@@ -1,0 +1,90 @@
+import {
+  Module,
+  NestModule,
+  MiddlewareConsumer,
+} from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+
+import { PrismaModule } from './prisma/prisma.module';
+import { RedisModule } from './common/redis/redis.module';
+import { TenantMiddleware } from './common/tenant/tenant.middleware';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { AuditLogInterceptor } from './common/interceptors/audit-log.interceptor';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+
+import { AuthModule } from './modules/auth/auth.module';
+import { TenantsModule } from './modules/tenants/tenants.module';
+import { FeatureFlagsModule } from './modules/feature-flags/feature-flags.module';
+import { AuditLogModule } from './modules/audit-log/audit-log.module';
+import { HealthModule } from './modules/health/health.module';
+import { RbacModule } from './modules/rbac/rbac.module';
+import { AcademicModule } from './modules/academic/academic.module';
+import { ClassesModule } from './modules/classes/classes.module';
+import { MembersModule } from './modules/members/members.module';
+import { ProfilesModule } from './modules/profiles/profiles.module';
+import { AttendanceModule } from './modules/attendance/attendance.module';
+import { HomeworkModule } from './modules/homework/homework.module';
+import { CalendarModule } from './modules/calendar/calendar.module';
+import { PollsModule } from './modules/polls/polls.module';
+import { ParentVisitsModule } from './modules/parent-visits/parent-visits.module';
+import { MattersModule } from './modules/matters/matters.module';
+import { AppController } from './app.controller';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['.env', '.env.example'],
+    }),
+    EventEmitterModule.forRoot({
+      wildcard: true,
+      delimiter: '.',
+      maxListeners: 20,
+    }),
+    PrismaModule,
+    RedisModule,
+    AuditLogModule,
+    FeatureFlagsModule,
+    TenantsModule,
+    AuthModule,
+    HealthModule,
+    RbacModule,
+    AcademicModule,
+    ClassesModule,
+    MembersModule,
+    ProfilesModule,
+    AttendanceModule,
+    HomeworkModule,
+    CalendarModule,
+    PollsModule,
+    ParentVisitsModule,
+    MattersModule,
+  ],
+  controllers: [AppController],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TransformInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditLogInterceptor,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
+})
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(TenantMiddleware).forRoutes('*');
+  }
+}
