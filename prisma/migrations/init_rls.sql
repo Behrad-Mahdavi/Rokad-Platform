@@ -1,5 +1,5 @@
 -- Row Level Security (RLS) Policies for Rokad Platform
--- Layer 2 Multi-Tenant Defense in Depth (Phase 1, 2, 3)
+-- Layer 2 Multi-Tenant Defense in Depth (Phase 1, 2, 3, 4)
 
 -- 1. Enable RLS on Tenant-bound tables
 ALTER TABLE "User" ENABLE ROW LEVEL SECURITY;
@@ -39,6 +39,15 @@ ALTER TABLE "ParentVisitSlot" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "ParentVisitBooking" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "DisciplinaryMatter" ENABLE ROW LEVEL SECURITY;
 
+-- Phase 4 Tables
+ALTER TABLE "LessonPlan" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "QuestionCategory" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Question" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Exam" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ExamClassroom" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ExamParticipation" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "GradeEntry" ENABLE ROW LEVEL SECURITY;
+
 -- 2. Force RLS for all table owners (prevents bypass)
 ALTER TABLE "User" FORCE ROW LEVEL SECURITY;
 ALTER TABLE "RefreshTokenFamily" FORCE ROW LEVEL SECURITY;
@@ -73,6 +82,14 @@ ALTER TABLE "PollVote" FORCE ROW LEVEL SECURITY;
 ALTER TABLE "ParentVisitSlot" FORCE ROW LEVEL SECURITY;
 ALTER TABLE "ParentVisitBooking" FORCE ROW LEVEL SECURITY;
 ALTER TABLE "DisciplinaryMatter" FORCE ROW LEVEL SECURITY;
+
+ALTER TABLE "LessonPlan" FORCE ROW LEVEL SECURITY;
+ALTER TABLE "QuestionCategory" FORCE ROW LEVEL SECURITY;
+ALTER TABLE "Question" FORCE ROW LEVEL SECURITY;
+ALTER TABLE "Exam" FORCE ROW LEVEL SECURITY;
+ALTER TABLE "ExamClassroom" FORCE ROW LEVEL SECURITY;
+ALTER TABLE "ExamParticipation" FORCE ROW LEVEL SECURITY;
+ALTER TABLE "GradeEntry" FORCE ROW LEVEL SECURITY;
 
 -- 3. Dynamic helper function for creating tenant isolation policies
 DO $$
@@ -111,7 +128,14 @@ DECLARE
     'PollVote',
     'ParentVisitSlot',
     'ParentVisitBooking',
-    'DisciplinaryMatter'
+    'DisciplinaryMatter',
+    'LessonPlan',
+    'QuestionCategory',
+    'Question',
+    'Exam',
+    'ExamClassroom',
+    'ExamParticipation',
+    'GradeEntry'
   ];
 BEGIN
   FOREACH tbl IN ARRAY tables

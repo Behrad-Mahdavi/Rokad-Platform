@@ -714,7 +714,150 @@ async function main() {
     },
   });
 
-  console.log('✅ Phase 1, Phase 2 & Phase 3 Database Seeding Completed Successfully!');
+  // 9. Phase 4: Seed Exams & LMS Engine
+  console.log('⚡ 9. Seeding Phase 4 Exams & LMS Engine...');
+
+  // Lesson Plan
+  const calculusPlan = await prisma.lessonPlan.create({
+    data: {
+      tenantId: boysTenant.id,
+      academicYearId: academicYear.id,
+      lessonId: calculusLesson.id,
+      teacherId: teacherProfile.id,
+      title: 'طرح درس سالانه حسابان ۱ پایه دهم ریاضی',
+      description: 'سرفصل‌ها و بودجه‌بندی جلسات درس حسابان ۱ برای سال تحصیلی',
+      totalHoursPlanned: 32,
+      sessions: {
+        create: [
+          {
+            sessionNumber: 1,
+            topic: 'آشنایی با توابع و دامنه و برد تابع',
+            objectives: 'درک مفهوم تابع و تعیین دامنه توابع کسری و رادیکالی',
+            activities: 'حل تمرین‌های مقدماتی و رسم نمودار با نرم‌افزار GeoGebra',
+            status: 'COMPLETED',
+          },
+          {
+            sessionNumber: 2,
+            topic: 'توابع جبری و ترکیب توابع (f o g)',
+            objectives: 'آموزش ترکیب توابع و خواص آن',
+            status: 'COMPLETED',
+          },
+          {
+            sessionNumber: 3,
+            topic: 'مفهوم حد و پیوستگی توابع',
+            objectives: 'محاسبه حدود نامعین صفر بر صفر و رفع ابهام',
+            status: 'PLANNED',
+          },
+        ],
+      },
+    },
+  });
+
+  // Question Bank
+  const calculusCategory = await prisma.questionCategory.create({
+    data: {
+      tenantId: boysTenant.id,
+      lessonId: calculusLesson.id,
+      name: 'فصل اول: توابع و روابط بین متغیرها',
+      orderIndex: 1,
+    },
+  });
+
+  const q1 = await prisma.question.create({
+    data: {
+      tenantId: boysTenant.id,
+      lessonId: calculusLesson.id,
+      categoryId: calculusCategory.id,
+      createdById: teacherUser.id,
+      type: 'MULTIPLE_CHOICE',
+      difficulty: 'MEDIUM',
+      text: 'دامنه تابع f(x) = sqrt(x - 2) / (x - 5) کدام است؟',
+      defaultScore: 2.0,
+      suggestedTimeSeconds: 90,
+      solutionExplanation: 'زیر رادیکال زوج باید نامنفی باشد (x >= 2) و مخرج کسر نباید صفر شود (x != 5). پس دامنه: [2, +inf) - {5}',
+      options: {
+        create: [
+          { text: '[2, +inf) - {5}', isCorrect: true, orderIndex: 1 },
+          { text: '(2, +inf)', isCorrect: false, orderIndex: 2 },
+          { text: '[2, 5)', isCorrect: false, orderIndex: 3 },
+          { text: 'R - {5}', isCorrect: false, orderIndex: 4 },
+        ],
+      },
+    },
+  });
+
+  const q2 = await prisma.question.create({
+    data: {
+      tenantId: boysTenant.id,
+      lessonId: calculusLesson.id,
+      categoryId: calculusCategory.id,
+      createdById: teacherUser.id,
+      type: 'MULTIPLE_CHOICE',
+      difficulty: 'EASY',
+      text: 'اگر f(x) = 2x + 3 و g(x) = x^2 باشد، مقدار (f o g)(2) کدام است؟',
+      defaultScore: 2.0,
+      suggestedTimeSeconds: 60,
+      solutionExplanation: 'g(2) = 2^2 = 4 -> f(4) = 2(4) + 3 = 11',
+      options: {
+        create: [
+          { text: '11', isCorrect: true, orderIndex: 1 },
+          { text: '49', isCorrect: false, orderIndex: 2 },
+          { text: '14', isCorrect: false, orderIndex: 3 },
+          { text: '7', isCorrect: false, orderIndex: 4 },
+        ],
+      },
+    },
+  });
+
+  // Exam
+  const calculusExam = await prisma.exam.create({
+    data: {
+      tenantId: boysTenant.id,
+      academicYearId: academicYear.id,
+      lessonId: calculusLesson.id,
+      teacherId: teacherProfile.id,
+      title: 'آزمون آنلاین مبحثی فصل اول حسابان',
+      description: 'آزمون تستی زمان‌دار با تصحیح خودکار',
+      examType: 'ONLINE',
+      durationMinutes: 45,
+      startTime: new Date('2026-09-01T00:00:00.000Z'),
+      endTime: new Date('2026-10-30T23:59:59.000Z'),
+      totalScore: 4.0,
+      shuffleQuestions: true,
+      shuffleOptions: true,
+      status: 'RUNNING',
+      isPublished: true,
+      classrooms: {
+        create: [{ tenantId: boysTenant.id, classroomId: classroom10M1.id }],
+      },
+      questions: {
+        create: [
+          { questionId: q1.id, orderIndex: 1, score: 2.0 },
+          { questionId: q2.id, orderIndex: 2, score: 2.0 },
+        ],
+      },
+    },
+  });
+
+  // Grade Entries (Gradebook)
+  await prisma.gradeEntry.create({
+    data: {
+      tenantId: boysTenant.id,
+      academicYearId: academicYear.id,
+      classroomId: classroom10M1.id,
+      lessonId: calculusLesson.id,
+      studentId: studentProfile.id,
+      teacherId: teacherProfile.id,
+      gradeType: 'CLASS_ACTIVITY',
+      title: 'فعالیت کلاسی و حل تمرین پای تخته',
+      score: 19.5,
+      maxScore: 20,
+      weight: 1.0,
+      recordedById: teacherUser.id,
+    },
+  });
+
+  console.log('✅ Phase 1, Phase 2, Phase 3 & Phase 4 Database Seeding Completed Successfully!');
 }
 
 main()

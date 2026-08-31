@@ -37,6 +37,14 @@ const TENANT_BOUND_MODELS = [
   'ParentVisitSlot',
   'ParentVisitBooking',
   'DisciplinaryMatter',
+  // Phase 4
+  'LessonPlan',
+  'QuestionCategory',
+  'Question',
+  'Exam',
+  'ExamClassroom',
+  'ExamParticipation',
+  'GradeEntry',
 ];
 
 export function createTenantExtension(tenantContextService: TenantContextService) {

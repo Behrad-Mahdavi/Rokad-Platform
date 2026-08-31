@@ -31,6 +31,10 @@ import { CalendarModule } from './modules/calendar/calendar.module';
 import { PollsModule } from './modules/polls/polls.module';
 import { ParentVisitsModule } from './modules/parent-visits/parent-visits.module';
 import { MattersModule } from './modules/matters/matters.module';
+import { LessonPlansModule } from './modules/lesson-plans/lesson-plans.module';
+import { QuestionBankModule } from './modules/question-bank/question-bank.module';
+import { ExamsModule } from './modules/exams/exams.module';
+import { GradebookModule } from './modules/gradebook/gradebook.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -62,6 +66,10 @@ import { AppController } from './app.controller';
     PollsModule,
     ParentVisitsModule,
     MattersModule,
+    LessonPlansModule,
+    QuestionBankModule,
+    ExamsModule,
+    GradebookModule,
   ],
   controllers: [AppController],
   providers: [

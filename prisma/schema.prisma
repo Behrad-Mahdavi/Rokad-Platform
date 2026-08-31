@@ -156,6 +156,60 @@ enum MatterType {
   COUNSELING_REFERRAL
 }
 
+// Phase 4 Enums
+enum LessonPlanSessionStatus {
+  PLANNED
+  COMPLETED
+  IN_PROGRESS
+  CANCELLED
+  MAKEUP_REQUIRED
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  DESCRIPTIVE
+  TRUE_FALSE
+  FILL_IN_BLANK
+}
+
+enum DifficultyLevel {
+  EASY
+  MEDIUM
+  HARD
+  OLYMPIAD
+}
+
+enum ExamType {
+  ONLINE
+  PAPER_BASED
+  HYBRID
+}
+
+enum ExamStatus {
+  DRAFT
+  SCHEDULED
+  RUNNING
+  FINISHED
+  CANCELLED
+}
+
+enum ParticipationStatus {
+  IN_PROGRESS
+  SUBMITTED
+  TIMED_OUT
+  ABSENT
+}
+
+enum GradeType {
+  CLASS_ACTIVITY
+  QUIZ
+  HOMEWORK_GRADE
+  MIDTERM
+  FINAL_TERM_1
+  FINAL_TERM_2
+  CUSTOM
+}
+
 model Tenant {
   id           String       @id @default(uuid())
   type         TenantType   @default(SCHOOL)
@@ -210,6 +264,15 @@ model Tenant {
   parentVisitBookings ParentVisitBooking[]
   disciplinaryMatters DisciplinaryMatter[]
 
+  // Phase 4 LMS & Exam Relations
+  lessonPlans         LessonPlan[]
+  questionCategories  QuestionCategory[]
+  questions           Question[]
+  exams               Exam[]
+  examClassrooms      ExamClassroom[]
+  examParticipations  ExamParticipation[]
+  gradeEntries        GradeEntry[]
+
   @@index([status])
   @@index([createdAt])
 }
@@ -256,6 +319,10 @@ model User {
   createdPolls               Poll[]               @relation("CreatedPoll")
   pollVotes                  PollVote[]
   reportedMatters            DisciplinaryMatter[] @relation("ReportedMatter")
+
+  // Phase 4 Relations
+  createdQuestions Question[]   @relation("CreatedQuestion")
+  recordedGrades   GradeEntry[] @relation("RecordedGrade")
 
   @@unique([tenantId, email])
   @@unique([tenantId, phone])
@@ -370,6 +437,11 @@ model AcademicYear {
   studentAttendances  StudentAttendance[]
   disciplinaryMatters DisciplinaryMatter[]
 
+  // Phase 4
+  lessonPlans         LessonPlan[]
+  exams               Exam[]
+  gradeEntries        GradeEntry[]
+
   @@unique([tenantId, name])
   @@index([tenantId, isCurrent])
 }
@@ -386,6 +458,10 @@ model Term {
   isCurrent      Boolean      @default(false)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+
+  lessonPlans    LessonPlan[]
+  exams          Exam[]
+  gradeEntries   GradeEntry[]
 
   @@unique([academicYearId, name])
   @@index([tenantId, academicYearId])
@@ -449,6 +525,13 @@ model Lesson {
   studentAttendances StudentAttendance[]
   homeworks          Homework[]
 
+  // Phase 4 Relations
+  lessonPlans        LessonPlan[]
+  questionCategories QuestionCategory[]
+  questions          Question[]
+  exams              Exam[]
+  gradeEntries       GradeEntry[]
+
   @@unique([tenantId, code])
   @@index([tenantId, levelId])
 }
@@ -476,6 +559,10 @@ model Classroom {
   schedules          ClassSchedule[]
   studentAttendances StudentAttendance[]
   homeworks          Homework[]
+
+  // Phase 4 Relations
+  examClassrooms     ExamClassroom[]
+  gradeEntries       GradeEntry[]
 
   @@unique([tenantId, academicYearId, name])
   @@unique([tenantId, academicYearId, code])
@@ -610,6 +697,10 @@ model StudentProfile {
   parentVisitBookings ParentVisitBooking[]
   disciplinaryMatters DisciplinaryMatter[]
 
+  // Phase 4 Relations
+  examParticipations  ExamParticipation[]
+  gradeEntries        GradeEntry[]
+
   @@unique([tenantId, studentCode])
   @@index([tenantId, nationalCode])
 }
@@ -631,6 +722,11 @@ model TeacherProfile {
   teacherAttendances TeacherAttendance[]
   homeworks          Homework[]
   parentVisitSlots   ParentVisitSlot[]
+
+  // Phase 4 Relations
+  lessonPlans        LessonPlan[]
+  exams              Exam[]
+  gradeEntries       GradeEntry[]
 
   @@index([tenantId])
 }
@@ -982,5 +1078,257 @@ model DisciplinaryMatter {
   updatedAt       DateTime       @updatedAt
 
   @@index([tenantId, studentId, type])
+  @@index([tenantId, academicYearId])
+}
+
+// ==========================================
+// PHASE 4: EXAMS & LMS ENGINE
+// ==========================================
+
+model LessonPlan {
+  id               String         @id @default(uuid())
+  tenantId         String
+  tenant           Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  academicYearId   String
+  academicYear     AcademicYear   @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  termId           String?
+  term             Term?          @relation(fields: [termId], references: [id], onDelete: SetNull)
+  lessonId         String
+  lesson           Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  teacherId        String
+  teacher          TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  title            String         // e.g. "طرح درس جامع سالانه حسابان ۱"
+  description      String?
+  totalHoursPlanned Int           @default(30)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  sessions LessonPlanSession[]
+
+  @@index([tenantId, lessonId, teacherId])
+  @@index([tenantId, academicYearId])
+}
+
+model LessonPlanSession {
+  id           String                  @id @default(uuid())
+  lessonPlanId String
+  lessonPlan   LessonPlan              @relation(fields: [lessonPlanId], references: [id], onDelete: Cascade)
+  sessionNumber Int                    // جلسه ۱، ۲، ۳...
+  topic        String                  // مبحث درس (e.g. "تعریف مشتق و تعبیر هندسی")
+  objectives   String?                 // اهداف آموزشی
+  activities   String?                 // فعالیت‌های کلاسی و تمرینات
+  plannedDate  DateTime?               // تاریخ برنامه‌ریزی‌شده
+  actualDate   DateTime?               // تاریخ تدریس واقعی
+  status       LessonPlanSessionStatus @default(PLANNED)
+  notes        String?
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+
+  @@unique([lessonPlanId, sessionNumber])
+  @@index([lessonPlanId, status])
+}
+
+model QuestionCategory {
+  id         String     @id @default(uuid())
+  tenantId   String
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lessonId   String
+  lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  name       String     // e.g. "فصل ۱: توابع و نمودارها"
+  orderIndex Int        @default(1)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  questions Question[]
+
+  @@index([tenantId, lessonId])
+}
+
+model Question {
+  id                  String          @id @default(uuid())
+  tenantId            String
+  tenant              Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lessonId            String
+  lesson              Lesson          @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  categoryId          String?
+  category            QuestionCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdById         String
+  createdBy           User            @relation("CreatedQuestion", fields: [createdById], references: [id], onDelete: Cascade)
+  type                QuestionType    @default(MULTIPLE_CHOICE)
+  difficulty          DifficultyLevel @default(MEDIUM)
+  text                String          // متن سوال
+  formulaHtml         String?
+  imageUrls           String[]        @default([])
+  defaultScore        Float           @default(1.0)
+  suggestedTimeSeconds Int            @default(60)
+  solutionExplanation String?         // پاسخ تشریحی و راهنمای تصحیح
+  isPublic            Boolean         @default(false)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  options       QuestionOption[]
+  examQuestions ExamQuestion[]
+  examAnswers   ExamAnswer[]
+
+  @@index([tenantId, lessonId, difficulty])
+  @@index([tenantId, type])
+}
+
+model QuestionOption {
+  id          String   @id @default(uuid())
+  questionId  String
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  text        String
+  formulaHtml String?
+  imageUrl    String?
+  isCorrect   Boolean  @default(false)
+  orderIndex  Int      @default(1)
+
+  @@index([questionId])
+}
+
+model Exam {
+  id                     String     @id @default(uuid())
+  tenantId               String
+  tenant                 Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  academicYearId         String
+  academicYear           AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  termId                 String?
+  term                   Term?      @relation(fields: [termId], references: [id], onDelete: SetNull)
+  lessonId               String
+  lesson                 Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  teacherId              String
+  teacher                TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  title                  String     // e.g. "آزمون میان‌ترم حسابان ۱"
+  description            String?
+  examType               ExamType   @default(ONLINE)
+  durationMinutes        Int        @default(60)
+  startTime              DateTime
+  endTime                DateTime
+  totalScore             Float      @default(20)
+  shuffleQuestions       Boolean    @default(true)
+  shuffleOptions         Boolean    @default(true)
+  allowReview            Boolean    @default(true)
+  showResultsImmediately Boolean    @default(false)
+  isPublished            Boolean    @default(false)
+  status                 ExamStatus @default(DRAFT)
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
+
+  classrooms     ExamClassroom[]
+  questions      ExamQuestion[]
+  participations ExamParticipation[]
+  gradeEntries   GradeEntry[]
+
+  @@index([tenantId, lessonId, startTime])
+  @@index([tenantId, status])
+}
+
+model ExamClassroom {
+  id          String    @id @default(uuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  examId      String
+  exam        Exam      @relation(fields: [examId], references: [id], onDelete: Cascade)
+  classroomId String
+  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+
+  @@unique([examId, classroomId])
+  @@index([tenantId, classroomId])
+}
+
+model ExamQuestion {
+  id         String   @id @default(uuid())
+  examId     String
+  exam       Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  orderIndex Int
+  score      Float    @default(1.0)
+
+  @@unique([examId, questionId])
+  @@index([examId, orderIndex])
+}
+
+model ExamParticipation {
+  id               String              @id @default(uuid())
+  tenantId         String
+  tenant           Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  examId           String
+  exam             Exam                @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId        String
+  student          StudentProfile      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  startedAt        DateTime            @default(now())
+  submittedAt      DateTime?
+  serverDeadline   DateTime            // زمان پایان قطعی سمت سرور
+  totalScore       Float?
+  isGraded         Boolean             @default(false)
+  tabSwitchCount   Int                 @default(0) // شمارنده تعویض تب
+  flaggedForReview Boolean             @default(false) // پرچم برای بازبینی معلم
+  status           ParticipationStatus @default(IN_PROGRESS)
+  questionOrder    String[]            @default([]) // ذخیره قطعی ترتیب سوالات برای این دانش‌آموز
+  optionOrders     Json?               // ذخیره قطعی ترتیب گزینه‌های شافل‌شده
+  teacherFeedback  String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  answers ExamAnswer[]
+
+  @@unique([examId, studentId])
+  @@index([tenantId, studentId])
+  @@index([tenantId, examId, status])
+}
+
+model ExamAnswer {
+  id                String            @id @default(uuid())
+  participationId   String
+  participation     ExamParticipation @relation(fields: [participationId], references: [id], onDelete: Cascade)
+  questionId        String
+  question          Question          @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOptionId  String?           // گزینه انتخاب‌شده برای تستی
+  descriptiveAnswer String?           // متن پاسخ برای تشریحی
+  scoreAwarded      Float?
+  isAutoGraded      Boolean           @default(false)
+  teacherComment    String?
+  submittedAt       DateTime          @default(now())
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@unique([participationId, questionId])
+  @@index([participationId])
+}
+
+model GradeEntry {
+  id             String         @id @default(uuid())
+  tenantId       String
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  academicYearId String
+  academicYear   AcademicYear   @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  termId         String?
+  term           Term?          @relation(fields: [termId], references: [id], onDelete: SetNull)
+  classroomId    String
+  classroom      Classroom      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  lessonId       String
+  lesson         Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  studentId      String
+  student        StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId      String
+  teacher        TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  examId         String?
+  exam           Exam?          @relation(fields: [examId], references: [id], onDelete: SetNull)
+  gradeType      GradeType      @default(CLASS_ACTIVITY)
+  title          String         // e.g. "مستمر آبان‌ماه"
+  score          Float          // نمره کسب‌شده
+  maxScore       Float          @default(20) // سقف نمره
+  weight         Float          @default(1.0)
+  date           DateTime       @default(now())
+  description    String?
+  recordedById   String
+  recordedBy     User           @relation("RecordedGrade", fields: [recordedById], references: [id], onDelete: Cascade)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([tenantId, classroomId, lessonId, date])
+  @@index([tenantId, studentId, gradeType])
   @@index([tenantId, academicYearId])
 }
