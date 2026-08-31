@@ -19,6 +19,11 @@ import { SubscriptionsPage } from '../modules/super-admin/subscriptions/Subscrip
 import { RoleTemplatesPage } from '../modules/super-admin/roles/RoleTemplatesPage';
 import { PlatformOpsPage } from '../modules/super-admin/ops/PlatformOpsPage';
 import { SchoolAdminDashboard } from '../modules/school-admin/SchoolAdminDashboard';
+import { AcademicStructurePage } from '../modules/school-admin/academic/AcademicStructurePage';
+import { MembersPage } from '../modules/school-admin/members/MembersPage';
+import { FeesPage } from '../modules/school-admin/finance/FeesPage';
+import { PayrollPage } from '../modules/school-admin/finance/PayrollPage';
+import { ReportsPage } from '../modules/school-admin/reports/ReportsPage';
 import { TeacherDashboard } from '../modules/teacher/TeacherDashboard';
 import { StudentDashboard } from '../modules/student-parent/StudentDashboard';
 import { ParentDashboard } from '../modules/student-parent/ParentDashboard';
@@ -74,11 +79,11 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <Navigate to="dashboard" replace /> },
               { path: 'dashboard', element: <SchoolAdminDashboard /> },
-              { path: 'academic', element: <SchoolAdminDashboard /> },
-              { path: 'members', element: <SchoolAdminDashboard /> },
-              { path: 'finance/fees', element: <SchoolAdminDashboard /> },
-              { path: 'finance/payroll', element: <SchoolAdminDashboard /> },
-              { path: 'reports', element: <SchoolAdminDashboard /> },
+              { path: 'academic', element: <AcademicStructurePage /> },
+              { path: 'members', element: <MembersPage /> },
+              { path: 'finance/fees', element: <FeesPage /> },
+              { path: 'finance/payroll', element: <PayrollPage /> },
+              { path: 'reports', element: <ReportsPage /> },
             ],
           },
         ],
