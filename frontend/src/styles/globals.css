@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand semantic aliases */
+    --color-primary: #59BBAF;
+    --color-girl:    #E0195B;
+    --color-third:   #F8A41D;
+    --color-sec:     #202A5A;
+
+    /* Default Theme: Ecosystem */
+    --theme-light:        #EEF8F7;
+    --theme-light-hover:  #E6F5F3;
+    --theme-light-active: #CCEAE6;
+    --theme-normal:       #59BBAF;
+    --theme-normal-hover: #50A89E;
+    --theme-normal-active:#47968C;
+    --theme-dark:         #438C83;
+    --theme-dark-hover:   #357069;
+    --theme-dark-active:  #28544F;
+    --theme-darker:       #1F413D;
+    --theme-shadow:       2.75px 2.75px 0 #59BBAF;
+
+    /* Neutral ink */
+    --text-light:        #EAEAE9;
+    --text-light-hover:  #DFDFDF;
+    --text-light-active: #BDBCBC;
+    --text-normal:       #292827;
+    --text-normal-hover: #252423;
+    --text-normal-active:#21201F;
+    --text-dark:         #1F1E1D;
+    --text-darker:       #0E0E0E;
+
+    /* Accents */
+    --accent-green:  #009966;
+    --accent-red:    #C60036;
+    --accent-purple: #8A38F5;
+
+    /* Typography & Spacing */
+    --font-family: 'IRANSansX', 'Vazirmatn', system-ui, sans-serif;
+  }
+
+  [data-theme='male'] {
+    --theme-light:        #E9EAEF;
+    --theme-light-hover:  #DEDFE6;
+    --theme-light-active: #BABDCC;
+    --theme-normal:       #202A5A;
+    --theme-normal-hover: #1D2651;
+    --theme-normal-active:#1A2248;
+    --theme-dark:         #182044;
+    --theme-dark-hover:   #131936;
+    --theme-dark-active:  #0E1328;
+    --theme-darker:       #0B0F1F;
+    --theme-shadow:       2.75px 2.75px 0 #202A5A;
+  }
+
+  [data-theme='female'] {
+    --theme-light:        #FCE8EF;
+    --theme-light-hover:  #FADDE6;
+    --theme-light-active: #F5B8CC;
+    --theme-normal:       #E0195B;
+    --theme-normal-hover: #CA1752;
+    --theme-normal-active:#B31449;
+    --theme-dark:         #A81344;
+    --theme-dark-hover:   #860F37;
+    --theme-dark-active:  #650B29;
+    --theme-darker:       #4E0920;
+    --theme-shadow:       2.75px 2.75px 0 #E0195B;
+  }
+
+  [data-theme='college'] {
+    --theme-light:        #FEF6E8;
+    --theme-light-hover:  #FEF1DD;
+    --theme-light-active: #FDE3B9;
+    --theme-normal:       #F8A41D;
+    --theme-normal-hover: #DF941A;
+    --theme-normal-active:#C68317;
+    --theme-dark:         #BA7B16;
+    --theme-dark-hover:   #956211;
+    --theme-dark-active:  #704A0D;
+    --theme-darker:       #57390A;
+    --theme-shadow:       2.75px 2.75px 0 #F8A41D;
+  }
+
+  [data-theme='club'] {
+    --theme-light:        #F0EAF4;
+    --theme-light-hover:  #E8E0EE;
+    --theme-light-active: #CFBEDD;
+    --theme-normal:       #652D90;
+    --theme-normal-hover: #5B2982;
+    --theme-normal-active:#512473;
+    --theme-dark:         #4C226C;
+    --theme-dark-hover:   #3D1B56;
+    --theme-dark-active:  #2D1441;
+    --theme-darker:       #231032;
+    --theme-shadow:       2.75px 2.75px 0 #652D90;
+  }
+
+  body {
+    font-family: var(--font-family);
+    direction: rtl;
+    text-align: right;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
