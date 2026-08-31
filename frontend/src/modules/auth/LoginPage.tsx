@@ -162,20 +162,29 @@ export const LoginPage: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => selectPreset('rokad-boys', '09122222222', 'TeacherPass2026!')}
+              onClick={() => selectPreset('rokad-boys', '09123000001', 'RokadPass2026!')}
               className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
             >
               <div className="font-bold text-ink-dark">👨‍🏫 معلم نمونه</div>
-              <div className="text-[10px] text-gray-500 font-mono">09122222222</div>
+              <div className="text-[10px] text-gray-500 font-mono">09123000001</div>
             </button>
 
             <button
               type="button"
-              onClick={() => selectPreset('rokad-boys', '09123333333', 'StudentPass2026!')}
+              onClick={() => selectPreset('rokad-boys', '09124000001', 'RokadPass2026!')}
               className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
             >
               <div className="font-bold text-ink-dark">🎓 دانش‌آموز</div>
-              <div className="text-[10px] text-gray-500 font-mono">09123333333</div>
+              <div className="text-[10px] text-gray-500 font-mono">09124000001</div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => selectPreset('rokad-boys', '09125000001', 'RokadPass2026!')}
+              className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors col-span-2"
+            >
+              <div className="font-bold text-ink-dark">👨‍👩‍👦 اولیاء دانش‌آموز</div>
+              <div className="text-[10px] text-gray-500 font-mono">09125000001 • رمز: RokadPass2026!</div>
             </button>
           </div>
         </div>
