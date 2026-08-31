@@ -25,8 +25,21 @@ import { FeesPage } from '../modules/school-admin/finance/FeesPage';
 import { PayrollPage } from '../modules/school-admin/finance/PayrollPage';
 import { ReportsPage } from '../modules/school-admin/reports/ReportsPage';
 import { TeacherDashboard } from '../modules/teacher/TeacherDashboard';
+import { AttendancePage } from '../modules/teacher/attendance/AttendancePage';
+import { HomeworkPage } from '../modules/teacher/homework/HomeworkPage';
+import { ExamsPage } from '../modules/teacher/exams/ExamsPage';
+import { GradebookPage } from '../modules/teacher/gradebook/GradebookPage';
+import { LessonPlansPage } from '../modules/teacher/lessons/LessonPlansPage';
+
 import { StudentDashboard } from '../modules/student-parent/StudentDashboard';
+import { StudentHomeworkPage } from '../modules/student-parent/homework/StudentHomeworkPage';
+import { StudentExamsPage } from '../modules/student-parent/exams/StudentExamsPage';
+import { StudentGradesPage } from '../modules/student-parent/grades/StudentGradesPage';
+import { StudentMaterialsPage } from '../modules/student-parent/materials/StudentMaterialsPage';
+
 import { ParentDashboard } from '../modules/student-parent/ParentDashboard';
+import { ParentFeesPage } from '../modules/student-parent/fees/ParentFeesPage';
+
 import { ForbiddenPage } from '../modules/errors/ForbiddenPage';
 import { NotFoundPage } from '../modules/errors/NotFoundPage';
 
@@ -99,11 +112,11 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <Navigate to="dashboard" replace /> },
               { path: 'dashboard', element: <TeacherDashboard /> },
-              { path: 'attendance', element: <TeacherDashboard /> },
-              { path: 'homework', element: <TeacherDashboard /> },
-              { path: 'exams', element: <TeacherDashboard /> },
-              { path: 'gradebook', element: <TeacherDashboard /> },
-              { path: 'lessons', element: <TeacherDashboard /> },
+              { path: 'attendance', element: <AttendancePage /> },
+              { path: 'homework', element: <HomeworkPage /> },
+              { path: 'exams', element: <ExamsPage /> },
+              { path: 'gradebook', element: <GradebookPage /> },
+              { path: 'lessons', element: <LessonPlansPage /> },
             ],
           },
         ],
@@ -119,16 +132,16 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <Navigate to="dashboard" replace /> },
               { path: 'dashboard', element: <StudentDashboard /> },
-              { path: 'homework', element: <StudentDashboard /> },
-              { path: 'exams', element: <StudentDashboard /> },
-              { path: 'grades', element: <StudentDashboard /> },
-              { path: 'materials', element: <StudentDashboard /> },
+              { path: 'homework', element: <StudentHomeworkPage /> },
+              { path: 'exams', element: <StudentExamsPage /> },
+              { path: 'grades', element: <StudentGradesPage /> },
+              { path: 'materials', element: <StudentMaterialsPage /> },
             ],
           },
         ],
       },
 
-      // 2.5 Persona 4: Parent
+      // 2.5 Persona 5: Parent
       {
         path: 'parent',
         element: <RoleGuard allowedRoles={['PARENT', 'SUPER_ADMIN']} />,
@@ -138,8 +151,8 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <Navigate to="dashboard" replace /> },
               { path: 'dashboard', element: <ParentDashboard /> },
-              { path: 'fees', element: <ParentDashboard /> },
-              { path: 'reports', element: <ParentDashboard /> },
+              { path: 'fees', element: <ParentFeesPage /> },
+              { path: 'reports', element: <StudentGradesPage /> },
               { path: 'visits', element: <ParentDashboard /> },
             ],
           },
