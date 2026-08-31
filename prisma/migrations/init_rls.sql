@@ -1,5 +1,5 @@
 -- Row Level Security (RLS) Policies for Rokad Platform
--- Layer 2 Multi-Tenant Defense in Depth (Phase 1, 2, 3, 4, 5, 6)
+-- Layer 2 Multi-Tenant Defense in Depth (Phase 1, 2, 3, 4, 5, 6, 7)
 
 -- 1. Enable RLS on Tenant-bound tables
 ALTER TABLE "User" ENABLE ROW LEVEL SECURITY;
@@ -64,6 +64,9 @@ ALTER TABLE "StaffPayrollProfile" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "PayrollSlip" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "PayrollItem" ENABLE ROW LEVEL SECURITY;
 
+-- Phase 7 Tables
+ALTER TABLE "TenantSubscription" ENABLE ROW LEVEL SECURITY;
+
 -- 2. Force RLS for all table owners (prevents bypass)
 ALTER TABLE "User" FORCE ROW LEVEL SECURITY;
 ALTER TABLE "RefreshTokenFamily" FORCE ROW LEVEL SECURITY;
@@ -121,6 +124,8 @@ ALTER TABLE "StaffPayrollProfile" FORCE ROW LEVEL SECURITY;
 ALTER TABLE "PayrollSlip" FORCE ROW LEVEL SECURITY;
 ALTER TABLE "PayrollItem" FORCE ROW LEVEL SECURITY;
 
+ALTER TABLE "TenantSubscription" FORCE ROW LEVEL SECURITY;
+
 -- 3. Dynamic helper function for creating tenant isolation policies
 DO $$
 DECLARE
@@ -177,7 +182,8 @@ DECLARE
     'FeeReceipt',
     'StaffPayrollProfile',
     'PayrollSlip',
-    'PayrollItem'
+    'PayrollItem',
+    'TenantSubscription'
   ];
 BEGIN
   FOREACH tbl IN ARRAY tables

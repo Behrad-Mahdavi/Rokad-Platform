@@ -40,6 +40,7 @@ import { LearningMaterialsModule } from './modules/learning-materials/learning-m
 import { ChatModule } from './modules/chat/chat.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { PayrollModule } from './modules/payroll/payroll.module';
+import { SaasAdminModule } from './modules/saas-admin/saas-admin.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -80,6 +81,7 @@ import { AppController } from './app.controller';
     ChatModule,
     FinanceModule,
     PayrollModule,
+    SaasAdminModule,
   ],
   controllers: [AppController],
   providers: [

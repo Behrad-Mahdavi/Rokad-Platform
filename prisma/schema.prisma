@@ -10,6 +10,10 @@ generator client {
 enum TenantType {
   PLATFORM
   SCHOOL
+  COLLEGE
+  CLUB
+  PROJECT_INSTITUTE
+  MULTI_CAMPUS_NETWORK
 }
 
 enum TenantStatus {
@@ -227,6 +231,11 @@ model Tenant {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
+  // Multi-Campus / Multi-Branch Hierarchy
+  parentTenantId String?
+  parentTenant   Tenant?  @relation("TenantHierarchy", fields: [parentTenantId], references: [id], onDelete: SetNull)
+  subTenants     Tenant[] @relation("TenantHierarchy")
+
   users             User[]
   featureFlags      TenantFeatureFlag[]
   auditLogs         AuditLog[]
@@ -289,7 +298,11 @@ model Tenant {
   payrollSlips          PayrollSlip[]
   payrollItems          PayrollItem[]
 
+  // Phase 7 SaaS SuperAdmin Relations
+  subscriptions         TenantSubscription[]
+
   @@index([status])
+  @@index([parentTenantId])
   @@index([createdAt])
 }
 
@@ -1740,3 +1753,102 @@ model PayrollItem {
 
   @@index([tenantId, payrollSlipId])
 }
+
+// ==========================================
+// PHASE 7: SAAS SUPERADMIN & PLATFORM OPERATIONS
+// ==========================================
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  GRACE_PERIOD
+  CANCELLED
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
+  LIFETIME
+  CUSTOM
+}
+
+model SubscriptionPlan {
+  id                 String       @id @default(uuid())
+  code               String       @unique // e.g. "FREE_TRIAL", "STANDARD_SCHOOL", "PRO_CAMPUS", "ENTERPRISE"
+  name               String       // e.g. "پلن استاندارد مدارس"
+  description        String?
+  monthlyPrice       Float        @default(0) // قیمت ماهیانه (تومان)
+  annualPrice        Float        @default(0) // قیمت سالیانه با تخفیف (تومان)
+  maxStudents        Int          @default(100) // سقف تعداد دانش‌آموز مجاز
+  maxTeachers        Int          @default(20)  // سقف تعداد دبیر و پرسنل مجاز
+  maxStorageMb       Int          @default(5120) // سقف فضای ابری به مگابایت (۵ گیگ)
+  bundledFeatureFlags String[]    @default([]) // کلید فیچرفلگ‌های فعال در این پلن (e.g. ["LMS_EXAMS", "LIVE_CHAT", "FINANCE_PAYROLL"])
+  isPublic           Boolean      @default(true)
+  isActive           Boolean      @default(true)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  subscriptions TenantSubscription[]
+
+  @@index([isActive])
+}
+
+model TenantSubscription {
+  id             String             @id @default(uuid())
+  tenantId       String
+  tenant         Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  planId         String
+  plan           SubscriptionPlan   @relation(fields: [planId], references: [id], onDelete: Restrict)
+  billingCycle   BillingCycle       @default(ANNUAL)
+  status         SubscriptionStatus @default(ACTIVE)
+  startDate      DateTime           @default(now())
+  endDate        DateTime           // تاریخ پایان دوره اشتراک
+  autoRenew      Boolean            @default(true)
+  customDiscount Float              @default(0)
+  paidAmount     Float              @default(0)
+  notes          String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([tenantId, status])
+  @@index([status, endDate])
+}
+
+model GlobalRoleTemplate {
+  id               String      @id @default(uuid())
+  code             String      @unique // e.g. "ACADEMIC_VICE_PRINCIPAL", "CHIEF_ACCOUNTANT", "STUDENT_COUNSELOR", "SPORTS_COACH"
+  name             String      // e.g. "معاون آموزشی استاندارد"
+  description      String?
+  targetTenantType TenantType  @default(SCHOOL)
+  isSystem         Boolean     @default(true)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  permissions GlobalRoleTemplatePermission[]
+
+  @@index([targetTenantType])
+}
+
+model GlobalRoleTemplatePermission {
+  id             String             @id @default(uuid())
+  templateId     String
+  template       GlobalRoleTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  permissionCode String             // e.g. "attendance.write", "exam.write", "finance.fee.read"
+  createdAt      DateTime           @default(now())
+
+  @@unique([templateId, permissionCode])
+  @@index([templateId])
+}
+
+model PlatformSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique // e.g. "PLATFORM_MAINTENANCE_MODE", "GLOBAL_ANNOUNCEMENT_BANNER", "MAX_TENANT_STORAGE_LIMIT"
+  value       Json     // ارزش تنظیمات به فرمت JSON انعطاف‌پذیر
+  description String?
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([key])
+}
+

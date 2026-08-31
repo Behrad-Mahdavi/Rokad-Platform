@@ -59,6 +59,8 @@ const TENANT_BOUND_MODELS = [
   'StaffPayrollProfile',
   'PayrollSlip',
   'PayrollItem',
+  // Phase 7
+  'TenantSubscription',
 ];
 
 export function createTenantExtension(tenantContextService: TenantContextService) {

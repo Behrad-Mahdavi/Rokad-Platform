@@ -926,6 +926,16 @@ async function main() {
   // 11. Phase 6: Seed Financial Management (Fee & Payroll)
   console.log('⚡ 11. Seeding Phase 6 Financial Management (Fee & Payroll)...');
 
+  // Clean up previous fee & payroll seed data for idempotent runs
+  await prisma.feeReceipt.deleteMany({ where: { tenantId: boysTenant.id } });
+  await prisma.paymentTransaction.deleteMany({ where: { tenantId: boysTenant.id } });
+  await prisma.feeInstallment.deleteMany({ where: { tenantId: boysTenant.id } });
+  await prisma.studentFeeContract.deleteMany({ where: { tenantId: boysTenant.id } });
+  await prisma.payrollItem.deleteMany({ where: { tenantId: boysTenant.id } });
+  await prisma.payrollSlip.deleteMany({ where: { tenantId: boysTenant.id } });
+  await prisma.staffPayrollProfile.deleteMany({ where: { tenantId: boysTenant.id } });
+  await prisma.tenantSubscription.deleteMany({ where: { tenantId: boysTenant.id } });
+
   // Student Fee Contract with 3 Installments
   const feeContract = await prisma.studentFeeContract.create({
     data: {
@@ -1064,7 +1074,162 @@ async function main() {
     },
   });
 
-  console.log('✅ Phase 1, Phase 2, Phase 3, Phase 4, Phase 5 & Phase 6 Database Seeding Completed Successfully!');
+  // 12. Phase 7: Seed SaaS SuperAdmin & Platform Operations
+  console.log('⚡ 12. Seeding Phase 7 SaaS SuperAdmin (Plans, Global Roles & Platform Ops)...');
+
+  // Subscription Plans
+  const trialPlan = await prisma.subscriptionPlan.upsert({
+    where: { code: 'FREE_TRIAL' },
+    update: {},
+    create: {
+      code: 'FREE_TRIAL',
+      name: 'پلن آزمایشی ۱۴ روزه',
+      description: 'دسترسی آزمایشی به امکانات پایه سامانه',
+      monthlyPrice: 0,
+      annualPrice: 0,
+      maxStudents: 50,
+      maxTeachers: 10,
+      maxStorageMb: 1024,
+      bundledFeatureFlags: ['LMS_EXAMS'],
+      isPublic: true,
+      isActive: true,
+    },
+  });
+
+  const standardPlan = await prisma.subscriptionPlan.upsert({
+    where: { code: 'STANDARD_SCHOOL' },
+    update: {},
+    create: {
+      code: 'STANDARD_SCHOOL',
+      name: 'پلن جامع مدارس استاندارد',
+      description: 'پکیج کامل ERP، سیستم آزمون‌ساز آنلاین، حضور و غیاب، چت و امور مالی',
+      monthlyPrice: 2500000,
+      annualPrice: 25000000,
+      maxStudents: 400,
+      maxTeachers: 40,
+      maxStorageMb: 15360, // 15 GB
+      bundledFeatureFlags: ['LMS_EXAMS', 'LIVE_CHAT', 'FINANCE_PAYROLL'],
+      isPublic: true,
+      isActive: true,
+    },
+  });
+
+  const proPlan = await prisma.subscriptionPlan.upsert({
+    where: { code: 'PRO_CAMPUS' },
+    update: {},
+    create: {
+      code: 'PRO_CAMPUS',
+      name: 'پلن سازمانی مجتمع‌ها و کالج‌ها',
+      description: 'ظرفیت نامحدود، چندشعبه‌ای، هوش مصنوعی اختصاصی، فضای ابری نامحدود',
+      monthlyPrice: 6500000,
+      annualPrice: 65000000,
+      maxStudents: 1500,
+      maxTeachers: 150,
+      maxStorageMb: 51200, // 50 GB
+      bundledFeatureFlags: ['LMS_EXAMS', 'LIVE_CHAT', 'FINANCE_PAYROLL', 'ONLINE_CLASSES', 'MULTI_CAMPUS'],
+      isPublic: true,
+      isActive: true,
+    },
+  });
+
+  // Assign Standard Plan to Boys School
+  const subEndDate = new Date();
+  subEndDate.setFullYear(subEndDate.getFullYear() + 1);
+
+  await prisma.tenantSubscription.create({
+    data: {
+      tenantId: boysTenant.id,
+      planId: standardPlan.id,
+      billingCycle: 'ANNUAL',
+      status: 'ACTIVE',
+      startDate: new Date(),
+      endDate: subEndDate,
+      paidAmount: standardPlan.annualPrice,
+    },
+  });
+
+  // Global Role Templates
+  const vicePrincipalTemplate = await prisma.globalRoleTemplate.upsert({
+    where: { code: 'ACADEMIC_VICE_PRINCIPAL' },
+    update: {},
+    create: {
+      code: 'ACADEMIC_VICE_PRINCIPAL',
+      name: 'معاون آموزشی استاندارد',
+      description: 'قالب کشوری نقش معاونت آموزشی مدارس با دسترسی کامل به فرآیندهای تحصیلی و آزمون‌ها',
+      targetTenantType: 'SCHOOL',
+      isSystem: true,
+      permissions: {
+        create: [
+          { permissionCode: 'attendance.read' },
+          { permissionCode: 'attendance.write' },
+          { permissionCode: 'homework.read' },
+          { permissionCode: 'homework.write' },
+          { permissionCode: 'exam.read' },
+          { permissionCode: 'exam.write' },
+          { permissionCode: 'grades.read' },
+          { permissionCode: 'grades.write' },
+        ],
+      },
+    },
+  });
+
+  const chiefAccountantTemplate = await prisma.globalRoleTemplate.upsert({
+    where: { code: 'CHIEF_ACCOUNTANT' },
+    update: {},
+    create: {
+      code: 'CHIEF_ACCOUNTANT',
+      name: 'حسابدار ارشد مالی',
+      description: 'قالب کشوری مدیریت مالی، شهریه، اقساط و حقوق و دستمزد',
+      targetTenantType: 'SCHOOL',
+      isSystem: true,
+      permissions: {
+        create: [
+          { permissionCode: 'finance.fee.read' },
+          { permissionCode: 'finance.fee.write' },
+          { permissionCode: 'finance.payroll.read' },
+          { permissionCode: 'finance.payroll.write' },
+        ],
+      },
+    },
+  });
+
+  // Sample Sub-Campus / College Tenant
+  const collegeTenant = await prisma.tenant.upsert({
+    where: { slug: 'rokad-college' },
+    update: {},
+    create: {
+      name: 'کالج علمی و مهارتی رُکاد',
+      slug: 'rokad-college',
+      type: 'COLLEGE',
+      theme: 'COLLEGE',
+      subdomain: 'college',
+      parentTenantId: boysTenant.id,
+      status: 'ACTIVE',
+      settings: {
+        branding: {
+          primaryColor: '#0D9488',
+          secondaryColor: '#F59E0B',
+          mottoText: 'مرکز تخصصی آموزش‌های مهارتی و فناوری',
+        },
+      },
+    },
+  });
+
+  // Global Platform Settings
+  await prisma.platformSetting.upsert({
+    where: { key: 'PLATFORM_MAINTENANCE_MODE' },
+    update: {},
+    create: {
+      key: 'PLATFORM_MAINTENANCE_MODE',
+      value: {
+        enabled: false,
+        message: 'سامانه رُکاد فعال است.',
+      },
+      description: 'حالت تعمیرات سراسری پلتفرم رُکاد',
+    },
+  });
+
+  console.log('✅ Phase 1, Phase 2, Phase 3, Phase 4, Phase 5, Phase 6 & Phase 7 Database Seeding Completed Successfully!');
 }
 
 main()
