@@ -7,6 +7,12 @@ import { SuperAdminLayout } from './layouts/SuperAdminLayout';
 import { SchoolAdminLayout } from './layouts/SchoolAdminLayout';
 import { TeacherLayout } from './layouts/TeacherLayout';
 import { StudentParentLayout } from './layouts/StudentParentLayout';
+import { SharedAppLayout } from './layouts/SharedAppLayout';
+
+// Shared Real-Time Pages
+import { LiveChatPage } from '../modules/shared/chat/LiveChatPage';
+import { NoticeboardPage } from '../modules/shared/noticeboard/NoticeboardPage';
+import { CalendarPage } from '../modules/shared/calendar/CalendarPage';
 
 // Guards
 import { RoleGuard, GuestGuard } from '../components/guards/RoleGuard';
@@ -154,6 +160,21 @@ export const router = createBrowserRouter([
               { path: 'fees', element: <ParentFeesPage /> },
               { path: 'reports', element: <StudentGradesPage /> },
               { path: 'visits', element: <ParentDashboard /> },
+            ],
+          },
+        ],
+      },
+
+      // 2.6 Shared Communication & Live Routes (Available for all authenticated personas)
+      {
+        element: <RoleGuard allowedRoles={['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF', 'TEACHER', 'STUDENT', 'PARENT']} />,
+        children: [
+          {
+            element: <SharedAppLayout />,
+            children: [
+              { path: 'chat', element: <LiveChatPage /> },
+              { path: 'notices', element: <NoticeboardPage /> },
+              { path: 'calendar', element: <CalendarPage /> },
             ],
           },
         ],

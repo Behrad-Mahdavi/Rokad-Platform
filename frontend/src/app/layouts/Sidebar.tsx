@@ -36,6 +36,15 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   const getNavItems = (): { section: string; items: NavItem[] }[] => {
+    const commsSection = {
+      section: 'ارتباطات و اطلاعیه‌ها',
+      items: [
+        { title: 'پیام‌رسان و چت زنده', href: '/app/chat', icon: MessageSquare },
+        { title: 'بورد اطلاعیه‌ها', href: '/app/notices', icon: FileCheck },
+        { title: 'تقویم آموزشی', href: '/app/calendar', icon: CalendarDays },
+      ],
+    };
+
     switch (role) {
       case 'SUPER_ADMIN':
         return [
@@ -49,6 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               { title: 'عملیات و وضعیت سامانه', href: '/app/super-admin/ops', icon: Activity },
             ],
           },
+          commsSection,
         ];
 
       case 'SCHOOL_ADMIN':
@@ -70,6 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               { title: 'گزارش‌های جامع', href: '/app/admin/reports', icon: BarChart3 },
             ],
           },
+          commsSection,
         ];
 
       case 'TEACHER':
@@ -85,6 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               { title: 'طرح درس و محتوا', href: '/app/teacher/lessons', icon: BookOpen },
             ],
           },
+          commsSection,
         ];
 
       case 'STUDENT':
@@ -99,6 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               { title: 'محتوا و جزوات', href: '/app/student/materials', icon: BookOpen },
             ],
           },
+          commsSection,
         ];
 
       case 'PARENT':
@@ -112,10 +125,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               { title: 'ملاقات با کادر آموزشی', href: '/app/parent/visits', icon: CalendarDays },
             ],
           },
+          commsSection,
         ];
 
       default:
-        return [];
+        return [commsSection];
     }
   };
 
