@@ -51,6 +51,14 @@ const TENANT_BOUND_MODELS = [
   'ChatChannel',
   'ChatChannelMember',
   'ChatMessage',
+  // Phase 6
+  'StudentFeeContract',
+  'FeeInstallment',
+  'PaymentTransaction',
+  'FeeReceipt',
+  'StaffPayrollProfile',
+  'PayrollSlip',
+  'PayrollItem',
 ];
 
 export function createTenantExtension(tenantContextService: TenantContextService) {

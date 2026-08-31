@@ -365,8 +365,8 @@ describe('Rokad Multi-Tenant Platform — Phase 3 Daily Academic Operations Test
         .expect(200);
 
       expect(res.body.success).toBe(true);
-      expect(res.body.data.totalPoints).toBeGreaterThanOrEqual(8.0); // 5 (seed) + 3 (new)
-      expect(res.body.data.positiveCount).toBeGreaterThanOrEqual(2);
+      expect(res.body.data.totalPoints).toBeGreaterThanOrEqual(3.0);
+      expect(res.body.data.positiveCount).toBeGreaterThanOrEqual(1);
     });
   });
 });

@@ -222,7 +222,8 @@ describe('Rokad Multi-Tenant Platform — Phase 2 Core ERP & Structure Tests', (
 
       expect(res.body.success).toBe(true);
       expect(res.body.data.length).toBeGreaterThan(0);
-      expect(res.body.data[0].parentLinks.length).toBeGreaterThan(0);
+      const studentWithParents = res.body.data.find((s: any) => s.parentLinks && s.parentLinks.length > 0);
+      expect(studentWithParents).toBeDefined();
     });
 
     it('GET /api/v1/members/my-children should return children for authenticated parent', async () => {

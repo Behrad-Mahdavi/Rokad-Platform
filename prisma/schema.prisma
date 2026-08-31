@@ -280,6 +280,15 @@ model Tenant {
   chatChannelMembers  ChatChannelMember[]
   chatMessages        ChatMessage[]
 
+  // Phase 6 Relations
+  studentFeeContracts   StudentFeeContract[]
+  feeInstallments       FeeInstallment[]
+  paymentTransactions   PaymentTransaction[]
+  feeReceipts           FeeReceipt[]
+  staffPayrollProfiles  StaffPayrollProfile[]
+  payrollSlips          PayrollSlip[]
+  payrollItems          PayrollItem[]
+
   @@index([status])
   @@index([createdAt])
 }
@@ -334,6 +343,13 @@ model User {
   // Phase 5 Relations
   chatMemberships  ChatChannelMember[]
   sentChatMessages ChatMessage[]        @relation("SentChatMessage")
+
+  // Phase 6 Relations
+  paymentTransactions   PaymentTransaction[]  @relation("PayerTransactions")
+  issuedFeeReceipts     FeeReceipt[]          @relation("IssuedFeeReceipts")
+  staffPayrollProfile   StaffPayrollProfile?
+  payrollSlips          PayrollSlip[]         @relation("EmployeePayrollSlips")
+  approvedPayrollSlips  PayrollSlip[]         @relation("ApprovedPayrollSlips")
 
   @@unique([tenantId, email])
   @@unique([tenantId, phone])
@@ -455,6 +471,9 @@ model AcademicYear {
 
   // Phase 5
   courseMaterials     CourseMaterial[]
+
+  // Phase 6
+  studentFeeContracts StudentFeeContract[]
 
   @@unique([tenantId, name])
   @@index([tenantId, isCurrent])
@@ -722,6 +741,9 @@ model StudentProfile {
   // Phase 4 Relations
   examParticipations  ExamParticipation[]
   gradeEntries        GradeEntry[]
+
+  // Phase 6 Relations
+  feeContracts        StudentFeeContract[]
 
   @@unique([tenantId, studentCode])
   @@index([tenantId, nationalCode])
@@ -1485,4 +1507,236 @@ model ChatMessage {
 
   @@index([tenantId, channelId, createdAt])
   @@index([tenantId, senderId])
+}
+
+// ==========================================
+// PHASE 6: FINANCIAL MANAGEMENT (FEE & PAYROLL)
+// ==========================================
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCESSFUL
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  ONLINE_GATEWAY
+  POS_RECEIPT
+  BANK_TRANSFER
+  CHEQUE
+  CASH
+}
+
+enum PaymentGateway {
+  ZARINPAL
+  MANUAL_OFFLINE
+  MOCK_SANDBOX
+}
+
+enum FeeContractStatus {
+  ACTIVE
+  COMPLETED
+  DEFAULTED
+  CANCELLED
+}
+
+enum InstallmentStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+}
+
+enum PayrollStatus {
+  DRAFT
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+enum PayrollItemType {
+  BASE_SALARY
+  HOURLY_TEACHING
+  BONUS
+  OVERTIME
+  INSURANCE_DEDUCTION
+  TAX_DEDUCTION
+  ADVANCE_DEDUCTION
+  OTHER
+}
+
+enum ContractType {
+  FULL_TIME_SALARY
+  HOURLY_TEACHER
+  CONTRACTUAL
+}
+
+model StudentFeeContract {
+  id                 String            @id @default(uuid())
+  tenantId           String
+  tenant             Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  academicYearId     String
+  academicYear       AcademicYear      @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  studentId          String
+  student            StudentProfile    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  contractNumber     String            // e.g. "FEE-1404-001"
+  totalAmount        Float             // کل مبلغ مصوب شهریه
+  discountAmount     Float             @default(0) // مبلغ تخفیف / بورسیه
+  finalPayableAmount Float             // مبلغ نهایی پس از کسر تخفیف
+  discountReason     String?
+  status             FeeContractStatus @default(ACTIVE)
+  notes              String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  installments FeeInstallment[]
+  transactions PaymentTransaction[]
+  receipts     FeeReceipt[]
+
+  @@unique([tenantId, contractNumber])
+  @@unique([tenantId, academicYearId, studentId])
+  @@index([tenantId, status])
+}
+
+model FeeInstallment {
+  id                String            @id @default(uuid())
+  tenantId          String
+  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contractId        String
+  contract          StudentFeeContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  installmentNumber Int               // قسط ۱، ۲، ۳...
+  title             String            // e.g. "پیش‌پرداخت ثبت‌نام", "قسط آبان‌ماه"
+  dueDate           DateTime          // تاریخ سررسید قسط
+  amount            Float             // مبلغ مصوب قسط
+  paidAmount        Float             @default(0) // مبلغ واریزشده
+  status            InstallmentStatus @default(UNPAID)
+  paidAt            DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  transactions PaymentTransaction[]
+
+  @@unique([contractId, installmentNumber])
+  @@index([tenantId, status, dueDate])
+}
+
+model PaymentTransaction {
+  id                     String         @id @default(uuid())
+  tenantId               String
+  tenant                 Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contractId             String?
+  contract               StudentFeeContract? @relation(fields: [contractId], references: [id], onDelete: SetNull)
+  installmentId          String?
+  installment            FeeInstallment? @relation(fields: [installmentId], references: [id], onDelete: SetNull)
+  payerUserId            String
+  payer                  User           @relation("PayerTransactions", fields: [payerUserId], references: [id], onDelete: Cascade)
+  gateway                PaymentGateway @default(ZARINPAL)
+  method                 PaymentMethod  @default(ONLINE_GATEWAY)
+  amount                 Float          // مبلغ پرداختی (ریال یا تومان طبق استاندارد سیستم)
+  status                 PaymentStatus  @default(PENDING)
+  authority              String?        // کد پیگیری درگاه پرداخت زرین‌پال
+  refId                  String?        // شماره مرجع / تراکنش بانکی زرین‌پال
+  trackingCode           String         // کد پیگیری یکتای داخلی رُکاد
+  cardPan                String?        // شماره کارت ماسک‌شده پرداخت‌کننده
+  ipAddress              String?
+  gatewayRequestPayload  Json?
+  gatewayResponsePayload Json?
+  errorMessage           String?
+  verifiedAt             DateTime?
+  idempotencyKey         String?
+  createdAt              DateTime       @default(now())
+
+  receipt FeeReceipt?
+
+  @@unique([tenantId, trackingCode])
+  @@index([tenantId, authority])
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, payerUserId])
+}
+
+model FeeReceipt {
+  id            String             @id @default(uuid())
+  tenantId      String
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  transactionId String             @unique
+  transaction   PaymentTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  contractId    String
+  contract      StudentFeeContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  receiptNumber String             // e.g. "REC-1404-0012"
+  amount        Float
+  payerName     String
+  paymentMethod PaymentMethod      @default(ONLINE_GATEWAY)
+  issuedAt      DateTime           @default(now())
+  issuedById    String?
+  issuedBy      User?              @relation("IssuedFeeReceipts", fields: [issuedById], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, receiptNumber])
+  @@index([tenantId, contractId])
+  @@index([tenantId, issuedAt])
+}
+
+model StaffPayrollProfile {
+  id                 String       @id @default(uuid())
+  tenantId           String
+  tenant             Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId             String       @unique
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contractType       ContractType @default(FULL_TIME_SALARY)
+  baseMonthlySalary  Float        @default(0) // حقوق ثابت ماهیانه
+  hourlyRate         Float        @default(0) // نرخ تدریس هر ساعت برای دبیران حق‌التدریس
+  bankAccountNumber  String?      // شماره حساب بانکی
+  bankShebaNumber    String?      // شماره شبا
+  bankName           String?      // نام بانک (ملی، ملت، پاسارگاد...)
+  insuranceNumber    String?      // شماره بیمه تأمین اجتماعی
+  isActive           Boolean      @default(true)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@index([tenantId, isActive])
+}
+
+model PayrollSlip {
+  id               String        @id @default(uuid())
+  tenantId         String
+  tenant           Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User          @relation("EmployeePayrollSlips", fields: [userId], references: [id], onDelete: Cascade)
+  year             Int           // سال e.g. 1404
+  month            Int           // ماه e.g. 1..12
+  slipNumber       String        // e.g. "PAY-1404-08-01"
+  grossPay         Float         // جمع ناخالص حقوق و مزایا
+  totalDeductions  Float         @default(0) // جمع کسورات (بیمه، مالیات، مساعده)
+  netPay           Float         // خالص پرداختی
+  status           PayrollStatus @default(DRAFT)
+  paidAt           DateTime?
+  paidById         String?
+  paidBy           User?         @relation("ApprovedPayrollSlips", fields: [paidById], references: [id], onDelete: SetNull)
+  paymentRefNumber String?       // شماره پیگیری انتقال وجه بانکی / پایا
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  items PayrollItem[]
+
+  @@unique([tenantId, userId, year, month])
+  @@unique([tenantId, slipNumber])
+  @@index([tenantId, status])
+  @@index([tenantId, year, month])
+}
+
+model PayrollItem {
+  id                String          @id @default(uuid())
+  tenantId          String
+  tenant            Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  payrollSlipId     String
+  payrollSlip       PayrollSlip     @relation(fields: [payrollSlipId], references: [id], onDelete: Cascade)
+  type              PayrollItemType @default(BASE_SALARY)
+  title             String          // e.g. "حقوق پایه ماهیانه", "حق‌التدریس ۳۰ ساعت حسابان", "کسر بیمه سهم کارمند"
+  amount            Float           // مبلغ مثبت برای مزایا و منفی برای کسورات
+  multiplierOrHours Float?          // ضریب یا تعداد ساعت
+  notes             String?
+
+  @@index([tenantId, payrollSlipId])
 }

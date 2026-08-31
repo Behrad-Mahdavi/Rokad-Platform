@@ -1,5 +1,5 @@
 -- Row Level Security (RLS) Policies for Rokad Platform
--- Layer 2 Multi-Tenant Defense in Depth (Phase 1, 2, 3, 4, 5)
+-- Layer 2 Multi-Tenant Defense in Depth (Phase 1, 2, 3, 4, 5, 6)
 
 -- 1. Enable RLS on Tenant-bound tables
 ALTER TABLE "User" ENABLE ROW LEVEL SECURITY;
@@ -55,6 +55,15 @@ ALTER TABLE "ChatChannel" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "ChatChannelMember" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "ChatMessage" ENABLE ROW LEVEL SECURITY;
 
+-- Phase 6 Tables
+ALTER TABLE "StudentFeeContract" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "FeeInstallment" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "PaymentTransaction" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "FeeReceipt" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "StaffPayrollProfile" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "PayrollSlip" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "PayrollItem" ENABLE ROW LEVEL SECURITY;
+
 -- 2. Force RLS for all table owners (prevents bypass)
 ALTER TABLE "User" FORCE ROW LEVEL SECURITY;
 ALTER TABLE "RefreshTokenFamily" FORCE ROW LEVEL SECURITY;
@@ -103,6 +112,14 @@ ALTER TABLE "MaterialClassroom" FORCE ROW LEVEL SECURITY;
 ALTER TABLE "ChatChannel" FORCE ROW LEVEL SECURITY;
 ALTER TABLE "ChatChannelMember" FORCE ROW LEVEL SECURITY;
 ALTER TABLE "ChatMessage" FORCE ROW LEVEL SECURITY;
+
+ALTER TABLE "StudentFeeContract" FORCE ROW LEVEL SECURITY;
+ALTER TABLE "FeeInstallment" FORCE ROW LEVEL SECURITY;
+ALTER TABLE "PaymentTransaction" FORCE ROW LEVEL SECURITY;
+ALTER TABLE "FeeReceipt" FORCE ROW LEVEL SECURITY;
+ALTER TABLE "StaffPayrollProfile" FORCE ROW LEVEL SECURITY;
+ALTER TABLE "PayrollSlip" FORCE ROW LEVEL SECURITY;
+ALTER TABLE "PayrollItem" FORCE ROW LEVEL SECURITY;
 
 -- 3. Dynamic helper function for creating tenant isolation policies
 DO $$
@@ -153,7 +170,14 @@ DECLARE
     'MaterialClassroom',
     'ChatChannel',
     'ChatChannelMember',
-    'ChatMessage'
+    'ChatMessage',
+    'StudentFeeContract',
+    'FeeInstallment',
+    'PaymentTransaction',
+    'FeeReceipt',
+    'StaffPayrollProfile',
+    'PayrollSlip',
+    'PayrollItem'
   ];
 BEGIN
   FOREACH tbl IN ARRAY tables

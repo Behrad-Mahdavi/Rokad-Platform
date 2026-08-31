@@ -923,7 +923,148 @@ async function main() {
     },
   });
 
-  console.log('✅ Phase 1, Phase 2, Phase 3, Phase 4 & Phase 5 Database Seeding Completed Successfully!');
+  // 11. Phase 6: Seed Financial Management (Fee & Payroll)
+  console.log('⚡ 11. Seeding Phase 6 Financial Management (Fee & Payroll)...');
+
+  // Student Fee Contract with 3 Installments
+  const feeContract = await prisma.studentFeeContract.create({
+    data: {
+      tenantId: boysTenant.id,
+      academicYearId: academicYear.id,
+      studentId: studentProfile.id,
+      contractNumber: 'FEE-1404-001',
+      totalAmount: 36000000, // 36 Million Tomans
+      discountAmount: 6000000, // 6 Million Discount
+      finalPayableAmount: 30000000, // 30 Million Payable
+      discountReason: 'تخفیف ثبت‌نام زودهنگام و دانش‌آموز ممتاز',
+      status: 'ACTIVE',
+      installments: {
+        create: [
+          {
+            tenantId: boysTenant.id,
+            installmentNumber: 1,
+            title: 'پیش‌پرداخت ثبت‌نام شهریه',
+            dueDate: new Date('2026-09-15T00:00:00.000Z'),
+            amount: 10000000,
+            paidAmount: 10000000,
+            status: 'PAID',
+            paidAt: new Date('2026-09-10T10:00:00.000Z'),
+          },
+          {
+            tenantId: boysTenant.id,
+            installmentNumber: 2,
+            title: 'قسط اول — آبان‌ماه',
+            dueDate: new Date('2026-11-01T00:00:00.000Z'),
+            amount: 10000000,
+            paidAmount: 0,
+            status: 'UNPAID',
+          },
+          {
+            tenantId: boysTenant.id,
+            installmentNumber: 3,
+            title: 'قسط دوم — بهمن‌ماه',
+            dueDate: new Date('2027-02-01T00:00:00.000Z'),
+            amount: 10000000,
+            paidAmount: 0,
+            status: 'UNPAID',
+          },
+        ],
+      },
+    },
+    include: { installments: true },
+  });
+
+  // Initial Receipt for Paid Installment 1
+  const paidInst = feeContract.installments[0];
+  const initialTx = await prisma.paymentTransaction.create({
+    data: {
+      tenantId: boysTenant.id,
+      contractId: feeContract.id,
+      installmentId: paidInst.id,
+      payerUserId: studentUser.id,
+      gateway: 'ZARINPAL',
+      method: 'ONLINE_GATEWAY',
+      amount: 10000000,
+      status: 'SUCCESSFUL',
+      authority: 'A00000000000000000000000000000100001',
+      refId: 'REF-SEED-1404-01',
+      trackingCode: 'TRK-SEED-1404-01',
+      cardPan: '603799******7890',
+      verifiedAt: new Date('2026-09-10T10:05:00.000Z'),
+    },
+  });
+
+  await prisma.feeReceipt.create({
+    data: {
+      tenantId: boysTenant.id,
+      transactionId: initialTx.id,
+      contractId: feeContract.id,
+      receiptNumber: 'REC-1404-0001',
+      amount: 10000000,
+      payerName: 'رضا حسینی',
+      paymentMethod: 'ONLINE_GATEWAY',
+      issuedAt: new Date('2026-09-10T10:05:00.000Z'),
+    },
+  });
+
+  // Staff Payroll Profile
+  await prisma.staffPayrollProfile.create({
+    data: {
+      tenantId: boysTenant.id,
+      userId: teacherUser.id,
+      contractType: 'FULL_TIME_SALARY',
+      baseMonthlySalary: 22000000, // 22 Million Tomans
+      hourlyRate: 350000,
+      bankName: 'بانک ملت',
+      bankAccountNumber: '1234567890',
+      bankShebaNumber: 'IR120120000000001234567890',
+      insuranceNumber: '88776655',
+      isActive: true,
+    },
+  });
+
+  // Sample Approved Payroll Slip
+  const sampleSlip = await prisma.payrollSlip.create({
+    data: {
+      tenantId: boysTenant.id,
+      userId: teacherUser.id,
+      year: 1404,
+      month: 7, // مهر
+      slipNumber: 'PAY-1404-07-01',
+      grossPay: 25500000,
+      totalDeductions: 1785000,
+      netPay: 23715000,
+      status: 'PAID',
+      paidAt: new Date('2026-10-25T12:00:00.000Z'),
+      paidById: boysAdmin.id,
+      paymentRefNumber: 'PAYA-140407-9988',
+      items: {
+        create: [
+          {
+            tenantId: boysTenant.id,
+            type: 'BASE_SALARY',
+            title: 'حقوق پایه مهرماه',
+            amount: 22000000,
+          },
+          {
+            tenantId: boysTenant.id,
+            type: 'HOURLY_TEACHING',
+            title: 'حق‌التدریس ۱۰ ساعت کلاس فوق‌برنامه',
+            amount: 3500000,
+            multiplierOrHours: 10,
+          },
+          {
+            tenantId: boysTenant.id,
+            type: 'INSURANCE_DEDUCTION',
+            title: 'کسر بیمه تأمین اجتماعی سهم کارمند (۷٪)',
+            amount: -1785000,
+          },
+        ],
+      },
+    },
+  });
+
+  console.log('✅ Phase 1, Phase 2, Phase 3, Phase 4, Phase 5 & Phase 6 Database Seeding Completed Successfully!');
 }
 
 main()

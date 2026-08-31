@@ -38,6 +38,8 @@ import { GradebookModule } from './modules/gradebook/gradebook.module';
 import { StorageModule } from './common/storage/storage.module';
 import { LearningMaterialsModule } from './modules/learning-materials/learning-materials.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { FinanceModule } from './modules/finance/finance.module';
+import { PayrollModule } from './modules/payroll/payroll.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -76,6 +78,8 @@ import { AppController } from './app.controller';
     GradebookModule,
     LearningMaterialsModule,
     ChatModule,
+    FinanceModule,
+    PayrollModule,
   ],
   controllers: [AppController],
   providers: [
