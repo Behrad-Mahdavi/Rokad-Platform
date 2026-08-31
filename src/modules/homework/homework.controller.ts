@@ -6,9 +6,13 @@ import {
   Body,
   Param,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { HomeworkService } from './homework.service';
 import {
   CreateHomeworkDto,
@@ -31,6 +35,27 @@ import { AppPermission } from '../../common/constants/permissions';
 @Controller('homework')
 export class HomeworkController {
   constructor(private readonly homeworkService: HomeworkService) {}
+
+  @Post('upload')
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'آپلود مستقیم پیوست تکلیف با سرویس یکپارچه MinIO' })
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 25 * 1024 * 1024 } }))
+  async uploadAttachment(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('فایلی برای آپلود انتخاب نشده است');
+    }
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.homeworkService.uploadAttachment(effectiveTenantId, {
+      buffer: file.buffer,
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+    });
+  }
 
   @Post()
   @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)

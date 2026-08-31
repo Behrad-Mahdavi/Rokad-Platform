@@ -61,6 +61,22 @@ export class CalendarController {
     );
   }
 
+  @Get('announcements')
+  @ApiOperation({ summary: 'استعلام بورد اطلاعیه‌های مدرسه با فیلتر مخاطب و کلاس' })
+  async listAnnouncements(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Query('audience') audience?: string,
+    @Query('classroomId') classroomId?: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.calendarService.listAnnouncements(
+      effectiveTenantId,
+      audience,
+      classroomId,
+    );
+  }
+
   @Delete('events/:id')
   @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @RequirePermissions(AppPermission.CALENDAR_WRITE)

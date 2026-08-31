@@ -1,5 +1,5 @@
 -- Row Level Security (RLS) Policies for Rokad Platform
--- Layer 2 Multi-Tenant Defense in Depth (Phase 1, 2, 3, 4)
+-- Layer 2 Multi-Tenant Defense in Depth (Phase 1, 2, 3, 4, 5)
 
 -- 1. Enable RLS on Tenant-bound tables
 ALTER TABLE "User" ENABLE ROW LEVEL SECURITY;
@@ -48,6 +48,13 @@ ALTER TABLE "ExamClassroom" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "ExamParticipation" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "GradeEntry" ENABLE ROW LEVEL SECURITY;
 
+-- Phase 5 Tables
+ALTER TABLE "CourseMaterial" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "MaterialClassroom" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ChatChannel" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ChatChannelMember" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ChatMessage" ENABLE ROW LEVEL SECURITY;
+
 -- 2. Force RLS for all table owners (prevents bypass)
 ALTER TABLE "User" FORCE ROW LEVEL SECURITY;
 ALTER TABLE "RefreshTokenFamily" FORCE ROW LEVEL SECURITY;
@@ -90,6 +97,12 @@ ALTER TABLE "Exam" FORCE ROW LEVEL SECURITY;
 ALTER TABLE "ExamClassroom" FORCE ROW LEVEL SECURITY;
 ALTER TABLE "ExamParticipation" FORCE ROW LEVEL SECURITY;
 ALTER TABLE "GradeEntry" FORCE ROW LEVEL SECURITY;
+
+ALTER TABLE "CourseMaterial" FORCE ROW LEVEL SECURITY;
+ALTER TABLE "MaterialClassroom" FORCE ROW LEVEL SECURITY;
+ALTER TABLE "ChatChannel" FORCE ROW LEVEL SECURITY;
+ALTER TABLE "ChatChannelMember" FORCE ROW LEVEL SECURITY;
+ALTER TABLE "ChatMessage" FORCE ROW LEVEL SECURITY;
 
 -- 3. Dynamic helper function for creating tenant isolation policies
 DO $$
@@ -135,7 +148,12 @@ DECLARE
     'Exam',
     'ExamClassroom',
     'ExamParticipation',
-    'GradeEntry'
+    'GradeEntry',
+    'CourseMaterial',
+    'MaterialClassroom',
+    'ChatChannel',
+    'ChatChannelMember',
+    'ChatMessage'
   ];
 BEGIN
   FOREACH tbl IN ARRAY tables

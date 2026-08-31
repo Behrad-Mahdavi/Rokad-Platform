@@ -11,12 +11,30 @@ import {
   GradeSubmissionDto,
 } from './dto/create-homework.dto';
 
+import { StorageService } from '../../common/storage/storage.service';
+
 @Injectable()
 export class HomeworkService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly storageService: StorageService,
   ) {}
+
+  /**
+   * Upload attachment for homework or submission using unified MinIO StorageService
+   */
+  async uploadAttachment(
+    tenantId: string,
+    file: {
+      buffer: Buffer;
+      originalname: string;
+      mimetype: string;
+      size: number;
+    },
+  ) {
+    return this.storageService.uploadFile(tenantId, 'homework', file);
+  }
 
   /**
    * Create a new homework assignment

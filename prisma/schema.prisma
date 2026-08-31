@@ -273,6 +273,13 @@ model Tenant {
   examParticipations  ExamParticipation[]
   gradeEntries        GradeEntry[]
 
+  // Phase 5 Relations
+  courseMaterials     CourseMaterial[]
+  materialClassrooms  MaterialClassroom[]
+  chatChannels        ChatChannel[]
+  chatChannelMembers  ChatChannelMember[]
+  chatMessages        ChatMessage[]
+
   @@index([status])
   @@index([createdAt])
 }
@@ -323,6 +330,10 @@ model User {
   // Phase 4 Relations
   createdQuestions Question[]   @relation("CreatedQuestion")
   recordedGrades   GradeEntry[] @relation("RecordedGrade")
+
+  // Phase 5 Relations
+  chatMemberships  ChatChannelMember[]
+  sentChatMessages ChatMessage[]        @relation("SentChatMessage")
 
   @@unique([tenantId, email])
   @@unique([tenantId, phone])
@@ -442,6 +453,9 @@ model AcademicYear {
   exams               Exam[]
   gradeEntries        GradeEntry[]
 
+  // Phase 5
+  courseMaterials     CourseMaterial[]
+
   @@unique([tenantId, name])
   @@index([tenantId, isCurrent])
 }
@@ -462,6 +476,7 @@ model Term {
   lessonPlans    LessonPlan[]
   exams          Exam[]
   gradeEntries   GradeEntry[]
+  courseMaterials CourseMaterial[]
 
   @@unique([academicYearId, name])
   @@index([tenantId, academicYearId])
@@ -532,6 +547,9 @@ model Lesson {
   exams              Exam[]
   gradeEntries       GradeEntry[]
 
+  // Phase 5 Relations
+  courseMaterials    CourseMaterial[]
+
   @@unique([tenantId, code])
   @@index([tenantId, levelId])
 }
@@ -563,6 +581,10 @@ model Classroom {
   // Phase 4 Relations
   examClassrooms     ExamClassroom[]
   gradeEntries       GradeEntry[]
+
+  // Phase 5 Relations
+  materialClassrooms MaterialClassroom[]
+  chatChannels       ChatChannel[]
 
   @@unique([tenantId, academicYearId, name])
   @@unique([tenantId, academicYearId, code])
@@ -727,6 +749,9 @@ model TeacherProfile {
   lessonPlans        LessonPlan[]
   exams              Exam[]
   gradeEntries       GradeEntry[]
+
+  // Phase 5 Relations
+  courseMaterials    CourseMaterial[]
 
   @@index([tenantId])
 }
@@ -1331,4 +1356,133 @@ model GradeEntry {
   @@index([tenantId, classroomId, lessonId, date])
   @@index([tenantId, studentId, gradeType])
   @@index([tenantId, academicYearId])
+}
+
+// ==========================================
+// PHASE 5: LIVE COMMUNICATION & CONTENT
+// ==========================================
+
+enum MaterialType {
+  DOCUMENT
+  VIDEO
+  AUDIO
+  LINK
+  ARCHIVE
+}
+
+enum ChannelType {
+  DIRECT
+  CLASS_GROUP
+  STAFF_GROUP
+  CHANNEL
+}
+
+enum MessageAttachmentType {
+  IMAGE
+  VIDEO
+  AUDIO
+  FILE
+  NONE
+}
+
+model CourseMaterial {
+  id             String         @id @default(uuid())
+  tenantId       String
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  academicYearId String
+  academicYear   AcademicYear   @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  termId         String?
+  term           Term?          @relation(fields: [termId], references: [id], onDelete: SetNull)
+  lessonId       String
+  lesson         Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  teacherId      String
+  teacher        TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  title          String         // e.g. "جزوه دست‌نویس فصل مشتق و مثال‌های تکمیلی"
+  description    String?
+  materialType   MaterialType   @default(DOCUMENT)
+  fileKey        String         // MinIO Object Storage Key
+  fileUrl        String         // Public / Presigned Access URL
+  fileSizeMb     Float?
+  mimeType       String?
+  isDownloadable Boolean        @default(true)
+  isPublished    Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  classrooms MaterialClassroom[]
+
+  @@index([tenantId, lessonId])
+  @@index([tenantId, teacherId])
+}
+
+model MaterialClassroom {
+  id         String         @id @default(uuid())
+  tenantId   String
+  tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  materialId String
+  material   CourseMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  classroomId String
+  classroom  Classroom      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+
+  @@unique([materialId, classroomId])
+  @@index([tenantId, classroomId])
+}
+
+model ChatChannel {
+  id          String      @id @default(uuid())
+  tenantId    String
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  type        ChannelType @default(DIRECT)
+  name        String?     // e.g. "گفتگوی کلاس دهم ریاضی ۱"
+  description String?
+  classroomId String?
+  classroom   Classroom?  @relation(fields: [classroomId], references: [id], onDelete: SetNull)
+  createdById String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  members  ChatChannelMember[]
+  messages ChatMessage[]
+
+  @@index([tenantId, classroomId])
+  @@index([tenantId, type])
+}
+
+model ChatChannelMember {
+  id         String      @id @default(uuid())
+  tenantId   String
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  channelId  String
+  channel    ChatChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isAdmin    Boolean     @default(false)
+  lastReadAt DateTime?
+  joinedAt   DateTime    @default(now())
+
+  @@unique([channelId, userId])
+  @@index([tenantId, userId])
+}
+
+model ChatMessage {
+  id             String                @id @default(uuid())
+  tenantId       String
+  tenant         Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  channelId      String
+  channel        ChatChannel           @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User                  @relation("SentChatMessage", fields: [senderId], references: [id], onDelete: Cascade)
+  content        String                // متن پیام
+  attachmentKey  String?               // MinIO storage key
+  attachmentUrl  String?               // MinIO URL
+  attachmentType MessageAttachmentType @default(NONE)
+  replyToId      String?
+  replyTo        ChatMessage?          @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies        ChatMessage[]         @relation("MessageReplies")
+  isDeleted      Boolean               @default(false)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@index([tenantId, channelId, createdAt])
+  @@index([tenantId, senderId])
 }

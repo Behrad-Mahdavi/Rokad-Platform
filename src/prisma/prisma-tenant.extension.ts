@@ -45,6 +45,12 @@ const TENANT_BOUND_MODELS = [
   'ExamClassroom',
   'ExamParticipation',
   'GradeEntry',
+  // Phase 5
+  'CourseMaterial',
+  'MaterialClassroom',
+  'ChatChannel',
+  'ChatChannelMember',
+  'ChatMessage',
 ];
 
 export function createTenantExtension(tenantContextService: TenantContextService) {

@@ -857,7 +857,73 @@ async function main() {
     },
   });
 
-  console.log('✅ Phase 1, Phase 2, Phase 3 & Phase 4 Database Seeding Completed Successfully!');
+  // 10. Phase 5: Seed Live Communication & Content
+  console.log('⚡ 10. Seeding Phase 5 Live Communication & Content...');
+
+  // Course Material
+  await prisma.courseMaterial.create({
+    data: {
+      tenantId: boysTenant.id,
+      academicYearId: academicYear.id,
+      lessonId: calculusLesson.id,
+      teacherId: teacherProfile.id,
+      title: 'جزوه دست‌نویس فرمول‌های طلایی حسابان و نکات تستی',
+      description: 'فایل جامع خلاصه مباحث تابع، حد و مشتق به همراه ۵۰ تست منتخب کنکور',
+      materialType: 'DOCUMENT',
+      fileKey: `tenants/${boysTenant.slug}/materials/calculus-summary-2026.pdf`,
+      fileUrl: `http://localhost:9000/rokad-storage/tenants/${boysTenant.slug}/materials/calculus-summary-2026.pdf`,
+      fileSizeMb: 3.8,
+      mimeType: 'application/pdf',
+      isDownloadable: true,
+      isPublished: true,
+      classrooms: {
+        create: [{ tenantId: boysTenant.id, classroomId: classroom10M1.id }],
+      },
+    },
+  });
+
+  // Noticeboard Announcement
+  await prisma.schoolEvent.create({
+    data: {
+      tenantId: boysTenant.id,
+      title: 'اطلاعیه مهم: زمان‌بندی اردوهای علمی و کارگاه‌های تخصصی برنامه‌نویسی',
+      description: 'دانش‌آموزان گرامی جهت ثبت‌نام در کارگاه‌های مهارت‌آموزی به بخش نظرسنجی مراجعه نمایند.',
+      eventType: 'ACADEMIC',
+      startDate: new Date('2026-09-01T00:00:00.000Z'),
+      endDate: new Date('2026-10-30T23:59:59.000Z'),
+      targetAudience: 'ALL',
+      createdById: boysAdmin.id,
+    },
+  });
+
+  // Chat Channel (Class Group)
+  const classChannel = await prisma.chatChannel.create({
+    data: {
+      tenantId: boysTenant.id,
+      type: 'CLASS_GROUP',
+      name: 'کانال گفتگوی رسمی کلاس دهم ریاضی ۱',
+      description: 'هماهنگی تکالیف، آزمون‌ها و اخبار کلاسی',
+      classroomId: classroom10M1.id,
+      createdById: teacherUser.id,
+      members: {
+        create: [
+          { tenantId: boysTenant.id, userId: teacherUser.id, isAdmin: true },
+          { tenantId: boysTenant.id, userId: studentUser.id, isAdmin: false },
+        ],
+      },
+      messages: {
+        create: [
+          {
+            tenantId: boysTenant.id,
+            senderId: teacherUser.id,
+            content: 'سلام به همگی، جزوه جدید فصل اول در بخش محتوای آموزشی بارگذاری شد.',
+          },
+        ],
+      },
+    },
+  });
+
+  console.log('✅ Phase 1, Phase 2, Phase 3, Phase 4 & Phase 5 Database Seeding Completed Successfully!');
 }
 
 main()

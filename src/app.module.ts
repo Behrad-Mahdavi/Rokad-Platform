@@ -35,6 +35,9 @@ import { LessonPlansModule } from './modules/lesson-plans/lesson-plans.module';
 import { QuestionBankModule } from './modules/question-bank/question-bank.module';
 import { ExamsModule } from './modules/exams/exams.module';
 import { GradebookModule } from './modules/gradebook/gradebook.module';
+import { StorageModule } from './common/storage/storage.module';
+import { LearningMaterialsModule } from './modules/learning-materials/learning-materials.module';
+import { ChatModule } from './modules/chat/chat.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -50,6 +53,7 @@ import { AppController } from './app.controller';
     }),
     PrismaModule,
     RedisModule,
+    StorageModule,
     AuditLogModule,
     FeatureFlagsModule,
     TenantsModule,
@@ -70,6 +74,8 @@ import { AppController } from './app.controller';
     QuestionBankModule,
     ExamsModule,
     GradebookModule,
+    LearningMaterialsModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [

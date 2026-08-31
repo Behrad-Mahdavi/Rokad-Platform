@@ -69,6 +69,44 @@ export class CalendarService {
     });
   }
 
+  async listAnnouncements(
+    tenantId: string,
+    audience?: string,
+    classroomId?: string,
+  ) {
+    const where: any = { tenantId };
+
+    const conditions: any[] = [];
+    if (audience && audience !== 'ALL') {
+      conditions.push({
+        OR: [{ targetAudience: 'ALL' }, { targetAudience: audience }],
+      });
+    }
+
+    if (classroomId) {
+      conditions.push({
+        OR: [
+          { targetAudience: { not: 'SPECIFIC_CLASSES' } },
+          { targetClassIds: { has: classroomId } },
+        ],
+      });
+    }
+
+    if (conditions.length > 0) {
+      where.AND = conditions;
+    }
+
+    return this.prisma.schoolEvent.findMany({
+      where,
+      include: {
+        createdBy: {
+          select: { firstName: true, lastName: true, role: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async deleteEvent(tenantId: string, eventId: string) {
     const event = await this.prisma.schoolEvent.findFirst({
       where: { id: eventId, tenantId },
