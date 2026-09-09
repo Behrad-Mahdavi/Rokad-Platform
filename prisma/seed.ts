@@ -462,6 +462,62 @@ async function main() {
     },
   });
 
+  const webLesson = await prisma.lesson.upsert({
+    where: {
+      tenantId_code: {
+        tenantId: boysTenant.id,
+        code: 'WEB-DEV-10',
+      },
+    },
+    update: {},
+    create: {
+      tenantId: boysTenant.id,
+      levelId: grade10Level.id,
+      fieldId: boysWebField10.id,
+      name: 'تولید و توسعه پایگاه اینترنتی ۱',
+      code: 'WEB-DEV-10',
+      unitCount: 4,
+      type: 'SPECIALIZED',
+    },
+  });
+
+  const mediaLesson = await prisma.lesson.upsert({
+    where: {
+      tenantId_code: {
+        tenantId: boysTenant.id,
+        code: 'MEDIA-DEV-10',
+      },
+    },
+    update: {},
+    create: {
+      tenantId: boysTenant.id,
+      levelId: grade10Level.id,
+      fieldId: boysMediaField10.id,
+      name: 'تولید محتوای الکترونیکی و چندرسانه‌ای',
+      code: 'MEDIA-DEV-10',
+      unitCount: 4,
+      type: 'SPECIALIZED',
+    },
+  });
+
+  const persianLesson = await prisma.lesson.upsert({
+    where: {
+      tenantId_code: {
+        tenantId: boysTenant.id,
+        code: 'FA-10',
+      },
+    },
+    update: {},
+    create: {
+      tenantId: boysTenant.id,
+      levelId: grade10Level.id,
+      name: 'فارسی و نگارش ۱',
+      code: 'FA-10',
+      unitCount: 2,
+      type: 'GENERAL',
+    },
+  });
+
   // Classroom
   const classroom10M1 = await prisma.classroom.upsert({
     where: {
@@ -639,6 +695,44 @@ async function main() {
       code: 'CLS-10-G-NET',
       capacity: 25,
       roomNumber: 'اتاق ۱۰۱',
+    },
+  });
+
+  // Lessons for Girls
+  await prisma.lesson.upsert({
+    where: {
+      tenantId_code: {
+        tenantId: girlsTenant.id,
+        code: 'G-NET-TECH-10',
+      },
+    },
+    update: {},
+    create: {
+      tenantId: girlsTenant.id,
+      levelId: girlsGrade10.id,
+      fieldId: girlsNet10.id,
+      name: 'دانش فنی پایه شبکه و نرم‌افزار',
+      code: 'G-NET-TECH-10',
+      unitCount: 3,
+      type: 'SPECIALIZED',
+    },
+  });
+
+  await prisma.lesson.upsert({
+    where: {
+      tenantId_code: {
+        tenantId: girlsTenant.id,
+        code: 'G-FA-10',
+      },
+    },
+    update: {},
+    create: {
+      tenantId: girlsTenant.id,
+      levelId: girlsGrade10.id,
+      name: 'فارسی و نگارش ۱',
+      code: 'G-FA-10',
+      unitCount: 2,
+      type: 'GENERAL',
     },
   });
 

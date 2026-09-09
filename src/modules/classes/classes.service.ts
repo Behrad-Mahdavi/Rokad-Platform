@@ -33,7 +33,11 @@ export class ClassesService {
   }
 
   async createLesson(tenantId: string, dto: CreateLessonDto) {
-    let levelId = dto.levelId;
+    let levelId =
+      dto.levelId && typeof dto.levelId === 'string' && dto.levelId.trim() !== ''
+        ? dto.levelId.trim()
+        : undefined;
+
     if (!levelId) {
       const defaultLevel = await this.prisma.educationalLevel.findFirst({
         where: { tenantId },
@@ -45,7 +49,7 @@ export class ClassesService {
         const createdLevel = await this.prisma.educationalLevel.create({
           data: {
             tenantId,
-            name: 'پایه عمومی',
+            name: 'پایه دهم',
             code: 'LVL-DEFAULT',
             orderIndex: 1,
           },
@@ -61,14 +65,26 @@ export class ClassesService {
       throw new ConflictException(`درسی با کد '${dto.code}' قبلاً در این مدرسه ثبت شده است`);
     }
 
+    const sanitizedFieldId =
+      dto.fieldId && typeof dto.fieldId === 'string' && dto.fieldId.trim() !== ''
+        ? dto.fieldId.trim()
+        : undefined;
+
+    const unitCount =
+      dto.unitCount !== undefined && dto.unitCount !== null
+        ? Number(dto.unitCount)
+        : (dto as any).units
+        ? Number((dto as any).units)
+        : 1;
+
     return this.prisma.lesson.create({
       data: {
         tenantId,
         levelId: levelId!,
-        fieldId: dto.fieldId,
+        fieldId: sanitizedFieldId,
         name: dto.name,
         code: dto.code,
-        unitCount: dto.unitCount || 1,
+        unitCount: unitCount > 0 ? unitCount : 1,
         type: dto.type || 'GENERAL',
         description: dto.description,
       },

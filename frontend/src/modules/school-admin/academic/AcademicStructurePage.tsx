@@ -65,7 +65,13 @@ export const AcademicStructurePage: React.FC = () => {
     name: '',
     code: '',
     units: 3,
+    levelId: '',
+    fieldId: '',
+    type: 'SPECIALIZED',
   });
+
+  const [lessonFilterLevel, setLessonFilterLevel] = useState<string>('ALL');
+  const [lessonFilterField, setLessonFilterField] = useState<string>('ALL');
 
   const fetchData = async () => {
     try {
@@ -94,8 +100,14 @@ export const AcademicStructurePage: React.FC = () => {
       setClassForm((prev) => ({
         ...prev,
         academicYearId: currentYear?.id || '',
-        levelId: defaultLevel?.id || '',
-        fieldId: defaultField?.id || '',
+        levelId: prev.levelId || defaultLevel?.id || '',
+        fieldId: prev.fieldId || defaultField?.id || '',
+      }));
+
+      setLessonForm((prev) => ({
+        ...prev,
+        levelId: prev.levelId || defaultLevel?.id || '',
+        fieldId: prev.fieldId || defaultField?.id || '',
       }));
     } catch (err) {
       console.error('Failed to load academic data', err);
@@ -107,6 +119,15 @@ export const AcademicStructurePage: React.FC = () => {
   const handleLevelChange = (lvlId: string) => {
     const matchingFields = fields.filter((f) => f.levelId === lvlId);
     setClassForm((prev) => ({
+      ...prev,
+      levelId: lvlId,
+      fieldId: matchingFields[0]?.id || '',
+    }));
+  };
+
+  const handleLessonLevelChange = (lvlId: string) => {
+    const matchingFields = fields.filter((f) => f.levelId === lvlId);
+    setLessonForm((prev) => ({
       ...prev,
       levelId: lvlId,
       fieldId: matchingFields[0]?.id || '',
@@ -161,9 +182,21 @@ export const AcademicStructurePage: React.FC = () => {
     setIsSubmitting(true);
     setError(null);
     try {
-      await apiClient.post('/classes/lessons', lessonForm);
+      await apiClient.post('/classes/lessons', {
+        name: lessonForm.name,
+        code: lessonForm.code,
+        unitCount: Number(lessonForm.units) || 1,
+        levelId: lessonForm.levelId || undefined,
+        fieldId: lessonForm.fieldId && lessonForm.fieldId.trim() !== '' ? lessonForm.fieldId : undefined,
+        type: lessonForm.type,
+      });
       setIsLessonModalOpen(false);
-      setLessonForm({ name: '', code: '', units: 3 });
+      setLessonForm((prev) => ({
+        ...prev,
+        name: '',
+        code: '',
+        units: 3,
+      }));
       fetchData();
     } catch (err: any) {
       setError(err.message || 'خطا در ثبت درس.');
@@ -356,28 +389,114 @@ export const AcademicStructurePage: React.FC = () => {
 
       {/* Tab 3: Lessons */}
       {activeTab === 'LESSONS' && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>نام درس</TableHead>
-              <TableHead>کد درس</TableHead>
-              <TableHead>تعداد واحد</TableHead>
-              <TableHead>تعداد سرفصل‌ها</TableHead>
-              <TableHead>وضعیت</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {lessons.map((l) => (
-              <TableRow key={l.id}>
-                <TableCell><div className="font-bold text-ink-darker">{l.name}</div></TableCell>
-                <TableCell><span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">{l.code}</span></TableCell>
-                <TableCell><span className="text-xs font-bold text-ink-dark">{l.units || 3} واحد</span></TableCell>
-                <TableCell><span className="text-xs text-gray-500">{l._count?.topics || 0} مبحث</span></TableCell>
-                <TableCell><Badge variant="default">فعال</Badge></TableCell>
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-ink-dark">فیلتر بر اساس پایه:</span>
+              <select
+                value={lessonFilterLevel}
+                onChange={(e) => {
+                  setLessonFilterLevel(e.target.value);
+                  setLessonFilterField('ALL');
+                }}
+                className="h-9 rounded-md border border-gray-200 bg-gray-50 px-2.5 text-xs font-medium text-ink-dark focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="ALL">همه پایه‌ها</option>
+                {levels.map((lvl) => (
+                  <option key={lvl.id} value={lvl.id}>
+                    پایه {lvl.name}
+                  </option>
+                ))}
+              </select>
+
+              <span className="text-xs font-bold text-ink-dark">رشته تحصیلی:</span>
+              <select
+                value={lessonFilterField}
+                onChange={(e) => setLessonFilterField(e.target.value)}
+                className="h-9 rounded-md border border-gray-200 bg-gray-50 px-2.5 text-xs font-medium text-ink-dark focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="ALL">همه رشته‌ها</option>
+                {(lessonFilterLevel === 'ALL'
+                  ? fields
+                  : fields.filter((f) => f.levelId === lessonFilterLevel)
+                ).map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="text-xs text-gray-500 font-medium">
+              تعداد دروس نمایش‌داده‌شده:{' '}
+              <span className="font-bold text-primary">
+                {
+                  lessons.filter((l) => {
+                    if (lessonFilterLevel !== 'ALL' && l.levelId !== lessonFilterLevel) return false;
+                    if (lessonFilterField !== 'ALL' && l.fieldId !== lessonFilterField) return false;
+                    return true;
+                  }).length
+                }
+              </span>
+            </div>
+          </div>
+
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>نام درس</TableHead>
+                <TableHead>کد درس</TableHead>
+                <TableHead>پایه تحصیلی</TableHead>
+                <TableHead>رشته تحصیلی</TableHead>
+                <TableHead>نوع درس</TableHead>
+                <TableHead>تعداد واحد</TableHead>
+                <TableHead>تعداد سرفصل‌ها</TableHead>
+                <TableHead>وضعیت</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {lessons
+                .filter((l) => {
+                  if (lessonFilterLevel !== 'ALL' && l.levelId !== lessonFilterLevel) return false;
+                  if (lessonFilterField !== 'ALL' && l.fieldId !== lessonFilterField) return false;
+                  return true;
+                })
+                .map((l) => (
+                  <TableRow key={l.id}>
+                    <TableCell><div className="font-bold text-ink-darker">{l.name}</div></TableCell>
+                    <TableCell><span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">{l.code}</span></TableCell>
+                    <TableCell>
+                      {l.level?.name ? (
+                        <Badge variant="default">پایه {l.level.name}</Badge>
+                      ) : (
+                        <Badge variant="neutral">پایه نامشخص</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {l.field?.name ? (
+                        <Badge variant="college">{l.field.name}</Badge>
+                      ) : (
+                        <Badge variant="neutral">عمومی (مشترک)</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs font-medium text-gray-600">
+                        {l.type === 'SPECIALIZED'
+                          ? 'تخصصی'
+                          : l.type === 'PRACTICAL'
+                          ? 'کارگاهی'
+                          : l.type === 'OPTIONAL'
+                          ? 'انتخابی'
+                          : 'عمومی'}
+                      </span>
+                    </TableCell>
+                    <TableCell><span className="text-xs font-bold text-ink-dark">{l.unitCount || l.units || 1} واحد</span></TableCell>
+                    <TableCell><span className="text-xs text-gray-500">{l._count?.lessonPlans || l._count?.topics || 0} مبحث</span></TableCell>
+                    <TableCell><Badge variant="default">فعال</Badge></TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
 
       {/* 1. Modal: Create Academic Year */}
@@ -578,7 +697,7 @@ export const AcademicStructurePage: React.FC = () => {
           setError(null);
         }}
         title="تعریف عنوان درس جدید"
-        description="افزودن درس به چارت آموزشی مدرسه"
+        description="افزودن درس به چارت آموزشی مدرسه و تخصیص به پایه و رشته"
         maxWidth="md"
       >
         {error && (
@@ -589,23 +708,83 @@ export const AcademicStructurePage: React.FC = () => {
         )}
 
         <form onSubmit={handleCreateLesson} className="space-y-4">
-          <Input
-            label="نام درس"
-            placeholder="مثال: ریاضی و آمار ۲"
-            value={lessonForm.name}
-            onChange={(e) => setLessonForm({ ...lessonForm, name: e.target.value })}
-            required
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+                پایه تحصیلی <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={lessonForm.levelId}
+                onChange={(e) => handleLessonLevelChange(e.target.value)}
+                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                required
+              >
+                {levels.map((lvl) => (
+                  <option key={lvl.id} value={lvl.id}>
+                    پایه {lvl.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+                رشته تحصیلی <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={lessonForm.fieldId}
+                onChange={(e) => setLessonForm({ ...lessonForm, fieldId: e.target.value })}
+                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+              >
+                {(fields.filter((f) => f.levelId === lessonForm.levelId).length > 0
+                  ? fields.filter((f) => f.levelId === lessonForm.levelId)
+                  : fields
+                ).map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
+                  </option>
+                ))}
+                <option value="">عمومی (مشترک بین تمام رشته‌ها)</option>
+              </select>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <Input
+              label="نام درس"
+              placeholder="مثال: کارگاه شبکه و نرم‌افزار یا ریاضی ۱"
+              value={lessonForm.name}
+              onChange={(e) => setLessonForm({ ...lessonForm, name: e.target.value })}
+              required
+            />
+            <Input
               label="کد درس"
-              placeholder="مثال: MATH-102"
+              placeholder="مثال: NET-101"
               value={lessonForm.code}
               onChange={(e) => setLessonForm({ ...lessonForm, code: e.target.value })}
               required
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+                نوع درس
+              </label>
+              <select
+                value={lessonForm.type}
+                onChange={(e) => setLessonForm({ ...lessonForm, type: e.target.value })}
+                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-medium"
+              >
+                <option value="SPECIALIZED">شایستگی فنی / تخصصی</option>
+                <option value="GENERAL">شایستگی پایه / عمومی</option>
+                <option value="PRACTICAL">کارگاهی / عملی</option>
+                <option value="OPTIONAL">انتخابی / مهارتی</option>
+              </select>
+            </div>
+
             <Input
-              label="تعداد واحد"
+              label="تعداد واحد / ساعت هفتگی"
               type="number"
               value={lessonForm.units}
               onChange={(e) => setLessonForm({ ...lessonForm, units: Number(e.target.value) })}
