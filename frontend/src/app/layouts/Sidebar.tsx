@@ -69,6 +69,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             items: [
               { title: 'داشبورد مدیریت', href: '/app/admin/dashboard', icon: LayoutDashboard },
               { title: 'ساختار سال و کلاس‌ها', href: '/app/admin/academic', icon: GraduationCap },
+              { title: 'برنامه هفتگی کلاس‌ها', href: '/app/admin/schedule', icon: CalendarDays },
               { title: 'مدیریت دانش‌آموزان و پرسنل', href: '/app/admin/members', icon: Users },
             ],
           },

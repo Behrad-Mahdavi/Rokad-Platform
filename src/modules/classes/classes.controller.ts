@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
   Param,
   Query,
@@ -154,5 +155,18 @@ export class ClassesController {
   ) {
     const effectiveTenantId = tenantId || userTenantId;
     return this.classesService.getTeacherSchedule(effectiveTenantId, teacherId);
+  }
+
+  @Delete('schedules/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.SCHEDULE_WRITE)
+  @ApiOperation({ summary: 'حذف یک زنگ درسی از برنامه کلاس' })
+  async deleteSchedule(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') scheduleId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.classesService.deleteSchedule(effectiveTenantId, scheduleId);
   }
 }

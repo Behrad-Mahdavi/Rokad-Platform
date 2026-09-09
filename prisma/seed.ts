@@ -884,8 +884,92 @@ async function main() {
       teacherId: teacherProfile.id,
       dayOfWeek: 'SATURDAY',
       periodNumber: 1,
-      startTime: '08:00',
-      endTime: '09:30',
+      startTime: '07:45',
+      endTime: '09:00',
+    },
+  });
+
+  await prisma.classSchedule.upsert({
+    where: {
+      classroomId_dayOfWeek_periodNumber: {
+        classroomId: classroom10M1.id,
+        dayOfWeek: 'SATURDAY',
+        periodNumber: 2,
+      },
+    },
+    update: {},
+    create: {
+      tenantId: boysTenant.id,
+      classroomId: classroom10M1.id,
+      lessonId: physicsLesson.id,
+      teacherId: teacherProfile.id,
+      dayOfWeek: 'SATURDAY',
+      periodNumber: 2,
+      startTime: '09:15',
+      endTime: '10:30',
+    },
+  });
+
+  await prisma.classSchedule.upsert({
+    where: {
+      classroomId_dayOfWeek_periodNumber: {
+        classroomId: classroom10M1.id,
+        dayOfWeek: 'SATURDAY',
+        periodNumber: 3,
+      },
+    },
+    update: {},
+    create: {
+      tenantId: boysTenant.id,
+      classroomId: classroom10M1.id,
+      lessonId: webLesson.id,
+      teacherId: teacherProfile2.id,
+      dayOfWeek: 'SATURDAY',
+      periodNumber: 3,
+      startTime: '10:45',
+      endTime: '12:00',
+    },
+  });
+
+  await prisma.classSchedule.upsert({
+    where: {
+      classroomId_dayOfWeek_periodNumber: {
+        classroomId: classroom10M1.id,
+        dayOfWeek: 'SUNDAY',
+        periodNumber: 1,
+      },
+    },
+    update: {},
+    create: {
+      tenantId: boysTenant.id,
+      classroomId: classroom10M1.id,
+      lessonId: persianLesson.id,
+      teacherId: teacherProfile.id,
+      dayOfWeek: 'SUNDAY',
+      periodNumber: 1,
+      startTime: '07:45',
+      endTime: '09:00',
+    },
+  });
+
+  await prisma.classSchedule.upsert({
+    where: {
+      classroomId_dayOfWeek_periodNumber: {
+        classroomId: classroom10M1.id,
+        dayOfWeek: 'MONDAY',
+        periodNumber: 2,
+      },
+    },
+    update: {},
+    create: {
+      tenantId: boysTenant.id,
+      classroomId: classroom10M1.id,
+      lessonId: mediaLesson.id,
+      teacherId: teacherProfile2.id,
+      dayOfWeek: 'MONDAY',
+      periodNumber: 2,
+      startTime: '09:15',
+      endTime: '10:30',
     },
   });
 

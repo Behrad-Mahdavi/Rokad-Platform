@@ -324,38 +324,38 @@ export class ClassesService {
 
   // 4. Class Schedules (Timetable with Conflict Detection)
   async createSchedule(tenantId: string, dto: CreateScheduleDto) {
-    // 1. Check classroom conflict
-    const classroomConflict = await this.prisma.classSchedule.findFirst({
+    // 1. If slot already has a schedule in this classroom, find it for replacement
+    const existingSlot = await this.prisma.classSchedule.findFirst({
       where: {
         tenantId,
         classroomId: dto.classroomId,
         dayOfWeek: dto.dayOfWeek,
         periodNumber: dto.periodNumber,
       },
-      include: { lesson: true },
     });
 
-    if (classroomConflict) {
-      throw new ConflictException(
-        `تداخل برنامه: در این زنگ (${dto.periodNumber}) از روز ${dto.dayOfWeek} درس '${classroomConflict.lesson.name}' برای این کلاس تعریف شده است`,
-      );
-    }
-
-    // 2. Check teacher conflict
+    // 2. Check teacher conflict in another classroom
     const teacherConflict = await this.prisma.classSchedule.findFirst({
       where: {
         tenantId,
         teacherId: dto.teacherId,
         dayOfWeek: dto.dayOfWeek,
         periodNumber: dto.periodNumber,
+        ...(existingSlot ? { id: { not: existingSlot.id } } : {}),
       },
       include: { classroom: true },
     });
 
     if (teacherConflict) {
       throw new ConflictException(
-        `تداخل برنامه معلم: این استاد در این روز و زنگ کلاسی، در '${teacherConflict.classroom.name}' تدریس دارد`,
+        `تداخل برنامه دبیر: این استاد در این روز و زنگ کلاسی، در کلاس '${teacherConflict.classroom.name}' تدریس دارد`,
       );
+    }
+
+    if (existingSlot) {
+      await this.prisma.classSchedule.delete({
+        where: { id: existingSlot.id },
+      });
     }
 
     return this.prisma.classSchedule.create({
@@ -370,7 +370,12 @@ export class ClassesService {
         endTime: dto.endTime,
       },
       include: {
-        lesson: true,
+        lesson: {
+          include: {
+            level: true,
+            field: true,
+          },
+        },
         teacher: {
           include: { user: true },
         },
@@ -378,11 +383,29 @@ export class ClassesService {
     });
   }
 
+  async deleteSchedule(tenantId: string, scheduleId: string) {
+    const schedule = await this.prisma.classSchedule.findFirst({
+      where: { id: scheduleId, tenantId },
+    });
+    if (!schedule) {
+      throw new NotFoundException('برنامه کلاسی مورد نظر یافت نشد');
+    }
+
+    return this.prisma.classSchedule.delete({
+      where: { id: scheduleId },
+    });
+  }
+
   async getClassSchedule(tenantId: string, classroomId: string) {
     return this.prisma.classSchedule.findMany({
       where: { tenantId, classroomId },
       include: {
-        lesson: true,
+        lesson: {
+          include: {
+            level: true,
+            field: true,
+          },
+        },
         teacher: {
           include: {
             user: {
@@ -390,6 +413,7 @@ export class ClassesService {
                 id: true,
                 firstName: true,
                 lastName: true,
+                phone: true,
               },
             },
           },

@@ -26,6 +26,7 @@ import { RoleTemplatesPage } from '../modules/super-admin/roles/RoleTemplatesPag
 import { PlatformOpsPage } from '../modules/super-admin/ops/PlatformOpsPage';
 import { SchoolAdminDashboard } from '../modules/school-admin/SchoolAdminDashboard';
 import { AcademicStructurePage } from '../modules/school-admin/academic/AcademicStructurePage';
+import { ClassSchedulePage } from '../modules/school-admin/academic/ClassSchedulePage';
 import { MembersPage } from '../modules/school-admin/members/MembersPage';
 import { FeesPage } from '../modules/school-admin/finance/FeesPage';
 import { PayrollPage } from '../modules/school-admin/finance/PayrollPage';
@@ -99,6 +100,7 @@ export const router = createBrowserRouter([
               { index: true, element: <Navigate to="dashboard" replace /> },
               { path: 'dashboard', element: <SchoolAdminDashboard /> },
               { path: 'academic', element: <AcademicStructurePage /> },
+              { path: 'schedule', element: <ClassSchedulePage /> },
               { path: 'members', element: <MembersPage /> },
               { path: 'finance/fees', element: <FeesPage /> },
               { path: 'finance/payroll', element: <PayrollPage /> },
