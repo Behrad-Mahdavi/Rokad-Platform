@@ -90,6 +90,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             section: 'میز کار معلم',
             items: [
               { title: 'داشبورد کلاس‌ها', href: '/app/teacher/dashboard', icon: LayoutDashboard },
+              { title: 'برنامه هفتگی کلاس‌ها', href: '/app/teacher/schedule', icon: CalendarDays },
               { title: 'حضور و غیاب', href: '/app/teacher/attendance', icon: CalendarDays },
               { title: 'تکالیف و بازخورد', href: '/app/teacher/homework', icon: FileCheck },
               { title: 'بانک سوال و آزمون‌ها', href: '/app/teacher/exams', icon: HelpCircle },
@@ -106,6 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             section: 'پرتال دانش‌آموز',
             items: [
               { title: 'داشبورد تحصیلی', href: '/app/student/dashboard', icon: LayoutDashboard },
+              { title: 'برنامه هفتگی کلاس', href: '/app/student/schedule', icon: CalendarDays },
               { title: 'تکالیف من', href: '/app/student/homework', icon: FileCheck },
               { title: 'آزمون‌های آنلاین', href: '/app/student/exams', icon: HelpCircle },
               { title: 'کارنامه و نمرات', href: '/app/student/grades', icon: BarChart3 },
@@ -121,6 +123,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             section: 'پرتال اولیاء',
             items: [
               { title: 'داشبورد فرزندان', href: '/app/parent/dashboard', icon: LayoutDashboard },
+              { title: 'برنامه هفتگی فرزند', href: '/app/parent/schedule', icon: CalendarDays },
               { title: 'پرداخت شهریه و اقساط', href: '/app/parent/fees', icon: CreditCard },
               { title: 'وضعیت انضباطی و نمرات', href: '/app/parent/reports', icon: BarChart3 },
               { title: 'ملاقات با کادر آموزشی', href: '/app/parent/visits', icon: CalendarDays },

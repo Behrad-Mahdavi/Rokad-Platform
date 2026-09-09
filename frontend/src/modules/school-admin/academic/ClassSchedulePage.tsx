@@ -4,6 +4,7 @@ import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { useAuthStore } from '../../../lib/auth/auth-store';
 import {
   CalendarDays,
   Clock,
@@ -17,6 +18,7 @@ import {
   Building2,
   GraduationCap,
   Sparkles,
+  Lock,
 } from 'lucide-react';
 
 interface DayDef {
@@ -49,9 +51,21 @@ const PERIODS: PeriodDef[] = [
   { number: 6, label: 'زنگ ششم', defaultStart: '15:30', defaultEnd: '16:45' },
 ];
 
-export const ClassSchedulePage: React.FC = () => {
+interface ClassSchedulePageProps {
+  readOnly?: boolean;
+  classroomId?: string;
+}
+
+export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
+  readOnly = false,
+  classroomId: initialClassroomId,
+}) => {
+  const currentUser = useAuthStore((s) => s.user);
+  const isStaffOrAdmin = ['SCHOOL_ADMIN', 'STAFF', 'SUPER_ADMIN'].includes(currentUser?.role || '');
+  const canManageSchedule = !readOnly && isStaffOrAdmin;
+
   const [classrooms, setClassrooms] = useState<any[]>([]);
-  const [selectedClassroomId, setSelectedClassroomId] = useState<string>('');
+  const [selectedClassroomId, setSelectedClassroomId] = useState<string>(initialClassroomId || '');
   const [schedules, setSchedules] = useState<any[]>([]);
   const [lessons, setLessons] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
@@ -141,6 +155,7 @@ export const ClassSchedulePage: React.FC = () => {
 
   // Open Modal to Create or Edit
   const handleOpenSlotModal = (dayKey: string, periodNum: number, existingSchedule?: any) => {
+    if (!canManageSchedule) return;
     setError(null);
     const periodDef = PERIODS.find((p) => p.number === periodNum)!;
 
@@ -190,6 +205,7 @@ export const ClassSchedulePage: React.FC = () => {
   // Submit Schedule
   const handleSaveSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManageSchedule) return;
     if (!selectedClassroomId || !form.lessonId || !form.teacherId) {
       setError('لطفاً درس و دبیر را انتخاب کنید.');
       return;
@@ -220,6 +236,7 @@ export const ClassSchedulePage: React.FC = () => {
   // Delete Schedule
   const handleDeleteSlot = async (scheduleId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!canManageSchedule) return;
     if (!window.confirm('آیا از حذف این درس از برنامه هفتگی این کلاس اطمینان دارید؟')) {
       return;
     }
@@ -251,12 +268,22 @@ export const ClassSchedulePage: React.FC = () => {
       {/* Header & Classroom Selector */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-gray-200 shadow-xs print:hidden">
         <div>
-          <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-            <CalendarDays className="h-7 w-7 text-primary" />
-            <span>برنامه هفتگی و ساعات درسی کلاس‌ها (Weekly Timetable)</span>
-          </h2>
+          <div className="flex items-center space-x-2 space-x-reverse">
+            <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
+              <CalendarDays className="h-7 w-7 text-primary" />
+              <span>برنامه هفتگی و ساعات درسی کلاس‌ها (Weekly Timetable)</span>
+            </h2>
+            {!canManageSchedule && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold">
+                <Lock className="h-3 w-3 text-amber-600" />
+                <span>حالت فقط مشاهده (دانش‌آموز / اولیاء)</span>
+              </span>
+            )}
+          </div>
           <p className="text-xs text-gray-500 mt-1">
-            تنظیم ساعات ۶ زنگ درسی روزانه (شنبه تا پنج‌شنبه)، تخصیص درس و دبیر و بررسی تداخل برنامه
+            {canManageSchedule
+              ? 'تنظیم ساعات ۶ زنگ درسی روزانه (شنبه تا پنج‌شنبه)، تخصیص درس و دبیر و بررسی تداخل برنامه'
+              : 'مشاهده ساعات ۶ زنگ درسی روزانه (شنبه تا پنج‌شنبه)، اسامی دروس و اساتید مدرس'}
           </p>
         </div>
 
@@ -365,8 +392,16 @@ export const ClassSchedulePage: React.FC = () => {
                       {item ? (
                         /* Filled Slot Card */
                         <div
-                          onClick={() => handleOpenSlotModal(day.key, period.number, item)}
-                          className="group relative h-28 rounded-lg p-2.5 bg-white border border-primary/30 hover:border-primary hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
+                          onClick={() => {
+                            if (canManageSchedule) {
+                              handleOpenSlotModal(day.key, period.number, item);
+                            }
+                          }}
+                          className={`group relative h-28 rounded-lg p-2.5 bg-white border border-primary/30 flex flex-col justify-between transition-all ${
+                            canManageSchedule
+                              ? 'cursor-pointer hover:border-primary hover:shadow-md'
+                              : 'cursor-default shadow-2xs'
+                          }`}
                         >
                           <div>
                             <div className="flex items-start justify-between gap-1">
@@ -404,32 +439,34 @@ export const ClassSchedulePage: React.FC = () => {
                               {item.startTime} - {item.endTime}
                             </span>
 
-                            {/* Quick Action Buttons on Hover */}
-                            <div className="flex items-center space-x-1 space-x-reverse opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
-                              <button
-                                type="button"
-                                title="ویرایش"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleOpenSlotModal(day.key, period.number, item);
-                                }}
-                                className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-primary"
-                              >
-                                <Edit2 className="h-3 w-3" />
-                              </button>
-                              <button
-                                type="button"
-                                title="حذف ساعت درسی"
-                                onClick={(e) => handleDeleteSlot(item.id, e)}
-                                className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-600"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </div>
+                            {/* Quick Action Buttons on Hover (Admins / Staff only) */}
+                            {canManageSchedule && (
+                              <div className="flex items-center space-x-1 space-x-reverse opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
+                                <button
+                                  type="button"
+                                  title="ویرایش"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenSlotModal(day.key, period.number, item);
+                                  }}
+                                  className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-primary"
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  title="حذف ساعت درسی"
+                                  onClick={(e) => handleDeleteSlot(item.id, e)}
+                                  className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-600"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
-                      ) : (
-                        /* Empty Slot Box (Clickable to Assign) */
+                      ) : canManageSchedule ? (
+                        /* Empty Slot Box (Clickable to Assign - Admins/Staff only) */
                         <button
                           type="button"
                           onClick={() => handleOpenSlotModal(day.key, period.number)}
@@ -443,6 +480,15 @@ export const ClassSchedulePage: React.FC = () => {
                             {period.defaultStart} - {period.defaultEnd}
                           </span>
                         </button>
+                      ) : (
+                        /* Empty Slot Box (Read-Only for Students / Non-Staff) */
+                        <div className="w-full h-28 rounded-lg border border-dashed border-gray-200 bg-gray-50/40 flex flex-col items-center justify-center p-2 text-gray-400 select-none print:border-gray-100">
+                          <span className="text-base font-bold text-gray-300">—</span>
+                          <span className="text-[10px] text-gray-400 mt-0.5">فاقد درس</span>
+                          <span className="font-mono text-[9px] text-gray-400 mt-1 dir-ltr">
+                            {period.defaultStart} - {period.defaultEnd}
+                          </span>
+                        </div>
                       )}
                     </td>
                   );
@@ -453,9 +499,10 @@ export const ClassSchedulePage: React.FC = () => {
         </table>
       </div>
 
-      {/* Assignment Modal */}
-      <Modal
-        isOpen={isModalOpen}
+      {/* Assignment Modal (Guarded for Authorized Users Only) */}
+      {canManageSchedule && (
+        <Modal
+          isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
           setError(null);
@@ -567,6 +614,7 @@ export const ClassSchedulePage: React.FC = () => {
           </div>
         </form>
       </Modal>
+      )}
     </div>
   );
 };

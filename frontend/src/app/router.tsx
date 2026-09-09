@@ -125,6 +125,7 @@ export const router = createBrowserRouter([
               { path: 'exams', element: <ExamsPage /> },
               { path: 'gradebook', element: <GradebookPage /> },
               { path: 'lessons', element: <LessonPlansPage /> },
+              { path: 'schedule', element: <ClassSchedulePage readOnly={true} /> },
             ],
           },
         ],
@@ -140,6 +141,7 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <Navigate to="dashboard" replace /> },
               { path: 'dashboard', element: <StudentDashboard /> },
+              { path: 'schedule', element: <ClassSchedulePage readOnly={true} /> },
               { path: 'homework', element: <StudentHomeworkPage /> },
               { path: 'exams', element: <StudentExamsPage /> },
               { path: 'grades', element: <StudentGradesPage /> },
@@ -159,6 +161,7 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <Navigate to="dashboard" replace /> },
               { path: 'dashboard', element: <ParentDashboard /> },
+              { path: 'schedule', element: <ClassSchedulePage readOnly={true} /> },
               { path: 'fees', element: <ParentFeesPage /> },
               { path: 'reports', element: <StudentGradesPage /> },
               { path: 'visits', element: <ParentDashboard /> },

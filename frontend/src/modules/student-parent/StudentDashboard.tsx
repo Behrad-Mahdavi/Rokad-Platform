@@ -44,7 +44,16 @@ export const StudentDashboard: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center space-x-2 space-x-reverse">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.href = '/app/student/schedule'}
+            className="text-xs flex items-center space-x-1 space-x-reverse"
+          >
+            <Calendar className="h-3.5 w-3.5" />
+            <span>برنامه هفتگی کلاس</span>
+          </Button>
           <Button
             variant="outline"
             size="sm"

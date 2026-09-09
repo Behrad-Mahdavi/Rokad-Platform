@@ -134,7 +134,7 @@ export const CalendarPage: React.FC = () => {
       </div>
 
       {activeCalendarTab === 'TIMETABLE' ? (
-        <ClassSchedulePage />
+        <ClassSchedulePage readOnly={!['SCHOOL_ADMIN', 'STAFF', 'SUPER_ADMIN'].includes(currentUser?.role || '')} />
       ) : (
         <div className="space-y-6">
           {/* Header */}
