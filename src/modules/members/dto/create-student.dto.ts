@@ -31,10 +31,20 @@ export class CreateStudentDto {
   @IsNotEmpty()
   phone: string;
 
-  @ApiProperty({ description: 'شماره دانش‌آموزی یکتا', example: 'STD-1404-001' })
+  @ApiPropertyOptional({ description: 'شماره دانش‌آموزی یکتا', example: 'STD-1404-001' })
   @IsString()
-  @IsNotEmpty()
-  studentCode: string;
+  @IsOptional()
+  studentCode?: string;
+
+  @ApiPropertyOptional({ description: 'شماره دانش‌آموزی (نام دیگر)' })
+  @IsString()
+  @IsOptional()
+  studentNumber?: string;
+
+  @ApiPropertyOptional({ description: 'شناسه کلاس جهت انتساب خودکار' })
+  @IsString()
+  @IsOptional()
+  classroomId?: string;
 
   @ApiPropertyOptional({ description: 'کد ملی دانش‌آموز', example: '0012345678' })
   @IsString()
@@ -88,6 +98,11 @@ export class CreateTeacherDto {
   @IsNotEmpty()
   phone: string;
 
+  @ApiPropertyOptional({ description: 'کد پرسنلی' })
+  @IsString()
+  @IsOptional()
+  personnelCode?: string;
+
   @ApiPropertyOptional({ description: 'ایمیل دبیر', example: 'rezaei@rokadschool.ir' })
   @IsString()
   @IsOptional()
@@ -97,6 +112,11 @@ export class CreateTeacherDto {
   @IsString()
   @IsOptional()
   speciality?: string;
+
+  @ApiPropertyOptional({ description: 'تخصص تدریس (نام دیگر)' })
+  @IsString()
+  @IsOptional()
+  specialization?: string;
 
   @ApiPropertyOptional({ description: 'مدرک تحصیلی', example: 'کارشناسی ارشد فیزیک' })
   @IsString()

@@ -8,7 +8,6 @@ import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import {
   LogOut,
-  Palette,
   School,
   Shield,
   Bell,
@@ -20,7 +19,6 @@ import {
   CreditCard,
   MessageSquare,
 } from 'lucide-react';
-import { BrandThemeKey } from '../../types/tenant';
 
 interface NotificationItem {
   id: string;
@@ -33,7 +31,7 @@ interface NotificationItem {
 
 export const Header: React.FC = () => {
   const { user, logout } = useAuthStore();
-  const { currentTenant, theme, setTheme } = useTenantStore();
+  const { currentTenant } = useTenantStore();
 
   // Notification state
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -77,14 +75,6 @@ export const Header: React.FC = () => {
   const markAllAsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
-
-  const themes: { key: BrandThemeKey; label: string; color: string }[] = [
-    { key: 'ecosystem', label: 'اکوسیستم (اصلی)', color: '#59BBAF' },
-    { key: 'male', label: 'پسرانه', color: '#202A5A' },
-    { key: 'female', label: 'دخترانه', color: '#E0195B' },
-    { key: 'college', label: 'کالج', color: '#F8A41D' },
-    { key: 'club', label: 'کلوپ', color: '#652D90' },
-  ];
 
   const getRoleLabel = (role?: string) => {
     switch (role) {
@@ -139,24 +129,8 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Right (in RTL: Left) - Notifications, Theme, User & Actions */}
+      {/* Right (in RTL: Left) - Notifications, User & Actions */}
       <div className="flex items-center space-x-4 space-x-reverse">
-        {/* Theme Picker */}
-        <div className="hidden md:flex items-center bg-gray-50 border border-gray-200 rounded-lg p-1 space-x-1 space-x-reverse">
-          <Palette className="h-4 w-4 text-gray-400 mx-1" />
-          {themes.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTheme(t.key)}
-              title={t.label}
-              className={`h-5 w-5 rounded-full transition-transform ${
-                theme === t.key ? 'scale-125 ring-2 ring-offset-1 ring-gray-400' : 'opacity-70 hover:opacity-100'
-              }`}
-              style={{ backgroundColor: t.color }}
-            />
-          ))}
-        </div>
-
         {/* Notifications Popover Dropdown */}
         <div className="relative">
           <Button

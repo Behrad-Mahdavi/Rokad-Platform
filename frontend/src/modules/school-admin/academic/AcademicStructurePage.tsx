@@ -22,6 +22,7 @@ import {
   Plus,
   CheckCircle,
   Building,
+  AlertCircle,
 } from 'lucide-react';
 
 export const AcademicStructurePage: React.FC = () => {
@@ -30,6 +31,7 @@ export const AcademicStructurePage: React.FC = () => {
   const [classrooms, setClassrooms] = useState<any[]>([]);
   const [lessons, setLessons] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
+  const [levels, setLevels] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Modals
@@ -53,6 +55,8 @@ export const AcademicStructurePage: React.FC = () => {
     code: '',
     capacity: 30,
     academicYearId: '',
+    levelId: '',
+    roomNumber: '',
   });
 
   const [lessonForm, setLessonForm] = useState({
@@ -64,22 +68,27 @@ export const AcademicStructurePage: React.FC = () => {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const [yearsRes, classesRes, lessonsRes, teachersRes] = await Promise.all([
+      const [yearsRes, classesRes, lessonsRes, teachersRes, levelsRes] = await Promise.all([
         apiClient.get('/academic/years'),
         apiClient.get('/classes/classrooms'),
-        apiClient.get('/academic/lessons'),
+        apiClient.get('/classes/lessons'),
         apiClient.get('/members/teachers'),
+        apiClient.get('/academic/levels'),
       ]);
 
       setAcademicYears(yearsRes.data || []);
       setClassrooms(classesRes.data || []);
       setLessons(lessonsRes.data || []);
       setTeachers(teachersRes.data || []);
+      setLevels(levelsRes.data || []);
 
-      if (yearsRes.data?.length > 0) {
-        const current = yearsRes.data.find((y: any) => y.isCurrent) || yearsRes.data[0];
-        setClassForm((prev) => ({ ...prev, academicYearId: current.id }));
-      }
+      const currentYear = yearsRes.data?.find((y: any) => y.isCurrent) || yearsRes.data?.[0];
+      const defaultLevel = levelsRes.data?.[0];
+      setClassForm((prev) => ({
+        ...prev,
+        academicYearId: currentYear?.id || '',
+        levelId: defaultLevel?.id || '',
+      }));
     } catch (err) {
       console.error('Failed to load academic data', err);
     } finally {
@@ -113,7 +122,14 @@ export const AcademicStructurePage: React.FC = () => {
     try {
       await apiClient.post('/classes/classrooms', classForm);
       setIsClassModalOpen(false);
-      setClassForm({ name: '', code: '', capacity: 30, academicYearId: classForm.academicYearId });
+      setClassForm((prev) => ({
+        name: '',
+        code: '',
+        capacity: 30,
+        roomNumber: '',
+        academicYearId: prev.academicYearId,
+        levelId: prev.levelId,
+      }));
       fetchData();
     } catch (err: any) {
       setError(err.message || 'خطا در ثبت کلاس درس.');
@@ -127,7 +143,7 @@ export const AcademicStructurePage: React.FC = () => {
     setIsSubmitting(true);
     setError(null);
     try {
-      await apiClient.post('/academic/lessons', lessonForm);
+      await apiClient.post('/classes/lessons', lessonForm);
       setIsLessonModalOpen(false);
       setLessonForm({ name: '', code: '', units: 3 });
       fetchData();
@@ -335,11 +351,21 @@ export const AcademicStructurePage: React.FC = () => {
       {/* 1. Modal: Create Academic Year */}
       <Modal
         isOpen={isYearModalOpen}
-        onClose={() => setIsYearModalOpen(false)}
+        onClose={() => {
+          setIsYearModalOpen(false);
+          setError(null);
+        }}
         title="تعریف سال تحصیلی جدید"
         description="ایجاد سال تحصیلی و ساخت خودکار نیم‌سال اول و دوم"
         maxWidth="md"
       >
+        {error && (
+          <div className="mb-4 flex items-center space-x-2 space-x-reverse rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
         <form onSubmit={handleCreateYear} className="space-y-4">
           <Input
             label="عنوان سال تحصیلی"
@@ -366,7 +392,14 @@ export const AcademicStructurePage: React.FC = () => {
           </div>
 
           <div className="flex justify-end space-x-2 space-x-reverse pt-2">
-            <Button type="button" variant="ghost" onClick={() => setIsYearModalOpen(false)}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setIsYearModalOpen(false);
+                setError(null);
+              }}
+            >
               انصراف
             </Button>
             <Button type="submit" variant="primary" isLoading={isSubmitting}>
@@ -379,23 +412,34 @@ export const AcademicStructurePage: React.FC = () => {
       {/* 2. Modal: Create Classroom */}
       <Modal
         isOpen={isClassModalOpen}
-        onClose={() => setIsClassModalOpen(false)}
+        onClose={() => {
+          setIsClassModalOpen(false);
+          setError(null);
+        }}
         title="ایجاد کلاس درس جدید"
         description="تعریف کلاس آموزشی برای سال تحصیلی جاری"
         maxWidth="md"
       >
+        {error && (
+          <div className="mb-4 flex items-center space-x-2 space-x-reverse rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
         <form onSubmit={handleCreateClass} className="space-y-4">
           <Input
             label="نام کلاس"
-            placeholder="مثال: کلاس ۱۰۱ — تجربی"
+            placeholder="مثال: کلاس دهم ریاضی ۱"
             value={classForm.name}
             onChange={(e) => setClassForm({ ...classForm, name: e.target.value })}
             required
           />
+
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="کد یکتای کلاس"
-              placeholder="مثال: CLS-101"
+              placeholder="مثال: CLS-10-M1"
               value={classForm.code}
               onChange={(e) => setClassForm({ ...classForm, code: e.target.value })}
               required
@@ -409,8 +453,58 @@ export const AcademicStructurePage: React.FC = () => {
             />
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+                سال تحصیلی
+              </label>
+              <select
+                value={classForm.academicYearId}
+                onChange={(e) => setClassForm({ ...classForm, academicYearId: e.target.value })}
+                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                {academicYears.map((y) => (
+                  <option key={y.id} value={y.id}>
+                    {y.name} {y.isCurrent ? '(جاری)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+                پایه / مقطع تحصیلی
+              </label>
+              <select
+                value={classForm.levelId}
+                onChange={(e) => setClassForm({ ...classForm, levelId: e.target.value })}
+                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                {levels.map((lvl) => (
+                  <option key={lvl.id} value={lvl.id}>
+                    {lvl.name} ({lvl.code})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <Input
+            label="شماره یا نام اتاق فیزیکی (اختیاری)"
+            placeholder="مثال: اتاق ۱۰۱ — ساختمان علوم"
+            value={classForm.roomNumber}
+            onChange={(e) => setClassForm({ ...classForm, roomNumber: e.target.value })}
+          />
+
           <div className="flex justify-end space-x-2 space-x-reverse pt-2">
-            <Button type="button" variant="ghost" onClick={() => setIsClassModalOpen(false)}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setIsClassModalOpen(false);
+                setError(null);
+              }}
+            >
               انصراف
             </Button>
             <Button type="submit" variant="primary" isLoading={isSubmitting}>
@@ -423,11 +517,21 @@ export const AcademicStructurePage: React.FC = () => {
       {/* 3. Modal: Create Lesson */}
       <Modal
         isOpen={isLessonModalOpen}
-        onClose={() => setIsLessonModalOpen(false)}
+        onClose={() => {
+          setIsLessonModalOpen(false);
+          setError(null);
+        }}
         title="تعریف عنوان درس جدید"
         description="افزودن درس به چارت آموزشی مدرسه"
         maxWidth="md"
       >
+        {error && (
+          <div className="mb-4 flex items-center space-x-2 space-x-reverse rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
         <form onSubmit={handleCreateLesson} className="space-y-4">
           <Input
             label="نام درس"
@@ -454,7 +558,14 @@ export const AcademicStructurePage: React.FC = () => {
           </div>
 
           <div className="flex justify-end space-x-2 space-x-reverse pt-2">
-            <Button type="button" variant="ghost" onClick={() => setIsLessonModalOpen(false)}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setIsLessonModalOpen(false);
+                setError(null);
+              }}
+            >
               انصراف
             </Button>
             <Button type="submit" variant="primary" isLoading={isSubmitting}>

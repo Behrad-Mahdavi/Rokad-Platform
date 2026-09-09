@@ -72,11 +72,16 @@ export class MembersService {
   }
 
   async createStudent(tenantId: string, dto: CreateStudentDto) {
+    const studentCode =
+      dto.studentCode ||
+      dto.studentNumber ||
+      `STD-${Math.floor(100000 + Math.random() * 900000)}`;
+
     const existingCode = await this.prisma.studentProfile.findFirst({
-      where: { tenantId, studentCode: dto.studentCode },
+      where: { tenantId, studentCode },
     });
     if (existingCode) {
-      throw new ConflictException(`شماره دانش‌آموزی '${dto.studentCode}' قبلاً ثبت شده است`);
+      throw new ConflictException(`شماره دانش‌آموزی '${studentCode}' قبلاً ثبت شده است`);
     }
 
     const defaultPassword = dto.password || dto.phone;
@@ -103,7 +108,7 @@ export class MembersService {
         data: {
           tenantId,
           userId: user.id,
-          studentCode: dto.studentCode,
+          studentCode,
           nationalCode: dto.nationalCode,
           fatherName: dto.fatherName,
           birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
@@ -114,6 +119,23 @@ export class MembersService {
           user: true,
         },
       });
+
+      // 3. Optional Auto-Enrollment into Classroom
+      if (dto.classroomId) {
+        const classroom = await tx.classroom.findFirst({
+          where: { id: dto.classroomId, tenantId },
+        });
+        if (classroom) {
+          await tx.classEnrollment.create({
+            data: {
+              tenantId,
+              studentId: profile.id,
+              classroomId: classroom.id,
+              academicYearId: classroom.academicYearId,
+            },
+          });
+        }
+      }
 
       return profile;
     });
@@ -168,7 +190,7 @@ export class MembersService {
         data: {
           tenantId,
           userId: user.id,
-          speciality: dto.speciality,
+          speciality: dto.speciality || dto.specialization,
           degree: dto.degree,
           employmentType: dto.employmentType || 'FULL_TIME',
           bio: dto.bio,

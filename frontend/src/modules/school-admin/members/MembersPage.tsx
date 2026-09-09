@@ -21,6 +21,7 @@ import {
   Search,
   UserPlus,
   Shield,
+  AlertCircle,
 } from 'lucide-react';
 
 export const MembersPage: React.FC = () => {
@@ -88,7 +89,18 @@ export const MembersPage: React.FC = () => {
     setIsSubmitting(true);
     setError(null);
     try {
-      await apiClient.post('/members/students', studentForm);
+      const payload = {
+        firstName: studentForm.firstName.trim(),
+        lastName: studentForm.lastName.trim(),
+        phone: studentForm.phone.trim(),
+        nationalCode: studentForm.nationalCode.trim() || undefined,
+        studentCode: studentForm.studentNumber.trim() || undefined,
+        studentNumber: studentForm.studentNumber.trim() || undefined,
+        classroomId: studentForm.classroomId || undefined,
+        password: studentForm.password || undefined,
+      };
+
+      await apiClient.post('/members/students', payload);
       setIsStudentModalOpen(false);
       setStudentForm({
         firstName: '',
@@ -101,7 +113,10 @@ export const MembersPage: React.FC = () => {
       });
       fetchData();
     } catch (err: any) {
-      setError(err.message || 'خطا در ثبت‌نام دانش‌آموز.');
+      setError(
+        err.message ||
+          (Array.isArray(err.message) ? err.message.join('، ') : 'خطا در ثبت‌نام دانش‌آموز.'),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -112,7 +127,17 @@ export const MembersPage: React.FC = () => {
     setIsSubmitting(true);
     setError(null);
     try {
-      await apiClient.post('/members/teachers', teacherForm);
+      const payload = {
+        firstName: teacherForm.firstName.trim(),
+        lastName: teacherForm.lastName.trim(),
+        phone: teacherForm.phone.trim(),
+        personnelCode: teacherForm.personnelCode.trim() || undefined,
+        specialization: teacherForm.specialization.trim() || undefined,
+        speciality: teacherForm.specialization.trim() || undefined,
+        password: teacherForm.password || undefined,
+      };
+
+      await apiClient.post('/members/teachers', payload);
       setIsTeacherModalOpen(false);
       setTeacherForm({
         firstName: '',
@@ -124,7 +149,10 @@ export const MembersPage: React.FC = () => {
       });
       fetchData();
     } catch (err: any) {
-      setError(err.message || 'خطا در ثبت دبیر جدید.');
+      setError(
+        err.message ||
+          (Array.isArray(err.message) ? err.message.join('، ') : 'خطا در ثبت دبیر جدید.'),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -293,14 +321,18 @@ export const MembersPage: React.FC = () => {
       {/* 1. Modal: Enroll Student */}
       <Modal
         isOpen={isStudentModalOpen}
-        onClose={() => setIsStudentModalOpen(false)}
+        onClose={() => {
+          setIsStudentModalOpen(false);
+          setError(null);
+        }}
         title="ثبت‌نام دانش‌آموز جدید"
         description="ایجاد حساب کاربری، پرونده تحصیلی و انتساب به کلاس"
         maxWidth="lg"
       >
         {error && (
-          <div className="mb-4 rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200">
-            {error}
+          <div className="mb-4 flex items-center space-x-2 space-x-reverse rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
           </div>
         )}
 
@@ -377,11 +409,21 @@ export const MembersPage: React.FC = () => {
       {/* 2. Modal: Create Teacher */}
       <Modal
         isOpen={isTeacherModalOpen}
-        onClose={() => setIsTeacherModalOpen(false)}
+        onClose={() => {
+          setIsTeacherModalOpen(false);
+          setError(null);
+        }}
         title="ثبت دبیر یا پرسنل جدید"
         description="ایجاد حساب کاربری آموزشی و ثبت کد پرسنلی"
         maxWidth="lg"
       >
+        {error && (
+          <div className="mb-4 flex items-center space-x-2 space-x-reverse rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
         <form onSubmit={handleCreateTeacher} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <Input

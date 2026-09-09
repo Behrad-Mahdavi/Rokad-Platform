@@ -10,10 +10,10 @@ import {
 import { LessonType, DayOfWeek } from '@prisma/client';
 
 export class CreateLessonDto {
-  @ApiProperty({ description: 'شناسه مقطع تحصیلی' })
+  @ApiPropertyOptional({ description: 'شناسه مقطع تحصیلی' })
   @IsString()
-  @IsNotEmpty()
-  levelId: string;
+  @IsOptional()
+  levelId?: string;
 
   @ApiPropertyOptional({ description: 'شناسه رشته تحصیلی' })
   @IsString()
@@ -52,15 +52,15 @@ export class CreateLessonDto {
 }
 
 export class CreateClassroomDto {
-  @ApiProperty({ description: 'شناسه سال تحصیلی' })
+  @ApiPropertyOptional({ description: 'شناسه سال تحصیلی' })
   @IsString()
-  @IsNotEmpty()
-  academicYearId: string;
+  @IsOptional()
+  academicYearId?: string;
 
-  @ApiProperty({ description: 'شناسه مقطع تحصیلی' })
+  @ApiPropertyOptional({ description: 'شناسه مقطع تحصیلی' })
   @IsString()
-  @IsNotEmpty()
-  levelId: string;
+  @IsOptional()
+  levelId?: string;
 
   @ApiPropertyOptional({ description: 'شناسه رشته تحصیلی' })
   @IsString()

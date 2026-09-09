@@ -33,6 +33,27 @@ export class ClassesService {
   }
 
   async createLesson(tenantId: string, dto: CreateLessonDto) {
+    let levelId = dto.levelId;
+    if (!levelId) {
+      const defaultLevel = await this.prisma.educationalLevel.findFirst({
+        where: { tenantId },
+        orderBy: { orderIndex: 'asc' },
+      });
+      if (defaultLevel) {
+        levelId = defaultLevel.id;
+      } else {
+        const createdLevel = await this.prisma.educationalLevel.create({
+          data: {
+            tenantId,
+            name: 'پایه عمومی',
+            code: 'LVL-DEFAULT',
+            orderIndex: 1,
+          },
+        });
+        levelId = createdLevel.id;
+      }
+    }
+
     const existing = await this.prisma.lesson.findFirst({
       where: { tenantId, code: dto.code },
     });
@@ -43,7 +64,7 @@ export class ClassesService {
     return this.prisma.lesson.create({
       data: {
         tenantId,
-        levelId: dto.levelId,
+        levelId: levelId!,
         fieldId: dto.fieldId,
         name: dto.name,
         code: dto.code,
@@ -88,10 +109,47 @@ export class ClassesService {
   }
 
   async createClassroom(tenantId: string, dto: CreateClassroomDto) {
+    let academicYearId = dto.academicYearId;
+    if (!academicYearId) {
+      const currentYear =
+        (await this.prisma.academicYear.findFirst({
+          where: { tenantId, isCurrent: true },
+        })) ||
+        (await this.prisma.academicYear.findFirst({
+          where: { tenantId },
+          orderBy: { createdAt: 'desc' },
+        }));
+      if (!currentYear) {
+        throw new BadRequestException('ابتدا باید حداقل یک سال تحصیلی در مدرسه تعریف شود');
+      }
+      academicYearId = currentYear.id;
+    }
+
+    let levelId = dto.levelId;
+    if (!levelId) {
+      const defaultLevel = await this.prisma.educationalLevel.findFirst({
+        where: { tenantId },
+        orderBy: { orderIndex: 'asc' },
+      });
+      if (defaultLevel) {
+        levelId = defaultLevel.id;
+      } else {
+        const createdLevel = await this.prisma.educationalLevel.create({
+          data: {
+            tenantId,
+            name: 'پایه عمومی',
+            code: 'LVL-DEFAULT',
+            orderIndex: 1,
+          },
+        });
+        levelId = createdLevel.id;
+      }
+    }
+
     const existing = await this.prisma.classroom.findFirst({
       where: {
         tenantId,
-        academicYearId: dto.academicYearId,
+        academicYearId,
         OR: [{ name: dto.name }, { code: dto.code }],
       },
     });
@@ -102,8 +160,8 @@ export class ClassesService {
     return this.prisma.classroom.create({
       data: {
         tenantId,
-        academicYearId: dto.academicYearId,
-        levelId: dto.levelId,
+        academicYearId: academicYearId!,
+        levelId: levelId!,
         fieldId: dto.fieldId,
         mentorId: dto.mentorId,
         name: dto.name,
