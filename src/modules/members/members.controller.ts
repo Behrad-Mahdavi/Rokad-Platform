@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Put,
+  Param,
   Body,
   Query,
   UseGuards,
@@ -12,6 +14,7 @@ import { MembersService } from './members.service';
 import {
   CreateStudentDto,
   CreateTeacherDto,
+  AssignTeacherLessonsDto,
   CreateCoachDto,
   CreateStaffDto,
   CreateParentDto,
@@ -81,6 +84,20 @@ export class MembersController {
   ) {
     const effectiveTenantId = tenantId || userTenantId;
     return this.membersService.createTeacher(effectiveTenantId, dto);
+  }
+
+  @Put('teachers/:id/lessons')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.TEACHER_WRITE)
+  @ApiOperation({ summary: 'تخصیص یا ویرایش دروس دبیر' })
+  async assignLessons(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') teacherId: string,
+    @Body() dto: AssignTeacherLessonsDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.membersService.assignLessonsToTeacher(effectiveTenantId, teacherId, dto.lessonIds);
   }
 
   // 3. Coaches

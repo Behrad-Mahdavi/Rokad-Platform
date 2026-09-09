@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsArray,
   IsBoolean,
   IsDateString,
   IsEnum,
@@ -141,6 +142,20 @@ export class CreateTeacherDto {
   @IsString()
   @IsOptional()
   password?: string;
+
+  @ApiPropertyOptional({ description: 'شناسه‌های دروس تدریسی دبیر', type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  lessonIds?: string[];
+}
+
+export class AssignTeacherLessonsDto {
+  @ApiProperty({ description: 'لیست شناسه‌های دروس اختصاص‌یافته به دبیر', type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsNotEmpty()
+  lessonIds: string[];
 }
 
 export class CreateCoachDto {

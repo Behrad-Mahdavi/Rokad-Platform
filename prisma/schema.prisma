@@ -254,6 +254,7 @@ model Tenant {
   userSchoolRoles   UserSchoolRole[]
   studentProfiles   StudentProfile[]
   teacherProfiles   TeacherProfile[]
+  teacherLessons    TeacherLesson[]
   coachProfiles     CoachProfile[]
   staffProfiles     StaffProfile[]
   parentProfiles    ParentProfile[]
@@ -581,6 +582,7 @@ model Lesson {
 
   // Phase 5 Relations
   courseMaterials    CourseMaterial[]
+  teacherLessons     TeacherLesson[]
 
   @@unique([tenantId, code])
   @@index([tenantId, levelId])
@@ -787,8 +789,24 @@ model TeacherProfile {
 
   // Phase 5 Relations
   courseMaterials    CourseMaterial[]
+  teacherLessons     TeacherLesson[]
 
   @@index([tenantId])
+}
+
+model TeacherLesson {
+  id        String         @id @default(uuid())
+  tenantId  String
+  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  teacherId String
+  teacher   TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  lessonId  String
+  lesson    Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+
+  @@unique([teacherId, lessonId])
+  @@index([tenantId, teacherId])
+  @@index([tenantId, lessonId])
 }
 
 model CoachProfile {

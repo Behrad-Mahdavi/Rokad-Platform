@@ -157,6 +157,16 @@ export class MembersService {
             status: true,
           },
         },
+        teacherLessons: {
+          include: {
+            lesson: {
+              include: {
+                level: true,
+                field: true,
+              },
+            },
+          },
+        },
         schedules: {
           include: {
             classroom: true,
@@ -186,7 +196,7 @@ export class MembersService {
         },
       });
 
-      return tx.teacherProfile.create({
+      const teacher = await tx.teacherProfile.create({
         data: {
           tenantId,
           userId: user.id,
@@ -197,6 +207,79 @@ export class MembersService {
         },
         include: {
           user: true,
+        },
+      });
+
+      if (dto.lessonIds && Array.isArray(dto.lessonIds) && dto.lessonIds.length > 0) {
+        const uniqueLessonIds = Array.from(new Set(dto.lessonIds.filter(Boolean)));
+        for (const lessonId of uniqueLessonIds) {
+          await tx.teacherLesson.create({
+            data: {
+              tenantId,
+              teacherId: teacher.id,
+              lessonId,
+            },
+          });
+        }
+      }
+
+      return tx.teacherProfile.findUnique({
+        where: { id: teacher.id },
+        include: {
+          user: true,
+          teacherLessons: {
+            include: {
+              lesson: {
+                include: {
+                  level: true,
+                  field: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    });
+  }
+
+  async assignLessonsToTeacher(tenantId: string, teacherId: string, lessonIds: string[]) {
+    const teacher = await this.prisma.teacherProfile.findFirst({
+      where: { id: teacherId, tenantId },
+    });
+    if (!teacher) {
+      throw new NotFoundException('دبیر مورد نظر در این مدرسه یافت نشد');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.teacherLesson.deleteMany({
+        where: { teacherId, tenantId },
+      });
+
+      const uniqueLessonIds = Array.from(new Set(lessonIds.filter(Boolean)));
+      for (const lessonId of uniqueLessonIds) {
+        await tx.teacherLesson.create({
+          data: {
+            tenantId,
+            teacherId,
+            lessonId,
+          },
+        });
+      }
+
+      return tx.teacherProfile.findUnique({
+        where: { id: teacherId },
+        include: {
+          user: true,
+          teacherLessons: {
+            include: {
+              lesson: {
+                include: {
+                  level: true,
+                  field: true,
+                },
+              },
+            },
+          },
         },
       });
     });

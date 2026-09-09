@@ -772,6 +772,101 @@ async function main() {
     },
   });
 
+  // Assign lessons to Dr. Kazemi (Calculus & Physics)
+  await prisma.teacherLesson.upsert({
+    where: {
+      teacherId_lessonId: {
+        teacherId: teacherProfile.id,
+        lessonId: calculusLesson.id,
+      },
+    },
+    update: {},
+    create: {
+      tenantId: boysTenant.id,
+      teacherId: teacherProfile.id,
+      lessonId: calculusLesson.id,
+    },
+  });
+
+  await prisma.teacherLesson.upsert({
+    where: {
+      teacherId_lessonId: {
+        teacherId: teacherProfile.id,
+        lessonId: physicsLesson.id,
+      },
+    },
+    update: {},
+    create: {
+      tenantId: boysTenant.id,
+      teacherId: teacherProfile.id,
+      lessonId: physicsLesson.id,
+    },
+  });
+
+  // Second Teacher for Boys (Eng. Mohammadi - Web & Calculus)
+  const teacherUser2 = await prisma.user.upsert({
+    where: {
+      tenantId_phone: {
+        tenantId: boysTenant.id,
+        phone: '09123000002',
+      },
+    },
+    update: {},
+    create: {
+      tenantId: boysTenant.id,
+      firstName: 'مهندس علی',
+      lastName: 'محمدی',
+      phone: '09123000002',
+      email: 'mohammadi@rokadschool.ir',
+      passwordHash: defaultPass,
+      role: 'TEACHER',
+      status: 'ACTIVE',
+    },
+  });
+
+  const teacherProfile2 = await prisma.teacherProfile.upsert({
+    where: { userId: teacherUser2.id },
+    update: {},
+    create: {
+      tenantId: boysTenant.id,
+      userId: teacherUser2.id,
+      speciality: 'توسعه وب و شبکه',
+      degree: 'کارشناسی ارشد نرم‌افزار',
+      employmentType: 'FULL_TIME',
+    },
+  });
+
+  // Assign Web & Calculus to Teacher 2 (Demonstrating multiple teachers on Calculus)
+  await prisma.teacherLesson.upsert({
+    where: {
+      teacherId_lessonId: {
+        teacherId: teacherProfile2.id,
+        lessonId: webLesson.id,
+      },
+    },
+    update: {},
+    create: {
+      tenantId: boysTenant.id,
+      teacherId: teacherProfile2.id,
+      lessonId: webLesson.id,
+    },
+  });
+
+  await prisma.teacherLesson.upsert({
+    where: {
+      teacherId_lessonId: {
+        teacherId: teacherProfile2.id,
+        lessonId: calculusLesson.id,
+      },
+    },
+    update: {},
+    create: {
+      tenantId: boysTenant.id,
+      teacherId: teacherProfile2.id,
+      lessonId: calculusLesson.id,
+    },
+  });
+
   // Schedule for Classroom
   await prisma.classSchedule.upsert({
     where: {

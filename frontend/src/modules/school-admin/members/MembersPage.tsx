@@ -22,6 +22,7 @@ import {
   UserPlus,
   Shield,
   AlertCircle,
+  BookOpen,
 } from 'lucide-react';
 
 export const MembersPage: React.FC = () => {
@@ -29,12 +30,16 @@ export const MembersPage: React.FC = () => {
   const [students, setStudents] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
   const [classrooms, setClassrooms] = useState<any[]>([]);
+  const [lessons, setLessons] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
 
   // Modals
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
   const [isTeacherModalOpen, setIsTeacherModalOpen] = useState(false);
+  const [isEditLessonsModalOpen, setIsEditLessonsModalOpen] = useState(false);
+  const [editingTeacher, setEditingTeacher] = useState<any | null>(null);
+  const [editingLessonIds, setEditingLessonIds] = useState<string[]>([]);
 
   // Forms
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,19 +62,22 @@ export const MembersPage: React.FC = () => {
     personnelCode: '',
     specialization: '',
     password: 'TeacherPass2026!',
+    lessonIds: [] as string[],
   });
 
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const [studentsRes, teachersRes, classesRes] = await Promise.all([
+      const [studentsRes, teachersRes, classesRes, lessonsRes] = await Promise.all([
         apiClient.get('/members/students'),
         apiClient.get('/members/teachers'),
         apiClient.get('/classes/classrooms'),
+        apiClient.get('/classes/lessons'),
       ]);
       setStudents(studentsRes.data || []);
       setTeachers(teachersRes.data || []);
       setClassrooms(classesRes.data || []);
+      setLessons(lessonsRes.data || []);
       if (classesRes.data?.length > 0) {
         setStudentForm((prev) => ({ ...prev, classroomId: classesRes.data[0].id }));
       }
@@ -135,6 +143,7 @@ export const MembersPage: React.FC = () => {
         specialization: teacherForm.specialization.trim() || undefined,
         speciality: teacherForm.specialization.trim() || undefined,
         password: teacherForm.password || undefined,
+        lessonIds: teacherForm.lessonIds,
       };
 
       await apiClient.post('/members/teachers', payload);
@@ -146,6 +155,7 @@ export const MembersPage: React.FC = () => {
         personnelCode: '',
         specialization: '',
         password: 'TeacherPass2026!',
+        lessonIds: [],
       });
       fetchData();
     } catch (err: any) {
@@ -153,6 +163,32 @@ export const MembersPage: React.FC = () => {
         err.message ||
           (Array.isArray(err.message) ? err.message.join('، ') : 'خطا در ثبت دبیر جدید.'),
       );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenEditLessons = (teacher: any) => {
+    setEditingTeacher(teacher);
+    const currentLessonIds = teacher.teacherLessons?.map((tl: any) => tl.lessonId || tl.lesson?.id) || [];
+    setEditingLessonIds(currentLessonIds);
+    setIsEditLessonsModalOpen(true);
+  };
+
+  const handleSaveTeacherLessons = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTeacher) return;
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await apiClient.put(`/members/teachers/${editingTeacher.id}/lessons`, {
+        lessonIds: editingLessonIds,
+      });
+      setIsEditLessonsModalOpen(false);
+      setEditingTeacher(null);
+      fetchData();
+    } catch (err: any) {
+      setError(err.message || 'خطا در ذخیره دروس دبیر.');
     } finally {
       setIsSubmitting(false);
     }
@@ -277,9 +313,11 @@ export const MembersPage: React.FC = () => {
             <TableRow>
               <TableHead>نام دبیر / پرسنل</TableHead>
               <TableHead>کد پرسنلی</TableHead>
-              <TableHead>تخصص / رشته تدریس</TableHead>
               <TableHead>شماره تماس</TableHead>
+              <TableHead>تخصص تدریس</TableHead>
+              <TableHead>دروس تخصیص‌یافته</TableHead>
               <TableHead>وضعیت قرارداد</TableHead>
+              <TableHead className="text-left">عملیات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -290,29 +328,66 @@ export const MembersPage: React.FC = () => {
                   <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                   <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                   <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-36" /></TableCell>
                   <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                 </TableRow>
               ))
             ) : teachers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                   هنوز دبیری ثبت نشده است.
                 </TableCell>
               </TableRow>
             ) : (
-              teachers.map((t) => (
-                <TableRow key={t.id}>
-                  <TableCell>
-                    <div className="font-bold text-ink-darker">
-                      {t.user?.firstName} {t.user?.lastName}
-                    </div>
-                  </TableCell>
-                  <TableCell><span className="font-mono text-xs font-bold">{t.personnelCode}</span></TableCell>
-                  <TableCell><span className="text-xs text-gray-700">{t.specialization || 'عمومی'}</span></TableCell>
-                  <TableCell><span className="font-mono text-xs text-gray-600">{t.user?.phone || '—'}</span></TableCell>
-                  <TableCell><Badge variant="male">دبیر فعال</Badge></TableCell>
-                </TableRow>
-              ))
+              teachers.map((t) => {
+                const assignedLessons = t.teacherLessons?.map((tl: any) => tl.lesson) || [];
+                return (
+                  <TableRow key={t.id}>
+                    <TableCell>
+                      <div className="font-bold text-ink-darker">
+                        {t.user?.firstName} {t.user?.lastName}
+                      </div>
+                    </TableCell>
+                    <TableCell><span className="font-mono text-xs font-bold">{t.personnelCode}</span></TableCell>
+                    <TableCell><span className="font-mono text-xs text-gray-600">{t.user?.phone || '—'}</span></TableCell>
+                    <TableCell><span className="text-xs text-gray-700">{t.specialization || 'عمومی'}</span></TableCell>
+                    <TableCell>
+                      {assignedLessons.length === 0 ? (
+                        <span className="text-xs text-gray-400">بدون درس تخصیص‌یافته</span>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5 max-w-xs">
+                          {assignedLessons.map((l: any) => (
+                            <span
+                              key={l.id}
+                              className="inline-flex items-center gap-1 text-[11px] bg-primary/10 text-primary-dark font-bold px-2 py-0.5 rounded border border-primary/20"
+                              title={`پایه ${l.level?.name || '—'} | رشته ${l.field?.name || 'عمومی'}`}
+                            >
+                              <BookOpen className="h-3 w-3" />
+                              {l.name}
+                              {l.level?.name && (
+                                <span className="text-[9px] text-gray-500">({l.level.name})</span>
+                              )}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell><Badge variant="male">دبیر فعال</Badge></TableCell>
+                    <TableCell className="text-left">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleOpenEditLessons(t)}
+                        className="text-xs text-primary hover:text-primary-dark"
+                      >
+                        <BookOpen className="h-3.5 w-3.5 ml-1" />
+                        ویرایش دروس
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -467,12 +542,190 @@ export const MembersPage: React.FC = () => {
             required
           />
 
+          {/* Multi-Select Lessons */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-ink-normal text-right">
+              دروس تدریسی دبیر (انتخاب یک یا چند درس)
+            </label>
+            <p className="text-[11px] text-gray-500">
+              یک درس می‌تواند چندین دبیر داشته باشد و این دبیر هم می‌تواند چندین درس مختلف را تدریس کند:
+            </p>
+            <div className="max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-2.5 space-y-1.5">
+              {lessons.length === 0 ? (
+                <div className="text-xs text-gray-400 py-2 text-center">
+                  هیچ درسی تعریف نشده است. ابتدا در بخش ساختار آموزشی دروس را تعریف کنید.
+                </div>
+              ) : (
+                lessons.map((lesson) => {
+                  const isSelected = teacherForm.lessonIds.includes(lesson.id);
+                  return (
+                    <div
+                      key={lesson.id}
+                      onClick={() => {
+                        setTeacherForm((prev) => ({
+                          ...prev,
+                          lessonIds: isSelected
+                            ? prev.lessonIds.filter((id) => id !== lesson.id)
+                            : [...prev.lessonIds, lesson.id],
+                        }));
+                      }}
+                      className={`flex items-center justify-between p-2 rounded-md cursor-pointer transition-all border ${
+                        isSelected
+                          ? 'bg-primary-50/60 border-primary shadow-xs'
+                          : 'bg-white border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {}}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <span className="text-xs font-bold text-ink-dark">{lesson.name}</span>
+                        <span className="font-mono text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                          {lesson.code}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-1.5 space-x-reverse">
+                        {lesson.level?.name && (
+                          <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded">
+                            پایه {lesson.level.name}
+                          </span>
+                        )}
+                        {lesson.field?.name ? (
+                          <span className="text-[10px] bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded font-medium">
+                            {lesson.field.name}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-medium">
+                            عمومی
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            {teacherForm.lessonIds.length > 0 && (
+              <div className="text-[11px] text-primary font-bold">
+                {teacherForm.lessonIds.length} درس انتخاب شده است.
+              </div>
+            )}
+          </div>
+
           <div className="flex justify-end space-x-2 space-x-reverse pt-2">
             <Button type="button" variant="ghost" onClick={() => setIsTeacherModalOpen(false)}>
               انصراف
             </Button>
             <Button type="submit" variant="primary" isLoading={isSubmitting}>
               ثبت دبیر
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* 3. Modal: Edit Teacher Lessons */}
+      <Modal
+        isOpen={isEditLessonsModalOpen}
+        onClose={() => {
+          setIsEditLessonsModalOpen(false);
+          setEditingTeacher(null);
+          setError(null);
+        }}
+        title={`مدیریت دروس تخصیص‌یافته به ${editingTeacher?.user?.firstName || ''} ${editingTeacher?.user?.lastName || ''}`}
+        description="تخصیص، افزودن یا حذف دروس تدریسی این دبیر"
+        maxWidth="lg"
+      >
+        {error && (
+          <div className="mb-4 flex items-center space-x-2 space-x-reverse rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSaveTeacherLessons} className="space-y-4">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-ink-normal text-right">
+              دروس تدریسی دبیر
+            </label>
+            <p className="text-[11px] text-gray-500">
+              هر کدام از درس‌های زیر را می‌توانید برای این دبیر فعال یا غیرفعال کنید:
+            </p>
+            <div className="max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-2.5 space-y-1.5">
+              {lessons.length === 0 ? (
+                <div className="text-xs text-gray-400 py-2 text-center">درسی تعریف نشده است.</div>
+              ) : (
+                lessons.map((lesson) => {
+                  const isSelected = editingLessonIds.includes(lesson.id);
+                  return (
+                    <div
+                      key={lesson.id}
+                      onClick={() => {
+                        setEditingLessonIds((prev) =>
+                          isSelected
+                            ? prev.filter((id) => id !== lesson.id)
+                            : [...prev, lesson.id],
+                        );
+                      }}
+                      className={`flex items-center justify-between p-2.5 rounded-md cursor-pointer transition-all border ${
+                        isSelected
+                          ? 'bg-primary-50/60 border-primary shadow-xs'
+                          : 'bg-white border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {}}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <span className="text-xs font-bold text-ink-dark">{lesson.name}</span>
+                        <span className="font-mono text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                          {lesson.code}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-1.5 space-x-reverse">
+                        {lesson.level?.name && (
+                          <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded">
+                            پایه {lesson.level.name}
+                          </span>
+                        )}
+                        {lesson.field?.name ? (
+                          <span className="text-[10px] bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded font-medium">
+                            {lesson.field.name}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-medium">
+                            عمومی
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            <div className="text-[11px] text-primary font-bold">
+              {editingLessonIds.length} درس انتخاب شده است.
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-2 space-x-reverse pt-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setIsEditLessonsModalOpen(false);
+                setEditingTeacher(null);
+              }}
+            >
+              انصراف
+            </Button>
+            <Button type="submit" variant="primary" isLoading={isSubmitting}>
+              ذخیره دروس
             </Button>
           </div>
         </form>

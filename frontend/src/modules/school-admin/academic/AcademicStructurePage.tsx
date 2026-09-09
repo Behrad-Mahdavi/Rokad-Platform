@@ -447,6 +447,7 @@ export const AcademicStructurePage: React.FC = () => {
                 <TableHead>کد درس</TableHead>
                 <TableHead>پایه تحصیلی</TableHead>
                 <TableHead>رشته تحصیلی</TableHead>
+                <TableHead>دبیران مدرس</TableHead>
                 <TableHead>نوع درس</TableHead>
                 <TableHead>تعداد واحد</TableHead>
                 <TableHead>تعداد سرفصل‌ها</TableHead>
@@ -476,6 +477,22 @@ export const AcademicStructurePage: React.FC = () => {
                         <Badge variant="college">{l.field.name}</Badge>
                       ) : (
                         <Badge variant="neutral">عمومی (مشترک)</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {l.teacherLessons && l.teacherLessons.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 max-w-xs">
+                          {l.teacherLessons.map((tl: any) => (
+                            <span
+                              key={tl.id}
+                              className="text-[11px] bg-blue-50 text-blue-800 font-medium px-2 py-0.5 rounded border border-blue-200"
+                            >
+                              {tl.teacher?.user?.firstName} {tl.teacher?.user?.lastName}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">بدون دبیر</span>
                       )}
                     </TableCell>
                     <TableCell>

@@ -27,6 +27,15 @@ export class ClassesService {
       include: {
         level: true,
         field: true,
+        teacherLessons: {
+          include: {
+            teacher: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { name: 'asc' },
     });
