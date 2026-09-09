@@ -157,12 +157,22 @@ export class ClassesService {
       throw new ConflictException('کلاسی با این نام یا کد در این سال تحصیلی قبلاً ثبت شده است');
     }
 
+    let fieldId = dto.fieldId && dto.fieldId.trim() !== '' ? dto.fieldId : undefined;
+    if (!fieldId) {
+      const defaultField = await this.prisma.studyField.findFirst({
+        where: { tenantId, levelId },
+      });
+      if (defaultField) {
+        fieldId = defaultField.id;
+      }
+    }
+
     return this.prisma.classroom.create({
       data: {
         tenantId,
         academicYearId: academicYearId!,
         levelId: levelId!,
-        fieldId: dto.fieldId,
+        fieldId,
         mentorId: dto.mentorId,
         name: dto.name,
         code: dto.code,

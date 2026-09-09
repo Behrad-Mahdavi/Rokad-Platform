@@ -156,8 +156,17 @@ export const LoginPage: React.FC = () => {
               onClick={() => selectPreset('rokad-boys', '09121111111', 'RokadBoysPass2026!')}
               className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
             >
-              <div className="font-bold text-ink-dark">🏫 مدیر مدرسه</div>
+              <div className="font-bold text-ink-dark">👦 مدیر پسرانه</div>
               <div className="text-[10px] text-gray-500 font-mono">09121111111</div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => selectPreset('rokad-girls', '09121111112', 'RokadGirlsPass2026!')}
+              className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
+            >
+              <div className="font-bold text-ink-dark">👧 مدیر دخترانه</div>
+              <div className="text-[10px] text-gray-500 font-mono">09121111112</div>
             </button>
 
             <button

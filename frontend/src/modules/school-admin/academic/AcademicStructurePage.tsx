@@ -32,6 +32,7 @@ export const AcademicStructurePage: React.FC = () => {
   const [lessons, setLessons] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
   const [levels, setLevels] = useState<any[]>([]);
+  const [fields, setFields] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Modals
@@ -56,6 +57,7 @@ export const AcademicStructurePage: React.FC = () => {
     capacity: 30,
     academicYearId: '',
     levelId: '',
+    fieldId: '',
     roomNumber: '',
   });
 
@@ -68,12 +70,13 @@ export const AcademicStructurePage: React.FC = () => {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const [yearsRes, classesRes, lessonsRes, teachersRes, levelsRes] = await Promise.all([
+      const [yearsRes, classesRes, lessonsRes, teachersRes, levelsRes, fieldsRes] = await Promise.all([
         apiClient.get('/academic/years'),
         apiClient.get('/classes/classrooms'),
         apiClient.get('/classes/lessons'),
         apiClient.get('/members/teachers'),
         apiClient.get('/academic/levels'),
+        apiClient.get('/academic/fields'),
       ]);
 
       setAcademicYears(yearsRes.data || []);
@@ -81,19 +84,33 @@ export const AcademicStructurePage: React.FC = () => {
       setLessons(lessonsRes.data || []);
       setTeachers(teachersRes.data || []);
       setLevels(levelsRes.data || []);
+      setFields(fieldsRes.data || []);
 
       const currentYear = yearsRes.data?.find((y: any) => y.isCurrent) || yearsRes.data?.[0];
       const defaultLevel = levelsRes.data?.[0];
+      const matchingFields = fieldsRes.data?.filter((f: any) => f.levelId === defaultLevel?.id) || [];
+      const defaultField = matchingFields[0] || fieldsRes.data?.[0];
+
       setClassForm((prev) => ({
         ...prev,
         academicYearId: currentYear?.id || '',
         levelId: defaultLevel?.id || '',
+        fieldId: defaultField?.id || '',
       }));
     } catch (err) {
       console.error('Failed to load academic data', err);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleLevelChange = (lvlId: string) => {
+    const matchingFields = fields.filter((f) => f.levelId === lvlId);
+    setClassForm((prev) => ({
+      ...prev,
+      levelId: lvlId,
+      fieldId: matchingFields[0]?.id || '',
+    }));
   };
 
   useEffect(() => {
@@ -129,6 +146,7 @@ export const AcademicStructurePage: React.FC = () => {
         roomNumber: '',
         academicYearId: prev.academicYearId,
         levelId: prev.levelId,
+        fieldId: prev.fieldId,
       }));
       fetchData();
     } catch (err: any) {
@@ -237,6 +255,8 @@ export const AcademicStructurePage: React.FC = () => {
             <TableRow>
               <TableHead>نام کلاس</TableHead>
               <TableHead>کد کلاسی</TableHead>
+              <TableHead>پایه تحصیلی</TableHead>
+              <TableHead>رشته تحصیلی</TableHead>
               <TableHead>سال تحصیلی</TableHead>
               <TableHead>تعداد دانش‌آموزان</TableHead>
               <TableHead>ظرفیت کلاس</TableHead>
@@ -249,7 +269,9 @@ export const AcademicStructurePage: React.FC = () => {
                 <TableRow key={i}>
                   <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                   <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                   <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                   <TableCell><Skeleton className="h-5 w-16" /></TableCell>
                   <TableCell><Skeleton className="h-5 w-16" /></TableCell>
@@ -257,7 +279,7 @@ export const AcademicStructurePage: React.FC = () => {
               ))
             ) : classrooms.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                   هنوز کلاسی ثبت نشده است. از دکمه «ایجاد کلاس درس جدید» استفاده کنید.
                 </TableCell>
               </TableRow>
@@ -266,12 +288,22 @@ export const AcademicStructurePage: React.FC = () => {
                 <TableRow key={c.id}>
                   <TableCell>
                     <div className="font-bold text-ink-darker">{c.name}</div>
-                    <div className="text-[11px] text-gray-500">{c.grade?.name || 'پایه دهم'}</div>
+                    {c.roomNumber && <div className="text-[11px] text-gray-400">{c.roomNumber}</div>}
                   </TableCell>
                   <TableCell><span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">{c.code}</span></TableCell>
+                  <TableCell>
+                    <Badge variant="default" className="font-bold">
+                      پایه {c.level?.name || 'دهم'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="college" className="font-bold">
+                      {c.field?.name || 'شبکه و نرم‌افزار رایانه'}
+                    </Badge>
+                  </TableCell>
                   <TableCell><span className="text-xs text-gray-600">{c.academicYear?.name || '۱۴۰۴-۱۴۰۵'}</span></TableCell>
                   <TableCell>
-                    <span className="font-bold text-ink-darker">{c._count?.students || 0}</span> دانش‌آموز
+                    <span className="font-bold text-ink-darker">{c._count?.enrollments || c._count?.students || 0}</span> دانش‌آموز
                   </TableCell>
                   <TableCell><span className="text-xs text-gray-500">{c.capacity || 30} نفر</span></TableCell>
                   <TableCell><Badge variant="success">فعال</Badge></TableCell>
@@ -456,6 +488,47 @@ export const AcademicStructurePage: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+                پایه تحصیلی <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={classForm.levelId}
+                onChange={(e) => handleLevelChange(e.target.value)}
+                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                required
+              >
+                {levels.map((lvl) => (
+                  <option key={lvl.id} value={lvl.id}>
+                    پایه {lvl.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+                رشته تحصیلی <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={classForm.fieldId}
+                onChange={(e) => setClassForm({ ...classForm, fieldId: e.target.value })}
+                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                required
+              >
+                {(fields.filter((f) => f.levelId === classForm.levelId).length > 0
+                  ? fields.filter((f) => f.levelId === classForm.levelId)
+                  : fields
+                ).map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
                 سال تحصیلی
               </label>
               <select
@@ -471,30 +544,13 @@ export const AcademicStructurePage: React.FC = () => {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
-                پایه / مقطع تحصیلی
-              </label>
-              <select
-                value={classForm.levelId}
-                onChange={(e) => setClassForm({ ...classForm, levelId: e.target.value })}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                {levels.map((lvl) => (
-                  <option key={lvl.id} value={lvl.id}>
-                    {lvl.name} ({lvl.code})
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Input
+              label="شماره یا نام اتاق فیزیکی (اختیاری)"
+              placeholder="مثال: اتاق ۱۰۱ یا کارگاه کامپیوتر"
+              value={classForm.roomNumber}
+              onChange={(e) => setClassForm({ ...classForm, roomNumber: e.target.value })}
+            />
           </div>
-
-          <Input
-            label="شماره یا نام اتاق فیزیکی (اختیاری)"
-            placeholder="مثال: اتاق ۱۰۱ — ساختمان علوم"
-            value={classForm.roomNumber}
-            onChange={(e) => setClassForm({ ...classForm, roomNumber: e.target.value })}
-          />
 
           <div className="flex justify-end space-x-2 space-x-reverse pt-2">
             <Button

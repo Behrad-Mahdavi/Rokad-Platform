@@ -283,37 +283,145 @@ async function main() {
     },
   });
 
-  const highSchoolLevel = await prisma.educationalLevel.upsert({
-    where: {
-      tenantId_code: {
-        tenantId: boysTenant.id,
-        code: 'HIGH_SCHOOL_2',
-      },
-    },
-    update: {},
+  // 5. Seed Academic Structure for Boys School
+  const grade10Level = await prisma.educationalLevel.upsert({
+    where: { tenantId_code: { tenantId: boysTenant.id, code: 'GRADE_10' } },
+    update: { name: 'دهم' },
     create: {
       tenantId: boysTenant.id,
-      name: 'متوسطه دوم',
-      code: 'HIGH_SCHOOL_2',
-      orderIndex: 2,
+      name: 'دهم',
+      code: 'GRADE_10',
+      orderIndex: 10,
     },
   });
 
-  const mathField = await prisma.studyField.upsert({
-    where: {
-      tenantId_code: {
-        tenantId: boysTenant.id,
-        code: 'MATH_PHYSICS',
-      },
-    },
-    update: {},
+  const grade11Level = await prisma.educationalLevel.upsert({
+    where: { tenantId_code: { tenantId: boysTenant.id, code: 'GRADE_11' } },
+    update: { name: 'یازدهم' },
     create: {
       tenantId: boysTenant.id,
-      levelId: highSchoolLevel.id,
-      name: 'ریاضی و فیزیک',
-      code: 'MATH_PHYSICS',
+      name: 'یازدهم',
+      code: 'GRADE_11',
+      orderIndex: 11,
     },
   });
+
+  const grade12Level = await prisma.educationalLevel.upsert({
+    where: { tenantId_code: { tenantId: boysTenant.id, code: 'GRADE_12' } },
+    update: { name: 'دوازدهم' },
+    create: {
+      tenantId: boysTenant.id,
+      name: 'دوازدهم',
+      code: 'GRADE_12',
+      orderIndex: 12,
+    },
+  });
+
+  // Boys Fields: شبکه و نرم‌افزار رایانه - تولید و توسعه پایگاه اینترنتی - تولید محتوای چندرسانه‌ای
+  const boysNetField10 = await prisma.studyField.upsert({
+    where: { tenantId_code: { tenantId: boysTenant.id, code: 'BOYS_NET_10' } },
+    update: { name: 'شبکه و نرم‌افزار رایانه' },
+    create: {
+      tenantId: boysTenant.id,
+      levelId: grade10Level.id,
+      name: 'شبکه و نرم‌افزار رایانه',
+      code: 'BOYS_NET_10',
+    },
+  });
+
+  const boysWebField10 = await prisma.studyField.upsert({
+    where: { tenantId_code: { tenantId: boysTenant.id, code: 'BOYS_WEB_10' } },
+    update: { name: 'تولید و توسعه پایگاه اینترنتی' },
+    create: {
+      tenantId: boysTenant.id,
+      levelId: grade10Level.id,
+      name: 'تولید و توسعه پایگاه اینترنتی',
+      code: 'BOYS_WEB_10',
+    },
+  });
+
+  const boysMediaField10 = await prisma.studyField.upsert({
+    where: { tenantId_code: { tenantId: boysTenant.id, code: 'BOYS_MEDIA_10' } },
+    update: { name: 'تولید محتوای چندرسانه‌ای' },
+    create: {
+      tenantId: boysTenant.id,
+      levelId: grade10Level.id,
+      name: 'تولید محتوای چندرسانه‌ای',
+      code: 'BOYS_MEDIA_10',
+    },
+  });
+
+  // Grade 11 Boys Fields
+  await prisma.studyField.upsert({
+    where: { tenantId_code: { tenantId: boysTenant.id, code: 'BOYS_NET_11' } },
+    update: { name: 'شبکه و نرم‌افزار رایانه' },
+    create: {
+      tenantId: boysTenant.id,
+      levelId: grade11Level.id,
+      name: 'شبکه و نرم‌افزار رایانه',
+      code: 'BOYS_NET_11',
+    },
+  });
+
+  await prisma.studyField.upsert({
+    where: { tenantId_code: { tenantId: boysTenant.id, code: 'BOYS_WEB_11' } },
+    update: { name: 'تولید و توسعه پایگاه اینترنتی' },
+    create: {
+      tenantId: boysTenant.id,
+      levelId: grade11Level.id,
+      name: 'تولید و توسعه پایگاه اینترنتی',
+      code: 'BOYS_WEB_11',
+    },
+  });
+
+  await prisma.studyField.upsert({
+    where: { tenantId_code: { tenantId: boysTenant.id, code: 'BOYS_MEDIA_11' } },
+    update: { name: 'تولید محتوای چندرسانه‌ای' },
+    create: {
+      tenantId: boysTenant.id,
+      levelId: grade11Level.id,
+      name: 'تولید محتوای چندرسانه‌ای',
+      code: 'BOYS_MEDIA_11',
+    },
+  });
+
+  // Grade 12 Boys Fields
+  await prisma.studyField.upsert({
+    where: { tenantId_code: { tenantId: boysTenant.id, code: 'BOYS_NET_12' } },
+    update: { name: 'شبکه و نرم‌افزار رایانه' },
+    create: {
+      tenantId: boysTenant.id,
+      levelId: grade12Level.id,
+      name: 'شبکه و نرم‌افزار رایانه',
+      code: 'BOYS_NET_12',
+    },
+  });
+
+  await prisma.studyField.upsert({
+    where: { tenantId_code: { tenantId: boysTenant.id, code: 'BOYS_WEB_12' } },
+    update: { name: 'تولید و توسعه پایگاه اینترنتی' },
+    create: {
+      tenantId: boysTenant.id,
+      levelId: grade12Level.id,
+      name: 'تولید و توسعه پایگاه اینترنتی',
+      code: 'BOYS_WEB_12',
+    },
+  });
+
+  await prisma.studyField.upsert({
+    where: { tenantId_code: { tenantId: boysTenant.id, code: 'BOYS_MEDIA_12' } },
+    update: { name: 'تولید محتوای چندرسانه‌ای' },
+    create: {
+      tenantId: boysTenant.id,
+      levelId: grade12Level.id,
+      name: 'تولید محتوای چندرسانه‌ای',
+      code: 'BOYS_MEDIA_12',
+    },
+  });
+
+  // Legacy highSchoolLevel reference for compatibility
+  const highSchoolLevel = grade10Level;
+  const mathField = boysNetField10;
 
   // Lessons
   const calculusLesson = await prisma.lesson.upsert({
@@ -326,8 +434,8 @@ async function main() {
     update: {},
     create: {
       tenantId: boysTenant.id,
-      levelId: highSchoolLevel.id,
-      fieldId: mathField.id,
+      levelId: grade10Level.id,
+      fieldId: boysNetField10.id,
       name: 'حسابان ۱',
       code: 'CALC-10',
       unitCount: 4,
@@ -345,8 +453,8 @@ async function main() {
     update: {},
     create: {
       tenantId: boysTenant.id,
-      levelId: highSchoolLevel.id,
-      fieldId: mathField.id,
+      levelId: grade10Level.id,
+      fieldId: boysNetField10.id,
       name: 'فیزیک ۱ و آزمایشگاه',
       code: 'PHYS-10',
       unitCount: 3,
@@ -363,16 +471,174 @@ async function main() {
         code: 'CLS-10-M1',
       },
     },
-    update: {},
+    update: {
+      levelId: grade10Level.id,
+      fieldId: boysNetField10.id,
+    },
     create: {
       tenantId: boysTenant.id,
       academicYearId: academicYear.id,
-      levelId: highSchoolLevel.id,
-      fieldId: mathField.id,
-      name: 'کلاس دهم ریاضی ۱',
+      levelId: grade10Level.id,
+      fieldId: boysNetField10.id,
+      name: 'کلاس دهم شبکه ۱',
       code: 'CLS-10-M1',
       capacity: 30,
       roomNumber: 'اتاق ۲۰۱',
+    },
+  });
+
+  // 5.1 Seed Girls School (شعبه دخترانه)
+  const girlsTenant = await prisma.tenant.upsert({
+    where: { slug: 'rokad-girls' },
+    update: {
+      name: 'مجموعه مدارس هوشمند رُکاد — شعبه دخترانه',
+      type: 'SCHOOL',
+      theme: 'FEMALE',
+      subdomain: 'girls',
+      status: 'ACTIVE',
+    },
+    create: {
+      name: 'مجموعه مدارس هوشمند رُکاد — شعبه دخترانه',
+      slug: 'rokad-girls',
+      subdomain: 'girls',
+      type: 'SCHOOL',
+      theme: 'FEMALE',
+      status: 'ACTIVE',
+      email: 'girls@rokadschool.ir',
+      phone: '09121111112',
+      address: 'تهران، مجتمع آموزشی رُکاد دخترانه',
+    },
+  });
+
+  const girlsAdminPasswordHash = await argon2.hash('RokadGirlsPass2026!');
+  await prisma.user.upsert({
+    where: {
+      tenantId_phone: {
+        tenantId: girlsTenant.id,
+        phone: '09121111112',
+      },
+    },
+    update: {
+      passwordHash: girlsAdminPasswordHash,
+      role: 'SCHOOL_ADMIN',
+    },
+    create: {
+      tenantId: girlsTenant.id,
+      firstName: 'فاطمه',
+      lastName: 'حسینی (مدیر دخترانه)',
+      phone: '09121111112',
+      email: 'girls-admin@rokadschool.ir',
+      username: 'girlsadmin',
+      passwordHash: girlsAdminPasswordHash,
+      role: 'SCHOOL_ADMIN',
+      status: 'ACTIVE',
+    },
+  });
+
+  const girlsAcademicYear = await prisma.academicYear.upsert({
+    where: {
+      tenantId_name: {
+        tenantId: girlsTenant.id,
+        name: '۱۴۰۴-۱۴۰۵',
+      },
+    },
+    update: { isCurrent: true },
+    create: {
+      tenantId: girlsTenant.id,
+      name: '۱۴۰۴-۱۴۰۵',
+      startDate: new Date('2025-09-23T00:00:00.000Z'),
+      endDate: new Date('2026-06-20T00:00:00.000Z'),
+      isCurrent: true,
+    },
+  });
+
+  // Girls Levels: دهم یازدهم دوازدهم
+  const girlsGrade10 = await prisma.educationalLevel.upsert({
+    where: { tenantId_code: { tenantId: girlsTenant.id, code: 'GRADE_10' } },
+    update: { name: 'دهم' },
+    create: {
+      tenantId: girlsTenant.id,
+      name: 'دهم',
+      code: 'GRADE_10',
+      orderIndex: 10,
+    },
+  });
+
+  const girlsGrade11 = await prisma.educationalLevel.upsert({
+    where: { tenantId_code: { tenantId: girlsTenant.id, code: 'GRADE_11' } },
+    update: { name: 'یازدهم' },
+    create: {
+      tenantId: girlsTenant.id,
+      name: 'یازدهم',
+      code: 'GRADE_11',
+      orderIndex: 11,
+    },
+  });
+
+  const girlsGrade12 = await prisma.educationalLevel.upsert({
+    where: { tenantId_code: { tenantId: girlsTenant.id, code: 'GRADE_12' } },
+    update: { name: 'دوازدهم' },
+    create: {
+      tenantId: girlsTenant.id,
+      name: 'دوازدهم',
+      code: 'GRADE_12',
+      orderIndex: 12,
+    },
+  });
+
+  // Girls Field: شبکه و نرم‌افزار رایانه
+  const girlsNet10 = await prisma.studyField.upsert({
+    where: { tenantId_code: { tenantId: girlsTenant.id, code: 'GIRLS_NET_10' } },
+    update: { name: 'شبکه و نرم‌افزار رایانه' },
+    create: {
+      tenantId: girlsTenant.id,
+      levelId: girlsGrade10.id,
+      name: 'شبکه و نرم‌افزار رایانه',
+      code: 'GIRLS_NET_10',
+    },
+  });
+
+  await prisma.studyField.upsert({
+    where: { tenantId_code: { tenantId: girlsTenant.id, code: 'GIRLS_NET_11' } },
+    update: { name: 'شبکه و نرم‌افزار رایانه' },
+    create: {
+      tenantId: girlsTenant.id,
+      levelId: girlsGrade11.id,
+      name: 'شبکه و نرم‌افزار رایانه',
+      code: 'GIRLS_NET_11',
+    },
+  });
+
+  await prisma.studyField.upsert({
+    where: { tenantId_code: { tenantId: girlsTenant.id, code: 'GIRLS_NET_12' } },
+    update: { name: 'شبکه و نرم‌افزار رایانه' },
+    create: {
+      tenantId: girlsTenant.id,
+      levelId: girlsGrade12.id,
+      name: 'شبکه و نرم‌افزار رایانه',
+      code: 'GIRLS_NET_12',
+    },
+  });
+
+  // Classroom for Girls
+  await prisma.classroom.upsert({
+    where: {
+      tenantId_academicYearId_code: {
+        tenantId: girlsTenant.id,
+        academicYearId: girlsAcademicYear.id,
+        code: 'CLS-10-G-NET',
+      },
+    },
+    update: {},
+    create: {
+      tenantId: girlsTenant.id,
+      academicYearId: girlsAcademicYear.id,
+      levelId: girlsGrade10.id,
+      fieldId: girlsNet10.id,
+      name: 'کلاس دهم شبکه دختران',
+      code: 'CLS-10-G-NET',
+      capacity: 25,
+      roomNumber: 'اتاق ۱۰۱',
     },
   });
 
