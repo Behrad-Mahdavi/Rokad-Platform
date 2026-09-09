@@ -119,7 +119,7 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['IRANSansX', 'Vazirmatn', 'system-ui', 'sans-serif'],
+        sans: ['IRANSansXFaNum', 'IRANSansX', 'Vazirmatn', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         xs: ['10px', '15px'],

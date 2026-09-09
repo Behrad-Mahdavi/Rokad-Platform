@@ -1,3 +1,5 @@
+@import './fonts.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -39,7 +41,7 @@
     --accent-purple: #8A38F5;
 
     /* Typography & Spacing */
-    --font-family: 'IRANSansX', 'Vazirmatn', system-ui, sans-serif;
+    --font-family: 'IRANSansXFaNum', 'IRANSansX', 'Vazirmatn', system-ui, sans-serif;
   }
 
   [data-theme='male'] {
