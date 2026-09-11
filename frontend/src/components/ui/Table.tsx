@@ -6,10 +6,10 @@ export const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
 >(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto rounded-xl border border-gray-200/80 bg-white shadow-sm">
+  <div className="relative w-full overflow-x-auto rounded-2xl border border-gray-200/80 bg-white shadow-xs touch-pan-x">
     <table
       ref={ref}
-      className={twMerge(clsx('w-full caption-bottom text-sm text-right', className))}
+      className={twMerge(clsx('w-full min-w-[600px] sm:min-w-full caption-bottom text-sm text-right', className))}
       {...props}
     />
   </div>

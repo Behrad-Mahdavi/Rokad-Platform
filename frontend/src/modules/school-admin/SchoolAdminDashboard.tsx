@@ -109,7 +109,7 @@ export const SchoolAdminDashboard: React.FC = () => {
       </div>
 
       {/* 4 Top KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Students */}
         <Card className="p-5 border hover:border-primary transition-all">
           <div className="flex justify-between items-center text-xs text-gray-500 mb-2">

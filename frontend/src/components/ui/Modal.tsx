@@ -46,29 +46,35 @@ export const Modal: React.FC<ModalProps> = ({
   }[maxWidth];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity animate-in fade-in"
         onClick={onClose}
       />
 
-      {/* Modal Dialog */}
+      {/* Modal Dialog (Bottom Sheet on Mobile, Centered Modal on Desktop) */}
       <div
-        className={`relative w-full ${maxWidthClasses} rounded-2xl bg-white p-6 shadow-2xl border border-gray-200 z-10 max-h-[90vh] overflow-y-auto`}
+        className={`relative w-full ${maxWidthClasses} rounded-t-3xl sm:rounded-2xl bg-white p-5 sm:p-6 shadow-2xl border-t sm:border border-gray-200 z-10 max-h-[88vh] sm:max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200 pb-[max(1.25rem,env(safe-area-inset-bottom))]`}
       >
-        <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-5">
-          <div className="text-right">
-            <h3 className="text-lg font-bold text-ink-darker">{title}</h3>
+        {/* Mobile Drag Indicator Pill */}
+        <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-3 sm:hidden shrink-0" />
+
+        <div className="flex items-center justify-between pb-3.5 border-b border-gray-100 mb-4">
+          <div className="text-right min-w-0 pr-1">
+            <h3 className="text-base sm:text-lg font-bold text-ink-darker leading-snug truncate">
+              {title}
+            </h3>
             {description && (
-              <p className="text-xs text-gray-500 mt-1">{description}</p>
+              <p className="text-xs text-gray-500 mt-1 line-clamp-2">{description}</p>
             )}
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="h-8 w-8 text-gray-400 hover:text-gray-600 rounded-full"
+            aria-label="بستن"
+            className="h-8 w-8 text-gray-400 hover:text-gray-600 rounded-full shrink-0"
           >
             <X className="h-4 w-4" />
           </Button>

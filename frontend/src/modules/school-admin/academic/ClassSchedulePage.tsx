@@ -71,6 +71,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
   const [teachers, setTeachers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isScheduleLoading, setIsScheduleLoading] = useState(false);
+  const [mobileSelectedDay, setMobileSelectedDay] = useState<string>('SATURDAY');
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -350,8 +351,135 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
         </p>
       </div>
 
-      {/* 6x6 Timetable Grid */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-xs">
+      {/* 1. Mobile Adaptive Timetable View (Day Pills + Timeline Cards) */}
+      <div className="block md:hidden space-y-3.5 print:hidden">
+        {/* Day Pills Bar */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 touch-pan-x scrollbar-none">
+          {DAYS.map((d) => {
+            const dayCount = schedules.filter((s) => s.dayOfWeek === d.key).length;
+            const isSelected = mobileSelectedDay === d.key;
+            return (
+              <button
+                key={d.key}
+                type="button"
+                onClick={() => setMobileSelectedDay(d.key)}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <span>{d.label}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                    isSelected ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
+                  }`}
+                >
+                  {dayCount}/۶
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 6 Periods for Active Day */}
+        <div className="space-y-2.5">
+          {PERIODS.map((period) => {
+            const item = schedules.find(
+              (s) => s.dayOfWeek === mobileSelectedDay && s.periodNumber === period.number,
+            );
+
+            return (
+              <div
+                key={period.number}
+                className="bg-white rounded-2xl border border-gray-200 p-3.5 shadow-xs transition-all"
+              >
+                <div className="flex items-center justify-between pb-2 border-b border-gray-100 mb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="h-6 w-6 rounded-lg bg-primary-light text-primary flex items-center justify-center text-xs font-bold font-mono">
+                      {period.number}
+                    </span>
+                    <span className="text-xs font-bold text-ink-darker">{period.label}</span>
+                  </div>
+                  <span className="font-mono text-[10px] text-gray-500 dir-ltr bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
+                    {item ? `${item.startTime} - ${item.endTime}` : `${period.defaultStart} - ${period.defaultEnd}`}
+                  </span>
+                </div>
+
+                {item ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-xs sm:text-sm text-ink-darker truncate">
+                          {item.lesson?.name}
+                        </span>
+                        <span
+                          className={`text-[9px] px-1.5 py-0.5 rounded font-medium shrink-0 ${
+                            item.lesson?.type === 'SPECIALIZED'
+                              ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                              : item.lesson?.type === 'PRACTICAL'
+                              ? 'bg-purple-50 text-purple-800 border border-purple-200'
+                              : 'bg-blue-50 text-blue-800 border border-blue-200'
+                          }`}
+                        >
+                          {item.lesson?.type === 'SPECIALIZED'
+                            ? 'تخصصی'
+                            : item.lesson?.type === 'PRACTICAL'
+                            ? 'کارگاهی'
+                            : 'عمومی'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                        <User className="h-3 w-3 text-primary shrink-0" />
+                        <span className="truncate">
+                          {item.teacher?.user?.firstName} {item.teacher?.user?.lastName}
+                        </span>
+                      </div>
+                    </div>
+
+                    {canManageSchedule && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenSlotModal(mobileSelectedDay, period.number, item)}
+                          className="p-1.5 rounded-lg text-gray-500 hover:text-primary hover:bg-gray-100 transition-colors"
+                          title="ویرایش"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteSlot(item.id, e)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          title="حذف"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : canManageSchedule ? (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenSlotModal(mobileSelectedDay, period.number)}
+                    className="w-full py-2.5 rounded-xl border border-dashed border-primary/40 bg-primary-50/10 hover:bg-primary-50/30 text-primary flex items-center justify-center gap-1.5 text-xs font-bold transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>تخصیص درس برای این زنگ</span>
+                  </button>
+                ) : (
+                  <div className="py-2 text-center text-xs text-gray-400 bg-gray-50/50 rounded-xl border border-dashed border-gray-100">
+                    فاقد درس
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 2. Desktop & Tablet 6x6 Timetable Grid (hidden on mobile) */}
+      <div className="hidden md:block overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-xs">
         <table className="w-full border-collapse text-right">
           <thead>
             <tr className="bg-gray-50/80 border-b border-gray-200">

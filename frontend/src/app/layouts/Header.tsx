@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
+import { useSidebarStore } from '../../lib/ui/sidebar-store';
 import {
   LogOut,
   School,
@@ -18,6 +19,7 @@ import {
   FileCheck,
   CreditCard,
   MessageSquare,
+  Menu,
 } from 'lucide-react';
 
 interface NotificationItem {
@@ -32,6 +34,7 @@ interface NotificationItem {
 export const Header: React.FC = () => {
   const { user, logout } = useAuthStore();
   const { currentTenant } = useTenantStore();
+  const { toggle: toggleSidebar } = useSidebarStore();
 
   // Notification state
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -108,18 +111,27 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-16 border-b border-gray-200 bg-white px-6 flex items-center justify-between sticky top-0 z-30 shadow-sm">
-      {/* Left (in RTL: Right) - Tenant & Title */}
-      <div className="flex items-center space-x-3 space-x-reverse">
-        <div className="h-9 w-9 rounded-lg bg-primary-light flex items-center justify-center text-primary-dark border border-primary/20">
+    <header className="h-16 border-b border-gray-200 bg-white px-3 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+      {/* Left (in RTL: Right) - Hamburger + Tenant & Title */}
+      <div className="flex items-center space-x-2 sm:space-x-3 space-x-reverse min-w-0">
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          aria-label="منوی ناوبری"
+          className="p-2 -mr-1 rounded-xl text-gray-600 hover:text-primary hover:bg-gray-100 lg:hidden shrink-0 transition-colors"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+
+        <div className="h-9 w-9 rounded-xl bg-primary-light flex items-center justify-center text-primary-dark border border-primary/20 shrink-0">
           <School className="h-5 w-5" />
         </div>
-        <div>
-          <h1 className="font-bold text-sm text-ink-darker leading-tight">
+        <div className="min-w-0">
+          <h1 className="font-bold text-xs sm:text-sm text-ink-darker leading-tight truncate max-w-[150px] sm:max-w-xs md:max-w-md">
             {currentTenant?.name || 'پلتفرم جامع مدارس رُکاد'}
           </h1>
-          <div className="flex items-center space-x-2 space-x-reverse mt-0.5">
-            <span className="text-[11px] text-gray-500 font-mono">
+          <div className="hidden sm:flex items-center space-x-2 space-x-reverse mt-0.5">
+            <span className="text-[11px] text-gray-500 font-mono truncate">
               {currentTenant?.slug || 'rokad-platform'}
             </span>
             <Badge variant="default" className="text-[10px] py-0 px-1.5 h-4">
@@ -130,7 +142,7 @@ export const Header: React.FC = () => {
       </div>
 
       {/* Right (in RTL: Left) - Notifications, User & Actions */}
-      <div className="flex items-center space-x-4 space-x-reverse">
+      <div className="flex items-center space-x-2 sm:space-x-4 space-x-reverse shrink-0">
         {/* Notifications Popover Dropdown */}
         <div className="relative">
           <Button
@@ -149,7 +161,7 @@ export const Header: React.FC = () => {
 
           {/* Popover Dropdown */}
           {isNotifOpen && (
-            <div className="absolute left-0 mt-2 w-80 rounded-2xl bg-white p-4 shadow-xl border border-gray-200 z-50 animate-in fade-in slide-in-from-top-2">
+            <div className="fixed inset-x-3 top-16 sm:absolute sm:inset-auto sm:left-0 sm:mt-2 sm:w-80 rounded-2xl bg-white p-4 shadow-xl border border-gray-200 z-50 animate-in fade-in slide-in-from-top-2">
               <div className="flex items-center justify-between border-b border-gray-100 pb-2 mb-2">
                 <div className="font-bold text-xs text-ink-darker flex items-center space-x-1.5 space-x-reverse">
                   <Bell className="h-4 w-4 text-primary" />
@@ -188,9 +200,9 @@ export const Header: React.FC = () => {
         {/* User Profile Trigger */}
         <div
           onClick={() => setIsProfileModalOpen(true)}
-          className="flex items-center space-x-3 space-x-reverse border-r border-gray-200 pr-4 cursor-pointer hover:opacity-80 transition-opacity"
+          className="flex items-center space-x-2 sm:space-x-3 space-x-reverse border-r border-gray-200 pr-2 sm:pr-4 cursor-pointer hover:opacity-80 transition-opacity"
         >
-          <div className="text-left">
+          <div className="hidden sm:block text-left">
             <div className="font-bold text-xs text-ink-normal text-right">
               {user ? `${user.firstName} ${user.lastName}` : 'کاربر مهمان'}
             </div>

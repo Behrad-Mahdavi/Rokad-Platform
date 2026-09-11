@@ -24,6 +24,7 @@ import {
   AlertCircle,
   BookOpen,
 } from 'lucide-react';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 
 export const MembersPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'STUDENTS' | 'TEACHERS'>('STUDENTS');
@@ -197,38 +198,30 @@ export const MembersPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header & Actions */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-            <Users className="h-6 w-6 text-primary" />
-            <span>مدیریت اعضا و ثبت‌نام دانش‌آموزان و کادر (Members)</span>
-          </h2>
-          <p className="text-xs text-gray-500 mt-1">
-            ثبت پرونده تحصیلی، اطلاعات اولیاء، تخصیص نقش‌های پرسنل و پرونده‌های الکترونیکی
-          </p>
-        </div>
-
-        <div className="flex gap-2">
-          {activeTab === 'STUDENTS' && (
-            <Button variant="primary" onClick={() => setIsStudentModalOpen(true)}>
+      <ResponsivePageHeader
+        icon={Users}
+        title="مدیریت اعضا و ثبت‌نام دانش‌آموزان و کادر (Members)"
+        description="ثبت پرونده تحصیلی، اطلاعات اولیاء، تخصیص نقش‌های پرسنل و پرونده‌های الکترونیکی"
+        actions={
+          activeTab === 'STUDENTS' ? (
+            <Button variant="primary" size="sm" onClick={() => setIsStudentModalOpen(true)} className="w-full sm:w-auto">
               <UserPlus className="h-4 w-4 ml-1" />
               <span>ثبت‌نام دانش‌آموز جدید</span>
             </Button>
-          )}
-          {activeTab === 'TEACHERS' && (
-            <Button variant="primary" onClick={() => setIsTeacherModalOpen(true)}>
+          ) : (
+            <Button variant="primary" size="sm" onClick={() => setIsTeacherModalOpen(true)} className="w-full sm:w-auto">
               <Plus className="h-4 w-4 ml-1" />
               <span>ثبت دبیر یا پرسنل جدید</span>
             </Button>
-          )}
-        </div>
-      </div>
+          )
+        }
+      />
 
       {/* Tabs */}
-      <div className="flex space-x-2 space-x-reverse border-b border-gray-200">
+      <div className="flex space-x-2 space-x-reverse border-b border-gray-200 overflow-x-auto scrollbar-none pb-0.5 touch-pan-x">
         <button
           onClick={() => setActiveTab('STUDENTS')}
-          className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 flex items-center space-x-1.5 space-x-reverse ${
+          className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 flex items-center space-x-1.5 space-x-reverse shrink-0 ${
             activeTab === 'STUDENTS'
               ? 'border-primary text-primary-dark'
               : 'border-transparent text-gray-500 hover:text-ink-dark'
@@ -240,7 +233,7 @@ export const MembersPage: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('TEACHERS')}
-          className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 flex items-center space-x-1.5 space-x-reverse ${
+          className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 flex items-center space-x-1.5 space-x-reverse shrink-0 ${
             activeTab === 'TEACHERS'
               ? 'border-primary text-primary-dark'
               : 'border-transparent text-gray-500 hover:text-ink-dark'
@@ -412,7 +405,7 @@ export const MembersPage: React.FC = () => {
         )}
 
         <form onSubmit={handleEnrollStudent} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Input
               label="نام دانش‌آموز"
               placeholder="مثال: رضا"
@@ -429,7 +422,7 @@ export const MembersPage: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Input
               label="کد ملی (۱۰ رقم)"
               placeholder="مثال: 0012345678"
@@ -446,7 +439,7 @@ export const MembersPage: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Input
               label="شماره تماس (نام کاربری ورود)"
               placeholder="مثال: 09123333333"
@@ -500,7 +493,7 @@ export const MembersPage: React.FC = () => {
         )}
 
         <form onSubmit={handleCreateTeacher} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Input
               label="نام"
               placeholder="مثال: محمد"
@@ -517,7 +510,7 @@ export const MembersPage: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Input
               label="کد پرسنلی"
               placeholder="مثال: TCH-1404-01"

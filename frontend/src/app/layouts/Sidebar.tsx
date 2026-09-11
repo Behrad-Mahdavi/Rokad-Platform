@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import {
@@ -20,8 +20,10 @@ import {
   Wallet,
   MessageSquare,
   Sparkles,
+  X,
 } from 'lucide-react';
 import { UserRole } from '../../types/auth';
+import { useSidebarStore } from '../../lib/ui/sidebar-store';
 
 export interface NavItem {
   title: string;
@@ -35,6 +37,14 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
+  const { isOpen, close } = useSidebarStore();
+  const location = useLocation();
+
+  // Auto-close mobile drawer when location/route changes
+  useEffect(() => {
+    close();
+  }, [location.pathname, close]);
+
   const getNavItems = (): { section: string; items: NavItem[] }[] => {
     const commsSection = {
       section: 'ارتباطات و اطلاعیه‌ها',
@@ -139,10 +149,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
 
   const navSections = getNavItems();
 
-  return (
-    <aside className="w-64 border-l border-gray-200 bg-white min-h-[calc(100vh-4rem)] flex flex-col justify-between p-4 shrink-0 shadow-sm">
+  const renderNavContent = () => (
+    <>
       <div className="space-y-6">
-        {/* Navigation Sections */}
         {navSections.map((section, idx) => (
           <div key={idx} className="space-y-1.5">
             <h2 className="px-3 text-[11px] font-bold tracking-wider text-gray-400 uppercase">
@@ -156,9 +165,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
                   className={({ isActive }) =>
                     twMerge(
                       clsx(
-                        'flex items-center space-x-3 space-x-reverse px-3 py-2.5 rounded-lg text-xs font-medium transition-all group',
+                        'flex items-center space-x-3 space-x-reverse px-3 py-2.5 rounded-xl text-xs font-medium transition-all group',
                         isActive
-                          ? 'bg-primary-light text-primary-darker font-bold border border-primary/20 shadow-sm'
+                          ? 'bg-primary-light text-primary-darker font-bold border border-primary/20 shadow-xs'
                           : 'text-ink-normal hover:bg-gray-50 hover:text-ink-darker',
                       ),
                     )
@@ -179,7 +188,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       </div>
 
       {/* Footer Banner */}
-      <div className="rounded-xl bg-gradient-to-br from-primary-light to-white p-3.5 border border-primary/20 text-center">
+      <div className="rounded-xl bg-gradient-to-br from-primary-light to-white p-3.5 border border-primary/20 text-center mt-6">
         <div className="flex items-center justify-center space-x-1.5 space-x-reverse text-primary-dark font-bold text-xs">
           <Sparkles className="h-4 w-4" />
           <span>هوشمندسازی رُکاد</span>
@@ -188,6 +197,51 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
           نسل نوین مدیریت یکپارچه آموزشی
         </p>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* 1. Desktop Persistent Sidebar */}
+      <aside className="hidden lg:flex w-64 border-l border-gray-200 bg-white min-h-[calc(100vh-4rem)] flex-col justify-between p-4 shrink-0 shadow-xs">
+        {renderNavContent()}
+      </aside>
+
+      {/* 2. Mobile Off-canvas Drawer Backdrop */}
+      {isOpen && (
+        <div
+          onClick={close}
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 lg:hidden transition-opacity"
+          aria-hidden="true"
+        />
+      )}
+
+      {/* 3. Mobile Off-canvas Drawer */}
+      <aside
+        className={twMerge(
+          clsx(
+            'fixed inset-y-0 right-0 z-50 w-72 bg-white border-l border-gray-200 p-4 flex flex-col justify-between shadow-2xl transition-transform duration-300 ease-in-out lg:hidden overflow-y-auto',
+            isOpen ? 'translate-x-0' : 'translate-x-full',
+          ),
+        )}
+      >
+        <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+          <span className="font-bold text-xs text-ink-darker flex items-center gap-1.5">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span>منوی دسترسی سریع</span>
+          </span>
+          <button
+            type="button"
+            onClick={close}
+            aria-label="بستن منو"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-ink-dark hover:bg-gray-100 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {renderNavContent()}
+      </aside>
+    </>
   );
 };

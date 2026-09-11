@@ -6,6 +6,7 @@ import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import {
   Table,
   TableHeader,
@@ -207,46 +208,40 @@ export const AcademicStructurePage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-            <GraduationCap className="h-6 w-6 text-primary" />
-            <span>ساختار آموزشی و کلاس‌های درس (Academic Structure)</span>
-          </h2>
-          <p className="text-xs text-gray-500 mt-1">
-            مدیریت سال‌های تحصیلی، نیم‌سال‌ها، کلاس‌های درس، دروس و تخصیص سرفصل‌ها
-          </p>
-        </div>
+      {/* Responsive Header */}
+      <ResponsivePageHeader
+        icon={GraduationCap}
+        title="ساختار آموزشی و کلاس‌های درس"
+        description="مدیریت سال‌های تحصیلی، نیم‌سال‌ها، کلاس‌های درس، دروس و تخصیص سرفصل‌ها"
+        actions={
+          <>
+            {activeTab === 'YEARS' && (
+              <Button variant="primary" onClick={() => setIsYearModalOpen(true)}>
+                <Plus className="h-4 w-4 ml-1" />
+                <span>ثبت سال تحصیلی جدید</span>
+              </Button>
+            )}
+            {activeTab === 'CLASSROOMS' && (
+              <Button variant="primary" onClick={() => setIsClassModalOpen(true)}>
+                <Plus className="h-4 w-4 ml-1" />
+                <span>ایجاد کلاس درس جدید</span>
+              </Button>
+            )}
+            {activeTab === 'LESSONS' && (
+              <Button variant="primary" onClick={() => setIsLessonModalOpen(true)}>
+                <Plus className="h-4 w-4 ml-1" />
+                <span>تعریف درس جدید</span>
+              </Button>
+            )}
+          </>
+        }
+      />
 
-        {/* Dynamic Action Button based on Tab */}
-        <div className="flex gap-2">
-          {activeTab === 'YEARS' && (
-            <Button variant="primary" onClick={() => setIsYearModalOpen(true)}>
-              <Plus className="h-4 w-4 ml-1" />
-              <span>ثبت سال تحصیلی جدید</span>
-            </Button>
-          )}
-          {activeTab === 'CLASSROOMS' && (
-            <Button variant="primary" onClick={() => setIsClassModalOpen(true)}>
-              <Plus className="h-4 w-4 ml-1" />
-              <span>ایجاد کلاس درس جدید</span>
-            </Button>
-          )}
-          {activeTab === 'LESSONS' && (
-            <Button variant="primary" onClick={() => setIsLessonModalOpen(true)}>
-              <Plus className="h-4 w-4 ml-1" />
-              <span>تعریف درس جدید</span>
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex space-x-2 space-x-reverse border-b border-gray-200">
+      {/* Tabs (Responsive Swipeable) */}
+      <div className="flex space-x-2 space-x-reverse border-b border-gray-200 overflow-x-auto scrollbar-none pb-1 min-w-0">
         <button
           onClick={() => setActiveTab('CLASSROOMS')}
-          className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 flex items-center space-x-1.5 space-x-reverse ${
+          className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 flex items-center space-x-1.5 space-x-reverse whitespace-nowrap shrink-0 ${
             activeTab === 'CLASSROOMS'
               ? 'border-primary text-primary-dark'
               : 'border-transparent text-gray-500 hover:text-ink-dark'
@@ -258,7 +253,7 @@ export const AcademicStructurePage: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('YEARS')}
-          className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 flex items-center space-x-1.5 space-x-reverse ${
+          className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 flex items-center space-x-1.5 space-x-reverse whitespace-nowrap shrink-0 ${
             activeTab === 'YEARS'
               ? 'border-primary text-primary-dark'
               : 'border-transparent text-gray-500 hover:text-ink-dark'
@@ -270,7 +265,7 @@ export const AcademicStructurePage: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('LESSONS')}
-          className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 flex items-center space-x-1.5 space-x-reverse ${
+          className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 flex items-center space-x-1.5 space-x-reverse whitespace-nowrap shrink-0 ${
             activeTab === 'LESSONS'
               ? 'border-primary text-primary-dark'
               : 'border-transparent text-gray-500 hover:text-ink-dark'
@@ -542,7 +537,7 @@ export const AcademicStructurePage: React.FC = () => {
             onChange={(e) => setYearForm({ ...yearForm, name: e.target.value })}
             required
           />
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="تاریخ شروع (میلادی)"
               type="date"
@@ -604,7 +599,7 @@ export const AcademicStructurePage: React.FC = () => {
             required
           />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="کد یکتای کلاس"
               placeholder="مثال: CLS-10-M1"
@@ -621,7 +616,7 @@ export const AcademicStructurePage: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
                 پایه تحصیلی <span className="text-red-500">*</span>
@@ -662,7 +657,7 @@ export const AcademicStructurePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
                 سال تحصیلی
@@ -725,7 +720,7 @@ export const AcademicStructurePage: React.FC = () => {
         )}
 
         <form onSubmit={handleCreateLesson} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
                 پایه تحصیلی <span className="text-red-500">*</span>
@@ -766,7 +761,7 @@ export const AcademicStructurePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="نام درس"
               placeholder="مثال: کارگاه شبکه و نرم‌افزار یا ریاضی ۱"
@@ -783,7 +778,7 @@ export const AcademicStructurePage: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
                 نوع درس
