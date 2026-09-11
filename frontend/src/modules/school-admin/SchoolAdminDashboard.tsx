@@ -79,11 +79,11 @@ export const SchoolAdminDashboard: React.FC = () => {
               درود، {user?.firstName} {user?.lastName}
             </span>
             <Badge variant="default" className="text-xs">
-              مدیریت مجتمع
+              مدیریت هنرستان
             </Badge>
           </div>
           <p className="text-xs text-gray-500">
-            گزارش عملکرد برخط و شاخص‌های کلیدی {currentTenant?.name || 'مدرسه هوشمند رُکاد'}
+            گزارش عملکرد برخط، کارگاه‌های تخصصی، پودمان‌ها و شاخص‌های کلیدی {currentTenant?.name || 'هنرستان فنی و حرفه‌ای رُکاد'}
           </p>
         </div>
 
@@ -102,7 +102,7 @@ export const SchoolAdminDashboard: React.FC = () => {
             onClick={() => window.location.href = '/app/admin/academic'}
             className="text-xs flex items-center space-x-1 space-x-reverse"
           >
-            <span>کلاس‌ها و دروس</span>
+            <span>کارگاه‌ها و دروس</span>
             <ArrowUpRight className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -113,7 +113,7 @@ export const SchoolAdminDashboard: React.FC = () => {
         {/* Card 1: Students */}
         <Card className="p-5 border hover:border-primary transition-all">
           <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
-            <span>دانش‌آموزان فعال</span>
+            <span>هنرجویان فعال</span>
             <GraduationCap className="h-4 w-4 text-primary" />
           </div>
           <div className="text-2xl font-extrabold text-ink-darker">
@@ -128,7 +128,7 @@ export const SchoolAdminDashboard: React.FC = () => {
         {/* Card 2: Teachers */}
         <Card className="p-5 border hover:border-blue-500 transition-all">
           <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
-            <span>کادر و دبیران</span>
+            <span>هنرآموزان و کادر تخصصی</span>
             <Users className="h-4 w-4 text-blue-500" />
           </div>
           <div className="text-2xl font-extrabold text-ink-darker">

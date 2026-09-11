@@ -61,10 +61,10 @@ export const ReportsPage: React.FC = () => {
       <div>
         <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
           <BarChart3 className="h-6 w-6 text-primary" />
-          <span>گزارش‌های جامع و تحلیلی مدرسه (Comprehensive Reports)</span>
+          <span>گزارش‌های جامع و تحلیلی هنرستان (Comprehensive Reports)</span>
         </h2>
         <p className="text-xs text-gray-500 mt-1">
-          تراز مالی وصول شهریه، آمار تجمیعی حضور و غیاب، کارنامه‌های ترمیک و فایل پرداخت پایا بانکی
+          تراز مالی وصول شهریه، آمار تجمیعی حضور و غیاب، کارنامه‌های پودمانی و فایل پرداخت پایا بانکی
         </p>
       </div>
 
@@ -91,19 +91,19 @@ export const ReportsPage: React.FC = () => {
 
         <Card className="p-6 border hover:border-primary transition-all">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-xs text-gray-500 font-medium">میانگین حضور دانش‌آموزان</div>
+            <div className="text-xs text-gray-500 font-medium">میانگین حضور هنرجویان</div>
             <CalendarCheck className="h-5 w-5 text-primary" />
           </div>
           <div className="text-3xl font-extrabold text-emerald-700">۹۶.۴٪</div>
           <div className="w-full bg-gray-100 h-2 rounded-full mt-3 overflow-hidden">
             <div className="bg-primary h-2 rounded-full" style={{ width: '96.4%' }} />
           </div>
-          <p className="text-[11px] text-emerald-600 mt-2 font-medium">انضباط تحصیلی بسیار مطلوب</p>
+          <p className="text-[11px] text-emerald-600 mt-2 font-medium">انضباط تحصیلی و کارگاهی مطلوب</p>
         </Card>
 
         <Card className="p-6 border hover:border-blue-500 transition-all">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-xs text-gray-500 font-medium">میانگین معدل مدرسه</div>
+            <div className="text-xs text-gray-500 font-medium">میانگین معدل هنرستان</div>
             <TrendingUp className="h-5 w-5 text-blue-500" />
           </div>
           <div className="text-3xl font-extrabold text-primary">۱۸.۷۵</div>

@@ -62,7 +62,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             section: 'مرکز فرماندهی SaaS',
             items: [
               { title: 'داشبورد متریک‌ها', href: '/app/super-admin/dashboard', icon: LayoutDashboard },
-              { title: 'مدیریت مدارس و تننت‌ها', href: '/app/super-admin/tenants', icon: Building2 },
+              { title: 'مدیریت شعب و تننت‌ها', href: '/app/super-admin/tenants', icon: Building2 },
               { title: 'پلن‌های اشتراک و سهمیه‌ها', href: '/app/super-admin/subscriptions', icon: CreditCard },
               { title: 'قالب‌های نقش پویا', href: '/app/super-admin/role-templates', icon: Sliders },
               { title: 'عملیات و وضعیت سامانه', href: '/app/super-admin/ops', icon: Activity },
@@ -75,12 +75,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       case 'STAFF':
         return [
           {
-            section: 'مدیریت مدرسه',
+            section: 'مدیریت هنرستان',
             items: [
               { title: 'داشبورد مدیریت', href: '/app/admin/dashboard', icon: LayoutDashboard },
               { title: 'ساختار سال و کلاس‌ها', href: '/app/admin/academic', icon: GraduationCap },
               { title: 'برنامه هفتگی کلاس‌ها', href: '/app/admin/schedule', icon: CalendarDays },
-              { title: 'مدیریت دانش‌آموزان و پرسنل', href: '/app/admin/members', icon: Users },
+              { title: 'مدیریت هنرجویان و پرسنل', href: '/app/admin/members', icon: Users },
             ],
           },
           {
@@ -97,7 +97,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       case 'TEACHER':
         return [
           {
-            section: 'میز کار معلم',
+            section: 'میز کار هنرآموز / دبیر',
             items: [
               { title: 'داشبورد کلاس‌ها', href: '/app/teacher/dashboard', icon: LayoutDashboard },
               { title: 'برنامه هفتگی کلاس‌ها', href: '/app/teacher/schedule', icon: CalendarDays },
@@ -114,7 +114,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       case 'STUDENT':
         return [
           {
-            section: 'پرتال دانش‌آموز',
+            section: 'پرتال هنرجو',
             items: [
               { title: 'داشبورد تحصیلی', href: '/app/student/dashboard', icon: LayoutDashboard },
               { title: 'برنامه هفتگی کلاس', href: '/app/student/schedule', icon: CalendarDays },
@@ -130,7 +130,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       case 'PARENT':
         return [
           {
-            section: 'پرتال اولیاء',
+            section: 'پرتال اولیاء هنرجو',
             items: [
               { title: 'داشبورد فرزندان', href: '/app/parent/dashboard', icon: LayoutDashboard },
               { title: 'برنامه هفتگی فرزند', href: '/app/parent/schedule', icon: CalendarDays },

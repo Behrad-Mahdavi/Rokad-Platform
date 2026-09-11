@@ -19,15 +19,15 @@ export const TeacherDashboard: React.FC = () => {
   const user = useAuthStore((state) => state.user);
 
   const todaySchedule = [
-    { period: 'زنگ اول (۰۸:۰۰ - ۰۹:۳۰)', class: 'کلاس ۱۰۱ — ریاضی و فیزیک', lesson: 'حسابان و دیفرانسیل ۱', status: 'COMPLETED' },
-    { period: 'زنگ دوم (۱۰:۰۰ - ۱۱:۳۰)', class: 'کلاس ۱۰۲ — تجربی', lesson: 'ریاضی و آمار ۲', status: 'IN_PROGRESS' },
-    { period: 'زنگ سوم (۱۲:۰۰ - ۱۳:۳۰)', class: 'کلاس ۱۰۳ — انسانی', lesson: 'ریاضی و آمار علوم انسانی', status: 'UPCOMING' },
+    { period: 'زنگ اول (۰۸:۰۰ - ۰۹:۳۰)', class: 'کارگاه ۱۰۱ — شبکه و نرم‌افزار', lesson: 'نصب و راه‌اندازی سیستم‌های رایانه‌ای', status: 'COMPLETED' },
+    { period: 'زنگ دوم (۱۰:۰۰ - ۱۱:۳۰)', class: 'کارگاه ۱۰۲ — تولید وب', lesson: 'توسعه برنامه‌های وب و دیتابیس', status: 'IN_PROGRESS' },
+    { period: 'زنگ سوم (۱۲:۰۰ - ۱۳:۳۰)', class: 'کارگاه ۱۰۳ — دهم شبکه', lesson: 'دانش فنی پایه و شبکه', status: 'UPCOMING' },
   ];
 
   const pendingSubmissions = [
-    { student: 'امیرعلی صادقی', class: 'کلاس ۱۰۱', title: 'تمرینات فصل دوم هندسه', sentTime: '۲ ساعت پیش' },
-    { student: 'محمدرضا کاظمی', class: 'کلاس ۱۰۱', title: 'حل المسائل مشتق توابع', sentTime: '۴ ساعت پیش' },
-    { student: 'سینا احمدی', class: 'کلاس ۱۰۲', title: 'تکلیف آمار و احتمال', sentTime: 'دیروز' },
+    { student: 'امیرعلی صادقی', class: 'کلاس ۱۰۱', title: 'پروژه راه‌اندازی اکتیودایرکتوری', sentTime: '۲ ساعت پیش' },
+    { student: 'محمدرضا کاظمی', class: 'کلاس ۱۰۱', title: 'تمرین کدنویسی اسکریپت شل', sentTime: '۴ ساعت پیش' },
+    { student: 'سینا احمدی', class: 'کلاس ۱۰۲', title: 'پروژه لندینگ‌پیج با تیلویند', sentTime: 'دیروز' },
   ];
 
   return (
@@ -39,10 +39,10 @@ export const TeacherDashboard: React.FC = () => {
             <span className="text-xl font-bold text-ink-darker">
               خوش آمدید، {user?.firstName} {user?.lastName} 👨‍🏫
             </span>
-            <Badge variant="male">دبیر تخصصی ریاضیات</Badge>
+            <Badge variant="male">هنرآموز و دبیر تخصصی کامپیوتر</Badge>
           </div>
           <p className="text-xs text-gray-500">
-            برنامه کلاسی امروز، تکالیف ارسالی دانش‌آموزان و وضعیت ارزشیابی تحصیلی
+            برنامه کارگاهی امروز، پروژه‌های ارسالی هنرجویان و پودمان‌های ارزشیابی تحصیلی
           </p>
         </div>
 

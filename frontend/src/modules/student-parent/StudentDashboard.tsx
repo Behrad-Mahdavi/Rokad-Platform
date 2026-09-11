@@ -20,12 +20,12 @@ export const StudentDashboard: React.FC = () => {
   const user = useAuthStore((state) => state.user);
 
   const upcomingHomework = [
-    { title: 'تمرینات فصل دوم هندسه تحلیلی', lesson: 'ریاضی ۱', deadline: 'فردا ۱۸:۰۰', score: 20 },
-    { title: 'گزارش آزمایشگاه گرما و ترمودینامیک', lesson: 'فیزیک', deadline: 'پنجشنبه', score: 20 },
+    { title: 'پیکربندی سوئیچ‌های شبکه و VLAN', lesson: 'کارگاه شبکه و نرم‌افزار', deadline: 'فردا ۱۸:۰۰', score: 20 },
+    { title: 'طراحی رابط کاربری ریسپانسیو با فلکس‌باکس', lesson: 'توسعه وب', deadline: 'پنجشنبه', score: 20 },
   ];
 
   const onlineExams = [
-    { title: 'آزمون تستی میان‌ترم حسابان ۱', lesson: 'حسابان', duration: '۶۰ دقیقه', status: 'READY' },
+    { title: 'ارزشیابی پودمان اول دانش فنی تخصصی', lesson: 'دانش فنی', duration: '۶۰ دقیقه', status: 'READY' },
   ];
 
   return (
@@ -37,10 +37,10 @@ export const StudentDashboard: React.FC = () => {
             <span className="text-xl font-bold text-ink-darker">
               سلام، {user?.firstName} عزیز! 🎓
             </span>
-            <Badge variant="default">پایه دهم ریاضی (کلاس ۱۰۱)</Badge>
+            <Badge variant="default">هنرجوی پایه دهم شبکه و نرم‌افزار (کلاس ۱۰۱)</Badge>
           </div>
           <p className="text-xs text-gray-500">
-            برنامه درسی، تکالیف در انتظار ارسال و وضعیت کارنامه نمرات شما
+            برنامه کارگاهی، پروژه‌های عملی در انتظار تحویل و پودمان‌های ارزشیابی شما
           </p>
         </div>
 

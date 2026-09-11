@@ -17,8 +17,8 @@ export const AuthLayout: React.FC = () => {
             <School className="h-7 w-7 text-white" />
           </div>
           <div>
-            <h1 className="font-bold text-2xl tracking-tight">رُکاد‌اسکول</h1>
-            <p className="text-xs text-white/80">سیستم عامل جامع و هوشمند مدارس</p>
+            <h1 className="font-bold text-2xl tracking-tight">هنرستان‌های رُکاد</h1>
+            <p className="text-xs text-white/80">شعبه تخصصی دخترانه و پسرانه</p>
           </div>
         </div>
 
@@ -26,22 +26,22 @@ export const AuthLayout: React.FC = () => {
         <div className="space-y-6 relative z-10">
           <div className="inline-flex items-center space-x-2 space-x-reverse bg-white/15 px-3 py-1.5 rounded-full text-xs backdrop-blur-md border border-white/20">
             <Sparkles className="h-4 w-4 text-amber-300" />
-            <span>پلتفرم یکپارچه چندمستأجری مقیاس‌پذیر</span>
+            <span>پلتفرم جامع و هوشمند مدیریت هنرستان</span>
           </div>
 
           <h2 className="text-3xl font-extrabold leading-snug">
-            مدیریت هوشمند آموزشی، امور مالی و ارتباطات بلادرنگ در یک پنجره واحد
+            مدیریت هوشمند کارگاه‌ها، پودمان‌های درسی، امور مالی و ارتباطات در پنجره واحد
           </h2>
 
           <p className="text-sm text-white/80 leading-relaxed">
-            سامانه رُکاد با پشتیبانی از سیستم آزمون‌ساز آنلاین، حضور و غیاب، شهریه و حقوق، فضای ابری امن و چت زنده، فرآیندهای مدرسه را به سطحی نوین ارتقاء می‌دهد.
+            سامانه رُکاد با پشتیبانی از سیستم ارزشیابی شایستگی‌محور، برنامه هفتگی کارگاهی، آزمون‌های آنلاین، حضور و غیاب هوشمند و چت کلاسی، فرآیندهای هنرستان را به سطحی نوین ارتقاء می‌دهد.
           </p>
         </div>
 
         {/* Bottom Metadata */}
         <div className="text-xs text-white/60 relative z-10 flex justify-between items-center border-t border-white/10 pt-6">
-          <span>نسخه ۲.۰ — پلتفرم ابری رُکاد</span>
-          <span>امنیت و ایزولاسیون داده‌ها</span>
+          <span>نسخه تخصصی هنرستان‌های رُکاد</span>
+          <span>امنیت و ایزولاسیون اطلاعات شعب</span>
         </div>
       </div>
 

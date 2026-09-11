@@ -90,11 +90,49 @@ export const LoginPage: React.FC = () => {
       <CardHeader className="text-right space-y-2">
         <div className="flex items-center space-x-2 space-x-reverse text-primary-dark">
           <School className="h-6 w-6" />
-          <CardTitle className="text-xl">ورود به پنل کاربری</CardTitle>
+          <CardTitle className="text-xl">ورود به هنرستان‌های رُکاد</CardTitle>
         </div>
         <CardDescription>
-          جهت دسترسی به داشبورد، مشخصات مرکز و حساب کاربری خود را وارد کنید.
+          سامانه هوشمند و یکپارچه هنرستان‌های غیردولتی دخترانه و پسرانه رُکاد
         </CardDescription>
+
+        {/* Branch Selector Switch */}
+        <div className="pt-2">
+          <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 rounded-xl border border-gray-200 text-xs">
+            <button
+              type="button"
+              onClick={() => {
+                setTenantSlug('rokad-boys');
+                setIdentifier('09121111111');
+                setPassword('RokadBoysPass2026!');
+              }}
+              className={`py-2 rounded-lg font-bold transition-all flex items-center justify-center space-x-1.5 space-x-reverse ${
+                tenantSlug === 'rokad-boys'
+                  ? 'bg-sec text-white shadow-sm'
+                  : 'text-gray-600 hover:text-ink-dark'
+              }`}
+            >
+              <span>👦</span>
+              <span>هنرستان پسرانه</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setTenantSlug('rokad-girls');
+                setIdentifier('09121111112');
+                setPassword('RokadGirlsPass2026!');
+              }}
+              className={`py-2 rounded-lg font-bold transition-all flex items-center justify-center space-x-1.5 space-x-reverse ${
+                tenantSlug === 'rokad-girls'
+                  ? 'bg-girl text-white shadow-sm'
+                  : 'text-gray-600 hover:text-ink-dark'
+              }`}
+            >
+              <span>👧</span>
+              <span>هنرستان دخترانه</span>
+            </button>
+          </div>
+        </div>
       </CardHeader>
 
       <CardContent>
@@ -107,8 +145,8 @@ export const LoginPage: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="شناسه مدرسه (Tenant Slug)"
-            placeholder="مثال: rokad-boys"
+            label="شناسه شعبه هنرستان (Tenant Slug)"
+            placeholder="مثال: rokad-boys یا rokad-girls"
             value={tenantSlug}
             onChange={(e) => setTenantSlug(e.target.value)}
             required
@@ -132,32 +170,23 @@ export const LoginPage: React.FC = () => {
           />
 
           <Button type="submit" variant="primary" className="w-full h-11 text-base mt-2" isLoading={isLoading}>
-            ورود به سامانه
+            ورود به سامانه هنرستان
           </Button>
         </form>
 
         {/* Demo Fast Login Presets */}
         <div className="mt-6 pt-4 border-t border-gray-100">
           <p className="text-[11px] font-bold text-gray-500 mb-2 text-right">
-            ورود سریع با نقش‌های پیش‌فرض دمو:
+            ورود سریع با نقش‌های پیش‌فرض هنرستان رُکاد:
           </p>
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <button
-              type="button"
-              onClick={() => selectPreset('platform-root', '09120000000', 'RokadAdminPass2026!')}
-              className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
-            >
-              <div className="font-bold text-ink-dark">👑 سوپرادمین</div>
-              <div className="text-[10px] text-gray-500 font-mono">09120000000</div>
-            </button>
-
             <button
               type="button"
               onClick={() => selectPreset('rokad-boys', '09121111111', 'RokadBoysPass2026!')}
               className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
             >
               <div className="font-bold text-ink-dark">👦 مدیر پسرانه</div>
-              <div className="text-[10px] text-gray-500 font-mono">09121111111</div>
+              <div className="text-[10px] text-gray-500">09121111111</div>
             </button>
 
             <button
@@ -166,7 +195,7 @@ export const LoginPage: React.FC = () => {
               className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
             >
               <div className="font-bold text-ink-dark">👧 مدیر دخترانه</div>
-              <div className="text-[10px] text-gray-500 font-mono">09121111112</div>
+              <div className="text-[10px] text-gray-500">09121111112</div>
             </button>
 
             <button
@@ -174,8 +203,8 @@ export const LoginPage: React.FC = () => {
               onClick={() => selectPreset('rokad-boys', '09123000001', 'RokadPass2026!')}
               className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
             >
-              <div className="font-bold text-ink-dark">👨‍🏫 معلم نمونه</div>
-              <div className="text-[10px] text-gray-500 font-mono">09123000001</div>
+              <div className="font-bold text-ink-dark">👨‍🏫 هنرآموز / معلم</div>
+              <div className="text-[10px] text-gray-500">09123000001</div>
             </button>
 
             <button
@@ -183,8 +212,26 @@ export const LoginPage: React.FC = () => {
               onClick={() => selectPreset('rokad-boys', '09124000001', 'RokadPass2026!')}
               className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
             >
-              <div className="font-bold text-ink-dark">🎓 دانش‌آموز</div>
-              <div className="text-[10px] text-gray-500 font-mono">09124000001</div>
+              <div className="font-bold text-ink-dark">🎓 هنرجوی پسرانه</div>
+              <div className="text-[10px] text-gray-500">09124000001</div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => selectPreset('rokad-girls', '09124000002', 'RokadPass2026!')}
+              className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
+            >
+              <div className="font-bold text-ink-dark">👩‍🎓 هنرجوی دخترانه</div>
+              <div className="text-[10px] text-gray-500">09124000002</div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => selectPreset('platform-root', '09120000000', 'RokadAdminPass2026!')}
+              className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
+            >
+              <div className="font-bold text-ink-dark">👑 سوپرادمین کلان</div>
+              <div className="text-[10px] text-gray-500">09120000000</div>
             </button>
 
             <button
@@ -192,8 +239,8 @@ export const LoginPage: React.FC = () => {
               onClick={() => selectPreset('rokad-boys', '09125000001', 'RokadPass2026!')}
               className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors col-span-2"
             >
-              <div className="font-bold text-ink-dark">👨‍👩‍👦 اولیاء دانش‌آموز</div>
-              <div className="text-[10px] text-gray-500 font-mono">09125000001 • رمز: RokadPass2026!</div>
+              <div className="font-bold text-ink-dark">👨‍👩‍👦 اولیاء هنرجو</div>
+              <div className="text-[10px] text-gray-500">09125000001 • رمز: RokadPass2026!</div>
             </button>
           </div>
         </div>

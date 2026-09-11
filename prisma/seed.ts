@@ -203,14 +203,14 @@ async function main() {
   const boysTenant = await prisma.tenant.upsert({
     where: { slug: 'rokad-boys' },
     update: {
-      name: 'مجموعه مدارس هوشمند رُکاد — شعبه پسرانه',
+      name: 'هنرستان فنی و حرفه‌ای پسرانه رُکاد',
       type: 'SCHOOL',
       theme: 'MALE',
       subdomain: 'boys',
       status: 'ACTIVE',
     },
     create: {
-      name: 'مجموعه مدارس هوشمند رُکاد — شعبه پسرانه',
+      name: 'هنرستان فنی و حرفه‌ای پسرانه رُکاد',
       slug: 'rokad-boys',
       subdomain: 'boys',
       type: 'SCHOOL',
@@ -547,14 +547,14 @@ async function main() {
   const girlsTenant = await prisma.tenant.upsert({
     where: { slug: 'rokad-girls' },
     update: {
-      name: 'مجموعه مدارس هوشمند رُکاد — شعبه دخترانه',
+      name: 'هنرستان فنی و حرفه‌ای دخترانه رُکاد',
       type: 'SCHOOL',
       theme: 'FEMALE',
       subdomain: 'girls',
       status: 'ACTIVE',
     },
     create: {
-      name: 'مجموعه مدارس هوشمند رُکاد — شعبه دخترانه',
+      name: 'هنرستان فنی و حرفه‌ای دخترانه رُکاد',
       slug: 'rokad-girls',
       subdomain: 'girls',
       type: 'SCHOOL',

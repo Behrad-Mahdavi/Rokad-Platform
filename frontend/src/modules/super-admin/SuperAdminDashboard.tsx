@@ -108,12 +108,12 @@ export const SuperAdminDashboard: React.FC = () => {
         <div>
           <div className="flex items-center space-x-2 space-x-reverse mb-1">
             <span className="text-xl font-bold text-ink-darker">
-              مرکز فرماندهی کلان پلتفرم رُکاد (SaaS Control Plane) 👑
+              مرکز فرماندهی کلان هنرستان‌های رُکاد (Control Plane) 👑
             </span>
             <Badge variant="default">SuperAdmin Root</Badge>
           </div>
           <p className="text-xs text-gray-500">
-            مدیریت زیرساخت توزیع‌شده، تننت‌های آموزشی، سهمیه‌ها و نظارت بر کل جریان درآمد ماهیانه
+            نظارت عالی بر شعب هنرستان دخترانه و پسرانه، ساختار رشته‌های فنی، کارگاه‌ها، سهمیه‌ها و تراکنش‌های مالی
           </p>
         </div>
 
@@ -132,7 +132,7 @@ export const SuperAdminDashboard: React.FC = () => {
             onClick={() => window.location.href = '/app/super-admin/tenants'}
             className="text-xs flex items-center space-x-1 space-x-reverse"
           >
-            <span>راه‌اندازی مدرسه</span>
+            <span>مدیریت شعب هنرستان</span>
             <ArrowUpRight className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -143,28 +143,28 @@ export const SuperAdminDashboard: React.FC = () => {
         {/* Card 1: Total Tenants */}
         <Card className="p-5 border hover:border-primary transition-all">
           <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
-            <span>کل مراکز آموزشی</span>
+            <span>شعب فعال هنرستان</span>
             <Building2 className="h-4 w-4 text-primary" />
           </div>
           <div className="text-2xl font-extrabold text-ink-darker">
-            {metrics?.tenants?.total || 125}
+            ۲ شعبه تخصصی
           </div>
           <p className="text-[11px] text-emerald-600 font-medium mt-1">
-            {metrics?.tenants?.active || 120} مدرسه برخط و فعال
+            هنرستان پسرانه و دخترانه رُکاد برخط
           </p>
         </Card>
 
         {/* Card 2: Total Users */}
         <Card className="p-5 border hover:border-blue-500 transition-all">
           <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
-            <span>کل کاربران پلتفرم</span>
+            <span>هنرجویان و پرسنل فعال</span>
             <Users className="h-4 w-4 text-blue-500" />
           </div>
           <div className="text-2xl font-extrabold text-ink-darker">
-            {((metrics?.users?.total || 45000)).toLocaleString('fa-IR')}
+            {((metrics?.users?.total || 650)).toLocaleString('fa-IR')} نفر
           </div>
           <p className="text-[11px] text-gray-500 font-medium mt-1">
-            ۳۸,۰۰۰ دانش‌آموز • ۷,۰۰۰ دبیر و کادر
+            ۵۲۰ هنرجو • ۱۳۰ هنرآموز و کادر اجرایی
           </p>
         </Card>
 
@@ -235,7 +235,7 @@ export const SuperAdminDashboard: React.FC = () => {
               <h3 className="font-bold text-sm text-ink-darker">ورود نیابتی سریع (Impersonate)</h3>
             </div>
             <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-              ورود با یک کلیک به عنوان مدیر مدرسه جهت پشتیبانی فنی فوری بدون نیاز به رمز:
+              ورود با یک کلیک به عنوان مدیریت شعب هنرستان رُکاد جهت پشتیبانی فنی و نظارت مستقیم:
             </p>
 
             <div className="space-y-2">
@@ -265,7 +265,7 @@ export const SuperAdminDashboard: React.FC = () => {
             href="/app/super-admin/tenants"
             className="block text-center text-xs text-primary font-bold hover:underline pt-4 border-t border-gray-100"
           >
-            مشاهده تمام مدارس و مراکز ←
+            مدیریت کامل شعب هنرستان ←
           </a>
         </Card>
       </div>

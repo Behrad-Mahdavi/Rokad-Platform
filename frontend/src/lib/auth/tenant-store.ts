@@ -6,33 +6,51 @@ interface TenantState {
   theme: BrandThemeKey;
   setCurrentTenant: (tenant: TenantInfo) => void;
   setTheme: (theme: BrandThemeKey) => void;
+  switchBranch: (branch: 'boys' | 'girls') => void;
   clearTenant: () => void;
 }
 
-// Default initial tenant info
-const defaultTenant: TenantInfo = {
-  id: '',
-  name: 'مجتمع آموزشی رُکاد',
-  slug: 'rokad-boys',
-  type: 'SCHOOL',
-  theme: 'ecosystem',
+export const ROKAD_BRANCHES: Record<'boys' | 'girls', TenantInfo> = {
+  boys: {
+    id: 'boys-tenant-id',
+    name: 'هنرستان فنی و حرفه‌ای پسرانه رُکاد',
+    slug: 'rokad-boys',
+    type: 'SCHOOL',
+    theme: 'male',
+  },
+  girls: {
+    id: 'girls-tenant-id',
+    name: 'هنرستان فنی و حرفه‌ای دخترانه رُکاد',
+    slug: 'rokad-girls',
+    type: 'SCHOOL',
+    theme: 'female',
+  },
 };
 
 export const useTenantStore = create<TenantState>((set) => ({
-  currentTenant: defaultTenant,
-  theme: 'ecosystem',
+  currentTenant: ROKAD_BRANCHES.boys,
+  theme: 'male',
 
   setCurrentTenant: (tenant) => {
-    const rawTheme = (tenant.theme || 'ecosystem').toLowerCase() as BrandThemeKey;
+    const rawTheme = (tenant.theme || (tenant.slug === 'rokad-girls' ? 'female' : 'male')).toLowerCase() as BrandThemeKey;
     set({
       currentTenant: tenant,
       theme: ['ecosystem', 'male', 'female', 'college', 'club'].includes(rawTheme)
         ? rawTheme
-        : 'ecosystem',
+        : 'male',
+    });
+  },
+
+  switchBranch: (branch: 'boys' | 'girls') => {
+    const target = ROKAD_BRANCHES[branch];
+    set({
+      currentTenant: target,
+      theme: target.theme as BrandThemeKey,
     });
   },
 
   setTheme: (theme) => set({ theme }),
 
-  clearTenant: () => set({ currentTenant: null, theme: 'ecosystem' }),
+  clearTenant: () => set({ currentTenant: ROKAD_BRANCHES.boys, theme: 'male' }),
 }));
+

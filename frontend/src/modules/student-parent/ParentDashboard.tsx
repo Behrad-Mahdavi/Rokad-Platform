@@ -30,7 +30,7 @@ export const ParentDashboard: React.FC = () => {
             <Badge variant="female">فرزند: امیرعلی صادقی</Badge>
           </div>
           <p className="text-xs text-gray-500">
-            پایش وضعیت تحصیلی، انضباطی، مالی و ارتباط مستقیم با مشاوران مدرسه
+            پایش وضعیت تحصیلی، کارگاهی، مالی و ارتباط مستقیم با هنرآموزان و مشاوران هنرستان
           </p>
         </div>
 

@@ -33,7 +33,7 @@ interface NotificationItem {
 
 export const Header: React.FC = () => {
   const { user, logout } = useAuthStore();
-  const { currentTenant } = useTenantStore();
+  const { currentTenant, switchBranch } = useTenantStore();
   const { toggle: toggleSidebar } = useSidebarStore();
 
   // Notification state
@@ -82,15 +82,15 @@ export const Header: React.FC = () => {
   const getRoleLabel = (role?: string) => {
     switch (role) {
       case 'SUPER_ADMIN':
-        return 'سوپرادمین سامانه';
+        return 'سوپرادمین کلان';
       case 'SCHOOL_ADMIN':
-        return 'مدیر مدرسه';
+        return 'مدیریت هنرستان';
       case 'TEACHER':
-        return 'معلم / کادر آموزشی';
+        return 'هنرآموز / دبیر تخصصی';
       case 'STUDENT':
-        return 'دانش‌آموز';
+        return 'هنرجو';
       case 'PARENT':
-        return 'ولی دانش‌آموز';
+        return 'ولی هنرجو';
       default:
         return 'کاربر سامانه';
     }
@@ -127,18 +127,50 @@ export const Header: React.FC = () => {
           <School className="h-5 w-5" />
         </div>
         <div className="min-w-0">
-          <h1 className="font-bold text-xs sm:text-sm text-ink-darker leading-tight truncate max-w-[150px] sm:max-w-xs md:max-w-md">
-            {currentTenant?.name || 'پلتفرم جامع مدارس رُکاد'}
+          <h1 className="font-bold text-xs sm:text-sm text-ink-darker leading-tight truncate max-w-[140px] sm:max-w-xs md:max-w-md">
+            {currentTenant?.name || 'هنرستان فنی و حرفه‌ای رُکاد'}
           </h1>
           <div className="hidden sm:flex items-center space-x-2 space-x-reverse mt-0.5">
             <span className="text-[11px] text-gray-500 font-mono truncate">
-              {currentTenant?.slug || 'rokad-platform'}
+              {currentTenant?.slug || 'rokad-boys'}
             </span>
-            <Badge variant="default" className="text-[10px] py-0 px-1.5 h-4">
-              نسخه ۱.۰
+            <Badge variant={currentTenant?.slug === 'rokad-girls' ? 'female' : 'male'} className="text-[10px] py-0 px-1.5 h-4">
+              {currentTenant?.slug === 'rokad-girls' ? 'شعبه دخترانه' : 'شعبه پسرانه'}
             </Badge>
           </div>
         </div>
+      </div>
+
+      {/* Center/Quick Switcher: Boys vs Girls Vocational School */}
+      <div className="flex items-center bg-gray-100/90 p-1 rounded-xl border border-gray-200 text-xs shrink-0">
+        <button
+          type="button"
+          onClick={() => switchBranch('boys')}
+          title="سوئیچ به هنرستان پسرانه رُکاد"
+          className={`px-2 sm:px-3 py-1 rounded-lg font-bold transition-all flex items-center space-x-1 space-x-reverse ${
+            currentTenant?.slug === 'rokad-boys'
+              ? 'bg-sec text-white shadow-sm'
+              : 'text-gray-600 hover:text-ink-dark'
+          }`}
+        >
+          <span>👦</span>
+          <span className="hidden sm:inline">هنرستان</span>
+          <span>پسرانه</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => switchBranch('girls')}
+          title="سوئیچ به هنرستان دخترانه رُکاد"
+          className={`px-2 sm:px-3 py-1 rounded-lg font-bold transition-all flex items-center space-x-1 space-x-reverse ${
+            currentTenant?.slug === 'rokad-girls'
+              ? 'bg-girl text-white shadow-sm'
+              : 'text-gray-600 hover:text-ink-dark'
+          }`}
+        >
+          <span>👧</span>
+          <span className="hidden sm:inline">هنرستان</span>
+          <span>دخترانه</span>
+        </button>
       </div>
 
       {/* Right (in RTL: Left) - Notifications, User & Actions */}
