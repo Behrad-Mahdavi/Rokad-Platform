@@ -146,7 +146,7 @@ export const SuperAdminDashboard: React.FC = () => {
             <span>کل مراکز آموزشی</span>
             <Building2 className="h-4 w-4 text-primary" />
           </div>
-          <div className="text-2xl font-extrabold text-ink-darker font-mono">
+          <div className="text-2xl font-extrabold text-ink-darker">
             {metrics?.tenants?.total || 125}
           </div>
           <p className="text-[11px] text-emerald-600 font-medium mt-1">
@@ -160,7 +160,7 @@ export const SuperAdminDashboard: React.FC = () => {
             <span>کل کاربران پلتفرم</span>
             <Users className="h-4 w-4 text-blue-500" />
           </div>
-          <div className="text-2xl font-extrabold text-ink-darker font-mono">
+          <div className="text-2xl font-extrabold text-ink-darker">
             {((metrics?.users?.total || 45000)).toLocaleString('fa-IR')}
           </div>
           <p className="text-[11px] text-gray-500 font-medium mt-1">
@@ -174,7 +174,7 @@ export const SuperAdminDashboard: React.FC = () => {
             <span>درآمد ماهانه پلتفرم (MRR)</span>
             <CreditCard className="h-4 w-4 text-amber-500" />
           </div>
-          <div className="text-2xl font-extrabold text-ink-darker font-mono">
+          <div className="text-2xl font-extrabold text-ink-darker">
             ۴۸۰ <span className="text-xs font-normal text-gray-500">میلیون تومان</span>
           </div>
           <p className="text-[11px] text-emerald-600 font-medium mt-1">
@@ -188,7 +188,7 @@ export const SuperAdminDashboard: React.FC = () => {
             <span>فضای ابری مصرف‌شده</span>
             <HardDrive className="h-4 w-4 text-purple-500" />
           </div>
-          <div className="text-2xl font-extrabold text-ink-darker font-mono">
+          <div className="text-2xl font-extrabold text-ink-darker">
             ۱.۲ <span className="text-xs font-normal text-gray-500">ترابایت</span>
           </div>
           <p className="text-[11px] text-gray-500 font-medium mt-1">

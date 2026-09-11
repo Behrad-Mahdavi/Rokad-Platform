@@ -116,7 +116,7 @@ export const SchoolAdminDashboard: React.FC = () => {
             <span>دانش‌آموزان فعال</span>
             <GraduationCap className="h-4 w-4 text-primary" />
           </div>
-          <div className="text-2xl font-extrabold text-ink-darker font-mono">
+          <div className="text-2xl font-extrabold text-ink-darker">
             {stats?.quotas?.students?.currentUsage || 320}
             <span className="text-xs font-normal text-gray-500 mr-1">/ {stats?.quotas?.students?.maxAllowed || 400}</span>
           </div>
@@ -131,7 +131,7 @@ export const SchoolAdminDashboard: React.FC = () => {
             <span>کادر و دبیران</span>
             <Users className="h-4 w-4 text-blue-500" />
           </div>
-          <div className="text-2xl font-extrabold text-ink-darker font-mono">
+          <div className="text-2xl font-extrabold text-ink-darker">
             {stats?.quotas?.teachers?.currentUsage || 28}
             <span className="text-xs font-normal text-gray-500 mr-1">/ {stats?.quotas?.teachers?.maxAllowed || 40}</span>
           </div>
@@ -146,7 +146,7 @@ export const SchoolAdminDashboard: React.FC = () => {
             <span>وصول شهریه ترم جاری</span>
             <Receipt className="h-4 w-4 text-amber-500" />
           </div>
-          <div className="text-2xl font-extrabold text-ink-darker font-mono">
+          <div className="text-2xl font-extrabold text-ink-darker">
             ۳۹۰ <span className="text-xs font-normal text-gray-500">میلیون تومان</span>
           </div>
           <div className="w-full bg-gray-100 h-1.5 rounded-full mt-3 overflow-hidden">
@@ -160,7 +160,7 @@ export const SchoolAdminDashboard: React.FC = () => {
             <span>میانگین حضور هفته</span>
             <CalendarCheck className="h-4 w-4 text-emerald-500" />
           </div>
-          <div className="text-2xl font-extrabold text-emerald-700 font-mono">
+          <div className="text-2xl font-extrabold text-emerald-700">
             ۹۷.۴٪
           </div>
           <div className="w-full bg-gray-100 h-1.5 rounded-full mt-3 overflow-hidden">

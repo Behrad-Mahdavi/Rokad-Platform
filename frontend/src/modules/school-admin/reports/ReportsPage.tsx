@@ -82,7 +82,7 @@ export const ReportsPage: React.FC = () => {
             <div className="text-xs text-gray-500 font-medium">درصد وصول شهریه ترم جاری</div>
             <Receipt className="h-5 w-5 text-amber-500" />
           </div>
-          <div className="text-3xl font-extrabold text-ink-darker font-mono">۷۸٪</div>
+          <div className="text-3xl font-extrabold text-ink-darker">۷۸٪</div>
           <div className="w-full bg-gray-100 h-2 rounded-full mt-3 overflow-hidden">
             <div className="bg-amber-500 h-2 rounded-full" style={{ width: '78%' }} />
           </div>
@@ -94,7 +94,7 @@ export const ReportsPage: React.FC = () => {
             <div className="text-xs text-gray-500 font-medium">میانگین حضور دانش‌آموزان</div>
             <CalendarCheck className="h-5 w-5 text-primary" />
           </div>
-          <div className="text-3xl font-extrabold text-emerald-700 font-mono">۹۶.۴٪</div>
+          <div className="text-3xl font-extrabold text-emerald-700">۹۶.۴٪</div>
           <div className="w-full bg-gray-100 h-2 rounded-full mt-3 overflow-hidden">
             <div className="bg-primary h-2 rounded-full" style={{ width: '96.4%' }} />
           </div>
@@ -106,7 +106,7 @@ export const ReportsPage: React.FC = () => {
             <div className="text-xs text-gray-500 font-medium">میانگین معدل مدرسه</div>
             <TrendingUp className="h-5 w-5 text-blue-500" />
           </div>
-          <div className="text-3xl font-extrabold text-primary font-mono">۱۸.۷۵</div>
+          <div className="text-3xl font-extrabold text-primary">۱۸.۷۵</div>
           <div className="w-full bg-gray-100 h-2 rounded-full mt-3 overflow-hidden">
             <div className="bg-blue-500 h-2 rounded-full" style={{ width: '93.7%' }} />
           </div>

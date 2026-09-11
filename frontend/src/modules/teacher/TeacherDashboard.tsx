@@ -74,7 +74,7 @@ export const TeacherDashboard: React.FC = () => {
             <span>کلاس‌های امروز</span>
             <CalendarDays className="h-4 w-4 text-primary" />
           </div>
-          <div className="text-2xl font-extrabold text-ink-darker font-mono">۳ جلسه</div>
+          <div className="text-2xl font-extrabold text-ink-darker">۳ جلسه</div>
           <p className="text-[11px] text-primary font-medium mt-1">جلسه فعال: کلاس ۱۰۲</p>
         </Card>
 
@@ -83,7 +83,7 @@ export const TeacherDashboard: React.FC = () => {
             <span>تکالیف در انتظار تصحیح</span>
             <FileCheck className="h-4 w-4 text-amber-500" />
           </div>
-          <div className="text-2xl font-extrabold text-ink-darker font-mono">۱۲ ارسال</div>
+          <div className="text-2xl font-extrabold text-ink-darker">۱۲ ارسال</div>
           <p className="text-[11px] text-amber-600 font-medium mt-1">۳ تکلیف مهلت امروز</p>
         </Card>
 
@@ -92,7 +92,7 @@ export const TeacherDashboard: React.FC = () => {
             <span>آزمون آنلاین فعال</span>
             <HelpCircle className="h-4 w-4 text-blue-500" />
           </div>
-          <div className="text-2xl font-extrabold text-ink-darker font-mono">۱ آزمون</div>
+          <div className="text-2xl font-extrabold text-ink-darker">۱ آزمون</div>
           <p className="text-[11px] text-blue-600 font-medium mt-1">۲۸ شرکت‌کننده برخط</p>
         </Card>
 
@@ -101,7 +101,7 @@ export const TeacherDashboard: React.FC = () => {
             <span>میانگین نمرات کلاس‌ها</span>
             <Award className="h-4 w-4 text-purple-500" />
           </div>
-          <div className="text-2xl font-extrabold text-purple-700 font-mono">۱۹.۰۵</div>
+          <div className="text-2xl font-extrabold text-purple-700">۱۹.۰۵</div>
           <p className="text-[11px] text-emerald-600 font-medium mt-1">رشد ممتاز آموزشی</p>
         </Card>
       </div>

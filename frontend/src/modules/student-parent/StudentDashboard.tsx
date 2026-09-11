@@ -81,7 +81,7 @@ export const StudentDashboard: React.FC = () => {
             <span>معدل کل نیم‌سال</span>
             <TrendingUp className="h-4 w-4 text-primary" />
           </div>
-          <div className="text-3xl font-extrabold text-primary font-mono">۱۹.۳۱</div>
+          <div className="text-3xl font-extrabold text-primary">۱۹.۳۱</div>
           <p className="text-[11px] text-emerald-600 font-medium mt-1">رتبه ۲ در پایه دهم</p>
         </Card>
 
@@ -90,7 +90,7 @@ export const StudentDashboard: React.FC = () => {
             <span>تکالیف نیازمند تحویل</span>
             <FileCheck className="h-4 w-4 text-amber-500" />
           </div>
-          <div className="text-3xl font-extrabold text-ink-darker font-mono">۲ تکلیف</div>
+          <div className="text-3xl font-extrabold text-ink-darker">۲ تکلیف</div>
           <p className="text-[11px] text-amber-600 font-medium mt-1">مهلت نزدیک‌ترین: فردا</p>
         </Card>
 
@@ -99,7 +99,7 @@ export const StudentDashboard: React.FC = () => {
             <span>آزمون‌های آنلاین فعال</span>
             <HelpCircle className="h-4 w-4 text-blue-500" />
           </div>
-          <div className="text-3xl font-extrabold text-ink-darker font-mono">۱ آزمون</div>
+          <div className="text-3xl font-extrabold text-ink-darker">۱ آزمون</div>
           <p className="text-[11px] text-blue-600 font-medium mt-1">آماده برگزاری آنلاین</p>
         </Card>
 
@@ -108,7 +108,7 @@ export const StudentDashboard: React.FC = () => {
             <span>نمره انضباط</span>
             <Award className="h-4 w-4 text-purple-500" />
           </div>
-          <div className="text-3xl font-extrabold text-emerald-600 font-mono">۲۰.۰۰</div>
+          <div className="text-3xl font-extrabold text-emerald-600">۲۰.۰۰</div>
           <p className="text-[11px] text-gray-500 font-medium mt-1">بدون تاخیر یا غیبت</p>
         </Card>
       </div>
