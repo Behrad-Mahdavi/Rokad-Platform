@@ -104,7 +104,7 @@ export const LoginPage: React.FC = () => {
               onClick={() => {
                 setTenantSlug('rokad-boys');
                 setIdentifier('09121111111');
-                setPassword('RokadBoysPass2026!');
+                setPassword('Rokad1404!');
               }}
               className={`py-2 rounded-lg font-bold transition-all flex items-center justify-center space-x-1.5 space-x-reverse ${
                 tenantSlug === 'rokad-boys'
@@ -120,7 +120,7 @@ export const LoginPage: React.FC = () => {
               onClick={() => {
                 setTenantSlug('rokad-girls');
                 setIdentifier('09121111112');
-                setPassword('RokadGirlsPass2026!');
+                setPassword('Rokad1404!');
               }}
               className={`py-2 rounded-lg font-bold transition-all flex items-center justify-center space-x-1.5 space-x-reverse ${
                 tenantSlug === 'rokad-girls'
