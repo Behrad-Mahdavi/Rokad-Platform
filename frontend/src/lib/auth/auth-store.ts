@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { UserProfile, UserRole } from '../../types/auth';
 
 interface AuthState {
@@ -14,66 +15,70 @@ interface AuthState {
   hasPermission: (permission: string) => boolean;
 }
 
-// Retrieve saved refresh token from sessionStorage on load (safer than localStorage)
-const initialRefreshToken = typeof window !== 'undefined'
-  ? sessionStorage.getItem('rokad_rt')
-  : null;
-
-export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  accessToken: null,
-  refreshToken: initialRefreshToken,
-  isAuthenticated: false,
-
-  login: (user, accessToken, refreshToken) => {
-    if (refreshToken && typeof window !== 'undefined') {
-      sessionStorage.setItem('rokad_rt', refreshToken);
-    }
-    set({
-      user,
-      accessToken,
-      refreshToken: refreshToken || null,
-      isAuthenticated: true,
-    });
-  },
-
-  setTokens: (accessToken, refreshToken) => {
-    if (refreshToken && typeof window !== 'undefined') {
-      sessionStorage.setItem('rokad_rt', refreshToken);
-    }
-    set({
-      accessToken,
-      refreshToken: refreshToken || get().refreshToken,
-    });
-  },
-
-  setUser: (user) => set({ user }),
-
-  logout: () => {
-    if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('rokad_rt');
-    }
-    set({
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
       user: null,
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
-    });
-  },
 
-  hasRole: (roles) => {
-    const user = get().user;
-    if (!user) return false;
-    if (user.isPlatformAdmin) return true;
+      login: (user, accessToken, refreshToken) => {
+        if (refreshToken && typeof window !== 'undefined') {
+          sessionStorage.setItem('rokad_rt', refreshToken);
+        }
+        set({
+          user,
+          accessToken,
+          refreshToken: refreshToken || null,
+          isAuthenticated: true,
+        });
+      },
 
-    const allowedRoles = Array.isArray(roles) ? roles : [roles];
-    return allowedRoles.includes(user.role);
-  },
+      setTokens: (accessToken, refreshToken) => {
+        if (refreshToken && typeof window !== 'undefined') {
+          sessionStorage.setItem('rokad_rt', refreshToken);
+        }
+        set({
+          accessToken,
+          refreshToken: refreshToken || get().refreshToken,
+        });
+      },
 
-  hasPermission: (permission) => {
-    const user = get().user;
-    if (!user) return false;
-    if (user.role === 'SUPER_ADMIN' || user.isPlatformAdmin) return true;
-    return user.permissions?.includes(permission) || false;
-  },
-}));
+      setUser: (user) => set({ user }),
+
+      logout: () => {
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('rokad_rt');
+          localStorage.removeItem('rokad_auth_session');
+        }
+        set({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          isAuthenticated: false,
+        });
+      },
+
+      hasRole: (roles) => {
+        const user = get().user;
+        if (!user) return false;
+        if (user.isPlatformAdmin) return true;
+
+        const allowedRoles = Array.isArray(roles) ? roles : [roles];
+        return allowedRoles.includes(user.role);
+      },
+
+      hasPermission: (permission) => {
+        const user = get().user;
+        if (!user) return false;
+        if (user.role === 'SUPER_ADMIN' || user.isPlatformAdmin) return true;
+        return user.permissions?.includes(permission) || false;
+      },
+    }),
+    {
+      name: 'rokad_auth_session',
+      storage: createJSONStorage(() => localStorage),
+    },
+  ),
+);

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../lib/auth/auth-store';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 
 export const ParentDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
 
   return (
@@ -38,7 +40,7 @@ export const ParentDashboard: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.location.href = '/app/chat'}
+            onClick={() => navigate('/app/chat')}
             className="text-xs flex items-center space-x-1 space-x-reverse"
           >
             <MessageSquare className="h-3.5 w-3.5" />
@@ -47,7 +49,7 @@ export const ParentDashboard: React.FC = () => {
           <Button
             variant="primary"
             size="sm"
-            onClick={() => window.location.href = '/app/parent/fees'}
+            onClick={() => navigate('/app/parent/fees')}
             className="text-xs flex items-center space-x-1 space-x-reverse"
           >
             <span>امور شهریه</span>
@@ -74,7 +76,7 @@ export const ParentDashboard: React.FC = () => {
           <Button
             variant="primary"
             size="sm"
-            onClick={() => window.location.href = '/app/parent/fees'}
+            onClick={() => navigate('/app/parent/fees')}
             className="w-full mt-4 text-xs bg-emerald-600 hover:bg-emerald-700"
           >
             پرداخت آنلاین با درگاه زرین‌پال
@@ -97,7 +99,7 @@ export const ParentDashboard: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.location.href = '/app/parent/reports'}
+            onClick={() => navigate('/app/parent/reports')}
             className="w-full mt-4 text-xs"
           >
             مشاهده گزارش تحصیلی
@@ -120,7 +122,7 @@ export const ParentDashboard: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.location.href = '/app/student/grades'}
+            onClick={() => navigate('/app/student/grades')}
             className="w-full mt-4 text-xs"
           >
             دانلود کارنامه ترمیک

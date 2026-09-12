@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../lib/auth/auth-store';
 import { apiClient } from '../../lib/api/client';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
@@ -43,6 +44,7 @@ const DAY_NAMES: Record<string, string> = {
 };
 
 export const StudentDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const [scheduleData, setScheduleData] = useState<{ classroom: any; schedules: any[] } | null>(null);
   const [isScheduleLoading, setIsScheduleLoading] = useState(true);
@@ -108,7 +110,7 @@ export const StudentDashboard: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.location.href = '/app/student/schedule'}
+            onClick={() => navigate('/app/student/schedule')}
             className="text-xs flex items-center space-x-1 space-x-reverse"
           >
             <Calendar className="h-3.5 w-3.5" />
@@ -117,7 +119,7 @@ export const StudentDashboard: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.location.href = '/app/student/grades'}
+            onClick={() => navigate('/app/student/grades')}
             className="text-xs"
           >
             مشاهده کارنامه
@@ -125,7 +127,7 @@ export const StudentDashboard: React.FC = () => {
           <Button
             variant="primary"
             size="sm"
-            onClick={() => window.location.href = '/app/student/exams'}
+            onClick={() => navigate('/app/student/exams')}
             className="text-xs flex items-center space-x-1 space-x-reverse"
           >
             <span>آزمون‌های من</span>
@@ -198,7 +200,7 @@ export const StudentDashboard: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => (window.location.href = '/app/student/schedule')}
+            onClick={() => navigate('/app/student/schedule')}
             className="text-xs self-start sm:self-auto"
           >
             <span>مشاهده کل هفته</span>
@@ -272,7 +274,7 @@ export const StudentDashboard: React.FC = () => {
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => window.location.href = '/app/student/homework'}
+                  onClick={() => navigate('/app/student/homework')}
                   className="text-xs flex items-center space-x-1 space-x-reverse"
                 >
                   <Send className="h-3 w-3" />
@@ -306,7 +308,7 @@ export const StudentDashboard: React.FC = () => {
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => window.location.href = '/app/student/exams'}
+                  onClick={() => navigate('/app/student/exams')}
                   className="text-xs flex items-center space-x-1.5 space-x-reverse"
                 >
                   <Play className="h-3 w-3" />
