@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { JALALI_DATE_METADATA_KEY } from '../decorators/jalali-transform.decorator';
+import { gregorianToJalali } from '../utils/jalali.util';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -17,6 +19,44 @@ export interface ApiResponse<T> {
     tenantId?: string;
     [key: string]: any;
   };
+}
+
+/**
+ * پردازش بازگشتی داده‌ها جهت غنی‌سازی فیلدهای تاریخ با معادل شمسی جلالی
+ * بر اساس فیلدهای نشانه‌گذاری شده با دکوراتور @JalaliDate()
+ */
+function enrichDataWithJalali(data: any): any {
+  if (!data || typeof data !== 'object') {
+    return data;
+  }
+
+  if (data instanceof Date) {
+    return data;
+  }
+
+  if (Array.isArray(data)) {
+    return data.map((item) => enrichDataWithJalali(item));
+  }
+
+  const constructor = data.constructor;
+  const markedFields: (string | symbol)[] = constructor
+    ? Reflect.getMetadata(JALALI_DATE_METADATA_KEY, constructor) || []
+    : [];
+
+  const result: any = Array.isArray(data) ? [] : { ...data };
+
+  for (const key of Object.keys(data)) {
+    const val = data[key];
+    if (markedFields.includes(key) && val) {
+      result[key] = gregorianToJalali(val);
+    } else if (val && typeof val === 'object') {
+      result[key] = enrichDataWithJalali(val);
+    } else {
+      result[key] = val;
+    }
+  }
+
+  return result;
 }
 
 @Injectable()
@@ -34,9 +74,12 @@ export class TransformInterceptor<T>
 
     return next.handle().pipe(
       map((res) => {
-        // If response already matches standard structure, return it
+        // If response already matches standard structure, enrich data and return
         if (res && typeof res === 'object' && 'success' in res && 'data' in res) {
-          return res;
+          return {
+            ...res,
+            data: enrichDataWithJalali(res.data),
+          };
         }
 
         let data = res;
@@ -47,6 +90,7 @@ export class TransformInterceptor<T>
           data = res.data;
         }
 
+        data = enrichDataWithJalali(data);
         const tenantId = request?.tenant?.id || request?.tenantId;
 
         return {

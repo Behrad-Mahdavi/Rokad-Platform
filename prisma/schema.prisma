@@ -51,6 +51,11 @@ enum Gender {
   OTHER
 }
 
+enum CalendarSystem {
+  JALALI
+  GREGORIAN
+}
+
 enum EnrollmentStatus {
   ACTIVE
   TRANSFERRED
@@ -223,6 +228,7 @@ model Tenant {
   customDomain String?      @unique
   theme        BrandTheme   @default(ECOSYSTEM)
   status       TenantStatus @default(ACTIVE)
+  calendarSystem CalendarSystem @default(JALALI)
   logoUrl      String?
   phone        String?
   email        String?
@@ -273,6 +279,7 @@ model Tenant {
   parentVisitSlots    ParentVisitSlot[]
   parentVisitBookings ParentVisitBooking[]
   disciplinaryMatters DisciplinaryMatter[]
+  tenantHolidays      TenantHoliday[]
 
   // Phase 4 LMS & Exam Relations
   lessonPlans         LessonPlan[]
@@ -1037,6 +1044,27 @@ model SchoolEvent {
   updatedAt      DateTime       @updatedAt
 
   @@index([tenantId, startDate, endDate])
+}
+
+model OfficialHoliday {
+  id        String   @id @default(uuid())
+  date      DateTime @unique @db.Date
+  titleFa   String
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}
+
+model TenantHoliday {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  titleFa   String
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, date])
+  @@index([tenantId, date])
 }
 
 model Poll {
