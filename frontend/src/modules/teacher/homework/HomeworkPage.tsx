@@ -22,6 +22,7 @@ import {
   FileText,
   MessageSquare,
   Award,
+  AlertCircle,
 } from 'lucide-react';
 
 export const HomeworkPage: React.FC = () => {
@@ -58,23 +59,34 @@ export const HomeworkPage: React.FC = () => {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const [hwRes, classRes, lessonRes] = await Promise.all([
+      const [hwRes, classRes, lessonRes] = await Promise.allSettled([
         apiClient.get('/homework'),
         apiClient.get('/classes/classrooms'),
-        apiClient.get('/academic/lessons'),
+        apiClient.get('/classes/lessons'),
       ]);
-      setHomeworkList(hwRes.data || []);
-      setClassrooms(classRes.data || []);
-      setLessons(lessonRes.data || []);
 
-      if (classRes.data?.length > 0) {
-        setCreateForm((prev) => ({ ...prev, classroomId: classRes.data[0].id }));
+      const hwData = hwRes.status === 'fulfilled' ? hwRes.value.data || [] : [];
+      const classData = classRes.status === 'fulfilled' ? classRes.value.data || [] : [];
+      const lessonData = lessonRes.status === 'fulfilled' ? lessonRes.value.data || [] : [];
+
+      setHomeworkList(hwData);
+      setClassrooms(classData);
+      setLessons(lessonData);
+
+      if (classData.length > 0) {
+        setCreateForm((prev) => ({
+          ...prev,
+          classroomId: prev.classroomId || classData[0].id,
+        }));
       }
-      if (lessonRes.data?.length > 0) {
-        setCreateForm((prev) => ({ ...prev, lessonId: lessonRes.data[0].id }));
+      if (lessonData.length > 0) {
+        setCreateForm((prev) => ({
+          ...prev,
+          lessonId: prev.lessonId || lessonData[0].id,
+        }));
       }
     } catch (err) {
-      console.error('Failed to load homework', err);
+      console.error('Failed to load homework data', err);
     } finally {
       setIsLoading(false);
     }
@@ -86,6 +98,15 @@ export const HomeworkPage: React.FC = () => {
 
   const handleCreateHomework = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!createForm.classroomId) {
+      setError('لطفاً کلاس هدف را انتخاب کنید.');
+      return;
+    }
+    if (!createForm.lessonId) {
+      setError('لطفاً درس مرتبط را انتخاب کنید.');
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
     try {
@@ -104,7 +125,7 @@ export const HomeworkPage: React.FC = () => {
       });
       fetchData();
     } catch (err: any) {
-      setError(err.message || 'خطا در تعریف تکلیف.');
+      setError(err.response?.data?.message || err.message || 'خطا در تعریف تکلیف.');
     } finally {
       setIsSubmitting(false);
     }
@@ -223,9 +244,16 @@ export const HomeworkPage: React.FC = () => {
         maxWidth="lg"
       >
         <form onSubmit={handleCreateHomework} className="space-y-4">
+          {error && (
+            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
           <Input
             label="عنوان تکلیف"
-            placeholder="مثال: تمرینات فصل دوم هندسه تحلیلی"
+            placeholder="مثال: تمرینات پودمان دوم کارگاه شبکه"
             value={createForm.title}
             onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
             required
@@ -238,12 +266,20 @@ export const HomeworkPage: React.FC = () => {
                 value={createForm.classroomId}
                 onChange={(e) => setCreateForm({ ...createForm, classroomId: e.target.value })}
                 className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary"
+                required
               >
-                {classrooms.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} ({c.code})
-                  </option>
-                ))}
+                {classrooms.length === 0 ? (
+                  <option value="">در حال دریافت کلاس‌ها...</option>
+                ) : (
+                  <>
+                    <option value="">-- انتخاب کلاس درس --</option>
+                    {classrooms.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({c.code})
+                      </option>
+                    ))}
+                  </>
+                )}
               </select>
             </div>
 
@@ -253,12 +289,20 @@ export const HomeworkPage: React.FC = () => {
                 value={createForm.lessonId}
                 onChange={(e) => setCreateForm({ ...createForm, lessonId: e.target.value })}
                 className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary"
+                required
               >
-                {lessons.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
-                  </option>
-                ))}
+                {lessons.length === 0 ? (
+                  <option value="">در حال دریافت دروس...</option>
+                ) : (
+                  <>
+                    <option value="">-- انتخاب کتاب یا درس --</option>
+                    {lessons.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.name} {l.code ? `(${l.code})` : ''}
+                      </option>
+                    ))}
+                  </>
+                )}
               </select>
             </div>
           </div>

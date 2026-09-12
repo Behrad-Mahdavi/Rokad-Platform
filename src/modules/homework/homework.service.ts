@@ -39,7 +39,7 @@ export class HomeworkService {
   /**
    * Create a new homework assignment
    */
-  async createHomework(tenantId: string, dto: CreateHomeworkDto) {
+  async createHomework(tenantId: string, dto: CreateHomeworkDto, user?: any) {
     const classroom = await this.prisma.classroom.findFirst({
       where: { id: dto.classroomId, tenantId },
     });
@@ -47,12 +47,42 @@ export class HomeworkService {
       throw new NotFoundException('کلاس درس مورد نظر یافت نشد');
     }
 
+    let teacherId = dto.teacherId;
+    if (!teacherId && user) {
+      const teacher = await this.prisma.teacherProfile.findFirst({
+        where: { userId: user.id, tenantId },
+      });
+      if (teacher) {
+        teacherId = teacher.id;
+      }
+    }
+
+    if (!teacherId) {
+      const lessonTeacher = await this.prisma.teacherLesson.findFirst({
+        where: { tenantId, lessonId: dto.lessonId },
+      });
+      if (lessonTeacher) {
+        teacherId = lessonTeacher.teacherId;
+      } else {
+        const anyTeacher = await this.prisma.teacherProfile.findFirst({
+          where: { tenantId },
+        });
+        if (anyTeacher) {
+          teacherId = anyTeacher.id;
+        }
+      }
+    }
+
+    if (!teacherId) {
+      throw new BadRequestException('پروفایل دبیر مربوطه برای این تکلیف مشخص نشده است');
+    }
+
     const homework = await this.prisma.homework.create({
       data: {
         tenantId,
         classroomId: dto.classroomId,
         lessonId: dto.lessonId,
-        teacherId: dto.teacherId,
+        teacherId,
         title: dto.title,
         description: dto.description,
         attachmentUrls: dto.attachmentUrls || [],
@@ -62,6 +92,7 @@ export class HomeworkService {
         allowLateSubmissions: dto.allowLateSubmissions || false,
       },
       include: {
+        classroom: true,
         lesson: true,
         teacher: { include: { user: true } },
       },
@@ -75,6 +106,46 @@ export class HomeworkService {
     });
 
     return homework;
+  }
+
+  /**
+   * List all homeworks in school or for current teacher/student
+   */
+  async listAllHomeworks(tenantId: string, user?: any) {
+    const whereClause: any = { tenantId };
+
+    if (user?.role === 'TEACHER') {
+      const teacher = await this.prisma.teacherProfile.findFirst({
+        where: { userId: user.id, tenantId },
+      });
+      if (teacher) {
+        whereClause.teacherId = teacher.id;
+      }
+    } else if (user?.role === 'STUDENT') {
+      const student = await this.prisma.studentProfile.findFirst({
+        where: { userId: user.id, tenantId },
+        include: { enrollments: { where: { status: 'ACTIVE' } } },
+      });
+      const classIds = student?.enrollments.map((e) => e.classroomId) || [];
+      whereClause.classroomId = { in: classIds };
+    }
+
+    return this.prisma.homework.findMany({
+      where: whereClause,
+      include: {
+        classroom: true,
+        lesson: true,
+        teacher: {
+          include: {
+            user: { select: { firstName: true, lastName: true } },
+          },
+        },
+        _count: {
+          select: { submissions: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
   /**

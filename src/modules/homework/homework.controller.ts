@@ -57,17 +57,30 @@ export class HomeworkController {
     });
   }
 
+  @Get()
+  @RequirePermissions(AppPermission.HOMEWORK_READ)
+  @ApiOperation({ summary: 'لیست تمام تکالیف مدرسه یا کاربر جاری' })
+  async listHomeworks(
+    @CurrentUser() user: any,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.homeworkService.listAllHomeworks(effectiveTenantId, user);
+  }
+
   @Post()
   @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
   @RequirePermissions(AppPermission.HOMEWORK_WRITE)
   @ApiOperation({ summary: 'تعریف تکلیف جدید توسط دبیر' })
   async createHomework(
+    @CurrentUser() user: any,
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentTenant('id') tenantId: string,
     @Body() dto: CreateHomeworkDto,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
-    return this.homeworkService.createHomework(effectiveTenantId, dto);
+    return this.homeworkService.createHomework(effectiveTenantId, dto, user);
   }
 
   @Get('classroom/:classroomId')

@@ -21,10 +21,10 @@ export class CreateHomeworkDto {
   @IsNotEmpty()
   lessonId: string;
 
-  @ApiProperty({ description: 'شناسه پروفایل معلم' })
+  @ApiPropertyOptional({ description: 'شناسه پروفایل معلم' })
   @IsString()
-  @IsNotEmpty()
-  teacherId: string;
+  @IsOptional()
+  teacherId?: string;
 
   @ApiProperty({ description: 'عنوان تکلیف', example: 'حل مسائل فصل اول حسابان' })
   @IsString()
