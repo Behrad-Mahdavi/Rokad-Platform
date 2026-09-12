@@ -3,8 +3,10 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { Role } from '../../common/constants';
 import {
   CreateLessonDto,
   CreateClassroomDto,
@@ -105,12 +107,49 @@ export class ClassesService {
   }
 
   // 2. Classrooms
-  async listClassrooms(tenantId: string, academicYearId?: string) {
+  async listClassrooms(tenantId: string, academicYearId?: string, user?: any) {
+    const whereClause: any = { tenantId };
+    if (academicYearId) {
+      whereClause.academicYearId = academicYearId;
+    }
+
+    if (user?.role === Role.STUDENT) {
+      const student = await this.prisma.studentProfile.findFirst({
+        where: { userId: user.id, tenantId },
+        include: {
+          enrollments: {
+            where: { status: 'ACTIVE' },
+            select: { classroomId: true },
+          },
+        },
+      });
+      const classIds = student?.enrollments.map((e) => e.classroomId) || [];
+      whereClause.id = { in: classIds };
+    } else if (user?.role === Role.PARENT) {
+      const parent = await this.prisma.parentProfile.findFirst({
+        where: { userId: user.id, tenantId },
+        include: {
+          studentLinks: {
+            include: {
+              student: {
+                include: {
+                  enrollments: {
+                    where: { status: 'ACTIVE' },
+                    select: { classroomId: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      const classIds =
+        parent?.studentLinks.flatMap((link) => link.student.enrollments.map((e) => e.classroomId)) || [];
+      whereClause.id = { in: classIds };
+    }
+
     return this.prisma.classroom.findMany({
-      where: {
-        tenantId,
-        ...(academicYearId ? { academicYearId } : {}),
-      },
+      where: whereClause,
       include: {
         level: true,
         field: true,
@@ -324,7 +363,7 @@ export class ClassesService {
 
   // 4. Class Schedules (Timetable with Conflict Detection)
   async createSchedule(tenantId: string, dto: CreateScheduleDto) {
-    // 1. If slot already has a schedule in this classroom, find it for replacement
+    // 1. If slot already has a schedule in this classroom, check for conflict / replacement
     const existingSlot = await this.prisma.classSchedule.findFirst({
       where: {
         tenantId,
@@ -333,6 +372,12 @@ export class ClassesService {
         periodNumber: dto.periodNumber,
       },
     });
+
+    if (existingSlot && !dto.replaceExisting) {
+      throw new ConflictException(
+        `تداخل برنامه: در زنگ ${dto.periodNumber} از روز ${dto.dayOfWeek} قبلاً درسی برای این کلاس تعریف شده است`,
+      );
+    }
 
     // 2. Check teacher conflict in another classroom
     const teacherConflict = await this.prisma.classSchedule.findFirst({
@@ -352,7 +397,7 @@ export class ClassesService {
       );
     }
 
-    if (existingSlot) {
+    if (existingSlot && dto.replaceExisting) {
       await this.prisma.classSchedule.delete({
         where: { id: existingSlot.id },
       });
@@ -396,7 +441,47 @@ export class ClassesService {
     });
   }
 
-  async getClassSchedule(tenantId: string, classroomId: string) {
+  async getClassSchedule(tenantId: string, classroomId: string, user?: any) {
+    if (user?.role === Role.STUDENT) {
+      const student = await this.prisma.studentProfile.findFirst({
+        where: { userId: user.id, tenantId },
+        include: {
+          enrollments: {
+            where: { status: 'ACTIVE' },
+            select: { classroomId: true },
+          },
+        },
+      });
+      const isEnrolled = student?.enrollments.some((e) => e.classroomId === classroomId);
+      if (!isEnrolled) {
+        throw new ForbiddenException('هر دانش‌آموز فقط مجاز به مشاهده برنامه کلاسی کلاس خود می‌باشد');
+      }
+    } else if (user?.role === Role.PARENT) {
+      const parent = await this.prisma.parentProfile.findFirst({
+        where: { userId: user.id, tenantId },
+        include: {
+          studentLinks: {
+            include: {
+              student: {
+                include: {
+                  enrollments: {
+                    where: { status: 'ACTIVE' },
+                    select: { classroomId: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      const isAllowed = parent?.studentLinks.some((link) =>
+        link.student.enrollments.some((e) => e.classroomId === classroomId)
+      );
+      if (!isAllowed) {
+        throw new ForbiddenException('شما فقط مجاز به مشاهده برنامه کلاسی فرزندان خود هستید');
+      }
+    }
+
     return this.prisma.classSchedule.findMany({
       where: { tenantId, classroomId },
       include: {
@@ -421,6 +506,62 @@ export class ClassesService {
       },
       orderBy: [{ dayOfWeek: 'asc' }, { periodNumber: 'asc' }],
     });
+  }
+
+  async getMySchedule(tenantId: string, user: any) {
+    if (user?.role === Role.STUDENT) {
+      const student = await this.prisma.studentProfile.findFirst({
+        where: { userId: user.id, tenantId },
+        include: {
+          enrollments: {
+            where: { status: 'ACTIVE' },
+            include: {
+              classroom: {
+                include: {
+                  level: true,
+                  field: true,
+                  mentor: {
+                    select: {
+                      id: true,
+                      firstName: true,
+                      lastName: true,
+                      phone: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!student || student.enrollments.length === 0) {
+        return { classroom: null, schedules: [] };
+      }
+
+      const activeEnrollment = student.enrollments[0];
+      const classroom = activeEnrollment.classroom;
+      const schedules = await this.getClassSchedule(tenantId, classroom.id, user);
+
+      return {
+        classroom,
+        schedules,
+      };
+    } else if (user?.role === Role.TEACHER) {
+      const teacher = await this.prisma.teacherProfile.findFirst({
+        where: { userId: user.id, tenantId },
+      });
+      if (!teacher) {
+        return { teacher: null, schedules: [] };
+      }
+      const schedules = await this.getTeacherSchedule(tenantId, teacher.id);
+      return {
+        teacher,
+        schedules,
+      };
+    } else {
+      throw new BadRequestException('این متد فقط برای نقش‌های دانش‌آموز یا دبیر معتبر است');
+    }
   }
 
   async getTeacherSchedule(tenantId: string, teacherId: string) {

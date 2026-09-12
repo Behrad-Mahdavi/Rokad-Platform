@@ -11,6 +11,7 @@ describe('Rokad Multi-Tenant Platform — Phase 2 Core ERP & Structure Tests', (
   let boysAdminToken: string;
   let boysTeacherToken: string;
   let boysParentToken: string;
+  let boysStudentToken: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -49,6 +50,16 @@ describe('Rokad Multi-Tenant Platform — Phase 2 Core ERP & Structure Tests', (
         password: 'RokadPass2026!',
       });
     boysTeacherToken = teacherLogin.body.data.accessToken;
+
+    // Login as Student
+    const studentLogin = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .set('x-tenant-slug', 'rokad-boys')
+      .send({
+        identifier: '09124000001',
+        password: 'RokadPass2026!',
+      });
+    boysStudentToken = studentLogin.body.data.accessToken;
 
     // Login as Parent
     const parentLogin = await request(app.getHttpServer())
@@ -158,7 +169,7 @@ describe('Rokad Multi-Tenant Platform — Phase 2 Core ERP & Structure Tests', (
         .expect(409);
     });
 
-    it('GET /api/v1/classes/classrooms/:id/schedule should return timetable', async () => {
+    it('GET /api/v1/classes/classrooms/:id/schedule should return timetable for admin', async () => {
       const res = await request(app.getHttpServer())
         .get(`/api/v1/classes/classrooms/${classroomId}/schedule`)
         .set('Authorization', `Bearer ${boysAdminToken}`)
@@ -167,6 +178,53 @@ describe('Rokad Multi-Tenant Platform — Phase 2 Core ERP & Structure Tests', (
       expect(res.body.success).toBe(true);
       expect(Array.isArray(res.body.data)).toBe(true);
       expect(res.body.data.length).toBeGreaterThan(0);
+    });
+
+    it('Student can only view their own class schedule and gets 403 on other classes', async () => {
+      // 1. Student queries /classrooms -> gets only their enrolled classroom
+      const classroomsRes = await request(app.getHttpServer())
+        .get('/api/v1/classes/classrooms')
+        .set('Authorization', `Bearer ${boysStudentToken}`)
+        .expect(200);
+
+      expect(classroomsRes.body.success).toBe(true);
+      const studentClasses = classroomsRes.body.data;
+      expect(studentClasses.length).toBeGreaterThan(0);
+      const enrolledClassId = studentClasses[0].id;
+
+      // 2. Student can access their own schedule
+      const ownScheduleRes = await request(app.getHttpServer())
+        .get(`/api/v1/classes/classrooms/${enrolledClassId}/schedule`)
+        .set('Authorization', `Bearer ${boysStudentToken}`)
+        .expect(200);
+      expect(ownScheduleRes.body.success).toBe(true);
+
+      // 3. Student calling /my-schedule gets their own timetable directly
+      const myScheduleRes = await request(app.getHttpServer())
+        .get('/api/v1/classes/my-schedule')
+        .set('Authorization', `Bearer ${boysStudentToken}`)
+        .expect(200);
+      expect(myScheduleRes.body.success).toBe(true);
+      expect(myScheduleRes.body.data.classroom.id).toBe(enrolledClassId);
+
+      // 4. Create another classroom as admin that student is NOT enrolled in
+      const otherClassRes = await request(app.getHttpServer())
+        .post('/api/v1/classes/classrooms')
+        .set('Authorization', `Bearer ${boysAdminToken}`)
+        .send({
+          name: 'کلاس دوازدهم کامپیوتر تستی',
+          code: 'CLS-12-TEST-SEC',
+          capacity: 25,
+        });
+
+      if (otherClassRes.status === 201) {
+        const otherClassId = otherClassRes.body.data.id;
+        // Student MUST be rejected with 403 Forbidden
+        await request(app.getHttpServer())
+          .get(`/api/v1/classes/classrooms/${otherClassId}/schedule`)
+          .set('Authorization', `Bearer ${boysStudentToken}`)
+          .expect(403);
+      }
     });
   });
 

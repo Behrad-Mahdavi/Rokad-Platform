@@ -64,12 +64,24 @@ export class ClassesController {
   @Get('classrooms')
   @ApiOperation({ summary: 'لیست کلاس‌های درس مدرسه' })
   async listClassrooms(
+    @CurrentUser() user: any,
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentTenant('id') tenantId: string,
     @Query('academicYearId') academicYearId?: string,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
-    return this.classesService.listClassrooms(effectiveTenantId, academicYearId);
+    return this.classesService.listClassrooms(effectiveTenantId, academicYearId, user);
+  }
+
+  @Get('my-schedule')
+  @ApiOperation({ summary: 'دریافت برنامه هفتگی اختصاصی دانش‌آموز یا دبیر جاری' })
+  async getMySchedule(
+    @CurrentUser() user: any,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.classesService.getMySchedule(effectiveTenantId, user);
   }
 
   @Get('classrooms/:id')
@@ -138,12 +150,13 @@ export class ClassesController {
   @Get('classrooms/:id/schedule')
   @ApiOperation({ summary: 'دریافت برنامه هفتگی یک کلاس درس' })
   async getClassSchedule(
+    @CurrentUser() user: any,
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentTenant('id') tenantId: string,
     @Param('id') classroomId: string,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
-    return this.classesService.getClassSchedule(effectiveTenantId, classroomId);
+    return this.classesService.getClassSchedule(effectiveTenantId, classroomId, user);
   }
 
   @Get('teachers/:teacherId/schedule')

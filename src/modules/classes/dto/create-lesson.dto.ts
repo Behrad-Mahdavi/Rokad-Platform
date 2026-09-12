@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsBoolean,
   IsEnum,
   IsInt,
   IsNotEmpty,
@@ -149,4 +150,9 @@ export class CreateScheduleDto {
   @IsString()
   @IsNotEmpty()
   endTime: string;
+
+  @ApiPropertyOptional({ description: 'آیا در صورت وجود زنگ درسی قبلی، جایگزین شود؟' })
+  @IsOptional()
+  @IsBoolean()
+  replaceExisting?: boolean;
 }

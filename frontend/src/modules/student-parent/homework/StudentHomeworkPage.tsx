@@ -48,8 +48,7 @@ export const StudentHomeworkPage: React.FC = () => {
     setIsSubmitting(true);
     setError(null);
     try {
-      await apiClient.post('/homework/submissions', {
-        homeworkId: selectedHomework.id,
+      await apiClient.post(`/homework/${selectedHomework.id}/submit`, {
         content: submissionText,
       });
       setIsSubmitModalOpen(false);

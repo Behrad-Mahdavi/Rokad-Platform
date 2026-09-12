@@ -61,6 +61,8 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
   classroomId: initialClassroomId,
 }) => {
   const currentUser = useAuthStore((s) => s.user);
+  const isStudent = currentUser?.role === 'STUDENT';
+  const isParent = currentUser?.role === 'PARENT';
   const isStaffOrAdmin = ['SCHOOL_ADMIN', 'STAFF', 'SUPER_ADMIN'].includes(currentUser?.role || '');
   const canManageSchedule = !readOnly && isStaffOrAdmin;
 
@@ -223,6 +225,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
         periodNumber: form.periodNumber,
         startTime: form.startTime,
         endTime: form.endTime,
+        replaceExisting: true,
       });
 
       setIsModalOpen(false);
@@ -272,14 +275,23 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
           <div className="flex items-center space-x-2 space-x-reverse">
             <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
               <CalendarDays className="h-7 w-7 text-primary" />
-              <span>برنامه هفتگی و ساعات درسی کلاس‌ها (Weekly Timetable)</span>
+              <span>
+                {isStudent
+                  ? 'برنامه هفتگی کلاس من'
+                  : 'برنامه هفتگی و ساعات درسی کلاس‌ها (Weekly Timetable)'}
+              </span>
             </h2>
-            {!canManageSchedule && (
+            {isStudent ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 text-primary border border-primary/20 text-xs font-bold">
+                <GraduationCap className="h-3.5 w-3.5" />
+                <span>هنرجو: {currentUser?.firstName} {currentUser?.lastName}</span>
+              </span>
+            ) : !canManageSchedule ? (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold">
                 <Lock className="h-3 w-3 text-amber-600" />
-                <span>حالت فقط مشاهده (دانش‌آموز / اولیاء)</span>
+                <span>حالت فقط مشاهده {isParent ? '(اولیاء گرامی)' : '(مشاهده)'}</span>
               </span>
-            )}
+            ) : null}
           </div>
           <p className="text-xs text-gray-500 mt-1">
             {canManageSchedule
@@ -289,27 +301,66 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center space-x-2 space-x-reverse">
-            <label className="text-xs font-bold text-ink-dark">انتخاب کلاس درس:</label>
-            <select
-              value={selectedClassroomId}
-              onChange={(e) => setSelectedClassroomId(e.target.value)}
-              className="h-10 rounded-lg border border-gray-300 bg-gray-50 px-3 text-xs font-bold text-ink-dark focus:outline-none focus:ring-2 focus:ring-primary min-w-[200px]"
-            >
-              {classrooms.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} ({c.code})
-                </option>
-              ))}
-            </select>
-          </div>
+          {isStudent ? (
+            selectedClassroom ? (
+              <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary px-3.5 py-2 rounded-xl text-xs font-bold">
+                <Building2 className="h-4 w-4 text-primary" />
+                <span>کلاس شما: {selectedClassroom.name} {selectedClassroom.code ? `(${selectedClassroom.code})` : ''}</span>
+              </div>
+            ) : null
+          ) : isParent && classrooms.length <= 1 ? (
+            selectedClassroom ? (
+              <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary px-3.5 py-2 rounded-xl text-xs font-bold">
+                <Building2 className="h-4 w-4 text-primary" />
+                <span>کلاس فرزند شما: {selectedClassroom.name}</span>
+              </div>
+            ) : null
+          ) : classrooms.length > 0 ? (
+            <div className="flex items-center space-x-2 space-x-reverse">
+              <label className="text-xs font-bold text-ink-dark">
+                {isParent ? 'انتخاب کلاس فرزند:' : 'انتخاب کلاس درس:'}
+              </label>
+              <select
+                value={selectedClassroomId}
+                onChange={(e) => setSelectedClassroomId(e.target.value)}
+                className="h-10 rounded-lg border border-gray-300 bg-gray-50 px-3 text-xs font-bold text-ink-dark focus:outline-none focus:ring-2 focus:ring-primary min-w-[200px]"
+              >
+                {classrooms.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} ({c.code})
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
 
-          <Button variant="outline" size="sm" onClick={handlePrint} className="flex items-center gap-1.5">
-            <Printer className="h-4 w-4" />
-            <span>چاپ برنامه هفتگی</span>
-          </Button>
+          {classrooms.length > 0 && (
+            <Button variant="outline" size="sm" onClick={handlePrint} className="flex items-center gap-1.5">
+              <Printer className="h-4 w-4" />
+              <span>چاپ برنامه هفتگی</span>
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Empty State when student or user has no classroom */}
+      {classrooms.length === 0 && !isLoading && (
+        <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-12 text-center shadow-xs">
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mb-4">
+            <Lock className="w-8 h-8" />
+          </div>
+          <h3 className="text-lg font-bold text-ink-darker">
+            {isStudent
+              ? 'شما هنوز به هیچ کلاسی تخصیص داده نشده‌اید'
+              : 'هیچ کلاس درسی یافت نشد'}
+          </h3>
+          <p className="text-xs text-gray-500 max-w-md mx-auto mt-2 leading-relaxed">
+            {isStudent
+              ? 'هنرجوی گرامی، کلاس درس شما هنوز توسط مسئولین آموزش و مدیریت هنرستان در سامانه ثبت نهایی نشده است. پس از تخصیص قطعی به کلاس، برنامه هفتگی زنگ‌های کلاسی به صورت اختصاصی در این صفحه نمایش داده خواهد شد.'
+              : 'در حال حاضر هیچ کلاسی در این سال تحصیلی یا برای شما ثبت نشده است.'}
+          </p>
+        </div>
+      )}
 
       {/* Classroom Info Banner */}
       {selectedClassroom && (
