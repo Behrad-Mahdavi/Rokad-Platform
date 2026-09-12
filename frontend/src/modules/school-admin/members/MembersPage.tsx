@@ -23,8 +23,14 @@ import {
   Shield,
   AlertCircle,
   BookOpen,
+  FileSpreadsheet,
+  UploadCloud,
+  Download,
+  CheckCircle2,
 } from 'lucide-react';
 import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
+
+import { read, utils, writeFile } from 'xlsx';
 
 export const MembersPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'STUDENTS' | 'TEACHERS'>('STUDENTS');
@@ -42,9 +48,86 @@ export const MembersPage: React.FC = () => {
   const [editingTeacher, setEditingTeacher] = useState<any | null>(null);
   const [editingLessonIds, setEditingLessonIds] = useState<string[]>([]);
 
+  // Excel Bulk Import States
+  const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
+  const [excelFile, setExcelFile] = useState<File | null>(null);
+  const [excelRows, setExcelRows] = useState<any[]>([]);
+  const [excelResult, setExcelResult] = useState<{ total: number; success: number; failed: number; errors?: string[] } | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
   // Forms
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleDownloadExcelSample = () => {
+    const sampleData = [
+      {
+        'شماره دانش آموزی': '40310101',
+        'کد ملی': '0012345678',
+        'نام': 'امیرعلی',
+        'نام خانوادگی': 'صادقی',
+        'نام پدر': 'رضا',
+        'موبایل دانش آموز': '09121112233',
+        'موبایل پدر': '09124445566',
+        'شماره کلاس': '۱۰۱',
+        'جنسیت': 'پسر',
+      },
+      {
+        'شماره دانش آموزی': '40310102',
+        'کد ملی': '0012345679',
+        'نام': 'سارا',
+        'نام خانوادگی': 'محمدی',
+        'نام پدر': 'علی',
+        'موبایل دانش آموز': '09122223344',
+        'موبایل پدر': '09125556677',
+        'شماره کلاس': '۱۰۱',
+        'جنسیت': 'دختر',
+      },
+    ];
+    const ws = utils.json_to_sheet(sampleData);
+    const wb = utils.book_new();
+    utils.book_append_sheet(wb, ws, 'هنرجویان');
+    writeFile(wb, 'نمونه_ورود_گروهی_هنرجویان_رکاد.xlsx');
+  };
+
+  const handleExcelFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setError(null);
+      setExcelResult(null);
+      const data = await file.arrayBuffer();
+      const workbook = read(data);
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = utils.sheet_to_json(sheet);
+      if (!rows || rows.length === 0) {
+        setError('فایل اکسل انتخاب‌شده فاقد داده یا سطر است.');
+        return;
+      }
+      setExcelFile(file);
+      setExcelRows(rows);
+    } catch (err: any) {
+      setError('خطا در خواندن فایل اکسل: ' + (err.message || 'فایل نامعتبر است'));
+    }
+  };
+
+  const handleSubmitExcel = async () => {
+    if (!excelRows.length) {
+      setError('لطفاً ابتدا یک فایل اکسل دارای اطلاعات انتخاب کنید.');
+      return;
+    }
+    try {
+      setIsSubmitting(true);
+      setError(null);
+      const res = await apiClient.post('/members/students/bulk-excel', { items: excelRows });
+      setExcelResult(res.data);
+      fetchData();
+    } catch (err: any) {
+      setError('خطا در ثبت اطلاعات: ' + (err.message || 'خطای غیرمنتظره'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const [studentForm, setStudentForm] = useState({
     firstName: '',
@@ -200,18 +283,37 @@ export const MembersPage: React.FC = () => {
       {/* Header & Actions */}
       <ResponsivePageHeader
         icon={Users}
-        title="مدیریت اعضا و ثبت‌نام دانش‌آموزان و کادر (Members)"
-        description="ثبت پرونده تحصیلی، اطلاعات اولیاء، تخصیص نقش‌های پرسنل و پرونده‌های الکترونیکی"
+        title="مدیریت اعضا و ثبت‌نام هنرجویان و کادر هنرستان"
+        description="ثبت پرونده تحصیلی، اطلاعات اولیاء، پرونده‌های الکترونیکی و ورود دسته‌جمعی"
         actions={
           activeTab === 'STUDENTS' ? (
-            <Button variant="primary" size="sm" onClick={() => setIsStudentModalOpen(true)} className="w-full sm:w-auto">
-              <UserPlus className="h-4 w-4 ml-1" />
-              <span>ثبت‌نام دانش‌آموز جدید</span>
-            </Button>
+            <div className="flex items-center space-x-2 space-x-reverse w-full sm:w-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                onClick={() => {
+                  setIsExcelModalOpen(true);
+                  setExcelResult(null);
+                  setExcelFile(null);
+                  setExcelRows([]);
+                  setError(null);
+                }}
+                className="w-full sm:w-auto text-emerald-700 border-emerald-300 hover:bg-emerald-50 font-bold"
+              >
+                <FileSpreadsheet className="h-4 w-4 ml-1.5 text-emerald-600" />
+                <span>ورود گروهی با اکسل (.xlsx)</span>
+              </Button>
+
+              <Button variant="primary" size="sm" onClick={() => setIsStudentModalOpen(true)} className="w-full sm:w-auto">
+                <UserPlus className="h-4 w-4 ml-1" />
+                <span>ثبت‌نام فردی</span>
+              </Button>
+            </div>
           ) : (
             <Button variant="primary" size="sm" onClick={() => setIsTeacherModalOpen(true)} className="w-full sm:w-auto">
               <Plus className="h-4 w-4 ml-1" />
-              <span>ثبت دبیر یا پرسنل جدید</span>
+              <span>ثبت هنرآموز یا پرسنل جدید</span>
             </Button>
           )
         }
@@ -722,6 +824,128 @@ export const MembersPage: React.FC = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* 4. Modal: Bulk Excel Import for Students */}
+      <Modal
+        isOpen={isExcelModalOpen}
+        onClose={() => {
+          setIsExcelModalOpen(false);
+          setExcelFile(null);
+          setExcelRows([]);
+          setExcelResult(null);
+          setError(null);
+        }}
+        title="ورود گروهی هنرجویان از طریق اکسل"
+        description="بارگذاری دسته‌جمعی مشخصات هنرجویان با استفاده از فایل اکسل (.xlsx یا .xls)"
+        maxWidth="md"
+      >
+        <div className="space-y-5">
+          {/* Download Template Banner */}
+          <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center space-x-2.5 space-x-reverse">
+              <FileSpreadsheet className="h-5 w-5 text-emerald-600 shrink-0" />
+              <div>
+                <div className="text-xs font-bold text-emerald-900">فایل نمونه استاندارد اکسل</div>
+                <div className="text-[11px] text-emerald-700 mt-0.5">شامل ستون‌های: کد ملی، نام، نام خانوادگی، شماره کلاس و شماره تماس</div>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadExcelSample}
+              className="text-xs shrink-0 bg-white border-emerald-300 text-emerald-800 hover:bg-emerald-100"
+            >
+              <Download className="h-3.5 w-3.5 ml-1" />
+              <span>دانلود نمونه فایل</span>
+            </Button>
+          </div>
+
+          {/* Hidden File Input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx, .xls"
+            className="hidden"
+            onChange={handleExcelFileChange}
+          />
+
+          {/* Upload Drop/Click Area */}
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className="border-2 border-dashed border-gray-300 hover:border-emerald-500 rounded-2xl p-6 text-center cursor-pointer transition-colors bg-gray-50/60 hover:bg-emerald-50/30"
+          >
+            <UploadCloud className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+            <div className="text-xs font-bold text-ink-darker">
+              {excelFile ? excelFile.name : 'برای انتخاب فایل اکسل کلیک کنید'}
+            </div>
+            <p className="text-[11px] text-gray-400 mt-1">
+              فرمت‌های مجاز: .xlsx یا .xls
+            </p>
+            {excelRows.length > 0 && (
+              <div className="mt-3 inline-flex items-center space-x-1 space-x-reverse bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                <span>{excelRows.length} هنرجو در فایل شناسایی شد</span>
+              </div>
+            )}
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="flex items-center space-x-2 space-x-reverse rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Success Result Message */}
+          {excelResult && (
+            <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 space-y-1">
+              <div className="font-bold flex items-center space-x-1.5 space-x-reverse">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                <span>عملیات با موفقیت انجام شد:</span>
+              </div>
+              <div>تعداد موفق: <strong>{excelResult.success}</strong> نفر</div>
+              {excelResult.failed > 0 && (
+                <div className="text-amber-700">تعداد ناموفق: <strong>{excelResult.failed}</strong> نفر</div>
+              )}
+              {excelResult.errors && excelResult.errors.length > 0 && (
+                <div className="mt-2 text-[11px] text-red-600 space-y-0.5">
+                  {excelResult.errors.slice(0, 3).map((err, idx) => (
+                    <div key={idx}>• {err}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Modal Action Buttons */}
+          <div className="flex justify-end space-x-2 space-x-reverse pt-2 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setIsExcelModalOpen(false);
+                setExcelFile(null);
+                setExcelRows([]);
+                setExcelResult(null);
+                setError(null);
+              }}
+            >
+              بستن
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={handleSubmitExcel}
+              disabled={excelRows.length === 0}
+              isLoading={isSubmitting}
+            >
+              ثبت نهایی {excelRows.length > 0 ? `(${excelRows.length} هنرجو)` : ''}
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

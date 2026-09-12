@@ -276,14 +276,14 @@ describe('Rokad Multi-Tenant Platform — Phase 2 Core ERP & Structure Tests', (
     let girlsAdminToken: string;
 
     beforeAll(async () => {
-      const girlsLogin = await request(app.getHttpServer())
+      let girlsLogin = await request(app.getHttpServer())
         .post('/api/v1/auth/login')
         .set('x-tenant-slug', 'rokad-girls')
         .send({
-          identifier: '09122222222',
+          identifier: '09121111112',
           password: 'RokadGirlsPass2026!',
         });
-      girlsAdminToken = girlsLogin.body.data.accessToken;
+      girlsAdminToken = girlsLogin.body.data?.accessToken;
     });
 
     it('Girls school should not see Boys school classrooms', async () => {

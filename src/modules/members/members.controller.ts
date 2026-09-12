@@ -38,6 +38,19 @@ export class MembersController {
   constructor(private readonly membersService: MembersService) {}
 
   // 1. Students
+  @Post('students/bulk-excel')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.STUDENT_WRITE)
+  @ApiOperation({ summary: 'ایمپورت دسته‌جمعی دانش‌آموزان از طریق فایل اکسل' })
+  async bulkImportStudents(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Body() body: { items: any[] },
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.membersService.bulkImportStudents(effectiveTenantId, body.items || []);
+  }
+
   @Get('students')
   @ApiOperation({ summary: 'لیست دانش‌آموزان مدرسه' })
   async listStudents(

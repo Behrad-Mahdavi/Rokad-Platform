@@ -20,6 +20,105 @@ export class MembersService {
   constructor(private readonly prisma: PrismaService) {}
 
   // 1. Students
+  async bulkImportStudents(tenantId: string, items: any[]) {
+    const results = {
+      total: items.length,
+      success: 0,
+      failed: 0,
+      errors: [] as string[],
+    };
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      try {
+        const studentCode = item['شماره دانش آموزی']?.toString() || item['کد ملی']?.toString() || `STD-${Math.floor(100000 + Math.random() * 900000)}`;
+        const nationalCode = item['کد ملی']?.toString() || undefined;
+        const phone = item['موبایل دانش آموز']?.toString() || item['موبایل پدر']?.toString() || item['موبایل مادر']?.toString() || `09${Math.floor(Math.random() * 1000000000).toString().padStart(9, '0')}`;
+        const firstName = item['نام']?.toString() || 'دانش‌آموز';
+        const lastName = item['نام خانوادگی']?.toString() || 'بدون فامیل';
+        const fatherName = item['نام پدر']?.toString() || undefined;
+        const className = item['شماره کلاس']?.toString() || undefined;
+        const gender = item['جنسیت']?.toString() === 'دختر' ? 'FEMALE' : 'MALE';
+
+        // Find classroom if provided
+        let classroomId: string | undefined = undefined;
+        if (className) {
+          const classroom = await this.prisma.classroom.findFirst({
+            where: { tenantId, name: { contains: className } }
+          });
+          if (classroom) classroomId = classroom.id;
+        }
+
+        const defaultPassword = phone;
+        const passwordHash = await argon2.hash(defaultPassword);
+
+        await this.prisma.$transaction(async (tx) => {
+          // Check if code or phone already exists
+          const existingUser = await tx.user.findFirst({
+            where: { tenantId, phone }
+          });
+
+          if (existingUser) {
+            throw new Error(`شماره موبایل ${phone} تکراری است`);
+          }
+
+          const existingProfile = await tx.studentProfile.findFirst({
+            where: { tenantId, studentCode }
+          });
+
+          if (existingProfile) {
+            throw new Error(`کد دانش‌آموزی ${studentCode} تکراری است`);
+          }
+
+          const user = await tx.user.create({
+            data: {
+              tenantId,
+              firstName,
+              lastName,
+              phone,
+              gender,
+              nationalId: nationalCode,
+              passwordHash,
+              role: Role.STUDENT as any,
+              status: 'ACTIVE',
+            },
+          });
+
+          const profile = await tx.studentProfile.create({
+            data: {
+              tenantId,
+              userId: user.id,
+              studentCode,
+              nationalCode,
+              fatherName,
+            },
+          });
+
+          if (classroomId) {
+            const classroom = await tx.classroom.findUnique({ where: { id: classroomId } });
+            if (classroom) {
+              await tx.classEnrollment.create({
+                data: {
+                  tenantId,
+                  studentId: profile.id,
+                  classroomId: classroom.id,
+                  academicYearId: classroom.academicYearId,
+                },
+              });
+            }
+          }
+        });
+
+        results.success++;
+      } catch (err: any) {
+        results.failed++;
+        results.errors.push(`ردیف ${i + 1} (${item['نام'] || ''} ${item['نام خانوادگی'] || ''}): ${err.message}`);
+      }
+    }
+
+    return results;
+  }
+
   async listStudents(tenantId: string, search?: string) {
     const where: any = { tenantId };
     if (search) {
