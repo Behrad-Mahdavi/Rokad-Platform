@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
+
 import { apiClient } from '../../../lib/api/client';
+
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
+
 import {
   Table,
   TableHeader,
@@ -14,6 +17,15 @@ import {
   TableRow,
   TableCell,
 } from '../../../components/ui/Table';
+
+import { PersianDatePicker } from '../../../components/ui/PersianDatePicker';
+
+import {
+  gregorianToJalaliStr,
+  jalaliToGregorianDate,
+  formatJalaliDisplay,
+} from '../../../utils/jalali';
+
 import {
   FileCheck,
   Plus,
@@ -52,7 +64,7 @@ export const HomeworkPage: React.FC = () => {
     description: '',
     classroomId: '',
     lessonId: '',
-    dueDate: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
+    dueDate: gregorianToJalaliStr(new Date(Date.now() + 86400000 * 3)),
     maxScore: 20,
   });
 
@@ -112,7 +124,7 @@ export const HomeworkPage: React.FC = () => {
     try {
       await apiClient.post('/homework', {
         ...createForm,
-        dueDate: new Date(createForm.dueDate).toISOString(),
+        dueDate: jalaliToGregorianDate(createForm.dueDate).toISOString(),
       });
       setIsCreateOpen(false);
       setCreateForm({
@@ -120,7 +132,7 @@ export const HomeworkPage: React.FC = () => {
         description: '',
         classroomId: classrooms[0]?.id || '',
         lessonId: lessons[0]?.id || '',
-        dueDate: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
+        dueDate: gregorianToJalaliStr(new Date(Date.now() + 86400000 * 3)),
         maxScore: 20,
       });
       fetchData();
@@ -212,7 +224,7 @@ export const HomeworkPage: React.FC = () => {
 
                 <div className="flex items-center space-x-2 space-x-reverse text-xs text-gray-600 bg-gray-50 p-2.5 rounded-lg border">
                   <Clock className="h-4 w-4 text-amber-500 shrink-0" />
-                  <span>مهلت: {new Date(hw.dueDate).toLocaleDateString('fa-IR')}</span>
+                  <span>مهلت: {formatJalaliDisplay(hw.dueDate)}</span>
                 </div>
               </div>
 
@@ -308,12 +320,10 @@ export const HomeworkPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <Input
+            <PersianDatePicker
               label="مهلت ارسال (تاریخ)"
-              type="date"
               value={createForm.dueDate}
-              onChange={(e) => setCreateForm({ ...createForm, dueDate: e.target.value })}
-              required
+              onChange={(date) => setCreateForm({ ...createForm, dueDate: date })}
             />
             <Input
               label="حداکثر نمره (بارم)"

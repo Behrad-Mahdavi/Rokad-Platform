@@ -192,6 +192,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      jalaali-js:
+        specifier: ^1.2.8
+        version: 1.2.8
       lucide-react:
         specifier: ^0.468.0
         version: 0.468.0(react@18.3.1)
@@ -229,6 +232,9 @@ importers:
         specifier: ^5.0.2
         version: 5.0.15(@types/react@18.3.31)(react@18.3.1)
     devDependencies:
+      '@types/jalaali-js':
+        specifier: ^1.2.0
+        version: 1.2.0
       '@types/node':
         specifier: ^22.10.1
         version: 22.20.1

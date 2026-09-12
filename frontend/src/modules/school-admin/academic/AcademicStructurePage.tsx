@@ -6,7 +6,11 @@ import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
-import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
+import { PersianDatePicker } from '../../../components/ui/PersianDatePicker';
+import {
+  formatJalaliDisplay,
+  jalaliToGregorianDate,
+} from '../../../utils/jalali';
 import {
   Table,
   TableHeader,
@@ -25,6 +29,7 @@ import {
   Building,
   AlertCircle,
 } from 'lucide-react';
+import { ResponsivePageHeader } from '@/components/ui/ResponsivePageHeader';
 
 export const AcademicStructurePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'YEARS' | 'CLASSROOMS' | 'LESSONS'>('CLASSROOMS');
@@ -47,8 +52,8 @@ export const AcademicStructurePage: React.FC = () => {
 
   const [yearForm, setYearForm] = useState({
     name: 'سال تحصیلی ۱۴۰۵-۱۴۰۶',
-    startDate: '2026-09-23',
-    endDate: '2027-06-21',
+    startDate: '1405-07-01',
+    endDate: '1406-03-31',
     isCurrent: false,
   });
 
@@ -144,7 +149,11 @@ export const AcademicStructurePage: React.FC = () => {
     setIsSubmitting(true);
     setError(null);
     try {
-      await apiClient.post('/academic/years', yearForm);
+      await apiClient.post('/academic/years', {
+        ...yearForm,
+        startDate: jalaliToGregorianDate(yearForm.startDate).toISOString(),
+        endDate: jalaliToGregorianDate(yearForm.endDate).toISOString(),
+      });
       setIsYearModalOpen(false);
       fetchData();
     } catch (err: any) {
@@ -358,8 +367,8 @@ export const AcademicStructurePage: React.FC = () => {
             {academicYears.map((y) => (
               <TableRow key={y.id}>
                 <TableCell><div className="font-bold text-ink-darker">{y.name}</div></TableCell>
-                <TableCell><span className="text-xs font-mono text-gray-600">{new Date(y.startDate).toLocaleDateString('fa-IR')}</span></TableCell>
-                <TableCell><span className="text-xs font-mono text-gray-600">{new Date(y.endDate).toLocaleDateString('fa-IR')}</span></TableCell>
+                <TableCell><span className="text-xs font-medium text-gray-700">{formatJalaliDisplay(y.startDate)}</span></TableCell>
+                <TableCell><span className="text-xs font-medium text-gray-700">{formatJalaliDisplay(y.endDate)}</span></TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     {y.terms?.map((t: any) => (
@@ -538,19 +547,15 @@ export const AcademicStructurePage: React.FC = () => {
             required
           />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="تاریخ شروع (میلادی)"
-              type="date"
+            <PersianDatePicker
+              label="تاریخ شروع (شمسی)"
               value={yearForm.startDate}
-              onChange={(e) => setYearForm({ ...yearForm, startDate: e.target.value })}
-              required
+              onChange={(date) => setYearForm({ ...yearForm, startDate: date })}
             />
-            <Input
-              label="تاریخ پایان (میلادی)"
-              type="date"
+            <PersianDatePicker
+              label="تاریخ پایان (شمسی)"
               value={yearForm.endDate}
-              onChange={(e) => setYearForm({ ...yearForm, endDate: e.target.value })}
-              required
+              onChange={(date) => setYearForm({ ...yearForm, endDate: date })}
             />
           </div>
 

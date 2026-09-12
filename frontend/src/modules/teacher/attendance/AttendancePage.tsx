@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { apiClient } from '../../../lib/api/client';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
-import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import {
@@ -13,11 +12,18 @@ import {
   TableRow,
   TableCell,
 } from '../../../components/ui/Table';
+import { PersianDatePicker } from '../../../components/ui/PersianDatePicker';
+import {
+  gregorianToJalaliStr,
+  jalaliToGregorianDate,
+  formatJalaliDisplay,
+} from '../../../utils/jalali';
 import {
   CalendarDays,
   CheckCircle2,
   XCircle,
   Clock,
+  HelpCircle,
   Save,
   Users,
   AlertCircle,
@@ -26,7 +32,7 @@ import {
 export const AttendancePage: React.FC = () => {
   const [classrooms, setClassrooms] = useState<any[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState<string>(gregorianToJalaliStr(new Date()));
   const [students, setStudents] = useState<any[]>([]);
   const [attendanceMap, setAttendanceMap] = useState<Record<string, { status: string; delayMinutes: number; note: string }>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -114,7 +120,7 @@ export const AttendancePage: React.FC = () => {
       const records = students.map((s) => ({
         studentId: s.id,
         classroomId: selectedClassId,
-        date: new Date(date).toISOString(),
+        date: jalaliToGregorianDate(date).toISOString(),
         status: attendanceMap[s.id]?.status || 'PRESENT',
         delayMinutes: Number(attendanceMap[s.id]?.delayMinutes || 0),
         note: attendanceMap[s.id]?.note || '',
@@ -181,13 +187,11 @@ export const AttendancePage: React.FC = () => {
             </select>
           </div>
 
-          <div className="flex items-center space-x-2 space-x-reverse">
-            <label className="text-xs font-bold text-ink-dark">تاریخ جلسه:</label>
-            <input
-              type="date"
+          <div className="flex items-center space-x-2 space-x-reverse min-w-[200px]">
+            <label className="text-xs font-bold text-ink-dark shrink-0">تاریخ جلسه:</label>
+            <PersianDatePicker
               value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="h-10 text-xs px-3 rounded-md border border-gray-300 bg-white font-mono focus:ring-2 focus:ring-primary"
+              onChange={setDate}
             />
           </div>
         </div>

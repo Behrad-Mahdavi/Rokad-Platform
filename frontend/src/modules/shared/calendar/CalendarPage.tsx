@@ -6,6 +6,12 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
+import { PersianDatePicker } from '../../../components/ui/PersianDatePicker';
+import {
+  gregorianToJalaliStr,
+  jalaliToGregorianDate,
+  formatJalaliDisplay,
+} from '../../../utils/jalali';
 import {
   Calendar as CalendarIcon,
   Plus,
@@ -34,8 +40,10 @@ export const CalendarPage: React.FC = () => {
     title: '',
     description: '',
     type: 'EVENT',
-    startDate: new Date().toISOString().split('T')[0] + 'T08:00',
-    endDate: new Date().toISOString().split('T')[0] + 'T10:00',
+    startDate: gregorianToJalaliStr(new Date()),
+    startTime: '08:00',
+    endDate: gregorianToJalaliStr(new Date()),
+    endTime: '10:00',
     location: 'سالن همایش‌های مدرسه',
   });
 
@@ -86,14 +94,31 @@ export const CalendarPage: React.FC = () => {
     setIsSubmitting(true);
     setError(null);
     try {
-      await apiClient.post('/calendar/events', form);
+      const startDateObj = jalaliToGregorianDate(form.startDate);
+      const [sh, sm] = form.startTime.split(':').map(Number);
+      startDateObj.setHours(sh || 8, sm || 0, 0, 0);
+
+      const endDateObj = jalaliToGregorianDate(form.endDate);
+      const [eh, em] = form.endTime.split(':').map(Number);
+      endDateObj.setHours(eh || 10, em || 0, 0, 0);
+
+      await apiClient.post('/calendar/events', {
+        title: form.title,
+        description: form.description,
+        eventType: form.type,
+        startDate: startDateObj.toISOString(),
+        endDate: endDateObj.toISOString(),
+        location: form.location,
+      });
       setIsCreateOpen(false);
       setForm({
         title: '',
         description: '',
         type: 'EVENT',
-        startDate: new Date().toISOString().split('T')[0] + 'T08:00',
-        endDate: new Date().toISOString().split('T')[0] + 'T10:00',
+        startDate: gregorianToJalaliStr(new Date()),
+        startTime: '08:00',
+        endDate: gregorianToJalaliStr(new Date()),
+        endTime: '10:00',
         location: 'سالن همایش‌های مدرسه',
       });
       fetchEvents();
@@ -183,9 +208,9 @@ export const CalendarPage: React.FC = () => {
                         : 'رویداد و اردو'}
                     </Badge>
 
-                    <span className="text-xs font-mono font-bold text-gray-500 flex items-center space-x-1 space-x-reverse">
-                      <Clock className="h-3.5 w-3.5 text-amber-500" />
-                      <span>{new Date(event.startDate).toLocaleDateString('fa-IR')}</span>
+                    <span className="text-xs font-bold text-gray-600 flex items-center space-x-1 space-x-reverse">
+                      <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                      <span>{formatJalaliDisplay(event.startDate)}</span>
                     </span>
                   </div>
 
@@ -243,21 +268,33 @@ export const CalendarPage: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="زمان شروع"
-                  type="datetime-local"
-                  value={form.startDate}
-                  onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-                  required
-                />
-                <Input
-                  label="زمان پایان"
-                  type="datetime-local"
-                  value={form.endDate}
-                  onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-                  required
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <PersianDatePicker
+                    label="تاریخ شروع"
+                    value={form.startDate}
+                    onChange={(d) => setForm({ ...form, startDate: d })}
+                  />
+                  <Input
+                    label="ساعت شروع"
+                    type="time"
+                    value={form.startTime}
+                    onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <PersianDatePicker
+                    label="تاریخ پایان"
+                    value={form.endDate}
+                    onChange={(d) => setForm({ ...form, endDate: d })}
+                  />
+                  <Input
+                    label="ساعت پایان"
+                    type="time"
+                    value={form.endTime}
+                    onChange={(e) => setForm({ ...form, endTime: e.target.value })}
+                  />
+                </div>
               </div>
 
               <Input
