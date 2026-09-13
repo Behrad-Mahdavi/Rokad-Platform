@@ -30,7 +30,7 @@ export const AuthLayout: React.FC = () => {
           </div>
 
           <h2 className="text-3xl font-extrabold leading-snug">
-            مدیریت هوشمند کارگاه‌ها، پودمان‌های درسی، امور مالی و ارتباطات در پنجره واحد
+            پلتفرم جامع رکاد
           </h2>
 
           <p className="text-sm text-white/80 leading-relaxed">
