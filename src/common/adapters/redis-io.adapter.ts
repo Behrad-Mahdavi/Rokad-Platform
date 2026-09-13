@@ -26,14 +26,28 @@ export class RedisIoAdapter extends IoAdapter {
         host,
         port,
         password: password || undefined,
+        enableOfflineQueue: false,
+        maxRetriesPerRequest: null,
+        retryStrategy: () => null,
+        lazyConnect: true,
+      });
+
+      pubClient.on('error', (err) => {
+        this.logger.debug(`Redis pubClient error: ${err.message}`);
       });
 
       const subClient = pubClient.duplicate();
+      subClient.on('error', (err) => {
+        this.logger.debug(`Redis subClient error: ${err.message}`);
+      });
+
+      await pubClient.connect();
+      await subClient.connect();
 
       this.adapterConstructor = createAdapter(pubClient, subClient);
       this.logger.log('⚡ RedisIoAdapter connected successfully for WebSocket multi-instance synchronization');
     } catch (err: any) {
-      this.logger.warn(`RedisIoAdapter fallback: ${err.message}`);
+      this.logger.warn(`RedisIoAdapter fallback (in-memory WebSocket): ${err.message}`);
     }
   }
 
