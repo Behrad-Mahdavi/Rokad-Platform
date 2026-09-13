@@ -128,7 +128,7 @@ export const ParentDashboard: React.FC = () => {
           </div>
           <div className="mt-3 text-xs text-gray-500 space-y-1">
             <div>رتبه در کلاس: <strong className="text-ink-darker">رتبه ۲ (ممتاز)</strong></div>
-            <div>نمره انضباط: <strong className="text-emerald-600">۲۰.۰۰</strong></div>
+            <div>وضعیت انضباطی: <strong className="text-emerald-600">عادی و بدون مورد منفی</strong></div>
           </div>
           <Button
             variant="outline"

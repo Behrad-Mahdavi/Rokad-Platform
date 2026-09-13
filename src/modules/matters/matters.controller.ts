@@ -52,8 +52,8 @@ export class MattersController {
   }
 
   @Get()
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
-  @ApiOperation({ summary: 'لیست تمام موارد انضباطی و تشویقی مدرسه' })
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF, Role.TEACHER)
+  @ApiOperation({ summary: 'لیست تمام موارد انضباطی و تشویقی مدرسه (قابل مشاهده توسط مدیر، کادر و معلمان)' })
   async listMatters(
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentTenant('id') tenantId: string,
@@ -64,7 +64,7 @@ export class MattersController {
   }
 
   @Get('my-matters')
-  @ApiOperation({ summary: 'مشاهده کارنامه انضباطی و تشویقی من (دانش‌آموز یا فرزند ولی)' })
+  @ApiOperation({ summary: 'مشاهده موارد انضباطی و تشویقی من (دانش‌آموز یا فرزند ولی)' })
   async getMyMatters(
     @CurrentUser() user: any,
     @CurrentUser('tenantId') userTenantId: string,

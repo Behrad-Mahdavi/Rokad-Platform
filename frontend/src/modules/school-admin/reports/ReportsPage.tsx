@@ -17,6 +17,7 @@ import {
   Building,
   Award,
   Wallet,
+  Send,
 } from 'lucide-react';
 import {
   BarChart,
@@ -35,6 +36,20 @@ export const ReportsPage: React.FC = () => {
   const [isPayaModalOpen, setIsPayaModalOpen] = useState(false);
   const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
+  const [isReportCardPublished, setIsReportCardPublished] = useState<boolean>(() => {
+    return localStorage.getItem('rokad_report_card_published') === 'true';
+  });
+
+  const toggleReportCardPublish = () => {
+    const nextState = !isReportCardPublished;
+    setIsReportCardPublished(nextState);
+    localStorage.setItem('rokad_report_card_published', String(nextState));
+    handleSimulateDownload(
+      nextState
+        ? 'کارنامه‌ها با موفقیت برای کلیه اولیاء و دانش‌آموزان مدرسه منتشر شد.'
+        : 'انتشار کارنامه‌ها لغو شد و دسترسی اولیاء و دانش‌آموزان موقتاً بسته شد.'
+    );
+  };
 
   const gradeGpaData = [
     { grade: 'پایه دهم ریاضی', gpa: 19.20 },
@@ -147,6 +162,32 @@ export const ReportsPage: React.FC = () => {
             </div>
 
             <div className="space-y-3">
+              {/* Publication Control by Manager */}
+              <div className="p-4 rounded-xl border-2 border-primary/30 bg-primary/5 flex flex-col sm:flex-row justify-between sm:items-center gap-3 shadow-xs">
+                <div>
+                  <div className="font-bold text-xs text-ink-darker flex items-center space-x-2 space-x-reverse">
+                    <Send className="h-4 w-4 text-primary shrink-0" />
+                    <span>انتشار کارنامه برای اولیاء و هنرجویان</span>
+                    <Badge variant={isReportCardPublished ? 'success' : 'neutral'} className="mr-2">
+                      {isReportCardPublished ? 'منتشر شده برای اولیاء و هنرجویان' : 'پنهان و منتشرنشده'}
+                    </Badge>
+                  </div>
+                  <div className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+                    {isReportCardPublished
+                      ? 'کارنامه‌ها هم‌اکنون برای دانش‌آموزان و اولیاء در پرتال قابل مشاهده و دانلود است.'
+                      : 'کارنامه‌ها فعلاً از دید اولیاء و هنرجویان مخفی است و فقط با فشردن دکمه زیر منتشر می‌شود.'}
+                  </div>
+                </div>
+                <Button
+                  variant={isReportCardPublished ? 'destructive' : 'primary'}
+                  size="sm"
+                  onClick={toggleReportCardPublish}
+                  className="text-xs shrink-0 font-medium"
+                >
+                  {isReportCardPublished ? 'لغو انتشار کارنامه‌ها' : 'انتشار رسمی کارنامه‌ها'}
+                </Button>
+              </div>
+
               {/* Action 1: Report Card */}
               <div className="p-3.5 rounded-xl border border-gray-200 bg-gray-50 flex justify-between items-center">
                 <div>
@@ -154,7 +195,7 @@ export const ReportsPage: React.FC = () => {
                     <FileText className="h-4 w-4 text-primary" />
                     <span>کارنامه ترم اول (فرمت رسمی آموزش و پرورش)</span>
                   </div>
-                  <div className="text-[11px] text-gray-500 mt-0.5">خروجی رسمی چاپی شامل رتبه، انضباط و مهر مدرسه</div>
+                  <div className="text-[11px] text-gray-500 mt-0.5">خروجی رسمی چاپی شامل ریز نمرات، رتبه و مهر مدرسه</div>
                 </div>
                 <Button
                   variant="outline"
@@ -265,7 +306,7 @@ export const ReportsPage: React.FC = () => {
 
             <div className="grid grid-cols-3 gap-3 p-3 bg-primary-light/30 rounded-xl text-center text-xs font-bold">
               <div>معدل کل: <span className="text-primary text-sm font-mono font-extrabold">۱۹.۳۱</span></div>
-              <div>نمره انضباط: <span className="text-emerald-700 text-sm font-mono font-extrabold">۲۰.۰۰</span></div>
+              <div>وضعیت تحصیلی: <span className="text-emerald-700 text-sm font-extrabold">قبول ممتاز</span></div>
               <div>رتبه در پایه: <span className="text-indigo-700 text-sm font-mono font-extrabold">۲</span></div>
             </div>
 

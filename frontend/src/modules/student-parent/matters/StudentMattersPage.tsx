@@ -63,7 +63,7 @@ export const StudentMattersPage: React.FC = () => {
     string,
     { label: string; badgeVariant: 'success' | 'destructive' | 'warning' | 'college' | 'neutral'; icon: any }
   > = {
-    POSITIVE: { label: 'تشویق و افتخار', badgeVariant: 'success', icon: Award },
+    POSITIVE: { label: 'تشویق', badgeVariant: 'success', icon: Award },
     NEGATIVE: { label: 'مورد انضباطی', badgeVariant: 'destructive', icon: ShieldAlert },
     WARNING: { label: 'تذکر انضباطی', badgeVariant: 'warning', icon: AlertTriangle },
     SUSPENSION: { label: 'محرومیت موقت', badgeVariant: 'destructive', icon: ShieldAlert },
@@ -71,9 +71,6 @@ export const StudentMattersPage: React.FC = () => {
   };
 
   const isParent = user?.role === 'PARENT';
-  const baseDisciplineGrade = 20;
-  const netPoints = data?.totalPoints || 0;
-  const computedScore = Math.max(0, Math.min(20, baseDisciplineGrade + netPoints));
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
@@ -85,10 +82,10 @@ export const StudentMattersPage: React.FC = () => {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              {isParent ? 'کارنامه انضباطی و تشویقی فرزند' : 'کارنامه انضباطی و افتخارات من'}
+              {isParent ? 'موارد انضباطی و تشویقی فرزند' : 'موارد انضباطی و تشویقی من'}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              مشاهده سوابق تشویق‌ها، دستاوردهای علمی و ورزشی و تذکرات انضباطی ثبت‌شده
+              مشاهده سوابق تشویق‌ها، تذکرات کلاسی و موارد انضباطی ثبت‌شده
             </p>
           </div>
         </div>
@@ -103,33 +100,24 @@ export const StudentMattersPage: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Discipline Score */}
+          {/* Total Matters */}
           <Card className="p-5 border border-primary/20 bg-gradient-to-br from-primary/5 via-surface/50 to-surface">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">نمره انضباط جاری</span>
-              <Sparkles className="w-4 h-4 text-primary" />
+              <span className="text-xs font-semibold text-muted-foreground">کل موارد ثبت‌شده</span>
+              <ShieldCheck className="w-4 h-4 text-primary" />
             </div>
             <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-3xl font-black text-foreground">{computedScore}</span>
-              <span className="text-xs text-muted-foreground">از ۲۰</span>
-              {netPoints !== 0 && (
-                <span
-                  className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                    netPoints > 0
-                      ? 'bg-emerald-500/10 text-emerald-600'
-                      : 'bg-destructive/10 text-destructive'
-                  }`}
-                >
-                  {netPoints > 0 ? `+${netPoints} امتیاز` : `${netPoints} امتیاز`}
-                </span>
-              )}
+              <span className="text-3xl font-black text-foreground">
+                {data?.matters?.length || 0}
+              </span>
+              <span className="text-xs text-muted-foreground">مورد در پرونده</span>
             </div>
           </Card>
 
           {/* Commendations */}
           <Card className="p-5 border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 via-surface/50 to-surface">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">تشویق‌ها و دستاوردها</span>
+              <span className="text-xs font-semibold text-muted-foreground">تشویق‌ها</span>
               <Award className="w-4 h-4 text-emerald-500" />
             </div>
             <div className="flex items-baseline gap-2 mt-2">
@@ -140,7 +128,7 @@ export const StudentMattersPage: React.FC = () => {
             </div>
           </Card>
 
-          {/* Warnings */}
+          {/* Warnings & Negative */}
           <Card className="p-5 border border-amber-500/20 bg-gradient-to-br from-amber-500/5 via-surface/50 to-surface">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-muted-foreground">تذکرات و موارد منفی</span>

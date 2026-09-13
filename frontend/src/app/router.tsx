@@ -141,6 +141,7 @@ export const router = createBrowserRouter([
               { path: 'question-bank', element: <QuestionBankPage /> },
               { path: 'visits', element: <TeacherVisitsPage /> },
               { path: 'schedule', element: <TeacherSchedulePage /> },
+              { path: 'matters', element: <MattersPage /> },
             ],
           },
         ],

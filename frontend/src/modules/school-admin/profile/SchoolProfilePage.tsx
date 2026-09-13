@@ -356,7 +356,7 @@ export const SchoolProfilePage: React.FC = () => {
               <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
               <div className="text-sm font-bold text-ink-dark mb-1">هنوز مقاله‌ای منتشر نشده است</div>
               <p className="text-xs text-gray-400 mb-4">
-                برای اشتراک‌گذاری افتخارات، اخبار یا مقالات علمی مدرسه از دکمه زیر استفاده کنید.
+                برای اشتراک‌گذاری اخبار، رویدادها یا مقالات علمی مدرسه از دکمه زیر استفاده کنید.
               </p>
               <Button variant="primary" size="sm" onClick={() => setIsBlogModalOpen(true)}>
                 <Plus className="h-4 w-4 ml-1" />
@@ -446,8 +446,8 @@ export const SchoolProfilePage: React.FC = () => {
       <Modal
         isOpen={isBlogModalOpen}
         onClose={() => setIsBlogModalOpen(false)}
-        title="انتشار مقاله، خبر یا دستاورد جدید"
-        description="ثبت رویدادها، افتخارات کسب‌شده و مطالب علمی در وبلاگ مدرسه"
+        title="انتشار مقاله یا خبر جدید"
+        description="ثبت رویدادها، اخبار و مطالب علمی در وبلاگ مدرسه"
         maxWidth="lg"
       >
         <form onSubmit={handleCreateBlog} className="space-y-4">
@@ -460,7 +460,7 @@ export const SchoolProfilePage: React.FC = () => {
 
           <Input
             label="عنوان مقاله یا خبر *"
-            placeholder="مثال: کسب رتبه اول کشوری در المپیاد شایستگی‌محور کامپیوتر"
+            placeholder="مثال: برگزاری کارگاه تخصصی هوش مصنوعی و مهندسی داده در هنرستان رُکاد"
             value={blogForm.title}
             onChange={(e) => setBlogForm({ ...blogForm, title: e.target.value })}
             required
@@ -469,7 +469,7 @@ export const SchoolProfilePage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="اسلاگ آدرس (اختیاری)"
-              placeholder="مثال: computer-skills-first-place"
+              placeholder="مثال: ai-data-workshop"
               value={blogForm.slug}
               onChange={(e) => setBlogForm({ ...blogForm, slug: e.target.value })}
             />
@@ -483,7 +483,7 @@ export const SchoolProfilePage: React.FC = () => {
 
           <Input
             label="برچسب‌ها (با کاما جدا کنید)"
-            placeholder="مثال: مسابقات, افتخارات, کامپیوتر, رُکاد"
+            placeholder="مثال: کارگاه, آموزش, کامپیوتر, رُکاد"
             value={blogForm.tags}
             onChange={(e) => setBlogForm({ ...blogForm, tags: e.target.value })}
           />

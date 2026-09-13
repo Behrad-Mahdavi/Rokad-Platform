@@ -52,7 +52,7 @@ export class ProfilesController {
   @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
   @RequirePermissions(AppPermission.SCHOOL_PROFILE_WRITE)
   @Patch('school')
-  @ApiOperation({ summary: 'ویرایش مشخصات، شعار و افتخارات مدرسه (مدیر مدرسه)' })
+  @ApiOperation({ summary: 'ویرایش مشخصات و شعار مدرسه (مدیر مدرسه)' })
   async updateSchoolProfile(
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentTenant('id') tenantId: string,

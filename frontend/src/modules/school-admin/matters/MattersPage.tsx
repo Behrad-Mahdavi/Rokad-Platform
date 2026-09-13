@@ -187,7 +187,7 @@ export const MattersPage: React.FC = () => {
               سامانه امور انضباطی و تشویقی هنرجویان
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              ثبت افتخارات، تشویق‌ها، تذکرات انضباطی و ارجاعات مشاوره‌ای همراه با محاسبه امتیاز
+              ثبت تشویق‌ها، تذکرات کلاسی، موارد انضباطی و ارجاعات مشاوره‌ای
             </p>
           </div>
         </div>
@@ -213,7 +213,7 @@ export const MattersPage: React.FC = () => {
 
         <Card className="p-4 border border-border/60 bg-surface/30">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">تشویق‌ها و افتخارات</span>
+            <span className="text-xs text-muted-foreground">تشویق‌ها</span>
             <Award className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="text-2xl font-bold text-emerald-600 mt-2">{positiveTotal}</div>
@@ -468,7 +468,7 @@ export const MattersPage: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-foreground mb-1.5">
-                امتیاز اثرگذار بر نمره انضباط
+                امتیاز رویداد (اختیاری)
               </label>
               <Input
                 type="number"
@@ -482,12 +482,12 @@ export const MattersPage: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-foreground mb-1.5">
-              عنوان مورد یا دستاورد *
+              عنوان مورد تشویقی یا انضباطی *
             </label>
             <Input
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="مثال: کسب رتبه اول در مسابقات برنامه‌نویسی مرحله استانی"
+              placeholder="مثال: پاسخگویی دقیق و مشارکت فعال در حل تمرین‌های کلاسی"
               required
             />
           </div>

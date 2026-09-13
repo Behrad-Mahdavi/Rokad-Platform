@@ -19,6 +19,7 @@ import {
   TrendingUp,
   User,
   GraduationCap,
+  ShieldAlert,
 } from 'lucide-react';
 
 const getPersianDayKey = (): string => {
@@ -174,13 +175,18 @@ export const StudentDashboard: React.FC = () => {
           <p className="text-[11px] text-blue-600 font-medium mt-1">آماده برگزاری آنلاین</p>
         </Card>
 
-        <Card className="p-5 border hover:border-purple-500 transition-all">
+        <Card
+          onClick={() => navigate('/app/student/matters')}
+          className="p-5 border hover:border-purple-500 transition-all cursor-pointer group"
+        >
           <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
-            <span>نمره انضباط</span>
-            <Award className="h-4 w-4 text-purple-500" />
+            <span>امور انضباطی و تشویقی</span>
+            <ShieldAlert className="h-4 w-4 text-purple-500" />
           </div>
-          <div className="text-3xl font-extrabold text-emerald-600">۲۰.۰۰</div>
-          <p className="text-[11px] text-gray-500 font-medium mt-1">بدون تاخیر یا غیبت</p>
+          <div className="text-2xl font-extrabold text-foreground group-hover:text-primary transition-colors">
+            پرونده منظم
+          </div>
+          <p className="text-[11px] text-gray-500 font-medium mt-1">مشاهده سوابق و تشویق‌ها</p>
         </Card>
       </div>
 

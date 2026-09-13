@@ -37,18 +37,18 @@ export class UpdateSchoolProfileDto {
   @IsOptional()
   managerMessage?: string;
 
-  @ApiPropertyOptional({ description: 'افتخارات و دستاوردهای مدرسه (JSON)' })
+  @ApiPropertyOptional({ description: 'دستاوردهای مدرسه (JSON)' })
   @IsOptional()
   achievements?: any;
 }
 
 export class CreateBlogPostDto {
-  @ApiProperty({ description: 'عنوان مقاله یا دستاورد', example: 'کسب رتبه اول مسابقات برنامه‌نویسی توسط تیم رُکاد' })
+  @ApiProperty({ description: 'عنوان مقاله یا خبر', example: 'برگزاری کارگاه تخصصی هوش مصنوعی در هنرستان رُکاد' })
   @IsString()
   @IsNotEmpty()
   title: string;
 
-  @ApiProperty({ description: 'اسلاگ انگلیسی یا فارسی برای آدرس وبلاگ', example: 'first-place-programming-contest' })
+  @ApiProperty({ description: 'اسلاگ انگلیسی یا فارسی برای آدرس وبلاگ', example: 'ai-workshop-in-rokad' })
   @IsString()
   @IsNotEmpty()
   slug: string;
@@ -68,7 +68,7 @@ export class CreateBlogPostDto {
   @IsOptional()
   isPublished?: boolean;
 
-  @ApiPropertyOptional({ description: 'برچسب‌ها (تگ‌ها)', example: ['مسابقات', 'نوآوری', 'افتخارات'] })
+  @ApiPropertyOptional({ description: 'برچسب‌ها (تگ‌ها)', example: ['مسابقات', 'نوآوری', 'آموزش'] })
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
