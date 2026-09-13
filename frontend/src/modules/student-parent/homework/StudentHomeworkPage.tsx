@@ -90,8 +90,9 @@ export const StudentHomeworkPage: React.FC = () => {
             </Card>
           ))
         ) : homeworkList.length === 0 ? (
-          <div className="col-span-3 text-center py-12 bg-white rounded-2xl border border-gray-200 text-gray-500 text-sm">
-            در حال حاضر هیچ تکلیف فعالی برای شما ثبت نشده است. 🎉
+          <div className="col-span-3 text-center py-12 bg-white rounded-2xl border border-gray-200 text-gray-500 text-sm flex flex-col items-center justify-center gap-2">
+            <CheckCircle2 className="h-8 w-8 text-emerald-500 mb-1" />
+            <span>در حال حاضر هیچ تکلیف فعالی برای شما ثبت نشده است.</span>
           </div>
         ) : (
           homeworkList.map((hw) => {

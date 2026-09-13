@@ -85,8 +85,9 @@ export const StudentDashboard: React.FC = () => {
       <div className="relative overflow-hidden bg-gradient-to-l from-primary/10 via-primary-light/20 to-white p-6 rounded-2xl border border-primary/20 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 space-x-reverse mb-1">
+            <GraduationCap className="h-6 w-6 text-primary shrink-0" />
             <span className="text-xl font-bold text-ink-darker">
-              سلام، {user?.firstName} عزیز! 🎓
+              سلام، {user?.firstName} عزیز!
             </span>
             {scheduleData?.classroom ? (
               <Badge variant="default" className="flex items-center gap-1">

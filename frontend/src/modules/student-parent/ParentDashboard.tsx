@@ -14,6 +14,7 @@ import {
   TrendingUp,
   ArrowUpRight,
   MessageSquare,
+  Users,
 } from 'lucide-react';
 
 export const ParentDashboard: React.FC = () => {
@@ -26,8 +27,9 @@ export const ParentDashboard: React.FC = () => {
       <div className="relative overflow-hidden bg-gradient-to-l from-purple-500/10 via-purple-100/30 to-white p-6 rounded-2xl border border-purple-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 space-x-reverse mb-1">
+            <Users className="h-6 w-6 text-purple-600 shrink-0" />
             <span className="text-xl font-bold text-ink-darker">
-              پرتال اولیاء گرامی: {user?.firstName} {user?.lastName} 👨‍👩‍👦
+              پرتال اولیاء گرامی: {user?.firstName} {user?.lastName}
             </span>
             <Badge variant="female">فرزند: امیرعلی صادقی</Badge>
           </div>

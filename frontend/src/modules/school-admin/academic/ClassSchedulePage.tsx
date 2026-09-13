@@ -741,7 +741,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                 return (
                   <option key={t.id} value={t.id}>
                     {t.user?.firstName} {t.user?.lastName} ({t.specialization || 'عمومی'}){' '}
-                    {teachesThisLesson ? '★ [مدرس ثبت‌شده این درس]' : ''}
+                    {teachesThisLesson ? '[مدرس مصوب این درس]' : ''}
                   </option>
                 );
               })}

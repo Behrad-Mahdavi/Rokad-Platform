@@ -6,7 +6,18 @@ import { apiClient } from '../../lib/api/client';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
-import { Lock, Phone, School, UserCheck, AlertCircle } from 'lucide-react';
+import {
+  Lock,
+  Phone,
+  School,
+  UserCheck,
+  AlertCircle,
+  GraduationCap,
+  Shield,
+  Users,
+  Crown,
+  BookOpen,
+} from 'lucide-react';
 import { ApiResponse } from '../../types/api';
 import { LoginResponse } from '../../types/auth';
 
@@ -112,7 +123,7 @@ export const LoginPage: React.FC = () => {
                   : 'text-gray-600 hover:text-ink-dark'
               }`}
             >
-              <span>👦</span>
+              <GraduationCap className="h-4 w-4 shrink-0" />
               <span>هنرستان پسرانه</span>
             </button>
             <button
@@ -128,7 +139,7 @@ export const LoginPage: React.FC = () => {
                   : 'text-gray-600 hover:text-ink-dark'
               }`}
             >
-              <span>👧</span>
+              <GraduationCap className="h-4 w-4 shrink-0" />
               <span>هنرستان دخترانه</span>
             </button>
           </div>
@@ -185,7 +196,10 @@ export const LoginPage: React.FC = () => {
               onClick={() => selectPreset('rokad-boys', '09121111111', 'RokadBoysPass2026!')}
               className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
             >
-              <div className="font-bold text-ink-dark">👦 مدیر پسرانه</div>
+              <div className="font-bold text-ink-dark flex items-center gap-1.5">
+                <Shield className="h-3.5 w-3.5 text-sec shrink-0" />
+                <span>مدیر پسرانه</span>
+              </div>
               <div className="text-[10px] text-gray-500">09121111111</div>
             </button>
 
@@ -194,7 +208,10 @@ export const LoginPage: React.FC = () => {
               onClick={() => selectPreset('rokad-girls', '09121111112', 'RokadGirlsPass2026!')}
               className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
             >
-              <div className="font-bold text-ink-dark">👧 مدیر دخترانه</div>
+              <div className="font-bold text-ink-dark flex items-center gap-1.5">
+                <Shield className="h-3.5 w-3.5 text-girl shrink-0" />
+                <span>مدیر دخترانه</span>
+              </div>
               <div className="text-[10px] text-gray-500">09121111112</div>
             </button>
 
@@ -203,7 +220,10 @@ export const LoginPage: React.FC = () => {
               onClick={() => selectPreset('rokad-boys', '09123000001', 'RokadPass2026!')}
               className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
             >
-              <div className="font-bold text-ink-dark">👨‍🏫 هنرآموز / معلم</div>
+              <div className="font-bold text-ink-dark flex items-center gap-1.5">
+                <BookOpen className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                <span>هنرآموز / معلم</span>
+              </div>
               <div className="text-[10px] text-gray-500">09123000001</div>
             </button>
 
@@ -212,7 +232,10 @@ export const LoginPage: React.FC = () => {
               onClick={() => selectPreset('rokad-boys', '09124000001', 'RokadPass2026!')}
               className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
             >
-              <div className="font-bold text-ink-dark">🎓 هنرجوی پسرانه</div>
+              <div className="font-bold text-ink-dark flex items-center gap-1.5">
+                <GraduationCap className="h-3.5 w-3.5 text-sec shrink-0" />
+                <span>هنرجوی پسرانه</span>
+              </div>
               <div className="text-[10px] text-gray-500">09124000001</div>
             </button>
 
@@ -221,7 +244,10 @@ export const LoginPage: React.FC = () => {
               onClick={() => selectPreset('rokad-girls', '09124000002', 'RokadPass2026!')}
               className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
             >
-              <div className="font-bold text-ink-dark">👩‍🎓 هنرجوی دخترانه</div>
+              <div className="font-bold text-ink-dark flex items-center gap-1.5">
+                <GraduationCap className="h-3.5 w-3.5 text-girl shrink-0" />
+                <span>هنرجوی دخترانه</span>
+              </div>
               <div className="text-[10px] text-gray-500">09124000002</div>
             </button>
 
@@ -230,7 +256,10 @@ export const LoginPage: React.FC = () => {
               onClick={() => selectPreset('platform-root', '09120000000', 'RokadAdminPass2026!')}
               className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
             >
-              <div className="font-bold text-ink-dark">👑 سوپرادمین کلان</div>
+              <div className="font-bold text-ink-dark flex items-center gap-1.5">
+                <Crown className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                <span>سوپرادمین کلان</span>
+              </div>
               <div className="text-[10px] text-gray-500">09120000000</div>
             </button>
 
@@ -239,7 +268,10 @@ export const LoginPage: React.FC = () => {
               onClick={() => selectPreset('rokad-boys', '09125000001', 'RokadPass2026!')}
               className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors col-span-2"
             >
-              <div className="font-bold text-ink-dark">👨‍👩‍👦 اولیاء هنرجو</div>
+              <div className="font-bold text-ink-dark flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                <span>اولیاء هنرجو</span>
+              </div>
               <div className="text-[10px] text-gray-500">09125000001 • رمز: RokadPass2026!</div>
             </button>
           </div>

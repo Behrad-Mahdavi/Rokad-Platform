@@ -525,8 +525,9 @@ export const TenantsPage: React.FC = () => {
             required
           />
 
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 leading-relaxed">
-            ⚠️ توکن نیابتی صادرشده دارای اعتبار ۲ ساعته بوده و اجازه بررسی کلاس‌ها، نمرات و گزارش‌های مالی این مدرسه را فراهم می‌آورد.
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 leading-relaxed flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+            <span>توکن نیابتی صادرشده دارای اعتبار ۲ ساعته بوده و اجازه بررسی کلاس‌ها، نمرات و گزارش‌های مالی این مدرسه را فراهم می‌آورد.</span>
           </div>
 
           <div className="flex justify-end space-x-2 space-x-reverse pt-2">

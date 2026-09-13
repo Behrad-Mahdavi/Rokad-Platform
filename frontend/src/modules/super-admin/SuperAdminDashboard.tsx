@@ -16,6 +16,7 @@ import {
   ArrowUpRight,
   TrendingUp,
   LogIn,
+  Crown,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -107,8 +108,9 @@ export const SuperAdminDashboard: React.FC = () => {
       <div className="relative overflow-hidden bg-gradient-to-l from-primary/10 via-primary-light/20 to-white p-6 rounded-2xl border border-primary/20 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 space-x-reverse mb-1">
+            <Crown className="h-6 w-6 text-amber-500 shrink-0" />
             <span className="text-xl font-bold text-ink-darker">
-              مرکز فرماندهی کلان هنرستان‌های رُکاد (Control Plane) 👑
+              مرکز فرماندهی کلان هنرستان‌های رُکاد (Control Plane)
             </span>
             <Badge variant="default">SuperAdmin Root</Badge>
           </div>

@@ -20,6 +20,7 @@ import {
   CreditCard,
   MessageSquare,
   Menu,
+  GraduationCap,
 } from 'lucide-react';
 
 interface NotificationItem {
@@ -147,13 +148,13 @@ export const Header: React.FC = () => {
           type="button"
           onClick={() => switchBranch('boys')}
           title="سوئیچ به هنرستان پسرانه رُکاد"
-          className={`px-2 sm:px-3 py-1 rounded-lg font-bold transition-all flex items-center space-x-1 space-x-reverse ${
+          className={`px-2 sm:px-3 py-1 rounded-lg font-bold transition-all flex items-center space-x-1.5 space-x-reverse ${
             currentTenant?.slug === 'rokad-boys'
               ? 'bg-sec text-white shadow-sm'
               : 'text-gray-600 hover:text-ink-dark'
           }`}
         >
-          <span>👦</span>
+          <GraduationCap className="h-3.5 w-3.5 shrink-0" />
           <span className="hidden sm:inline">هنرستان</span>
           <span>پسرانه</span>
         </button>
@@ -161,13 +162,13 @@ export const Header: React.FC = () => {
           type="button"
           onClick={() => switchBranch('girls')}
           title="سوئیچ به هنرستان دخترانه رُکاد"
-          className={`px-2 sm:px-3 py-1 rounded-lg font-bold transition-all flex items-center space-x-1 space-x-reverse ${
+          className={`px-2 sm:px-3 py-1 rounded-lg font-bold transition-all flex items-center space-x-1.5 space-x-reverse ${
             currentTenant?.slug === 'rokad-girls'
               ? 'bg-girl text-white shadow-sm'
               : 'text-gray-600 hover:text-ink-dark'
           }`}
         >
-          <span>👧</span>
+          <GraduationCap className="h-3.5 w-3.5 shrink-0" />
           <span className="hidden sm:inline">هنرستان</span>
           <span>دخترانه</span>
         </button>
