@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { apiClient } from '../../../lib/api/client';
 
@@ -37,9 +38,19 @@ import {
   AlertCircle,
   Paperclip,
   ExternalLink,
+  X,
+  Filter,
 } from 'lucide-react';
 
 export const HomeworkPage: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const classroomIdParam = searchParams.get('classroomId');
+  const lessonIdParam = searchParams.get('lessonId');
+  const classroomNameParam = searchParams.get('classroomName');
+  const lessonNameParam = searchParams.get('lessonName');
+  const homeworkIdParam = searchParams.get('homeworkId');
+  const actionParam = searchParams.get('action');
+
   const [homeworkList, setHomeworkList] = useState<any[]>([]);
   const [classrooms, setClassrooms] = useState<any[]>([]);
   const [lessons, setLessons] = useState<any[]>([]);
@@ -64,8 +75,8 @@ export const HomeworkPage: React.FC = () => {
   const [createForm, setCreateForm] = useState({
     title: '',
     description: '',
-    classroomId: '',
-    lessonId: '',
+    classroomId: classroomIdParam || '',
+    lessonId: lessonIdParam || '',
     dueDate: gregorianToJalaliStr(new Date(Date.now() + 86400000 * 3)),
     maxScore: 20,
   });
@@ -93,17 +104,33 @@ export const HomeworkPage: React.FC = () => {
       setClassrooms(classData);
       setLessons(lessonData);
 
-      if (classData.length > 0) {
+      if (classroomIdParam) {
+        setCreateForm((prev) => ({ ...prev, classroomId: classroomIdParam }));
+      } else if (classData.length > 0) {
         setCreateForm((prev) => ({
           ...prev,
           classroomId: prev.classroomId || classData[0].id,
         }));
       }
-      if (lessonData.length > 0) {
+
+      if (lessonIdParam) {
+        setCreateForm((prev) => ({ ...prev, lessonId: lessonIdParam }));
+      } else if (lessonData.length > 0) {
         setCreateForm((prev) => ({
           ...prev,
           lessonId: prev.lessonId || lessonData[0].id,
         }));
+      }
+
+      if (actionParam === 'create') {
+        setIsCreateOpen(true);
+      }
+
+      if (homeworkIdParam && hwData.length > 0) {
+        const target = hwData.find((h: any) => h.id === homeworkIdParam);
+        if (target) {
+          handleViewSubmissions(target);
+        }
       }
     } catch (err) {
       console.error('Failed to load homework data', err);
@@ -114,7 +141,7 @@ export const HomeworkPage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [homeworkIdParam]);
 
   const handleCreateHomework = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,6 +217,16 @@ export const HomeworkPage: React.FC = () => {
     }
   };
 
+  const displayedHomework = homeworkList.filter((h) => {
+    if (classroomIdParam && h.classroomId !== classroomIdParam && h.classroom?.id !== classroomIdParam) {
+      return false;
+    }
+    if (lessonIdParam && h.lessonId !== lessonIdParam && h.lesson?.id !== lessonIdParam) {
+      return false;
+    }
+    return true;
+  });
+
   return (
     <div className="space-y-6">
       {/* Header & CTA */}
@@ -214,6 +251,42 @@ export const HomeworkPage: React.FC = () => {
         </Button>
       </div>
 
+      {/* Filter Banner */}
+      {(classroomIdParam || lessonIdParam) && (
+        <div className="flex items-center justify-between p-3.5 rounded-2xl bg-primary/10 border border-primary/25 text-xs text-foreground">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+              <Filter className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-bold text-primary">
+                فیلتر شده بر اساس: {classroomNameParam ? `کلاس ${classroomNameParam}` : ''}
+                {classroomNameParam && lessonNameParam ? ' - ' : ''}
+                {lessonNameParam ? `درس ${lessonNameParam}` : ''}
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                تعداد {displayedHomework.length} تکلیف منطبق با فیلتر یافت شد.
+              </div>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              searchParams.delete('classroomId');
+              searchParams.delete('lessonId');
+              searchParams.delete('classroomName');
+              searchParams.delete('lessonName');
+              setSearchParams(searchParams);
+            }}
+            className="text-xs h-8 gap-1 hover:bg-surface"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>نمایش همه تکالیف</span>
+          </Button>
+        </div>
+      )}
+
       {/* Homework List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {isLoading ? (
@@ -224,12 +297,14 @@ export const HomeworkPage: React.FC = () => {
               <Skeleton className="h-10 w-full" />
             </Card>
           ))
-        ) : homeworkList.length === 0 ? (
+        ) : displayedHomework.length === 0 ? (
           <div className="col-span-3 text-center py-12 bg-white rounded-2xl border border-gray-200 text-gray-500 text-sm">
-            هنوز تکلیفی برای کلاس‌های شما تعریف نشده است.
+            {classroomIdParam || lessonIdParam
+              ? 'هیچ تکلیفی با این مشخصات یافت نشد.'
+              : 'هنوز تکلیفی برای کلاس‌های شما تعریف نشده است.'}
           </div>
         ) : (
-          homeworkList.map((hw) => (
+          displayedHomework.map((hw) => (
             <Card key={hw.id} className="flex flex-col justify-between p-6 border hover:border-primary transition-all">
               <div>
                 <div className="flex justify-between items-center mb-2">

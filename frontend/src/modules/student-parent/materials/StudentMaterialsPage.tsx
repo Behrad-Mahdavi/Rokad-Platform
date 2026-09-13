@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { apiClient } from '../../../lib/api/client';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
@@ -11,9 +12,15 @@ import {
   Video,
   FileSpreadsheet,
   Search,
+  X,
+  Filter,
 } from 'lucide-react';
 
 export const StudentMaterialsPage: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const lessonIdParam = searchParams.get('lessonId');
+  const lessonNameParam = searchParams.get('lessonName');
+
   const [materials, setMaterials] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -34,10 +41,16 @@ export const StudentMaterialsPage: React.FC = () => {
     fetchMaterials();
   }, []);
 
-  const filteredMaterials = materials.filter((m) =>
-    m.title.toLowerCase().includes(search.toLowerCase()) ||
-    m.lesson?.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredMaterials = materials
+    .filter((m) => {
+      if (lessonIdParam && m.lessonId !== lessonIdParam && m.lesson?.id !== lessonIdParam) {
+        return false;
+      }
+      return (
+        m.title?.toLowerCase().includes(search.toLowerCase()) ||
+        m.lesson?.name?.toLowerCase().includes(search.toLowerCase())
+      );
+    });
 
   return (
     <div className="space-y-6">
@@ -63,6 +76,38 @@ export const StudentMaterialsPage: React.FC = () => {
           />
         </div>
       </div>
+
+      {/* Lesson Filter Banner */}
+      {lessonIdParam && (
+        <div className="flex items-center justify-between p-3.5 rounded-2xl bg-primary/10 border border-primary/25 text-xs text-foreground">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+              <Filter className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-bold text-primary">
+                فیلتر شده بر اساس درس: {lessonNameParam || 'درس انتخاب‌شده'}
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                تعداد {filteredMaterials.length} جزوه یا فایل آموزشی برای این درس موجود است.
+              </div>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              searchParams.delete('lessonId');
+              searchParams.delete('lessonName');
+              setSearchParams(searchParams);
+            }}
+            className="text-xs h-8 gap-1 hover:bg-surface"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>نمایش همه فایل‌ها</span>
+          </Button>
+        </div>
+      )}
 
       {/* Materials Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

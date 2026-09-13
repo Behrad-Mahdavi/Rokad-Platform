@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { apiClient } from '../../../lib/api/client';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
@@ -30,6 +31,9 @@ import {
 } from 'lucide-react';
 
 export const AttendancePage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const classroomIdParam = searchParams.get('classroomId');
+
   const [classrooms, setClassrooms] = useState<any[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [date, setDate] = useState<string>(gregorianToJalaliStr(new Date()));
@@ -43,9 +47,12 @@ export const AttendancePage: React.FC = () => {
     const fetchClassrooms = async () => {
       try {
         const res = await apiClient.get('/classes/classrooms');
-        setClassrooms(res.data || []);
-        if (res.data?.length > 0) {
-          setSelectedClassId(res.data[0].id);
+        const list = res.data || [];
+        setClassrooms(list);
+        if (classroomIdParam && list.some((c: any) => c.id === classroomIdParam)) {
+          setSelectedClassId(classroomIdParam);
+        } else if (list.length > 0) {
+          setSelectedClassId(list[0].id);
         }
       } catch (err) {
         console.error('Failed to load classrooms', err);
@@ -54,7 +61,7 @@ export const AttendancePage: React.FC = () => {
       }
     };
     fetchClassrooms();
-  }, []);
+  }, [classroomIdParam]);
 
   useEffect(() => {
     if (!selectedClassId) return;

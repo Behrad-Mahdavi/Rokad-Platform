@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../lib/auth/auth-store';
+import { apiClient } from '../../lib/api/client';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -15,20 +17,55 @@ import {
   Award,
 } from 'lucide-react';
 
+const getPersianDayKey = (): string => {
+  const dayIndex = new Date().getDay(); // 0 is Sunday, 6 is Saturday
+  switch (dayIndex) {
+    case 6: return 'SATURDAY';
+    case 0: return 'SUNDAY';
+    case 1: return 'MONDAY';
+    case 2: return 'TUESDAY';
+    case 3: return 'WEDNESDAY';
+    case 4: return 'THURSDAY';
+    default: return 'SATURDAY';
+  }
+};
+
 export const TeacherDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
+  const [schedules, setSchedules] = useState<any[]>([]);
+  const [homeworkList, setHomeworkList] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const todaySchedule = [
-    { period: 'زنگ اول (۰۸:۰۰ - ۰۹:۳۰)', class: 'کارگاه ۱۰۱ — شبکه و نرم‌افزار', lesson: 'نصب و راه‌اندازی سیستم‌های رایانه‌ای', status: 'COMPLETED' },
-    { period: 'زنگ دوم (۱۰:۰۰ - ۱۱:۳۰)', class: 'کارگاه ۱۰۲ — تولید وب', lesson: 'توسعه برنامه‌های وب و دیتابیس', status: 'IN_PROGRESS' },
-    { period: 'زنگ سوم (۱۲:۰۰ - ۱۳:۳۰)', class: 'کارگاه ۱۰۳ — دهم شبکه', lesson: 'دانش فنی پایه و شبکه', status: 'UPCOMING' },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const [schedRes, hwRes] = await Promise.allSettled([
+          apiClient.get('/classes/my-schedule'),
+          apiClient.get('/homework'),
+        ]);
 
-  const pendingSubmissions = [
-    { student: 'امیرعلی صادقی', class: 'کلاس ۱۰۱', title: 'پروژه راه‌اندازی اکتیودایرکتوری', sentTime: '۲ ساعت پیش' },
-    { student: 'محمدرضا کاظمی', class: 'کلاس ۱۰۱', title: 'تمرین کدنویسی اسکریپت شل', sentTime: '۴ ساعت پیش' },
-    { student: 'سینا احمدی', class: 'کلاس ۱۰۲', title: 'پروژه لندینگ‌پیج با تیلویند', sentTime: 'دیروز' },
-  ];
+        if (schedRes.status === 'fulfilled') {
+          const sData = schedRes.value.data;
+          setSchedules(sData?.schedules || (Array.isArray(sData) ? sData : []));
+        }
+        if (hwRes.status === 'fulfilled') {
+          const hData = hwRes.value.data;
+          setHomeworkList(Array.isArray(hData) ? hData : (hData?.data || []));
+        }
+      } catch (err) {
+        console.error('Failed to load teacher dashboard', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const todayKey = getPersianDayKey();
+  const todaySchedules = schedules.filter((s: any) => s.dayOfWeek === todayKey);
 
   return (
     <div className="space-y-6">
@@ -51,7 +88,7 @@ export const TeacherDashboard: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.location.href = '/app/teacher/attendance'}
+            onClick={() => navigate('/app/teacher/attendance')}
             className="text-xs"
           >
             دفتر حضور و غیاب
@@ -59,7 +96,7 @@ export const TeacherDashboard: React.FC = () => {
           <Button
             variant="primary"
             size="sm"
-            onClick={() => window.location.href = '/app/teacher/homework'}
+            onClick={() => navigate('/app/teacher/homework')}
             className="text-xs flex items-center space-x-1 space-x-reverse"
           >
             <span>تصحیح تکالیف</span>
@@ -125,29 +162,31 @@ export const TeacherDashboard: React.FC = () => {
           </div>
 
           <div className="space-y-3">
-            {todaySchedule.map((s, idx) => (
-              <div key={idx} className="p-3.5 rounded-xl border bg-gray-50 flex items-center justify-between text-xs">
-                <div>
-                  <div className="font-bold text-ink-darker">{s.class}</div>
-                  <div className="text-[11px] text-gray-500 mt-0.5">{s.lesson} • {s.period}</div>
-                </div>
-
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  {s.status === 'COMPLETED' && <Badge variant="success">ثبت حضور انجام شد</Badge>}
-                  {s.status === 'IN_PROGRESS' && (
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => window.location.href = '/app/teacher/attendance'}
-                      className="text-xs"
-                    >
-                      ثبت حضور جلسه جاری
-                    </Button>
-                  )}
-                  {s.status === 'UPCOMING' && <Badge variant="neutral">ساعت ۱۲:۰۰</Badge>}
-                </div>
+            {todaySchedules.length === 0 ? (
+              <div className="py-8 text-center text-xs text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                امروز در سامانه کلاسی برای شما ثبت نشده است.
               </div>
-            ))}
+            ) : (
+              todaySchedules.map((s) => (
+                <div key={s.id} className="p-3.5 rounded-xl border bg-gray-50 flex items-center justify-between text-xs gap-3">
+                  <div>
+                    <div className="font-bold text-ink-darker">{s.classroom?.name}</div>
+                    <div className="text-[11px] text-gray-500 mt-0.5">
+                      {s.lesson?.name} • ساعت {s.startTime} تا {s.endTime}
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/app/teacher/attendance?classroomId=${s.classroomId}`)}
+                    className="text-xs shrink-0"
+                  >
+                    ثبت حضور و غیاب
+                  </Button>
+                </div>
+              ))
+            )}
           </div>
         </Card>
 
@@ -155,7 +194,7 @@ export const TeacherDashboard: React.FC = () => {
         <Card className="p-6">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h3 className="font-bold text-sm text-ink-darker">ارسال‌های اخیر تکالیف</h3>
+              <h3 className="font-bold text-sm text-ink-darker">تکالیف فعال و پاسخ‌های دریافتی</h3>
               <p className="text-[11px] text-gray-400">بررسی سریع و نمره‌دهی تمرینات دانش‌آموزان</p>
             </div>
             <a href="/app/teacher/homework" className="text-xs text-primary font-bold hover:underline">
@@ -164,23 +203,33 @@ export const TeacherDashboard: React.FC = () => {
           </div>
 
           <div className="space-y-3">
-            {pendingSubmissions.map((sub, idx) => (
-              <div key={idx} className="p-3.5 rounded-xl border bg-gray-50 flex items-center justify-between text-xs">
-                <div>
-                  <div className="font-bold text-ink-darker">{sub.student} ({sub.class})</div>
-                  <div className="text-[11px] text-gray-500 mt-0.5">{sub.title} • {sub.sentTime}</div>
-                </div>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.location.href = '/app/teacher/homework'}
-                  className="text-xs"
-                >
-                  تصحیح و نمره
-                </Button>
+            {homeworkList.length === 0 ? (
+              <div className="py-8 text-center text-xs text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                در حال حاضر تکلیفی ثبت نشده است.
               </div>
-            ))}
+            ) : (
+              homeworkList.slice(0, 3).map((hw) => (
+                <div key={hw.id} className="p-3.5 rounded-xl border bg-gray-50 flex items-center justify-between text-xs gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-ink-darker truncate">
+                      {hw.title} ({hw.classroom?.name || 'کلاس'})
+                    </div>
+                    <div className="text-[11px] text-gray-500 mt-0.5 truncate">
+                      {hw.lesson?.name || 'درس'} • {hw._count?.submissions || 0} پاسخ ارسال‌شده
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => navigate(`/app/teacher/homework?homeworkId=${hw.id}&action=submissions`)}
+                    className="text-xs shrink-0"
+                  >
+                    تصحیح و نمره
+                  </Button>
+                </div>
+              ))
+            )}
           </div>
         </Card>
       </div>

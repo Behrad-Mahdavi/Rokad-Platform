@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { apiClient } from '../../../lib/api/client';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
@@ -16,9 +17,17 @@ import {
   Eye,
   MessageSquare,
   Edit3,
+  X,
+  Sparkles,
 } from 'lucide-react';
 
 export const StudentHomeworkPage: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const homeworkIdParam = searchParams.get('homeworkId');
+  const actionParam = searchParams.get('action');
+  const lessonIdParam = searchParams.get('lessonId');
+  const lessonNameParam = searchParams.get('lessonName');
+
   const [homeworkList, setHomeworkList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -35,6 +44,17 @@ export const StudentHomeworkPage: React.FC = () => {
       const res: any = await apiClient.get('/homework');
       const data = Array.isArray(res) ? res : (res?.data || []);
       setHomeworkList(data);
+
+      // Direct action/modal open if requested via URL
+      if (homeworkIdParam && data.length > 0) {
+        const target = data.find((h: any) => h.id === homeworkIdParam);
+        if (target) {
+          const mySub = target.submissions && target.submissions.length > 0 ? target.submissions[0] : null;
+          setSelectedHomework(target);
+          setSubmissionText(mySub?.content || '');
+          setIsSubmitModalOpen(true);
+        }
+      }
     } catch (err) {
       console.error('Failed to load homework', err);
     } finally {
@@ -44,7 +64,7 @@ export const StudentHomeworkPage: React.FC = () => {
 
   useEffect(() => {
     fetchHomework();
-  }, []);
+  }, [homeworkIdParam]);
 
   const handleSubmitHomework = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +86,10 @@ export const StudentHomeworkPage: React.FC = () => {
     }
   };
 
+  const displayedHomework = lessonIdParam
+    ? homeworkList.filter((h) => h.lessonId === lessonIdParam || h.lesson?.id === lessonIdParam)
+    : homeworkList;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -79,6 +103,38 @@ export const StudentHomeworkPage: React.FC = () => {
         </p>
       </div>
 
+      {/* Lesson Filter Banner if navigated from schedule */}
+      {lessonIdParam && (
+        <div className="flex items-center justify-between p-3.5 rounded-2xl bg-primary/10 border border-primary/25 text-xs text-foreground">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+              <FileCheck className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-bold text-primary">
+                فیلتر شده بر اساس درس: {lessonNameParam || 'درس انتخاب‌شده'}
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                تعداد {displayedHomework.length} تکلیف مربوط به این درس یافت شد.
+              </div>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              searchParams.delete('lessonId');
+              searchParams.delete('lessonName');
+              setSearchParams(searchParams);
+            }}
+            className="text-xs h-8 gap-1 hover:bg-surface"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>نمایش همه تکالیف</span>
+          </Button>
+        </div>
+      )}
+
       {/* Homework Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {isLoading ? (
@@ -89,13 +145,17 @@ export const StudentHomeworkPage: React.FC = () => {
               <Skeleton className="h-10 w-full" />
             </Card>
           ))
-        ) : homeworkList.length === 0 ? (
+        ) : displayedHomework.length === 0 ? (
           <div className="col-span-3 text-center py-12 bg-white rounded-2xl border border-gray-200 text-gray-500 text-sm flex flex-col items-center justify-center gap-2">
             <CheckCircle2 className="h-8 w-8 text-emerald-500 mb-1" />
-            <span>در حال حاضر هیچ تکلیف فعالی برای شما ثبت نشده است.</span>
+            <span>
+              {lessonIdParam
+                ? `هیچ تکلیفی برای درس ${lessonNameParam || ''} ثبت نشده است.`
+                : 'در حال حاضر هیچ تکلیف فعالی برای شما ثبت نشده است.'}
+            </span>
           </div>
         ) : (
-          homeworkList.map((hw) => {
+          displayedHomework.map((hw) => {
             const mySub = hw.submissions && hw.submissions.length > 0 ? hw.submissions[0] : null;
             const isGraded = mySub && (mySub.status === 'GRADED' || (mySub.score !== null && mySub.score !== undefined));
             const isResubmitRequired = mySub?.status === 'RESUBMIT_REQUIRED';
@@ -273,7 +333,14 @@ export const StudentHomeworkPage: React.FC = () => {
       {/* Submit Homework / View Grade Modal */}
       <Modal
         isOpen={isSubmitModalOpen}
-        onClose={() => setIsSubmitModalOpen(false)}
+        onClose={() => {
+          setIsSubmitModalOpen(false);
+          if (homeworkIdParam) {
+            searchParams.delete('homeworkId');
+            searchParams.delete('action');
+            setSearchParams(searchParams);
+          }
+        }}
         title={
           selectedHomework?.submissions?.[0]?.score !== null &&
           selectedHomework?.submissions?.[0]?.score !== undefined

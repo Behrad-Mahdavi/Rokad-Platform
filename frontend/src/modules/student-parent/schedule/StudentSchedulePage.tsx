@@ -386,8 +386,13 @@ export const StudentSchedulePage: React.FC = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => navigate('/app/student/homework')}
+                            onClick={() =>
+                              navigate(
+                                `/app/student/homework?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                              )
+                            }
                             className="text-xs flex items-center gap-1.5 h-9"
+                            title={`مشاهده و ارسال تکالیف ${slot.lesson?.name}`}
                           >
                             <FileCheck className="w-3.5 h-3.5 text-amber-500" />
                             <span>تکالیف درس</span>
@@ -396,8 +401,13 @@ export const StudentSchedulePage: React.FC = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => navigate('/app/student/materials')}
+                            onClick={() =>
+                              navigate(
+                                `/app/student/materials?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                              )
+                            }
                             className="text-xs flex items-center gap-1.5 h-9"
+                            title={`دانلود جزوات و ویدیوهای ${slot.lesson?.name}`}
                           >
                             <FolderDown className="w-3.5 h-3.5 text-purple-500" />
                             <span>جزوات و فایل‌ها</span>
@@ -406,8 +416,13 @@ export const StudentSchedulePage: React.FC = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => navigate('/app/student/exams')}
+                            onClick={() =>
+                              navigate(
+                                `/app/student/exams?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                              )
+                            }
                             className="text-xs flex items-center gap-1.5 h-9"
+                            title={`آزمون‌های آنلاین درس ${slot.lesson?.name}`}
                           >
                             <HelpCircle className="w-3.5 h-3.5 text-primary" />
                             <span>آزمون‌ها</span>

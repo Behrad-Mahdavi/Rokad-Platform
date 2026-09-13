@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { apiClient } from '../../../lib/api/client';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
@@ -23,10 +24,19 @@ import {
   AlertCircle,
   Loader2,
   ExternalLink,
+  Filter,
 } from 'lucide-react';
 
 export const LessonPlansPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'MATERIALS' | 'PLANS'>('MATERIALS');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const lessonIdParam = searchParams.get('lessonId');
+  const lessonNameParam = searchParams.get('lessonName');
+  const actionParam = searchParams.get('action');
+
+  const [activeTab, setActiveTab] = useState<'MATERIALS' | 'PLANS'>(
+    tabParam === 'PLANS' ? 'PLANS' : 'MATERIALS'
+  );
   const [materials, setMaterials] = useState<any[]>([]);
   const [lessonPlans, setLessonPlans] = useState<any[]>([]);
   const [lessons, setLessons] = useState<any[]>([]);
@@ -51,14 +61,14 @@ export const LessonPlansPage: React.FC = () => {
   const [materialForm, setMaterialForm] = useState({
     title: '',
     description: '',
-    lessonId: '',
+    lessonId: lessonIdParam || '',
     classroomId: '',
     materialType: 'DOCUMENT',
   });
 
   const [planForm, setPlanForm] = useState({
     title: '',
-    lessonId: '',
+    lessonId: lessonIdParam || '',
     sessionNumber: 1,
     topics: '',
     pedagogicalGoal: '',
@@ -85,21 +95,30 @@ export const LessonPlansPage: React.FC = () => {
       setLessons(less);
       setClassrooms(cls);
 
-      if (less.length > 0) {
+      const defaultLessonId = lessonIdParam || (less.length > 0 ? less[0].id : '');
+      if (defaultLessonId) {
         setMaterialForm((prev) => ({
           ...prev,
-          lessonId: prev.lessonId || less[0].id,
+          lessonId: prev.lessonId || defaultLessonId,
         }));
         setPlanForm((prev) => ({
           ...prev,
-          lessonId: prev.lessonId || less[0].id,
+          lessonId: prev.lessonId || defaultLessonId,
         }));
       }
+
       if (cls.length > 0) {
         setMaterialForm((prev) => ({
           ...prev,
           classroomId: prev.classroomId || cls[0].id,
         }));
+      }
+
+      // Check actions
+      if (actionParam === 'new-plan') {
+        setIsPlanModalOpen(true);
+      } else if (actionParam === 'upload-material') {
+        setIsUploadModalOpen(true);
       }
     } catch (err) {
       console.error('Failed to load materials or lessons', err);
@@ -107,6 +126,12 @@ export const LessonPlansPage: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (tabParam === 'PLANS') {
+      setActiveTab('PLANS');
+    }
+  }, [tabParam]);
 
   useEffect(() => {
     fetchData();
@@ -282,7 +307,6 @@ export const LessonPlansPage: React.FC = () => {
       setIsSubmitting(false);
     }
   };
-
   const renderTypeIcon = (type: string) => {
     switch (type) {
       case 'VIDEO':
@@ -296,38 +320,77 @@ export const LessonPlansPage: React.FC = () => {
     }
   };
 
+  const displayedMaterials = lessonIdParam
+    ? materials.filter((m) => m.lessonId === lessonIdParam || m.lesson?.id === lessonIdParam)
+    : materials;
+
+  const displayedPlans = lessonIdParam
+    ? lessonPlans.filter((p) => p.lessonId === lessonIdParam || p.lesson?.id === lessonIdParam)
+    : lessonPlans;
+
   return (
     <div className="space-y-6">
-      {/* Header & Actions */}
+      {/* Header & Quick Action Buttons */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
             <BookOpen className="h-6 w-6 text-primary" />
-            <span>طرح درس و محتوای آموزشی (Course Materials & LMS)</span>
+            <span>طرح درس و مدیریت محتوای آموزشی (Lesson Plans & Materials)</span>
           </h2>
           <p className="text-xs text-gray-500 mt-1">
-            بارگذاری جزوات و فایل‌های درسی در فضای ابری MinIO و مدیریت سرفصل‌های تدریس
+            بارگذاری جزوات و ویدیوهای آموزشی، تدوین طرح درس‌های کلاسی و اشتراک فایل با دانش‌آموزان
           </p>
         </div>
 
-        <div className="flex gap-2">
-          {activeTab === 'MATERIALS' && (
-            <Button variant="primary" onClick={() => setIsUploadModalOpen(true)}>
-              <UploadCloud className="h-4 w-4 ml-1.5" />
-              <span>بارگذاری جزوه یا ویدیو</span>
-            </Button>
-          )}
-          {activeTab === 'PLANS' && (
-            <Button variant="primary" onClick={() => setIsPlanModalOpen(true)}>
-              <Plus className="h-4 w-4 ml-1.5" />
-              <span>ثبت طرح درس جدید</span>
-            </Button>
-          )}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setIsPlanModalOpen(true)}>
+            <Plus className="h-4 w-4 ml-1 text-primary" />
+            <span>ثبت طرح درس جدید</span>
+          </Button>
+
+          <Button variant="primary" size="sm" onClick={() => setIsUploadModalOpen(true)}>
+            <UploadCloud className="h-4 w-4 ml-1" />
+            <span>بارگذاری جزوه یا ویدیو</span>
+          </Button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex space-x-2 space-x-reverse border-b border-gray-200">
+      {/* Lesson Filter Banner */}
+      {lessonIdParam && (
+        <div className="flex items-center justify-between p-3.5 rounded-2xl bg-primary/10 border border-primary/25 text-xs text-foreground">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+              <Filter className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-bold text-primary">
+                فیلتر شده بر اساس درس: {lessonNameParam || 'درس انتخاب‌شده'}
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                {activeTab === 'PLANS'
+                  ? `تعداد ${displayedPlans.length} طرح درس برای این مبحث ثبت شده است.`
+                  : `تعداد ${displayedMaterials.length} جزوه و فایل آموزشی برای این درس موجود است.`}
+              </div>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              searchParams.delete('lessonId');
+              searchParams.delete('lessonName');
+              setSearchParams(searchParams);
+            }}
+            className="text-xs h-8 gap-1 hover:bg-surface"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>نمایش همه دروس</span>
+          </Button>
+        </div>
+      )}
+
+      {/* Tab Switcher */}
+      <div className="flex items-center space-x-4 space-x-reverse border-b border-gray-200">
         <button
           onClick={() => setActiveTab('MATERIALS')}
           className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 flex items-center space-x-1.5 space-x-reverse ${
@@ -337,7 +400,7 @@ export const LessonPlansPage: React.FC = () => {
           }`}
         >
           <HardDrive className="h-4 w-4" />
-          <span>جزوات و فایل‌های بارگذاری‌شده ({materials.length})</span>
+          <span>جزوات و فایل‌های بارگذاری‌شده ({displayedMaterials.length})</span>
         </button>
 
         <button
@@ -349,7 +412,7 @@ export const LessonPlansPage: React.FC = () => {
           }`}
         >
           <FileText className="h-4 w-4" />
-          <span>طرح درس‌های جلسات ({lessonPlans.length})</span>
+          <span>طرح درس‌های جلسات ({displayedPlans.length})</span>
         </button>
       </div>
 
@@ -364,10 +427,14 @@ export const LessonPlansPage: React.FC = () => {
                 <Skeleton className="h-10 w-full" />
               </Card>
             ))
-          ) : materials.length === 0 ? (
+          ) : displayedMaterials.length === 0 ? (
             <div className="col-span-3 text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300 text-gray-500">
               <UploadCloud className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <div className="text-sm font-bold text-ink-dark mb-1">هنوز فایلی بارگذاری نشده است</div>
+              <div className="text-sm font-bold text-ink-dark mb-1">
+                {lessonIdParam
+                  ? `هیچ فایلی برای درس ${lessonNameParam || ''} بارگذاری نشده است`
+                  : 'هنوز فایلی بارگذاری نشده است'}
+              </div>
               <p className="text-xs text-gray-400 mb-4">
                 از دکمه «بارگذاری جزوه یا ویدیو» برای اشتراک فایل آموزشی با دانش‌آموزان استفاده کنید.
               </p>
@@ -452,20 +519,24 @@ export const LessonPlansPage: React.FC = () => {
       {/* Tab 2: Lesson Plans Grid */}
       {activeTab === 'PLANS' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {lessonPlans.length === 0 ? (
+          {displayedPlans.length === 0 ? (
             <div className="col-span-2 text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300 text-gray-500">
               <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <div className="text-sm font-bold text-ink-dark mb-1">طرح درسی ثبت نشده است</div>
+              <div className="text-sm font-bold text-ink-dark mb-1">
+                {lessonIdParam
+                  ? `طرح درسی برای درس ${lessonNameParam || ''} ثبت نشده است`
+                  : 'طرح درسی ثبت نشده است'}
+              </div>
               <p className="text-xs text-gray-400 mb-4">
                 برای برنامه‌ریزی جلسات درسی و بودجه‌بندی سرفصل‌ها از دکمه زیر استفاده کنید.
               </p>
               <Button variant="primary" size="sm" onClick={() => setIsPlanModalOpen(true)}>
                 <Plus className="h-4 w-4 ml-1" />
-                <span>ثبت اولین طرح درس</span>
+                <span>ثبت طرح درس جدید</span>
               </Button>
             </div>
           ) : (
-            lessonPlans.map((lp) => {
+            displayedPlans.map((lp) => {
               const firstSession = lp.sessions?.[0];
               return (
                 <Card key={lp.id} className="p-6 border border-gray-200 rounded-2xl bg-white space-y-3">

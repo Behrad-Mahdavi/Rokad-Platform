@@ -48,36 +48,44 @@ export const StudentDashboard: React.FC = () => {
   const user = useAuthStore((state) => state.user);
   const [scheduleData, setScheduleData] = useState<{ classroom: any; schedules: any[] } | null>(null);
   const [isScheduleLoading, setIsScheduleLoading] = useState(true);
+  const [realHomework, setRealHomework] = useState<any[]>([]);
+  const [realExams, setRealExams] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchMySchedule = async () => {
+    const fetchData = async () => {
       try {
         setIsScheduleLoading(true);
-        const res = await apiClient.get('/classes/my-schedule');
-        setScheduleData(res.data);
+        const [schedRes, hwRes, examsRes] = await Promise.allSettled([
+          apiClient.get('/classes/my-schedule'),
+          apiClient.get('/homework'),
+          apiClient.get('/exams'),
+        ]);
+
+        if (schedRes.status === 'fulfilled') {
+          setScheduleData(schedRes.value.data);
+        }
+        if (hwRes.status === 'fulfilled') {
+          const hw = Array.isArray(hwRes.value.data) ? hwRes.value.data : (hwRes.value as any)?.data || [];
+          setRealHomework(hw);
+        }
+        if (examsRes.status === 'fulfilled') {
+          const ex = Array.isArray(examsRes.value.data) ? examsRes.value.data : (examsRes.value as any)?.data || [];
+          setRealExams(ex);
+        }
       } catch (err) {
-        console.error('Failed to load my schedule', err);
+        console.error('Failed to load student dashboard data', err);
       } finally {
         setIsScheduleLoading(false);
       }
     };
 
-    fetchMySchedule();
+    fetchData();
   }, []);
 
   const todayKey = getPersianDayKey();
   const todaySchedules = (scheduleData?.schedules || [])
     .filter((s: any) => s.dayOfWeek === todayKey)
     .sort((a: any, b: any) => a.periodNumber - b.periodNumber);
-
-  const upcomingHomework = [
-    { title: 'پیکربندی سوئیچ‌های شبکه و VLAN', lesson: 'کارگاه شبکه و نرم‌افزار', deadline: 'فردا ۱۸:۰۰', score: 20 },
-    { title: 'طراحی رابط کاربری ریسپانسیو با فلکس‌باکس', lesson: 'توسعه وب', deadline: 'پنجشنبه', score: 20 },
-  ];
-
-  const onlineExams = [
-    { title: 'ارزشیابی پودمان اول دانش فنی تخصصی', lesson: 'دانش فنی', duration: '۶۰ دقیقه', status: 'READY' },
-  ];
 
   return (
     <div className="space-y-6">
@@ -263,26 +271,49 @@ export const StudentDashboard: React.FC = () => {
           </div>
 
           <div className="space-y-3">
-            {upcomingHomework.map((hw, idx) => (
-              <div key={idx} className="p-3.5 rounded-xl border bg-gray-50 flex items-center justify-between text-xs">
-                <div>
-                  <div className="font-bold text-ink-darker">{hw.title}</div>
-                  <div className="text-[11px] text-gray-500 mt-0.5">
-                    {hw.lesson} • مهلت: <span className="text-amber-600 font-bold">{hw.deadline}</span>
-                  </div>
-                </div>
-
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => navigate('/app/student/homework')}
-                  className="text-xs flex items-center space-x-1 space-x-reverse"
-                >
-                  <Send className="h-3 w-3" />
-                  <span>ارسال پاسخ</span>
-                </Button>
+            {realHomework.length === 0 ? (
+              <div className="py-6 text-center text-xs text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                در حال حاضر هیچ تکلیف فعالی ثبت نشده است.
               </div>
-            ))}
+            ) : (
+              realHomework.slice(0, 4).map((hw) => {
+                const mySub = hw.submissions && hw.submissions.length > 0 ? hw.submissions[0] : null;
+                const isGraded = mySub && (mySub.score !== null && mySub.score !== undefined);
+                const isSubmitted = mySub && !isGraded;
+
+                return (
+                  <div key={hw.id} className="p-3.5 rounded-xl border bg-gray-50 flex items-center justify-between text-xs gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-ink-darker truncate">{hw.title}</div>
+                      <div className="text-[11px] text-gray-500 mt-0.5 truncate">
+                        {hw.lesson?.name || 'درس'} •{' '}
+                        {isGraded ? (
+                          <span className="text-emerald-600 font-bold">نمره ثبت شد: {mySub.score}</span>
+                        ) : isSubmitted ? (
+                          <span className="text-blue-600 font-bold">در انتظار تصحیح دبیر</span>
+                        ) : (
+                          <span className="text-amber-600 font-bold">مهلت تحویل فعال</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <Button
+                      variant={isGraded ? 'outline' : 'primary'}
+                      size="sm"
+                      onClick={() =>
+                        navigate(
+                          `/app/student/homework?homeworkId=${hw.id}${!isGraded && !isSubmitted ? '&action=submit' : ''}`
+                        )
+                      }
+                      className="text-xs shrink-0 flex items-center space-x-1 space-x-reverse"
+                    >
+                      <Send className="h-3 w-3" />
+                      <span>{isGraded ? 'مشاهده بازخورد' : isSubmitted ? 'مشاهده پاسخ' : 'ارسال پاسخ'}</span>
+                    </Button>
+                  </div>
+                );
+              })
+            )}
           </div>
         </Card>
 
@@ -297,26 +328,32 @@ export const StudentDashboard: React.FC = () => {
           </div>
 
           <div className="space-y-3">
-            {onlineExams.map((ex, idx) => (
-              <div key={idx} className="p-3.5 rounded-xl border bg-primary-light/30 border-primary/30 flex items-center justify-between text-xs">
-                <div>
-                  <div className="font-bold text-ink-darker">{ex.title}</div>
-                  <div className="text-[11px] text-gray-500 mt-0.5">
-                    درس {ex.lesson} • مدت زمان: {ex.duration}
-                  </div>
-                </div>
-
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => navigate('/app/student/exams')}
-                  className="text-xs flex items-center space-x-1.5 space-x-reverse"
-                >
-                  <Play className="h-3 w-3" />
-                  <span>شروع آزمون</span>
-                </Button>
+            {realExams.length === 0 ? (
+              <div className="py-6 text-center text-xs text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                آزمون آنلاین فعالی در حال حاضر وجود ندارد.
               </div>
-            ))}
+            ) : (
+              realExams.slice(0, 3).map((ex) => (
+                <div key={ex.id} className="p-3.5 rounded-xl border bg-primary-light/30 border-primary/30 flex items-center justify-between text-xs gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-ink-darker truncate">{ex.title}</div>
+                    <div className="text-[11px] text-gray-500 mt-0.5 truncate">
+                      {ex.lesson?.name || 'درس'} • مدت: {ex.durationMinutes || 60} دقیقه
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => navigate(`/app/student/exams?examId=${ex.id}&action=start`)}
+                    className="text-xs shrink-0 flex items-center space-x-1.5 space-x-reverse"
+                  >
+                    <Play className="h-3 w-3" />
+                    <span>شروع آزمون</span>
+                  </Button>
+                </div>
+              ))
+            )}
           </div>
         </Card>
       </div>

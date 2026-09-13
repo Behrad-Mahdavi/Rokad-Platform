@@ -370,8 +370,11 @@ export const TeacherSchedulePage: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => navigate('/app/teacher/attendance')}
+                          onClick={() =>
+                            navigate(`/app/teacher/attendance?classroomId=${slot.classroomId}`)
+                          }
                           className="text-xs flex items-center gap-1.5 h-9"
+                          title={`ثبت حضور و غیاب ${slot.classroom?.name}`}
                         >
                           <CalendarCheck2 className="w-3.5 h-3.5 text-emerald-600" />
                           <span>ثبت حضور و غیاب</span>
@@ -380,8 +383,13 @@ export const TeacherSchedulePage: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => navigate('/app/teacher/homework')}
+                          onClick={() =>
+                            navigate(
+                              `/app/teacher/homework?classroomId=${slot.classroomId}&lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}&classroomName=${encodeURIComponent(slot.classroom?.name || '')}`
+                            )
+                          }
                           className="text-xs flex items-center gap-1.5 h-9"
+                          title={`تکالیف درس ${slot.lesson?.name} برای کلاس ${slot.classroom?.name}`}
                         >
                           <FileCheck className="w-3.5 h-3.5 text-blue-600" />
                           <span>تکالیف کلاس</span>
@@ -390,11 +398,16 @@ export const TeacherSchedulePage: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => navigate('/app/teacher/lessons')}
+                          onClick={() =>
+                            navigate(
+                              `/app/teacher/lessons?tab=PLANS&lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                            )
+                          }
                           className="text-xs flex items-center gap-1.5 h-9"
+                          title={`مشاهده و تدوین طرح درس ${slot.lesson?.name}`}
                         >
                           <BookOpen className="w-3.5 h-3.5 text-purple-600" />
-                          <span>طرح درس</span>
+                          <span>دیدن طرح درس</span>
                         </Button>
                       </div>
                     </div>

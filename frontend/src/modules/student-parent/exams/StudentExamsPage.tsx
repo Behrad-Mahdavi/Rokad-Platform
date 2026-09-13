@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { apiClient } from '../../../lib/api/client';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
@@ -12,9 +13,17 @@ import {
   Play,
   Check,
   Award,
+  X,
+  Filter,
 } from 'lucide-react';
 
 export const StudentExamsPage: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const examIdParam = searchParams.get('examId');
+  const actionParam = searchParams.get('action');
+  const lessonIdParam = searchParams.get('lessonId');
+  const lessonNameParam = searchParams.get('lessonName');
+
   const [exams, setExams] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -30,7 +39,15 @@ export const StudentExamsPage: React.FC = () => {
     try {
       setIsLoading(true);
       const res = await apiClient.get('/exams');
-      setExams(res.data || []);
+      const data = res.data || [];
+      setExams(data);
+
+      if (examIdParam && actionParam === 'start' && data.length > 0) {
+        const target = data.find((e: any) => e.id === examIdParam);
+        if (target) {
+          handleStartExam(target);
+        }
+      }
     } catch (err) {
       console.error('Failed to load exams', err);
     } finally {
@@ -40,7 +57,7 @@ export const StudentExamsPage: React.FC = () => {
 
   useEffect(() => {
     fetchExams();
-  }, []);
+  }, [examIdParam]);
 
   // Timer Effect
   useEffect(() => {
@@ -334,6 +351,10 @@ export const StudentExamsPage: React.FC = () => {
     );
   }
 
+  const displayedExams = lessonIdParam
+    ? exams.filter((e) => e.lessonId === lessonIdParam || e.lesson?.id === lessonIdParam)
+    : exams;
+
   // Regular List View
   return (
     <div className="space-y-6">
@@ -348,6 +369,38 @@ export const StudentExamsPage: React.FC = () => {
         </p>
       </div>
 
+      {/* Lesson Filter Banner */}
+      {lessonIdParam && (
+        <div className="flex items-center justify-between p-3.5 rounded-2xl bg-primary/10 border border-primary/25 text-xs text-foreground">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+              <Filter className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-bold text-primary">
+                فیلتر شده بر اساس درس: {lessonNameParam || 'درس انتخاب‌شده'}
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                تعداد {displayedExams.length} آزمون برای این درس برنامه‌ریزی شده است.
+              </div>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              searchParams.delete('lessonId');
+              searchParams.delete('lessonName');
+              setSearchParams(searchParams);
+            }}
+            className="text-xs h-8 gap-1 hover:bg-surface"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>نمایش همه آزمون‌ها</span>
+          </Button>
+        </div>
+      )}
+
       {/* Exams Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {isLoading ? (
@@ -358,12 +411,14 @@ export const StudentExamsPage: React.FC = () => {
               <Skeleton className="h-10 w-full" />
             </Card>
           ))
-        ) : exams.length === 0 ? (
+        ) : displayedExams.length === 0 ? (
           <div className="col-span-3 text-center py-12 bg-white rounded-2xl border border-gray-200 text-gray-500 text-sm">
-            در حال حاضر هیچ آزمون فعالی برای شما برنامه‌ریزی نشده است.
+            {lessonIdParam
+              ? `در حال حاضر هیچ آزمون فعالی برای درس ${lessonNameParam || ''} ثبت نشده است.`
+              : 'در حال حاضر هیچ آزمون فعالی برای شما برنامه‌ریزی نشده است.'}
           </div>
         ) : (
-          exams.map((exam) => {
+          displayedExams.map((exam) => {
             const hasQuestions = (exam._count?.questions || 0) > 0;
             const participation = exam.participations?.[0];
             const isSubmitted = participation?.status === 'SUBMITTED';
