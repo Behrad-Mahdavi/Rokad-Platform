@@ -111,13 +111,19 @@ export class HomeworkController {
   @Roles(Role.STUDENT)
   @ApiOperation({ summary: 'ارسال پاسخ تکلیف توسط دانش‌آموز' })
   async submitHomework(
+    @CurrentUser() user: any,
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentTenant('id') tenantId: string,
     @Param('id') homeworkId: string,
     @Body() dto: SubmitHomeworkDto,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
-    return this.homeworkService.submitHomework(effectiveTenantId, homeworkId, dto);
+    return this.homeworkService.submitHomework(
+      effectiveTenantId,
+      homeworkId,
+      dto,
+      user,
+    );
   }
 
   @Patch('submissions/:submissionId/grade')

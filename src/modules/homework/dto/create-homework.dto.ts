@@ -64,10 +64,10 @@ export class CreateHomeworkDto {
 }
 
 export class SubmitHomeworkDto {
-  @ApiProperty({ description: 'شناسه پروفایل دانش‌آموز' })
+  @ApiPropertyOptional({ description: 'شناسه پروفایل دانش‌آموز' })
   @IsString()
-  @IsNotEmpty()
-  studentId: string;
+  @IsOptional()
+  studentId?: string;
 
   @ApiPropertyOptional({ description: 'یادداشت یا پاسخ متنی دانش‌آموز' })
   @IsString()

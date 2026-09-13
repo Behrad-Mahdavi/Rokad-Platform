@@ -55,7 +55,8 @@ export const StudentHomeworkPage: React.FC = () => {
       setSubmissionText('');
       fetchHomework();
     } catch (err: any) {
-      setError(err.message || 'خطا در ارسال پاسخ تکلیف.');
+      const msg = err.response?.data?.message;
+      setError(Array.isArray(msg) ? msg.join(' - ') : msg || err.message || 'خطا در ارسال پاسخ تکلیف.');
     } finally {
       setIsSubmitting(false);
     }

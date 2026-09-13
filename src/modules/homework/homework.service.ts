@@ -206,12 +206,36 @@ export class HomeworkService {
     tenantId: string,
     homeworkId: string,
     dto: SubmitHomeworkDto,
+    user?: any,
   ) {
     const homework = await this.prisma.homework.findFirst({
       where: { id: homeworkId, tenantId },
     });
     if (!homework) {
       throw new NotFoundException('تکلیف یافت نشد');
+    }
+
+    let studentId = dto.studentId;
+    if (!studentId && user?.id) {
+      const student = await this.prisma.studentProfile.findFirst({
+        where: { userId: user.id, tenantId },
+      });
+      if (student) {
+        studentId = student.id;
+      }
+    }
+
+    if (!studentId && user?.id) {
+      const studentFallback = await this.prisma.studentProfile.findFirst({
+        where: { userId: user.id },
+      });
+      if (studentFallback) {
+        studentId = studentFallback.id;
+      }
+    }
+
+    if (!studentId) {
+      throw new BadRequestException('پروفایل دانش‌آموزی برای این کاربر یافت نشد');
     }
 
     const now = new Date();
@@ -227,7 +251,7 @@ export class HomeworkService {
       where: {
         homeworkId_studentId: {
           homeworkId,
-          studentId: dto.studentId,
+          studentId,
         },
       },
       update: {
@@ -239,7 +263,7 @@ export class HomeworkService {
       create: {
         tenantId,
         homeworkId,
-        studentId: dto.studentId,
+        studentId,
         content: dto.content,
         attachmentUrls: dto.attachmentUrls || [],
         submittedAt: now,
