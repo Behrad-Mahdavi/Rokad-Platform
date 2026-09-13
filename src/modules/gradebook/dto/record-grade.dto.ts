@@ -32,10 +32,10 @@ export class BulkRecordGradeItemDto {
 }
 
 export class BulkRecordGradeDto {
-  @ApiProperty({ description: 'شناسه سال تحصیلی' })
+  @ApiPropertyOptional({ description: 'شناسه سال تحصیلی' })
   @IsString()
-  @IsNotEmpty()
-  academicYearId: string;
+  @IsOptional()
+  academicYearId?: string;
 
   @ApiPropertyOptional({ description: 'شناسه ترم تحصیلی' })
   @IsString()
@@ -52,10 +52,10 @@ export class BulkRecordGradeDto {
   @IsNotEmpty()
   lessonId: string;
 
-  @ApiProperty({ description: 'شناسه پروفایل معلم' })
+  @ApiPropertyOptional({ description: 'شناسه پروفایل معلم' })
   @IsString()
-  @IsNotEmpty()
-  teacherId: string;
+  @IsOptional()
+  teacherId?: string;
 
   @ApiPropertyOptional({ description: 'شناسه آزمون متصل به این نمره' })
   @IsString()

@@ -110,11 +110,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             items: [
               { title: 'داشبورد کلاس‌ها', href: '/app/teacher/dashboard', icon: LayoutDashboard },
               { title: 'برنامه هفتگی کلاس‌ها', href: '/app/teacher/schedule', icon: CalendarDays },
-              { title: 'حضور و غیاب', href: '/app/teacher/attendance', icon: CalendarDays },
+              { title: 'دفتر کلاسی', href: '/app/teacher/gradebook', icon: BookOpen },
               { title: 'تکالیف و بازخورد', href: '/app/teacher/homework', icon: FileCheck },
               { title: 'بانک سوالات متمرکز', href: '/app/teacher/question-bank', icon: FileQuestion },
               { title: 'آزمون‌های آنلاین', href: '/app/teacher/exams', icon: HelpCircle },
-              { title: 'دفتر کلاسی و نمرات', href: '/app/teacher/gradebook', icon: BarChart3 },
               { title: 'طرح درس و محتوا', href: '/app/teacher/lessons', icon: BookOpen },
               { title: 'موارد انضباطی و تشویقی', href: '/app/teacher/matters', icon: ShieldAlert },
               { title: 'ملاقات با اولیاء', href: '/app/teacher/visits', icon: UserCheck },

@@ -42,31 +42,77 @@ export class GradebookService {
     }
 
     const entryDate = dto.date ? new Date(dto.date) : new Date();
+    const academicYearId = dto.academicYearId || classroom.academicYearId;
+
+    let teacherId = dto.teacherId;
+    if (!teacherId) {
+      const teacherProf = await this.prisma.teacherProfile.findFirst({
+        where: { userId: recordedById, tenantId },
+      });
+      teacherId =
+        teacherProf?.id ||
+        (await this.prisma.teacherProfile.findFirst({ where: { tenantId } }))?.id ||
+        '';
+    }
 
     const createdEntries = await this.prisma.$transaction(async (tx) => {
       const records: any[] = [];
       for (const item of dto.grades) {
-        const record = await tx.gradeEntry.create({
-          data: {
+        const startOfDay = new Date(entryDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(entryDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const existing = await tx.gradeEntry.findFirst({
+          where: {
             tenantId,
-            academicYearId: dto.academicYearId,
-            termId: dto.termId,
             classroomId: dto.classroomId,
             lessonId: dto.lessonId,
             studentId: item.studentId,
-            teacherId: dto.teacherId,
-            examId: dto.examId,
             gradeType: dto.gradeType,
-            title: dto.title,
-            score: item.score,
-            maxScore,
-            weight: dto.weight || 1.0,
-            date: entryDate,
-            description: item.description,
-            recordedById,
+            date: {
+              gte: startOfDay,
+              lte: endOfDay,
+            },
           },
         });
-        records.push(record);
+
+        if (existing) {
+          const updated = await tx.gradeEntry.update({
+            where: { id: existing.id },
+            data: {
+              score: item.score,
+              maxScore,
+              title: dto.title,
+              description: item.description,
+              weight: dto.weight || existing.weight || 1.0,
+              recordedById,
+            },
+          });
+          records.push(updated);
+        } else {
+          const record = await tx.gradeEntry.create({
+            data: {
+              tenantId,
+              academicYearId,
+              termId: dto.termId,
+              classroomId: dto.classroomId,
+              lessonId: dto.lessonId,
+              studentId: item.studentId,
+              teacherId,
+              examId: dto.examId,
+              gradeType: dto.gradeType,
+              title: dto.title,
+              score: item.score,
+              maxScore,
+              weight: dto.weight || 1.0,
+              date: entryDate,
+              description: item.description,
+              recordedById,
+            },
+          });
+          records.push(record);
+        }
       }
       return records;
     });
