@@ -352,6 +352,66 @@ describe('Rokad Multi-Tenant Platform — Phase 4 LMS & Exam Engine Tests', () =
       expect(res.body.data.stats.averageScore).toBe(2.0);
       expect(res.body.data.participations[0].flaggedForReview).toBe(true);
     });
+
+    it('POST /api/v1/exams/:id/questions/import-bank should import existing questions from bank into exam', async () => {
+      // 1. Create a bank question first
+      const qRes = await request(app.getHttpServer())
+        .post('/api/v1/question-bank/questions')
+        .set('Authorization', `Bearer ${boysTeacherToken}`)
+        .send({
+          lessonId: testLessonId,
+          type: 'DESCRIPTIVE',
+          difficulty: 'MEDIUM',
+          text: 'سوال تشریحی جهت تست ایمپورت از بانک سوالات',
+          defaultScore: 3.5,
+        })
+        .expect(201);
+
+      const bankQId = qRes.body.data.id;
+
+      // 2. Import into exam
+      const res = await request(app.getHttpServer())
+        .post(`/api/v1/exams/${createdExamId}/questions/import-bank`)
+        .set('Authorization', `Bearer ${boysTeacherToken}`)
+        .send({
+          questionIds: [bankQId],
+          defaultScore: 3.0,
+        })
+        .expect(201);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.importedCount).toBe(1);
+      expect(res.body.data.questions[0].score).toBe(3.0);
+    });
+
+    it('POST /api/v1/exams/:id/questions/bulk should bulk insert questions extracted from Excel or batch input', async () => {
+      const res = await request(app.getHttpServer())
+        .post(`/api/v1/exams/${createdExamId}/questions/bulk`)
+        .set('Authorization', `Bearer ${boysTeacherToken}`)
+        .send({
+          questions: [
+            {
+              text: 'سوال تستی وارد شده از اکسل نمونه',
+              type: 'MULTIPLE_CHOICE',
+              score: 2.5,
+              options: [
+                { text: 'پاسخ الف', isCorrect: true },
+                { text: 'پاسخ ب', isCorrect: false },
+              ],
+            },
+            {
+              text: 'سوال تشریحی وارد شده از اکسل نمونه',
+              type: 'DESCRIPTIVE',
+              score: 4.0,
+              solutionExplanation: 'راهنمای حل تشریحی...',
+            },
+          ],
+        })
+        .expect(201);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.count).toBe(2);
+    });
   });
 
   describe('4. Gradebook & Weighted GPA Report Card', () => {

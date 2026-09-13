@@ -7,7 +7,12 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateExamDto, AddExamQuestionDto } from './dto/create-exam.dto';
+import {
+  CreateExamDto,
+  AddExamQuestionDto,
+  ImportFromBankDto,
+  BulkAddExamQuestionsDto,
+} from './dto/create-exam.dto';
 import {
   SubmitExamAnswersDto,
   GradeExamParticipationDto,
@@ -239,7 +244,7 @@ export class ExamsService {
     return exams;
   }
 
-  // Add Question directly to Exam
+  // Add Question directly to Exam (Manual or by Question ID)
   async addQuestionToExam(
     tenantId: string,
     examId: string,
@@ -258,34 +263,51 @@ export class ExamsService {
       throw new ForbiddenException('شما مجاز به افزودن سوال به این آزمون نیستید');
     }
 
-    const question = await this.prisma.question.create({
-      data: {
-        tenantId,
-        lessonId: exam.lessonId,
-        createdById: user?.id || exam.teacher.userId,
-        type: dto.type as any,
-        difficulty: 'MEDIUM',
-        text: dto.text,
-        defaultScore: dto.score,
-        options:
-          dto.options && dto.options.length > 0
-            ? {
-                create: dto.options.map((opt, idx) => ({
-                  text: opt.text,
-                  isCorrect: opt.isCorrect,
-                  orderIndex: idx + 1,
-                })),
-              }
-            : undefined,
-      },
-    });
+    let questionId = dto.questionId;
+
+    if (!questionId) {
+      if (!dto.text) {
+        throw new BadRequestException('متن صورت سوال الزامی است');
+      }
+
+      const question = await this.prisma.question.create({
+        data: {
+          tenantId,
+          lessonId: exam.lessonId,
+          createdById: user?.id || exam.teacher.userId,
+          type: (dto.type as any) || 'MULTIPLE_CHOICE',
+          difficulty: 'MEDIUM',
+          text: dto.text,
+          solutionExplanation: dto.solutionExplanation,
+          defaultScore: dto.score,
+          options:
+            dto.options && dto.options.length > 0
+              ? {
+                  create: dto.options.map((opt, idx) => ({
+                    text: opt.text,
+                    isCorrect: opt.isCorrect,
+                    orderIndex: idx + 1,
+                  })),
+                }
+              : undefined,
+        },
+      });
+      questionId = question.id;
+    } else {
+      const existingQ = await this.prisma.question.findFirst({
+        where: { id: questionId, tenantId },
+      });
+      if (!existingQ) {
+        throw new NotFoundException('سوال مورد نظر در بانک سوالات یافت نشد');
+      }
+    }
 
     const nextOrderIndex = exam.questions.length + 1;
 
     const examQuestion = await this.prisma.examQuestion.create({
       data: {
         examId: exam.id,
-        questionId: question.id,
+        questionId: questionId,
         orderIndex: nextOrderIndex,
         score: dto.score,
       },
@@ -297,6 +319,157 @@ export class ExamsService {
     });
 
     return examQuestion;
+  }
+
+  // Import Multiple Questions from Question Bank to Exam
+  async importQuestionsFromBank(
+    tenantId: string,
+    examId: string,
+    dto: ImportFromBankDto,
+    user?: any,
+  ) {
+    const exam = await this.prisma.exam.findFirst({
+      where: { id: examId, tenantId },
+      include: { teacher: true, questions: true },
+    });
+    if (!exam) {
+      throw new NotFoundException('آزمون مورد نظر یافت نشد');
+    }
+
+    if (user?.role === Role.TEACHER && exam.teacher.userId !== user.id) {
+      throw new ForbiddenException('شما مجاز به تغییر این آزمون نیستید');
+    }
+
+    if (!dto.questionIds || dto.questionIds.length === 0) {
+      throw new BadRequestException('حداقل یک سوال باید برای ایمپورت انتخاب شود');
+    }
+
+    const bankQuestions = await this.prisma.question.findMany({
+      where: {
+        id: { in: dto.questionIds },
+        tenantId,
+      },
+      include: { options: true },
+    });
+
+    if (bankQuestions.length === 0) {
+      throw new BadRequestException('هیچ سوال معتبری در بانک سوالات یافت نشد');
+    }
+
+    const existingIds = new Set(exam.questions.map((q) => q.questionId));
+    const toAdd = bankQuestions.filter((q) => !existingIds.has(q.id));
+
+    if (toAdd.length === 0) {
+      throw new BadRequestException('تمام سوالات انتخابی قبلاً به این آزمون افزوده شده‌اند');
+    }
+
+    let currentIndex = exam.questions.length;
+    const addedExamQuestions: any[] = [];
+
+    for (const q of toAdd) {
+      currentIndex += 1;
+      const eq = await this.prisma.examQuestion.create({
+        data: {
+          examId: exam.id,
+          questionId: q.id,
+          orderIndex: currentIndex,
+          score: dto.defaultScore || q.defaultScore || 1.0,
+        },
+        include: {
+          question: {
+            include: { options: true },
+          },
+        },
+      });
+      addedExamQuestions.push(eq);
+    }
+
+    return {
+      message: `${addedExamQuestions.length} سوال با موفقیت از بانک سوالات به آزمون افزوده شد`,
+      importedCount: addedExamQuestions.length,
+      questions: addedExamQuestions,
+    };
+  }
+
+  // Bulk Add Questions (from Excel Parser or Batch Form)
+  async bulkAddQuestionsToExam(
+    tenantId: string,
+    examId: string,
+    dto: BulkAddExamQuestionsDto,
+    user?: any,
+  ) {
+    const exam = await this.prisma.exam.findFirst({
+      where: { id: examId, tenantId },
+      include: { teacher: true, questions: true },
+    });
+    if (!exam) {
+      throw new NotFoundException('آزمون مورد نظر یافت نشد');
+    }
+
+    if (user?.role === Role.TEACHER && exam.teacher.userId !== user.id) {
+      throw new ForbiddenException('شما مجاز به افزودن سوال به این آزمون نیستید');
+    }
+
+    if (!dto.questions || dto.questions.length === 0) {
+      throw new BadRequestException('لیست سوالات ارسالی خالی است');
+    }
+
+    let currentIndex = exam.questions.length;
+    const addedExamQuestions: any[] = [];
+
+    for (const qDto of dto.questions) {
+      let qId = qDto.questionId;
+
+      if (!qId) {
+        if (!qDto.text) continue;
+
+        const question = await this.prisma.question.create({
+          data: {
+            tenantId,
+            lessonId: exam.lessonId,
+            createdById: user?.id || exam.teacher.userId,
+            type: (qDto.type as any) || 'MULTIPLE_CHOICE',
+            difficulty: 'MEDIUM',
+            text: qDto.text,
+            solutionExplanation: qDto.solutionExplanation,
+            defaultScore: qDto.score || 1.0,
+            options:
+              qDto.options && qDto.options.length > 0
+                ? {
+                    create: qDto.options.map((opt, idx) => ({
+                      text: opt.text,
+                      isCorrect: opt.isCorrect,
+                      orderIndex: idx + 1,
+                    })),
+                  }
+                : undefined,
+          },
+        });
+        qId = question.id;
+      }
+
+      currentIndex += 1;
+      const eq = await this.prisma.examQuestion.create({
+        data: {
+          examId: exam.id,
+          questionId: qId,
+          orderIndex: currentIndex,
+          score: qDto.score || 1.0,
+        },
+        include: {
+          question: {
+            include: { options: true },
+          },
+        },
+      });
+      addedExamQuestions.push(eq);
+    }
+
+    return {
+      message: `${addedExamQuestions.length} سوال با موفقیت به آزمون افزوده شد`,
+      count: addedExamQuestions.length,
+      questions: addedExamQuestions,
+    };
   }
 
   // Get Exam Participations

@@ -57,7 +57,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       items: [
         { title: 'پیام‌رسان و چت زنده', href: '/app/chat', icon: MessageSquare },
         { title: 'بورد اطلاعیه‌ها', href: '/app/notices', icon: FileCheck },
-        { title: 'تقویم آموزشی', href: '/app/calendar', icon: CalendarDays },
+        { title: 'تقویم و رویدادها (۱۴۰۵)', href: '/app/calendar', icon: CalendarDays },
         { title: 'نظرسنجی و آراء', href: '/app/polls', icon: Vote },
       ],
     };

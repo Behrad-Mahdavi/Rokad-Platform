@@ -10,7 +10,12 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ExamsService } from './exams.service';
-import { CreateExamDto, AddExamQuestionDto } from './dto/create-exam.dto';
+import {
+  CreateExamDto,
+  AddExamQuestionDto,
+  ImportFromBankDto,
+  BulkAddExamQuestionsDto,
+} from './dto/create-exam.dto';
 import {
   SubmitExamAnswersDto,
   GradeExamParticipationDto,
@@ -77,6 +82,44 @@ export class ExamsController {
   ) {
     const effectiveTenantId = tenantId || userTenantId;
     return this.examsService.addQuestionToExam(effectiveTenantId, examId, dto, user);
+  }
+
+  @Post(':id/questions/import-bank')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @ApiOperation({ summary: 'ایمپورت سوالات از بانک سوالات به آزمون' })
+  async importQuestionsFromBank(
+    @CurrentUser() user: any,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') examId: string,
+    @Body() dto: ImportFromBankDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.examsService.importQuestionsFromBank(
+      effectiveTenantId,
+      examId,
+      dto,
+      user,
+    );
+  }
+
+  @Post(':id/questions/bulk')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @ApiOperation({ summary: 'افزودن دسته‌جمعی سوالات (از اکسل یا فرم)' })
+  async bulkAddQuestionsToExam(
+    @CurrentUser() user: any,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') examId: string,
+    @Body() dto: BulkAddExamQuestionsDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.examsService.bulkAddQuestionsToExam(
+      effectiveTenantId,
+      examId,
+      dto,
+      user,
+    );
   }
 
   @Get(':id/participations')

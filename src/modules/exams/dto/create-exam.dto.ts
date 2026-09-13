@@ -143,23 +143,58 @@ export class CreateExamDto {
 }
 
 export class AddExamQuestionDto {
-  @ApiProperty({ description: 'متن صورت سوال' })
+  @ApiPropertyOptional({ description: 'شناسه سوال در بانک سوالات (اختیاری اگر از قبل موجود باشد)' })
   @IsString()
-  @IsNotEmpty()
-  text: string;
+  @IsOptional()
+  questionId?: string;
 
-  @ApiProperty({ description: 'نوع سوال', enum: ['MULTIPLE_CHOICE', 'DESCRIPTIVE'] })
+  @ApiPropertyOptional({ description: 'متن صورت سوال (در صورت ایجاد سوال جدید الزامی است)' })
   @IsString()
-  @IsNotEmpty()
-  type: 'MULTIPLE_CHOICE' | 'DESCRIPTIVE';
+  @IsOptional()
+  text?: string;
+
+  @ApiPropertyOptional({ description: 'نوع سوال', enum: ['MULTIPLE_CHOICE', 'DESCRIPTIVE'] })
+  @IsString()
+  @IsOptional()
+  type?: 'MULTIPLE_CHOICE' | 'DESCRIPTIVE';
 
   @ApiProperty({ description: 'بارم نمره اختصاص‌یافته به این سوال', example: 2.0 })
   @IsNumber()
-  @Min(0.25)
+  @Min(0.1)
   score: number;
 
   @ApiPropertyOptional({ description: 'گزینه‌های تستی سوال' })
   @IsArray()
   @IsOptional()
   options?: Array<{ text: string; isCorrect: boolean }>;
+
+  @ApiPropertyOptional({ description: 'راهنمای حل و پاسخ تشریحی' })
+  @IsString()
+  @IsOptional()
+  solutionExplanation?: string;
 }
+
+export class ImportFromBankDto {
+  @ApiProperty({ description: 'لیست شناسه‌های سوالات انتخابی از بانک سوالات' })
+  @IsArray()
+  @IsString({ each: true })
+  questionIds: string[];
+
+  @ApiPropertyOptional({ description: 'بارم نمره پیش‌فرض برای هر سوال (اختیاری)' })
+  @IsNumber()
+  @Min(0.1)
+  @IsOptional()
+  defaultScore?: number;
+}
+
+export class BulkAddExamQuestionsDto {
+  @ApiProperty({
+    description: 'لیست سوالات استخراج‌شده از اکسل یا فرم جهت افزودن دسته‌جمعی',
+    type: [AddExamQuestionDto],
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AddExamQuestionDto)
+  questions: AddExamQuestionDto[];
+}
+
