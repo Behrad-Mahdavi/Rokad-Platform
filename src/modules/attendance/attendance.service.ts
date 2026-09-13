@@ -31,42 +31,52 @@ export class AttendanceService {
       throw new BadRequestException('لیست حضور و غیاب نمی‌تواند خالی باشد');
     }
 
+    const periodNumber = dto.periodNumber ?? 1;
+
     const results = await this.prisma.$transaction(async (tx) => {
       const records: any[] = [];
       for (const item of dto.attendances) {
-        const record = await tx.studentAttendance.upsert({
+        const existing = await tx.studentAttendance.findFirst({
           where: {
-            tenantId_classroomId_studentId_date_periodNumber: {
-              tenantId,
-              classroomId: dto.classroomId,
-              studentId: item.studentId,
-              date: dto.date,
-              periodNumber: dto.periodNumber ?? (null as any),
-            },
-          },
-          update: {
-            status: item.status,
-            delayMinutes: item.delayMinutes || 0,
-            reason: item.reason,
-            recordedById,
-            lessonId: dto.lessonId,
-            scheduleId: dto.scheduleId,
-          },
-          create: {
             tenantId,
-            academicYearId: dto.academicYearId,
             classroomId: dto.classroomId,
             studentId: item.studentId,
-            lessonId: dto.lessonId,
-            scheduleId: dto.scheduleId,
             date: dto.date,
-            periodNumber: dto.periodNumber,
-            status: item.status,
-            delayMinutes: item.delayMinutes || 0,
-            reason: item.reason,
-            recordedById,
+            periodNumber,
           },
         });
+
+        let record;
+        if (existing) {
+          record = await tx.studentAttendance.update({
+            where: { id: existing.id },
+            data: {
+              status: item.status,
+              delayMinutes: item.delayMinutes || 0,
+              reason: item.reason,
+              recordedById,
+              lessonId: dto.lessonId,
+              scheduleId: dto.scheduleId,
+            },
+          });
+        } else {
+          record = await tx.studentAttendance.create({
+            data: {
+              tenantId,
+              academicYearId: dto.academicYearId,
+              classroomId: dto.classroomId,
+              studentId: item.studentId,
+              lessonId: dto.lessonId,
+              scheduleId: dto.scheduleId,
+              date: dto.date,
+              periodNumber,
+              status: item.status,
+              delayMinutes: item.delayMinutes || 0,
+              reason: item.reason,
+              recordedById,
+            },
+          });
+        }
         records.push(record);
 
         // Fire event if student is absent or tardy (for future SMS/notification engine)
@@ -75,7 +85,7 @@ export class AttendanceService {
             tenantId,
             studentId: item.studentId,
             date: dto.date,
-            periodNumber: dto.periodNumber,
+            periodNumber,
             status: item.status,
             delayMinutes: item.delayMinutes,
           });

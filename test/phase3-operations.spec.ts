@@ -170,7 +170,8 @@ describe('Rokad Multi-Tenant Platform — Phase 3 Daily Academic Operations Test
       const allLessons = await request(app.getHttpServer())
         .get('/api/v1/classes/lessons')
         .set('Authorization', `Bearer ${boysAdminToken}`);
-      const unassignedLesson = allLessons.body.data.find(
+      const lessonsArr = Array.isArray(allLessons.body) ? allLessons.body : allLessons.body?.data || [];
+      const unassignedLesson = lessonsArr.find(
         (l: any) => l.name === 'تجارت الکترونیک و امنیت شبکه',
       );
 

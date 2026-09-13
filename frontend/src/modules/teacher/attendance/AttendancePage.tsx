@@ -186,6 +186,7 @@ export const AttendancePage: React.FC = () => {
         academicYearId,
         classroomId: selectedClassId,
         date: dateStr,
+        periodNumber: 1,
         attendances,
       });
 
