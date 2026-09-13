@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
   Param,
   Query,
@@ -101,5 +102,29 @@ export class QuestionBankController {
       effectiveTenantId,
       questionId,
     );
+  }
+
+  @Delete('questions/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @ApiOperation({ summary: 'حذف سوال از بانک سوالات' })
+  async deleteQuestion(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') questionId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.questionBankService.deleteQuestion(effectiveTenantId, questionId);
+  }
+
+  @Delete('categories/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @ApiOperation({ summary: 'حذف سرفصل موضوعی' })
+  async deleteCategory(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') categoryId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.questionBankService.deleteCategory(effectiveTenantId, categoryId);
   }
 }

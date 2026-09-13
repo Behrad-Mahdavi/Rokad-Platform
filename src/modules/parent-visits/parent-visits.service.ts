@@ -15,9 +15,21 @@ export class ParentVisitsService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async createSlot(tenantId: string, dto: CreateVisitSlotDto) {
+  async createSlot(tenantId: string, dto: CreateVisitSlotDto, user?: any) {
+    let teacherId = dto.teacherId;
+    if (!teacherId && user) {
+      const teacherProfile = await this.prisma.teacherProfile.findFirst({
+        where: { userId: user.id, tenantId },
+      });
+      if (teacherProfile) teacherId = teacherProfile.id;
+    }
+    if (!teacherId) {
+      const anyTeacher = await this.prisma.teacherProfile.findFirst({ where: { tenantId } });
+      if (anyTeacher) teacherId = anyTeacher.id;
+    }
+
     const teacher = await this.prisma.teacherProfile.findFirst({
-      where: { id: dto.teacherId, tenantId },
+      where: { id: teacherId, tenantId },
     });
     if (!teacher) {
       throw new NotFoundException('استاد یا مشاور مورد نظر یافت نشد');
@@ -26,7 +38,7 @@ export class ParentVisitsService {
     return this.prisma.parentVisitSlot.create({
       data: {
         tenantId,
-        teacherId: dto.teacherId,
+        teacherId: teacher.id,
         date: dto.date,
         startTime: dto.startTime,
         endTime: dto.endTime,
@@ -40,6 +52,64 @@ export class ParentVisitsService {
         teacher: { include: { user: true } },
       },
     });
+  }
+
+  async deleteSlot(tenantId: string, slotId: string) {
+    const slot = await this.prisma.parentVisitSlot.findFirst({
+      where: { id: slotId, tenantId },
+    });
+    if (!slot) {
+      throw new NotFoundException('اسلات ملاقات یافت نشد');
+    }
+
+    return this.prisma.parentVisitSlot.update({
+      where: { id: slotId },
+      data: { isCancelled: true },
+    });
+  }
+
+  async listMyBookings(tenantId: string, user: any) {
+    if (user.role === 'PARENT') {
+      const parent = await this.prisma.parentProfile.findFirst({
+        where: { userId: user.id, tenantId },
+      });
+      if (!parent) return [];
+
+      return this.prisma.parentVisitBooking.findMany({
+        where: { parentId: parent.id, tenantId },
+        include: {
+          slot: { include: { teacher: { include: { user: true } } } },
+          student: { include: { user: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    } else if (user.role === 'TEACHER') {
+      const teacher = await this.prisma.teacherProfile.findFirst({
+        where: { userId: user.id, tenantId },
+      });
+      if (!teacher) return [];
+
+      return this.prisma.parentVisitBooking.findMany({
+        where: { slot: { teacherId: teacher.id }, tenantId },
+        include: {
+          slot: true,
+          student: { include: { user: true } },
+          parent: { include: { user: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    } else {
+      // Super Admin or School Admin: return all bookings
+      return this.prisma.parentVisitBooking.findMany({
+        where: { tenantId },
+        include: {
+          slot: { include: { teacher: { include: { user: true } } } },
+          student: { include: { user: true } },
+          parent: { include: { user: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
   }
 
   async listAvailableSlots(tenantId: string, teacherId?: string, date?: string) {

@@ -7,6 +7,7 @@ import {
   Query,
   UseGuards,
   ForbiddenException,
+  Delete,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { MattersService } from './matters.service';
@@ -60,5 +61,28 @@ export class MattersController {
   ) {
     const effectiveTenantId = tenantId || userTenantId;
     return this.mattersService.listMatters(effectiveTenantId, type);
+  }
+
+  @Get('my-matters')
+  @ApiOperation({ summary: 'مشاهده کارنامه انضباطی و تشویقی من (دانش‌آموز یا فرزند ولی)' })
+  async getMyMatters(
+    @CurrentUser() user: any,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.mattersService.getMyMatters(effectiveTenantId, user);
+  }
+
+  @Delete(':id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @ApiOperation({ summary: 'حذف مورد انضباطی یا تشویقی' })
+  async deleteMatter(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') matterId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.mattersService.deleteMatter(effectiveTenantId, matterId);
   }
 }

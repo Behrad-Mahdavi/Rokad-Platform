@@ -37,15 +37,26 @@ import { HomeworkPage } from '../modules/teacher/homework/HomeworkPage';
 import { ExamsPage } from '../modules/teacher/exams/ExamsPage';
 import { GradebookPage } from '../modules/teacher/gradebook/GradebookPage';
 import { LessonPlansPage } from '../modules/teacher/lessons/LessonPlansPage';
+import { TeacherSchedulePage } from '../modules/teacher/schedule/TeacherSchedulePage';
 
 import { StudentDashboard } from '../modules/student-parent/StudentDashboard';
 import { StudentHomeworkPage } from '../modules/student-parent/homework/StudentHomeworkPage';
 import { StudentExamsPage } from '../modules/student-parent/exams/StudentExamsPage';
 import { StudentGradesPage } from '../modules/student-parent/grades/StudentGradesPage';
 import { StudentMaterialsPage } from '../modules/student-parent/materials/StudentMaterialsPage';
+import { StudentSchedulePage } from '../modules/student-parent/schedule/StudentSchedulePage';
 
 import { ParentDashboard } from '../modules/student-parent/ParentDashboard';
 import { ParentFeesPage } from '../modules/student-parent/fees/ParentFeesPage';
+
+// Newly Integrated Modules
+import { SchoolProfilePage } from '../modules/school-admin/profile/SchoolProfilePage';
+import { MattersPage } from '../modules/school-admin/matters/MattersPage';
+import { PollsPage } from '../modules/shared/polls/PollsPage';
+import { ParentVisitsPage } from '../modules/student-parent/visits/ParentVisitsPage';
+import { TeacherVisitsPage } from '../modules/teacher/visits/TeacherVisitsPage';
+import { StudentMattersPage } from '../modules/student-parent/matters/StudentMattersPage';
+import { QuestionBankPage } from '../modules/teacher/question-bank/QuestionBankPage';
 
 import { ForbiddenPage } from '../modules/errors/ForbiddenPage';
 import { NotFoundPage } from '../modules/errors/NotFoundPage';
@@ -102,6 +113,8 @@ export const router = createBrowserRouter([
               { path: 'academic', element: <AcademicStructurePage /> },
               { path: 'schedule', element: <ClassSchedulePage /> },
               { path: 'members', element: <MembersPage /> },
+              { path: 'profile', element: <SchoolProfilePage /> },
+              { path: 'matters', element: <MattersPage /> },
               { path: 'finance/fees', element: <FeesPage /> },
               { path: 'finance/payroll', element: <PayrollPage /> },
               { path: 'reports', element: <ReportsPage /> },
@@ -125,7 +138,9 @@ export const router = createBrowserRouter([
               { path: 'exams', element: <ExamsPage /> },
               { path: 'gradebook', element: <GradebookPage /> },
               { path: 'lessons', element: <LessonPlansPage /> },
-              { path: 'schedule', element: <ClassSchedulePage readOnly={true} /> },
+              { path: 'question-bank', element: <QuestionBankPage /> },
+              { path: 'visits', element: <TeacherVisitsPage /> },
+              { path: 'schedule', element: <TeacherSchedulePage /> },
             ],
           },
         ],
@@ -141,10 +156,11 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <Navigate to="dashboard" replace /> },
               { path: 'dashboard', element: <StudentDashboard /> },
-              { path: 'schedule', element: <ClassSchedulePage readOnly={true} /> },
+              { path: 'schedule', element: <StudentSchedulePage /> },
               { path: 'homework', element: <StudentHomeworkPage /> },
               { path: 'exams', element: <StudentExamsPage /> },
               { path: 'grades', element: <StudentGradesPage /> },
+              { path: 'matters', element: <StudentMattersPage /> },
               { path: 'materials', element: <StudentMaterialsPage /> },
             ],
           },
@@ -161,10 +177,11 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <Navigate to="dashboard" replace /> },
               { path: 'dashboard', element: <ParentDashboard /> },
-              { path: 'schedule', element: <ClassSchedulePage readOnly={true} /> },
+              { path: 'schedule', element: <StudentSchedulePage /> },
               { path: 'fees', element: <ParentFeesPage /> },
               { path: 'reports', element: <StudentGradesPage /> },
-              { path: 'visits', element: <ParentDashboard /> },
+              { path: 'matters', element: <StudentMattersPage /> },
+              { path: 'visits', element: <ParentVisitsPage /> },
             ],
           },
         ],
@@ -180,6 +197,7 @@ export const router = createBrowserRouter([
               { path: 'chat', element: <LiveChatPage /> },
               { path: 'notices', element: <NoticeboardPage /> },
               { path: 'calendar', element: <CalendarPage /> },
+              { path: 'polls', element: <PollsPage /> },
             ],
           },
         ],

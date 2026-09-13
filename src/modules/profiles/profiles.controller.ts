@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -112,5 +113,23 @@ export class ProfilesController {
       throw new ForbiddenException('کانتکست مدرسه مشخص نیست');
     }
     return this.profilesService.createBlogPost(effectiveTenantId, authorId, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @ApiBearerAuth()
+  @Delete('blogs/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @RequirePermissions(AppPermission.BLOG_WRITE)
+  @ApiOperation({ summary: 'حذف مقاله یا پست وبلاگ مدرسه' })
+  async deleteBlogPost(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') postId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    if (!effectiveTenantId) {
+      throw new ForbiddenException('کانتکست مدرسه مشخص نیست');
+    }
+    return this.profilesService.deleteBlogPost(effectiveTenantId, postId);
   }
 }

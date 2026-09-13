@@ -9,10 +9,10 @@ import {
 } from 'class-validator';
 
 export class CreateVisitSlotDto {
-  @ApiProperty({ description: 'شناسه پروفایل معلم یا مشاور' })
+  @ApiPropertyOptional({ description: 'شناسه پروفایل معلم یا مشاور' })
   @IsString()
-  @IsNotEmpty()
-  teacherId: string;
+  @IsOptional()
+  teacherId?: string;
 
   @ApiProperty({ description: 'تاریخ به فرمت YYYY-MM-DD', example: '2026-09-12' })
   @IsString()

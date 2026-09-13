@@ -80,26 +80,77 @@ export function gregorianToJalaliStr(dateInput: Date | string | null | undefined
   return `${jy}-${String(jm).padStart(2, '0')}-${String(jd).padStart(2, '0')}`;
 }
 
+const PERSIAN_WEEK_DAYS_FULL = [
+  'یکشنبه',
+  'دوشنبه',
+  'سه‌شنبه',
+  'چهارشنبه',
+  'پنج‌شنبه',
+  'جمعه',
+  'شنبه',
+];
+
 /**
- * قالب‌بندی متنی خوانا برای نمایش در UI (مثلاً: ۱ مهر ۱۴۰۴)
+ * قالب‌بندی متنی خوانا برای نمایش در UI (مثلاً: ۲۳ شهریور ۱۴۰۵)
+ * به صورت هوشمند هم رشته شمسی (1405-06-23) و هم رشته یا تاریخ میلادی را پردازش می‌کند.
  */
-export function formatJalaliDisplay(dateInput: Date | string | null | undefined): string {
+export function formatJalaliDisplay(
+  dateInput: Date | string | null | undefined,
+  includeWeekday = false
+): string {
   if (!dateInput) return '';
-  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-  if (isNaN(date.getTime())) return '';
 
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Tehran',
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric',
-  });
+  let jy: number;
+  let jm: number;
+  let jd: number;
+  let dayOfWeek = 0;
 
-  const parts = formatter.formatToParts(date);
-  const gy = parseInt(parts.find((p) => p.type === 'year')!.value, 10);
-  const gm = parseInt(parts.find((p) => p.type === 'month')!.value, 10);
-  const gd = parseInt(parts.find((p) => p.type === 'day')!.value, 10);
+  if (typeof dateInput === 'string') {
+    const norm = normalizeDigits(dateInput.trim());
+    const match = norm.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+    if (match) {
+      const y = parseInt(match[1], 10);
+      const m = parseInt(match[2], 10);
+      const d = parseInt(match[3], 10);
 
-  const { jy, jm, jd } = jalaali.toJalaali(gy, gm, gd);
-  return `${toPersianDigits(jd)} ${PERSIAN_MONTH_NAMES[jm - 1]} ${toPersianDigits(jy)}`;
+      if (y >= 1200 && y <= 1700) {
+        jy = y;
+        jm = m;
+        jd = d;
+        const g = jalaali.toGregorian(y, m, d);
+        dayOfWeek = new Date(g.gy, g.gm - 1, g.gd).getDay();
+      } else {
+        const j = jalaali.toJalaali(y, m, d);
+        jy = j.jy;
+        jm = j.jm;
+        jd = j.jd;
+        dayOfWeek = new Date(y, m - 1, d).getDay();
+      }
+    } else {
+      const parsed = new Date(dateInput);
+      if (isNaN(parsed.getTime())) return dateInput;
+      const j = jalaali.toJalaali(parsed.getFullYear(), parsed.getMonth() + 1, parsed.getDate());
+      jy = j.jy;
+      jm = j.jm;
+      jd = j.jd;
+      dayOfWeek = parsed.getDay();
+    }
+  } else {
+    if (isNaN(dateInput.getTime())) return '';
+    const j = jalaali.toJalaali(dateInput.getFullYear(), dateInput.getMonth() + 1, dateInput.getDate());
+    jy = j.jy;
+    jm = j.jm;
+    jd = j.jd;
+    dayOfWeek = dateInput.getDay();
+  }
+
+  const monthName = PERSIAN_MONTH_NAMES[jm - 1] || '';
+  const dateFormatted = `${toPersianDigits(jd)} ${monthName} ${toPersianDigits(jy)}`;
+
+  if (includeWeekday) {
+    const weekdayName = PERSIAN_WEEK_DAYS_FULL[dayOfWeek] || '';
+    return `${weekdayName} ${dateFormatted}`;
+  }
+
+  return dateFormatted;
 }

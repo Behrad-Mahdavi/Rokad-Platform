@@ -142,4 +142,17 @@ export class ProfilesService {
 
     return post;
   }
+
+  async deleteBlogPost(tenantId: string, postId: string) {
+    const post = await this.prisma.profileBlog.findFirst({
+      where: { id: postId, tenantId },
+    });
+    if (!post) {
+      throw new NotFoundException('مقاله مورد نظر یافت نشد');
+    }
+
+    return this.prisma.profileBlog.delete({
+      where: { id: postId },
+    });
+  }
 }

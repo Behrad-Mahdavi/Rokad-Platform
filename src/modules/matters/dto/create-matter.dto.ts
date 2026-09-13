@@ -15,10 +15,10 @@ export class CreateMatterDto {
   @IsNotEmpty()
   studentId: string;
 
-  @ApiProperty({ description: 'شناسه سال تحصیلی' })
+  @ApiPropertyOptional({ description: 'شناسه سال تحصیلی' })
   @IsString()
-  @IsNotEmpty()
-  academicYearId: string;
+  @IsOptional()
+  academicYearId?: string;
 
   @ApiProperty({
     description: 'نوع مورد (POSITIVE, NEGATIVE, WARNING, SUSPENSION, COUNSELING_REFERRAL)',

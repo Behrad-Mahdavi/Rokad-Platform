@@ -8,6 +8,7 @@ import {
   Query,
   UseGuards,
   ForbiddenException,
+  Delete,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ParentVisitsService } from './parent-visits.service';
@@ -31,12 +32,36 @@ export class ParentVisitsController {
   @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'تعریف اسلات زمانی ملاقات توسط دبیر یا مشاور' })
   async createSlot(
+    @CurrentUser() user: any,
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentTenant('id') tenantId: string,
     @Body() dto: CreateVisitSlotDto,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
-    return this.parentVisitsService.createSlot(effectiveTenantId, dto);
+    return this.parentVisitsService.createSlot(effectiveTenantId, dto, user);
+  }
+
+  @Delete('slots/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @ApiOperation({ summary: 'حذف یا لغو اسلات زمانی ملاقات' })
+  async deleteSlot(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') slotId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.parentVisitsService.deleteSlot(effectiveTenantId, slotId);
+  }
+
+  @Get('my-bookings')
+  @ApiOperation({ summary: 'مشاهده لیست نوبت‌های رزروشده کاربر جاری (ولی یا معلم)' })
+  async listMyBookings(
+    @CurrentUser() user: any,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.parentVisitsService.listMyBookings(effectiveTenantId, user);
   }
 
   @Get('slots')

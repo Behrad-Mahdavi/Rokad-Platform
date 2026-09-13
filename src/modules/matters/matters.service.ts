@@ -25,11 +25,19 @@ export class MattersService {
       throw new NotFoundException('پروفایل دانش‌آموز یافت نشد');
     }
 
+    let academicYearId = dto.academicYearId;
+    if (!academicYearId) {
+      const currentYear = await this.prisma.academicYear.findFirst({
+        where: { tenantId, isCurrent: true },
+      });
+      academicYearId = currentYear ? currentYear.id : (await this.prisma.academicYear.findFirst({ where: { tenantId } }))?.id || '';
+    }
+
     const matter = await this.prisma.disciplinaryMatter.create({
       data: {
         tenantId,
         studentId: dto.studentId,
-        academicYearId: dto.academicYearId,
+        academicYearId,
         type: dto.type,
         title: dto.title,
         description: dto.description,
@@ -52,6 +60,41 @@ export class MattersService {
     });
 
     return matter;
+  }
+
+  async deleteMatter(tenantId: string, matterId: string) {
+    const matter = await this.prisma.disciplinaryMatter.findFirst({
+      where: { id: matterId, tenantId },
+    });
+    if (!matter) {
+      throw new NotFoundException('مورد انضباطی مورد نظر یافت نشد');
+    }
+
+    return this.prisma.disciplinaryMatter.delete({
+      where: { id: matterId },
+    });
+  }
+
+  async getMyMatters(tenantId: string, user: any) {
+    if (user.role === 'STUDENT') {
+      const student = await this.prisma.studentProfile.findFirst({
+        where: { userId: user.id, tenantId },
+      });
+      if (!student) return { matters: [], totalPoints: 0, positiveCount: 0, negativeCount: 0 };
+      return this.getStudentMatters(tenantId, student.id);
+    } else if (user.role === 'PARENT') {
+      const parent = await this.prisma.parentProfile.findFirst({
+        where: { userId: user.id, tenantId },
+        include: { studentLinks: { include: { student: true } } },
+      });
+      if (!parent || parent.studentLinks.length === 0) {
+        return { matters: [], totalPoints: 0, positiveCount: 0, negativeCount: 0 };
+      }
+      const studentId = parent.studentLinks[0].studentId;
+      return this.getStudentMatters(tenantId, studentId);
+    } else {
+      return this.listMatters(tenantId);
+    }
   }
 
   async getStudentMatters(tenantId: string, studentId: string) {

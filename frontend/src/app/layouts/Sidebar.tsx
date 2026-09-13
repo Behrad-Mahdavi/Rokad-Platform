@@ -21,6 +21,12 @@ import {
   MessageSquare,
   Sparkles,
   X,
+  Vote,
+  School,
+  ShieldAlert,
+  UserCheck,
+  Award,
+  FileQuestion,
 } from 'lucide-react';
 import { UserRole } from '../../types/auth';
 import { useSidebarStore } from '../../lib/ui/sidebar-store';
@@ -47,11 +53,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
 
   const getNavItems = (): { section: string; items: NavItem[] }[] => {
     const commsSection = {
-      section: 'ارتباطات و اطلاعیه‌ها',
+      section: 'ارتباطات و اطلاع‌رسانی',
       items: [
         { title: 'پیام‌رسان و چت زنده', href: '/app/chat', icon: MessageSquare },
         { title: 'بورد اطلاعیه‌ها', href: '/app/notices', icon: FileCheck },
         { title: 'تقویم آموزشی', href: '/app/calendar', icon: CalendarDays },
+        { title: 'نظرسنجی و آراء', href: '/app/polls', icon: Vote },
       ],
     };
 
@@ -78,9 +85,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             section: 'مدیریت هنرستان',
             items: [
               { title: 'داشبورد مدیریت', href: '/app/admin/dashboard', icon: LayoutDashboard },
+              { title: 'پروفایل و وبلاگ مدرسه', href: '/app/admin/profile', icon: School },
               { title: 'ساختار سال و کلاس‌ها', href: '/app/admin/academic', icon: GraduationCap },
               { title: 'برنامه هفتگی کلاس‌ها', href: '/app/admin/schedule', icon: CalendarDays },
               { title: 'مدیریت هنرجویان و پرسنل', href: '/app/admin/members', icon: Users },
+              { title: 'امور انضباطی و تشویقی', href: '/app/admin/matters', icon: ShieldAlert },
             ],
           },
           {
@@ -103,9 +112,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               { title: 'برنامه هفتگی کلاس‌ها', href: '/app/teacher/schedule', icon: CalendarDays },
               { title: 'حضور و غیاب', href: '/app/teacher/attendance', icon: CalendarDays },
               { title: 'تکالیف و بازخورد', href: '/app/teacher/homework', icon: FileCheck },
-              { title: 'بانک سوال و آزمون‌ها', href: '/app/teacher/exams', icon: HelpCircle },
+              { title: 'بانک سوالات متمرکز', href: '/app/teacher/question-bank', icon: FileQuestion },
+              { title: 'آزمون‌های آنلاین', href: '/app/teacher/exams', icon: HelpCircle },
               { title: 'دفتر کلاسی و نمرات', href: '/app/teacher/gradebook', icon: BarChart3 },
               { title: 'طرح درس و محتوا', href: '/app/teacher/lessons', icon: BookOpen },
+              { title: 'ملاقات با اولیاء', href: '/app/teacher/visits', icon: UserCheck },
             ],
           },
           commsSection,
@@ -121,6 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               { title: 'تکالیف من', href: '/app/student/homework', icon: FileCheck },
               { title: 'آزمون‌های آنلاین', href: '/app/student/exams', icon: HelpCircle },
               { title: 'کارنامه و نمرات', href: '/app/student/grades', icon: BarChart3 },
+              { title: 'پرونده انضباطی و افتخارات', href: '/app/student/matters', icon: Award },
               { title: 'محتوا و جزوات', href: '/app/student/materials', icon: BookOpen },
             ],
           },
@@ -135,8 +147,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               { title: 'داشبورد فرزندان', href: '/app/parent/dashboard', icon: LayoutDashboard },
               { title: 'برنامه هفتگی فرزند', href: '/app/parent/schedule', icon: CalendarDays },
               { title: 'پرداخت شهریه و اقساط', href: '/app/parent/fees', icon: CreditCard },
-              { title: 'وضعیت انضباطی و نمرات', href: '/app/parent/reports', icon: BarChart3 },
-              { title: 'ملاقات با کادر آموزشی', href: '/app/parent/visits', icon: CalendarDays },
+              { title: 'کارنامه و نمرات', href: '/app/parent/reports', icon: BarChart3 },
+              { title: 'پرونده انضباطی و تشویقی', href: '/app/parent/matters', icon: Award },
+              { title: 'ملاقات با کادر آموزشی', href: '/app/parent/visits', icon: UserCheck },
             ],
           },
           commsSection,

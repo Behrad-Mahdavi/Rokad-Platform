@@ -116,7 +116,12 @@ export const TeacherDashboard: React.FC = () => {
               <h3 className="font-bold text-sm text-ink-darker">برنامه تدریس امروز شما</h3>
               <p className="text-[11px] text-gray-400">زمان‌بندی زنگ‌های کلاسی و حضور و غیاب</p>
             </div>
-            <Badge variant="default">امروز</Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="default">امروز</Badge>
+              <a href="/app/teacher/schedule" className="text-xs text-primary font-bold hover:underline">
+                کل برنامه هفتگی ←
+              </a>
+            </div>
           </div>
 
           <div className="space-y-3">

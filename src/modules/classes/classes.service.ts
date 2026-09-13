@@ -605,8 +605,53 @@ export class ClassesService {
         teacher,
         schedules,
       };
+    } else if (user?.role === Role.PARENT) {
+      const parent = await this.prisma.parentProfile.findFirst({
+        where: { userId: user.id, tenantId },
+        include: {
+          studentLinks: {
+            include: {
+              student: {
+                include: {
+                  user: true,
+                  enrollments: {
+                    where: { status: 'ACTIVE' },
+                    include: {
+                      classroom: {
+                        include: {
+                          level: true,
+                          field: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!parent || parent.studentLinks.length === 0) {
+        return { classroom: null, schedules: [] };
+      }
+
+      const activeStudent = parent.studentLinks[0].student;
+      const activeEnrollment = activeStudent.enrollments[0];
+      if (!activeEnrollment) {
+        return { classroom: null, schedules: [] };
+      }
+
+      const classroom = activeEnrollment.classroom;
+      const schedules = await this.getClassSchedule(tenantId, classroom.id, user);
+
+      return {
+        classroom,
+        schedules,
+        student: activeStudent,
+      };
     } else {
-      throw new BadRequestException('این متد فقط برای نقش‌های دانش‌آموز یا دبیر معتبر است');
+      throw new BadRequestException('این متد فقط برای نقش‌های دانش‌آموز، والد یا دبیر معتبر است');
     }
   }
 

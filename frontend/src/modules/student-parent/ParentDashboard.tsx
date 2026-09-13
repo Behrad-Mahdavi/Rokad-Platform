@@ -42,11 +42,20 @@ export const ParentDashboard: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => navigate('/app/parent/visits')}
+            className="text-xs flex items-center space-x-1 space-x-reverse"
+          >
+            <Clock className="h-3.5 w-3.5 text-purple-600" />
+            <span>وقت ملاقات با معلمان</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => navigate('/app/chat')}
             className="text-xs flex items-center space-x-1 space-x-reverse"
           >
             <MessageSquare className="h-3.5 w-3.5" />
-            <span>پیام به اولیاء و مربیان</span>
+            <span>پیام‌رسان هنرستان</span>
           </Button>
           <Button
             variant="primary"

@@ -140,4 +140,34 @@ export class QuestionBankService {
     }
     return question;
   }
+
+  async deleteQuestion(tenantId: string, questionId: string) {
+    const question = await this.prisma.question.findFirst({
+      where: { id: questionId, tenantId },
+    });
+    if (!question) {
+      throw new NotFoundException('سوال مورد نظر یافت نشد');
+    }
+
+    await this.prisma.questionOption.deleteMany({
+      where: { questionId },
+    });
+
+    return this.prisma.question.delete({
+      where: { id: questionId },
+    });
+  }
+
+  async deleteCategory(tenantId: string, categoryId: string) {
+    const category = await this.prisma.questionCategory.findFirst({
+      where: { id: categoryId, tenantId },
+    });
+    if (!category) {
+      throw new NotFoundException('سرفصل مورد نظر یافت نشد');
+    }
+
+    return this.prisma.questionCategory.delete({
+      where: { id: categoryId },
+    });
+  }
 }
