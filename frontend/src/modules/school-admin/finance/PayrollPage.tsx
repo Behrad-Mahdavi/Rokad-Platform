@@ -14,6 +14,7 @@ import {
   TableRow,
   TableCell,
 } from '../../../components/ui/Table';
+import { MobileDataTable } from '../../../components/ui/MobileDataTable';
 import {
   Wallet,
   Plus,
@@ -193,98 +194,140 @@ export const PayrollPage: React.FC = () => {
 
       {/* Tab 1: Monthly Slips Table */}
       {activeTab === 'SLIPS' && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>شماره فیش</TableHead>
-              <TableHead>نام پرسنل</TableHead>
-              <TableHead>دوره / ماه</TableHead>
-              <TableHead>ناخالص حقوق</TableHead>
-              <TableHead>کسورات قانونی</TableHead>
-              <TableHead>خالص پرداختی</TableHead>
-              <TableHead>وضعیت پرداخت</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                </TableRow>
-              ))
-            ) : slips.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                  هنوز فیش حقوقی صادر نشده است. از دکمه «صدور فیش حقوقی جدید» استفاده کنید.
-                </TableCell>
-              </TableRow>
-            ) : (
-              slips.map((s) => (
-                <TableRow key={s.id}>
-                  <TableCell><span className="font-mono font-bold text-xs bg-gray-100 px-2 py-0.5 rounded">{s.slipNumber}</span></TableCell>
-                  <TableCell>
-                    <div className="font-bold text-ink-darker">
-                      {s.user?.firstName} {s.user?.lastName}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-xs font-medium text-ink-dark">
-                      {getMonthName(s.month)} {s.year}
-                    </span>
-                  </TableCell>
-                  <TableCell><span className="text-xs font-bold font-mono">{(s.grossPay / 1000000).toLocaleString('fa-IR')} م</span></TableCell>
-                  <TableCell><span className="text-xs text-rose-600 font-mono">{(s.totalDeductions / 1000000).toLocaleString('fa-IR')} م</span></TableCell>
-                  <TableCell><span className="text-xs font-bold text-emerald-700 font-mono">{(s.netPay / 1000000).toLocaleString('fa-IR')} م تومان</span></TableCell>
-                  <TableCell>
-                    {s.status === 'PAID' ? (
-                      <Badge variant="success">پرداخت‌شده (پایا)</Badge>
-                    ) : (
-                      <Badge variant="warning">در انتظار پرداخت</Badge>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        <MobileDataTable
+          items={slips}
+          isLoading={isLoading}
+          emptyMessage="هنوز فیش حقوقی صادر نشده است. از دکمه «صدور فیش حقوقی جدید» استفاده کنید."
+          primaryField={(s) => (
+            <div>
+              <div className="font-bold text-ink-darker text-sm">
+                {s.user?.firstName} {s.user?.lastName}
+              </div>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="font-mono text-[11px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-700">{s.slipNumber}</span>
+                <span className="text-xs text-gray-500">{getMonthName(s.month)} {s.year}</span>
+              </div>
+            </div>
+          )}
+          secondaryField={(s) => (
+            <div className="text-left">
+              <div className="font-bold text-xs font-mono text-emerald-700">
+                {(s.netPay / 1000000).toLocaleString('fa-IR')} م ت
+              </div>
+              <div>
+                {s.status === 'PAID' ? (
+                  <Badge variant="success" className="text-[10px]">پرداخت‌شده</Badge>
+                ) : (
+                  <Badge variant="warning" className="text-[10px]">در انتظار</Badge>
+                )}
+              </div>
+            </div>
+          )}
+          columns={[
+            {
+              header: 'شماره فیش',
+              cell: (s) => <span className="font-mono font-bold text-xs bg-gray-100 px-2 py-0.5 rounded">{s.slipNumber}</span>,
+            },
+            {
+              header: 'نام پرسنل',
+              cell: (s) => (
+                <div className="font-bold text-ink-darker">
+                  {s.user?.firstName} {s.user?.lastName}
+                </div>
+              ),
+            },
+            {
+              header: 'دوره / ماه',
+              cell: (s) => (
+                <span className="text-xs font-medium text-ink-dark">
+                  {getMonthName(s.month)} {s.year}
+                </span>
+              ),
+            },
+            {
+              header: 'ناخالص حقوق',
+              cell: (s) => <span className="text-xs font-bold font-mono">{(s.grossPay / 1000000).toLocaleString('fa-IR')} م</span>,
+              mobileDetail: true,
+            },
+            {
+              header: 'کسورات قانونی',
+              cell: (s) => <span className="text-xs text-rose-600 font-mono">{(s.totalDeductions / 1000000).toLocaleString('fa-IR')} م</span>,
+              mobileDetail: true,
+            },
+            {
+              header: 'خالص پرداختی',
+              cell: (s) => <span className="text-xs font-bold text-emerald-700 font-mono">{(s.netPay / 1000000).toLocaleString('fa-IR')} م تومان</span>,
+            },
+            {
+              header: 'وضعیت پرداخت',
+              cell: (s) => (
+                s.status === 'PAID' ? (
+                  <Badge variant="success">پرداخت‌شده (پایا)</Badge>
+                ) : (
+                  <Badge variant="warning">در انتظار پرداخت</Badge>
+                )
+              ),
+            },
+          ]}
+        />
       )}
 
       {/* Tab 2: Profiles Table */}
       {activeTab === 'PROFILES' && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>نام پرسنل</TableHead>
-              <TableHead>نوع قرارداد</TableHead>
-              <TableHead>حقوق پایه ماهیانه</TableHead>
-              <TableHead>نرخ ساعتی</TableHead>
-              <TableHead>شماره شبا بانکی</TableHead>
-              <TableHead>وضعیت</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {profiles.map((p) => (
-              <TableRow key={p.id}>
-                <TableCell>
-                  <div className="font-bold text-ink-darker">
-                    {p.user?.firstName} {p.user?.lastName}
-                  </div>
-                </TableCell>
-                <TableCell><Badge variant="default">{p.contractType === 'FULL_TIME_SALARY' ? 'تمام‌وقت' : 'حق‌التدریس'}</Badge></TableCell>
-                <TableCell><span className="font-bold text-xs font-mono">{(p.baseMonthlySalary / 1000000).toLocaleString('fa-IR')} م تومان</span></TableCell>
-                <TableCell><span className="text-xs font-mono text-gray-600">{(p.hourlyRate).toLocaleString('fa-IR')} تومان/ساعت</span></TableCell>
-                <TableCell><span className="font-mono text-xs text-gray-500">{p.bankShebaNumber || '—'}</span></TableCell>
-                <TableCell><Badge variant="success">فعال</Badge></TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <MobileDataTable
+          items={profiles}
+          isLoading={isLoading}
+          emptyMessage="پروفایل حقوقی ثبت نشده است."
+          primaryField={(p) => (
+            <div>
+              <div className="font-bold text-ink-darker text-sm">
+                {p.user?.firstName} {p.user?.lastName}
+              </div>
+              <div className="text-xs text-gray-500 mt-0.5">
+                {p.contractType === 'FULL_TIME_SALARY' ? 'تمام‌وقت' : 'حق‌التدریس'}
+              </div>
+            </div>
+          )}
+          secondaryField={(p) => (
+            <div className="text-left">
+              <span className="font-bold text-xs font-mono text-ink-darker">
+                {(p.baseMonthlySalary / 1000000).toLocaleString('fa-IR')} م ت
+              </span>
+            </div>
+          )}
+          columns={[
+            {
+              header: 'نام پرسنل',
+              cell: (p) => (
+                <div className="font-bold text-ink-darker">
+                  {p.user?.firstName} {p.user?.lastName}
+                </div>
+              ),
+            },
+            {
+              header: 'نوع قرارداد',
+              cell: (p) => <Badge variant="default">{p.contractType === 'FULL_TIME_SALARY' ? 'تمام‌وقت' : 'حق‌التدریس'}</Badge>,
+            },
+            {
+              header: 'حقوق پایه ماهیانه',
+              cell: (p) => <span className="font-bold text-xs font-mono">{(p.baseMonthlySalary / 1000000).toLocaleString('fa-IR')} م تومان</span>,
+            },
+            {
+              header: 'نرخ ساعتی',
+              cell: (p) => <span className="text-xs font-mono text-gray-600">{(p.hourlyRate).toLocaleString('fa-IR')} تومان/ساعت</span>,
+              mobileDetail: true,
+            },
+            {
+              header: 'شماره شبا بانکی',
+              cell: (p) => <span className="font-mono text-xs text-gray-500">{p.bankShebaNumber || '—'}</span>,
+              mobileDetail: true,
+            },
+            {
+              header: 'وضعیت',
+              cell: () => <Badge variant="success">فعال</Badge>,
+            },
+          ]}
+        />
       )}
 
       {/* 1. Modal: Generate Slip */}

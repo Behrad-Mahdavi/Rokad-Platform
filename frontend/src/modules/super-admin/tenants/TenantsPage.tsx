@@ -16,6 +16,7 @@ import {
   TableRow,
   TableCell,
 } from '../../../components/ui/Table';
+import { MobileDataTable } from '../../../components/ui/MobileDataTable';
 import {
   Building2,
   Plus,
@@ -278,120 +279,132 @@ export const TenantsPage: React.FC = () => {
       </div>
 
       {/* Tenants Table */}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>نام مرکز و شناسه</TableHead>
-            <TableHead>نوع سازمان</TableHead>
-            <TableHead>پلن اشتراک</TableHead>
-            <TableHead>تعداد اعضا</TableHead>
-            <TableHead>وضعیت</TableHead>
-            <TableHead className="text-center">عملیات</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
-            Array.from({ length: 4 }).map((_, i) => (
-              <TableRow key={i}>
-                <TableCell><Skeleton className="h-5 w-36" /></TableCell>
-                <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                <TableCell><Skeleton className="h-8 w-32 mx-auto" /></TableCell>
-              </TableRow>
-            ))
-          ) : tenants.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                هیچ مرکز آموزشی با فیلترهای مشخص‌شده یافت نشد.
-              </TableCell>
-            </TableRow>
-          ) : (
-            tenants.map((t) => (
-              <TableRow key={t.id}>
-                <TableCell>
-                  <div className="font-bold text-ink-darker">{t.name}</div>
-                  <div className="text-[11px] text-gray-500 font-mono mt-0.5">
-                    slug: {t.slug} {t.subdomain && `• ${t.subdomain}.rokadschool.ir`}
-                  </div>
-                </TableCell>
-                <TableCell>{getTypeBadge(t.type)}</TableCell>
-                <TableCell>
-                  {t.subscriptions?.[0]?.plan ? (
-                    <Badge variant="default">
-                      {t.subscriptions[0].plan.name}
-                    </Badge>
-                  ) : (
-                    <span className="text-xs text-gray-400">بدون پلن</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="text-xs">
-                    <span className="font-bold">{t._count?.studentProfiles || 0}</span> دانش‌آموز •{' '}
-                    <span className="font-bold">{t._count?.teacherProfiles || 0}</span> معلم
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {t.status === 'ACTIVE' ? (
-                    <Badge variant="success">فعال</Badge>
-                  ) : (
-                    <Badge variant="destructive">معلق</Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center justify-center space-x-1.5 space-x-reverse">
-                    {/* Impersonate Button */}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedTenant(t);
-                        setIsImpersonateOpen(true);
-                      }}
-                      title="ورود نیابتی به پنل مدرسه"
-                      className="text-primary hover:bg-primary-light"
-                    >
-                      <LogIn className="h-4 w-4 ml-1" />
-                      <span>ورود نیابتی</span>
-                    </Button>
+      <MobileDataTable
+        items={tenants}
+        isLoading={isLoading}
+        emptyMessage="هیچ مرکز آموزشی با فیلترهای مشخص‌شده یافت نشد."
+        primaryField={(t) => (
+          <div>
+            <div className="font-bold text-ink-darker text-sm">{t.name}</div>
+            <div className="text-[11px] text-gray-500 font-mono mt-0.5">
+              slug: {t.slug} {t.subdomain && `• ${t.subdomain}.rokadschool.ir`}
+            </div>
+          </div>
+        )}
+        secondaryField={(t) => (
+          <div className="flex items-center gap-1.5 flex-wrap justify-end">
+            {getTypeBadge(t.type)}
+            {t.status === 'ACTIVE' ? (
+              <Badge variant="success" className="text-[10px]">فعال</Badge>
+            ) : (
+              <Badge variant="destructive" className="text-[10px]">معلق</Badge>
+            )}
+          </div>
+        )}
+        columns={[
+          {
+            header: 'نام مرکز و شناسه',
+            cell: (t) => (
+              <div>
+                <div className="font-bold text-ink-darker">{t.name}</div>
+                <div className="text-[11px] text-gray-500 font-mono mt-0.5">
+                  slug: {t.slug} {t.subdomain && `• ${t.subdomain}.rokadschool.ir`}
+                </div>
+              </div>
+            ),
+          },
+          {
+            header: 'نوع سازمان',
+            cell: (t) => getTypeBadge(t.type),
+          },
+          {
+            header: 'پلن اشتراک',
+            cell: (t) => (
+              t.subscriptions?.[0]?.plan ? (
+                <Badge variant="default">
+                  {t.subscriptions[0].plan.name}
+                </Badge>
+              ) : (
+                <span className="text-xs text-gray-400">بدون پلن</span>
+              )
+            ),
+            mobileDetail: true,
+          },
+          {
+            header: 'تعداد اعضا',
+            cell: (t) => (
+              <div className="text-xs">
+                <span className="font-bold">{t._count?.studentProfiles || 0}</span> دانش‌آموز •{' '}
+                <span className="font-bold">{t._count?.teacherProfiles || 0}</span> معلم
+              </div>
+            ),
+            mobileDetail: true,
+          },
+          {
+            header: 'وضعیت',
+            cell: (t) => (
+              t.status === 'ACTIVE' ? (
+                <Badge variant="success">فعال</Badge>
+              ) : (
+                <Badge variant="destructive">معلق</Badge>
+              )
+            ),
+          },
+          {
+            header: 'عملیات',
+            cell: (t) => (
+              <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                {/* Impersonate Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedTenant(t);
+                    setIsImpersonateOpen(true);
+                  }}
+                  title="ورود نیابتی به پنل مدرسه"
+                  className="text-primary hover:bg-primary-light min-h-[44px] px-3 text-xs"
+                >
+                  <LogIn className="h-4 w-4 ml-1" />
+                  <span>ورود نیابتی</span>
+                </Button>
 
-                    {/* Branding Button */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setSelectedTenant(t);
-                        setBrandingForm({
-                          primaryColor: t.settings?.branding?.primaryColor || '#59BBAF',
-                          secondaryColor: t.settings?.branding?.secondaryColor || '#202A5A',
-                          mottoText: t.settings?.branding?.mottoText || '',
-                        });
-                        setIsBrandingOpen(true);
-                      }}
-                      title="تنظیم رنگ سازمانی و برندینگ"
-                      className="text-gray-500 hover:text-amber-600"
-                    >
-                      <Palette className="h-4 w-4" />
-                    </Button>
+                {/* Branding Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedTenant(t);
+                    setBrandingForm({
+                      primaryColor: t.settings?.branding?.primaryColor || '#59BBAF',
+                      secondaryColor: t.settings?.branding?.secondaryColor || '#202A5A',
+                      mottoText: t.settings?.branding?.mottoText || '',
+                    });
+                    setIsBrandingOpen(true);
+                  }}
+                  title="تنظیم رنگ سازمانی و برندینگ"
+                  className="text-gray-500 hover:text-amber-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                >
+                  <Palette className="h-4 w-4" />
+                </Button>
 
-                    {/* Suspend / Activate Toggle */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleToggleStatus(t)}
-                      title={t.status === 'ACTIVE' ? 'تعلیق مرکز' : 'فعال‌سازی مرکز'}
-                      className={t.status === 'ACTIVE' ? 'text-gray-400 hover:text-red-600' : 'text-emerald-600'}
-                    >
-                      <Power className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+                {/* Suspend / Activate Toggle */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleToggleStatus(t)}
+                  title={t.status === 'ACTIVE' ? 'تعلیق مرکز' : 'فعال‌سازی مرکز'}
+                  className={`min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                    t.status === 'ACTIVE' ? 'text-gray-400 hover:text-red-600' : 'text-emerald-600'
+                  }`}
+                >
+                  <Power className="h-4 w-4" />
+                </Button>
+              </div>
+            ),
+          },
+        ]}
+      />
 
       {/* 1. Modal: Provision New Tenant */}
       <Modal

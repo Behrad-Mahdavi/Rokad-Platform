@@ -4,12 +4,13 @@ import { Skeleton } from './Skeleton';
 import { ChevronDown, ChevronUp, Inbox } from 'lucide-react';
 
 export interface ColumnDef<T> {
-  key: string;
+  key?: string;
   header: string;
   /**
    * Render function for the cell in desktop table view
    */
   render?: (item: T, index: number) => React.ReactNode;
+  cell?: (item: T, index: number) => React.ReactNode;
   /**
    * Priority in mobile card view:
    * 'primary' -> shown in card header / title
@@ -18,13 +19,17 @@ export interface ColumnDef<T> {
    * 'hidden' -> not shown in mobile card
    */
   mobilePriority?: 'primary' | 'secondary' | 'detail' | 'hidden';
+  mobileDetail?: boolean;
   className?: string;
 }
 
 export interface MobileDataTableProps<T> {
-  data: T[];
+  data?: T[];
+  items?: T[];
   columns: ColumnDef<T>[];
-  keyExtractor: (item: T, index: number) => string;
+  keyExtractor?: (item: T, index: number) => string;
+  primaryField?: (item: T, index: number) => React.ReactNode;
+  secondaryField?: (item: T, index: number) => React.ReactNode;
   isLoading?: boolean;
   emptyMessage?: string;
   emptyIcon?: React.ReactNode;
@@ -34,8 +39,11 @@ export interface MobileDataTableProps<T> {
 
 export function MobileDataTable<T>({
   data,
+  items,
   columns,
-  keyExtractor,
+  keyExtractor = (item: any, index: number) => item?.id || item?._id || item?.key || String(index),
+  primaryField,
+  secondaryField,
   isLoading = false,
   emptyMessage = 'داده‌ای برای نمایش یافت نشد',
   emptyIcon,
@@ -44,8 +52,19 @@ export function MobileDataTable<T>({
 }: MobileDataTableProps<T>) {
   const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
 
+  const listData: T[] = items || data || [];
+
   const toggleExpand = (key: string) => {
     setExpandedKeys((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const getColKey = (col: ColumnDef<T>, idx: number) => col.key || `col_${idx}_${col.header}`;
+
+  const renderCell = (col: ColumnDef<T>, item: T, index: number) => {
+    if (col.cell) return col.cell(item, index);
+    if (col.render) return col.render(item, index);
+    if (col.key && (item as any)[col.key] !== undefined) return (item as any)[col.key];
+    return null;
   };
 
   // Loading state
@@ -73,16 +92,16 @@ export function MobileDataTable<T>({
           <Table>
             <TableHeader>
               <TableRow>
-                {columns.map((c) => (
-                  <TableHead key={c.key}>{c.header}</TableHead>
+                {columns.map((c, idx) => (
+                  <TableHead key={getColKey(c, idx)}>{c.header}</TableHead>
                 ))}
               </TableRow>
             </TableHeader>
             <TableBody>
               {Array.from({ length: 4 }).map((_, i) => (
                 <TableRow key={i}>
-                  {columns.map((c) => (
-                    <TableCell key={c.key}>
+                  {columns.map((c, idx) => (
+                    <TableCell key={getColKey(c, idx)}>
                       <Skeleton className="h-5 w-full max-w-[120px] rounded-md" />
                     </TableCell>
                   ))}
@@ -96,7 +115,7 @@ export function MobileDataTable<T>({
   }
 
   // Empty state
-  if (!data || data.length === 0) {
+  if (!listData || listData.length === 0) {
     return (
       <div className="p-8 sm:p-12 bg-white rounded-2xl border border-gray-200/80 shadow-xs text-center flex flex-col items-center justify-center">
         <div className="w-12 h-12 rounded-2xl bg-gray-100 text-gray-400 flex items-center justify-center mb-3">
@@ -109,14 +128,18 @@ export function MobileDataTable<T>({
 
   // Split columns for mobile view
   const primaryCols = columns.filter((c) => c.mobilePriority === 'primary');
-  const secondaryCols = columns.filter((c) => c.mobilePriority === 'secondary' || !c.mobilePriority);
-  const detailCols = columns.filter((c) => c.mobilePriority === 'detail');
+  const secondaryCols = columns.filter(
+    (c) =>
+      !c.mobileDetail &&
+      (c.mobilePriority === 'secondary' || (!c.mobilePriority && !primaryField))
+  );
+  const detailCols = columns.filter((c) => c.mobileDetail || c.mobilePriority === 'detail');
 
   return (
     <div className={`w-full ${className}`}>
       {/* 1. MOBILE VIEW (< 768px): Responsive Tactile Card List */}
       <div className="md:hidden space-y-3">
-        {data.map((item, index) => {
+        {listData.map((item, index) => {
           const key = keyExtractor(item, index);
           const isExpanded = !!expandedKeys[key];
 
@@ -125,38 +148,50 @@ export function MobileDataTable<T>({
               key={key}
               className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-4 transition-shadow hover:shadow-md space-y-3"
             >
-              {/* Card Header (Primary Columns) */}
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  {primaryCols.length > 0 ? (
-                    primaryCols.map((col) => (
-                      <div key={col.key} className="text-sm font-bold text-ink-darker break-words">
-                        {col.render ? col.render(item, index) : (item as any)[col.key]}
+              {/* Card Header */}
+              {primaryField || secondaryField ? (
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    {primaryField && primaryField(item, index)}
+                  </div>
+                  <div className="shrink-0 flex items-center gap-1.5 flex-wrap justify-end">
+                    {secondaryField && secondaryField(item, index)}
+                    {cardActions && cardActions(item, index)}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    {primaryCols.length > 0 ? (
+                      primaryCols.map((col, cIdx) => (
+                        <div key={getColKey(col, cIdx)} className="text-sm font-bold text-ink-darker break-words">
+                          {renderCell(col, item, index)}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm font-bold text-ink-darker">
+                        {renderCell(columns[0], item, index)}
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-sm font-bold text-ink-darker">
-                      {columns[0]?.render ? columns[0].render(item, index) : (item as any)[columns[0]?.key]}
+                    )}
+                  </div>
+
+                  {/* Card Top Actions / Status */}
+                  {cardActions && (
+                    <div className="shrink-0 flex items-center gap-1.5">
+                      {cardActions(item, index)}
                     </div>
                   )}
                 </div>
-
-                {/* Card Top Actions / Status */}
-                {cardActions && (
-                  <div className="shrink-0 flex items-center gap-1.5">
-                    {cardActions(item, index)}
-                  </div>
-                )}
-              </div>
+              )}
 
               {/* Card Body (Secondary Columns) */}
               {secondaryCols.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1 border-t border-gray-100">
-                  {secondaryCols.map((col) => (
-                    <div key={col.key} className="flex items-center justify-between gap-2 py-0.5">
+                  {secondaryCols.map((col, cIdx) => (
+                    <div key={getColKey(col, cIdx)} className="flex items-center justify-between gap-2 py-0.5">
                       <span className="text-gray-500 font-medium shrink-0">{col.header}:</span>
                       <span className="font-semibold text-ink-dark truncate">
-                        {col.render ? col.render(item, index) : (item as any)[col.key]}
+                        {renderCell(col, item, index)}
                       </span>
                     </div>
                   ))}
@@ -169,7 +204,7 @@ export function MobileDataTable<T>({
                   <button
                     type="button"
                     onClick={() => toggleExpand(key)}
-                    className="w-full py-1.5 flex items-center justify-between text-xs font-bold text-primary hover:text-primary-dark transition-colors"
+                    className="w-full min-h-[44px] py-1.5 flex items-center justify-between text-xs font-bold text-primary hover:text-primary-dark transition-colors"
                   >
                     <span>{isExpanded ? 'بستن جزئیات تکمیلی' : 'مشاهده جزئیات بیشتر'}</span>
                     {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -177,11 +212,11 @@ export function MobileDataTable<T>({
 
                   {isExpanded && (
                     <div className="mt-2 p-3 bg-gray-50 rounded-xl space-y-2 text-xs animate-in fade-in">
-                      {detailCols.map((col) => (
-                        <div key={col.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                      {detailCols.map((col, cIdx) => (
+                        <div key={getColKey(col, cIdx)} className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                           <span className="text-gray-500 font-medium">{col.header}:</span>
                           <span className="font-semibold text-ink-dark">
-                            {col.render ? col.render(item, index) : (item as any)[col.key]}
+                            {renderCell(col, item, index)}
                           </span>
                         </div>
                       ))}
@@ -199,8 +234,8 @@ export function MobileDataTable<T>({
         <Table>
           <TableHeader>
             <TableRow>
-              {columns.map((col) => (
-                <TableHead key={col.key} className={col.className}>
+              {columns.map((col, idx) => (
+                <TableHead key={getColKey(col, idx)} className={col.className}>
                   {col.header}
                 </TableHead>
               ))}
@@ -208,13 +243,13 @@ export function MobileDataTable<T>({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.map((item, index) => {
+            {listData.map((item, index) => {
               const key = keyExtractor(item, index);
               return (
                 <TableRow key={key}>
-                  {columns.map((col) => (
-                    <TableCell key={col.key} className={col.className}>
-                      {col.render ? col.render(item, index) : (item as any)[col.key]}
+                  {columns.map((col, idx) => (
+                    <TableCell key={getColKey(col, idx)} className={col.className}>
+                      {renderCell(col, item, index)}
                     </TableCell>
                   ))}
                   {cardActions && (

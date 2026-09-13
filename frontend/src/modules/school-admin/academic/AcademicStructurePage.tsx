@@ -19,6 +19,7 @@ import {
   TableRow,
   TableCell,
 } from '../../../components/ui/Table';
+import { MobileDataTable } from '../../../components/ui/MobileDataTable';
 import {
   GraduationCap,
   Calendar,
@@ -287,108 +288,132 @@ export const AcademicStructurePage: React.FC = () => {
 
       {/* Tab 1: Classrooms */}
       {activeTab === 'CLASSROOMS' && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>نام کلاس</TableHead>
-              <TableHead>کد کلاسی</TableHead>
-              <TableHead>پایه تحصیلی</TableHead>
-              <TableHead>رشته تحصیلی</TableHead>
-              <TableHead>سال تحصیلی</TableHead>
-              <TableHead>تعداد دانش‌آموزان</TableHead>
-              <TableHead>ظرفیت کلاس</TableHead>
-              <TableHead>وضعیت</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                </TableRow>
-              ))
-            ) : classrooms.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                  هنوز کلاسی ثبت نشده است. از دکمه «ایجاد کلاس درس جدید» استفاده کنید.
-                </TableCell>
-              </TableRow>
-            ) : (
-              classrooms.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell>
-                    <div className="font-bold text-ink-darker">{c.name}</div>
-                    {c.roomNumber && <div className="text-[11px] text-gray-400">{c.roomNumber}</div>}
-                  </TableCell>
-                  <TableCell><span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">{c.code}</span></TableCell>
-                  <TableCell>
-                    <Badge variant="default" className="font-bold">
-                      پایه {c.level?.name || 'دهم'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="college" className="font-bold">
-                      {c.field?.name || 'شبکه و نرم‌افزار رایانه'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell><span className="text-xs text-gray-600">{c.academicYear?.name || '۱۴۰۴-۱۴۰۵'}</span></TableCell>
-                  <TableCell>
-                    <span className="font-bold text-ink-darker">{c._count?.enrollments || c._count?.students || 0}</span> دانش‌آموز
-                  </TableCell>
-                  <TableCell><span className="text-xs text-gray-500">{c.capacity || 30} نفر</span></TableCell>
-                  <TableCell><Badge variant="success">فعال</Badge></TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        <MobileDataTable
+          items={classrooms}
+          isLoading={isLoading}
+          emptyMessage="هنوز کلاسی ثبت نشده است. از دکمه «ایجاد کلاس درس جدید» استفاده کنید."
+          primaryField={(c) => (
+            <div>
+              <div className="font-bold text-ink-darker text-sm">{c.name}</div>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="font-mono text-[11px] bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">{c.code}</span>
+                {c.roomNumber && <span className="text-[11px] text-gray-400">اتاق {c.roomNumber}</span>}
+              </div>
+            </div>
+          )}
+          secondaryField={(c) => (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Badge variant="default" className="text-[11px]">پایه {c.level?.name || 'دهم'}</Badge>
+              <Badge variant="college" className="text-[11px]">{c.field?.name || 'عمومی'}</Badge>
+            </div>
+          )}
+          columns={[
+            {
+              header: 'نام کلاس',
+              cell: (c) => (
+                <div>
+                  <div className="font-bold text-ink-darker">{c.name}</div>
+                  {c.roomNumber && <div className="text-[11px] text-gray-400">{c.roomNumber}</div>}
+                </div>
+              ),
+            },
+            {
+              header: 'کد کلاسی',
+              cell: (c) => <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">{c.code}</span>,
+            },
+            {
+              header: 'پایه تحصیلی',
+              cell: (c) => (
+                <Badge variant="default" className="font-bold">
+                  پایه {c.level?.name || 'دهم'}
+                </Badge>
+              ),
+            },
+            {
+              header: 'رشته تحصیلی',
+              cell: (c) => (
+                <Badge variant="college" className="font-bold">
+                  {c.field?.name || 'شبکه و نرم‌افزار رایانه'}
+                </Badge>
+              ),
+            },
+            {
+              header: 'سال تحصیلی',
+              cell: (c) => <span className="text-xs text-gray-600">{c.academicYear?.name || '۱۴۰۴-۱۴۰۵'}</span>,
+            },
+            {
+              header: 'تعداد دانش‌آموزان',
+              cell: (c) => (
+                <span className="font-bold text-ink-darker">
+                  {c._count?.enrollments || c._count?.students || 0} دانش‌آموز
+                </span>
+              ),
+              mobileDetail: true,
+            },
+            {
+              header: 'ظرفیت کلاس',
+              cell: (c) => <span className="text-xs text-gray-500">{c.capacity || 30} نفر</span>,
+              mobileDetail: true,
+            },
+            {
+              header: 'وضعیت',
+              cell: () => <Badge variant="success">فعال</Badge>,
+            },
+          ]}
+        />
       )}
 
       {/* Tab 2: Academic Years */}
       {activeTab === 'YEARS' && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>عنوان سال تحصیلی</TableHead>
-              <TableHead>تاریخ شروع</TableHead>
-              <TableHead>تاریخ پایان</TableHead>
-              <TableHead>نیم‌سال‌ها (Terms)</TableHead>
-              <TableHead>وضعیت جاری</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {academicYears.map((y) => (
-              <TableRow key={y.id}>
-                <TableCell><div className="font-bold text-ink-darker">{y.name}</div></TableCell>
-                <TableCell><span className="text-xs font-medium text-gray-700">{formatJalaliDisplay(y.startDate)}</span></TableCell>
-                <TableCell><span className="text-xs font-medium text-gray-700">{formatJalaliDisplay(y.endDate)}</span></TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    {y.terms?.map((t: any) => (
-                      <span key={t.id} className="text-[10px] bg-primary-light text-primary-darker px-2 py-0.5 rounded font-bold">
-                        {t.name}
-                      </span>
-                    ))}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {y.isCurrent ? (
-                    <Badge variant="success">سال جاری</Badge>
-                  ) : (
-                    <Badge variant="neutral">گذشته</Badge>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <MobileDataTable
+          items={academicYears}
+          isLoading={isLoading}
+          emptyMessage="سال تحصیلی یافت نشد."
+          primaryField={(y) => (
+            <div>
+              <div className="font-bold text-ink-darker text-sm">{y.name}</div>
+              <div className="text-xs text-gray-500 mt-0.5">
+                از {formatJalaliDisplay(y.startDate)} تا {formatJalaliDisplay(y.endDate)}
+              </div>
+            </div>
+          )}
+          secondaryField={(y) => (
+            y.isCurrent ? <Badge variant="success">سال جاری</Badge> : <Badge variant="neutral">گذشته</Badge>
+          )}
+          columns={[
+            {
+              header: 'عنوان سال تحصیلی',
+              cell: (y) => <div className="font-bold text-ink-darker">{y.name}</div>,
+            },
+            {
+              header: 'تاریخ شروع',
+              cell: (y) => <span className="text-xs font-medium text-gray-700">{formatJalaliDisplay(y.startDate)}</span>,
+            },
+            {
+              header: 'تاریخ پایان',
+              cell: (y) => <span className="text-xs font-medium text-gray-700">{formatJalaliDisplay(y.endDate)}</span>,
+            },
+            {
+              header: 'نیم‌سال‌ها (Terms)',
+              cell: (y) => (
+                <div className="flex gap-1 flex-wrap">
+                  {y.terms?.map((t: any) => (
+                    <span key={t.id} className="text-[10px] bg-primary-light text-primary-darker px-2 py-0.5 rounded font-bold">
+                      {t.name}
+                    </span>
+                  ))}
+                </div>
+              ),
+              mobileDetail: true,
+            },
+            {
+              header: 'وضعیت جاری',
+              cell: (y) => (
+                y.isCurrent ? <Badge variant="success">سال جاری</Badge> : <Badge variant="neutral">گذشته</Badge>
+              ),
+            },
+          ]}
+        />
       )}
 
       {/* Tab 3: Lessons */}
@@ -444,79 +469,113 @@ export const AcademicStructurePage: React.FC = () => {
             </div>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>نام درس</TableHead>
-                <TableHead>کد درس</TableHead>
-                <TableHead>پایه تحصیلی</TableHead>
-                <TableHead>رشته تحصیلی</TableHead>
-                <TableHead>دبیران مدرس</TableHead>
-                <TableHead>نوع درس</TableHead>
-                <TableHead>تعداد واحد</TableHead>
-                <TableHead>تعداد سرفصل‌ها</TableHead>
-                <TableHead>وضعیت</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {lessons
-                .filter((l) => {
-                  if (lessonFilterLevel !== 'ALL' && l.levelId !== lessonFilterLevel) return false;
-                  if (lessonFilterField !== 'ALL' && l.fieldId !== lessonFilterField) return false;
-                  return true;
-                })
-                .map((l) => (
-                  <TableRow key={l.id}>
-                    <TableCell><div className="font-bold text-ink-darker">{l.name}</div></TableCell>
-                    <TableCell><span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">{l.code}</span></TableCell>
-                    <TableCell>
-                      {l.level?.name ? (
-                        <Badge variant="default">پایه {l.level.name}</Badge>
-                      ) : (
-                        <Badge variant="neutral">پایه نامشخص</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {l.field?.name ? (
-                        <Badge variant="college">{l.field.name}</Badge>
-                      ) : (
-                        <Badge variant="neutral">عمومی (مشترک)</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {l.teacherLessons && l.teacherLessons.length > 0 ? (
-                        <div className="flex flex-wrap gap-1 max-w-xs">
-                          {l.teacherLessons.map((tl: any) => (
-                            <span
-                              key={tl.id}
-                              className="text-[11px] bg-blue-50 text-blue-800 font-medium px-2 py-0.5 rounded border border-blue-200"
-                            >
-                              {tl.teacher?.user?.firstName} {tl.teacher?.user?.lastName}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-gray-400">بدون دبیر</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-xs font-medium text-gray-600">
-                        {l.type === 'SPECIALIZED'
-                          ? 'تخصصی'
-                          : l.type === 'PRACTICAL'
-                          ? 'کارگاهی'
-                          : l.type === 'OPTIONAL'
-                          ? 'انتخابی'
-                          : 'عمومی'}
-                      </span>
-                    </TableCell>
-                    <TableCell><span className="text-xs font-bold text-ink-dark">{l.unitCount || l.units || 1} واحد</span></TableCell>
-                    <TableCell><span className="text-xs text-gray-500">{l._count?.lessonPlans || l._count?.topics || 0} مبحث</span></TableCell>
-                    <TableCell><Badge variant="default">فعال</Badge></TableCell>
-                  </TableRow>
-                ))}
-            </TableBody>
-          </Table>
+          <MobileDataTable
+            items={lessons.filter((l) => {
+              if (lessonFilterLevel !== 'ALL' && l.levelId !== lessonFilterLevel) return false;
+              if (lessonFilterField !== 'ALL' && l.fieldId !== lessonFilterField) return false;
+              return true;
+            })}
+            isLoading={isLoading}
+            emptyMessage="درسی برای این فیلتر یافت نشد."
+            primaryField={(l) => (
+              <div>
+                <div className="font-bold text-ink-darker text-sm">{l.name}</div>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="font-mono text-[11px] bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">{l.code}</span>
+                  <span className="text-xs text-gray-500">{l.unitCount || l.units || 1} واحد</span>
+                </div>
+              </div>
+            )}
+            secondaryField={(l) => (
+              <div className="flex items-center gap-1 flex-wrap">
+                {l.level?.name && <Badge variant="default" className="text-[11px]">پایه {l.level.name}</Badge>}
+                {l.field?.name ? (
+                  <Badge variant="college" className="text-[11px]">{l.field.name}</Badge>
+                ) : (
+                  <Badge variant="neutral" className="text-[11px]">عمومی</Badge>
+                )}
+              </div>
+            )}
+            columns={[
+              {
+                header: 'نام درس',
+                cell: (l) => <div className="font-bold text-ink-darker">{l.name}</div>,
+              },
+              {
+                header: 'کد درس',
+                cell: (l) => <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">{l.code}</span>,
+              },
+              {
+                header: 'پایه تحصیلی',
+                cell: (l) => (
+                  l.level?.name ? (
+                    <Badge variant="default">پایه {l.level.name}</Badge>
+                  ) : (
+                    <Badge variant="neutral">پایه نامشخص</Badge>
+                  )
+                ),
+              },
+              {
+                header: 'رشته تحصیلی',
+                cell: (l) => (
+                  l.field?.name ? (
+                    <Badge variant="college">{l.field.name}</Badge>
+                  ) : (
+                    <Badge variant="neutral">عمومی (مشترک)</Badge>
+                  )
+                ),
+              },
+              {
+                header: 'دبیران مدرس',
+                cell: (l) => (
+                  l.teacherLessons && l.teacherLessons.length > 0 ? (
+                    <div className="flex flex-wrap gap-1 max-w-xs">
+                      {l.teacherLessons.map((tl: any) => (
+                        <span
+                          key={tl.id}
+                          className="text-[11px] bg-blue-50 text-blue-800 font-medium px-2 py-0.5 rounded border border-blue-200"
+                        >
+                          {tl.teacher?.user?.firstName} {tl.teacher?.user?.lastName}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-gray-400">بدون دبیر</span>
+                  )
+                ),
+                mobileDetail: true,
+              },
+              {
+                header: 'نوع درس',
+                cell: (l) => (
+                  <span className="text-xs font-medium text-gray-600">
+                    {l.type === 'SPECIALIZED'
+                      ? 'تخصصی'
+                      : l.type === 'PRACTICAL'
+                      ? 'کارگاهی'
+                      : l.type === 'OPTIONAL'
+                      ? 'انتخابی'
+                      : 'عمومی'}
+                  </span>
+                ),
+                mobileDetail: true,
+              },
+              {
+                header: 'تعداد واحد',
+                cell: (l) => <span className="text-xs font-bold text-ink-dark">{l.unitCount || l.units || 1} واحد</span>,
+                mobileDetail: true,
+              },
+              {
+                header: 'تعداد سرفصل‌ها',
+                cell: (l) => <span className="text-xs text-gray-500">{l._count?.lessonPlans || l._count?.topics || 0} مبحث</span>,
+                mobileDetail: true,
+              },
+              {
+                header: 'وضعیت',
+                cell: () => <Badge variant="default">فعال</Badge>,
+              },
+            ]}
+          />
         </div>
       )}
 

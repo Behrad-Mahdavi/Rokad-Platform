@@ -14,6 +14,7 @@ import {
   TableRow,
   TableCell,
 } from '../../../components/ui/Table';
+import { MobileDataTable } from '../../../components/ui/MobileDataTable';
 import {
   HelpCircle,
   Plus,
@@ -815,93 +816,120 @@ export const ExamsPage: React.FC = () => {
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
             </div>
-          ) : filteredParticipations.length === 0 ? (
-            <div className="text-center py-10 text-xs text-gray-500 bg-gray-50 rounded-2xl border">
-              موردی برای نمایش در این دسته وجود ندارد.
-            </div>
           ) : (
-            <div className="border rounded-xl overflow-hidden bg-white">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-right">دانش‌آموز</TableHead>
-                    <TableHead className="text-right">زمان تحویل</TableHead>
-                    <TableHead className="text-center">سیگنال تقلب</TableHead>
-                    <TableHead className="text-center">نمره ارفاقی</TableHead>
-                    <TableHead className="text-center">نمره نهایی</TableHead>
-                    <TableHead className="text-center">وضعیت برگه</TableHead>
-                    <TableHead className="text-center">عملیات</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredParticipations.map((part: any) => (
-                    <TableRow key={part.id}>
-                      <TableCell className="font-bold text-xs text-ink-dark">
-                        <div>{part.studentName}</div>
-                        <div className="text-[11px] font-normal text-gray-400">
-                          {part.phone || part.nationalId || 'بدون شناسه'}
-                        </div>
-                      </TableCell>
-
-                      <TableCell className="text-xs text-gray-600">
-                        {part.submittedAt
-                          ? new Date(part.submittedAt).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })
-                          : 'در حال آزمون'}
-                      </TableCell>
-
-                      <TableCell className="text-center">
-                        {part.tabSwitchCount > 0 ? (
-                          <Badge variant="destructive" className="inline-flex items-center space-x-1 space-x-reverse">
-                            <ShieldAlert className="h-3 w-3" />
-                            <span>{part.tabSwitchCount} خروج</span>
-                          </Badge>
-                        ) : (
-                          <span className="text-[11px] text-gray-400">بدون خروج</span>
-                        )}
-                      </TableCell>
-
-                      <TableCell className="text-center">
-                        {part.graceScore > 0 ? (
-                          <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                            +{part.graceScore}
-                          </span>
-                        ) : (
-                          <span className="text-[11px] text-gray-400">—</span>
-                        )}
-                      </TableCell>
-
-                      <TableCell className="text-center font-bold text-xs">
-                        {part.totalScore !== null ? (
-                          <span className="text-primary font-bold">
-                            {part.totalScore} <span className="text-gray-400 font-normal">/ {selectedExam?.totalScore || 20}</span>
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
-                      </TableCell>
-
-                      <TableCell className="text-center">
-                        <Badge variant={part.isGraded ? 'success' : 'warning'}>
-                          {part.isGraded ? 'تصحیح‌شده' : 'نیازمند تصحیح'}
-                        </Badge>
-                      </TableCell>
-
-                      <TableCell className="text-center">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOpenPaperGrading(part.id)}
-                          className="text-xs flex items-center justify-center space-x-1 space-x-reverse mx-auto"
-                        >
-                          <Edit3 className="h-3.5 w-3.5 text-primary" />
-                          <span>تصحیح برگه</span>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <MobileDataTable
+              items={filteredParticipations}
+              emptyMessage="موردی برای نمایش در این دسته وجود ندارد."
+              primaryField={(part: any) => (
+                <div>
+                  <div className="font-bold text-xs text-ink-dark">{part.studentName}</div>
+                  <div className="text-[11px] font-mono text-gray-400">
+                    {part.phone || part.nationalId || 'بدون شناسه'}
+                  </div>
+                </div>
+              )}
+              secondaryField={(part: any) => (
+                <div className="text-left">
+                  {part.totalScore !== null ? (
+                    <span className="text-primary font-bold text-xs font-mono">
+                      {part.totalScore} / {selectedExam?.totalScore || 20}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400 text-xs">—</span>
+                  )}
+                  <div>
+                    <Badge variant={part.isGraded ? 'success' : 'warning'} className="text-[10px]">
+                      {part.isGraded ? 'تصحیح‌شده' : 'نیازمند تصحیح'}
+                    </Badge>
+                  </div>
+                </div>
+              )}
+              columns={[
+                {
+                  header: 'دانش‌آموز',
+                  cell: (part: any) => (
+                    <div>
+                      <div className="font-bold text-xs text-ink-dark">{part.studentName}</div>
+                      <div className="text-[11px] font-mono text-gray-400">
+                        {part.phone || part.nationalId || 'بدون شناسه'}
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  header: 'نمره نهایی',
+                  cell: (part: any) => (
+                    part.totalScore !== null ? (
+                      <span className="text-primary font-bold text-xs font-mono">
+                        {part.totalScore} / {selectedExam?.totalScore || 20}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 text-xs">—</span>
+                    )
+                  ),
+                },
+                {
+                  header: 'وضعیت برگه',
+                  cell: (part: any) => (
+                    <Badge variant={part.isGraded ? 'success' : 'warning'}>
+                      {part.isGraded ? 'تصحیح‌شده' : 'نیازمند تصحیح'}
+                    </Badge>
+                  ),
+                },
+                {
+                  header: 'زمان تحویل',
+                  cell: (part: any) => (
+                    <span className="text-xs text-gray-600 font-mono">
+                      {part.submittedAt
+                        ? new Date(part.submittedAt).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })
+                        : 'در حال آزمون'}
+                    </span>
+                  ),
+                  mobileDetail: true,
+                },
+                {
+                  header: 'سیگنال تقلب',
+                  cell: (part: any) => (
+                    part.tabSwitchCount > 0 ? (
+                      <Badge variant="destructive" className="inline-flex items-center space-x-1 space-x-reverse">
+                        <ShieldAlert className="h-3 w-3" />
+                        <span>{part.tabSwitchCount} خروج</span>
+                      </Badge>
+                    ) : (
+                      <span className="text-[11px] text-gray-400">بدون خروج</span>
+                    )
+                  ),
+                  mobileDetail: true,
+                },
+                {
+                  header: 'نمره ارفاقی',
+                  cell: (part: any) => (
+                    part.graceScore > 0 ? (
+                      <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-mono">
+                        +{part.graceScore}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-gray-400">—</span>
+                    )
+                  ),
+                  mobileDetail: true,
+                },
+                {
+                  header: 'عملیات',
+                  cell: (part: any) => (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenPaperGrading(part.id)}
+                      className="text-xs flex items-center gap-1 h-8 px-2.5"
+                    >
+                      <Edit3 className="h-3.5 w-3.5 text-primary" />
+                      <span>تصحیح برگه</span>
+                    </Button>
+                  ),
+                },
+              ]}
+            />
           )}
 
           <div className="flex justify-end pt-2">

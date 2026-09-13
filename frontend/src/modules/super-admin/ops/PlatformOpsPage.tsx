@@ -12,6 +12,7 @@ import {
   TableRow,
   TableCell,
 } from '../../../components/ui/Table';
+import { MobileDataTable } from '../../../components/ui/MobileDataTable';
 import {
   Activity,
   AlertTriangle,
@@ -178,61 +179,69 @@ export const PlatformOpsPage: React.FC = () => {
           </Button>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>عملیات (Action)</TableHead>
-                <TableHead>موجودیت</TableHead>
-                <TableHead>مدرسه / تننت</TableHead>
-                <TableHead>کاربر مجری</TableHead>
-                <TableHead>زمان رویداد</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoadingLogs ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-6 text-gray-500">
-                    در حال بارگذاری لاگ‌های امنیتی...
-                  </TableCell>
-                </TableRow>
-              ) : auditLogs.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-6 text-gray-500">
-                    هیچ لاگ امنیتی ثبت نشده است.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                auditLogs.map((log) => (
-                  <TableRow key={log.id}>
-                    <TableCell>
-                      <span className="font-mono font-bold text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-700">
-                        {log.action}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-xs text-gray-600 font-mono">{log.entity}</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-xs font-medium text-ink-dark">
-                        {log.tenant?.name || log.tenantId}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-xs text-gray-600">
-                        {log.user ? `${log.user.firstName} ${log.user.lastName}` : 'سیستم / سوپرادمین'}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-[11px] text-gray-400 font-mono flex items-center space-x-1 space-x-reverse">
-                        <Clock className="h-3 w-3" />
-                        <span>{new Date(log.createdAt).toLocaleString('fa-IR')}</span>
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+          <MobileDataTable
+            items={auditLogs}
+            isLoading={isLoadingLogs}
+            emptyMessage="هیچ لاگ امنیتی ثبت نشده است."
+            primaryField={(log) => (
+              <div>
+                <span className="font-mono font-bold text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-700">
+                  {log.action}
+                </span>
+                <div className="text-xs text-gray-500 mt-1">
+                  موجودیت: <span className="font-mono text-ink-dark">{log.entity}</span>
+                </div>
+              </div>
+            )}
+            secondaryField={(log) => (
+              <div className="text-left text-[11px] text-gray-400 font-mono flex items-center gap-1 justify-end">
+                <Clock className="h-3 w-3" />
+                <span>{new Date(log.createdAt).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+            )}
+            columns={[
+              {
+                header: 'عملیات (Action)',
+                cell: (log) => (
+                  <span className="font-mono font-bold text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-700">
+                    {log.action}
+                  </span>
+                ),
+              },
+              {
+                header: 'موجودیت',
+                cell: (log) => <span className="text-xs text-gray-600 font-mono">{log.entity}</span>,
+              },
+              {
+                header: 'مدرسه / تننت',
+                cell: (log) => (
+                  <span className="text-xs font-medium text-ink-dark">
+                    {log.tenant?.name || log.tenantId}
+                  </span>
+                ),
+                mobileDetail: true,
+              },
+              {
+                header: 'کاربر مجری',
+                cell: (log) => (
+                  <span className="text-xs text-gray-600">
+                    {log.user ? `${log.user.firstName} ${log.user.lastName}` : 'سیستم / سوپرادمین'}
+                  </span>
+                ),
+                mobileDetail: true,
+              },
+              {
+                header: 'زمان رویداد',
+                cell: (log) => (
+                  <span className="text-[11px] text-gray-400 font-mono flex items-center space-x-1 space-x-reverse">
+                    <Clock className="h-3 w-3" />
+                    <span>{new Date(log.createdAt).toLocaleString('fa-IR')}</span>
+                  </span>
+                ),
+                mobileDetail: true,
+              },
+            ]}
+          />
         </CardContent>
       </Card>
     </div>
