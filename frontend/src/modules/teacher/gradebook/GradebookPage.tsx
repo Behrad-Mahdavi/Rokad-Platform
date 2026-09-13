@@ -13,6 +13,7 @@ import {
   TableRow,
   TableCell,
 } from '../../../components/ui/Table';
+import { StickyActionBar } from '../../../components/ui/StickyActionBar';
 import { PersianDatePicker } from '../../../components/ui/PersianDatePicker';
 import {
   gregorianToJalaliStr,
@@ -693,261 +694,510 @@ export const GradebookPage: React.FC = () => {
 
       {/* ACTIVE LOGBOOK COCKPIT VIEW */}
       {activeTab === 'SESSION' && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-gray-50/80">
-                <TableHead className="w-12 text-center font-bold">#</TableHead>
-                <TableHead className="w-52">مشخصات هنرجو</TableHead>
-                <TableHead className="text-center w-72">حضور و غیاب جلسه</TableHead>
-                <TableHead className="w-64 text-center">نمره پرسش کلاسی (از ۲۰)</TableHead>
-                <TableHead className="text-center w-56">موارد انضباطی و تشویقی</TableHead>
-                <TableHead>یادداشت جلسه دبیر</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell><Skeleton className="h-5 w-6 mx-auto" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-36" /></TableCell>
-                    <TableCell><Skeleton className="h-8 w-64 mx-auto" /></TableCell>
-                    <TableCell><Skeleton className="h-8 w-44 mx-auto" /></TableCell>
-                    <TableCell><Skeleton className="h-8 w-40 mx-auto" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                  </TableRow>
-                ))
-              ) : students.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12 text-gray-400">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <Users className="w-8 h-8 text-gray-300" />
-                      <span>هیچ دانش‌آموزی در این کلاس ثبت‌نام نشده است.</span>
+        <div className="space-y-4">
+          {/* 1. MOBILE CARD LIST (< md) */}
+          <div className="md:hidden space-y-3">
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="p-4 bg-white rounded-2xl border border-gray-200 shadow-xs space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="space-y-1">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-20" />
                     </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                students.map((student, idx) => {
-                  const currentAtt = attendanceMap[student.id] || {
-                    status: 'PRESENT',
-                    delayMinutes: 0,
-                    note: '',
-                  };
-                  const currentGrade = gradesMap[student.id] || { score: '', description: '' };
-                  const matters = studentMattersCount[student.id] || { positive: 0, negative: 0 };
+                  </div>
+                  <Skeleton className="h-10 w-full rounded-xl" />
+                  <Skeleton className="h-9 w-full rounded-xl" />
+                </div>
+              ))
+            ) : students.length === 0 ? (
+              <div className="p-8 text-center bg-white rounded-2xl border border-gray-200 text-gray-400">
+                <Users className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                <span className="text-xs font-bold">هیچ دانش‌آموزی در این کلاس یافت نشد.</span>
+              </div>
+            ) : (
+              students.map((student, idx) => {
+                const currentAtt = attendanceMap[student.id] || {
+                  status: 'PRESENT',
+                  delayMinutes: 0,
+                  note: '',
+                };
+                const currentGrade = gradesMap[student.id] || { score: '', description: '' };
+                const matters = studentMattersCount[student.id] || { positive: 0, negative: 0 };
 
-                  return (
-                    <TableRow key={student.id} className="hover:bg-gray-50/50 transition-colors">
-                      {/* 1. Index */}
-                      <TableCell className="text-center font-mono text-xs text-gray-400">
-                        {idx + 1}
-                      </TableCell>
-
-                      {/* 2. Student Info */}
-                      <TableCell>
-                        <div className="flex items-center space-x-2.5 space-x-reverse">
-                          {student.avatarUrl ? (
-                            <img
-                              src={student.avatarUrl}
-                              alt=""
-                              className="w-8 h-8 rounded-full object-cover border border-gray-200"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center">
-                              {student.firstName?.[0] || 'ه'}
-                            </div>
-                          )}
-                          <div>
-                            <div className="font-bold text-ink-darker text-xs">
-                              {student.firstName} {student.lastName}
-                            </div>
-                            <div className="font-mono text-[10px] text-gray-400">
-                              {student.studentCode || 'کد ندارد'}
-                            </div>
+                return (
+                  <div
+                    key={student.id}
+                    className="p-4 bg-white rounded-2xl border border-gray-200/90 shadow-xs space-y-3.5"
+                  >
+                    {/* Student Info Header */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        {student.avatarUrl ? (
+                          <img
+                            src={student.avatarUrl}
+                            alt=""
+                            className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center">
+                            {student.firstName?.[0] || 'ه'}
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-bold text-sm text-ink-darker">
+                            {student.firstName} {student.lastName}
+                          </div>
+                          <div className="font-mono text-[11px] text-gray-400">
+                            کد: {student.studentCode || '—'}
                           </div>
                         </div>
-                      </TableCell>
+                      </div>
 
-                      {/* 3. Attendance Buttons */}
-                      <TableCell className="text-center">
-                        <div className="inline-flex items-center p-1 bg-gray-100 rounded-lg gap-1">
-                          <button
-                            type="button"
-                            onClick={() => setAttendanceStatus(student.id, 'PRESENT')}
-                            className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
-                              currentAtt.status === 'PRESENT'
-                                ? 'bg-emerald-600 text-white shadow-xs'
-                                : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50'
-                            }`}
-                          >
-                            حاضر
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setAttendanceStatus(student.id, 'ABSENT')}
-                            className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
-                              currentAtt.status === 'ABSENT'
-                                ? 'bg-rose-600 text-white shadow-xs'
-                                : 'text-gray-600 hover:text-rose-700 hover:bg-rose-50'
-                            }`}
-                          >
-                            غایب
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setAttendanceStatus(student.id, 'EXCUSED_ABSENT')}
-                            className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
-                              currentAtt.status === 'EXCUSED_ABSENT'
-                                ? 'bg-amber-600 text-white shadow-xs'
-                                : 'text-gray-600 hover:text-amber-700 hover:bg-amber-50'
-                            }`}
-                          >
-                            موجه
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setAttendanceStatus(student.id, 'TARDY')}
-                            className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
-                              currentAtt.status === 'TARDY'
-                                ? 'bg-blue-600 text-white shadow-xs'
-                                : 'text-gray-600 hover:text-blue-700 hover:bg-blue-50'
-                            }`}
-                          >
-                            تأخیر
-                          </button>
+                      {/* Matters Counter Badge */}
+                      {(matters.positive > 0 || matters.negative > 0) && (
+                        <div className="flex items-center gap-1 text-[11px] font-bold">
+                          {matters.positive > 0 && (
+                            <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                              +{matters.positive}
+                            </span>
+                          )}
+                          {matters.negative > 0 && (
+                            <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                              -{matters.negative}
+                            </span>
+                          )}
                         </div>
+                      )}
+                    </div>
 
-                        {/* Delay Minutes input if TARDY */}
-                        {currentAtt.status === 'TARDY' && (
-                          <div className="mt-1.5 flex items-center justify-center gap-1.5 text-[11px] text-blue-700">
-                            <span>دقایق:</span>
+                    {/* Attendance Large Touch Buttons */}
+                    <div>
+                      <div className="text-[11px] font-bold text-gray-500 mb-1.5">وضعیت حضور:</div>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setAttendanceStatus(student.id, 'PRESENT')}
+                          className={`min-h-[44px] text-xs font-bold rounded-xl transition-all flex items-center justify-center ${
+                            currentAtt.status === 'PRESENT'
+                              ? 'bg-emerald-600 text-white shadow-xs font-black'
+                              : 'bg-gray-100 text-gray-600 hover:bg-emerald-50'
+                          }`}
+                        >
+                          حاضر
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAttendanceStatus(student.id, 'ABSENT')}
+                          className={`min-h-[44px] text-xs font-bold rounded-xl transition-all flex items-center justify-center ${
+                            currentAtt.status === 'ABSENT'
+                              ? 'bg-rose-600 text-white shadow-xs font-black'
+                              : 'bg-gray-100 text-gray-600 hover:bg-rose-50'
+                          }`}
+                        >
+                          غایب
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAttendanceStatus(student.id, 'EXCUSED_ABSENT')}
+                          className={`min-h-[44px] text-xs font-bold rounded-xl transition-all flex items-center justify-center ${
+                            currentAtt.status === 'EXCUSED_ABSENT'
+                              ? 'bg-amber-600 text-white shadow-xs font-black'
+                              : 'bg-gray-100 text-gray-600 hover:bg-amber-50'
+                          }`}
+                        >
+                          موجه
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAttendanceStatus(student.id, 'TARDY')}
+                          className={`min-h-[44px] text-xs font-bold rounded-xl transition-all flex items-center justify-center ${
+                            currentAtt.status === 'TARDY'
+                              ? 'bg-blue-600 text-white shadow-xs font-black'
+                              : 'bg-gray-100 text-gray-600 hover:bg-blue-50'
+                          }`}
+                        >
+                          تأخیر
+                        </button>
+                      </div>
+
+                      {/* Tardy minutes selector */}
+                      {currentAtt.status === 'TARDY' && (
+                        <div className="mt-2 p-2 bg-blue-50/80 rounded-xl border border-blue-200 flex items-center justify-between text-xs text-blue-900">
+                          <span>دقایق تأخیر ورود:</span>
+                          <div className="flex items-center gap-1">
                             <input
                               type="number"
                               min="1"
                               max="90"
                               value={currentAtt.delayMinutes || 10}
                               onChange={(e) => setDelayMinutes(student.id, Number(e.target.value))}
-                              className="w-14 h-6 text-center text-xs font-bold border border-blue-300 rounded bg-blue-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none"
+                              className="w-16 h-8 text-center text-xs font-bold border border-blue-300 rounded-lg bg-white outline-none"
                             />
-                            <span>دقیقه</span>
+                            <span className="text-[11px]">دقیقه</span>
                           </div>
-                        )}
-                      </TableCell>
-
-                      {/* 4. Oral Questioning & Activity Grade */}
-                      <TableCell className="text-center">
-                        <div className="flex flex-col items-center gap-1.5">
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              step="0.25"
-                              min="0"
-                              max="20"
-                              placeholder="نمره (۰-۲۰)"
-                              value={currentGrade.score}
-                              onChange={(e) => setOralScore(student.id, e.target.value)}
-                              className={`w-24 h-8 text-center text-xs font-black rounded-lg border outline-none transition-colors ${
-                                currentGrade.score !== ''
-                                  ? 'bg-amber-50/80 border-amber-300 text-amber-900 font-mono ring-1 ring-amber-400'
-                                  : 'bg-gray-50 border-gray-300 text-gray-700 focus:bg-white focus:ring-2 focus:ring-primary'
-                              }`}
-                            />
-
-                            {/* Quick score pills */}
-                            <div className="flex items-center gap-0.5">
-                              {[20, 18, 15].map((val) => (
-                                <button
-                                  key={val}
-                                  type="button"
-                                  onClick={() => setOralScore(student.id, val)}
-                                  className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-gray-100 hover:bg-amber-100 hover:text-amber-800 text-gray-600 transition-colors"
-                                >
-                                  {val}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          {currentGrade.score !== '' && (
-                            <input
-                              type="text"
-                              placeholder="توضیحات سوال یا مبحث..."
-                              value={currentGrade.description}
-                              onChange={(e) => setOralDescription(student.id, e.target.value)}
-                              className="w-full h-6 text-[10px] px-2 rounded border border-gray-200 bg-gray-50 focus:bg-white outline-none text-gray-700"
-                            />
-                          )}
                         </div>
-                      </TableCell>
+                      )}
+                    </div>
 
-                      {/* 5. Disciplinary & Commendation Matters */}
-                      <TableCell className="text-center">
-                        <div className="flex flex-col items-center gap-1">
-                          <div className="flex items-center justify-center gap-1">
-                            {/* Quick Positive Button */}
+                    {/* Oral Question Score Field */}
+                    <div className="pt-2 border-t border-gray-100 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-gray-600">نمره پرسش کلاسی (از ۲۰):</span>
+                        <div className="flex items-center gap-1">
+                          {[20, 18, 15, 12].map((val) => (
                             <button
+                              key={val}
                               type="button"
-                              onClick={() =>
-                                openMatterModal(student, 'POSITIVE', 'پاسخگویی عالی به پرسش کلاسی')
-                              }
-                              title="ثبت تشویق"
-                              className="px-2 py-1 text-[11px] font-bold rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 flex items-center gap-1 transition-colors"
+                              onClick={() => setOralScore(student.id, val)}
+                              className="min-h-[32px] px-2 text-[11px] font-bold rounded-lg bg-gray-100 hover:bg-amber-100 hover:text-amber-800 text-gray-700 transition-colors"
                             >
-                              <Smile className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>+ تشویق</span>
+                              {val}
                             </button>
-
-                            {/* Quick Negative Button */}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                openMatterModal(student, 'NEGATIVE', 'تذکر کلاسی و عدم تمرکز')
-                              }
-                              title="ثبت تذکر انضباطی"
-                              className="px-2 py-1 text-[11px] font-bold rounded-md bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 flex items-center gap-1 transition-colors"
-                            >
-                              <Frown className="w-3.5 h-3.5 text-rose-600" />
-                              <span>- تذکر</span>
-                            </button>
-                          </div>
-
-                          {/* Matters count badge */}
-                          {(matters.positive > 0 || matters.negative > 0) && (
-                            <div className="flex items-center gap-1 text-[10px] font-bold">
-                              {matters.positive > 0 && (
-                                <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                                  +{matters.positive} تشویق
-                                </span>
-                              )}
-                              {matters.negative > 0 && (
-                                <span className="text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200">
-                                  -{matters.negative} مورد
-                                </span>
-                              )}
-                            </div>
-                          )}
+                          ))}
                         </div>
-                      </TableCell>
+                      </div>
 
-                      {/* 6. Session Note */}
-                      <TableCell>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          step="0.25"
+                          min="0"
+                          max="20"
+                          placeholder="نمره (اختیاری)"
+                          value={currentGrade.score}
+                          onChange={(e) => setOralScore(student.id, e.target.value)}
+                          className={`w-28 h-10 text-center text-xs font-black rounded-xl border outline-none ${
+                            currentGrade.score !== ''
+                              ? 'bg-amber-50 border-amber-300 text-amber-900 ring-2 ring-amber-400'
+                              : 'bg-gray-50 border-gray-300'
+                          }`}
+                        />
                         <input
                           type="text"
-                          placeholder="یادداشت جلسه (اختیاری)..."
-                          value={currentAtt.note}
-                          onChange={(e) => setAttendanceNote(student.id, e.target.value)}
-                          className="w-full h-8 text-xs px-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:ring-1 focus:ring-primary outline-none text-gray-700"
+                          placeholder="مبحث / توضیح پرسش..."
+                          value={currentGrade.description}
+                          onChange={(e) => setOralDescription(student.id, e.target.value)}
+                          className="flex-1 h-10 text-xs px-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white outline-none"
                         />
-                      </TableCell>
+                      </div>
+                    </div>
+
+                    {/* Disciplinary & Commendation Actions */}
+                    <div className="pt-2 border-t border-gray-100 flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openMatterModal(student, 'POSITIVE', 'پاسخگویی عالی به پرسش کلاسی')
+                        }
+                        className="flex-1 min-h-[40px] text-xs font-bold rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 flex items-center justify-center gap-1.5 transition-colors"
+                      >
+                        <Smile className="w-4 h-4 text-emerald-600" />
+                        <span>+ تشویق</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openMatterModal(student, 'NEGATIVE', 'تذکر کلاسی و عدم تمرکز')
+                        }
+                        className="flex-1 min-h-[40px] text-xs font-bold rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 flex items-center justify-center gap-1.5 transition-colors"
+                      >
+                        <Frown className="w-4 h-4 text-rose-600" />
+                        <span>- تذکر</span>
+                      </button>
+                    </div>
+
+                    {/* Student Note */}
+                    <input
+                      type="text"
+                      placeholder="یادداشت جلسه برای این هنرجو..."
+                      value={currentAtt.note}
+                      onChange={(e) => setAttendanceNote(student.id, e.target.value)}
+                      className="w-full h-9 text-xs px-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white outline-none text-gray-700"
+                    />
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* 2. DESKTOP MATRIX TABLE (>= md) */}
+          <div className="hidden md:block bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50/80">
+                  <TableHead className="w-12 text-center font-bold">#</TableHead>
+                  <TableHead className="w-52">مشخصات هنرجو</TableHead>
+                  <TableHead className="text-center w-72">حضور و غیاب جلسه</TableHead>
+                  <TableHead className="w-64 text-center">نمره پرسش کلاسی (از ۲۰)</TableHead>
+                  <TableHead className="text-center w-56">موارد انضباطی و تشویقی</TableHead>
+                  <TableHead>یادداشت جلسه دبیر</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-5 w-6 mx-auto" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-36" /></TableCell>
+                      <TableCell><Skeleton className="h-8 w-64 mx-auto" /></TableCell>
+                      <TableCell><Skeleton className="h-8 w-44 mx-auto" /></TableCell>
+                      <TableCell><Skeleton className="h-8 w-40 mx-auto" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                     </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
+                  ))
+                ) : students.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-12 text-gray-400">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Users className="w-8 h-8 text-gray-300" />
+                        <span>هیچ دانش‌آموزی در این کلاس ثبت‌نام نشده است.</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  students.map((student, idx) => {
+                    const currentAtt = attendanceMap[student.id] || {
+                      status: 'PRESENT',
+                      delayMinutes: 0,
+                      note: '',
+                    };
+                    const currentGrade = gradesMap[student.id] || { score: '', description: '' };
+                    const matters = studentMattersCount[student.id] || { positive: 0, negative: 0 };
+
+                    return (
+                      <TableRow key={student.id} className="hover:bg-gray-50/50 transition-colors">
+                        {/* 1. Index */}
+                        <TableCell className="text-center font-mono text-xs text-gray-400">
+                          {idx + 1}
+                        </TableCell>
+
+                        {/* 2. Student Info */}
+                        <TableCell>
+                          <div className="flex items-center space-x-2.5 space-x-reverse">
+                            {student.avatarUrl ? (
+                              <img
+                                src={student.avatarUrl}
+                                alt=""
+                                className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center">
+                                {student.firstName?.[0] || 'ه'}
+                              </div>
+                            )}
+                            <div>
+                              <div className="font-bold text-ink-darker text-xs">
+                                {student.firstName} {student.lastName}
+                              </div>
+                              <div className="font-mono text-[10px] text-gray-400">
+                                {student.studentCode || 'کد ندارد'}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* 3. Attendance Buttons */}
+                        <TableCell className="text-center">
+                          <div className="inline-flex items-center p-1 bg-gray-100 rounded-lg gap-1">
+                            <button
+                              type="button"
+                              onClick={() => setAttendanceStatus(student.id, 'PRESENT')}
+                              className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
+                                currentAtt.status === 'PRESENT'
+                                  ? 'bg-emerald-600 text-white shadow-xs'
+                                  : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50'
+                              }`}
+                            >
+                              حاضر
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setAttendanceStatus(student.id, 'ABSENT')}
+                              className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
+                                currentAtt.status === 'ABSENT'
+                                  ? 'bg-rose-600 text-white shadow-xs'
+                                  : 'text-gray-600 hover:text-rose-700 hover:bg-rose-50'
+                              }`}
+                            >
+                              غایب
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setAttendanceStatus(student.id, 'EXCUSED_ABSENT')}
+                              className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
+                                currentAtt.status === 'EXCUSED_ABSENT'
+                                  ? 'bg-amber-600 text-white shadow-xs'
+                                  : 'text-gray-600 hover:text-amber-700 hover:bg-amber-50'
+                              }`}
+                            >
+                              موجه
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setAttendanceStatus(student.id, 'TARDY')}
+                              className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
+                                currentAtt.status === 'TARDY'
+                                  ? 'bg-blue-600 text-white shadow-xs'
+                                  : 'text-gray-600 hover:text-blue-700 hover:bg-blue-50'
+                              }`}
+                            >
+                              تأخیر
+                            </button>
+                          </div>
+
+                          {/* Delay Minutes input if TARDY */}
+                          {currentAtt.status === 'TARDY' && (
+                            <div className="mt-1.5 flex items-center justify-center gap-1.5 text-[11px] text-blue-700">
+                              <span>دقایق:</span>
+                              <input
+                                type="number"
+                                min="1"
+                                max="90"
+                                value={currentAtt.delayMinutes || 10}
+                                onChange={(e) => setDelayMinutes(student.id, Number(e.target.value))}
+                                className="w-14 h-6 text-center text-xs font-bold border border-blue-300 rounded bg-blue-50 focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none"
+                              />
+                              <span>دقیقه</span>
+                            </div>
+                          )}
+                        </TableCell>
+
+                        {/* 4. Oral Questioning & Activity Grade */}
+                        <TableCell className="text-center">
+                          <div className="flex flex-col items-center gap-1.5">
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                step="0.25"
+                                min="0"
+                                max="20"
+                                placeholder="نمره (۰-۲۰)"
+                                value={currentGrade.score}
+                                onChange={(e) => setOralScore(student.id, e.target.value)}
+                                className={`w-24 h-8 text-center text-xs font-black rounded-lg border outline-none transition-colors ${
+                                  currentGrade.score !== ''
+                                    ? 'bg-amber-50/80 border-amber-300 text-amber-900 font-mono ring-1 ring-amber-400'
+                                    : 'bg-gray-50 border-gray-300 text-gray-700 focus:bg-white focus:ring-2 focus:ring-primary'
+                                }`}
+                              />
+
+                              {/* Quick score pills */}
+                              <div className="flex items-center gap-0.5">
+                                {[20, 18, 15].map((val) => (
+                                  <button
+                                    key={val}
+                                    type="button"
+                                    onClick={() => setOralScore(student.id, val)}
+                                    className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-gray-100 hover:bg-amber-100 hover:text-amber-800 text-gray-600 transition-colors"
+                                  >
+                                    {val}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            {currentGrade.score !== '' && (
+                              <input
+                                type="text"
+                                placeholder="توضیحات سوال یا مبحث..."
+                                value={currentGrade.description}
+                                onChange={(e) => setOralDescription(student.id, e.target.value)}
+                                className="w-full h-6 text-[10px] px-2 rounded border border-gray-200 bg-gray-50 focus:bg-white outline-none text-gray-700"
+                              />
+                            )}
+                          </div>
+                        </TableCell>
+
+                        {/* 5. Disciplinary & Commendation Matters */}
+                        <TableCell className="text-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <div className="flex items-center justify-center gap-1">
+                              {/* Quick Positive Button */}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  openMatterModal(student, 'POSITIVE', 'پاسخگویی عالی به پرسش کلاسی')
+                                }
+                                title="ثبت تشویق"
+                                className="px-2 py-1 text-[11px] font-bold rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 flex items-center gap-1 transition-colors"
+                              >
+                                <Smile className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>+ تشویق</span>
+                              </button>
+
+                              {/* Quick Negative Button */}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  openMatterModal(student, 'NEGATIVE', 'تذکر کلاسی و عدم تمرکز')
+                                }
+                                title="ثبت تذکر انضباطی"
+                                className="px-2 py-1 text-[11px] font-bold rounded-md bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 flex items-center gap-1 transition-colors"
+                              >
+                                <Frown className="w-3.5 h-3.5 text-rose-600" />
+                                <span>- تذکر</span>
+                              </button>
+                            </div>
+
+                            {/* Matters count badge */}
+                            {(matters.positive > 0 || matters.negative > 0) && (
+                              <div className="flex items-center gap-1 text-[10px] font-bold">
+                                {matters.positive > 0 && (
+                                  <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                                    +{matters.positive} تشویق
+                                  </span>
+                                )}
+                                {matters.negative > 0 && (
+                                  <span className="text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200">
+                                    -{matters.negative} مورد
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+
+                        {/* 6. Session Note */}
+                        <TableCell>
+                          <input
+                            type="text"
+                            placeholder="یادداشت جلسه (اختیاری)..."
+                            value={currentAtt.note}
+                            onChange={(e) => setAttendanceNote(student.id, e.target.value)}
+                            className="w-full h-8 text-xs px-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:ring-1 focus:ring-primary outline-none text-gray-700"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Sticky Action Bar on Mobile */}
+          <StickyActionBar className="md:hidden">
+            <div className="w-full flex items-center justify-between gap-3">
+              <div className="text-xs font-bold text-gray-600">
+                حاضر: {presentCount} | غایب: {absentCount}
+              </div>
+              <Button
+                variant="primary"
+                onClick={handleSaveSession}
+                isLoading={isSaving}
+                disabled={isLoading || students.length === 0}
+                className="flex items-center gap-1.5 text-xs font-bold px-5 h-11"
+              >
+                <Save className="h-4 w-4" />
+                <span>ذخیره دفتر کلاسی</span>
+              </Button>
+            </div>
+          </StickyActionBar>
         </div>
       )}
 

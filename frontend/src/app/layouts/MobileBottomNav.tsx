@@ -15,6 +15,7 @@ import {
   CreditCard,
   Building2,
   Activity,
+  BookOpen,
 } from 'lucide-react';
 import { UserRole } from '../../types/auth';
 import { useSidebarStore } from '../../lib/ui/sidebar-store';
@@ -55,7 +56,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
         return [
           { title: 'میز کار', href: '/app/teacher/dashboard', icon: LayoutDashboard },
           { title: 'برنامه کلاس', href: '/app/teacher/schedule', icon: CalendarDays },
-          { title: 'حضور و غیاب', href: '/app/teacher/attendance', icon: CalendarDays },
+          { title: 'دفتر کلاسی', href: '/app/teacher/gradebook', icon: BookOpen },
           { title: 'تکالیف', href: '/app/teacher/homework', icon: FileCheck },
         ];
 

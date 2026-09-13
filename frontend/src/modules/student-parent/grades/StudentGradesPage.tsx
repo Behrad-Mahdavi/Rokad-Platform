@@ -10,6 +10,7 @@ import {
   TableRow,
   TableCell,
 } from '../../../components/ui/Table';
+import { MobileDataTable } from '../../../components/ui/MobileDataTable';
 import {
   FileText,
   Download,
@@ -133,50 +134,74 @@ export const StudentGradesPage: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>عنوان درس</TableHead>
-                    <TableHead>تعداد واحد</TableHead>
-                    <TableHead className="text-center">نمره مستمر (۳۰٪)</TableHead>
-                    <TableHead className="text-center">میان‌ترم (۳۰٪)</TableHead>
-                    <TableHead className="text-center">پایانی (۴۰٪)</TableHead>
-                    <TableHead className="text-center">نمره نهایی (از ۲۰)</TableHead>
-                    <TableHead>نتیجه</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {grades.map((g, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell>
-                        <div className="font-bold text-ink-darker">{g.lesson}</div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-xs font-bold text-gray-600">
-                          {toPersianDigits(g.units)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center text-xs font-semibold text-ink-normal">
+              <MobileDataTable
+                data={grades}
+                columns={[
+                  {
+                    key: 'lesson',
+                    header: 'عنوان درس',
+                    mobilePriority: 'primary',
+                    render: (g) => <div className="font-bold text-ink-darker text-sm">{g.lesson}</div>,
+                  },
+                  {
+                    key: 'total',
+                    header: 'نمره نهایی (از ۲۰)',
+                    mobilePriority: 'primary',
+                    render: (g) => (
+                      <span className="font-bold text-xs text-primary bg-primary/10 px-2.5 py-1 rounded-lg font-mono">
+                        {toPersianDigits(g.total.toFixed(2))}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'result',
+                    header: 'نتیجه',
+                    mobilePriority: 'secondary',
+                    render: () => <Badge variant="success">قبول</Badge>,
+                  },
+                  {
+                    key: 'units',
+                    header: 'تعداد واحد',
+                    mobilePriority: 'secondary',
+                    render: (g) => (
+                      <span className="text-xs font-bold text-gray-600 font-mono">
+                        {toPersianDigits(g.units)} واحد
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'continuous',
+                    header: 'نمره مستمر (۳۰٪)',
+                    mobilePriority: 'detail',
+                    render: (g) => (
+                      <span className="font-semibold text-xs text-ink-normal font-mono">
                         {toPersianDigits(g.continuous.toFixed(2))}
-                      </TableCell>
-                      <TableCell className="text-center text-xs font-semibold text-ink-normal">
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'midterm',
+                    header: 'میان‌ترم (۳۰٪)',
+                    mobilePriority: 'detail',
+                    render: (g) => (
+                      <span className="font-semibold text-xs text-ink-normal font-mono">
                         {toPersianDigits(g.midterm.toFixed(2))}
-                      </TableCell>
-                      <TableCell className="text-center text-xs font-semibold text-ink-normal">
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'final',
+                    header: 'پایانی (۴۰٪)',
+                    mobilePriority: 'detail',
+                    render: (g) => (
+                      <span className="font-semibold text-xs text-ink-normal font-mono">
                         {toPersianDigits(g.final.toFixed(2))}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="font-bold text-xs text-primary bg-primary-light px-2.5 py-1 rounded-lg">
-                          {toPersianDigits(g.total.toFixed(2))}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="success">قبول</Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                      </span>
+                    ),
+                  },
+                ]}
+                keyExtractor={(_, idx) => String(idx)}
+              />
             </CardContent>
           </Card>
         </>

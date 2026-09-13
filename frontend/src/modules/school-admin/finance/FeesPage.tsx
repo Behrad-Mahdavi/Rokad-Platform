@@ -14,6 +14,7 @@ import {
   TableRow,
   TableCell,
 } from '../../../components/ui/Table';
+import { MobileDataTable } from '../../../components/ui/MobileDataTable';
 import {
   Receipt,
   Plus,
@@ -142,98 +143,98 @@ export const FeesPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Contracts Table */}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>شماره قرارداد</TableHead>
-            <TableHead>دانش‌آموز</TableHead>
-            <TableHead>مبلغ کل شهریه</TableHead>
-            <TableHead>تخفیف</TableHead>
-            <TableHead>مبلغ قابل پرداخت</TableHead>
-            <TableHead>وضعیت اقساط</TableHead>
-            <TableHead className="text-center">عملیات</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
-            Array.from({ length: 3 }).map((_, i) => (
-              <TableRow key={i}>
-                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                <TableCell><Skeleton className="h-8 w-24 mx-auto" /></TableCell>
-              </TableRow>
-            ))
-          ) : contracts.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                هنوز قراردادی ثبت نشده است. از دکمه «ثبت قرارداد شهریه جدید» استفاده کنید.
-              </TableCell>
-            </TableRow>
-          ) : (
-            contracts.map((c) => {
+      {/* Contracts Responsive Data View */}
+      <MobileDataTable
+        data={contracts}
+        columns={[
+          {
+            key: 'student',
+            header: 'دانش‌آموز',
+            mobilePriority: 'primary',
+            render: (c) => (
+              <div>
+                <div className="font-bold text-ink-darker text-sm">
+                  {c.student?.user?.firstName} {c.student?.user?.lastName}
+                </div>
+                <div className="text-[11px] text-gray-500 font-mono">
+                  شماره دانش‌آموزی: {c.student?.studentNumber || '—'}
+                </div>
+              </div>
+            ),
+          },
+          {
+            key: 'payable',
+            header: 'مبلغ قابل پرداخت',
+            mobilePriority: 'primary',
+            render: (c) => (
+              <span className="font-bold text-xs text-emerald-700 font-mono">
+                {(c.finalPayableAmount / 1000000).toLocaleString('fa-IR')} میلیون تومان
+              </span>
+            ),
+          },
+          {
+            key: 'installmentsStatus',
+            header: 'وضعیت اقساط',
+            mobilePriority: 'secondary',
+            render: (c) => {
               const paidCount = c.installments?.filter((i: any) => i.status === 'PAID').length || 0;
               const totalInst = c.installments?.length || 0;
-
               return (
-                <TableRow key={c.id}>
-                  <TableCell>
-                    <span className="font-mono font-bold text-xs bg-gray-100 px-2 py-0.5 rounded">
-                      {c.contractNumber}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-bold text-ink-darker">
-                      {c.student?.user?.firstName} {c.student?.user?.lastName}
-                    </div>
-                    <div className="text-[11px] text-gray-500">
-                      شماره: {c.student?.studentNumber}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-bold text-xs text-ink-dark">
-                      {(c.totalAmount / 1000000).toLocaleString('fa-IR')} م تومان
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-xs text-rose-600 font-medium">
-                      {(c.discountAmount / 1000000).toLocaleString('fa-IR')} م
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-bold text-xs text-emerald-700">
-                      {(c.finalPayableAmount / 1000000).toLocaleString('fa-IR')} م تومان
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={paidCount === totalInst ? 'success' : 'warning'}>
-                      {paidCount} از {totalInst} قسط پرداخت‌شده
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedContract(c);
-                        setIsInstallmentsOpen(true);
-                      }}
-                      className="text-xs"
-                    >
-                      <CreditCard className="h-3.5 w-3.5 ml-1" />
-                      <span>مشاهده اقساط</span>
-                    </Button>
-                  </TableCell>
-                </TableRow>
+                <Badge variant={paidCount === totalInst ? 'success' : 'warning'}>
+                  {paidCount} از {totalInst} قسط پرداخت‌شده
+                </Badge>
               );
-            })
-          )}
-        </TableBody>
-      </Table>
+            },
+          },
+          {
+            key: 'contractNumber',
+            header: 'شماره قرارداد',
+            mobilePriority: 'secondary',
+            render: (c) => (
+              <span className="font-mono font-bold text-xs bg-gray-100 px-2 py-0.5 rounded">
+                {c.contractNumber}
+              </span>
+            ),
+          },
+          {
+            key: 'totalAmount',
+            header: 'مبلغ کل شهریه',
+            mobilePriority: 'detail',
+            render: (c) => (
+              <span className="font-bold text-xs text-ink-dark">
+                {(c.totalAmount / 1000000).toLocaleString('fa-IR')} میلیون تومان
+              </span>
+            ),
+          },
+          {
+            key: 'discountAmount',
+            header: 'تخفیف',
+            mobilePriority: 'detail',
+            render: (c) => (
+              <span className="text-xs text-rose-600 font-medium">
+                {(c.discountAmount / 1000000).toLocaleString('fa-IR')} میلیون تومان
+              </span>
+            ),
+          },
+        ]}
+        keyExtractor={(c) => c.id}
+        isLoading={isLoading}
+        emptyMessage="هنوز قراردادی ثبت نشده است. از دکمه «ثبت قرارداد شهریه جدید» استفاده کنید."
+        cardActions={(c) => (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setSelectedContract(c);
+              setIsInstallmentsOpen(true);
+            }}
+            className="text-xs h-8 px-2.5"
+          >
+            <CreditCard className="h-3.5 w-3.5 ms-1" />
+            <span>مشاهده اقساط</span>
+          </Button>
+        )}
+      />
 
       {/* 1. Modal: Create Fee Contract */}
       <Modal

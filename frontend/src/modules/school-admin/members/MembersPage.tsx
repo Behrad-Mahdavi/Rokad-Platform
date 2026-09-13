@@ -13,6 +13,7 @@ import {
   TableRow,
   TableCell,
 } from '../../../components/ui/Table';
+import { MobileDataTable, ColumnDef } from '../../../components/ui/MobileDataTable';
 import {
   Users,
   GraduationCap,
@@ -346,146 +347,145 @@ export const MembersPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Tab 1: Students Table */}
+      {/* Tab 1: Students */}
       {activeTab === 'STUDENTS' && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>نام و نام خانوادگی</TableHead>
-              <TableHead>شماره دانش‌آموزی</TableHead>
-              <TableHead>کد ملی</TableHead>
-              <TableHead>کلاس درس</TableHead>
-              <TableHead>شماره تماس</TableHead>
-              <TableHead>وضعیت پرونده</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                </TableRow>
-              ))
-            ) : students.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                  هنوز دانش‌آموزی ثبت‌نام نشده است.
-                </TableCell>
-              </TableRow>
-            ) : (
-              students.map((s) => (
-                <TableRow key={s.id}>
-                  <TableCell>
-                    <div className="font-bold text-ink-darker">
-                      {s.user?.firstName} {s.user?.lastName}
-                    </div>
-                  </TableCell>
-                  <TableCell><span className="font-mono text-xs font-bold">{s.studentNumber}</span></TableCell>
-                  <TableCell><span className="font-mono text-xs text-gray-600">{s.nationalCode}</span></TableCell>
-                  <TableCell>
-                    <span className="text-xs bg-gray-100 px-2 py-0.5 rounded font-medium">
-                      {s.classroom?.name || 'کلاس ۱۰۱'}
-                    </span>
-                  </TableCell>
-                  <TableCell><span className="font-mono text-xs text-gray-600">{s.user?.phone || '—'}</span></TableCell>
-                  <TableCell><Badge variant="success">ثبت‌نام قطعی</Badge></TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        <MobileDataTable
+          data={students}
+          columns={[
+            {
+              key: 'name',
+              header: 'نام و نام خانوادگی',
+              mobilePriority: 'primary',
+              render: (s) => (
+                <div className="font-bold text-ink-darker text-sm">
+                  {s.user?.firstName} {s.user?.lastName}
+                </div>
+              ),
+            },
+            {
+              key: 'classroom',
+              header: 'کلاس درس',
+              mobilePriority: 'primary',
+              render: (s) => (
+                <span className="text-xs bg-primary/10 text-primary-dark px-2.5 py-0.5 rounded-full font-bold">
+                  {s.classroom?.name || 'کلاس ۱۰۱'}
+                </span>
+              ),
+            },
+            {
+              key: 'studentNumber',
+              header: 'شماره دانش‌آموزی',
+              mobilePriority: 'secondary',
+              render: (s) => <span className="font-mono text-xs font-bold">{s.studentNumber}</span>,
+            },
+            {
+              key: 'status',
+              header: 'وضعیت پرونده',
+              mobilePriority: 'secondary',
+              render: () => <Badge variant="success">ثبت‌نام قطعی</Badge>,
+            },
+            {
+              key: 'nationalCode',
+              header: 'کد ملی',
+              mobilePriority: 'detail',
+              render: (s) => <span className="font-mono text-xs text-gray-600">{s.nationalCode || '—'}</span>,
+            },
+            {
+              key: 'phone',
+              header: 'شماره تماس',
+              mobilePriority: 'detail',
+              render: (s) => <span className="font-mono text-xs text-gray-600">{s.user?.phone || '—'}</span>,
+            },
+          ]}
+          keyExtractor={(s) => s.id}
+          isLoading={isLoading}
+          emptyMessage="هنوز دانش‌آموزی ثبت‌نام نشده است."
+        />
       )}
 
-      {/* Tab 2: Teachers Table */}
+      {/* Tab 2: Teachers */}
       {activeTab === 'TEACHERS' && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>نام دبیر / پرسنل</TableHead>
-              <TableHead>کد پرسنلی</TableHead>
-              <TableHead>شماره تماس</TableHead>
-              <TableHead>تخصص تدریس</TableHead>
-              <TableHead>دروس تخصیص‌یافته</TableHead>
-              <TableHead>وضعیت قرارداد</TableHead>
-              <TableHead className="text-left">عملیات</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-36" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                </TableRow>
-              ))
-            ) : teachers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                  هنوز دبیری ثبت نشده است.
-                </TableCell>
-              </TableRow>
-            ) : (
-              teachers.map((t) => {
+        <MobileDataTable
+          data={teachers}
+          columns={[
+            {
+              key: 'name',
+              header: 'نام دبیر / پرسنل',
+              mobilePriority: 'primary',
+              render: (t) => (
+                <div className="font-bold text-ink-darker text-sm">
+                  {t.user?.firstName} {t.user?.lastName}
+                </div>
+              ),
+            },
+            {
+              key: 'specialization',
+              header: 'تخصص تدریس',
+              mobilePriority: 'primary',
+              render: (t) => <span className="text-xs text-gray-700 font-bold">{t.specialization || 'عمومی'}</span>,
+            },
+            {
+              key: 'personnelCode',
+              header: 'کد پرسنلی',
+              mobilePriority: 'secondary',
+              render: (t) => <span className="font-mono text-xs font-bold">{t.personnelCode || '—'}</span>,
+            },
+            {
+              key: 'lessons',
+              header: 'دروس تخصیص‌یافته',
+              mobilePriority: 'secondary',
+              render: (t) => {
                 const assignedLessons = t.teacherLessons?.map((tl: any) => tl.lesson) || [];
+                if (assignedLessons.length === 0) {
+                  return <span className="text-xs text-gray-400">بدون درس تخصیص‌یافته</span>;
+                }
                 return (
-                  <TableRow key={t.id}>
-                    <TableCell>
-                      <div className="font-bold text-ink-darker">
-                        {t.user?.firstName} {t.user?.lastName}
-                      </div>
-                    </TableCell>
-                    <TableCell><span className="font-mono text-xs font-bold">{t.personnelCode}</span></TableCell>
-                    <TableCell><span className="font-mono text-xs text-gray-600">{t.user?.phone || '—'}</span></TableCell>
-                    <TableCell><span className="text-xs text-gray-700">{t.specialization || 'عمومی'}</span></TableCell>
-                    <TableCell>
-                      {assignedLessons.length === 0 ? (
-                        <span className="text-xs text-gray-400">بدون درس تخصیص‌یافته</span>
-                      ) : (
-                        <div className="flex flex-wrap gap-1.5 max-w-xs">
-                          {assignedLessons.map((l: any) => (
-                            <span
-                              key={l.id}
-                              className="inline-flex items-center gap-1 text-[11px] bg-primary/10 text-primary-dark font-bold px-2 py-0.5 rounded border border-primary/20"
-                              title={`پایه ${l.level?.name || '—'} | رشته ${l.field?.name || 'عمومی'}`}
-                            >
-                              <BookOpen className="h-3 w-3" />
-                              {l.name}
-                              {l.level?.name && (
-                                <span className="text-[9px] text-gray-500">({l.level.name})</span>
-                              )}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell><Badge variant="male">دبیر فعال</Badge></TableCell>
-                    <TableCell className="text-left">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleOpenEditLessons(t)}
-                        className="text-xs text-primary hover:text-primary-dark"
+                  <div className="flex flex-wrap gap-1.5 max-w-xs">
+                    {assignedLessons.map((l: any) => (
+                      <span
+                        key={l.id}
+                        className="inline-flex items-center gap-1 text-[11px] bg-primary/10 text-primary-dark font-bold px-2 py-0.5 rounded border border-primary/20"
+                        title={`پایه ${l.level?.name || '—'} | رشته ${l.field?.name || 'عمومی'}`}
                       >
-                        <BookOpen className="h-3.5 w-3.5 ml-1" />
-                        ویرایش دروس
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                        <BookOpen className="h-3 w-3" />
+                        {l.name}
+                        {l.level?.name && (
+                          <span className="text-[9px] text-gray-500">({l.level.name})</span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
                 );
-              })
-            )}
-          </TableBody>
-        </Table>
+              },
+            },
+            {
+              key: 'phone',
+              header: 'شماره تماس',
+              mobilePriority: 'detail',
+              render: (t) => <span className="font-mono text-xs text-gray-600">{t.user?.phone || '—'}</span>,
+            },
+            {
+              key: 'contractStatus',
+              header: 'وضعیت قرارداد',
+              mobilePriority: 'detail',
+              render: () => <Badge variant="male">دبیر فعال</Badge>,
+            },
+          ]}
+          keyExtractor={(t) => t.id}
+          isLoading={isLoading}
+          emptyMessage="هنوز دبیری ثبت نشده است."
+          cardActions={(t) => (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleOpenEditLessons(t)}
+              className="text-xs text-primary hover:text-primary-dark h-8 px-2.5"
+            >
+              <BookOpen className="h-3.5 w-3.5 ms-1" />
+              ویرایش دروس
+            </Button>
+          )}
+        />
       )}
 
       {/* 1. Modal: Enroll Student */}
