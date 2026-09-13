@@ -158,9 +158,14 @@ export const Header: React.FC = () => {
           <School className="h-5 w-5" />
         </div>
         <div className="min-w-0">
-          <h1 className="font-bold text-xs sm:text-sm text-ink-darker leading-tight truncate max-w-[140px] sm:max-w-xs md:max-w-md">
-            {currentTenant?.name || 'هنرستان فنی و حرفه‌ای رُکاد'}
-          </h1>
+          <div className="flex items-center gap-1.5">
+            <h1 className="font-bold text-xs sm:text-sm text-ink-darker leading-tight truncate max-w-[130px] sm:max-w-xs md:max-w-md">
+              {currentTenant?.name || 'هنرستان فنی و حرفه‌ای رُکاد'}
+            </h1>
+            <Badge variant={currentTenant?.slug === 'rokad-girls' ? 'female' : 'male'} className="text-[9px] py-0 px-1.5 h-4 sm:hidden shrink-0">
+              {currentTenant?.slug === 'rokad-girls' ? 'دخترانه' : 'پسرانه'}
+            </Badge>
+          </div>
           <div className="hidden sm:flex items-center space-x-2 space-x-reverse mt-0.5">
             <span className="text-[11px] text-gray-500 font-mono truncate">
               {currentTenant?.slug || 'rokad-boys'}
@@ -172,8 +177,8 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Center/Quick Switcher: Boys vs Girls Vocational School */}
-      <div className="flex items-center bg-gray-100/90 p-1 rounded-xl border border-gray-200 text-xs shrink-0">
+      {/* Center/Quick Switcher: Boys vs Girls Vocational School (Desktop) */}
+      <div className="hidden sm:flex items-center bg-gray-100/90 p-1 rounded-xl border border-gray-200 text-xs shrink-0">
         <button
           type="button"
           onClick={() => switchBranch('boys')}

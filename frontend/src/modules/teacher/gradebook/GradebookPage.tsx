@@ -503,14 +503,14 @@ export const GradebookPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-              <BookOpen className="h-5 w-5" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-ink-darker">
+              <h2 className="text-base sm:text-lg md:text-xl font-bold text-ink-darker">
                 دفتر کلاسی الکترونیکی (Classroom Cockpit)
               </h2>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5 line-clamp-1 sm:line-clamp-none">
                 مدیریت یکپارچه هر جلسه: ثبت حضور و غیاب، نمرات پرسش کلاسی و ارزشیابی مستمر، و موارد انضباطی و تشویقی
               </p>
             </div>

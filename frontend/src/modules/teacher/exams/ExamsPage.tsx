@@ -15,6 +15,7 @@ import {
   TableCell,
 } from '../../../components/ui/Table';
 import { MobileDataTable } from '../../../components/ui/MobileDataTable';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import {
   HelpCircle,
   Plus,
@@ -360,29 +361,24 @@ export const ExamsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header & CTA */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-            <HelpCircle className="h-6 w-6 text-primary" />
-            <span>موتور آزمون آنلاین و تصحیح هوشمند (LMS Exam & Grading)</span>
-          </h2>
-          <p className="text-xs text-gray-500 mt-1">
-            طراحی آزمون، تصحیح دستی سوالات تشریحی، اعطای نمره ارفاقی و مدیریت انتشار کارنامه‌ها
-          </p>
-        </div>
-
-        <Button
-          variant="primary"
-          onClick={() => {
-            setError(null);
-            setIsCreateExamOpen(true);
-          }}
-          className="flex items-center space-x-1.5 space-x-reverse"
-        >
-          <Plus className="h-4 w-4" />
-          <span>طراحی آزمون جدید</span>
-        </Button>
-      </div>
+      <ResponsivePageHeader
+        icon={HelpCircle}
+        title="موتور آزمون آنلاین و تصحیح هوشمند"
+        description="طراحی آزمون، تصحیح دستی سوالات تشریحی، اعطای نمره ارفاقی و مدیریت انتشار کارنامه‌ها"
+        actions={
+          <Button
+            variant="primary"
+            onClick={() => {
+              setError(null);
+              setIsCreateExamOpen(true);
+            }}
+            className="flex items-center space-x-1.5 space-x-reverse text-xs"
+          >
+            <Plus className="h-4 w-4" />
+            <span>طراحی آزمون جدید</span>
+          </Button>
+        }
+      />
 
       {/* Exams Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

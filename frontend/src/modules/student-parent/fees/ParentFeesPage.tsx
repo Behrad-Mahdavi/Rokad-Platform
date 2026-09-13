@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import {
   CreditCard,
   CheckCircle2,
@@ -69,43 +70,39 @@ export const ParentFeesPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-          <CreditCard className="h-6 w-6 text-amber-500" />
-          <span>شهریه، اقساط و درگاه پرداخت آنلاین (Tuition Fees & Payments)</span>
-        </h2>
-        <p className="text-xs text-gray-500 mt-1">
-          مشاهده قرارداد تحصیلی، وضعیت تسویه اقساط و پرداخت امن از طریق درگاه الکترونیکی شاپرک / زرین‌پال
-        </p>
-      </div>
+      <ResponsivePageHeader
+        icon={CreditCard}
+        title="شهریه، اقساط و پرداخت آنلاین"
+        description="مشاهده قرارداد تحصیلی، وضعیت تسویه اقساط و پرداخت امن از طریق درگاه الکترونیکی شاپرک"
+      />
 
       {/* Contract Financial Summary */}
       {contract && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <Card className="p-4 sm:p-5">
             <div className="text-xs text-gray-500 font-medium mb-1">مبلغ کل شهریه تحصیلی</div>
             <div className="text-2xl font-extrabold text-ink-darker font-mono">
               {(contract.totalAmount / 1000000).toLocaleString('fa-IR')} م تومان
             </div>
-            <p className="text-[11px] text-rose-600 mt-2">
-              شامل {(contract.discountAmount / 1000000).toLocaleString('fa-IR')} میلیون تومان تخفیف مصوب
+            <p className="text-[11px] text-rose-600 mt-1.5">
+              شامل {(contract.discountAmount / 1000000).toLocaleString('fa-IR')} م تومان تخفیف مصوب
             </p>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-4 sm:p-5">
             <div className="text-xs text-gray-500 font-medium mb-1">مبلغ پرداخت‌شده تا کنون</div>
             <div className="text-2xl font-extrabold text-emerald-600 font-mono">
               ۲۰ میلیون تومان
             </div>
-            <Badge variant="success" className="mt-2">۲ قسط تسویه‌شده</Badge>
+            <Badge variant="success" className="mt-1.5 text-[10px]">۲ قسط تسویه‌شده</Badge>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-4 sm:p-5">
             <div className="text-xs text-gray-500 font-medium mb-1">مانده شهریه قابل پرداخت</div>
             <div className="text-2xl font-extrabold text-amber-500 font-mono">
               ۱۰ میلیون تومان
             </div>
-            <p className="text-[11px] text-gray-500 mt-2">سررسید قسط بعدی: بهمن‌ماه</p>
+            <p className="text-[11px] text-gray-500 mt-1.5">سررسید قسط بعدی: بهمن‌ماه</p>
           </Card>
         </div>
       )}

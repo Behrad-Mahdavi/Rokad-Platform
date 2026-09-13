@@ -331,29 +331,29 @@ export const QuestionBankPage: React.FC = () => {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-surface/40 p-6 rounded-2xl border border-border/50 backdrop-blur-sm shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-600 shadow-inner">
-            <FileQuestion className="w-6 h-6" />
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 bg-surface/40 p-3.5 sm:p-5 rounded-2xl border border-border/50 backdrop-blur-sm shadow-xs">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-600 shrink-0">
+            <FileQuestion className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
+            <h1 className="text-base sm:text-lg md:text-xl font-bold text-foreground tracking-tight">
               بانک سوالات متمرکز و آزمون‌ساز هوشمند
             </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
+            <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 line-clamp-1 sm:line-clamp-none">
               مخزن تخصصی سوالات درسی، طبقه‌بندی موضوعی، بارم‌بندی و راهنمای حل تشریحی
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <Button
             variant="outline"
             onClick={() => setIsCategoryModalOpen(true)}
-            className="flex items-center gap-2 text-xs h-10"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 text-xs h-9 sm:h-10"
           >
             <FolderPlus className="w-4 h-4" />
-            <span>مدیریت سرفصل‌ها</span>
+            <span>سرفصل‌ها</span>
           </Button>
 
           <Button
@@ -361,7 +361,7 @@ export const QuestionBankPage: React.FC = () => {
               setQForm((prev) => ({ ...prev, lessonId: selectedLessonId }));
               setIsQuestionModalOpen(true);
             }}
-            className="flex items-center gap-2 shadow-sm font-medium h-10"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 shadow-xs font-medium text-xs h-9 sm:h-10"
           >
             <Plus className="w-4 h-4" />
             <span>ثبت سوال جدید</span>

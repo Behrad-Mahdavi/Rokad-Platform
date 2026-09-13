@@ -6,6 +6,7 @@ import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import {
   Sliders,
   Plus,
@@ -159,26 +160,21 @@ export const RoleTemplatesPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-            <Sliders className="h-6 w-6 text-primary" />
-            <span>سازنده قالب‌های نقش پویا (Global Role Templates)</span>
-          </h2>
-          <p className="text-xs text-gray-500 mt-1">
-            تعریف نقش‌های استاندارد کشوری و توزیع و همگام‌سازی خودکار به مدارس و مراکز منتخب
-          </p>
-        </div>
-
-        <Button
-          variant="primary"
-          onClick={() => setIsCreateOpen(true)}
-          className="flex items-center space-x-1.5 space-x-reverse"
-        >
-          <Plus className="h-4 w-4" />
-          <span>طراحی قالب نقش جدید</span>
-        </Button>
-      </div>
+      <ResponsivePageHeader
+        icon={Sliders}
+        title="سازنده قالب‌های نقش پویا"
+        description="تعریف نقش‌های استاندارد کشوری و توزیع و همگام‌سازی خودکار به مدارس و مراکز منتخب"
+        actions={
+          <Button
+            variant="primary"
+            onClick={() => setIsCreateOpen(true)}
+            className="flex items-center space-x-1.5 space-x-reverse text-xs"
+          >
+            <Plus className="h-4 w-4" />
+            <span>قالب نقش جدید</span>
+          </Button>
+        }
+      />
 
       {/* Templates Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

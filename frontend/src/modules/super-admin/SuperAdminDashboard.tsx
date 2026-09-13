@@ -105,21 +105,21 @@ export const SuperAdminDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header Title */}
-      <div className="relative overflow-hidden bg-gradient-to-l from-primary/10 via-primary-light/20 to-white p-6 rounded-2xl border border-primary/20 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="relative overflow-hidden bg-gradient-to-l from-primary/10 via-primary-light/20 to-white p-3.5 sm:p-5 md:p-6 rounded-2xl border border-primary/20 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 space-x-reverse mb-1">
-            <Crown className="h-6 w-6 text-amber-500 shrink-0" />
-            <span className="text-xl font-bold text-ink-darker">
-              مرکز فرماندهی کلان هنرستان‌های رُکاد (Control Plane)
+            <Crown className="h-5 w-5 text-amber-500 shrink-0" />
+            <span className="text-base sm:text-lg font-bold text-ink-darker">
+              مرکز فرماندهی کلان هنرستان‌های رُکاد
             </span>
-            <Badge variant="default">SuperAdmin Root</Badge>
+            <Badge variant="default" className="text-[11px]">SuperAdmin Root</Badge>
           </div>
-          <p className="text-xs text-gray-500">
+          <p className="text-[11px] sm:text-xs text-gray-500">
             نظارت عالی بر شعب هنرستان دخترانه و پسرانه، ساختار رشته‌های فنی، کارگاه‌ها، سهمیه‌ها و تراکنش‌های مالی
           </p>
         </div>
 
-        <div className="flex items-center space-x-2 space-x-reverse">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -134,21 +134,21 @@ export const SuperAdminDashboard: React.FC = () => {
             onClick={() => window.location.href = '/app/super-admin/tenants'}
             className="text-xs flex items-center space-x-1 space-x-reverse"
           >
-            <span>مدیریت شعب هنرستان</span>
+            <span>مدیریت شعب</span>
             <ArrowUpRight className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
 
       {/* 4 KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         {/* Card 1: Total Tenants */}
-        <Card className="p-5 border hover:border-primary transition-all">
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+        <Card className="p-3.5 sm:p-5 border hover:border-primary transition-all">
+          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
             <span>شعب فعال هنرستان</span>
             <Building2 className="h-4 w-4 text-primary" />
           </div>
-          <div className="text-2xl font-extrabold text-ink-darker">
+          <div className="text-xl sm:text-2xl font-extrabold text-ink-darker">
             ۲ شعبه تخصصی
           </div>
           <p className="text-[11px] text-emerald-600 font-medium mt-1">
@@ -157,12 +157,12 @@ export const SuperAdminDashboard: React.FC = () => {
         </Card>
 
         {/* Card 2: Total Users */}
-        <Card className="p-5 border hover:border-blue-500 transition-all">
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+        <Card className="p-3.5 sm:p-5 border hover:border-blue-500 transition-all">
+          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
             <span>هنرجویان و پرسنل فعال</span>
             <Users className="h-4 w-4 text-blue-500" />
           </div>
-          <div className="text-2xl font-extrabold text-ink-darker">
+          <div className="text-xl sm:text-2xl font-extrabold text-ink-darker">
             {((metrics?.users?.total || 650)).toLocaleString('fa-IR')} نفر
           </div>
           <p className="text-[11px] text-gray-500 font-medium mt-1">
@@ -171,12 +171,12 @@ export const SuperAdminDashboard: React.FC = () => {
         </Card>
 
         {/* Card 3: MRR */}
-        <Card className="p-5 border hover:border-amber-500 transition-all">
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+        <Card className="p-3.5 sm:p-5 border hover:border-amber-500 transition-all">
+          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
             <span>درآمد ماهانه پلتفرم (MRR)</span>
             <CreditCard className="h-4 w-4 text-amber-500" />
           </div>
-          <div className="text-2xl font-extrabold text-ink-darker">
+          <div className="text-xl sm:text-2xl font-extrabold text-ink-darker">
             ۴۸۰ <span className="text-xs font-normal text-gray-500">میلیون تومان</span>
           </div>
           <p className="text-[11px] text-emerald-600 font-medium mt-1">
@@ -185,12 +185,12 @@ export const SuperAdminDashboard: React.FC = () => {
         </Card>
 
         {/* Card 4: Cloud Storage */}
-        <Card className="p-5 border hover:border-purple-500 transition-all">
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+        <Card className="p-3.5 sm:p-5 border hover:border-purple-500 transition-all">
+          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
             <span>فضای ابری مصرف‌شده</span>
             <HardDrive className="h-4 w-4 text-purple-500" />
           </div>
-          <div className="text-2xl font-extrabold text-ink-darker">
+          <div className="text-xl sm:text-2xl font-extrabold text-ink-darker">
             ۱.۲ <span className="text-xs font-normal text-gray-500">ترابایت</span>
           </div>
           <p className="text-[11px] text-gray-500 font-medium mt-1">

@@ -91,16 +91,16 @@ export const StudentDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <div className="relative overflow-hidden bg-gradient-to-l from-primary/10 via-primary-light/20 to-white p-6 rounded-2xl border border-primary/20 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="relative overflow-hidden bg-gradient-to-l from-primary/10 via-primary-light/20 to-white p-3.5 sm:p-5 md:p-6 rounded-2xl border border-primary/20 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 space-x-reverse mb-1">
             <GraduationCap className="h-6 w-6 text-primary shrink-0" />
-            <span className="text-xl font-bold text-ink-darker">
-              سلام، {user?.firstName} عزیز!
+            <span className="text-base sm:text-lg font-bold text-ink-darker">
+              درود، {user?.firstName} {user?.lastName}
             </span>
             {scheduleData?.classroom ? (
-              <Badge variant="default" className="flex items-center gap-1">
-                <GraduationCap className="h-3.5 w-3.5" />
+              <Badge variant="default" className="flex items-center gap-1 text-[11px]">
+                <GraduationCap className="h-3 w-3" />
                 <span>
                   {scheduleData.classroom.level?.name ? `پایه ${scheduleData.classroom.level.name} - ` : ''}
                   {scheduleData.classroom.field?.name ? `${scheduleData.classroom.field.name} ` : ''}
@@ -108,10 +108,10 @@ export const StudentDashboard: React.FC = () => {
                 </span>
               </Badge>
             ) : (
-              <Badge variant="neutral">هنرجوی هنرستان رکاد</Badge>
+              <Badge variant="neutral" className="text-[11px]">هنرجوی هنرستان</Badge>
             )}
           </div>
-          <p className="text-xs text-gray-500">
+          <p className="text-[11px] sm:text-xs text-gray-500">
             برنامه کارگاهی، پروژه‌های عملی در انتظار تحویل و پودمان‌های ارزشیابی شما
           </p>
         </div>
@@ -124,7 +124,7 @@ export const StudentDashboard: React.FC = () => {
             className="text-xs flex items-center space-x-1 space-x-reverse"
           >
             <Calendar className="h-3.5 w-3.5" />
-            <span>برنامه هفتگی کلاس من</span>
+            <span>برنامه کلاس من</span>
           </Button>
           <Button
             variant="outline"
@@ -132,7 +132,7 @@ export const StudentDashboard: React.FC = () => {
             onClick={() => navigate('/app/student/grades')}
             className="text-xs"
           >
-            مشاهده کارنامه
+            کارنامه
           </Button>
           <Button
             variant="primary"
@@ -140,50 +140,50 @@ export const StudentDashboard: React.FC = () => {
             onClick={() => navigate('/app/student/exams')}
             className="text-xs flex items-center space-x-1 space-x-reverse"
           >
-            <span>آزمون‌های من</span>
+            <span>آزمون‌ها</span>
             <ArrowUpRight className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-5 border hover:border-primary transition-all">
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+        <Card className="p-3.5 sm:p-5 border hover:border-primary transition-all">
+          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
             <span>معدل کل نیم‌سال</span>
             <TrendingUp className="h-4 w-4 text-primary" />
           </div>
-          <div className="text-3xl font-extrabold text-primary">۱۹.۳۱</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-primary">۱۹.۳۱</div>
           <p className="text-[11px] text-emerald-600 font-medium mt-1">رتبه ۲ در پایه دهم</p>
         </Card>
 
-        <Card className="p-5 border hover:border-amber-500 transition-all">
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+        <Card className="p-3.5 sm:p-5 border hover:border-amber-500 transition-all">
+          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
             <span>تکالیف نیازمند تحویل</span>
             <FileCheck className="h-4 w-4 text-amber-500" />
           </div>
-          <div className="text-3xl font-extrabold text-ink-darker">۲ تکلیف</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-ink-darker">۲ تکلیف</div>
           <p className="text-[11px] text-amber-600 font-medium mt-1">مهلت نزدیک‌ترین: فردا</p>
         </Card>
 
-        <Card className="p-5 border hover:border-blue-500 transition-all">
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+        <Card className="p-3.5 sm:p-5 border hover:border-blue-500 transition-all">
+          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
             <span>آزمون‌های آنلاین فعال</span>
             <HelpCircle className="h-4 w-4 text-blue-500" />
           </div>
-          <div className="text-3xl font-extrabold text-ink-darker">۱ آزمون</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-ink-darker">۱ آزمون</div>
           <p className="text-[11px] text-blue-600 font-medium mt-1">آماده برگزاری آنلاین</p>
         </Card>
 
         <Card
           onClick={() => navigate('/app/student/matters')}
-          className="p-5 border hover:border-purple-500 transition-all cursor-pointer group"
+          className="p-3.5 sm:p-5 border hover:border-purple-500 transition-all cursor-pointer group"
         >
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
             <span>امور انضباطی و تشویقی</span>
             <ShieldAlert className="h-4 w-4 text-purple-500" />
           </div>
-          <div className="text-2xl font-extrabold text-foreground group-hover:text-primary transition-colors">
+          <div className="text-xl sm:text-2xl font-extrabold text-foreground group-hover:text-primary transition-colors">
             پرونده منظم
           </div>
           <p className="text-[11px] text-gray-500 font-medium mt-1">مشاهده سوابق و تشویق‌ها</p>

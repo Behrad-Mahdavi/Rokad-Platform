@@ -6,6 +6,7 @@ import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import { formatJalaliDisplay } from '../../../utils/jalali';
 import {
   FileCheck,
@@ -93,15 +94,11 @@ export const StudentHomeworkPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-          <FileCheck className="h-6 w-6 text-primary" />
-          <span>تکالیف درسی و تمرینات (My Homework)</span>
-        </h2>
-        <p className="text-xs text-gray-500 mt-1">
-          مشاهده تکالیف محول‌شده، مهلت تحویل، ارسال پاسخ، و بررسی نمرات و بازخورد دبیران
-        </p>
-      </div>
+      <ResponsivePageHeader
+        icon={FileCheck}
+        title="تکالیف درسی و تمرینات"
+        description="مشاهده تکالیف محول‌شده، مهلت تحویل، ارسال پاسخ، و بررسی نمرات و بازخورد دبیران"
+      />
 
       {/* Lesson Filter Banner if navigated from schedule */}
       {lessonIdParam && (

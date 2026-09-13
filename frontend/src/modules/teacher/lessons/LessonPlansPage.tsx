@@ -7,6 +7,7 @@ import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import {
   BookOpen,
   Plus,
@@ -330,30 +331,23 @@ export const LessonPlansPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header & Quick Action Buttons */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-            <BookOpen className="h-6 w-6 text-primary" />
-            <span>طرح درس و مدیریت محتوای آموزشی (Lesson Plans & Materials)</span>
-          </h2>
-          <p className="text-xs text-gray-500 mt-1">
-            بارگذاری جزوات و ویدیوهای آموزشی، تدوین طرح درس‌های کلاسی و اشتراک فایل با دانش‌آموزان
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setIsPlanModalOpen(true)}>
-            <Plus className="h-4 w-4 ml-1 text-primary" />
-            <span>ثبت طرح درس جدید</span>
-          </Button>
-
-          <Button variant="primary" size="sm" onClick={() => setIsUploadModalOpen(true)}>
-            <UploadCloud className="h-4 w-4 ml-1" />
-            <span>بارگذاری جزوه یا ویدیو</span>
-          </Button>
-        </div>
-      </div>
+      <ResponsivePageHeader
+        title="طرح درس و مدیریت محتوای آموزشی (Lesson Plans & Materials)"
+        subtitle="بارگذاری جزوات و ویدیوهای آموزشی، تدوین طرح درس‌های کلاسی و اشتراک فایل با دانش‌آموزان"
+        icon={<BookOpen className="h-5 w-5 text-primary" />}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setIsPlanModalOpen(true)} className="text-xs h-9">
+              <Plus className="h-3.5 w-3.5 ml-1 text-primary" />
+              <span>ثبت طرح درس جدید</span>
+            </Button>
+            <Button variant="primary" size="sm" onClick={() => setIsUploadModalOpen(true)} className="text-xs h-9">
+              <UploadCloud className="h-3.5 w-3.5 ml-1" />
+              <span>بارگذاری جزوه یا ویدیو</span>
+            </Button>
+          </div>
+        }
+      />
 
       {/* Lesson Filter Banner */}
       {lessonIdParam && (

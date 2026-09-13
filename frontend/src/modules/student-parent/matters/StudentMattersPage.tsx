@@ -4,6 +4,7 @@ import { useAuthStore } from '../../../lib/auth/auth-store';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import {
   Award,
   ShieldAlert,
@@ -74,71 +75,60 @@ export const StudentMattersPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-surface/40 p-6 rounded-2xl border border-border/50 backdrop-blur-sm shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-inner">
-            <ShieldCheck className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              {isParent ? 'موارد انضباطی و تشویقی فرزند' : 'موارد انضباطی و تشویقی من'}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              مشاهده سوابق تشویق‌ها، تذکرات کلاسی و موارد انضباطی ثبت‌شده
-            </p>
-          </div>
-        </div>
-      </div>
+      <ResponsivePageHeader
+        title={isParent ? 'موارد انضباطی و تشویقی فرزند' : 'موارد انضباطی و تشویقی من'}
+        subtitle="مشاهده سوابق تشویق‌ها، تذکرات کلاسی و موارد انضباطی ثبت‌شده"
+        icon={<ShieldCheck className="h-5 w-5 text-amber-600" />}
+      />
 
       {/* Hero Stats */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Skeleton className="h-28 rounded-2xl" />
-          <Skeleton className="h-28 rounded-2xl" />
-          <Skeleton className="h-28 rounded-2xl" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
+          <Skeleton className="h-20 sm:h-28 rounded-2xl" />
+          <Skeleton className="h-20 sm:h-28 rounded-2xl" />
+          <Skeleton className="h-20 sm:h-28 rounded-2xl col-span-2 sm:col-span-1" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
           {/* Total Matters */}
-          <Card className="p-5 border border-primary/20 bg-gradient-to-br from-primary/5 via-surface/50 to-surface">
+          <Card className="p-3.5 sm:p-5 border border-primary/20 bg-gradient-to-br from-primary/5 via-surface/50 to-surface">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">کل موارد ثبت‌شده</span>
-              <ShieldCheck className="w-4 h-4 text-primary" />
+              <span className="text-[11px] sm:text-xs font-semibold text-muted-foreground">کل موارد</span>
+              <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
             </div>
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-3xl font-black text-foreground">
+            <div className="flex items-baseline gap-1.5 sm:gap-2 mt-1 sm:mt-2">
+              <span className="text-xl sm:text-2xl font-black text-foreground">
                 {data?.matters?.length || 0}
               </span>
-              <span className="text-xs text-muted-foreground">مورد در پرونده</span>
+              <span className="text-[10px] sm:text-xs text-muted-foreground">مورد</span>
             </div>
           </Card>
 
           {/* Commendations */}
-          <Card className="p-5 border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 via-surface/50 to-surface">
+          <Card className="p-3.5 sm:p-5 border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 via-surface/50 to-surface">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">تشویق‌ها</span>
-              <Award className="w-4 h-4 text-emerald-500" />
+              <span className="text-[11px] sm:text-xs font-semibold text-muted-foreground">تشویق‌ها</span>
+              <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
             </div>
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-3xl font-black text-emerald-600">
+            <div className="flex items-baseline gap-1.5 sm:gap-2 mt-1 sm:mt-2">
+              <span className="text-xl sm:text-2xl font-black text-emerald-600">
                 {data?.positiveCount || 0}
               </span>
-              <span className="text-xs text-muted-foreground">مورد ثبت‌شده</span>
+              <span className="text-[10px] sm:text-xs text-muted-foreground">مورد</span>
             </div>
           </Card>
 
           {/* Warnings & Negative */}
-          <Card className="p-5 border border-amber-500/20 bg-gradient-to-br from-amber-500/5 via-surface/50 to-surface">
+          <Card className="p-3.5 sm:p-5 border border-amber-500/20 bg-gradient-to-br from-amber-500/5 via-surface/50 to-surface col-span-2 sm:col-span-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">تذکرات و موارد منفی</span>
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              <span className="text-[11px] sm:text-xs font-semibold text-muted-foreground">تذکرات</span>
+              <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />
             </div>
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-3xl font-black text-destructive">
+            <div className="flex items-baseline gap-1.5 sm:gap-2 mt-1 sm:mt-2">
+              <span className="text-xl sm:text-2xl font-black text-destructive">
                 {data?.negativeCount || 0}
               </span>
-              <span className="text-xs text-muted-foreground">مورد ثبت‌شده</span>
+              <span className="text-[10px] sm:text-xs text-muted-foreground">مورد</span>
             </div>
           </Card>
         </div>

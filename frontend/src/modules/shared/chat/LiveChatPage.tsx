@@ -168,7 +168,7 @@ export const LiveChatPage: React.FC = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-140px)] flex rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-xs">
+    <div className="h-[calc(100dvh-155px)] md:h-[calc(100vh-140px)] flex rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-xs">
       {/* Channels Sidebar (Master Pane: Hidden on mobile if activeChannel is selected) */}
       <div
         className={`w-full md:w-80 border-l border-gray-200 flex flex-col bg-gray-50/70 shrink-0 ${

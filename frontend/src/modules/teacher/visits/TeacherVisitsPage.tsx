@@ -8,6 +8,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { PersianDatePicker } from '../../../components/ui/PersianDatePicker';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import {
   formatJalaliDisplay,
   toPersianDigits,
@@ -160,61 +161,49 @@ export const TeacherVisitsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-surface/40 p-6 rounded-2xl border border-border/50 backdrop-blur-sm shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 shadow-inner">
-            <UserCheck className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              مدیریت اوقات ملاقات با اولیاء
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              تعریف ساعات آزاد جهت گفت‌وگو با اولیای گرامی به صورت حضوری یا برخط
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
+      <ResponsivePageHeader
+        title="مدیریت اوقات ملاقات با اولیاء"
+        subtitle="تعریف ساعات آزاد جهت گفت‌وگو با اولیای گرامی به صورت حضوری یا برخط"
+        icon={<UserCheck className="h-5 w-5 text-purple-600" />}
+        actions={
           <Button
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 shadow-sm font-medium"
+            className="w-full sm:w-auto flex items-center justify-center gap-1.5 shadow-xs font-medium text-xs h-9 sm:h-10"
           >
             <Plus className="w-4 h-4" />
             <span>تعریف زمان ملاقات جدید</span>
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="p-4 border border-border/60 bg-surface/30">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
+        <Card className="p-3 sm:p-4 border border-border/60 bg-surface/30">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">کل اسلات‌های فعال</span>
-            <Calendar className="w-4 h-4 text-purple-500" />
+            <span className="text-[11px] sm:text-xs text-muted-foreground">کل اسلات‌های فعال</span>
+            <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-500" />
           </div>
-          <div className="text-2xl font-bold text-foreground mt-2">
+          <div className="text-base sm:text-lg md:text-xl font-bold text-foreground mt-1 sm:mt-2">
             {slots.filter((s) => !s.isCancelled).length}
           </div>
         </Card>
 
-        <Card className="p-4 border border-border/60 bg-surface/30">
+        <Card className="p-3 sm:p-4 border border-border/60 bg-surface/30">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">نوبت‌های رزرو شده توسط اولیا</span>
-            <Users className="w-4 h-4 text-emerald-500" />
+            <span className="text-[11px] sm:text-xs text-muted-foreground">نوبت‌های رزرو شده</span>
+            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
           </div>
-          <div className="text-2xl font-bold text-foreground mt-2">
+          <div className="text-base sm:text-lg md:text-xl font-bold text-foreground mt-1 sm:mt-2">
             {confirmedBookings.length}
           </div>
         </Card>
 
-        <Card className="p-4 border border-border/60 bg-surface/30">
+        <Card className="p-3 sm:p-4 border border-border/60 bg-surface/30 col-span-2 sm:col-span-1">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">جلسات مجازی برخط</span>
-            <Video className="w-4 h-4 text-primary" />
+            <span className="text-[11px] sm:text-xs text-muted-foreground">جلسات مجازی برخط</span>
+            <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
           </div>
-          <div className="text-2xl font-bold text-foreground mt-2">
+          <div className="text-base sm:text-lg md:text-xl font-bold text-foreground mt-1 sm:mt-2">
             {slots.filter((s) => s.isVirtual && !s.isCancelled).length}
           </div>
         </Card>

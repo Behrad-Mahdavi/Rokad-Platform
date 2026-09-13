@@ -123,25 +123,28 @@ export default {
         mono: ['IRANSansXFaNum', 'IRANSansX', 'sans-serif'],
       },
       fontSize: {
-        xs: ['10px', '15px'],
-        sm: ['13px', '19.5px'],
-        base: ['16px', '24px'],
-        md: ['20px', '30px'],
-        lg: ['25px', '37.5px'],
-        xl: ['39px', '58.5px'],
-        '2xl': ['49px', '73.5px'],
-        '3xl': ['61px', '91.5px'],
+        xs: ['0.75rem', { lineHeight: '1.125rem' }],   // 12px / 18px
+        sm: ['0.8125rem', { lineHeight: '1.25rem' }],  // 13px / 20px
+        base: ['0.875rem', { lineHeight: '1.375rem' }],// 14px / 22px
+        md: ['0.9375rem', { lineHeight: '1.4375rem' }],// 15px / 23px
+        lg: ['1rem', { lineHeight: '1.5rem' }],        // 16px / 24px
+        xl: ['1.125rem', { lineHeight: '1.625rem' }],  // 18px / 26px
+        '2xl': ['1.25rem', { lineHeight: '1.75rem' }],  // 20px / 28px
+        '3xl': ['1.5rem', { lineHeight: '2rem' }],     // 24px / 32px
+        '4xl': ['1.75rem', { lineHeight: '2.25rem' }],  // 28px / 36px
       },
       borderRadius: {
-        xs: '5px',
-        sm: '8px',
-        md: '12px',
-        lg: '17px',
-        xl: '24px',
-        '2xl': '34px',
-        pill: '40px',
+        xs: '4px',
+        sm: '6px',
+        md: '8px',
+        lg: '12px',
+        xl: '16px',
+        '2xl': '20px',
+        '3xl': '24px',
+        pill: '9999px',
       },
       boxShadow: {
+        xs: '0 1px 2px 0 rgba(0, 0, 0, 0.04)',
         // Rokad Brand Hard Shadows (No blur, 2.75px offset)
         'brand-ecosystem': '2.75px 2.75px 0 #59BBAF',
         'brand-male': '2.75px 2.75px 0 #202A5A',

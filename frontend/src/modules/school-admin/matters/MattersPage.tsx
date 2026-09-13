@@ -6,6 +6,7 @@ import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import {
   ShieldAlert,
   Award,
@@ -176,63 +177,53 @@ export const MattersPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-surface/40 p-6 rounded-2xl border border-border/50 backdrop-blur-sm shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shadow-inner">
-            <ShieldAlert className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              سامانه امور انضباطی و تشویقی هنرجویان
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              ثبت تشویق‌ها، تذکرات کلاسی، موارد انضباطی و ارجاعات مشاوره‌ای
-            </p>
-          </div>
-        </div>
+      <ResponsivePageHeader
+        title="سامانه امور انضباطی و تشویقی هنرجویان"
+        subtitle="ثبت تشویق‌ها، تذکرات کلاسی، موارد انضباطی و ارجاعات مشاوره‌ای"
+        icon={<ShieldAlert className="h-5 w-5 text-amber-600" />}
+        actions={
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 shadow-xs font-medium text-xs h-9 sm:h-10"
+          >
+            <Plus className="w-4 h-4" />
+            <span>ثبت مورد جدید</span>
+          </Button>
+        }
+      />
 
-        <Button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-2 shadow-sm font-medium"
-        >
-          <Plus className="w-4 h-4" />
-          <span>ثبت مورد جدید</span>
-        </Button>
-      </div>
-
-      {/* KPI Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <Card className="p-4 border border-border/60 bg-surface/30">
+      {/* KPI Stats (2-column on mobile, 4-column on desktop) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
+        <Card className="p-3 sm:p-4 border border-border/60 bg-surface/30">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">کل موارد ثبت‌شده</span>
-            <ShieldAlert className="w-4 h-4 text-primary" />
+            <span className="text-[11px] sm:text-xs text-muted-foreground">کل موارد</span>
+            <ShieldAlert className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
           </div>
-          <div className="text-2xl font-bold text-foreground mt-2">{matters.length}</div>
+          <div className="text-base sm:text-lg md:text-xl font-bold text-foreground mt-1 sm:mt-2">{matters.length}</div>
         </Card>
 
-        <Card className="p-4 border border-border/60 bg-surface/30">
+        <Card className="p-3 sm:p-4 border border-border/60 bg-surface/30">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">تشویق‌ها</span>
-            <Award className="w-4 h-4 text-emerald-500" />
+            <span className="text-[11px] sm:text-xs text-muted-foreground">تشویق‌ها</span>
+            <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
           </div>
-          <div className="text-2xl font-bold text-emerald-600 mt-2">{positiveTotal}</div>
+          <div className="text-base sm:text-lg md:text-xl font-bold text-emerald-600 mt-1 sm:mt-2">{positiveTotal}</div>
         </Card>
 
-        <Card className="p-4 border border-border/60 bg-surface/30">
+        <Card className="p-3 sm:p-4 border border-border/60 bg-surface/30">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">تذکرات و اخطارها</span>
-            <AlertTriangle className="w-4 h-4 text-destructive" />
+            <span className="text-[11px] sm:text-xs text-muted-foreground">تذکرات</span>
+            <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-destructive" />
           </div>
-          <div className="text-2xl font-bold text-destructive mt-2">{negativeTotal}</div>
+          <div className="text-base sm:text-lg md:text-xl font-bold text-destructive mt-1 sm:mt-2">{negativeTotal}</div>
         </Card>
 
-        <Card className="p-4 border border-border/60 bg-surface/30">
+        <Card className="p-3 sm:p-4 border border-border/60 bg-surface/30">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">ارجاعات مشاوره‌ای</span>
-            <HeartHandshake className="w-4 h-4 text-purple-500" />
+            <span className="text-[11px] sm:text-xs text-muted-foreground">مشاوره‌ای</span>
+            <HeartHandshake className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-500" />
           </div>
-          <div className="text-2xl font-bold text-purple-600 mt-2">{counselingTotal}</div>
+          <div className="text-base sm:text-lg md:text-xl font-bold text-purple-600 mt-1 sm:mt-2">{counselingTotal}</div>
         </Card>
       </div>
 

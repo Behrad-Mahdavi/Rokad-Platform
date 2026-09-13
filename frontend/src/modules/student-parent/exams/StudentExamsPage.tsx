@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import {
   HelpCircle,
   Clock,
@@ -359,15 +360,11 @@ export const StudentExamsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-          <HelpCircle className="h-6 w-6 text-primary" />
-          <span>آزمون‌های آنلاین و سنجش تحصیلی (Online Exams)</span>
-        </h2>
-        <p className="text-xs text-gray-500 mt-1">
-          شرکت در آزمون‌های تستی و تشریحی آنلاین با پاسخ‌برگ هوشمند و نمایش لحظه‌ای نتایج
-        </p>
-      </div>
+      <ResponsivePageHeader
+        icon={HelpCircle}
+        title="آزمون‌های آنلاین و سنجش تحصیلی"
+        description="شرکت در آزمون‌های تستی و تشریحی آنلاین با پاسخ‌برگ هوشمند و نمایش لحظه‌ای نتایج"
+      />
 
       {/* Lesson Filter Banner */}
       {lessonIdParam && (

@@ -13,6 +13,7 @@ import {
   TableCell,
 } from '../../../components/ui/Table';
 import { MobileDataTable } from '../../../components/ui/MobileDataTable';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import {
   Activity,
   AlertTriangle,
@@ -84,15 +85,11 @@ export const PlatformOpsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-          <Activity className="h-6 w-6 text-primary" />
-          <span>عملیات، نگهداری و امنیت سراسری پلتفرم</span>
-        </h2>
-        <p className="text-xs text-gray-500 mt-1">
-          کنترل وضعیت برخط سامانه، لاگ‌های امنیتی فراتننت و مدیریت حافظه کش ردیس
-        </p>
-      </div>
+      <ResponsivePageHeader
+        icon={Activity}
+        title="عملیات، نگهداری و امنیت سراسری پلتفرم"
+        description="کنترل وضعیت برخط سامانه، لاگ‌های امنیتی فراتننت و مدیریت حافظه کش ردیس"
+      />
 
       {/* Maintenance & Cache Controls */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

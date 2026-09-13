@@ -7,6 +7,7 @@ import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import {
   Vote,
   Plus,
@@ -310,32 +311,22 @@ export const PollsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-surface/40 p-6 rounded-2xl border border-border/50 backdrop-blur-sm shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-inner">
-            <Vote className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              سامانه نظرسنجی و آراء هوشمند
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              مشارکت در تصمیم‌گیری‌ها، نظرسنجی‌های سازمانی و ارزیابی کیفیت دوره‌ها
-            </p>
-          </div>
-        </div>
-
-        {canCreatePoll && (
-          <Button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 shadow-sm font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            <span>ایجاد نظرسنجی جدید</span>
-          </Button>
-        )}
-      </div>
+      <ResponsivePageHeader
+        title="سامانه نظرسنجی و آراء هوشمند"
+        subtitle="مشارکت در تصمیم‌گیری‌ها، نظرسنجی‌های سازمانی و ارزیابی کیفیت دوره‌ها"
+        icon={<Vote className="h-5 w-5 text-primary" />}
+        actions={
+          canCreatePoll ? (
+            <Button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="w-full sm:w-auto flex items-center justify-center gap-1.5 shadow-xs font-medium text-xs h-9 sm:h-10"
+            >
+              <Plus className="w-4 h-4" />
+              <span>ایجاد نظرسنجی جدید</span>
+            </Button>
+          ) : undefined
+        }
+      />
 
       {/* Filter Tabs */}
       <div className="flex items-center gap-2 border-b border-border/60 pb-3">

@@ -17,6 +17,7 @@ import {
   TableCell,
 } from '../../../components/ui/Table';
 import { MobileDataTable } from '../../../components/ui/MobileDataTable';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import {
   Building2,
   Plus,
@@ -218,26 +219,21 @@ export const TenantsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header & CTA */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-            <Building2 className="h-6 w-6 text-primary" />
-            <span>مدیریت مدارس و مراکز آموزشی (Tenants)</span>
-          </h2>
-          <p className="text-xs text-gray-500 mt-1">
-            مشاهده، تعریف مرکز جدید، ورود نیابتی پشتیبانی و تنظیم برندینگ اختصاصی
-          </p>
-        </div>
-
-        <Button
-          variant="primary"
-          onClick={() => setIsProvisionOpen(true)}
-          className="flex items-center space-x-1.5 space-x-reverse"
-        >
-          <Plus className="h-4 w-4" />
-          <span>ثبت و راه‌اندازی مدرسه جدید</span>
-        </Button>
-      </div>
+      <ResponsivePageHeader
+        icon={Building2}
+        title="مدیریت مدارس و مراکز آموزشی"
+        description="مشاهده، تعریف مرکز جدید، ورود نیابتی پشتیبانی و تنظیم برندینگ اختصاصی"
+        actions={
+          <Button
+            variant="primary"
+            onClick={() => setIsProvisionOpen(true)}
+            className="flex items-center space-x-1.5 space-x-reverse text-xs"
+          >
+            <Plus className="h-4 w-4" />
+            <span>راه‌اندازی مدرسه جدید</span>
+          </Button>
+        }
+      />
 
       {/* Filter and Search Bar */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">

@@ -6,6 +6,7 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import { PersianDatePicker } from '../../../components/ui/PersianDatePicker';
 import {
   gregorianToJalaliStr,
@@ -163,28 +164,23 @@ export const CalendarPage: React.FC = () => {
       ) : (
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-                <CalendarIcon className="h-6 w-6 text-primary" />
-                <span>تقویم آموزشی و رویدادهای مدرسه (Academic Calendar)</span>
-              </h2>
-              <p className="text-xs text-gray-500 mt-1">
-                زمان‌بندی امتحانات، اردوهای علمی، جلسات اولیاء و مربیان و مناسبت‌های تقویمی
-              </p>
-            </div>
-
-            {isStaff && (
-              <Button
-                variant="primary"
-                onClick={() => setIsCreateOpen(true)}
-                className="flex items-center space-x-1.5 space-x-reverse"
-              >
-                <Plus className="h-4 w-4" />
-                <span>ثبت رویداد جدید</span>
-              </Button>
-            )}
-          </div>
+          <ResponsivePageHeader
+            icon={CalendarIcon}
+            title="تقویم آموزشی و رویدادهای مدرسه"
+            description="زمان‌بندی امتحانات، اردوهای علمی، جلسات اولیاء و مربیان و مناسبت‌های تقویمی"
+            actions={
+              isStaff ? (
+                <Button
+                  variant="primary"
+                  onClick={() => setIsCreateOpen(true)}
+                  className="flex items-center space-x-1.5 space-x-reverse text-xs"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>ثبت رویداد</span>
+                </Button>
+              ) : undefined
+            }
+          />
 
           {/* Events List */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

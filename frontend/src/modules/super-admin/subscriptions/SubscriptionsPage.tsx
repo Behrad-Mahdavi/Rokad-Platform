@@ -6,6 +6,7 @@ import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import {
   CreditCard,
   Plus,
@@ -140,37 +141,34 @@ export const SubscriptionsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header & Actions */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-            <CreditCard className="h-6 w-6 text-primary" />
-            <span>پلن‌های تجاری، سهمیه‌ها و فیچرفلگ‌ها</span>
-          </h2>
-          <p className="text-xs text-gray-500 mt-1">
-            تعریف سطوح اشتراک، سقف مجاز کاربران، فضای ذخیره‌سازی ابری و انتساب به مدارس
-          </p>
-        </div>
+      <ResponsivePageHeader
+        icon={CreditCard}
+        title="پلن‌های تجاری، سهمیه‌ها و فیچرفلگ‌ها"
+        description="تعریف سطوح اشتراک، سقف مجاز کاربران، فضای ذخیره‌سازی ابری و انتساب به مدارس"
+        actions={
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsAssignOpen(true)}
+              className="flex items-center space-x-1.5 space-x-reverse text-xs"
+            >
+              <ArrowRightLeft className="h-3.5 w-3.5" />
+              <span>ارتقاء / تخصیص</span>
+            </Button>
 
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setIsAssignOpen(true)}
-            className="flex items-center space-x-1.5 space-x-reverse"
-          >
-            <ArrowRightLeft className="h-4 w-4" />
-            <span>ارتقاء / تخصیص اشتراک</span>
-          </Button>
-
-          <Button
-            variant="primary"
-            onClick={() => setIsCreatePlanOpen(true)}
-            className="flex items-center space-x-1.5 space-x-reverse"
-          >
-            <Plus className="h-4 w-4" />
-            <span>ایجاد پلن جدید</span>
-          </Button>
-        </div>
-      </div>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setIsCreatePlanOpen(true)}
+              className="flex items-center space-x-1.5 space-x-reverse text-xs"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>پلن جدید</span>
+            </Button>
+          </div>
+        }
+      />
 
       {/* Pricing Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

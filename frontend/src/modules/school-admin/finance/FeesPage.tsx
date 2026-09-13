@@ -15,6 +15,7 @@ import {
   TableCell,
 } from '../../../components/ui/Table';
 import { MobileDataTable } from '../../../components/ui/MobileDataTable';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import {
   Receipt,
   Plus,
@@ -122,26 +123,21 @@ export const FeesPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header & Actions */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-            <Receipt className="h-6 w-6 text-amber-500" />
-            <span>مدیریت قراردادهای شهریه و اقساط (Student Fee Engine)</span>
-          </h2>
-          <p className="text-xs text-gray-500 mt-1">
-            تنظیم قراردادهای مالی، تقسیط هوشمند، تراکنش‌های آنلاین درگاه زرین‌پال و صدور رسید الکترونیکی
-          </p>
-        </div>
-
-        <Button
-          variant="primary"
-          onClick={() => setIsCreateContractOpen(true)}
-          className="flex items-center space-x-1.5 space-x-reverse"
-        >
-          <Plus className="h-4 w-4" />
-          <span>ثبت قرارداد شهریه جدید</span>
-        </Button>
-      </div>
+      <ResponsivePageHeader
+        icon={Receipt}
+        title="مدیریت قراردادهای شهریه و اقساط"
+        description="تنظیم قراردادهای مالی، تقسیط هوشمند، تراکنش‌های آنلاین و صدور رسید الکترونیکی"
+        actions={
+          <Button
+            variant="primary"
+            onClick={() => setIsCreateContractOpen(true)}
+            className="flex items-center space-x-1.5 space-x-reverse text-xs"
+          >
+            <Plus className="h-4 w-4" />
+            <span>ثبت قرارداد شهریه</span>
+          </Button>
+        }
+      />
 
       {/* Contracts Responsive Data View */}
       <MobileDataTable

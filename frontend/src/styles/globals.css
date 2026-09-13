@@ -104,10 +104,14 @@
     font-family: 'IRANSansXFaNum', 'IRANSansX', sans-serif !important;
     direction: rtl;
     text-align: right;
+    overflow-x: hidden;
+    max-width: 100vw;
+    -webkit-tap-highlight-color: transparent;
   }
 
   *, *::before, *::after, button, input, select, textarea, optgroup {
     font-family: 'IRANSansXFaNum', 'IRANSansX', sans-serif;
+    box-sizing: border-box;
   }
 
   code, kbd, samp, pre, .font-mono {

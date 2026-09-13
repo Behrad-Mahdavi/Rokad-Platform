@@ -11,6 +11,7 @@ import {
   TableCell,
 } from '../../../components/ui/Table';
 import { MobileDataTable } from '../../../components/ui/MobileDataTable';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import {
   FileText,
   Download,
@@ -39,24 +40,19 @@ export const StudentGradesPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-            <FileText className="h-6 w-6 text-primary shrink-0" />
-            <span>کارنامه رسمی و دفتر نمرات تحصیلی</span>
-          </h2>
-          <p className="text-xs text-gray-500 mt-1">
-            کارنامه نمرات مستمر، ارزشیابی‌های میان‌ترم، پایانی و معدل کل تحصیلی
-          </p>
-        </div>
-
-        {isPublished && (
-          <Button variant="outline" className="flex items-center space-x-1.5 space-x-reverse">
-            <Download className="h-4 w-4" />
-            <span>دانلود کارنامه رسمی (PDF)</span>
-          </Button>
-        )}
-      </div>
+      <ResponsivePageHeader
+        icon={FileText}
+        title="کارنامه رسمی و دفتر نمرات تحصیلی"
+        description="کارنامه نمرات مستمر، ارزشیابی‌های میان‌ترم، پایانی و معدل کل تحصیلی"
+        actions={
+          isPublished ? (
+            <Button variant="outline" size="sm" className="flex items-center space-x-1.5 space-x-reverse text-xs">
+              <Download className="h-3.5 w-3.5" />
+              <span>دانلود کارنامه رسمی (PDF)</span>
+            </Button>
+          ) : undefined
+        }
+      />
 
       {!isPublished ? (
         /* Unpublished state: strictly hidden until published by school manager */

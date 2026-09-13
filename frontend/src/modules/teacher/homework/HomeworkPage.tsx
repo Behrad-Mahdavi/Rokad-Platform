@@ -9,6 +9,7 @@ import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 
 import {
   Table,
@@ -230,26 +231,21 @@ export const HomeworkPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header & CTA */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-            <FileCheck className="h-6 w-6 text-primary" />
-            <span>مدیریت و تصحیح تکالیف کلاسی (Homework Hub)</span>
-          </h2>
-          <p className="text-xs text-gray-500 mt-1">
-            تعریف تکالیف درسی، پیگیری مهلت تحویل، بررسی پاسخ‌ها و ثبت نمره و بازخورد
-          </p>
-        </div>
-
-        <Button
-          variant="primary"
-          onClick={() => setIsCreateOpen(true)}
-          className="flex items-center space-x-1.5 space-x-reverse"
-        >
-          <Plus className="h-4 w-4" />
-          <span>تعریف تکلیف جدید</span>
-        </Button>
-      </div>
+      <ResponsivePageHeader
+        icon={FileCheck}
+        title="مدیریت و تصحیح تکالیف کلاسی"
+        description="تعریف تکالیف درسی، پیگیری مهلت تحویل، بررسی پاسخ‌ها و ثبت نمره و بازخورد"
+        actions={
+          <Button
+            variant="primary"
+            onClick={() => setIsCreateOpen(true)}
+            className="flex items-center space-x-1.5 space-x-reverse text-xs"
+          >
+            <Plus className="h-4 w-4" />
+            <span>تعریف تکلیف جدید</span>
+          </Button>
+        }
+      />
 
       {/* Filter Banner */}
       {(classroomIdParam || lessonIdParam) && (

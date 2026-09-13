@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import {
   BarChart3,
   TrendingUp,
@@ -73,59 +74,55 @@ export const ReportsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-          <BarChart3 className="h-6 w-6 text-primary" />
-          <span>گزارش‌های جامع و تحلیلی هنرستان (Comprehensive Reports)</span>
-        </h2>
-        <p className="text-xs text-gray-500 mt-1">
-          تراز مالی وصول شهریه، آمار تجمیعی حضور و غیاب، کارنامه‌های پودمانی و فایل پرداخت پایا بانکی
-        </p>
-      </div>
+      <ResponsivePageHeader
+        icon={BarChart3}
+        title="گزارش‌های جامع و تحلیلی هنرستان"
+        description="تراز مالی وصول شهریه، آمار تجمیعی حضور و غیاب، کارنامه‌های پودمانی و فایل پرداخت پایا بانکی"
+      />
 
       {downloadSuccess && (
-        <div className="p-4 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200 flex items-center space-x-2 space-x-reverse text-xs font-bold">
-          <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+        <div className="p-3.5 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200 flex items-center space-x-2 space-x-reverse text-xs font-bold">
+          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
           <span>{downloadSuccess}</span>
         </div>
       )}
 
       {/* KPI Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6 border hover:border-amber-500 transition-all">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs text-gray-500 font-medium">درصد وصول شهریه ترم جاری</div>
-            <Receipt className="h-5 w-5 text-amber-500" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <Card className="p-4 sm:p-5 border hover:border-amber-500 transition-all">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="text-xs text-gray-500 font-medium">وصول شهریه ترم جاری</div>
+            <Receipt className="h-4 w-4 text-amber-500" />
           </div>
-          <div className="text-3xl font-extrabold text-ink-darker">۷۸٪</div>
-          <div className="w-full bg-gray-100 h-2 rounded-full mt-3 overflow-hidden">
-            <div className="bg-amber-500 h-2 rounded-full" style={{ width: '78%' }} />
+          <div className="text-2xl font-extrabold text-ink-darker">۷۸٪</div>
+          <div className="w-full bg-gray-100 h-1.5 rounded-full mt-2.5 overflow-hidden">
+            <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: '78%' }} />
           </div>
-          <p className="text-[11px] text-gray-500 mt-2">۲۲٪ مانده اقساط در موعد بهمن‌ماه</p>
+          <p className="text-[11px] text-gray-500 mt-1.5">۲۲٪ مانده اقساط در موعد بهمن‌ماه</p>
         </Card>
 
-        <Card className="p-6 border hover:border-primary transition-all">
-          <div className="flex items-center justify-between mb-2">
+        <Card className="p-4 sm:p-5 border hover:border-primary transition-all">
+          <div className="flex items-center justify-between mb-1.5">
             <div className="text-xs text-gray-500 font-medium">میانگین حضور هنرجویان</div>
-            <CalendarCheck className="h-5 w-5 text-primary" />
+            <CalendarCheck className="h-4 w-4 text-primary" />
           </div>
-          <div className="text-3xl font-extrabold text-emerald-700">۹۶.۴٪</div>
-          <div className="w-full bg-gray-100 h-2 rounded-full mt-3 overflow-hidden">
-            <div className="bg-primary h-2 rounded-full" style={{ width: '96.4%' }} />
+          <div className="text-2xl font-extrabold text-emerald-700">۹۶.۴٪</div>
+          <div className="w-full bg-gray-100 h-1.5 rounded-full mt-2.5 overflow-hidden">
+            <div className="bg-primary h-1.5 rounded-full" style={{ width: '96.4%' }} />
           </div>
-          <p className="text-[11px] text-emerald-600 mt-2 font-medium">انضباط تحصیلی و کارگاهی مطلوب</p>
+          <p className="text-[11px] text-emerald-600 mt-1.5 font-medium">انضباط تحصیلی مطلوب</p>
         </Card>
 
-        <Card className="p-6 border hover:border-blue-500 transition-all">
-          <div className="flex items-center justify-between mb-2">
+        <Card className="p-4 sm:p-5 border hover:border-blue-500 transition-all">
+          <div className="flex items-center justify-between mb-1.5">
             <div className="text-xs text-gray-500 font-medium">میانگین معدل هنرستان</div>
-            <TrendingUp className="h-5 w-5 text-blue-500" />
+            <TrendingUp className="h-4 w-4 text-blue-500" />
           </div>
-          <div className="text-3xl font-extrabold text-primary">۱۸.۷۵</div>
-          <div className="w-full bg-gray-100 h-2 rounded-full mt-3 overflow-hidden">
-            <div className="bg-blue-500 h-2 rounded-full" style={{ width: '93.7%' }} />
+          <div className="text-2xl font-extrabold text-primary">۱۸.۷۵</div>
+          <div className="w-full bg-gray-100 h-1.5 rounded-full mt-2.5 overflow-hidden">
+            <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: '93.7%' }} />
           </div>
-          <p className="text-[11px] text-blue-600 mt-2 font-medium">+۰.۶۵ رشد نسبت به نیم‌سال قبل</p>
+          <p className="text-[11px] text-blue-600 mt-1.5 font-medium">+۰.۶۵ رشد نسبت به قبل</p>
         </Card>
       </div>
 

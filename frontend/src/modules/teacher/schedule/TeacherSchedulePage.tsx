@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import { toPersianDigits, formatJalaliDisplay } from '../../../utils/jalali';
 import {
   CalendarDays,
@@ -139,49 +140,40 @@ export const TeacherSchedulePage: React.FC = () => {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-surface/40 p-6 rounded-2xl border border-border/50 backdrop-blur-sm shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-inner">
-            <CalendarDays className="w-6 h-6" />
+      <ResponsivePageHeader
+        icon={CalendarDays}
+        title="برنامه هفتگی تدریس من"
+        description="مشاهده زنگ‌ها و ساعات کلاسی هفتگی به صورت اسلاتی و بر اساس روزهای هفته"
+        badge={
+          <Badge variant="college" className="text-[11px]">
+            استاد: {user?.firstName} {user?.lastName}
+          </Badge>
+        }
+        actions={
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setViewMode('TAB')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                viewMode === 'TAB'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              نمای روزانه (تبی)
+            </button>
+            <button
+              onClick={() => setViewMode('WEEKLY')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                viewMode === 'WEEKLY'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              نمای کل هفته
+            </button>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-foreground tracking-tight">
-                برنامه هفتگی تدریس من
-              </h1>
-              <Badge variant="college">
-                استاد: {user?.firstName} {user?.lastName}
-              </Badge>
-            </div>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              مشاهده زنگ‌ها و ساعات کلاسی هفتگی به صورت اسلاتی و بر اساس روزهای هفته
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setViewMode('TAB')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-              viewMode === 'TAB'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'bg-surface/50 text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            نمای روزانه (تبی)
-          </button>
-          <button
-            onClick={() => setViewMode('WEEKLY')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-              viewMode === 'WEEKLY'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'bg-surface/50 text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            نمای کل هفته
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* KPI Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

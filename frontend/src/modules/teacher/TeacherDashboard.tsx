@@ -70,16 +70,16 @@ export const TeacherDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="relative overflow-hidden bg-gradient-to-l from-primary/10 via-primary-light/20 to-white p-6 rounded-2xl border border-primary/20 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="relative overflow-hidden bg-gradient-to-l from-primary/10 via-primary-light/20 to-white p-3.5 sm:p-5 md:p-6 rounded-2xl border border-primary/20 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 space-x-reverse mb-1">
-            <BookOpen className="h-6 w-6 text-primary shrink-0" />
-            <span className="text-xl font-bold text-ink-darker">
+            <BookOpen className="h-5 w-5 text-primary shrink-0" />
+            <span className="text-base sm:text-lg font-bold text-ink-darker">
               خوش آمدید، {user?.firstName} {user?.lastName}
             </span>
-            <Badge variant="male">هنرآموز و دبیر تخصصی کامپیوتر</Badge>
+            <Badge variant="male" className="text-[11px]">هنرآموز تخصصی</Badge>
           </div>
-          <p className="text-xs text-gray-500">
+          <p className="text-[11px] sm:text-xs text-gray-500">
             برنامه کارگاهی امروز، پروژه‌های ارسالی هنرجویان و پودمان‌های ارزشیابی تحصیلی
           </p>
         </div>
@@ -106,48 +106,48 @@ export const TeacherDashboard: React.FC = () => {
       </div>
 
       {/* 4 Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-5 border hover:border-primary transition-all">
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+        <Card className="p-3.5 sm:p-5 border hover:border-primary transition-all">
+          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
             <span>کلاس‌های امروز</span>
             <CalendarDays className="h-4 w-4 text-primary" />
           </div>
-          <div className="text-2xl font-extrabold text-ink-darker">۳ جلسه</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-ink-darker">۳ جلسه</div>
           <p className="text-[11px] text-primary font-medium mt-1">جلسه فعال: کلاس ۱۰۲</p>
         </Card>
 
-        <Card className="p-5 border hover:border-amber-500 transition-all">
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+        <Card className="p-3.5 sm:p-5 border hover:border-amber-500 transition-all">
+          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
             <span>تکالیف در انتظار تصحیح</span>
             <FileCheck className="h-4 w-4 text-amber-500" />
           </div>
-          <div className="text-2xl font-extrabold text-ink-darker">۱۲ ارسال</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-ink-darker">۱۲ ارسال</div>
           <p className="text-[11px] text-amber-600 font-medium mt-1">۳ تکلیف مهلت امروز</p>
         </Card>
 
-        <Card className="p-5 border hover:border-blue-500 transition-all">
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+        <Card className="p-3.5 sm:p-5 border hover:border-blue-500 transition-all">
+          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
             <span>آزمون آنلاین فعال</span>
             <HelpCircle className="h-4 w-4 text-blue-500" />
           </div>
-          <div className="text-2xl font-extrabold text-ink-darker">۱ آزمون</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-ink-darker">۱ آزمون</div>
           <p className="text-[11px] text-blue-600 font-medium mt-1">۲۸ شرکت‌کننده برخط</p>
         </Card>
 
-        <Card className="p-5 border hover:border-purple-500 transition-all">
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+        <Card className="p-3.5 sm:p-5 border hover:border-purple-500 transition-all">
+          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
             <span>میانگین نمرات کلاس‌ها</span>
             <Award className="h-4 w-4 text-purple-500" />
           </div>
-          <div className="text-2xl font-extrabold text-purple-700">۱۹.۰۵</div>
+          <div className="text-xl sm:text-2xl font-extrabold text-purple-700">۱۹.۰۵</div>
           <p className="text-[11px] text-emerald-600 font-medium mt-1">رشد ممتاز آموزشی</p>
         </Card>
       </div>
 
       {/* Main Row: Schedule & Submissions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Today's Schedule Card */}
-        <Card className="p-6">
+        <Card className="p-4 sm:p-5 md:p-6">
           <div className="flex justify-between items-center mb-4">
             <div>
               <h3 className="font-bold text-sm text-ink-darker">برنامه تدریس امروز شما</h3>

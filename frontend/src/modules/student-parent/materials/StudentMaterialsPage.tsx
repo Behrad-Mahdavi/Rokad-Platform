@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import {
   BookOpen,
   Download,
@@ -55,27 +56,22 @@ export const StudentMaterialsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header & Search */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-            <BookOpen className="h-6 w-6 text-primary" />
-            <span>محتوای آموزشی، جزوات و ویدیوها (Learning Materials)</span>
-          </h2>
-          <p className="text-xs text-gray-500 mt-1">
-            دانلود مستقیم جزوات درسی، نمونه سوالات و ویدیوهای بارگذاری‌شده توسط معلمان
-          </p>
-        </div>
-
-        <div className="w-full md:w-72">
-          <input
-            type="text"
-            placeholder="جستجو در عنوان یا نام درس..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-10 px-3 text-xs rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-        </div>
-      </div>
+      <ResponsivePageHeader
+        icon={BookOpen}
+        title="محتوای آموزشی، جزوات و ویدیوها"
+        description="دانلود مستقیم جزوات درسی، نمونه سوالات و ویدیوهای بارگذاری‌شده توسط معلمان"
+        actions={
+          <div className="w-full sm:w-64">
+            <input
+              type="text"
+              placeholder="جستجو در عنوان یا درس..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full h-8.5 px-3 text-xs rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+        }
+      />
 
       {/* Lesson Filter Banner */}
       {lessonIdParam && (

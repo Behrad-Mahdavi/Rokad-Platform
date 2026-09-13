@@ -7,6 +7,7 @@ import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import { PersianDatePicker } from '../../../components/ui/PersianDatePicker';
 import { formatJalaliDisplay, toPersianDigits } from '../../../utils/jalali';
 import {
@@ -206,44 +207,35 @@ export const ParentVisitsPage: React.FC = () => {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-surface/40 p-6 rounded-2xl border border-border/50 backdrop-blur-sm shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 shadow-inner">
-            <UserCheck className="w-6 h-6" />
+      <ResponsivePageHeader
+        icon={UserCheck}
+        title="سامانه ملاقات اولیا و معلمان"
+        description="رزرو وقت ملاقات حضوری یا جلسات برخط با دبیران، هنرآموزان و مشاوران مدرسه"
+        actions={
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setActiveTab('AVAILABLE')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                activeTab === 'AVAILABLE'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              نوبت‌های آزاد
+            </button>
+            <button
+              onClick={() => setActiveTab('MY_BOOKINGS')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                activeTab === 'MY_BOOKINGS'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              نوبت‌های من ({myBookings.filter((b) => b.status === 'CONFIRMED').length})
+            </button>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              سامانه ملاقات اولیا و معلمان
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              رزرو وقت ملاقات حضوری یا جلسات برخط با دبیران، هنرآموزان و مشاوران مدرسه
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setActiveTab('AVAILABLE')}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              activeTab === 'AVAILABLE'
-                ? 'bg-purple-600 text-white shadow-sm'
-                : 'bg-surface/50 text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            نوبت‌های آزاد
-          </button>
-          <button
-            onClick={() => setActiveTab('MY_BOOKINGS')}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              activeTab === 'MY_BOOKINGS'
-                ? 'bg-purple-600 text-white shadow-sm'
-                : 'bg-surface/50 text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            نوبت‌های رزروشده من ({myBookings.filter((b) => b.status === 'CONFIRMED').length})
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Content Tabs */}
       {activeTab === 'AVAILABLE' ? (

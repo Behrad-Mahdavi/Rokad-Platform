@@ -6,6 +6,7 @@ import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import {
   School,
   FileText,
@@ -178,24 +179,24 @@ export const SchoolProfilePage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-            <School className="h-6 w-6 text-primary" />
-            <span>پروفایل و هویت مدرسه (School Profile & Blogs)</span>
-          </h2>
-          <p className="text-xs text-gray-500 mt-1">
-            مدیریت اطلاعات عمومی، پیام مدیریت، شبکه‌های اجتماعی و اخبار و دستاوردهای رسمی مدرسه
-          </p>
-        </div>
-
-        {activeTab === 'BLOGS' && (
-          <Button variant="primary" onClick={() => setIsBlogModalOpen(true)}>
-            <Plus className="h-4 w-4 ml-1.5" />
-            <span>انتشار مقاله یا خبر جدید</span>
-          </Button>
-        )}
-      </div>
+      <ResponsivePageHeader
+        icon={School}
+        title="پروفایل و هویت مدرسه"
+        description="مدیریت اطلاعات عمومی، پیام مدیریت، شبکه‌های اجتماعی و اخبار و دستاوردهای رسمی مدرسه"
+        actions={
+          activeTab === 'BLOGS' ? (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setIsBlogModalOpen(true)}
+              className="flex items-center space-x-1.5 space-x-reverse text-xs"
+            >
+              <Plus className="h-4 w-4 ml-1" />
+              <span>انتشار خبر جدید</span>
+            </Button>
+          ) : undefined
+        }
+      />
 
       {/* Tabs */}
       <div className="flex space-x-2 space-x-reverse border-b border-gray-200">

@@ -4,6 +4,7 @@ import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import { useAuthStore } from '../../../lib/auth/auth-store';
 import {
   CalendarDays,
@@ -270,78 +271,71 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
   return (
     <div className="space-y-6">
       {/* Header & Classroom Selector */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-gray-200 shadow-xs print:hidden">
-        <div>
-          <div className="flex items-center space-x-2 space-x-reverse">
-            <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-              <CalendarDays className="h-7 w-7 text-primary" />
-              <span>
-                {isStudent
-                  ? 'برنامه هفتگی کلاس من'
-                  : 'برنامه هفتگی و ساعات درسی کلاس‌ها (Weekly Timetable)'}
-              </span>
-            </h2>
+      <ResponsivePageHeader
+        icon={CalendarDays}
+        title={isStudent ? 'برنامه هفتگی کلاس من' : 'برنامه هفتگی و ساعات درسی'}
+        description={
+          canManageSchedule
+            ? 'تنظیم ساعات ۶ زنگ درسی روزانه (شنبه تا پنج‌شنبه)، تخصیص درس و دبیر و بررسی تداخل'
+            : 'مشاهده ساعات ۶ زنگ درسی روزانه، اسامی دروس و هنرآموزان مدرس'
+        }
+        badge={
+          isStudent ? (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 text-[11px] font-bold">
+              <GraduationCap className="h-3.5 w-3.5" />
+              <span>هنرجو: {currentUser?.firstName} {currentUser?.lastName}</span>
+            </span>
+          ) : !canManageSchedule ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-semibold">
+              <Lock className="h-3 w-3 text-amber-600" />
+              <span>حالت فقط مشاهده {isParent ? '(اولیاء)' : ''}</span>
+            </span>
+          ) : null
+        }
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
             {isStudent ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 text-primary border border-primary/20 text-xs font-bold">
-                <GraduationCap className="h-3.5 w-3.5" />
-                <span>هنرجو: {currentUser?.firstName} {currentUser?.lastName}</span>
-              </span>
-            ) : !canManageSchedule ? (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold">
-                <Lock className="h-3 w-3 text-amber-600" />
-                <span>حالت فقط مشاهده {isParent ? '(اولیاء گرامی)' : '(مشاهده)'}</span>
-              </span>
+              selectedClassroom ? (
+                <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 text-primary px-2.5 py-1.5 rounded-xl text-xs font-bold">
+                  <Building2 className="h-3.5 w-3.5 text-primary" />
+                  <span>کلاس شما: {selectedClassroom.name}</span>
+                </div>
+              ) : null
+            ) : isParent && classrooms.length <= 1 ? (
+              selectedClassroom ? (
+                <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 text-primary px-2.5 py-1.5 rounded-xl text-xs font-bold">
+                  <Building2 className="h-3.5 w-3.5 text-primary" />
+                  <span>کلاس فرزند شما: {selectedClassroom.name}</span>
+                </div>
+              ) : null
+            ) : classrooms.length > 0 ? (
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <label className="text-xs font-bold text-ink-dark">
+                  {isParent ? 'کلاس فرزند:' : 'کلاس درس:'}
+                </label>
+                <select
+                  value={selectedClassroomId}
+                  onChange={(e) => setSelectedClassroomId(e.target.value)}
+                  className="h-8.5 rounded-lg border border-gray-300 bg-gray-50 px-2.5 text-xs font-bold text-ink-dark focus:outline-none focus:ring-2 focus:ring-primary min-w-[160px]"
+                >
+                  {classrooms.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
             ) : null}
+
+            {classrooms.length > 0 && (
+              <Button variant="outline" size="sm" onClick={handlePrint} className="flex items-center gap-1.5 text-xs">
+                <Printer className="h-3.5 w-3.5" />
+                <span>چاپ برنامه</span>
+              </Button>
+            )}
           </div>
-          <p className="text-xs text-gray-500 mt-1">
-            {canManageSchedule
-              ? 'تنظیم ساعات ۶ زنگ درسی روزانه (شنبه تا پنج‌شنبه)، تخصیص درس و دبیر و بررسی تداخل برنامه'
-              : 'مشاهده ساعات ۶ زنگ درسی روزانه (شنبه تا پنج‌شنبه)، اسامی دروس و اساتید مدرس'}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          {isStudent ? (
-            selectedClassroom ? (
-              <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary px-3.5 py-2 rounded-xl text-xs font-bold">
-                <Building2 className="h-4 w-4 text-primary" />
-                <span>کلاس شما: {selectedClassroom.name} {selectedClassroom.code ? `(${selectedClassroom.code})` : ''}</span>
-              </div>
-            ) : null
-          ) : isParent && classrooms.length <= 1 ? (
-            selectedClassroom ? (
-              <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary px-3.5 py-2 rounded-xl text-xs font-bold">
-                <Building2 className="h-4 w-4 text-primary" />
-                <span>کلاس فرزند شما: {selectedClassroom.name}</span>
-              </div>
-            ) : null
-          ) : classrooms.length > 0 ? (
-            <div className="flex items-center space-x-2 space-x-reverse">
-              <label className="text-xs font-bold text-ink-dark">
-                {isParent ? 'انتخاب کلاس فرزند:' : 'انتخاب کلاس درس:'}
-              </label>
-              <select
-                value={selectedClassroomId}
-                onChange={(e) => setSelectedClassroomId(e.target.value)}
-                className="h-10 rounded-lg border border-gray-300 bg-gray-50 px-3 text-xs font-bold text-ink-dark focus:outline-none focus:ring-2 focus:ring-primary min-w-[200px]"
-              >
-                {classrooms.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} ({c.code})
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : null}
-
-          {classrooms.length > 0 && (
-            <Button variant="outline" size="sm" onClick={handlePrint} className="flex items-center gap-1.5">
-              <Printer className="h-4 w-4" />
-              <span>چاپ برنامه هفتگی</span>
-            </Button>
-          )}
-        </div>
-      </div>
+        }
+      />
 
       {/* Empty State when student or user has no classroom */}
       {classrooms.length === 0 && !isLoading && (

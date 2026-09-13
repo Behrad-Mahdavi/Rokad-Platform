@@ -15,6 +15,7 @@ import {
   TableCell,
 } from '../../../components/ui/Table';
 import { MobileDataTable } from '../../../components/ui/MobileDataTable';
+import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import {
   Wallet,
   Plus,
@@ -138,32 +139,27 @@ export const PayrollPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header & CTA */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-ink-darker flex items-center space-x-2 space-x-reverse">
-            <Wallet className="h-6 w-6 text-primary" />
-            <span>موتور حقوق و دستمزد پرسنل (Staff Payroll Engine)</span>
-          </h2>
-          <p className="text-xs text-gray-500 mt-1">
-            تعریف پرونده حقوقی پرسنل، اطلاعات شبا، صدور خودکار فیش ماهیانه و ثبت شماره پرداخت پایا
-          </p>
-        </div>
-
-        <div className="flex gap-2">
-          {activeTab === 'SLIPS' && (
-            <Button variant="primary" onClick={() => setIsGenerateSlipOpen(true)}>
-              <Plus className="h-4 w-4 ml-1" />
-              <span>صدور فیش حقوقی جدید</span>
-            </Button>
-          )}
-          {activeTab === 'PROFILES' && (
-            <Button variant="primary" onClick={() => setIsProfileModalOpen(true)}>
-              <Plus className="h-4 w-4 ml-1" />
-              <span>تعریف پروفایل حقوقی</span>
-            </Button>
-          )}
-        </div>
-      </div>
+      <ResponsivePageHeader
+        icon={Wallet}
+        title="موتور حقوق و دستمزد پرسنل"
+        description="تعریف پرونده حقوقی پرسنل، اطلاعات شبا، صدور خودکار فیش ماهیانه و ثبت شماره پرداخت پایا"
+        actions={
+          <div className="flex gap-2">
+            {activeTab === 'SLIPS' && (
+              <Button variant="primary" size="sm" onClick={() => setIsGenerateSlipOpen(true)} className="text-xs">
+                <Plus className="h-4 w-4 ml-1" />
+                <span>صدور فیش حقوقی</span>
+              </Button>
+            )}
+            {activeTab === 'PROFILES' && (
+              <Button variant="primary" size="sm" onClick={() => setIsProfileModalOpen(true)} className="text-xs">
+                <Plus className="h-4 w-4 ml-1" />
+                <span>تعریف پروفایل حقوقی</span>
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       {/* Tabs */}
       <div className="flex space-x-2 space-x-reverse border-b border-gray-200">
