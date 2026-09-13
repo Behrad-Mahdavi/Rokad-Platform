@@ -68,7 +68,7 @@ export const ParentDashboard: React.FC = () => {
             <span className="text-xs text-gray-500">مانده شهریه سال تحصیلی</span>
             <CreditCard className="h-5 w-5 text-amber-500" />
           </div>
-          <div className="text-2xl font-extrabold text-ink-darker font-mono">
+          <div className="text-2xl font-extrabold text-ink-darker">
             ۱۰ <span className="text-xs font-normal text-gray-500">میلیون تومان</span>
           </div>
           <div className="mt-3 flex items-center justify-between text-xs">
@@ -91,7 +91,7 @@ export const ParentDashboard: React.FC = () => {
             <span className="text-xs text-gray-500">وضعیت تردد و حضور</span>
             <CalendarDays className="h-5 w-5 text-primary" />
           </div>
-          <div className="text-2xl font-extrabold text-emerald-700 font-mono">
+          <div className="text-2xl font-extrabold text-emerald-700">
             حضور منظم (۱۰۰٪)
           </div>
           <div className="mt-3 text-xs text-gray-500 space-y-1">
@@ -114,7 +114,7 @@ export const ParentDashboard: React.FC = () => {
             <span className="text-xs text-gray-500">معدل و پیشرفت درسی</span>
             <Award className="h-5 w-5 text-blue-500" />
           </div>
-          <div className="text-2xl font-extrabold text-primary font-mono">
+          <div className="text-2xl font-extrabold text-primary">
             ۱۹.۳۱
           </div>
           <div className="mt-3 text-xs text-gray-500 space-y-1">

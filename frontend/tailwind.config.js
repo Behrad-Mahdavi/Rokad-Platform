@@ -120,6 +120,7 @@ export default {
       },
       fontFamily: {
         sans: ['IRANSansXFaNum', 'IRANSansX', 'Vazirmatn', 'system-ui', 'sans-serif'],
+        mono: ['IRANSansXFaNum', 'IRANSansX', 'Vazirmatn', 'monospace'],
       },
       fontSize: {
         xs: ['10px', '15px'],
