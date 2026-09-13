@@ -200,6 +200,38 @@ export class HomeworkService {
   }
 
   /**
+   * Get all submissions for a homework
+   */
+  async getHomeworkSubmissions(tenantId: string, homeworkId: string) {
+    const homework = await this.prisma.homework.findFirst({
+      where: { id: homeworkId, tenantId },
+    });
+    if (!homework) {
+      throw new NotFoundException('تکلیف یافت نشد');
+    }
+
+    return this.prisma.homeworkSubmission.findMany({
+      where: { homeworkId, tenantId },
+      include: {
+        student: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+                phone: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { submittedAt: 'desc' },
+    });
+  }
+
+  /**
    * Submit homework response by student
    */
   async submitHomework(

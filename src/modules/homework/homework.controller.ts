@@ -107,6 +107,19 @@ export class HomeworkController {
     return this.homeworkService.getHomeworkDetails(effectiveTenantId, homeworkId);
   }
 
+  @Get(':id/submissions')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @RequirePermissions(AppPermission.HOMEWORK_READ)
+  @ApiOperation({ summary: 'لیست تمام پاسخ‌های ارسالی برای یک تکلیف' })
+  async getHomeworkSubmissions(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') homeworkId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.homeworkService.getHomeworkSubmissions(effectiveTenantId, homeworkId);
+  }
+
   @Post(':id/submit')
   @Roles(Role.STUDENT)
   @ApiOperation({ summary: 'ارسال پاسخ تکلیف توسط دانش‌آموز' })

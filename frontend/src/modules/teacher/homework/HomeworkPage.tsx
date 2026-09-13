@@ -35,6 +35,8 @@ import {
   MessageSquare,
   Award,
   AlertCircle,
+  Paperclip,
+  ExternalLink,
 } from 'lucide-react';
 
 export const HomeworkPage: React.FC = () => {
@@ -77,9 +79,15 @@ export const HomeworkPage: React.FC = () => {
         apiClient.get('/classes/lessons'),
       ]);
 
-      const hwData = hwRes.status === 'fulfilled' ? hwRes.value.data || [] : [];
-      const classData = classRes.status === 'fulfilled' ? classRes.value.data || [] : [];
-      const lessonData = lessonRes.status === 'fulfilled' ? lessonRes.value.data || [] : [];
+      const hwData = hwRes.status === 'fulfilled'
+        ? (Array.isArray(hwRes.value) ? hwRes.value : (hwRes.value?.data || []))
+        : [];
+      const classData = classRes.status === 'fulfilled'
+        ? (Array.isArray(classRes.value) ? classRes.value : (classRes.value?.data || []))
+        : [];
+      const lessonData = lessonRes.status === 'fulfilled'
+        ? (Array.isArray(lessonRes.value) ? lessonRes.value : (lessonRes.value?.data || []))
+        : [];
 
       setHomeworkList(hwData);
       setClassrooms(classData);
@@ -148,10 +156,19 @@ export const HomeworkPage: React.FC = () => {
     setIsSubmissionsOpen(true);
     setIsLoadingSubs(true);
     try {
-      const res = await apiClient.get(`/homework/${hw.id}/submissions`);
-      setSubmissions(res.data || []);
+      const res: any = await apiClient.get(`/homework/${hw.id}/submissions`);
+      const subs = Array.isArray(res) ? res : (res?.data || []);
+      setSubmissions(subs);
     } catch (err) {
-      console.error('Failed to load submissions', err);
+      console.error('Failed to load submissions, falling back to homework details', err);
+      try {
+        const detailRes: any = await apiClient.get(`/homework/${hw.id}`);
+        const details = Array.isArray(detailRes) ? detailRes : (detailRes?.data || detailRes);
+        setSubmissions(details?.submissions || []);
+      } catch (innerErr) {
+        console.error('Failed to load homework details fallback', innerErr);
+        setSubmissions([]);
+      }
     } finally {
       setIsLoadingSubs(false);
     }
@@ -164,7 +181,10 @@ export const HomeworkPage: React.FC = () => {
         feedback: feedbackInput,
       });
       setGradingSubId(null);
-      handleViewSubmissions(selectedHomework);
+      if (selectedHomework) {
+        handleViewSubmissions(selectedHomework);
+      }
+      fetchData();
     } catch (err) {
       console.error('Failed to save grade', err);
     }
@@ -377,8 +397,20 @@ export const HomeworkPage: React.FC = () => {
               {submissions.map((sub) => (
                 <div key={sub.id} className="p-4 rounded-xl border bg-gray-50 text-xs space-y-3">
                   <div className="flex justify-between items-center">
-                    <div className="font-bold text-sm text-ink-darker">
-                      {sub.student?.user?.firstName} {sub.student?.user?.lastName}
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-xs">
+                        {sub.student?.user?.firstName?.[0] || 'د'}
+                      </div>
+                      <div>
+                        <div className="font-bold text-sm text-ink-darker">
+                          {sub.student?.user?.firstName || 'دانش‌آموز'} {sub.student?.user?.lastName || ''}
+                        </div>
+                        {sub.submittedAt && (
+                          <div className="text-[11px] text-gray-400">
+                            ارسال شده: {formatJalaliDisplay(sub.submittedAt)}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div>
                       {sub.score !== null && sub.score !== undefined ? (
@@ -389,9 +421,34 @@ export const HomeworkPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <p className="bg-white p-3 rounded-lg border text-gray-700 leading-relaxed">
+                  <p className="bg-white p-3 rounded-lg border text-gray-700 leading-relaxed whitespace-pre-wrap">
                     {sub.content || 'پاسخ متنی ارسال نشده است.'}
                   </p>
+
+                  {sub.attachmentUrls && sub.attachmentUrls.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {sub.attachmentUrls.map((url: string, idx: number) => (
+                        <a
+                          key={idx}
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs hover:bg-blue-100 transition-colors"
+                        >
+                          <Paperclip className="h-3.5 w-3.5" />
+                          <span>پیوست {idx + 1}</span>
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+
+                  {sub.feedback && gradingSubId !== sub.id && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-xs text-amber-900">
+                      <span className="font-bold ml-1">بازخورد دبیر:</span>
+                      {sub.feedback}
+                    </div>
+                  )}
 
                   {/* Grading Inline Form */}
                   {gradingSubId === sub.id ? (

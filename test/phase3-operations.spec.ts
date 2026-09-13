@@ -198,6 +198,21 @@ describe('Rokad Multi-Tenant Platform — Phase 3 Daily Academic Operations Test
       createdSubmissionId = res.body.data.id;
     });
 
+    it('GET /api/v1/homework/:id/submissions should allow teacher to view student submissions', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/api/v1/homework/${createdHomeworkId}/submissions`)
+        .set('Authorization', `Bearer ${boysTeacherToken}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(res.body.data.length).toBeGreaterThanOrEqual(1);
+      const sub = res.body.data.find((s: any) => s.id === createdSubmissionId);
+      expect(sub).toBeDefined();
+      expect(sub.content).toBe('پاسخ کلیه تمرینات ارسال شد');
+      expect(sub.student?.user?.firstName).toBeDefined();
+    });
+
     it('PATCH /api/v1/homework/submissions/:id/grade should allow teacher to grade and provide feedback', async () => {
       const res = await request(app.getHttpServer())
         .patch(`/api/v1/homework/submissions/${createdSubmissionId}/grade`)
