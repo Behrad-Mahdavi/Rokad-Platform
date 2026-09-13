@@ -84,10 +84,10 @@ describe('Rokad Multi-Tenant Platform — Phase 3 Daily Academic Operations Test
     testClassroomId = classrooms.body.data[0].id;
     testAcademicYearId = classrooms.body.data[0].academicYearId;
 
-    const lessons = await request(app.getHttpServer())
+    const teacherLessons = await request(app.getHttpServer())
       .get('/api/v1/classes/lessons')
-      .set('Authorization', `Bearer ${boysAdminToken}`);
-    testLessonId = lessons.body.data[0].id;
+      .set('Authorization', `Bearer ${boysTeacherToken}`);
+    testLessonId = teacherLessons.body.data[0].id;
 
     const students = await request(app.getHttpServer())
       .get('/api/v1/members/students')
@@ -165,6 +165,32 @@ describe('Rokad Multi-Tenant Platform — Phase 3 Daily Academic Operations Test
   describe('2. Homework & Grading Workflow', () => {
     let createdHomeworkId: string;
     let createdSubmissionId: string;
+
+    it('POST /api/v1/homework should reject teacher creating homework for unassigned lesson (403)', async () => {
+      const allLessons = await request(app.getHttpServer())
+        .get('/api/v1/classes/lessons')
+        .set('Authorization', `Bearer ${boysAdminToken}`);
+      const unassignedLesson = allLessons.body.data.find(
+        (l: any) => l.name === 'تجارت الکترونیک و امنیت شبکه',
+      );
+
+      if (unassignedLesson) {
+        const res = await request(app.getHttpServer())
+          .post('/api/v1/homework')
+          .set('Authorization', `Bearer ${boysTeacherToken}`)
+          .send({
+            classroomId: testClassroomId,
+            lessonId: unassignedLesson.id,
+            title: 'تکلیف درس غیرمجاز',
+            description: 'تست امنیت دسترسی دبیر',
+            dueDate: '2026-09-30T23:59:59.000Z',
+            maxScore: 20,
+          })
+          .expect(403);
+
+        expect(res.body.message).toContain('شما فقط مجاز به تعریف تکلیف برای دروس تخصیص‌یافته به خودتان هستید');
+      }
+    });
 
     it('POST /api/v1/homework should allow teacher to create homework assignment', async () => {
       const res = await request(app.getHttpServer())

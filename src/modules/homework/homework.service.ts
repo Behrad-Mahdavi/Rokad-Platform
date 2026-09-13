@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -48,7 +49,28 @@ export class HomeworkService {
     }
 
     let teacherId = dto.teacherId;
-    if (!teacherId && user) {
+
+    if (user?.role === 'TEACHER') {
+      const teacher = await this.prisma.teacherProfile.findFirst({
+        where: { userId: user.id, tenantId },
+      });
+      if (!teacher) {
+        throw new ForbiddenException('پروفایل دبیر برای این کاربر یافت نشد');
+      }
+      teacherId = teacher.id;
+
+      // Check if this teacher is assigned to this lesson
+      const teachesLesson = await this.prisma.teacherLesson.findFirst({
+        where: { teacherId: teacher.id, lessonId: dto.lessonId, tenantId },
+      });
+      const hasSchedule = await this.prisma.classSchedule.findFirst({
+        where: { teacherId: teacher.id, lessonId: dto.lessonId, tenantId },
+      });
+
+      if (!teachesLesson && !hasSchedule) {
+        throw new ForbiddenException('شما فقط مجاز به تعریف تکلیف برای دروس تخصیص‌یافته به خودتان هستید');
+      }
+    } else if (!teacherId && user) {
       const teacher = await this.prisma.teacherProfile.findFirst({
         where: { userId: user.id, tenantId },
       });

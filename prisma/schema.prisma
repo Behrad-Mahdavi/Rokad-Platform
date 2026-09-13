@@ -1317,6 +1317,8 @@ model Exam {
   allowReview            Boolean    @default(true)
   showResultsImmediately Boolean    @default(false)
   isPublished            Boolean    @default(false)
+  isResultsPublished     Boolean    @default(false)
+  resultsPublishedAt     DateTime?
   status                 ExamStatus @default(DRAFT)
   createdAt              DateTime   @default(now())
   updatedAt              DateTime   @updatedAt
@@ -1371,6 +1373,8 @@ model ExamParticipation {
   isGraded         Boolean             @default(false)
   tabSwitchCount   Int                 @default(0) // شمارنده تعویض تب
   flaggedForReview Boolean             @default(false) // پرچم برای بازبینی معلم
+  graceScore       Float               @default(0) // نمره ارفاقی دبیر
+  graceReason      String?             // علت یا توضیحات نمره ارفاقی
   status           ParticipationStatus @default(IN_PROGRESS)
   questionOrder    String[]            @default([]) // ذخیره قطعی ترتیب سوالات برای این دانش‌آموز
   optionOrders     Json?               // ذخیره قطعی ترتیب گزینه‌های شافل‌شده

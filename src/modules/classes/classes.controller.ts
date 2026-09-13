@@ -38,13 +38,15 @@ export class ClassesController {
   @Get('lessons')
   @ApiOperation({ summary: 'لیست تمام دروس و کتاب‌های مدرسه' })
   async listLessons(
+    @CurrentUser() user: any,
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentTenant('id') tenantId: string,
     @Query('levelId') levelId?: string,
     @Query('fieldId') fieldId?: string,
+    @Query('teacherId') teacherId?: string,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
-    return this.classesService.listLessons(effectiveTenantId, levelId, fieldId);
+    return this.classesService.listLessons(effectiveTenantId, levelId, fieldId, user, teacherId);
   }
 
   @Post('lessons')

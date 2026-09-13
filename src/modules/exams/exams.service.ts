@@ -7,11 +7,12 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateExamDto } from './dto/create-exam.dto';
+import { CreateExamDto, AddExamQuestionDto } from './dto/create-exam.dto';
 import {
   SubmitExamAnswersDto,
   GradeExamParticipationDto,
 } from './dto/participate-exam.dto';
+import { Role } from '../../common/constants';
 
 @Injectable()
 export class ExamsService {
@@ -20,7 +21,7 @@ export class ExamsService {
   constructor(private readonly prisma: PrismaService) {}
 
   // 1. Create Exam
-  async createExam(tenantId: string, dto: CreateExamDto) {
+  async createExam(tenantId: string, dto: CreateExamDto, user?: any) {
     const lesson = await this.prisma.lesson.findFirst({
       where: { id: dto.lessonId, tenantId },
     });
@@ -28,32 +29,97 @@ export class ExamsService {
       throw new NotFoundException('درس مورد نظر یافت نشد');
     }
 
-    const teacher = await this.prisma.teacherProfile.findFirst({
-      where: { id: dto.teacherId, tenantId },
-    });
-    if (!teacher) {
-      throw new NotFoundException('پروفایل معلم یافت نشد');
+    let teacherId = dto.teacherId;
+
+    if (user?.role === Role.TEACHER) {
+      const teacher = await this.prisma.teacherProfile.findFirst({
+        where: { userId: user.id, tenantId },
+      });
+      if (!teacher) {
+        throw new ForbiddenException('پروفایل دبیر برای این کاربر یافت نشد');
+      }
+      teacherId = teacher.id;
+
+      // Enforce: Teacher can only create exams for their assigned lessons
+      const teachesLesson = await this.prisma.teacherLesson.findFirst({
+        where: { teacherId: teacher.id, lessonId: dto.lessonId, tenantId },
+      });
+      const hasSchedule = await this.prisma.classSchedule.findFirst({
+        where: { teacherId: teacher.id, lessonId: dto.lessonId, tenantId },
+      });
+
+      if (!teachesLesson && !hasSchedule) {
+        throw new ForbiddenException(
+          'شما فقط مجاز به تعریف آزمون برای دروس تخصیص‌یافته به خودتان هستید',
+        );
+      }
+    } else if (!teacherId && user) {
+      const teacher = await this.prisma.teacherProfile.findFirst({
+        where: { userId: user.id, tenantId },
+      });
+      if (teacher) {
+        teacherId = teacher.id;
+      }
     }
 
-    if (!dto.questions || dto.questions.length === 0) {
-      throw new BadRequestException('آزمون باید حداقل شامل یک سوال باشد');
+    if (!teacherId) {
+      const lessonTeacher = await this.prisma.teacherLesson.findFirst({
+        where: { tenantId, lessonId: dto.lessonId },
+      });
+      if (lessonTeacher) {
+        teacherId = lessonTeacher.teacherId;
+      }
     }
 
-    const calculatedTotalScore = dto.questions.reduce(
-      (sum, q) => sum + (q.score || 1.0),
-      0,
+    if (!teacherId) {
+      const fallbackTeacher = await this.prisma.teacherProfile.findFirst({
+        where: { tenantId },
+      });
+      if (!fallbackTeacher) {
+        throw new NotFoundException('پروفایل معلم برای انتساب به آزمون یافت نشد');
+      }
+      teacherId = fallbackTeacher.id;
+    }
+
+    // Resolve academic year if not provided
+    let academicYearId = dto.academicYearId;
+    if (!academicYearId) {
+      const currentYear =
+        (await this.prisma.academicYear.findFirst({
+          where: { tenantId, isCurrent: true },
+        })) ||
+        (await this.prisma.academicYear.findFirst({
+          where: { tenantId },
+          orderBy: { startDate: 'desc' },
+        }));
+      if (!currentYear) {
+        throw new BadRequestException('هیچ سال تحصیلی فعالی تعریف نشده است');
+      }
+      academicYearId = currentYear.id;
+    }
+
+    const calculatedTotalScore =
+      dto.questions && dto.questions.length > 0
+        ? dto.questions.reduce((sum, q) => sum + (q.score || 1.0), 0)
+        : 20;
+
+    const targetClassroomIds = Array.from(
+      new Set([
+        ...(dto.classroomIds || []),
+        ...(dto.classroomId ? [dto.classroomId] : []),
+      ]),
     );
 
     return this.prisma.exam.create({
       data: {
         tenantId,
-        academicYearId: dto.academicYearId,
+        academicYearId,
         termId: dto.termId,
         lessonId: dto.lessonId,
-        teacherId: dto.teacherId,
+        teacherId,
         title: dto.title,
         description: dto.description,
-        examType: dto.examType || 'ONLINE',
+        examType: dto.examType || dto.type || 'ONLINE',
         durationMinutes: dto.durationMinutes,
         startTime: new Date(dto.startTime),
         endTime: new Date(dto.endTime),
@@ -64,13 +130,13 @@ export class ExamsService {
         status: 'SCHEDULED',
         isPublished: true,
         classrooms: {
-          create: dto.classroomIds.map((cid) => ({
+          create: targetClassroomIds.map((cid) => ({
             tenantId,
             classroomId: cid,
           })),
         },
         questions: {
-          create: dto.questions.map((q, idx) => ({
+          create: (dto.questions || []).map((q, idx) => ({
             questionId: q.questionId,
             orderIndex: q.orderIndex || idx + 1,
             score: q.score,
@@ -88,6 +154,7 @@ export class ExamsService {
   async listExams(
     tenantId: string,
     filters?: { classroomId?: string; lessonId?: string; teacherId?: string },
+    user?: any,
   ) {
     const where: any = { tenantId };
     if (filters?.lessonId) where.lessonId = filters.lessonId;
@@ -96,15 +163,174 @@ export class ExamsService {
       where.classrooms = { some: { classroomId: filters.classroomId } };
     }
 
-    return this.prisma.exam.findMany({
+    let studentId: string | null = null;
+    if (user?.role === Role.TEACHER) {
+      const teacher = await this.prisma.teacherProfile.findFirst({
+        where: { userId: user.id, tenantId },
+      });
+      if (teacher) {
+        where.teacherId = teacher.id;
+      }
+    } else if (user?.role === Role.STUDENT) {
+      const student = await this.prisma.studentProfile.findFirst({
+        where: { userId: user.id, tenantId },
+        include: { enrollments: true },
+      });
+      if (student) {
+        studentId = student.id;
+        const studentClassIds = student.enrollments.map((e) => e.classroomId);
+        where.classrooms = { some: { classroomId: { in: studentClassIds } } };
+      }
+    }
+
+    const exams = await this.prisma.exam.findMany({
       where,
       include: {
         lesson: true,
         teacher: { include: { user: { select: { firstName: true, lastName: true } } } },
         classrooms: { include: { classroom: true } },
         _count: { select: { questions: true, participations: true } },
+        participations: studentId
+          ? {
+              where: { studentId },
+              select: {
+                id: true,
+                status: true,
+                totalScore: true,
+                graceScore: true,
+                graceReason: true,
+                isGraded: true,
+                submittedAt: true,
+                teacherFeedback: true,
+              },
+            }
+          : false,
       },
       orderBy: { startTime: 'desc' },
+    });
+
+    if (user?.role === Role.STUDENT) {
+      return exams.map((exam) => {
+        const isPublished = exam.isResultsPublished || exam.showResultsImmediately;
+        const mappedParticipations = (exam.participations || []).map((p: any) => {
+          if (!isPublished) {
+            return {
+              id: p.id,
+              status: p.status,
+              submittedAt: p.submittedAt,
+              totalScore: null,
+              isGraded: false,
+              isResultsPublished: false,
+            };
+          }
+          return {
+            ...p,
+            isResultsPublished: true,
+          };
+        });
+
+        return {
+          ...exam,
+          participations: mappedParticipations,
+        };
+      });
+    }
+
+    return exams;
+  }
+
+  // Add Question directly to Exam
+  async addQuestionToExam(
+    tenantId: string,
+    examId: string,
+    dto: AddExamQuestionDto,
+    user?: any,
+  ) {
+    const exam = await this.prisma.exam.findFirst({
+      where: { id: examId, tenantId },
+      include: { teacher: true, questions: true },
+    });
+    if (!exam) {
+      throw new NotFoundException('آزمون مورد نظر یافت نشد');
+    }
+
+    if (user?.role === Role.TEACHER && exam.teacher.userId !== user.id) {
+      throw new ForbiddenException('شما مجاز به افزودن سوال به این آزمون نیستید');
+    }
+
+    const question = await this.prisma.question.create({
+      data: {
+        tenantId,
+        lessonId: exam.lessonId,
+        createdById: user?.id || exam.teacher.userId,
+        type: dto.type as any,
+        difficulty: 'MEDIUM',
+        text: dto.text,
+        defaultScore: dto.score,
+        options:
+          dto.options && dto.options.length > 0
+            ? {
+                create: dto.options.map((opt, idx) => ({
+                  text: opt.text,
+                  isCorrect: opt.isCorrect,
+                  orderIndex: idx + 1,
+                })),
+              }
+            : undefined,
+      },
+    });
+
+    const nextOrderIndex = exam.questions.length + 1;
+
+    const examQuestion = await this.prisma.examQuestion.create({
+      data: {
+        examId: exam.id,
+        questionId: question.id,
+        orderIndex: nextOrderIndex,
+        score: dto.score,
+      },
+      include: {
+        question: {
+          include: { options: true },
+        },
+      },
+    });
+
+    return examQuestion;
+  }
+
+  // Get Exam Participations
+  async getExamParticipations(tenantId: string, examId: string, user?: any) {
+    const exam = await this.prisma.exam.findFirst({
+      where: { id: examId, tenantId },
+      include: { teacher: true },
+    });
+    if (!exam) {
+      throw new NotFoundException('آزمون یافت نشد');
+    }
+
+    if (user?.role === Role.TEACHER && exam.teacher.userId !== user.id) {
+      throw new ForbiddenException('شما فقط به نتایج آزمون‌های خود دسترسی دارید');
+    }
+
+    return this.prisma.examParticipation.findMany({
+      where: { examId, tenantId },
+      include: {
+        student: {
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+                nationalId: true,
+              },
+            },
+          },
+        },
+        answers: true,
+      },
+      orderBy: { startedAt: 'desc' },
     });
   }
 
@@ -343,8 +569,8 @@ export class ExamsService {
       answerRecords.push({
         participationId: participation.id,
         questionId: ans.questionId,
-        selectedOptionId: ans.selectedOptionId,
-        descriptiveAnswer: ans.descriptiveAnswer,
+        selectedOptionId: ans.selectedOptionId || null,
+        descriptiveAnswer: ans.descriptiveAnswer || ans.textAnswer || null,
         scoreAwarded,
         isAutoGraded,
       });
@@ -379,15 +605,110 @@ export class ExamsService {
     });
 
     return {
-      message: 'پاسخ‌های آزمون با موفقیت در سامانه ثبت و ارسال گردید',
+      message: 'پاسخ‌های آزمون با موفقیت در سامانه ثبت و ارسال گردید و پس از بررسی دبیر کارنامه صادر خواهد شد',
       status: 'SUBMITTED',
       isGraded: !hasDescriptiveQuestions,
       autoGradedScore: !hasDescriptiveQuestions ? autoGradedTotalScore : null,
+      totalScore: !hasDescriptiveQuestions ? autoGradedTotalScore : null,
       flaggedForReview,
     };
   }
 
-  // 5. Grade Descriptive Answers (Teacher Grading)
+  // 5. Get Detailed Exam Participation Sheet for Teacher Grading
+  async getExamParticipationSheet(tenantId: string, participationId: string) {
+    const participation = await this.prisma.examParticipation.findFirst({
+      where: { id: participationId, tenantId },
+      include: {
+        student: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                phone: true,
+                nationalId: true,
+              },
+            },
+          },
+        },
+        exam: {
+          include: {
+            lesson: true,
+            questions: {
+              include: {
+                question: {
+                  include: { options: { orderBy: { orderIndex: 'asc' } } },
+                },
+              },
+              orderBy: { orderIndex: 'asc' },
+            },
+          },
+        },
+        answers: true,
+      },
+    });
+
+    if (!participation) {
+      throw new NotFoundException('برگه آزمون یافت نشد');
+    }
+
+    const answersMap = new Map(participation.answers.map((a) => [a.questionId, a]));
+
+    const questionsReview = participation.exam.questions.map((eq) => {
+      const studentAnswer = answersMap.get(eq.questionId);
+      return {
+        questionId: eq.questionId,
+        orderIndex: eq.orderIndex,
+        score: eq.score,
+        type: eq.question.type,
+        text: eq.question.text,
+        options: eq.question.options.map((opt) => ({
+          id: opt.id,
+          text: opt.text,
+          isCorrect: opt.isCorrect,
+        })),
+        studentAnswer: studentAnswer
+          ? {
+              selectedOptionId: studentAnswer.selectedOptionId,
+              descriptiveAnswer: studentAnswer.descriptiveAnswer,
+              scoreAwarded: studentAnswer.scoreAwarded,
+              isAutoGraded: studentAnswer.isAutoGraded,
+              teacherComment: studentAnswer.teacherComment,
+            }
+          : null,
+      };
+    });
+
+    return {
+      participation: {
+        id: participation.id,
+        examId: participation.examId,
+        studentId: participation.studentId,
+        startedAt: participation.startedAt,
+        submittedAt: participation.submittedAt,
+        tabSwitchCount: participation.tabSwitchCount,
+        flaggedForReview: participation.flaggedForReview,
+        totalScore: participation.totalScore,
+        graceScore: participation.graceScore || 0,
+        graceReason: participation.graceReason,
+        teacherFeedback: participation.teacherFeedback,
+        isGraded: participation.isGraded,
+        status: participation.status,
+      },
+      student: participation.student,
+      exam: {
+        id: participation.exam.id,
+        title: participation.exam.title,
+        totalScore: participation.exam.totalScore,
+        lessonName: participation.exam.lesson?.name,
+        isResultsPublished: participation.exam.isResultsPublished,
+      },
+      questions: questionsReview,
+    };
+  }
+
+  // 6. Grade Descriptive Answers & Apply Grace Score (Teacher Grading)
   async gradeDescriptiveAnswers(
     tenantId: string,
     participationId: string,
@@ -405,8 +726,11 @@ export class ExamsService {
       throw new NotFoundException('برگه مشارکت آزمون یافت نشد');
     }
 
+    const graceScore = Number(dto.graceScore) || 0;
+    const graceReason = dto.graceReason || null;
+
     await this.prisma.$transaction(async (tx) => {
-      for (const g of dto.grades) {
+      for (const g of (dto.grades || [])) {
         await tx.examAnswer.update({
           where: {
             participationId_questionId: {
@@ -415,8 +739,8 @@ export class ExamsService {
             },
           },
           data: {
-            scoreAwarded: g.scoreAwarded,
-            teacherComment: g.teacherComment,
+            scoreAwarded: Number(g.scoreAwarded) || 0,
+            teacherComment: g.teacherComment || null,
           },
         });
       }
@@ -425,17 +749,25 @@ export class ExamsService {
       const allAnswers = await tx.examAnswer.findMany({
         where: { participationId },
       });
-      const totalScore = allAnswers.reduce(
+      const rawScore = allAnswers.reduce(
         (sum, a) => sum + (a.scoreAwarded || 0),
         0,
+      );
+
+      // Total score = rawScore + graceScore, capped at exam.totalScore
+      const totalScore = Math.min(
+        participation.exam.totalScore,
+        Math.round((rawScore + graceScore) * 100) / 100,
       );
 
       await tx.examParticipation.update({
         where: { id: participationId },
         data: {
           totalScore,
+          graceScore,
+          graceReason,
           isGraded: true,
-          teacherFeedback: dto.teacherFeedback,
+          teacherFeedback: dto.teacherFeedback || null,
         },
       });
     });
@@ -443,17 +775,59 @@ export class ExamsService {
     return {
       message: 'تصحیح و ثبت نمرات برگه با موفقیت انجام شد',
       participationId,
+      graceScore,
+      graceReason,
     };
   }
 
-  // 6. Get Exam Results & Sheet
+  // 7. Toggle Publish Exam Results (Teacher Controlled)
+  async togglePublishResults(
+    tenantId: string,
+    examId: string,
+    publish?: boolean,
+    user?: any,
+  ) {
+    const exam = await this.prisma.exam.findFirst({
+      where: { id: examId, tenantId },
+      include: { teacher: true },
+    });
+
+    if (!exam) {
+      throw new NotFoundException('آزمون یافت نشد');
+    }
+
+    if (user?.role === Role.TEACHER && exam.teacher.userId !== user.id) {
+      throw new ForbiddenException('شما مجاز به تغییر وضعیت انتشار کارنامه این آزمون نیستید');
+    }
+
+    const nextState = publish !== undefined ? publish : !exam.isResultsPublished;
+
+    const updated = await this.prisma.exam.update({
+      where: { id: examId },
+      data: {
+        isResultsPublished: nextState,
+        resultsPublishedAt: nextState ? new Date() : null,
+      },
+    });
+
+    return {
+      message: nextState
+        ? 'کارنامه و نمرات آزمون با موفقیت برای کلیه دانش‌آموزان کلاس منتشر شد'
+        : 'انتشار کارنامه لغو گردید و نمرات برای دانش‌آموزان پنهان شد',
+      isResultsPublished: updated.isResultsPublished,
+      resultsPublishedAt: updated.resultsPublishedAt,
+    };
+  }
+
+  // 8. Get Exam Results & Summary Stats
   async getExamResults(tenantId: string, examId: string) {
     const exam = await this.prisma.exam.findFirst({
       where: { id: examId, tenantId },
       include: {
+        lesson: true,
         participations: {
           include: {
-            student: { include: { user: { select: { firstName: true, lastName: true } } } },
+            student: { include: { user: { select: { firstName: true, lastName: true, phone: true, nationalId: true } } } },
             answers: true,
           },
           orderBy: { totalScore: 'desc' },
@@ -467,6 +841,13 @@ export class ExamsService {
 
     const totalStudents = exam.participations.length;
     const gradedCount = exam.participations.filter((p) => p.isGraded).length;
+    const needsGradingCount = exam.participations.filter(
+      (p) => (p.status === 'SUBMITTED' || p.status === 'TIMED_OUT') && !p.isGraded,
+    ).length;
+    const tabSwitchFlaggedCount = exam.participations.filter(
+      (p) => p.tabSwitchCount > 0,
+    ).length;
+
     const scores = exam.participations
       .filter((p) => p.isGraded && p.totalScore !== null)
       .map((p) => p.totalScore as number);
@@ -483,10 +864,15 @@ export class ExamsService {
         id: exam.id,
         title: exam.title,
         totalScore: exam.totalScore,
+        lessonName: exam.lesson?.name,
+        isResultsPublished: exam.isResultsPublished,
+        resultsPublishedAt: exam.resultsPublishedAt,
       },
       stats: {
         totalStudents,
         gradedCount,
+        needsGradingCount,
+        tabSwitchFlaggedCount,
         averageScore,
         maxScore,
         minScore,
@@ -494,10 +880,15 @@ export class ExamsService {
       participations: exam.participations.map((p) => ({
         id: p.id,
         studentName: `${p.student.user.firstName} ${p.student.user.lastName}`,
+        phone: p.student.user.phone,
+        nationalId: p.student.user.nationalId,
         status: p.status,
         startedAt: p.startedAt,
         submittedAt: p.submittedAt,
         totalScore: p.totalScore,
+        graceScore: p.graceScore || 0,
+        graceReason: p.graceReason,
+        teacherFeedback: p.teacherFeedback,
         isGraded: p.isGraded,
         tabSwitchCount: p.tabSwitchCount,
         flaggedForReview: p.flaggedForReview,

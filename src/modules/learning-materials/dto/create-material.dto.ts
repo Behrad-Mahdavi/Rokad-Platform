@@ -10,10 +10,10 @@ import {
 import { MaterialType } from '@prisma/client';
 
 export class CreateMaterialDto {
-  @ApiProperty({ description: 'شناسه سال تحصیلی' })
+  @ApiPropertyOptional({ description: 'شناسه سال تحصیلی' })
   @IsString()
-  @IsNotEmpty()
-  academicYearId: string;
+  @IsOptional()
+  academicYearId?: string;
 
   @ApiPropertyOptional({ description: 'شناسه ترم تحصیلی' })
   @IsString()
@@ -25,10 +25,10 @@ export class CreateMaterialDto {
   @IsNotEmpty()
   lessonId: string;
 
-  @ApiProperty({ description: 'شناسه پروفایل معلم' })
+  @ApiPropertyOptional({ description: 'شناسه پروفایل معلم' })
   @IsString()
-  @IsNotEmpty()
-  teacherId: string;
+  @IsOptional()
+  teacherId?: string;
 
   @ApiProperty({ description: 'عنوان جزوه یا محتوای آموزشی', example: 'جزوه دست‌نویس حل تمرین‌های فصل اول' })
   @IsString()
@@ -40,23 +40,24 @@ export class CreateMaterialDto {
   @IsOptional()
   description?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'نوع محتوا (DOCUMENT, VIDEO, AUDIO, LINK, ARCHIVE)',
     enum: MaterialType,
     default: MaterialType.DOCUMENT,
   })
   @IsEnum(MaterialType)
-  materialType: MaterialType;
+  @IsOptional()
+  materialType?: MaterialType;
 
-  @ApiProperty({ description: 'کلید فایل در MinIO Storage', example: 'tenants/rokad-boys/materials/xyz.pdf' })
+  @ApiPropertyOptional({ description: 'کلید فایل در MinIO Storage', example: 'tenants/rokad-boys/materials/xyz.pdf' })
   @IsString()
-  @IsNotEmpty()
-  fileKey: string;
+  @IsOptional()
+  fileKey?: string;
 
-  @ApiProperty({ description: 'آدرس فایل یا لینک محتوا', example: 'http://localhost:9000/rokad-storage/tenants/rokad-boys/materials/xyz.pdf' })
+  @ApiPropertyOptional({ description: 'آدرس فایل یا لینک محتوا', example: 'http://localhost:9000/rokad-storage/tenants/rokad-boys/materials/xyz.pdf' })
   @IsString()
-  @IsNotEmpty()
-  fileUrl: string;
+  @IsOptional()
+  fileUrl?: string;
 
   @ApiPropertyOptional({ description: 'حجم فایل به مگابایت', example: 4.2 })
   @IsOptional()
@@ -77,8 +78,14 @@ export class CreateMaterialDto {
   @IsOptional()
   isPublished?: boolean;
 
-  @ApiProperty({ description: 'شناسه کلاس‌های مجاز برای مشاهده این جزوه' })
+  @ApiPropertyOptional({ description: 'شناسه کلاس‌های مجاز برای مشاهده این جزوه' })
   @IsArray()
   @IsString({ each: true })
-  classroomIds: string[];
+  @IsOptional()
+  classroomIds?: string[];
+
+  @ApiPropertyOptional({ description: 'شناسه کلاس مجاز برای مشاهده این جزوه' })
+  @IsString()
+  @IsOptional()
+  classroomId?: string;
 }

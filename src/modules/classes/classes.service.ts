@@ -19,13 +19,38 @@ export class ClassesService {
   constructor(private readonly prisma: PrismaService) {}
 
   // 1. Lessons
-  async listLessons(tenantId: string, levelId?: string, fieldId?: string) {
+  async listLessons(
+    tenantId: string,
+    levelId?: string,
+    fieldId?: string,
+    user?: any,
+    teacherId?: string,
+  ) {
+    const where: any = {
+      tenantId,
+      ...(levelId ? { levelId } : {}),
+      ...(fieldId ? { fieldId } : {}),
+    };
+
+    let effectiveTeacherId = teacherId;
+    if (!effectiveTeacherId && user?.role === Role.TEACHER) {
+      const teacher = await this.prisma.teacherProfile.findFirst({
+        where: { userId: user.id, tenantId },
+      });
+      if (teacher) {
+        effectiveTeacherId = teacher.id;
+      }
+    }
+
+    if (effectiveTeacherId) {
+      where.OR = [
+        { teacherLessons: { some: { teacherId: effectiveTeacherId } } },
+        { schedules: { some: { teacherId: effectiveTeacherId } } },
+      ];
+    }
+
     return this.prisma.lesson.findMany({
-      where: {
-        tenantId,
-        ...(levelId ? { levelId } : {}),
-        ...(fieldId ? { fieldId } : {}),
-      },
+      where,
       include: {
         level: true,
         field: true,
@@ -146,6 +171,27 @@ export class ClassesService {
       const classIds =
         parent?.studentLinks.flatMap((link) => link.student.enrollments.map((e) => e.classroomId)) || [];
       whereClause.id = { in: classIds };
+    } else if (user?.role === Role.TEACHER) {
+      const teacher = await this.prisma.teacherProfile.findFirst({
+        where: { userId: user.id, tenantId },
+      });
+      if (teacher) {
+        const teacherClassroomsCount = await this.prisma.classroom.count({
+          where: {
+            tenantId,
+            OR: [
+              { schedules: { some: { teacherId: teacher.id } } },
+              { mentorId: user.id },
+            ],
+          },
+        });
+        if (teacherClassroomsCount > 0) {
+          whereClause.OR = [
+            { schedules: { some: { teacherId: teacher.id } } },
+            { mentorId: user.id },
+          ];
+        }
+      }
     }
 
     return this.prisma.classroom.findMany({

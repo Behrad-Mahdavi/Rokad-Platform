@@ -27,6 +27,11 @@ export class SubmitAnswerItemDto {
   @IsString()
   @IsOptional()
   descriptiveAnswer?: string;
+
+  @ApiPropertyOptional({ description: 'پاسخ متنی/تشریحی دانش‌آموز (نام فیلد جایگزین فرانت‌اند)' })
+  @IsString()
+  @IsOptional()
+  textAnswer?: string;
 }
 
 export class SubmitExamAnswersDto {
@@ -68,6 +73,17 @@ export class GradeExamParticipationDto {
   @IsString()
   @IsOptional()
   teacherFeedback?: string;
+
+  @ApiPropertyOptional({ description: 'نمره ارفاقی اضافه شده توسط دبیر', example: 1.5, default: 0 })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  graceScore?: number;
+
+  @ApiPropertyOptional({ description: 'علت یا توضیحات نمره ارفاقی' })
+  @IsString()
+  @IsOptional()
+  graceReason?: string;
 
   @ApiProperty({
     description: 'نمرات ثبت‌شده برای پاسخ‌های تشریحی',

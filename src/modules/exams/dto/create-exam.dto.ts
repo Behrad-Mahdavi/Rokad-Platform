@@ -33,10 +33,10 @@ export class ExamQuestionItemDto {
 }
 
 export class CreateExamDto {
-  @ApiProperty({ description: 'شناسه سال تحصیلی' })
+  @ApiPropertyOptional({ description: 'شناسه سال تحصیلی' })
   @IsString()
-  @IsNotEmpty()
-  academicYearId: string;
+  @IsOptional()
+  academicYearId?: string;
 
   @ApiPropertyOptional({ description: 'شناسه ترم' })
   @IsString()
@@ -48,10 +48,10 @@ export class CreateExamDto {
   @IsNotEmpty()
   lessonId: string;
 
-  @ApiProperty({ description: 'شناسه پروفایل معلم طراح آزمون' })
+  @ApiPropertyOptional({ description: 'شناسه پروفایل معلم طراح آزمون' })
   @IsString()
-  @IsNotEmpty()
-  teacherId: string;
+  @IsOptional()
+  teacherId?: string;
 
   @ApiProperty({ description: 'عنوان آزمون', example: 'آزمون میان‌ترم حسابان ۱' })
   @IsString()
@@ -63,13 +63,22 @@ export class CreateExamDto {
   @IsOptional()
   description?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'نوع آزمون (ONLINE, PAPER_BASED, HYBRID)',
     enum: ExamType,
     default: ExamType.ONLINE,
   })
   @IsEnum(ExamType)
-  examType: ExamType;
+  @IsOptional()
+  examType?: ExamType;
+
+  @ApiPropertyOptional({
+    description: 'نوع آزمون جهت سازگاری کلاینت',
+    enum: ExamType,
+  })
+  @IsEnum(ExamType)
+  @IsOptional()
+  type?: ExamType;
 
   @ApiProperty({ description: 'مدت زمان آزمون به دقیقه', example: 60 })
   @IsInt()
@@ -90,6 +99,12 @@ export class CreateExamDto {
   @IsOptional()
   totalScore?: number;
 
+  @ApiPropertyOptional({ description: 'حداقل نمره قبولی', default: 10 })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  passingScore?: number;
+
   @ApiPropertyOptional({ description: 'آیا سوالات برای هر دانش‌آموز بر زده شود؟', default: true })
   @IsBoolean()
   @IsOptional()
@@ -105,17 +120,46 @@ export class CreateExamDto {
   @IsOptional()
   showResultsImmediately?: boolean;
 
-  @ApiProperty({ description: 'لیست شناسه‌های کلاس‌های مخاطب آزمون' })
+  @ApiPropertyOptional({ description: 'شناسه کلاس مخاطب آزمون (تک کلاس)' })
+  @IsString()
+  @IsOptional()
+  classroomId?: string;
+
+  @ApiPropertyOptional({ description: 'لیست شناسه‌های کلاس‌های مخاطب آزمون' })
   @IsArray()
   @IsString({ each: true })
-  classroomIds: string[];
+  @IsOptional()
+  classroomIds?: string[];
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'لیست سوالات و بارم‌بندی آزمون',
     type: [ExamQuestionItemDto],
   })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ExamQuestionItemDto)
-  questions: ExamQuestionItemDto[];
+  @IsOptional()
+  questions?: ExamQuestionItemDto[];
+}
+
+export class AddExamQuestionDto {
+  @ApiProperty({ description: 'متن صورت سوال' })
+  @IsString()
+  @IsNotEmpty()
+  text: string;
+
+  @ApiProperty({ description: 'نوع سوال', enum: ['MULTIPLE_CHOICE', 'DESCRIPTIVE'] })
+  @IsString()
+  @IsNotEmpty()
+  type: 'MULTIPLE_CHOICE' | 'DESCRIPTIVE';
+
+  @ApiProperty({ description: 'بارم نمره اختصاص‌یافته به این سوال', example: 2.0 })
+  @IsNumber()
+  @Min(0.25)
+  score: number;
+
+  @ApiPropertyOptional({ description: 'گزینه‌های تستی سوال' })
+  @IsArray()
+  @IsOptional()
+  options?: Array<{ text: string; isCorrect: boolean }>;
 }

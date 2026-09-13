@@ -77,8 +77,12 @@ describe('Rokad Multi-Tenant Platform — Phase 5 Communication & Content Tests'
     const classrooms = await request(app.getHttpServer())
       .get('/api/v1/classes/classrooms')
       .set('Authorization', `Bearer ${boysAdminToken}`);
-    testClassroomId = classrooms.body.data[0].id;
-    testAcademicYearId = classrooms.body.data[0].academicYearId;
+    const studentEnrollment = await prisma.classEnrollment.findFirst({
+      where: { student: { userId: testStudentUserId } },
+    });
+    testClassroomId = studentEnrollment?.classroomId || classrooms.body.data[0].id;
+    const targetClassroom = classrooms.body.data.find((c: any) => c.id === testClassroomId) || classrooms.body.data[0];
+    testAcademicYearId = targetClassroom.academicYearId;
 
     const lessons = await request(app.getHttpServer())
       .get('/api/v1/classes/lessons')

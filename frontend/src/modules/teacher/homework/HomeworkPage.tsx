@@ -283,9 +283,16 @@ export const HomeworkPage: React.FC = () => {
             </div>
           )}
 
+          {lessons.length === 0 && (
+            <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg">
+              <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
+              <span>هیچ درسی به حساب کاربری شما تخصیص نیافته است. لطفاً جهت تخصیص درس با مدیریت مدرسه تماس بگیرید.</span>
+            </div>
+          )}
+
           <Input
             label="عنوان تکلیف"
-            placeholder="مثال: تمرینات پودمان دوم کارگاه شبکه"
+            placeholder="مثال: تمرین‌های فصل سوم - مشتق و کاربردها"
             value={createForm.title}
             onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
             required
@@ -324,7 +331,7 @@ export const HomeworkPage: React.FC = () => {
                 required
               >
                 {lessons.length === 0 ? (
-                  <option value="">در حال دریافت دروس...</option>
+                  <option value="">هیچ درسی به شما تخصیص نیافته است</option>
                 ) : (
                   <>
                     <option value="">-- انتخاب کتاب یا درس --</option>
@@ -370,7 +377,12 @@ export const HomeworkPage: React.FC = () => {
             <Button type="button" variant="ghost" onClick={() => setIsCreateOpen(false)}>
               انصراف
             </Button>
-            <Button type="submit" variant="primary" isLoading={isSubmitting}>
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={isSubmitting}
+              disabled={isSubmitting || lessons.length === 0 || classrooms.length === 0}
+            >
               انتشار تکلیف برای کلاس
             </Button>
           </div>

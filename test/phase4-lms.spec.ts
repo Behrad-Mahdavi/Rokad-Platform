@@ -73,15 +73,21 @@ describe('Rokad Multi-Tenant Platform — Phase 4 LMS & Exam Engine Tests', () =
     testClassroomId = classrooms.body.data[0].id;
     testAcademicYearId = classrooms.body.data[0].academicYearId;
 
-    const lessons = await request(app.getHttpServer())
+    const teacherLessons = await request(app.getHttpServer())
       .get('/api/v1/classes/lessons')
-      .set('Authorization', `Bearer ${boysAdminToken}`);
-    testLessonId = lessons.body.data[0].id;
+      .set('Authorization', `Bearer ${boysTeacherToken}`);
+    testLessonId = teacherLessons.body.data[0].id;
 
     const students = await request(app.getHttpServer())
       .get('/api/v1/members/students')
       .set('Authorization', `Bearer ${boysAdminToken}`);
-    testStudentProfileId = students.body.data[0].id;
+    const currentStudent =
+      students.body.data.find((s: any) => s.user?.phone === '09124000001') ||
+      students.body.data[0];
+    testStudentProfileId = currentStudent.id;
+    if (currentStudent.enrollments?.[0]?.classroomId) {
+      testClassroomId = currentStudent.enrollments[0].classroomId;
+    }
 
     const teachers = await request(app.getHttpServer())
       .get('/api/v1/members/teachers')
@@ -241,6 +247,32 @@ describe('Rokad Multi-Tenant Platform — Phase 4 LMS & Exam Engine Tests', () =
         });
       question1Id = qRes.body.data.id;
       question1CorrectOptionId = qRes.body.data.options[0].id;
+    });
+
+    it('POST /api/v1/exams should reject teacher creating exam for unassigned lesson (403)', async () => {
+      const allLessons = await request(app.getHttpServer())
+        .get('/api/v1/classes/lessons')
+        .set('Authorization', `Bearer ${boysAdminToken}`);
+      const unassignedLesson = allLessons.body.data.find(
+        (l: any) => l.name === 'تجارت الکترونیک و امنیت شبکه',
+      );
+
+      if (unassignedLesson) {
+        const res = await request(app.getHttpServer())
+          .post('/api/v1/exams')
+          .set('Authorization', `Bearer ${boysTeacherToken}`)
+          .send({
+            lessonId: unassignedLesson.id,
+            title: 'آزمون غیرمجاز',
+            durationMinutes: 30,
+            startTime: new Date().toISOString(),
+            endTime: new Date(Date.now() + 86400000).toISOString(),
+            classroomIds: [testClassroomId],
+          })
+          .expect(403);
+
+        expect(res.body.message).toContain('شما فقط مجاز به تعریف آزمون برای دروس تخصیص‌یافته به خودتان هستید');
+      }
     });
 
     it('POST /api/v1/exams should create scheduled online exam', async () => {

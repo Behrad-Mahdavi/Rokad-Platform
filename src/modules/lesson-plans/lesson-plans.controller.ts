@@ -35,12 +35,13 @@ export class LessonPlansController {
   @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
   @ApiOperation({ summary: 'ایجاد طرح درس سالانه یا ترمی جدید' })
   async createLessonPlan(
+    @CurrentUser() user: any,
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentTenant('id') tenantId: string,
     @Body() dto: CreateLessonPlanDto,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
-    return this.lessonPlansService.createLessonPlan(effectiveTenantId, dto);
+    return this.lessonPlansService.createLessonPlan(effectiveTenantId, dto, user);
   }
 
   @Get()

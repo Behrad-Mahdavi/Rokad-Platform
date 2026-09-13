@@ -14,7 +14,7 @@ import {
 export class LessonPlansService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createLessonPlan(tenantId: string, dto: CreateLessonPlanDto) {
+  async createLessonPlan(tenantId: string, dto: CreateLessonPlanDto, user?: any) {
     const lesson = await this.prisma.lesson.findFirst({
       where: { id: dto.lessonId, tenantId },
     });
@@ -22,25 +22,87 @@ export class LessonPlansService {
       throw new NotFoundException('درس مورد نظر یافت نشد');
     }
 
+    // Resolve teacherId
+    let teacherId = dto.teacherId;
+    if (!teacherId && user) {
+      const teacher = await this.prisma.teacherProfile.findFirst({
+        where: { userId: user.id, tenantId },
+      });
+      if (teacher) {
+        teacherId = teacher.id;
+      }
+    }
+    if (!teacherId) {
+      const lessonTeacher = await this.prisma.teacherLesson.findFirst({
+        where: { tenantId, lessonId: dto.lessonId },
+      });
+      if (lessonTeacher) {
+        teacherId = lessonTeacher.teacherId;
+      } else {
+        const anyTeacher = await this.prisma.teacherProfile.findFirst({
+          where: { tenantId },
+        });
+        if (anyTeacher) teacherId = anyTeacher.id;
+      }
+    }
+    if (!teacherId) {
+      throw new NotFoundException('پروفایل معلم برای ثبت طرح درس یافت نشد');
+    }
+
+    // Resolve academicYearId
+    let academicYearId = dto.academicYearId;
+    if (!academicYearId) {
+      const currentYear = await this.prisma.academicYear.findFirst({
+        where: { tenantId, isCurrent: true },
+      });
+      if (currentYear) {
+        academicYearId = currentYear.id;
+      } else {
+        const anyYear = await this.prisma.academicYear.findFirst({
+          where: { tenantId },
+          orderBy: { createdAt: 'desc' },
+        });
+        if (anyYear) academicYearId = anyYear.id;
+      }
+    }
+    if (!academicYearId) {
+      throw new NotFoundException('سال تحصیلی فعال یافت نشد');
+    }
+
+    // Build sessions list
+    let sessionsData: any[] = [];
+    if (dto.sessions && dto.sessions.length > 0) {
+      sessionsData = dto.sessions.map((s) => ({
+        sessionNumber: s.sessionNumber,
+        topic: s.topic,
+        objectives: s.objectives,
+        activities: s.activities,
+        plannedDate: s.plannedDate ? new Date(s.plannedDate) : undefined,
+        status: 'PLANNED',
+      }));
+    } else if (dto.topics || dto.pedagogicalGoal) {
+      sessionsData = [
+        {
+          sessionNumber: dto.sessionNumber || 1,
+          topic: dto.topics || dto.title,
+          objectives: dto.pedagogicalGoal,
+          status: 'PLANNED',
+        },
+      ];
+    }
+
     return this.prisma.lessonPlan.create({
       data: {
         tenantId,
-        academicYearId: dto.academicYearId,
+        academicYearId,
         termId: dto.termId,
         lessonId: dto.lessonId,
-        teacherId: dto.teacherId,
+        teacherId,
         title: dto.title,
         description: dto.description,
         totalHoursPlanned: dto.totalHoursPlanned || 30,
         sessions: {
-          create: dto.sessions?.map((s) => ({
-            sessionNumber: s.sessionNumber,
-            topic: s.topic,
-            objectives: s.objectives,
-            activities: s.activities,
-            plannedDate: s.plannedDate ? new Date(s.plannedDate) : undefined,
-            status: 'PLANNED',
-          })) || [],
+          create: sessionsData,
         },
       },
       include: {

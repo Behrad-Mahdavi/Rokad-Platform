@@ -97,19 +97,26 @@ export const StudentMaterialsPage: React.FC = () => {
               </div>
 
               <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
-                <span className="text-[11px] text-gray-400 font-mono">
+                <span className="text-[11px] text-gray-400">
                   {new Date(mat.createdAt || Date.now()).toLocaleDateString('fa-IR')}
                 </span>
 
-                <a
-                  href={mat.fileUrl || '#'}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const res = await apiClient.get(`/learning-materials/${mat.id}/download-url`);
+                      const downloadUrl = res.data?.downloadUrl || mat.fileUrl;
+                      if (downloadUrl) window.open(downloadUrl, '_blank', 'noopener,noreferrer');
+                    } catch (e) {
+                      if (mat.fileUrl) window.open(mat.fileUrl, '_blank', 'noopener,noreferrer');
+                    }
+                  }}
                   className="inline-flex items-center space-x-1.5 space-x-reverse bg-primary-light text-primary-darker hover:bg-primary hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
                 >
-                  <Download className="h-3.5 w-3.5" />
+                  <Download className="h-3.5 w-3.5 ml-1" />
                   <span>دانلود فایل</span>
-                </a>
+                </button>
               </div>
             </Card>
           ))

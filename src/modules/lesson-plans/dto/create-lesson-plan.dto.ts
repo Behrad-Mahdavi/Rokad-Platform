@@ -41,10 +41,10 @@ export class CreateSessionItemDto {
 }
 
 export class CreateLessonPlanDto {
-  @ApiProperty({ description: 'شناسه سال تحصیلی' })
+  @ApiPropertyOptional({ description: 'شناسه سال تحصیلی' })
   @IsString()
-  @IsNotEmpty()
-  academicYearId: string;
+  @IsOptional()
+  academicYearId?: string;
 
   @ApiPropertyOptional({ description: 'شناسه ترم' })
   @IsString()
@@ -56,10 +56,10 @@ export class CreateLessonPlanDto {
   @IsNotEmpty()
   lessonId: string;
 
-  @ApiProperty({ description: 'شناسه پروفایل معلم' })
+  @ApiPropertyOptional({ description: 'شناسه پروفایل معلم' })
   @IsString()
-  @IsNotEmpty()
-  teacherId: string;
+  @IsOptional()
+  teacherId?: string;
 
   @ApiProperty({ description: 'عنوان طرح درس', example: 'طرح درس جامع سالانه حسابان ۱' })
   @IsString()
@@ -86,6 +86,20 @@ export class CreateLessonPlanDto {
   @Type(() => CreateSessionItemDto)
   @IsOptional()
   sessions?: CreateSessionItemDto[];
+
+  @ApiPropertyOptional({ description: 'شماره جلسه اولیه' })
+  @IsOptional()
+  sessionNumber?: number;
+
+  @ApiPropertyOptional({ description: 'سرفصل‌های جلسه' })
+  @IsString()
+  @IsOptional()
+  topics?: string;
+
+  @ApiPropertyOptional({ description: 'اهداف آموزشی جلسه' })
+  @IsString()
+  @IsOptional()
+  pedagogicalGoal?: string;
 }
 
 export class UpdateSessionStatusDto {

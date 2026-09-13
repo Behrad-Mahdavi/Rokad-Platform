@@ -78,18 +78,43 @@ export const StudentExamsPage: React.FC = () => {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [activeExam, examResult]);
 
+  const [isStartingId, setIsStartingId] = useState<string | null>(null);
+
   const handleStartExam = async (exam: any) => {
     try {
-      // Start participation session
-      await apiClient.post(`/exams/${exam.id}/start`);
-      setActiveExam(exam);
-      setTimeLeftSeconds((exam.durationMinutes || 60) * 60);
+      setIsStartingId(exam.id);
+      // Start participation session and fetch tailored exam questions
+      const res: any = await apiClient.post(`/exams/${exam.id}/start`);
+      const payload = res.data || res;
+      const questions = payload.questions || [];
+      const participation = payload.participation || {};
+
+      let remainingSec = (exam.durationMinutes || 60) * 60;
+      if (participation.serverDeadline) {
+        const deadline = new Date(participation.serverDeadline).getTime();
+        const now = Date.now();
+        const diff = Math.floor((deadline - now) / 1000);
+        if (diff > 0) {
+          remainingSec = Math.min(remainingSec, diff);
+        }
+      }
+
+      setActiveExam({
+        ...exam,
+        ...payload.exam,
+        questions,
+        participationId: participation.id,
+      });
+      setTimeLeftSeconds(remainingSec);
       setTabSwitches(0);
       setExamResult(null);
-    } catch (err) {
-      // If already started, still load
-      setActiveExam(exam);
-      setTimeLeftSeconds((exam.durationMinutes || 60) * 60);
+    } catch (err: any) {
+      console.error('Failed to start exam', err);
+      const msg =
+        err.response?.data?.message || err.message || 'امکان ورود به آزمون وجود ندارد.';
+      alert(Array.isArray(msg) ? msg.join('، ') : msg);
+    } finally {
+      setIsStartingId(null);
     }
   };
 
@@ -111,19 +136,32 @@ export const StudentExamsPage: React.FC = () => {
     if (!activeExam) return;
     setIsSubmitting(true);
     try {
-      const answersPayload = Object.entries(currentAnswers).map(([questionId, ans]) => ({
-        questionId,
-        selectedOptionId: ans.selectedOptionId,
-        textAnswer: ans.textAnswer,
-      }));
+      const answersPayload = (activeExam.questions || []).map((q: any) => {
+        const qKey = q.questionId || q.id;
+        const ans = currentAnswers[qKey];
+        const item: any = { questionId: qKey };
+        if (ans?.selectedOptionId) {
+          item.selectedOptionId = ans.selectedOptionId;
+        }
+        const text = ans?.textAnswer;
+        if (text && typeof text === 'string' && text.trim().length > 0) {
+          item.descriptiveAnswer = text.trim();
+          item.textAnswer = text.trim();
+        }
+        return item;
+      });
 
-      const res = await apiClient.post(`/exams/${activeExam.id}/submit`, {
+      const res: any = await apiClient.post(`/exams/${activeExam.id}/submit`, {
+        tabSwitchCount: tabSwitches,
         answers: answersPayload,
       });
 
-      setExamResult(res.data);
+      setExamResult(res.data || res);
+      fetchExams();
     } catch (err: any) {
-      alert(err.message || 'خطا در ثبت آزمون.');
+      const msg =
+        err.response?.data?.message || err.message || 'خطا در ثبت آزمون.';
+      alert(Array.isArray(msg) ? msg.join('، ') : msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -146,19 +184,19 @@ export const StudentExamsPage: React.FC = () => {
 
           <h2 className="text-2xl font-bold text-ink-darker">پاسخ‌برگ شما با موفقیت ثبت شد!</h2>
           <p className="text-xs text-gray-500">
-            آزمون «{activeExam.title}» در موعد مقرر تحویل داده شد و کارنامه اولیه صادر گردید.
+            آزمون «{activeExam.title}» در موعد مقرر تحویل داده شد.
           </p>
 
           <div className="bg-gray-50 p-6 rounded-2xl border space-y-3">
-            <div className="text-3xl font-extrabold text-primary font-mono">
-              {examResult.totalScore !== null && examResult.totalScore !== undefined
-                ? examResult.totalScore
-                : 'در انتظار تصحیح'}
-              <span className="text-sm font-normal text-gray-500 mr-1">/ {activeExam.totalScore || 20} نمره</span>
+            <div className="text-base font-bold text-ink-dark">
+              پاسخ‌برگ در انتظار بررسی و ثبت نمره توسط دبیر است
             </div>
+            <p className="text-xs text-gray-500 leading-relaxed max-w-md mx-auto">
+              پس از اتمام مهلت آزمون، بررسی پاسخ‌های تشریحی و انتشار رسمی کارنامه توسط دبیر محترم، نمره نهایی و بازخوردها در این بخش قابل مشاهده خواهد بود.
+            </p>
 
             {tabSwitches > 0 && (
-              <div className="text-xs text-rose-600 font-bold flex items-center justify-center space-x-1 space-x-reverse">
+              <div className="text-xs text-rose-600 font-bold flex items-center justify-center space-x-1 space-x-reverse pt-2">
                 <AlertTriangle className="h-4 w-4" />
                 <span>ثبت {tabSwitches} مرتبه خروج از صفحه آزمون</span>
               </div>
@@ -195,7 +233,7 @@ export const StudentExamsPage: React.FC = () => {
               </Badge>
             )}
 
-            <div className="flex items-center space-x-2 space-x-reverse bg-primary-light px-4 py-2 rounded-xl text-primary-darker font-mono font-bold text-base">
+            <div className="flex items-center space-x-2 space-x-reverse bg-primary-light px-4 py-2 rounded-xl text-primary-darker font-bold text-base">
               <Clock className="h-5 w-5 text-primary" />
               <span>{formatTime(timeLeftSeconds)}</span>
             </div>
@@ -211,63 +249,87 @@ export const StudentExamsPage: React.FC = () => {
         </div>
 
         {/* Questions List */}
-        <div className="space-y-6">
-          {activeExam.questions?.map((q: any, qIdx: number) => (
-            <Card key={q.id} className="p-6 border">
-              <div className="flex justify-between items-start mb-3">
-                <span className="font-bold text-xs bg-gray-100 text-ink-dark px-2.5 py-1 rounded-lg">
-                  سوال شماره {qIdx + 1}
-                </span>
-                <span className="text-xs font-mono font-bold text-primary">{q.score || 2} نمره</span>
-              </div>
+        {!activeExam.questions || activeExam.questions.length === 0 ? (
+          <Card className="p-8 text-center bg-gray-50 border rounded-2xl max-w-xl mx-auto space-y-4">
+            <div className="h-12 w-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <h4 className="font-bold text-base text-ink-darker">سوالی برای این آزمون ثبت نشده است</h4>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              دبیر محترم هنوز سوالات این آزمون را در سامانه بارگذاری نکرده است. لطفاً پس از ثبت سوالات توسط دبیر مجدداً مراجعه فرمایید.
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setActiveExam(null);
+                setExamResult(null);
+              }}
+            >
+              بازگشت به لیست آزمون‌ها
+            </Button>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            {activeExam.questions.map((q: any, qIdx: number) => {
+              const qKey = q.questionId || q.id;
+              return (
+                <Card key={qKey} className="p-6 border">
+                  <div className="flex justify-between items-start mb-3">
+                    <span className="font-bold text-xs bg-gray-100 text-ink-dark px-2.5 py-1 rounded-lg">
+                      سوال شماره {qIdx + 1}
+                    </span>
+                    <span className="text-xs font-bold text-primary">{q.score || 2} نمره</span>
+                  </div>
 
-              <h4 className="text-sm font-bold text-ink-darker mb-4 leading-relaxed">{q.text}</h4>
+                  <h4 className="text-sm font-bold text-ink-darker mb-4 leading-relaxed whitespace-pre-wrap">{q.text}</h4>
 
-              {/* Multiple Choice Options */}
-              {q.type === 'MULTIPLE_CHOICE' && q.options && (
-                <div className="space-y-2.5">
-                  {q.options.map((opt: any, optIdx: number) => {
-                    const isSelected = currentAnswers[q.id]?.selectedOptionId === opt.id;
+                  {/* Multiple Choice Options */}
+                  {q.type === 'MULTIPLE_CHOICE' && q.options && (
+                    <div className="space-y-2.5">
+                      {q.options.map((opt: any) => {
+                        const isSelected = currentAnswers[qKey]?.selectedOptionId === opt.id;
 
-                    return (
-                      <div
-                        key={opt.id}
-                        onClick={() => handleSelectOption(q.id, opt.id)}
-                        className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center space-x-3 space-x-reverse text-xs ${
-                          isSelected
-                            ? 'border-primary bg-primary-light/40 text-primary-dark font-bold'
-                            : 'border-gray-200 bg-white hover:bg-gray-50 text-ink-normal'
-                        }`}
-                      >
-                        <div
-                          className={`h-5 w-5 rounded-full border flex items-center justify-center ${
-                            isSelected ? 'border-primary bg-primary text-white' : 'border-gray-300'
-                          }`}
-                        >
-                          {isSelected && <Check className="h-3.5 w-3.5" />}
-                        </div>
-                        <span>{opt.text}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                        return (
+                          <div
+                            key={opt.id}
+                            onClick={() => handleSelectOption(qKey, opt.id)}
+                            className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center space-x-3 space-x-reverse text-xs ${
+                              isSelected
+                                ? 'border-primary bg-primary-light/40 text-primary-dark font-bold'
+                                : 'border-gray-200 bg-white hover:bg-gray-50 text-ink-normal'
+                            }`}
+                          >
+                            <div
+                              className={`h-5 w-5 rounded-full border flex items-center justify-center shrink-0 ${
+                                isSelected ? 'border-primary bg-primary text-white' : 'border-gray-300'
+                              }`}
+                            >
+                              {isSelected && <Check className="h-3.5 w-3.5" />}
+                            </div>
+                            <span>{opt.text}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
-              {/* Descriptive Question */}
-              {q.type === 'DESCRIPTIVE' && (
-                <div>
-                  <textarea
-                    rows={4}
-                    placeholder="پاسخ تشریحی خود را اینجا تایپ کنید..."
-                    value={currentAnswers[q.id]?.textAnswer || ''}
-                    onChange={(e) => handleTextAnswer(q.id, e.target.value)}
-                    className="w-full rounded-xl border border-gray-300 bg-white p-3 text-xs focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-              )}
-            </Card>
-          ))}
-        </div>
+                  {/* Descriptive Question */}
+                  {q.type === 'DESCRIPTIVE' && (
+                    <div>
+                      <textarea
+                        rows={4}
+                        placeholder="پاسخ تشریحی خود را اینجا تایپ کنید..."
+                        value={currentAnswers[qKey]?.textAnswer || ''}
+                        onChange={(e) => handleTextAnswer(qKey, e.target.value)}
+                        className="w-full rounded-xl border border-gray-300 bg-white p-3 text-xs focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   }
@@ -301,37 +363,104 @@ export const StudentExamsPage: React.FC = () => {
             در حال حاضر هیچ آزمون فعالی برای شما برنامه‌ریزی نشده است.
           </div>
         ) : (
-          exams.map((exam) => (
-            <Card key={exam.id} className="flex flex-col justify-between p-6 border hover:border-primary transition-all">
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <Badge variant="default">{exam.lesson?.name || 'حسابان'}</Badge>
-                  <span className="text-xs font-bold text-primary font-mono">
-                    {exam.durationMinutes} دقیقه
-                  </span>
+          exams.map((exam) => {
+            const hasQuestions = (exam._count?.questions || 0) > 0;
+            const participation = exam.participations?.[0];
+            const isSubmitted = participation?.status === 'SUBMITTED';
+            const isTimedOut = participation?.status === 'TIMED_OUT';
+            const isCompleted = isSubmitted || isTimedOut;
+            const isResultsPublished = !!participation?.isResultsPublished;
+
+            return (
+              <Card key={exam.id} className="flex flex-col justify-between p-6 border hover:border-primary transition-all">
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <Badge variant={isCompleted ? (isResultsPublished ? 'success' : 'warning') : 'default'}>
+                      {isCompleted
+                        ? (isResultsPublished ? 'کارنامه صادر شد' : 'تحویل داده شده')
+                        : (exam.lesson?.name || 'آزمون عمومی')}
+                    </Badge>
+                    <span className="text-xs font-bold text-primary">
+                      {exam.durationMinutes} دقیقه
+                    </span>
+                  </div>
+
+                  <h3 className="font-bold text-base text-ink-darker mb-1">{exam.title}</h3>
+                  <p className="text-xs text-gray-500 leading-relaxed mb-3 line-clamp-2">{exam.description || 'آزمون سنجش تحصیلی'}</p>
+
+                  <div className="space-y-1.5 text-xs text-gray-600 bg-gray-50 p-2.5 rounded-lg border mb-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-500">تعداد سوالات:</span>
+                      <strong>
+                        {hasQuestions ? `${exam._count.questions} سوال` : 'فاقد سوال'}
+                      </strong>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-500">بارم کل آزمون:</span>
+                      <strong>{exam.totalScore || 20} نمره</strong>
+                    </div>
+
+                    {isCompleted && (
+                      <div className="pt-2 border-t space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-500">وضعیت کارنامه:</span>
+                          {isResultsPublished ? (
+                            <span className="font-bold text-emerald-600">
+                              {participation.totalScore !== null ? `${participation.totalScore} از ${exam.totalScore || 20}` : 'ثبت‌شده'}
+                            </span>
+                          ) : (
+                            <span className="font-medium text-amber-700">در انتظار تصحیح و انتشار دبیر</span>
+                          )}
+                        </div>
+
+                        {isResultsPublished && participation.graceScore > 0 && (
+                          <div className="flex items-center justify-between text-[11px] text-primary">
+                            <span>نمره ارفاقی دبیر:</span>
+                            <span>+{participation.graceScore} نمره {participation.graceReason ? `(${participation.graceReason})` : ''}</span>
+                          </div>
+                        )}
+
+                        {isResultsPublished && participation.teacherFeedback && (
+                          <div className="text-[11px] bg-white p-2 rounded border border-gray-200 text-gray-700 mt-1">
+                            <span className="font-bold text-ink-dark">بازخورد دبیر:</span> {participation.teacherFeedback}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-1 border-t">
+                      <span className="text-gray-500">پایان مهلت:</span>
+                      <span>{new Date(exam.endTime).toLocaleDateString('fa-IR')}</span>
+                    </div>
+                  </div>
                 </div>
 
-                <h3 className="font-bold text-base text-ink-darker mb-1">{exam.title}</h3>
-                <p className="text-xs text-gray-500 leading-relaxed mb-4">{exam.description}</p>
-
-                <div className="flex items-center space-x-2 space-x-reverse text-xs text-gray-600 bg-gray-50 p-2.5 rounded-lg border">
-                  <Clock className="h-4 w-4 text-amber-500 shrink-0" />
-                  <span>پایان مهلت: {new Date(exam.endTime).toLocaleDateString('fa-IR')}</span>
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  {isCompleted ? (
+                    <Button
+                      variant="outline"
+                      disabled
+                      className="w-full text-xs flex items-center justify-center space-x-1.5 space-x-reverse text-emerald-700 bg-emerald-50 border-emerald-200 cursor-default"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                      <span>{isResultsPublished ? 'کارنامه صادر شد' : 'پاسخ‌برگ تحویل شد — در انتظار انتشار'}</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      variant={hasQuestions ? 'primary' : 'outline'}
+                      onClick={() => handleStartExam(exam)}
+                      isLoading={isStartingId === exam.id}
+                      disabled={isStartingId === exam.id || !hasQuestions}
+                      className="w-full text-xs flex items-center justify-center space-x-1.5 space-x-reverse"
+                    >
+                      <Play className="h-3.5 w-3.5" />
+                      <span>{hasQuestions ? 'ورود به جلسه آزمون' : 'در انتظار ثبت سوالات توسط دبیر'}</span>
+                    </Button>
+                  )}
                 </div>
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <Button
-                  variant="primary"
-                  onClick={() => handleStartExam(exam)}
-                  className="w-full text-xs flex items-center justify-center space-x-1.5 space-x-reverse"
-                >
-                  <Play className="h-3.5 w-3.5" />
-                  <span>ورود به جلسه آزمون</span>
-                </Button>
-              </div>
-            </Card>
-          ))
+              </Card>
+            );
+          })
         )}
       </div>
     </div>

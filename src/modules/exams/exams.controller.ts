@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ExamsService } from './exams.service';
-import { CreateExamDto } from './dto/create-exam.dto';
+import { CreateExamDto, AddExamQuestionDto } from './dto/create-exam.dto';
 import {
   SubmitExamAnswersDto,
   GradeExamParticipationDto,
@@ -34,17 +34,19 @@ export class ExamsController {
   @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
   @ApiOperation({ summary: 'طراحی و تعریف آزمون جدید' })
   async createExam(
+    @CurrentUser() user: any,
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentTenant('id') tenantId: string,
     @Body() dto: CreateExamDto,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
-    return this.examsService.createExam(effectiveTenantId, dto);
+    return this.examsService.createExam(effectiveTenantId, dto, user);
   }
 
   @Get()
   @ApiOperation({ summary: 'لیست آزمون‌های تعریف‌شده مدرسه' })
   async listExams(
+    @CurrentUser() user: any,
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentTenant('id') tenantId: string,
     @Query('classroomId') classroomId?: string,
@@ -52,11 +54,42 @@ export class ExamsController {
     @Query('teacherId') teacherId?: string,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
-    return this.examsService.listExams(effectiveTenantId, {
-      classroomId,
-      lessonId,
-      teacherId,
-    });
+    return this.examsService.listExams(
+      effectiveTenantId,
+      {
+        classroomId,
+        lessonId,
+        teacherId,
+      },
+      user,
+    );
+  }
+
+  @Post(':id/questions')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @ApiOperation({ summary: 'افزودن سوال جدید به آزمون' })
+  async addQuestionToExam(
+    @CurrentUser() user: any,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') examId: string,
+    @Body() dto: AddExamQuestionDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.examsService.addQuestionToExam(effectiveTenantId, examId, dto, user);
+  }
+
+  @Get(':id/participations')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @ApiOperation({ summary: 'مشاهده لیست شرکت‌کنندگان آزمون' })
+  async getExamParticipations(
+    @CurrentUser() user: any,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') examId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.examsService.getExamParticipations(effectiveTenantId, examId, user);
   }
 
   @Post(':id/start')
@@ -91,9 +124,21 @@ export class ExamsController {
     );
   }
 
+  @Get('participations/:id/sheet')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @ApiOperation({ summary: 'مشاهده کامل برگه پاسخ‌نامه دانش‌آموز جهت تصحیح سوالات تشریحی و اعطای نمره ارفاقی' })
+  async getExamParticipationSheet(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') participationId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.examsService.getExamParticipationSheet(effectiveTenantId, participationId);
+  }
+
   @Patch('participations/:id/grade')
   @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
-  @ApiOperation({ summary: 'تصحیح دستی سوالات تشریحی و ثبت نمره نهایی توسط دبیر' })
+  @ApiOperation({ summary: 'تصحیح سوالات تشریحی، اعمال نمره ارفاقی و ثبت نمره نهایی توسط دبیر' })
   async gradeDescriptiveAnswers(
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentTenant('id') tenantId: string,
@@ -105,6 +150,25 @@ export class ExamsController {
       effectiveTenantId,
       participationId,
       dto,
+    );
+  }
+
+  @Patch(':id/publish-results')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @ApiOperation({ summary: 'انتشار رسمی یا لغو انتشار کارنامه آزمون برای کلیه دانش‌آموزان کلاس' })
+  async togglePublishResults(
+    @CurrentUser() user: any,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') examId: string,
+    @Body('publish') publish?: boolean,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.examsService.togglePublishResults(
+      effectiveTenantId,
+      examId,
+      publish,
+      user,
     );
   }
 

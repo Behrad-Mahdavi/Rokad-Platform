@@ -41,7 +41,7 @@
     --accent-purple: #8A38F5;
 
     /* Typography & Spacing */
-    --font-family: 'IRANSansXFaNum', 'IRANSansX', 'Vazirmatn', system-ui, sans-serif;
+    --font-family: 'IRANSansXFaNum', 'IRANSansX', sans-serif;
   }
 
   [data-theme='male'] {
@@ -100,10 +100,18 @@
     --theme-shadow:       2.75px 2.75px 0 #652D90;
   }
 
-  body {
-    font-family: var(--font-family);
+  html, body {
+    font-family: 'IRANSansXFaNum', 'IRANSansX', sans-serif !important;
     direction: rtl;
     text-align: right;
+  }
+
+  *, *::before, *::after, button, input, select, textarea, optgroup {
+    font-family: 'IRANSansXFaNum', 'IRANSansX', sans-serif;
+  }
+
+  code, kbd, samp, pre, .font-mono {
+    font-family: 'IRANSansXFaNum', 'IRANSansX', sans-serif !important;
   }
 }
 
