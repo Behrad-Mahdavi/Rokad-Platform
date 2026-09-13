@@ -41,6 +41,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { PayrollModule } from './modules/payroll/payroll.module';
 import { SaasAdminModule } from './modules/saas-admin/saas-admin.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -82,6 +83,7 @@ import { AppController } from './app.controller';
     FinanceModule,
     PayrollModule,
     SaasAdminModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [

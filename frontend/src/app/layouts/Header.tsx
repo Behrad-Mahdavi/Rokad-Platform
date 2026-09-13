@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../lib/auth/auth-store';
 import { useTenantStore } from '../../lib/auth/tenant-store';
 import { apiClient } from '../../lib/api/client';
@@ -21,6 +22,10 @@ import {
   MessageSquare,
   Menu,
   GraduationCap,
+  ExternalLink,
+  Inbox,
+  Filter,
+  Loader2,
 } from 'lucide-react';
 
 interface NotificationItem {
@@ -29,42 +34,42 @@ interface NotificationItem {
   desc: string;
   time: string;
   read: boolean;
-  type: 'HOMEWORK' | 'FEE' | 'CHAT' | 'SYSTEM';
+  type: string;
+  badge?: 'default' | 'success' | 'warning' | 'destructive' | 'neutral' | 'college' | 'male' | 'female';
+  targetUrl?: string;
+  createdAt?: string;
 }
 
 export const Header: React.FC = () => {
+  const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const { currentTenant, switchBranch } = useTenantStore();
   const { toggle: toggleSidebar } = useSidebarStore();
 
   // Notification state
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([
-    {
-      id: 'n-1',
-      title: 'تکلیف جدید ریاضی ثبت شد',
-      desc: 'دکتر کاظمی: تمرینات فصل دوم هندسه تحلیلی برای کلاس ۱۰۱ ثبت شد.',
-      time: '۱۰ دقیقه پیش',
-      read: false,
-      type: 'HOMEWORK',
-    },
-    {
-      id: 'n-2',
-      title: 'پرداخت آنلاین شهریه تایید شد',
-      desc: 'قسط شهریه دانش‌آموز امیرعلی صادقی با موفقیت تسویه گردید.',
-      time: '۱ ساعت پیش',
-      read: false,
-      type: 'FEE',
-    },
-    {
-      id: 'n-3',
-      title: 'پیام جدید در کانال کلاس ۱۰۱',
-      desc: 'زمان آزمون میان‌ترم به ساعت ۱۰ صبح تغییر یافت.',
-      time: '۳ ساعت پیش',
-      read: true,
-      type: 'CHAT',
-    },
-  ]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [isNotifLoading, setIsNotifLoading] = useState(false);
+  const [notifFilter, setNotifFilter] = useState<'ALL' | 'UNREAD'>('ALL');
+
+  const fetchNotifications = async () => {
+    try {
+      setIsNotifLoading(true);
+      const res = await apiClient.get<NotificationItem[]>('/notifications');
+      const list = res.data || [];
+      setNotifications(Array.isArray(list) ? list : []);
+    } catch (err) {
+      console.error('Failed to fetch notifications', err);
+    } finally {
+      setIsNotifLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user?.id, currentTenant?.id]);
 
   // Profile Modal State
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -76,8 +81,33 @@ export const Header: React.FC = () => {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  const markAllAsRead = async () => {
+    try {
+      const ids = notifications.filter((n) => !n.read).map((n) => n.id);
+      if (ids.length > 0) {
+        await apiClient.post('/notifications/mark-all-read', { notificationIds: ids });
+      }
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    } catch (err) {
+      console.error('Failed to mark all as read', err);
+    }
+  };
+
+  const handleNotificationClick = async (notif: NotificationItem) => {
+    try {
+      if (!notif.read) {
+        apiClient.patch(`/notifications/${notif.id}/read`).catch(() => {});
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n))
+        );
+      }
+      setIsNotifOpen(false);
+      if (notif.targetUrl) {
+        navigate(notif.targetUrl);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const getRoleLabel = (role?: string) => {
@@ -181,50 +211,134 @@ export const Header: React.FC = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsNotifOpen(!isNotifOpen)}
+            onClick={() => {
+              setIsNotifOpen(!isNotifOpen);
+              if (!isNotifOpen) fetchNotifications();
+            }}
             className="relative text-gray-500 hover:text-ink-dark"
+            title="اعلان‌ها و رویدادهای اختصاصی"
           >
             <Bell className="h-5 w-5" />
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 left-1.5 h-4 w-4 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">
-                {unreadCount}
+              <span className="absolute top-1 left-1 flex h-4 w-4">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-rose-500 text-white text-[10px] font-bold items-center justify-center">
+                  {unreadCount}
+                </span>
               </span>
             )}
           </Button>
 
           {/* Popover Dropdown */}
           {isNotifOpen && (
-            <div className="fixed inset-x-3 top-16 sm:absolute sm:inset-auto sm:left-0 sm:mt-2 sm:w-80 rounded-2xl bg-white p-4 shadow-xl border border-gray-200 z-50 animate-in fade-in slide-in-from-top-2">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-2 mb-2">
-                <div className="font-bold text-xs text-ink-darker flex items-center space-x-1.5 space-x-reverse">
-                  <Bell className="h-4 w-4 text-primary" />
-                  <span>اعلانات و پیام‌های زنده</span>
+            <div className="fixed inset-x-3 top-16 sm:absolute sm:inset-auto sm:left-0 sm:mt-2 sm:w-96 rounded-2xl bg-white p-4 shadow-2xl border border-gray-200 z-50 animate-in fade-in slide-in-from-top-2">
+              {/* Header of Popover */}
+              <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <Bell className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-xs text-ink-darker">اعلان‌ها و رویدادهای من</h4>
+                    <span className="text-[10px] text-gray-400">
+                      مخصوص رول {getRoleLabel(user?.role)}
+                    </span>
+                  </div>
                 </div>
+
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllAsRead}
-                    className="text-[10px] text-primary font-bold hover:underline"
+                    className="text-[10px] text-primary font-bold hover:underline bg-primary/5 px-2 py-1 rounded-lg"
                   >
-                    خوانده‌شدن همه
+                    علامت‌گذاری همه خوانده‌شده
                   </button>
                 )}
               </div>
 
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {notifications.map((n) => (
-                  <div
-                    key={n.id}
-                    className={`p-2.5 rounded-xl border text-xs transition-colors ${
-                      n.read ? 'bg-gray-50/50 border-gray-100 text-gray-500' : 'bg-primary-light/20 border-primary/20 text-ink-darker font-medium'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="font-bold">{n.title}</span>
-                      <span className="text-[9px] text-gray-400 font-mono">{n.time}</span>
-                    </div>
-                    <p className="text-[11px] leading-relaxed text-gray-600">{n.desc}</p>
+              {/* Filter Tabs */}
+              <div className="flex items-center gap-1.5 pb-2 mb-2 border-b border-gray-100 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setNotifFilter('ALL')}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                    notifFilter === 'ALL'
+                      ? 'bg-primary text-white shadow-xs'
+                      : 'text-gray-500 hover:bg-gray-100'
+                  }`}
+                >
+                  همه ({notifications.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNotifFilter('UNREAD')}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                    notifFilter === 'UNREAD'
+                      ? 'bg-primary text-white shadow-xs'
+                      : 'text-gray-500 hover:bg-gray-100'
+                  }`}
+                >
+                  خوانده‌نشده ({unreadCount})
+                </button>
+              </div>
+
+              {/* Notification List */}
+              <div className="space-y-2 max-h-80 overflow-y-auto pr-0.5">
+                {isNotifLoading && notifications.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-gray-400 flex flex-col items-center justify-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                    <span>در حال بارگذاری اعلان‌ها...</span>
                   </div>
-                ))}
+                ) : notifications.filter((n) => (notifFilter === 'UNREAD' ? !n.read : true)).length === 0 ? (
+                  <div className="py-8 text-center text-xs text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200 flex flex-col items-center justify-center gap-1.5">
+                    <Inbox className="w-6 h-6 text-gray-300" />
+                    <span>هیچ اعلانی در این بخش وجود ندارد.</span>
+                  </div>
+                ) : (
+                  notifications
+                    .filter((n) => (notifFilter === 'UNREAD' ? !n.read : true))
+                    .map((n) => (
+                      <div
+                        key={n.id}
+                        onClick={() => handleNotificationClick(n)}
+                        className={`p-3 rounded-xl border text-xs transition-all cursor-pointer group ${
+                          n.read
+                            ? 'bg-gray-50/60 border-gray-150 text-gray-500 hover:bg-gray-100'
+                            : 'bg-primary/5 border-primary/25 text-ink-darker font-medium hover:bg-primary/10 shadow-xs'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start mb-1 gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            {!n.read && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                            )}
+                            <span className="font-bold truncate text-foreground group-hover:text-primary transition-colors">
+                              {n.title}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-gray-400 font-mono shrink-0 whitespace-nowrap">
+                            {n.time}
+                          </span>
+                        </div>
+
+                        <p className="text-[11px] leading-relaxed text-gray-600 line-clamp-2">
+                          {n.desc}
+                        </p>
+
+                        <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-gray-200/50 text-[10px]">
+                          <Badge variant={n.badge || 'neutral'} className="text-[9px] py-0 px-1.5 h-4">
+                            {n.type}
+                          </Badge>
+                          {n.targetUrl && (
+                            <span className="text-primary font-semibold flex items-center gap-0.5 group-hover:underline">
+                              <span>مشاهده و اقدام</span>
+                              <ExternalLink className="w-3 h-3 ml-0.5" />
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                )}
               </div>
             </div>
           )}
