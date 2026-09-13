@@ -113,6 +113,8 @@ export class HomeworkService {
    */
   async listAllHomeworks(tenantId: string, user?: any) {
     const whereClause: any = { tenantId };
+    let studentProfileId: string | undefined;
+    let parentStudentIds: string[] = [];
 
     if (user?.role === 'TEACHER') {
       const teacher = await this.prisma.teacherProfile.findFirst({
@@ -122,28 +124,90 @@ export class HomeworkService {
         whereClause.teacherId = teacher.id;
       }
     } else if (user?.role === 'STUDENT') {
-      const student = await this.prisma.studentProfile.findFirst({
+      let student = await this.prisma.studentProfile.findFirst({
         where: { userId: user.id, tenantId },
         include: { enrollments: { where: { status: 'ACTIVE' } } },
       });
-      const classIds = student?.enrollments.map((e) => e.classroomId) || [];
-      whereClause.classroomId = { in: classIds };
+      if (!student) {
+        student = await this.prisma.studentProfile.findFirst({
+          where: { userId: user.id },
+          include: { enrollments: { where: { status: 'ACTIVE' } } },
+        });
+      }
+      if (student) {
+        studentProfileId = student.id;
+        const classIds = student.enrollments.map((e) => e.classroomId) || [];
+        whereClause.OR = [
+          { classroomId: { in: classIds } },
+          { submissions: { some: { studentId: studentProfileId } } },
+        ];
+      }
+    } else if (user?.role === 'PARENT') {
+      const parent = await this.prisma.parentProfile.findFirst({
+        where: { userId: user.id, tenantId },
+        include: {
+          studentLinks: {
+            include: {
+              student: {
+                include: {
+                  enrollments: {
+                    where: { status: 'ACTIVE' },
+                    select: { classroomId: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      if (parent) {
+        parentStudentIds = parent.studentLinks.map((l) => l.studentId);
+        const classIds = parent.studentLinks.flatMap((l) =>
+          l.student.enrollments.map((e) => e.classroomId),
+        );
+        whereClause.classroomId = { in: classIds };
+        if (parentStudentIds.length === 1) {
+          studentProfileId = parentStudentIds[0];
+        }
+      }
+    }
+
+    const includeClause: any = {
+      classroom: true,
+      lesson: true,
+      teacher: {
+        include: {
+          user: { select: { firstName: true, lastName: true, avatarUrl: true } },
+        },
+      },
+      _count: {
+        select: { submissions: true },
+      },
+    };
+
+    if (studentProfileId) {
+      includeClause.submissions = {
+        where: { studentId: studentProfileId },
+        include: {
+          gradedBy: {
+            select: { firstName: true, lastName: true },
+          },
+        },
+      };
+    } else if (parentStudentIds.length > 0) {
+      includeClause.submissions = {
+        where: { studentId: { in: parentStudentIds } },
+        include: {
+          gradedBy: {
+            select: { firstName: true, lastName: true },
+          },
+        },
+      };
     }
 
     return this.prisma.homework.findMany({
       where: whereClause,
-      include: {
-        classroom: true,
-        lesson: true,
-        teacher: {
-          include: {
-            user: { select: { firstName: true, lastName: true } },
-          },
-        },
-        _count: {
-          select: { submissions: true },
-        },
-      },
+      include: includeClause,
       orderBy: { createdAt: 'desc' },
     });
   }

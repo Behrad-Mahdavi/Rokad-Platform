@@ -92,7 +92,13 @@ describe('Rokad Multi-Tenant Platform — Phase 3 Daily Academic Operations Test
     const students = await request(app.getHttpServer())
       .get('/api/v1/members/students')
       .set('Authorization', `Bearer ${boysAdminToken}`);
-    testStudentProfileId = students.body.data[0].id;
+    const currentStudent =
+      students.body.data.find((s: any) => s.user?.phone === '09124000001') ||
+      students.body.data[0];
+    testStudentProfileId = currentStudent.id;
+    if (currentStudent.enrollments?.[0]?.classroomId) {
+      testClassroomId = currentStudent.enrollments[0].classroomId;
+    }
 
     const teachers = await request(app.getHttpServer())
       .get('/api/v1/members/teachers')
@@ -226,6 +232,23 @@ describe('Rokad Multi-Tenant Platform — Phase 3 Daily Academic Operations Test
       expect(res.body.success).toBe(true);
       expect(res.body.data.score).toBe(19.0);
       expect(res.body.data.status).toBe('GRADED');
+    });
+
+    it('GET /api/v1/homework should return student homework with graded submission and teacher feedback', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/v1/homework')
+        .set('Authorization', `Bearer ${boysStudentToken}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
+      const hw = res.body.data.find((h: any) => h.id === createdHomeworkId);
+      expect(hw).toBeDefined();
+      expect(Array.isArray(hw.submissions)).toBe(true);
+      expect(hw.submissions.length).toBe(1);
+      expect(hw.submissions[0].score).toBe(19.0);
+      expect(hw.submissions[0].status).toBe('GRADED');
+      expect(hw.submissions[0].feedback).toBe('پاسخ سوال سوم بسیار ابتکاری بود. آفرین!');
     });
   });
 
