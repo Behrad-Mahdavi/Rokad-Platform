@@ -39,10 +39,10 @@ export class SingleStudentAttendanceItemDto {
 }
 
 export class BulkRecordStudentAttendanceDto {
-  @ApiProperty({ description: 'شناسه سال تحصیلی' })
+  @ApiPropertyOptional({ description: 'شناسه سال تحصیلی (اختیاری - خودکار از کلاس استخراج می‌شود)' })
   @IsString()
-  @IsNotEmpty()
-  academicYearId: string;
+  @IsOptional()
+  academicYearId?: string;
 
   @ApiProperty({ description: 'شناسه کلاس درس' })
   @IsString()

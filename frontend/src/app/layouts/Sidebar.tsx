@@ -55,7 +55,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
     const commsSection = {
       section: 'ارتباطات و اطلاع‌رسانی',
       items: [
-        { title: 'پیام‌رسان و چت زنده', href: '/app/chat', icon: MessageSquare },
         { title: 'بورد اطلاعیه‌ها', href: '/app/notices', icon: FileCheck },
         { title: 'تقویم و رویدادها (۱۴۰۵)', href: '/app/calendar', icon: CalendarDays },
         { title: 'نظرسنجی و آراء', href: '/app/polls', icon: Vote },
@@ -203,7 +202,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   const renderFooterBanner = () => (
     <div className="rounded-xl bg-gradient-to-br from-primary-light to-white p-3 border border-primary/20 text-center shadow-2xs">
       <div className="flex items-center justify-center space-x-2 space-x-reverse text-primary-dark font-bold text-xs">
-        <img src="/logo.png" alt="رُکاد" className="h-4 w-4 rounded-md object-cover inline-block shrink-0 shadow-2xs" />
+        <img src="/logo.svg" alt="رُکاد" className="h-4 w-4 rounded-md object-cover inline-block shrink-0 shadow-2xs" />
         <span>هوشمندسازی رُکاد</span>
       </div>
       <p className="text-[10px] text-gray-500 mt-0.5">
@@ -246,7 +245,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
         <div className="p-3.5 sm:p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/70 shrink-0">
           <div className="flex items-center gap-2.5">
             <img
-              src="/logo.png"
+              src="/logo.svg"
               alt="رُکاد"
               className="h-8 w-8 rounded-xl object-cover border border-gray-200 shadow-2xs shrink-0"
             />

@@ -42,7 +42,7 @@ export const PwaUpdatePrompt: React.FC = () => {
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3">
             <img
-              src="/logo.png"
+              src="/logo.svg"
               alt="رُکاد"
               className="w-10 h-10 rounded-xl object-cover shrink-0 border border-white/20 shadow-sm"
             />

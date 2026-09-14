@@ -173,7 +173,7 @@ export const SuperAdminDashboard: React.FC = () => {
         {/* Card 3: MRR */}
         <Card className="p-3.5 sm:p-5 border hover:border-amber-500 transition-all">
           <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
-            <span>درآمد ماهانه پلتفرم (MRR)</span>
+            <span>درآمد ماهانه پلتفرم</span>
             <CreditCard className="h-4 w-4 text-amber-500" />
           </div>
           <div className="text-xl sm:text-2xl font-extrabold text-ink-darker">
@@ -194,7 +194,7 @@ export const SuperAdminDashboard: React.FC = () => {
             ۱.۲ <span className="text-xs font-normal text-gray-500">ترابایت</span>
           </div>
           <p className="text-[11px] text-gray-500 font-medium mt-1">
-            ذخیره‌سازی توزیع‌شده ابری MinIO
+            ذخیره‌سازی توزیع‌شده ابری
           </p>
         </Card>
       </div>
@@ -205,10 +205,10 @@ export const SuperAdminDashboard: React.FC = () => {
         <Card className="lg:col-span-2 p-6">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h3 className="font-bold text-sm text-ink-darker">روند رشد درآمد ماهیانه پلتفرم (MRR)</h3>
+              <h3 className="font-bold text-sm text-ink-darker">روند رشد درآمد ماهیانه پلتفرم</h3>
               <p className="text-[11px] text-gray-400">نمودار فروش اشتراک‌های سالانه و ماهانه مدارس (میلیون تومان)</p>
             </div>
-            <Badge variant="default">SaaS Growth</Badge>
+            <Badge variant="default">رشد اشتراک‌ها</Badge>
           </div>
 
           <div className="h-64 w-full" dir="ltr">
@@ -234,7 +234,7 @@ export const SuperAdminDashboard: React.FC = () => {
           <div>
             <div className="flex items-center space-x-2 space-x-reverse mb-3">
               <LogIn className="h-4 w-4 text-primary" />
-              <h3 className="font-bold text-sm text-ink-darker">ورود نیابتی سریع (Impersonate)</h3>
+              <h3 className="font-bold text-sm text-ink-darker">ورود نیابتی سریع</h3>
             </div>
             <p className="text-xs text-gray-500 mb-4 leading-relaxed">
               ورود با یک کلیک به عنوان مدیریت شعب هنرستان رُکاد جهت پشتیبانی فنی و نظارت مستقیم:

@@ -33,6 +33,22 @@ export class AttendanceService {
 
     const periodNumber = dto.periodNumber ?? 1;
 
+    let academicYearId = dto.academicYearId;
+    if (!academicYearId) {
+      const classroom = await this.prisma.classroom.findUnique({
+        where: { id: dto.classroomId },
+        select: { academicYearId: true },
+      });
+      academicYearId = classroom?.academicYearId;
+    }
+    if (!academicYearId) {
+      const activeYear = await this.prisma.academicYear.findFirst({
+        where: { tenantId, isCurrent: true },
+        select: { id: true },
+      });
+      academicYearId = activeYear?.id || '';
+    }
+
     const results = await this.prisma.$transaction(async (tx) => {
       const records: any[] = [];
       for (const item of dto.attendances) {
@@ -63,7 +79,7 @@ export class AttendanceService {
           record = await tx.studentAttendance.create({
             data: {
               tenantId,
-              academicYearId: dto.academicYearId,
+              academicYearId: academicYearId || dto.academicYearId || '',
               classroomId: dto.classroomId,
               studentId: item.studentId,
               lessonId: dto.lessonId,

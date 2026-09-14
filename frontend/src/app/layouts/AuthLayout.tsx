@@ -14,7 +14,7 @@ export const AuthLayout: React.FC = () => {
         {/* Top Logo */}
         <div className="flex items-center space-x-3 space-x-reverse relative z-10">
           <img
-            src="/logo.png"
+            src="/logo.svg"
             alt="لوگوی رسمی رُکاد"
             className="h-12 w-12 rounded-2xl object-cover border border-white/30 shadow-lg shrink-0"
           />

@@ -101,7 +101,7 @@ export const LoginPage: React.FC = () => {
       <CardHeader className="text-right space-y-2">
         <div className="flex items-center space-x-2.5 space-x-reverse">
           <img
-            src="/logo.png"
+            src="/logo.svg"
             alt="لوگوی رُکاد"
             className="h-8 w-8 rounded-xl object-cover shadow-2xs shrink-0"
           />
@@ -160,7 +160,7 @@ export const LoginPage: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="شناسه شعبه هنرستان (Tenant Slug)"
+            label="شناسه شعبه هنرستان"
             placeholder="مثال: rokad-boys یا rokad-girls"
             value={tenantSlug}
             onChange={(e) => setTenantSlug(e.target.value)}

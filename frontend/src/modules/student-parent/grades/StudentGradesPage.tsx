@@ -79,7 +79,7 @@ export const StudentGradesPage: React.FC = () => {
           isPublished ? (
             <Button variant="outline" size="sm" className="flex items-center space-x-1.5 space-x-reverse text-xs">
               <Download className="h-3.5 w-3.5" />
-              <span>دانلود کارنامه رسمی (PDF)</span>
+              <span>دانلود کارنامه رسمی</span>
             </Button>
           ) : undefined
         }

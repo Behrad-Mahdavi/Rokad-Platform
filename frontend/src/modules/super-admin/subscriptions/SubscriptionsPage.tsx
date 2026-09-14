@@ -383,7 +383,7 @@ export const SubscriptionsPage: React.FC = () => {
               required
             />
             <Input
-              label="فضای ابری (MB)"
+              label="فضای ابری (مگابایت)"
               type="number"
               value={createPlanForm.maxStorageMb}
               onChange={(e) => setCreatePlanForm({ ...createPlanForm, maxStorageMb: Number(e.target.value) })}

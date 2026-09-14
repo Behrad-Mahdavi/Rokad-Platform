@@ -370,7 +370,7 @@ export const CalendarPage: React.FC = () => {
                   ? 'bg-white text-primary shadow-xs font-black'
                   : 'text-gray-600 hover:text-ink-darker'
               }`}
-              title="نمای رویدادها و برنامه (Google Schedule View)"
+              title="نمای رویدادها و برنامه زمان‌بندی"
             >
               <ListOrdered className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">برنامه</span>

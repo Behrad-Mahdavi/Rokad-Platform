@@ -49,15 +49,6 @@ export const ParentDashboard: React.FC = () => {
             <span>وقت ملاقات با معلمان</span>
           </Button>
           <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate('/app/chat')}
-            className="text-xs flex items-center space-x-1 space-x-reverse"
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-            <span>پیام‌رسان</span>
-          </Button>
-          <Button
             variant="primary"
             size="sm"
             onClick={() => navigate('/app/parent/fees')}

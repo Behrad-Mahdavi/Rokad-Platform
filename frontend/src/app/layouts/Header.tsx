@@ -155,7 +155,7 @@ export const Header: React.FC = () => {
         </button>
 
         <img
-          src={currentTenant?.logoUrl || '/logo.png'}
+          src={currentTenant?.logoUrl || '/logo.svg'}
           alt="لوگوی رُکاد"
           className="h-9 w-9 rounded-xl object-cover border border-gray-200/80 shadow-2xs shrink-0"
         />

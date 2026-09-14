@@ -49,7 +49,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
           { title: 'داشبورد', href: '/app/admin/dashboard', icon: LayoutDashboard },
           { title: 'برنامه هفتگی', href: '/app/admin/schedule', icon: CalendarDays },
           { title: 'اعضا و کادر', href: '/app/admin/members', icon: Users },
-          { title: 'پیام‌رسان', href: '/app/chat', icon: MessageSquare },
+          { title: 'اطلاعیه‌ها', href: '/app/notices', icon: FileCheck },
         ];
 
       case 'TEACHER':
@@ -78,7 +78,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
 
       default:
         return [
-          { title: 'پیام‌رسان', href: '/app/chat', icon: MessageSquare },
+          { title: 'اطلاعیه‌ها', href: '/app/notices', icon: FileCheck },
           { title: 'تقویم', href: '/app/calendar', icon: CalendarDays },
         ];
     }

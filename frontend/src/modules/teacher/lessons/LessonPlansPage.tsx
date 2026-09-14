@@ -568,8 +568,8 @@ export const LessonPlansPage: React.FC = () => {
             setError(null);
           }
         }}
-        title="بارگذاری جزوه یا محتوای آموزشی (MinIO Storage)"
-        description="بارگذاری مستقیم فایل با سرعت بالا در سرور ابری MinIO و صدور لینک دانلود امن برای دانش‌آموزان"
+        title="بارگذاری جزوه یا محتوای آموزشی"
+        description="بارگذاری مستقیم فایل با سرعت بالا در سرور ابری و صدور لینک دانلود امن برای دانش‌آموزان"
         maxWidth="lg"
       >
         <form onSubmit={handleUploadMaterial} className="space-y-4">

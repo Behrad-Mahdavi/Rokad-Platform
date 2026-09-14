@@ -404,7 +404,7 @@ export const AcademicStructurePage: React.FC = () => {
               cell: (y) => <span className="text-xs font-medium text-gray-700">{formatJalaliDisplay(y.endDate)}</span>,
             },
             {
-              header: 'نیم‌سال‌ها (Terms)',
+              header: 'نیم‌سال‌ها',
               cell: (y) => (
                 <div className="flex gap-1 flex-wrap">
                   {y.terms?.map((t: any) => (

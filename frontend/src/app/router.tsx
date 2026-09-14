@@ -10,7 +10,8 @@ import { StudentParentLayout } from './layouts/StudentParentLayout';
 import { SharedAppLayout } from './layouts/SharedAppLayout';
 
 // Shared Real-Time Pages
-import { LiveChatPage } from '../modules/shared/chat/LiveChatPage';
+// import { LiveChatPage } from '../modules/shared/chat/LiveChatPage'; // Temporarily disabled
+
 import { NoticeboardPage } from '../modules/shared/noticeboard/NoticeboardPage';
 import { CalendarPage } from '../modules/shared/calendar/CalendarPage';
 
@@ -195,7 +196,7 @@ export const router = createBrowserRouter([
           {
             element: <SharedAppLayout />,
             children: [
-              { path: 'chat', element: <LiveChatPage /> },
+              { path: 'chat', element: <Navigate to="/app" replace /> },
               { path: 'notices', element: <NoticeboardPage /> },
               { path: 'calendar', element: <CalendarPage /> },
               { path: 'polls', element: <PollsPage /> },

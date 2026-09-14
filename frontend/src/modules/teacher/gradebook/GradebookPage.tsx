@@ -521,9 +521,13 @@ export const GradebookPage: React.FC = () => {
       const gregorianDate = jalaliToGregorianDate(date);
       const dateStr = gregorianDate.toISOString().split('T')[0];
 
+      const currentClassroom = classrooms.find((c) => c.id === selectedClassId);
+
       // 1. Save Attendance
       const attendancePayload = {
+        academicYearId: currentClassroom?.academicYearId || undefined,
         classroomId: selectedClassId,
+        lessonId: selectedLessonId || undefined,
         date: dateStr,
         periodNumber: Number(periodNumber) || 1,
         attendances: students.map((s) => ({
@@ -578,9 +582,12 @@ export const GradebookPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Failed to save logbook session', err);
-      setErrorMessage(
-        err.response?.data?.message || 'خطا در ذخیره اطلاعات دفتر کلاسی. لطفاً مجدداً تلاش نمایید.'
-      );
+      const resData = err.response?.data;
+      let errorText = resData?.message || 'خطا در ذخیره اطلاعات دفتر کلاسی. لطفاً مجدداً تلاش نمایید.';
+      if (Array.isArray(resData?.errors) && resData.errors.length > 0) {
+        errorText += ` (${resData.errors.join(' | ')})`;
+      }
+      setErrorMessage(errorText);
     } finally {
       setIsSaving(false);
     }
@@ -673,7 +680,7 @@ export const GradebookPage: React.FC = () => {
             </div>
             <div>
               <h2 className="text-base sm:text-lg md:text-xl font-bold text-ink-darker">
-                دفتر کلاسی الکترونیکی (Classroom Cockpit)
+                دفتر کلاسی الکترونیکی
               </h2>
               <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5 line-clamp-1 sm:line-clamp-none">
                 مدیریت یکپارچه هر جلسه: ثبت حضور و غیاب، نمرات پرسش کلاسی و ارزشیابی مستمر، و موارد انضباطی و تشویقی

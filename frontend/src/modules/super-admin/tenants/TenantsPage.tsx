@@ -239,7 +239,7 @@ export const TenantsPage: React.FC = () => {
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
         <form onSubmit={handleSearchSubmit} className="flex-1 w-full md:max-w-md flex gap-2">
           <Input
-            placeholder="جستجو بر اساس نام یا شناسه مدرسه (slug)..."
+            placeholder="جستجو بر اساس نام یا شناسه مدرسه..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-10"
@@ -406,7 +406,7 @@ export const TenantsPage: React.FC = () => {
       <Modal
         isOpen={isProvisionOpen}
         onClose={() => setIsProvisionOpen(false)}
-        title="راه‌اندازی آنی مرکز آموزشی جدید (Onboarding)"
+        title="راه‌اندازی آنی مرکز آموزشی جدید"
         description="با تکمیل این فرم، مرکز جدید، کاربر مدیر ارشد، سال تحصیلی جاری و پلن اشتراک به صورت خودکار ایجاد می‌شوند."
         maxWidth="xl"
       >
@@ -426,7 +426,7 @@ export const TenantsPage: React.FC = () => {
               required
             />
             <Input
-              label="شناسه انگلیسی یکتا (slug)"
+              label="شناسه انگلیسی یکتا"
               placeholder="مثال: farzanegan-school"
               value={provisionForm.slug}
               onChange={(e) => setProvisionForm({ ...provisionForm, slug: e.target.value })}
@@ -561,7 +561,7 @@ export const TenantsPage: React.FC = () => {
         <form onSubmit={handleBrandingSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">رنگ اصلی برند (Primary)</label>
+              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">رنگ اصلی برند</label>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
@@ -574,7 +574,7 @@ export const TenantsPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">رنگ ثانویه برند (Secondary)</label>
+              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">رنگ ثانویه برند</label>
               <div className="flex items-center gap-2">
                 <input
                   type="color"

@@ -262,7 +262,7 @@ export const SchoolProfilePage: React.FC = () => {
             </div>
 
             <Input
-              label="آدرس تصویر بنر / هدر بالای مدرسه (URL)"
+              label="آدرس اینترنتی تصویر بنر مدرسه"
               placeholder="https://..."
               value={profileForm.headerImageUrl}
               onChange={(e) => setProfileForm({ ...profileForm, headerImageUrl: e.target.value })}

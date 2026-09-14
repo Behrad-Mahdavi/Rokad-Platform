@@ -272,7 +272,7 @@ export const PersianDatePicker: React.FC<PersianDatePickerProps> = ({
       {error && <p className="mt-1.5 text-xs text-red-600 font-medium">{error}</p>}
       {helperText && !error && <p className="mt-1 text-xs text-gray-500">{helperText}</p>}
 
-      {/* تقویم بازشو (Popup Popover) */}
+      {/* تقویم بازشو */}
       {isOpen && (
         <div className="absolute z-50 mt-1.5 right-0 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 p-3.5 select-none animate-in fade-in zoom-in-95 duration-150">
           {/* هدر: انتخاب سال و ماه و ناوبری */}

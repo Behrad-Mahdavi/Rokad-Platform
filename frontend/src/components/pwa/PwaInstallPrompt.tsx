@@ -94,7 +94,7 @@ export const PwaInstallPrompt: React.FC = () => {
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3">
             <img
-              src="/logo.png"
+              src="/logo.svg"
               alt="نرم‌افزار رُکاد"
               className="w-11 h-11 rounded-xl object-cover shadow-sm shrink-0 border border-gray-200/80"
             />
@@ -118,7 +118,7 @@ export const PwaInstallPrompt: React.FC = () => {
         {isIos ? (
           <div className="bg-primary-50/60 rounded-xl p-2.5 text-[11px] text-primary-darker space-y-1.5 leading-relaxed">
             <div className="flex items-center gap-1.5 font-bold">
-              <span>راهنمای نصب در آیفون / آیپد (Safari):</span>
+              <span>راهنمای نصب در آیفون و آیپد:</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-5 h-5 rounded-full bg-white flex items-center justify-center text-[10px] font-bold shrink-0">۱</span>
@@ -126,7 +126,7 @@ export const PwaInstallPrompt: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <span className="w-5 h-5 rounded-full bg-white flex items-center justify-center text-[10px] font-bold shrink-0">۲</span>
-              <span>گزینه <strong className="font-bold">Add to Home Screen</strong> <PlusSquare className="w-3.5 h-3.5 inline mx-1 text-primary" /> را انتخاب نمایید.</span>
+              <span>گزینه <strong className="font-bold">افزودن به صفحه اصلی</strong> <PlusSquare className="w-3.5 h-3.5 inline mx-1 text-primary" /> را انتخاب نمایید.</span>
             </div>
           </div>
         ) : (

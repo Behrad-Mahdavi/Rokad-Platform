@@ -98,7 +98,7 @@ export const PlatformOpsPage: React.FC = () => {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2 space-x-reverse">
               <AlertTriangle className={`h-5 w-5 ${maintenance.enabled ? 'text-amber-600' : 'text-gray-400'}`} />
-              <h3 className="font-bold text-sm text-ink-darker">حالت تعمیرات سراسری (Maintenance Mode)</h3>
+              <h3 className="font-bold text-sm text-ink-darker">حالت تعمیرات سراسری</h3>
             </div>
             {maintenance.enabled ? (
               <Badge variant="destructive">فعال — سامانه در دسترس نیست</Badge>
@@ -134,7 +134,7 @@ export const PlatformOpsPage: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2 space-x-reverse">
                 <RefreshCw className="h-5 w-5 text-blue-500" />
-                <h3 className="font-bold text-sm text-ink-darker">مدیریت حافظه کش ردیس (Redis Cache)</h3>
+                <h3 className="font-bold text-sm text-ink-darker">مدیریت حافظه کش ردیس</h3>
               </div>
               <Badge variant="default">توزیع‌شده</Badge>
             </div>
@@ -168,7 +168,7 @@ export const PlatformOpsPage: React.FC = () => {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-sm flex items-center space-x-2 space-x-reverse">
             <Shield className="h-4 w-4 text-primary" />
-            <span>دفتر کل لاگ‌های امنیتی و حسابرسی پلتفرم (Audit Logs)</span>
+            <span>دفتر کل لاگ‌های امنیتی و حسابرسی پلتفرم</span>
           </CardTitle>
           <Button variant="ghost" size="sm" onClick={fetchStatusAndLogs}>
             <RefreshCw className="h-3.5 w-3.5 ml-1" />
@@ -198,7 +198,7 @@ export const PlatformOpsPage: React.FC = () => {
             )}
             columns={[
               {
-                header: 'عملیات (Action)',
+                header: 'نوع عملیات',
                 cell: (log) => (
                   <span className="font-mono font-bold text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-700">
                     {log.action}
