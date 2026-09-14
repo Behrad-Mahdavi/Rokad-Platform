@@ -261,10 +261,18 @@ export const ReportsPage: React.FC = () => {
         <div className="space-y-4">
           {/* Official Printable Header */}
           <div className="border-2 border-ink-darker rounded-2xl p-6 bg-white space-y-4 shadow-sm">
-            <div className="text-center space-y-1 border-b pb-4">
-              <div className="font-bold text-xs text-gray-500">وزارت آموزش و پرورش جمهوری اسلامی ایران</div>
-              <div className="font-extrabold text-base text-ink-darker">مجتمع آموزشی هوشمند رُکاد</div>
-              <div className="text-xs font-bold text-primary">کارنامه ارزشیابی پیشرفت تحصیلی دانش‌آموز</div>
+            <div className="flex items-center justify-between border-b pb-4">
+              <div className="w-12 h-12 flex items-center justify-center shrink-0">
+                <img src="/logo.png" alt="لوگوی رُکاد" className="w-11 h-11 object-cover rounded-xl border border-gray-200/80 shadow-2xs" />
+              </div>
+              <div className="text-center space-y-1 flex-1">
+                <div className="font-bold text-xs text-gray-500">وزارت آموزش و پرورش جمهوری اسلامی ایران</div>
+                <div className="font-extrabold text-base text-ink-darker">مجتمع آموزشی هوشمند رُکاد</div>
+                <div className="text-xs font-bold text-primary">کارنامه ارزشیابی پیشرفت تحصیلی دانش‌آموز</div>
+              </div>
+              <div className="w-12 h-12 flex items-center justify-center shrink-0">
+                <img src="/logo.png" alt="لوگوی رُکاد" className="w-11 h-11 object-cover rounded-xl border border-gray-200/80 shadow-2xs" />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs bg-gray-50 p-3 rounded-xl">

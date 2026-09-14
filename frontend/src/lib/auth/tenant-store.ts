@@ -17,6 +17,7 @@ export const ROKAD_BRANCHES: Record<'boys' | 'girls', TenantInfo> = {
     slug: 'rokad-boys',
     type: 'SCHOOL',
     theme: 'male',
+    logoUrl: '/logo.png',
   },
   girls: {
     id: 'girls-tenant-id',
@@ -24,6 +25,7 @@ export const ROKAD_BRANCHES: Record<'boys' | 'girls', TenantInfo> = {
     slug: 'rokad-girls',
     type: 'SCHOOL',
     theme: 'female',
+    logoUrl: '/logo.png',
   },
 };
 

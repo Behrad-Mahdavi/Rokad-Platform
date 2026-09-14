@@ -93,9 +93,11 @@ export const PwaInstallPrompt: React.FC = () => {
         {/* Header */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center text-white shrink-0 shadow-sm">
-              <Smartphone className="w-6 h-6" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="نرم‌افزار رُکاد"
+              className="w-11 h-11 rounded-xl object-cover shadow-sm shrink-0 border border-gray-200/80"
+            />
             <div>
               <h4 className="text-sm font-bold text-ink-darker">نصب نرم‌افزار رُکاد</h4>
               <p className="text-[11px] text-gray-500 mt-0.5">

@@ -99,8 +99,12 @@ export const LoginPage: React.FC = () => {
   return (
     <Card className="shadow-lg border-gray-200">
       <CardHeader className="text-right space-y-2">
-        <div className="flex items-center space-x-2 space-x-reverse text-primary-dark">
-          <School className="h-6 w-6" />
+        <div className="flex items-center space-x-2.5 space-x-reverse">
+          <img
+            src="/logo.png"
+            alt="لوگوی رُکاد"
+            className="h-8 w-8 rounded-xl object-cover shadow-2xs shrink-0"
+          />
           <CardTitle className="text-xl">ورود به هنرستان‌های رُکاد</CardTitle>
         </div>
         <CardDescription>

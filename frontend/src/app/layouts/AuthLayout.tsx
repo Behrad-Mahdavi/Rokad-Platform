@@ -13,9 +13,11 @@ export const AuthLayout: React.FC = () => {
 
         {/* Top Logo */}
         <div className="flex items-center space-x-3 space-x-reverse relative z-10">
-          <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-lg">
-            <School className="h-7 w-7 text-white" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="لوگوی رسمی رُکاد"
+            className="h-12 w-12 rounded-2xl object-cover border border-white/30 shadow-lg shrink-0"
+          />
           <div>
             <h1 className="font-bold text-2xl tracking-tight">هنرستان‌های رُکاد</h1>
             <p className="text-xs text-white/80">شعبه تخصصی دخترانه و پسرانه</p>

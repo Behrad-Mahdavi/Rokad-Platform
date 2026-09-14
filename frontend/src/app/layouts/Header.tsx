@@ -154,9 +154,11 @@ export const Header: React.FC = () => {
           <Menu className="h-5 w-5" />
         </button>
 
-        <div className="h-9 w-9 rounded-xl bg-primary-light flex items-center justify-center text-primary-dark border border-primary/20 shrink-0">
-          <School className="h-5 w-5" />
-        </div>
+        <img
+          src={currentTenant?.logoUrl || '/logo.png'}
+          alt="لوگوی رُکاد"
+          className="h-9 w-9 rounded-xl object-cover border border-gray-200/80 shadow-2xs shrink-0"
+        />
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <h1 className="font-bold text-xs sm:text-sm text-ink-darker leading-tight truncate max-w-[130px] sm:max-w-xs md:max-w-md">

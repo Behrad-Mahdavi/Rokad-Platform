@@ -202,8 +202,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
 
   const renderFooterBanner = () => (
     <div className="rounded-xl bg-gradient-to-br from-primary-light to-white p-3 border border-primary/20 text-center shadow-2xs">
-      <div className="flex items-center justify-center space-x-1.5 space-x-reverse text-primary-dark font-bold text-xs">
-        <Sparkles className="h-3.5 w-3.5 text-primary" />
+      <div className="flex items-center justify-center space-x-2 space-x-reverse text-primary-dark font-bold text-xs">
+        <img src="/logo.png" alt="رُکاد" className="h-4 w-4 rounded-md object-cover inline-block shrink-0 shadow-2xs" />
         <span>هوشمندسازی رُکاد</span>
       </div>
       <p className="text-[10px] text-gray-500 mt-0.5">
@@ -245,9 +245,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
         {/* Drawer Header (Attached directly to top) */}
         <div className="p-3.5 sm:p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/70 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-2xs">
-              <Sparkles className="h-4 w-4" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="رُکاد"
+              className="h-8 w-8 rounded-xl object-cover border border-gray-200 shadow-2xs shrink-0"
+            />
             <div>
               <span className="font-bold text-xs text-ink-darker block leading-tight">
                 منوی دسترسی سریع

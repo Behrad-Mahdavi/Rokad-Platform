@@ -41,9 +41,11 @@ export const PwaUpdatePrompt: React.FC = () => {
       <div className="bg-ink-darker/95 backdrop-blur-md text-white rounded-2xl p-4 shadow-2xl border border-gray-700/60 ring-1 ring-white/10 flex flex-col gap-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0">
-              <Sparkles className="w-5 h-5 animate-pulse" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="رُکاد"
+              className="w-10 h-10 rounded-xl object-cover shrink-0 border border-white/20 shadow-sm"
+            />
             <div>
               <h4 className="text-sm font-bold text-white">نسخه جدید رُکاد آماده است</h4>
               <p className="text-[11px] text-gray-300 mt-0.5">
