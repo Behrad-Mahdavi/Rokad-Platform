@@ -9,27 +9,24 @@ import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { useSidebarStore } from '../../lib/ui/sidebar-store';
 import { useWebPush } from '../../hooks/useWebPush';
+import { formatToJalali, toPersianDigits } from '../../lib/utils';
 import {
   LogOut,
-  School,
   Shield,
   Bell,
   BellRing,
   Smartphone,
   Send,
   CheckCircle2,
-  Clock,
-  User,
   KeyRound,
-  FileCheck,
-  CreditCard,
-  MessageSquare,
   Menu,
   GraduationCap,
   ExternalLink,
   Inbox,
-  Filter,
   Loader2,
+  Calendar,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 interface NotificationItem {
@@ -49,6 +46,31 @@ export const Header: React.FC = () => {
   const { user, logout } = useAuthStore();
   const { currentTenant, switchBranch } = useTenantStore();
   const { toggle: toggleSidebar } = useSidebarStore();
+
+  // Dark mode state with sync to localStorage
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    if (typeof document !== 'undefined') {
+      return document.documentElement.classList.contains('dark');
+    }
+    return false;
+  });
+
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    if (next) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('rokad-theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('rokad-theme', 'light');
+    }
+  };
+
+  // Live Persian Date
+  const [liveDate] = useState(() =>
+    formatToJalali(new Date(), { showMonthName: true, includeDayName: true })
+  );
 
   // Notification state
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -159,14 +181,14 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-16 border-b border-gray-200 bg-white px-3 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-sm">
-      {/* Left (in RTL: Right) - Hamburger + Tenant & Title */}
+    <header className="h-20 border-b border-[#EAEAEA] dark:border-gray-800 bg-white/90 dark:bg-[#0B0F17]/90 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between sticky top-0 z-40 shadow-xs transition-colors">
+      {/* Right (in RTL: Start) - Hamburger + Tenant Info */}
       <div className="flex items-center space-x-2 sm:space-x-3 space-x-reverse min-w-0">
         <button
           type="button"
           onClick={toggleSidebar}
           aria-label="منوی ناوبری"
-          className="p-2 -mr-1 rounded-xl text-gray-600 hover:text-primary hover:bg-gray-100 lg:hidden shrink-0 transition-colors"
+          className="p-2 -mr-1 rounded-xl text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-800 lg:hidden shrink-0 transition-colors"
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -174,11 +196,11 @@ export const Header: React.FC = () => {
         <img
           src={currentTenant?.logoUrl || '/logo.svg'}
           alt="لوگوی رُکاد"
-          className="h-9 w-9 rounded-xl object-cover border border-gray-200/80 shadow-2xs shrink-0"
+          className="h-10 w-10 rounded-xl object-cover border-[1.5px] border-gray-200 dark:border-gray-700 shadow-2xs shrink-0"
         />
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
-            <h1 className="font-bold text-xs sm:text-sm text-ink-darker leading-tight truncate max-w-[130px] sm:max-w-xs md:max-w-md">
+            <h1 className="font-bold text-xs sm:text-sm text-ink-darker dark:text-white leading-tight truncate max-w-[130px] sm:max-w-xs md:max-w-md">
               {currentTenant?.name || 'هنرستان فنی و حرفه‌ای رُکاد'}
             </h1>
             <Badge variant={currentTenant?.slug === 'rokad-girls' ? 'female' : 'male'} className="text-[9px] py-0 px-1.5 h-4 sm:hidden shrink-0">
@@ -186,7 +208,7 @@ export const Header: React.FC = () => {
             </Badge>
           </div>
           <div className="hidden sm:flex items-center space-x-2 space-x-reverse mt-0.5">
-            <span className="text-[11px] text-gray-500 font-mono truncate">
+            <span className="text-[11px] text-gray-500 dark:text-gray-400 font-mono truncate">
               {currentTenant?.slug || 'rokad-boys'}
             </span>
             <Badge variant={currentTenant?.slug === 'rokad-girls' ? 'female' : 'male'} className="text-[10px] py-0 px-1.5 h-4">
@@ -196,40 +218,62 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Center/Quick Switcher: Boys vs Girls Vocational School (Desktop) */}
-      <div className="hidden sm:flex items-center bg-gray-100/90 p-1 rounded-xl border border-gray-200 text-xs shrink-0">
-        <button
-          type="button"
-          onClick={() => switchBranch('boys')}
-          title="سوئیچ به هنرستان پسرانه رُکاد"
-          className={`px-2 sm:px-3 py-1 rounded-lg font-bold transition-all flex items-center space-x-1.5 space-x-reverse ${
-            currentTenant?.slug === 'rokad-boys'
-              ? 'bg-sec text-white shadow-sm'
-              : 'text-gray-600 hover:text-ink-dark'
-          }`}
-        >
-          <GraduationCap className="h-3.5 w-3.5 shrink-0" />
-          <span className="hidden sm:inline">هنرستان</span>
-          <span>پسرانه</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => switchBranch('girls')}
-          title="سوئیچ به هنرستان دخترانه رُکاد"
-          className={`px-2 sm:px-3 py-1 rounded-lg font-bold transition-all flex items-center space-x-1.5 space-x-reverse ${
-            currentTenant?.slug === 'rokad-girls'
-              ? 'bg-girl text-white shadow-sm'
-              : 'text-gray-600 hover:text-ink-dark'
-          }`}
-        >
-          <GraduationCap className="h-3.5 w-3.5 shrink-0" />
-          <span className="hidden sm:inline">هنرستان</span>
-          <span>دخترانه</span>
-        </button>
+      {/* Center: Live Persian Date & Vocational School Switcher */}
+      <div className="hidden md:flex items-center gap-3 shrink-0">
+        {/* Live Jalali Date Chip */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-50 dark:bg-[#161D2A] border border-gray-200/80 dark:border-gray-700 text-xs font-semibold text-ink-normal/80 dark:text-gray-300 shadow-2xs">
+          <Calendar className="w-3.5 h-3.5 text-primary" />
+          <span>{liveDate}</span>
+        </div>
+
+        {/* Quick Branch Switcher */}
+        <div className="flex items-center bg-gray-100/90 dark:bg-[#161D2A] p-1 rounded-xl border border-gray-200 dark:border-gray-700 text-xs shrink-0">
+          <button
+            type="button"
+            onClick={() => switchBranch('boys')}
+            title="سوئیچ به هنرستان پسرانه رُکاد"
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center space-x-1.5 space-x-reverse ${
+              currentTenant?.slug === 'rokad-boys'
+                ? 'bg-male text-white border border-male-dark shadow-[1.5px_1.5px_0_#0B0F1F]'
+                : 'text-gray-600 dark:text-gray-300 hover:text-ink-dark dark:hover:text-white'
+            }`}
+          >
+            <GraduationCap className="h-3.5 w-3.5 shrink-0" />
+            <span>پسرانه</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => switchBranch('girls')}
+            title="سوئیچ به هنرستان دخترانه رُکاد"
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center space-x-1.5 space-x-reverse ${
+              currentTenant?.slug === 'rokad-girls'
+                ? 'bg-female text-white border border-female-dark shadow-[1.5px_1.5px_0_#5B0823]'
+                : 'text-gray-600 dark:text-gray-300 hover:text-ink-dark dark:hover:text-white'
+            }`}
+          >
+            <GraduationCap className="h-3.5 w-3.5 shrink-0" />
+            <span>دخترانه</span>
+          </button>
+        </div>
       </div>
 
-      {/* Right (in RTL: Left) - Notifications, User & Actions */}
-      <div className="flex items-center space-x-2 sm:space-x-4 space-x-reverse shrink-0">
+      {/* Left (in RTL: End) - Dark Mode Toggle, Notifications, User Profile */}
+      <div className="flex items-center space-x-2 sm:space-x-3 space-x-reverse shrink-0">
+        {/* Dark Mode Toggle Button */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          title={isDark ? 'تغییر به حالت روز (روشن)' : 'تغییر به حالت شب (تاریک)'}
+          aria-label="تغییر تم روز و شب"
+          className="p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#161D2A] text-ink-normal dark:text-gray-200 hover:text-primary dark:hover:text-primary transition-all active:translate-x-[1px] active:translate-y-[1px] cursor-pointer"
+        >
+          {isDark ? (
+            <Sun className="h-4.5 w-4.5 text-amber-400" />
+          ) : (
+            <Moon className="h-4.5 w-4.5 text-male" />
+          )}
+        </button>
+
         {/* Notifications Popover Dropdown */}
         <div className="relative">
           <Button
@@ -239,7 +283,7 @@ export const Header: React.FC = () => {
               setIsNotifOpen(!isNotifOpen);
               if (!isNotifOpen) fetchNotifications();
             }}
-            className="relative text-gray-500 hover:text-ink-dark"
+            className="relative text-gray-500 dark:text-gray-300 hover:text-ink-dark dark:hover:text-white"
             title="اعلان‌ها و رویدادهای اختصاصی"
           >
             <Bell className="h-5 w-5" />
@@ -247,7 +291,7 @@ export const Header: React.FC = () => {
               <span className="absolute top-1 left-1 flex h-4 w-4">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-4 w-4 bg-rose-500 text-white text-[10px] font-bold items-center justify-center">
-                  {unreadCount}
+                  {toPersianDigits(unreadCount)}
                 </span>
               </span>
             )}
@@ -255,15 +299,15 @@ export const Header: React.FC = () => {
 
           {/* Popover Dropdown */}
           {isNotifOpen && (
-            <div className="fixed inset-x-3 top-16 sm:absolute sm:inset-auto sm:left-0 sm:mt-2 sm:w-96 rounded-2xl bg-white p-4 shadow-2xl border border-gray-200 z-50 animate-in fade-in slide-in-from-top-2">
+            <div className="fixed inset-x-3 top-20 sm:absolute sm:inset-auto sm:left-0 sm:mt-2 sm:w-96 rounded-2xl bg-white dark:bg-[#151C28] p-4 shadow-male dark:shadow-ecosystem border-[1.5px] border-gray-200 dark:border-gray-700 z-50 animate-in fade-in slide-in-from-top-2 text-right">
               {/* Header of Popover */}
-              <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-2">
+              <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700/70 pb-3 mb-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-lg bg-ecosystem-light dark:bg-ecosystem-darker/60 text-primary flex items-center justify-center">
                     <Bell className="h-4 w-4" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-xs text-ink-darker">اعلان‌ها و رویدادهای من</h4>
+                    <h4 className="font-bold text-xs text-ink-darker dark:text-white">اعلان‌ها و رویدادهای من</h4>
                     <span className="text-[10px] text-gray-400">
                       مخصوص رول {getRoleLabel(user?.role)}
                     </span>
@@ -273,7 +317,7 @@ export const Header: React.FC = () => {
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllAsRead}
-                    className="text-[10px] text-primary font-bold hover:underline bg-primary/5 px-2 py-1 rounded-lg"
+                    className="text-[10px] text-primary font-bold hover:underline bg-primary/10 dark:bg-primary/20 px-2 py-1 rounded-lg cursor-pointer transition-colors"
                   >
                     علامت‌گذاری همه خوانده‌شده
                   </button>
@@ -281,42 +325,42 @@ export const Header: React.FC = () => {
               </div>
 
               {/* Filter Tabs */}
-              <div className="flex items-center gap-1.5 pb-2 mb-2 border-b border-gray-100 text-xs">
+              <div className="flex items-center gap-1.5 pb-2 mb-2 border-b border-gray-100 dark:border-gray-700/70 text-xs">
                 <button
                   type="button"
                   onClick={() => setNotifFilter('ALL')}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     notifFilter === 'ALL'
                       ? 'bg-primary text-white shadow-xs'
-                      : 'text-gray-500 hover:bg-gray-100'
+                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
                 >
-                  همه ({notifications.length})
+                  همه ({toPersianDigits(notifications.length)})
                 </button>
                 <button
                   type="button"
                   onClick={() => setNotifFilter('UNREAD')}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     notifFilter === 'UNREAD'
                       ? 'bg-primary text-white shadow-xs'
-                      : 'text-gray-500 hover:bg-gray-100'
+                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
                 >
-                  خوانده‌نشده ({unreadCount})
+                  خوانده‌نشده ({toPersianDigits(unreadCount)})
                 </button>
               </div>
 
               {/* Web Push (iOS & Android) Device Banner */}
               {isPushSupported && (
-                <div className="mb-2.5 p-2.5 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 via-teal-50/40 to-primary/5 transition-all">
+                <div className="mb-2.5 p-2.5 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 via-teal-50/40 dark:via-gray-800/40 to-primary/5 transition-all">
                   {needsIOSInstall ? (
                     <div className="space-y-1 text-right">
-                      <div className="flex items-center gap-1.5 text-amber-700 font-bold text-[11px]">
-                        <Smartphone className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+                      <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-bold text-[11px]">
+                        <Smartphone className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
                         <span>فعال‌سازی اعلان در آیفون (iOS)</span>
                       </div>
-                      <p className="text-[10px] text-gray-600 leading-relaxed">
-                        جهت دریافت نوتیفیکیشن در آیفون، ابتدا دکمه <span className="font-bold text-gray-800">Share (اشتراک‌گذاری)</span> در نوار پایین سافاری را لمس و گزینه <span className="font-bold text-primary">«Add to Home Screen»</span> را بزنید.
+                      <p className="text-[10px] text-gray-600 dark:text-gray-400 leading-relaxed">
+                        جهت دریافت نوتیفیکیشن در آیفون، ابتدا دکمه <span className="font-bold text-gray-800 dark:text-gray-200">Share (اشتراک‌گذاری)</span> در نوار پایین سافاری را لمس و گزینه <span className="font-bold text-primary">«Add to Home Screen»</span> را بزنید.
                       </p>
                     </div>
                   ) : isPushSubscribed ? (
@@ -327,7 +371,7 @@ export const Header: React.FC = () => {
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                           </span>
-                          <span className="text-[11px] font-bold text-emerald-800 truncate">
+                          <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-400 truncate">
                             نوتیفیکیشن این دستگاه فعال است
                           </span>
                         </div>
@@ -346,7 +390,7 @@ export const Header: React.FC = () => {
                               }
                             }}
                             disabled={isPushLoading}
-                            className="px-2 py-0.5 bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-300 rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
+                            className="px-2 py-0.5 bg-white dark:bg-[#1C2536] hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700 rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
                             title="تست ارسال نوتیفیکیشن روی همین دستگاه"
                           >
                             {isPushLoading ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Send className="w-2.5 h-2.5" />}
@@ -369,7 +413,7 @@ export const Header: React.FC = () => {
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <BellRing className="w-3.5 h-3.5 text-primary shrink-0" />
-                          <span className="text-[11px] font-bold text-ink-darker truncate">
+                          <span className="text-[11px] font-bold text-ink-darker dark:text-white truncate">
                             دریافت فوری اعلان‌ها (پوش)
                           </span>
                         </div>
@@ -382,7 +426,7 @@ export const Header: React.FC = () => {
                             }
                           }}
                           disabled={isPushLoading}
-                          className="h-6 text-[10px] font-bold px-2 bg-primary hover:bg-primary-dark text-white rounded-lg flex items-center gap-1 transition-all shadow-2xs shrink-0 cursor-pointer"
+                          className="h-6 text-[10px] font-bold px-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg flex items-center gap-1 transition-all shadow-2xs shrink-0 cursor-pointer"
                         >
                           {isPushLoading ? (
                             <Loader2 className="w-2.5 h-2.5 animate-spin" />
@@ -393,7 +437,7 @@ export const Header: React.FC = () => {
                         </button>
                       </div>
                       {pushError && (
-                        <p className="text-[9px] text-rose-600 leading-tight">{pushError}</p>
+                        <p className="text-[9px] text-rose-600 dark:text-rose-400 leading-tight">{pushError}</p>
                       )}
                     </div>
                   )}
@@ -408,8 +452,8 @@ export const Header: React.FC = () => {
                     <span>در حال بارگذاری اعلان‌ها...</span>
                   </div>
                 ) : notifications.filter((n) => (notifFilter === 'UNREAD' ? !n.read : true)).length === 0 ? (
-                  <div className="py-8 text-center text-xs text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200 flex flex-col items-center justify-center gap-1.5">
-                    <Inbox className="w-6 h-6 text-gray-300" />
+                  <div className="py-8 text-center text-xs text-gray-400 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center gap-1.5">
+                    <Inbox className="w-6 h-6 text-gray-300 dark:text-gray-600" />
                     <span>هیچ اعلانی در این بخش وجود ندارد.</span>
                   </div>
                 ) : (
@@ -421,8 +465,8 @@ export const Header: React.FC = () => {
                         onClick={() => handleNotificationClick(n)}
                         className={`p-3 rounded-xl border text-xs transition-all cursor-pointer group ${
                           n.read
-                            ? 'bg-gray-50/60 border-gray-150 text-gray-500 hover:bg-gray-100'
-                            : 'bg-primary/5 border-primary/25 text-ink-darker font-medium hover:bg-primary/10 shadow-xs'
+                            ? 'bg-gray-50/60 dark:bg-[#1C2536]/40 border-gray-150 dark:border-gray-700/60 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1C2536]'
+                            : 'bg-primary/5 dark:bg-primary/10 border-primary/25 text-ink-darker dark:text-white font-medium hover:bg-primary/10 dark:hover:bg-primary/15 shadow-xs'
                         }`}
                       >
                         <div className="flex justify-between items-start mb-1 gap-2">
@@ -430,7 +474,7 @@ export const Header: React.FC = () => {
                             {!n.read && (
                               <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                             )}
-                            <span className="font-bold truncate text-foreground group-hover:text-primary transition-colors">
+                            <span className="font-bold truncate text-foreground dark:text-white group-hover:text-primary transition-colors">
                               {n.title}
                             </span>
                           </div>
@@ -439,11 +483,11 @@ export const Header: React.FC = () => {
                           </span>
                         </div>
 
-                        <p className="text-[11px] leading-relaxed text-gray-600 line-clamp-2">
+                        <p className="text-[11px] leading-relaxed text-gray-600 dark:text-gray-300 line-clamp-2">
                           {n.desc}
                         </p>
 
-                        <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-gray-200/50 text-[10px]">
+                        <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-gray-200/50 dark:border-gray-700/50 text-[10px]">
                           <Badge variant={n.badge || 'neutral'} className="text-[9px] py-0 px-1.5 h-4">
                             {n.type}
                           </Badge>
@@ -465,21 +509,21 @@ export const Header: React.FC = () => {
         {/* User Profile Trigger */}
         <div
           onClick={() => setIsProfileModalOpen(true)}
-          className="flex items-center space-x-2 sm:space-x-3 space-x-reverse border-r border-gray-200 pr-2 sm:pr-4 cursor-pointer hover:opacity-80 transition-opacity"
+          className="flex items-center space-x-2 sm:space-x-3 space-x-reverse border-r border-gray-200 dark:border-gray-700 pr-2 sm:pr-3 cursor-pointer hover:opacity-80 transition-opacity"
         >
           <div className="hidden sm:block text-left">
-            <div className="font-bold text-xs text-ink-normal text-right">
+            <div className="font-bold text-xs text-ink-normal dark:text-white text-right">
               {user ? `${user.firstName} ${user.lastName}` : 'کاربر مهمان'}
             </div>
             <div className="flex items-center justify-end space-x-1 space-x-reverse mt-0.5">
               {user?.role === 'SUPER_ADMIN' && <Shield className="h-3 w-3 text-amber-500 ml-0.5" />}
-              <span className="text-[10px] text-gray-500">
+              <span className="text-[10px] text-gray-500 dark:text-gray-400">
                 {getRoleLabel(user?.role)}
               </span>
             </div>
           </div>
 
-          <div className="h-9 w-9 rounded-full bg-primary-light text-primary border border-primary/30 flex items-center justify-center font-bold text-xs">
+          <div className="h-9 w-9 rounded-full bg-primary-light dark:bg-primary-darker/60 text-primary-darker dark:text-primary-light border-[1.5px] border-primary/40 shadow-[1.5px_1.5px_0_#202A5A] dark:shadow-[1.5px_1.5px_0_#59BBAF] flex items-center justify-center font-bold text-xs">
             {user?.firstName ? user.firstName[0] : 'U'}
           </div>
         </div>
@@ -490,7 +534,7 @@ export const Header: React.FC = () => {
           size="icon"
           onClick={logout}
           title="خروج از حساب کاربری"
-          className="text-gray-500 hover:text-red-600 hover:bg-red-50"
+          className="text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
         >
           <LogOut className="h-4 w-4" />
         </Button>
@@ -505,29 +549,29 @@ export const Header: React.FC = () => {
         maxWidth="md"
       >
         {passSuccess ? (
-          <div className="p-4 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200 text-xs flex items-center space-x-2 space-x-reverse">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+          <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs flex items-center space-x-2 space-x-reverse">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>{passSuccess}</span>
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 text-xs space-y-2">
+            <div className="bg-gray-50 dark:bg-[#1C2536] p-4 rounded-xl border border-gray-200 dark:border-gray-700 text-xs space-y-2">
               <div className="flex justify-between">
-                <span className="text-gray-500">نام و نام خانوادگی:</span>
-                <strong>{user?.firstName} {user?.lastName}</strong>
+                <span className="text-gray-500 dark:text-gray-400">نام و نام خانوادگی:</span>
+                <strong className="text-ink-normal dark:text-white">{user?.firstName} {user?.lastName}</strong>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">شماره موبایل:</span>
-                <span className="font-mono">{user?.phone}</span>
+                <span className="text-gray-500 dark:text-gray-400">شماره موبایل:</span>
+                <span className="font-mono text-ink-normal dark:text-white">{user?.phone ? toPersianDigits(user.phone) : '-'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">نقش کاربری:</span>
+                <span className="text-gray-500 dark:text-gray-400">نقش کاربری:</span>
                 <Badge variant="default">{getRoleLabel(user?.role)}</Badge>
               </div>
             </div>
 
-            <form onSubmit={handlePasswordChange} className="space-y-3 pt-2 border-t border-gray-100">
-              <div className="font-bold text-xs text-ink-dark flex items-center space-x-1.5 space-x-reverse">
+            <form onSubmit={handlePasswordChange} className="space-y-3 pt-2 border-t border-gray-100 dark:border-gray-800">
+              <div className="font-bold text-xs text-ink-dark dark:text-white flex items-center space-x-1.5 space-x-reverse">
                 <KeyRound className="h-4 w-4 text-primary" />
                 <span>تغییر رمز عبور</span>
               </div>

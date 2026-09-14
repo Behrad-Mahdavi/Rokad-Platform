@@ -123,29 +123,42 @@ export default {
         mono: ['IRANSansXFaNum', 'IRANSansX', 'sans-serif'],
       },
       fontSize: {
-        xs: ['0.75rem', { lineHeight: '1.125rem' }],   // 12px / 18px
-        sm: ['0.8125rem', { lineHeight: '1.25rem' }],  // 13px / 20px
-        base: ['0.875rem', { lineHeight: '1.375rem' }],// 14px / 22px
-        md: ['0.9375rem', { lineHeight: '1.4375rem' }],// 15px / 23px
-        lg: ['1rem', { lineHeight: '1.5rem' }],        // 16px / 24px
-        xl: ['1.125rem', { lineHeight: '1.625rem' }],  // 18px / 26px
-        '2xl': ['1.25rem', { lineHeight: '1.75rem' }],  // 20px / 28px
-        '3xl': ['1.5rem', { lineHeight: '2rem' }],     // 24px / 32px
-        '4xl': ['1.75rem', { lineHeight: '2.25rem' }],  // 28px / 36px
+        xs: ['11.5px', '17px'],
+        sm: ['13px', '20px'],
+        base: ['14.5px', '23px'],
+        md: ['16px', '25px'],
+        lg: ['18px', '27px'],
+        xl: ['21px', '29px'],
+        '2xl': ['25px', '34px'],
+        '3xl': ['30px', '39px'],
+        '4xl': ['36px', '46px'],
       },
       borderRadius: {
         xs: '4px',
         sm: '6px',
         md: '8px',
-        lg: '12px',
-        xl: '16px',
-        '2xl': '20px',
-        '3xl': '24px',
+        lg: '10px',
+        xl: '12px',
+        '2xl': '16px',
+        '3xl': '20px',
         pill: '9999px',
+        full: '9999px',
       },
       boxShadow: {
         xs: '0 1px 2px 0 rgba(0, 0, 0, 0.04)',
-        // Rokad Brand Hard Shadows (No blur, 2.75px offset)
+        // Official Neo-Brutalism Hard Shadows
+        ecosystem: '2.75px 2.75px 0 #59BBAF',
+        male: '2.75px 2.75px 0 #202A5A',
+        female: '2.75px 2.75px 0 #E0195B',
+        college: '2.75px 2.75px 0 #F8A41D',
+        club: '2.75px 2.75px 0 #652D90',
+        neutral: '2.75px 2.75px 0 #292827',
+        'hard-sm': '2px 2px 0 rgba(41, 40, 39, 0.8)',
+        'hard-md': '3px 3px 0 rgba(41, 40, 39, 0.9)',
+        'hard-lg': '4px 4px 0 #202A5A',
+        'dark-ecosystem': '2.75px 2.75px 0 #59BBAF',
+        'dark-hard': '3px 3px 0 #59BBAF',
+        // Backward compatibility
         'brand-ecosystem': '2.75px 2.75px 0 #59BBAF',
         'brand-male': '2.75px 2.75px 0 #202A5A',
         'brand-female': '2.75px 2.75px 0 #E0195B',

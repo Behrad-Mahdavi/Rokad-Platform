@@ -89,7 +89,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200/80 px-2 py-1.5 flex items-center justify-around md:hidden shadow-lg pb-[max(0.375rem,env(safe-area-inset-bottom))]"
+      className="fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-[#0B0F17]/95 backdrop-blur-md border-t border-gray-200/80 dark:border-gray-800 px-2 py-1.5 flex items-center justify-around md:hidden shadow-lg pb-[max(0.375rem,env(safe-area-inset-bottom))]"
     >
       {navItems.map((item) => (
         <NavLink
@@ -101,7 +101,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
                 'flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all text-[10px] font-medium select-none min-w-0',
                 isActive
                   ? 'text-primary font-bold scale-105'
-                  : 'text-gray-500 hover:text-ink-dark',
+                  : 'text-gray-500 dark:text-gray-400 hover:text-ink-dark dark:hover:text-white',
               ),
             )
           }
@@ -111,7 +111,9 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
               <div
                 className={clsx(
                   'h-7 w-7 rounded-lg flex items-center justify-center transition-colors mb-0.5',
-                  isActive ? 'bg-primary-light text-primary' : 'text-gray-500',
+                  isActive
+                    ? 'bg-ecosystem-light dark:bg-ecosystem-darker/60 text-primary-darker dark:text-primary-light shadow-[1.5px_1.5px_0_#59BBAF]'
+                    : 'text-gray-500 dark:text-gray-400',
                 )}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
@@ -128,13 +130,17 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
         onClick={toggle}
         className={clsx(
           'flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all text-[10px] font-medium select-none min-w-0',
-          isOpen ? 'text-primary font-bold' : 'text-gray-500 hover:text-ink-dark',
+          isOpen
+            ? 'text-primary font-bold'
+            : 'text-gray-500 dark:text-gray-400 hover:text-ink-dark dark:hover:text-white',
         )}
       >
         <div
           className={clsx(
             'h-7 w-7 rounded-lg flex items-center justify-center transition-colors mb-0.5',
-            isOpen ? 'bg-primary-light text-primary' : 'text-gray-500',
+            isOpen
+              ? 'bg-ecosystem-light dark:bg-ecosystem-darker/60 text-primary-darker dark:text-primary-light shadow-[1.5px_1.5px_0_#59BBAF]'
+              : 'text-gray-500 dark:text-gray-400',
           )}
         >
           <Menu className="h-4 w-4 shrink-0" />

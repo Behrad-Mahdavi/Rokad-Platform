@@ -4,14 +4,15 @@ import { twMerge } from 'tailwind-merge';
 
 export const Card = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { isInteractive?: boolean }
->(({ className, isInteractive, ...props }, ref) => (
+  React.HTMLAttributes<HTMLDivElement> & { isInteractive?: boolean; isFlat?: boolean }
+>(({ className, isInteractive = true, isFlat = false, ...props }, ref) => (
   <div
     ref={ref}
     className={twMerge(
       clsx(
-        'rounded-xl border border-gray-200/80 bg-white text-ink-normal shadow-sm transition-all',
-        isInteractive && 'hover:shadow-md hover:border-gray-300 cursor-pointer',
+        'rokad-card rounded-2xl border-[1.5px] border-[#EAEAEA] dark:border-[#242F42] bg-white dark:bg-[#151C28] text-ink-normal dark:text-white transition-all duration-200',
+        !isFlat && 'shadow-[2.75px_2.75px_0_#202A5A] dark:shadow-[2.75px_2.75px_0_#59BBAF]',
+        isInteractive && !isFlat && 'hover:-translate-y-0.5 hover:shadow-[3.5px_3.5px_0_#202A5A] dark:hover:shadow-[3.5px_3.5px_0_#59BBAF]',
         className,
       ),
     )}
@@ -26,7 +27,7 @@ export const CardHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={twMerge(clsx('flex flex-col space-y-1.5 p-3.5 sm:p-5 md:p-6', className))}
+    className={twMerge(clsx('flex flex-col space-y-1.5 p-4 sm:p-5 md:p-6', className))}
     {...props}
   />
 ));
@@ -39,7 +40,7 @@ export const CardTitle = React.forwardRef<
   <h3
     ref={ref}
     className={twMerge(
-      clsx('font-bold text-sm sm:text-base md:text-lg leading-snug tracking-tight text-ink-darker', className),
+      clsx('font-black text-base sm:text-lg leading-snug tracking-tight text-sec dark:text-white', className),
     )}
     {...props}
   />
@@ -52,7 +53,7 @@ export const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={twMerge(clsx('text-[11px] sm:text-xs text-gray-500 mt-1 leading-relaxed', className))}
+    className={twMerge(clsx('text-xs sm:text-[13px] text-ink-normal/70 dark:text-gray-400 mt-1 leading-relaxed', className))}
     {...props}
   />
 ));
@@ -62,7 +63,7 @@ export const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={twMerge(clsx('p-3.5 sm:p-5 md:p-6 pt-0', className))} {...props} />
+  <div ref={ref} className={twMerge(clsx('p-4 sm:p-5 md:p-6 pt-0', className))} {...props} />
 ));
 CardContent.displayName = 'CardContent';
 
@@ -72,7 +73,7 @@ export const CardFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={twMerge(clsx('flex items-center p-3.5 sm:p-5 md:p-6 pt-0', className))}
+    className={twMerge(clsx('flex items-center p-4 sm:p-5 md:p-6 pt-0', className))}
     {...props}
   />
 ));

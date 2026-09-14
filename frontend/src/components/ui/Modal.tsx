@@ -51,24 +51,26 @@ export const Modal: React.FC<ModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity animate-in fade-in"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
         onClick={onClose}
       />
 
-      {/* Modal Dialog (Bottom Sheet on Mobile, Centered Modal on Desktop) */}
+      {/* Modal Dialog (Bottom Sheet on Mobile, Centered Neo-Brutalist Modal on Desktop) */}
       <div
-        className={`relative w-full ${maxWidthClasses} rounded-t-3xl sm:rounded-2xl bg-white p-5 sm:p-6 shadow-2xl border-t sm:border border-gray-200 z-10 max-h-[88vh] sm:max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200 pb-[max(1.25rem,env(safe-area-inset-bottom))]`}
+        className={`relative w-full ${maxWidthClasses} rounded-t-3xl sm:rounded-3xl bg-white dark:bg-[#151C28] text-ink-normal dark:text-white p-5 sm:p-6 border-2 border-primary/40 shadow-[4px_4px_0_#202A5A] dark:shadow-[4px_4px_0_#59BBAF] z-10 max-h-[88vh] sm:max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150 pb-[max(1.25rem,env(safe-area-inset-bottom))]`}
       >
         {/* Mobile Drag Indicator Pill */}
-        <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-3 sm:hidden shrink-0" />
+        <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-3 sm:hidden shrink-0" />
 
-        <div className="flex items-center justify-between pb-3.5 border-b border-gray-100 mb-4">
+        <div className="flex items-center justify-between pb-3.5 border-b border-gray-100 dark:border-gray-800 mb-4">
           <div className="text-right min-w-0 pr-1">
-            <h3 className="text-base sm:text-lg font-bold text-ink-darker leading-snug truncate">
+            <h3 className="text-base sm:text-lg font-black text-sec dark:text-white leading-snug truncate">
               {title}
             </h3>
             {description && (
-              <p className="text-xs text-gray-500 mt-1 line-clamp-2">{description}</p>
+              <p className="text-xs text-ink-normal/70 dark:text-gray-400 mt-1 line-clamp-2 leading-relaxed">
+                {description}
+              </p>
             )}
           </div>
           <Button
@@ -76,7 +78,7 @@ export const Modal: React.FC<ModalProps> = ({
             size="icon"
             onClick={onClose}
             aria-label="بستن"
-            className="h-8 w-8 text-gray-400 hover:text-gray-600 rounded-full shrink-0"
+            className="h-8 w-8 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full shrink-0"
           >
             <X className="h-4 w-4" />
           </Button>

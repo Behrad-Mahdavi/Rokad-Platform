@@ -27,6 +27,7 @@ import {
   UserCheck,
   Award,
   FileQuestion,
+  ChevronLeft,
 } from 'lucide-react';
 import { UserRole } from '../../types/auth';
 import { useSidebarStore } from '../../lib/ui/sidebar-store';
@@ -162,13 +163,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   const navSections = getNavItems();
 
   const renderNavSections = () => (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {navSections.map((section, idx) => (
-        <div key={idx} className="space-y-1">
-          <h2 className="px-3 text-[10px] sm:text-[11px] font-black tracking-wider text-gray-400 uppercase">
+        <div key={idx} className="space-y-1.5">
+          <h2 className="px-3 text-[11px] font-black tracking-wider text-ink-normal/50 dark:text-gray-400 uppercase">
             {section.section}
           </h2>
-          <nav className="space-y-0.5">
+          <nav className="space-y-1">
             {section.items.map((item) => (
               <NavLink
                 key={item.href}
@@ -176,20 +177,37 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
                 className={({ isActive }) =>
                   twMerge(
                     clsx(
-                      'flex items-center space-x-3 space-x-reverse px-3 py-2 sm:py-2.5 rounded-xl text-xs font-medium transition-all group select-none',
+                      'flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[13px] sm:text-[14px] font-medium transition-all group select-none',
                       isActive
-                        ? 'bg-primary-light text-primary-darker font-bold border border-primary/20 shadow-xs'
-                        : 'text-ink-normal hover:bg-gray-50 hover:text-ink-darker',
+                        ? 'font-bold bg-ecosystem-light dark:bg-ecosystem-darker/60 text-ecosystem-darker dark:text-ecosystem-light border border-primary/40 shadow-[2px_2px_0_#59BBAF]'
+                        : 'text-ink-normal dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60 hover:text-ink-darker dark:hover:text-white',
                     ),
                   )
                 }
               >
-                <item.icon className="h-4 w-4 shrink-0 transition-transform group-hover:scale-110" />
-                <span>{item.title}</span>
-                {item.badge && (
-                  <span className="mr-auto bg-primary text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-                    {item.badge}
-                  </span>
+                {({ isActive }) => (
+                  <>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <item.icon
+                        className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
+                          isActive ? 'text-primary' : 'text-gray-400 dark:text-gray-500'
+                        }`}
+                      />
+                      <span className="truncate">{item.title}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {item.badge && (
+                        <span className="bg-primary text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                          {item.badge}
+                        </span>
+                      )}
+                      <ChevronLeft
+                        className={`w-3.5 h-3.5 text-primary transition-opacity ${
+                          isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        }`}
+                      />
+                    </div>
+                  </>
                 )}
               </NavLink>
             ))}
@@ -200,12 +218,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   );
 
   const renderFooterBanner = () => (
-    <div className="rounded-xl bg-gradient-to-br from-primary-light to-white p-3 border border-primary/20 text-center shadow-2xs">
-      <div className="flex items-center justify-center space-x-2 space-x-reverse text-primary-dark font-bold text-xs">
+    <div className="rounded-2xl bg-gradient-to-br from-ecosystem-light/60 via-white to-ecosystem-light/30 dark:from-[#151C28] dark:to-[#1C2536] p-3 border border-primary/30 text-center shadow-[2px_2px_0_#59BBAF]">
+      <div className="flex items-center justify-center space-x-2 space-x-reverse text-primary-dark dark:text-primary font-bold text-xs">
         <img src="/logo.svg" alt="رُکاد" className="h-4 w-4 rounded-md object-cover inline-block shrink-0 shadow-2xs" />
         <span>هوشمندسازی رُکاد</span>
       </div>
-      <p className="text-[10px] text-gray-500 mt-0.5">
+      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 font-medium">
         نسل نوین مدیریت یکپارچه آموزشی
       </p>
     </div>
@@ -213,12 +231,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
 
   return (
     <>
-      {/* 1. Desktop Persistent Sidebar */}
-      <aside className="hidden lg:flex w-64 border-l border-gray-200 bg-white min-h-[calc(100vh-4rem)] flex-col shrink-0 shadow-xs">
-        <div className="flex-1 overflow-y-auto p-3.5 space-y-4 no-scrollbar">
+      {/* 1. Desktop Persistent Sidebar (w-72 per standard) */}
+      <aside className="hidden lg:flex w-72 border-l border-[#EAEAEA] dark:border-gray-800 bg-white dark:bg-[#121824] min-h-[calc(100vh-5rem)] flex-col shrink-0 transition-colors">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
           {renderNavSections()}
         </div>
-        <div className="p-3.5 border-t border-gray-100 bg-white shrink-0">
+        <div className="p-4 border-t border-[#EAEAEA] dark:border-gray-800 bg-white dark:bg-[#121824] shrink-0">
           {renderFooterBanner()}
         </div>
       </aside>
@@ -227,7 +245,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       {isOpen && (
         <div
           onClick={close}
-          className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 lg:hidden transition-opacity"
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 lg:hidden transition-opacity"
           aria-hidden="true"
         />
       )}
@@ -236,25 +254,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       <aside
         className={twMerge(
           clsx(
-            'fixed inset-y-0 right-0 z-50 w-72 sm:w-80 bg-white border-l border-gray-200 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out lg:hidden',
+            'fixed inset-y-0 right-0 z-50 w-72 sm:w-80 bg-white dark:bg-[#121824] border-l border-[#EAEAEA] dark:border-gray-800 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out lg:hidden',
             isOpen ? 'translate-x-0' : 'translate-x-full',
           ),
         )}
       >
-        {/* Drawer Header (Attached directly to top) */}
-        <div className="p-3.5 sm:p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/70 shrink-0">
+        {/* Drawer Header */}
+        <div className="p-4 border-b border-[#EAEAEA] dark:border-gray-800 flex items-center justify-between bg-gray-50/70 dark:bg-[#161D2A] shrink-0">
           <div className="flex items-center gap-2.5">
             <img
               src="/logo.svg"
               alt="رُکاد"
-              className="h-8 w-8 rounded-xl object-cover border border-gray-200 shadow-2xs shrink-0"
+              className="h-8 w-8 rounded-xl object-cover border border-primary/30 shadow-[1.5px_1.5px_0_#59BBAF] shrink-0"
             />
             <div>
-              <span className="font-bold text-xs text-ink-darker block leading-tight">
-                منوی دسترسی سریع
+              <span className="font-black text-xs text-sec dark:text-white block leading-tight">
+                منوی ناوبری رُکاد
               </span>
               <span className="text-[10px] text-gray-400 font-medium leading-tight">
-                پلتفرم مدیریت آموزشی رُکاد
+                پلتفرم مدیریت آموزشی و اداری
               </span>
             </div>
           </div>
@@ -263,19 +281,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             type="button"
             onClick={close}
             aria-label="بستن منو"
-            className="h-8 w-8 rounded-lg text-gray-400 hover:text-ink-dark hover:bg-gray-200/60 flex items-center justify-center transition-colors"
+            className="h-8 w-8 rounded-lg text-gray-400 hover:text-ink-dark dark:hover:text-white hover:bg-gray-200/60 dark:hover:bg-gray-800 flex items-center justify-center transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Scrollable Nav Sections (Immediately below header, NO gap!) */}
-        <div className="flex-1 overflow-y-auto p-3.5 sm:p-4 space-y-4 no-scrollbar">
+        {/* Scrollable Nav Sections */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
           {renderNavSections()}
         </div>
 
         {/* Docked Drawer Footer */}
-        <div className="p-3.5 sm:p-4 border-t border-gray-100 bg-white shrink-0">
+        <div className="p-4 border-t border-[#EAEAEA] dark:border-gray-800 bg-white dark:bg-[#121824] shrink-0">
           {renderFooterBanner()}
         </div>
       </aside>

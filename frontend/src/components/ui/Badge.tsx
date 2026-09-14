@@ -4,19 +4,34 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+  'inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-bold text-xs transition-colors select-none',
   {
     variants: {
       variant: {
-        default: 'bg-primary-light text-primary-darker border border-primary/20',
-        success: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-        warning: 'bg-amber-50 text-amber-700 border border-amber-200',
-        destructive: 'bg-rose-50 text-rose-700 border border-rose-200',
-        neutral: 'bg-gray-100 text-gray-700 border border-gray-200',
-        male: 'bg-male-light text-male-dark border border-male-normal/20',
-        female: 'bg-female-light text-female-dark border border-female-normal/20',
-        college: 'bg-college-light text-college-dark border border-college-normal/20',
-        club: 'bg-club-light text-club-dark border border-club-normal/20',
+        default:
+          'bg-ecosystem-light dark:bg-ecosystem-darker/40 text-ecosystem-darker dark:text-ecosystem-light border border-primary/30',
+        ecosystem:
+          'bg-ecosystem-light dark:bg-ecosystem-darker/40 text-ecosystem-darker dark:text-ecosystem-light border border-primary/30',
+        male:
+          'bg-male-light dark:bg-male-darker/40 text-male-darker dark:text-male-light border border-sec/30',
+        sec:
+          'bg-male-light dark:bg-male-darker/40 text-male-darker dark:text-male-light border border-sec/30',
+        female:
+          'bg-female-light dark:bg-female-darker/40 text-female-darker dark:text-female-light border border-female-normal/30',
+        girl:
+          'bg-female-light dark:bg-female-darker/40 text-female-darker dark:text-female-light border border-female-normal/30',
+        college:
+          'bg-college-light dark:bg-college-darker/40 text-college-darker dark:text-college-light border border-college-normal/30',
+        club:
+          'bg-club-light dark:bg-club-darker/40 text-club-darker dark:text-club-light border border-club-normal/30',
+        success:
+          'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30',
+        warning:
+          'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-500/30',
+        destructive:
+          'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-500/30',
+        neutral:
+          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-700',
       },
     },
     defaultVariants: {

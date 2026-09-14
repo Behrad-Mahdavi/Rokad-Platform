@@ -6,10 +6,10 @@ export const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
 >(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-x-auto rounded-2xl border border-gray-200/80 bg-white shadow-xs touch-pan-x">
+  <div className="relative w-full overflow-x-auto rounded-2xl border-[1.5px] border-[#EAEAEA] dark:border-[#242F42] bg-white dark:bg-[#151C28] shadow-[3px_3px_0_#202A5A] dark:shadow-[3px_3px_0_#59BBAF] touch-pan-x">
     <table
       ref={ref}
-      className={twMerge(clsx('w-full min-w-[600px] sm:min-w-full caption-bottom text-sm text-right', className))}
+      className={twMerge(clsx('w-full min-w-[650px] sm:min-w-full caption-bottom text-sm text-right', className))}
       {...props}
     />
   </div>
@@ -22,7 +22,7 @@ export const TableHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <thead
     ref={ref}
-    className={twMerge(clsx('bg-gray-50/80 border-b border-gray-200 text-xs font-semibold text-gray-600', className))}
+    className={twMerge(clsx('bg-[#F8F9FA] dark:bg-[#1C2536] border-b border-[#EAEAEA] dark:border-[#242F42] text-xs font-bold text-sec dark:text-gray-200', className))}
     {...props}
   />
 ));
@@ -34,7 +34,7 @@ export const TableBody = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tbody
     ref={ref}
-    className={twMerge(clsx('divide-y divide-gray-100', className))}
+    className={twMerge(clsx('divide-y divide-gray-100 dark:divide-gray-800', className))}
     {...props}
   />
 ));
@@ -47,7 +47,7 @@ export const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={twMerge(
-      clsx('transition-colors hover:bg-gray-50/60', className),
+      clsx('transition-colors hover:bg-gray-50/70 dark:hover:bg-[#1C2536]/50', className),
     )}
     {...props}
   />
@@ -61,7 +61,7 @@ export const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={twMerge(
-      clsx('h-11 px-4 text-right align-middle font-bold text-gray-700 [&:has([role=checkbox])]:pr-0', className),
+      clsx('h-11 px-4 text-right align-middle font-bold text-sec dark:text-gray-200 [&:has([role=checkbox])]:pr-0', className),
     )}
     {...props}
   />
@@ -75,7 +75,7 @@ export const TableCell = React.forwardRef<
   <td
     ref={ref}
     className={twMerge(
-      clsx('p-4 align-middle text-ink-normal [&:has([role=checkbox])]:pr-0', className),
+      clsx('p-4 align-middle text-ink-normal dark:text-gray-200 text-xs sm:text-sm [&:has([role=checkbox])]:pr-0', className),
     )}
     {...props}
   />

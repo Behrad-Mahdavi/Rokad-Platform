@@ -27,8 +27,18 @@
     <link rel="preload" href="/IRANSansXFaNum-MediumD4.ttf" as="font" type="font/ttf" crossorigin />
     <link rel="preload" href="/IRANSansXFaNum-DemiBoldD4.ttf" as="font" type="font/ttf" crossorigin />
     <link rel="preload" href="/IRANSansXFaNum-BoldD4.ttf" as="font" type="font/ttf" crossorigin />
+    <script>
+      (function() {
+        const theme = localStorage.getItem('rokad-theme');
+        if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      })();
+    </script>
   </head>
-  <body class="bg-gray-50 text-ink-normal font-sans antialiased selection:bg-primary-light selection:text-primary-darker">
+  <body class="bg-gray-50 dark:bg-[#0B0F17] text-ink-normal dark:text-gray-100 font-sans antialiased selection:bg-primary-light selection:text-primary-darker">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

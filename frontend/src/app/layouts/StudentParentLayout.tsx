@@ -10,7 +10,7 @@ export const StudentParentLayout: React.FC = () => {
   const effectiveRole = role === 'PARENT' ? 'PARENT' : 'STUDENT';
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0B0F17] text-ink-normal dark:text-gray-100 flex flex-col font-sans transition-colors">
       <Header />
       <div className="flex flex-1 relative">
         <Sidebar role={effectiveRole} />
