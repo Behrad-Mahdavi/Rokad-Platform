@@ -162,62 +162,66 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
 
   const navSections = getNavItems();
 
-  const renderNavContent = () => (
-    <>
-      <div className="space-y-6">
-        {navSections.map((section, idx) => (
-          <div key={idx} className="space-y-1.5">
-            <h2 className="px-3 text-[11px] font-bold tracking-wider text-gray-400 uppercase">
-              {section.section}
-            </h2>
-            <nav className="space-y-1">
-              {section.items.map((item) => (
-                <NavLink
-                  key={item.href}
-                  to={item.href}
-                  className={({ isActive }) =>
-                    twMerge(
-                      clsx(
-                        'flex items-center space-x-3 space-x-reverse px-3 py-2.5 rounded-xl text-xs font-medium transition-all group',
-                        isActive
-                          ? 'bg-primary-light text-primary-darker font-bold border border-primary/20 shadow-xs'
-                          : 'text-ink-normal hover:bg-gray-50 hover:text-ink-darker',
-                      ),
-                    )
-                  }
-                >
-                  <item.icon className="h-4 w-4 shrink-0 transition-transform group-hover:scale-110" />
-                  <span>{item.title}</span>
-                  {item.badge && (
-                    <span className="mr-auto bg-primary text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-                      {item.badge}
-                    </span>
-                  )}
-                </NavLink>
-              ))}
-            </nav>
-          </div>
-        ))}
-      </div>
-
-      {/* Footer Banner */}
-      <div className="rounded-xl bg-gradient-to-br from-primary-light to-white p-3.5 border border-primary/20 text-center mt-6">
-        <div className="flex items-center justify-center space-x-1.5 space-x-reverse text-primary-dark font-bold text-xs">
-          <Sparkles className="h-4 w-4" />
-          <span>هوشمندسازی رُکاد</span>
+  const renderNavSections = () => (
+    <div className="space-y-5">
+      {navSections.map((section, idx) => (
+        <div key={idx} className="space-y-1">
+          <h2 className="px-3 text-[10px] sm:text-[11px] font-black tracking-wider text-gray-400 uppercase">
+            {section.section}
+          </h2>
+          <nav className="space-y-0.5">
+            {section.items.map((item) => (
+              <NavLink
+                key={item.href}
+                to={item.href}
+                className={({ isActive }) =>
+                  twMerge(
+                    clsx(
+                      'flex items-center space-x-3 space-x-reverse px-3 py-2 sm:py-2.5 rounded-xl text-xs font-medium transition-all group select-none',
+                      isActive
+                        ? 'bg-primary-light text-primary-darker font-bold border border-primary/20 shadow-xs'
+                        : 'text-ink-normal hover:bg-gray-50 hover:text-ink-darker',
+                    ),
+                  )
+                }
+              >
+                <item.icon className="h-4 w-4 shrink-0 transition-transform group-hover:scale-110" />
+                <span>{item.title}</span>
+                {item.badge && (
+                  <span className="mr-auto bg-primary text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                    {item.badge}
+                  </span>
+                )}
+              </NavLink>
+            ))}
+          </nav>
         </div>
-        <p className="text-[11px] text-gray-500 mt-1">
-          نسل نوین مدیریت یکپارچه آموزشی
-        </p>
+      ))}
+    </div>
+  );
+
+  const renderFooterBanner = () => (
+    <div className="rounded-xl bg-gradient-to-br from-primary-light to-white p-3 border border-primary/20 text-center shadow-2xs">
+      <div className="flex items-center justify-center space-x-1.5 space-x-reverse text-primary-dark font-bold text-xs">
+        <Sparkles className="h-3.5 w-3.5 text-primary" />
+        <span>هوشمندسازی رُکاد</span>
       </div>
-    </>
+      <p className="text-[10px] text-gray-500 mt-0.5">
+        نسل نوین مدیریت یکپارچه آموزشی
+      </p>
+    </div>
   );
 
   return (
     <>
       {/* 1. Desktop Persistent Sidebar */}
-      <aside className="hidden lg:flex w-64 border-l border-gray-200 bg-white min-h-[calc(100vh-4rem)] flex-col justify-between p-4 shrink-0 shadow-xs">
-        {renderNavContent()}
+      <aside className="hidden lg:flex w-64 border-l border-gray-200 bg-white min-h-[calc(100vh-4rem)] flex-col shrink-0 shadow-xs">
+        <div className="flex-1 overflow-y-auto p-3.5 space-y-4 no-scrollbar">
+          {renderNavSections()}
+        </div>
+        <div className="p-3.5 border-t border-gray-100 bg-white shrink-0">
+          {renderFooterBanner()}
+        </div>
       </aside>
 
       {/* 2. Mobile Off-canvas Drawer Backdrop */}
@@ -233,27 +237,46 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       <aside
         className={twMerge(
           clsx(
-            'fixed inset-y-0 right-0 z-50 w-72 bg-white border-l border-gray-200 p-4 flex flex-col justify-between shadow-2xl transition-transform duration-300 ease-in-out lg:hidden overflow-y-auto',
+            'fixed inset-y-0 right-0 z-50 w-72 sm:w-80 bg-white border-l border-gray-200 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out lg:hidden',
             isOpen ? 'translate-x-0' : 'translate-x-full',
           ),
         )}
       >
-        <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
-          <span className="font-bold text-xs text-ink-darker flex items-center gap-1.5">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span>منوی دسترسی سریع</span>
-          </span>
+        {/* Drawer Header (Attached directly to top) */}
+        <div className="p-3.5 sm:p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/70 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-2xs">
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <div>
+              <span className="font-bold text-xs text-ink-darker block leading-tight">
+                منوی دسترسی سریع
+              </span>
+              <span className="text-[10px] text-gray-400 font-medium leading-tight">
+                پلتفرم مدیریت آموزشی رُکاد
+              </span>
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={close}
             aria-label="بستن منو"
-            className="p-1.5 rounded-lg text-gray-400 hover:text-ink-dark hover:bg-gray-100 transition-colors"
+            className="h-8 w-8 rounded-lg text-gray-400 hover:text-ink-dark hover:bg-gray-200/60 flex items-center justify-center transition-colors"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        {renderNavContent()}
+        {/* Scrollable Nav Sections (Immediately below header, NO gap!) */}
+        <div className="flex-1 overflow-y-auto p-3.5 sm:p-4 space-y-4 no-scrollbar">
+          {renderNavSections()}
+        </div>
+
+        {/* Docked Drawer Footer */}
+        <div className="p-3.5 sm:p-4 border-t border-gray-100 bg-white shrink-0">
+          {renderFooterBanner()}
+        </div>
       </aside>
     </>
   );
