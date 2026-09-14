@@ -116,7 +116,13 @@ export class ClassesService {
         ? Number((dto as any).units)
         : 1;
 
-    const isModular = Boolean(dto.isModular);
+    const isModularLessonType = [
+      'NON_TECHNICAL_COMPETENCY',
+      'BASIC_COMPETENCY',
+      'TECHNICAL_MODULAR_COMPETENCY',
+    ].includes(dto.type as string);
+
+    const isModular = dto.isModular !== undefined ? Boolean(dto.isModular) : isModularLessonType;
     const podmanCount = isModular ? Math.max(1, dto.podmanCount || 5) : 5;
 
     return this.prisma.$transaction(async (tx) => {

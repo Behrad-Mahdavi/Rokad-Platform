@@ -74,8 +74,8 @@ export const AcademicStructurePage: React.FC = () => {
     units: 3,
     levelId: '',
     fieldId: '',
-    type: 'SPECIALIZED',
-    isModular: false,
+    type: 'TECHNICAL_MODULAR_COMPETENCY',
+    isModular: true,
     podmanCount: 5,
     podmanTitles: ['پودمان ۱', 'پودمان ۲', 'پودمان ۳', 'پودمان ۴', 'پودمان ۵'],
   });
@@ -213,7 +213,8 @@ export const AcademicStructurePage: React.FC = () => {
         name: '',
         code: '',
         units: 3,
-        isModular: false,
+        type: 'TECHNICAL_MODULAR_COMPETENCY',
+        isModular: true,
         podmanCount: 5,
         podmanTitles: ['پودمان ۱', 'پودمان ۲', 'پودمان ۳', 'پودمان ۴', 'پودمان ۵'],
       }));
@@ -565,17 +566,26 @@ export const AcademicStructurePage: React.FC = () => {
               },
               {
                 header: 'نوع درس',
-                cell: (l) => (
-                  <span className="text-xs font-medium text-gray-600">
-                    {l.type === 'SPECIALIZED'
-                      ? 'تخصصی'
-                      : l.type === 'PRACTICAL'
-                      ? 'کارگاهی'
-                      : l.type === 'OPTIONAL'
-                      ? 'انتخابی'
-                      : 'عمومی'}
-                  </span>
-                ),
+                cell: (l) => {
+                  switch (l.type) {
+                    case 'NON_TECHNICAL_COMPETENCY':
+                      return <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-200">شایستگی‌های غیرفنی (پودمانی)</span>;
+                    case 'BASIC_COMPETENCY':
+                      return <span className="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-200">شایستگی‌های پایه (پودمانی)</span>;
+                    case 'TECHNICAL_MODULAR_COMPETENCY':
+                      return <span className="text-xs font-semibold text-purple-800 bg-purple-100 px-2 py-0.5 rounded-lg border border-purple-300">شایستگی‌های فنی / پودمانی</span>;
+                    case 'TECHNICAL_PRACTICAL_COMPETENCY':
+                      return <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">شایستگی‌های فنی / عملی</span>;
+                    case 'SPECIALIZED':
+                      return <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">تخصصی</span>;
+                    case 'PRACTICAL':
+                      return <span className="text-xs font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-200">کارگاهی</span>;
+                    case 'OPTIONAL':
+                      return <span className="text-xs font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-lg">انتخابی</span>;
+                    default:
+                      return <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">عمومی</span>;
+                  }
+                },
                 mobileDetail: true,
               },
               {
@@ -860,70 +870,161 @@ export const AcademicStructurePage: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
-                نوع درس
-              </label>
-              <select
-                value={lessonForm.type}
-                onChange={(e) => setLessonForm({ ...lessonForm, type: e.target.value })}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-medium"
-              >
-                <option value="SPECIALIZED">شایستگی فنی / تخصصی</option>
-                <option value="GENERAL">شایستگی پایه / عمومی</option>
-                <option value="PRACTICAL">کارگاهی / عملی</option>
-                <option value="OPTIONAL">انتخابی / مهارتی</option>
-              </select>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+                  نوع درس
+                </label>
+                <select
+                  value={lessonForm.type}
+                  onChange={(e) => {
+                    const newType = e.target.value;
+                    const isMod = ['NON_TECHNICAL_COMPETENCY', 'BASIC_COMPETENCY', 'TECHNICAL_MODULAR_COMPETENCY'].includes(newType);
+                    setLessonForm({
+                      ...lessonForm,
+                      type: newType,
+                      isModular: isMod,
+                    });
+                  }}
+                  className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-medium"
+                >
+                  <option value="GENERAL">۱- عمومی</option>
+                  <option value="NON_TECHNICAL_COMPETENCY">۲- شایستگی‌های غیرفنی (پودمانی)</option>
+                  <option value="BASIC_COMPETENCY">۳- شایستگی‌های پایه (پودمانی)</option>
+                  <option value="TECHNICAL_MODULAR_COMPETENCY">۴- شایستگی‌های فنی / پودمانی</option>
+                  <option value="TECHNICAL_PRACTICAL_COMPETENCY">۵- شایستگی‌های فنی / عملی</option>
+                </select>
+              </div>
+
+              <Input
+                label="تعداد واحد / ساعت هفتگی"
+                type="number"
+                value={lessonForm.units}
+                onChange={(e) => setLessonForm({ ...lessonForm, units: Number(e.target.value) })}
+                required
+              />
             </div>
 
-            <Input
-              label="تعداد واحد / ساعت هفتگی"
-              type="number"
-              value={lessonForm.units}
-              onChange={(e) => setLessonForm({ ...lessonForm, units: Number(e.target.value) })}
-              required
-            />
-          </div>
-
-          {/* Checkbox: درس پودمانی */}
-          <div className="bg-gradient-to-l from-purple-50/60 via-purple-50/20 to-white rounded-2xl border border-purple-200 p-4 space-y-3">
-            <label className="flex items-start gap-3 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={lessonForm.isModular}
-                onChange={(e) =>
-                  setLessonForm({
-                    ...lessonForm,
-                    isModular: e.target.checked,
-                    type: e.target.checked ? 'SPECIALIZED' : lessonForm.type,
-                  })
-                }
-                className="mt-1 h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
-              />
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-extrabold text-sm text-ink-darker">
-                    درس پودمانی (شایستگی‌های فنی و کارگاهی هنرستان)
+            {/* کارت راهنما و توضیحات زنده منطق نمره‌دهی و ارزشیابی نوع درس */}
+            {lessonForm.type === 'GENERAL' && (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5 text-xs text-emerald-950 space-y-1.5 transition-all">
+                <div className="flex items-center justify-between font-bold text-emerald-900">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    منطق ارزشیابی: دروس عمومی (غیرپودمانی)
                   </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-100 text-purple-800 border border-purple-200">
-                    نظام ۵ پودمانی
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[11px] border border-emerald-300">
+                    نظام نوبت اول و نوبت دوم
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                  این درس به ۵ پودمان مهارتی مستقل با ارزشیابی شایستگی‌محور (مستمر از ۵ + شایستگی از ۳ سطح) و شرط قبولی حداقل نمره ۱۲ در تک‌تک پودمان‌ها تقسیم می‌شود.
+                <p className="leading-relaxed text-emerald-800 text-[11.5px]">
+                  این درس به صورت ترمی/سالیانه ارزشیابی می‌شود: دارای <strong>نمره مستمر و پایانی نوبت اول (دی‌ماه)</strong> و <strong>نمره مستمر و پایانی نوبت دوم (خرداد/شهریور)</strong>. محاسبه نمره سالانه طبق فرمول آموزش متوسطه انجام می‌گیرد و نیازی به تفکیک ۵ پودمان ندارد.
                 </p>
               </div>
-            </label>
+            )}
 
-            {lessonForm.isModular && (
+            {lessonForm.type === 'NON_TECHNICAL_COMPETENCY' && (
+              <div className="rounded-xl border border-purple-200 bg-purple-50/70 p-3.5 text-xs text-purple-950 space-y-1.5 transition-all">
+                <div className="flex items-center justify-between font-bold text-purple-900">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-purple-500 animate-pulse" />
+                    منطق ارزشیابی: شایستگی‌های غیرفنی (پودمانی)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 text-[11px] border border-purple-300">
+                    ۵ پودمان مهارتی مستقل
+                  </span>
+                </div>
+                <p className="leading-relaxed text-purple-800 text-[11.5px]">
+                  دروسی نظیر الزامات محیط کار، اخلاق حرفه‌ای، کاربرد فناوری اطلاعات و ارتباطات، و کارگاه نوآوری و کارآفرینی. ارزشیابی در <strong>۵ پودمان مجزا</strong> انجام می‌شود (نمره مستمر ۰ تا ۵ + شایستگی ۱ تا ۳ ضربدر ۵ = نمره پودمان از ۲۰). <strong>حد نصاب قبولی کسب حداقل نمره ۱۲ در تمام ۵ پودمان است.</strong>
+                </p>
+              </div>
+            )}
+
+            {lessonForm.type === 'BASIC_COMPETENCY' && (
+              <div className="rounded-xl border border-indigo-200 bg-indigo-50/70 p-3.5 text-xs text-indigo-950 space-y-1.5 transition-all">
+                <div className="flex items-center justify-between font-bold text-indigo-900">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
+                    منطق ارزشیابی: شایستگی‌های پایه (پودمانی)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 text-[11px] border border-indigo-300">
+                    ۵ پودمان علوم پایه هنرستان
+                  </span>
+                </div>
+                <p className="leading-relaxed text-indigo-800 text-[11.5px]">
+                  دروس علوم پایه فنی‌وحرفه‌ای نظیر ریاضی ۱، ۲، ۳، فیزیک، و شیمی هنرستان. ساختار کتاب شامل <strong>۵ پودمان متوالی مستقل</strong> است و ارزشیابی هر پودمان به صورت مجزا با نمره مستمر و پایانی پودمان ثبت می‌گردد. شرط قبولی درس، قبولی در هر ۵ پودمان (حداقل نمره ۱۲) می‌باشد.
+                </p>
+              </div>
+            )}
+
+            {lessonForm.type === 'TECHNICAL_MODULAR_COMPETENCY' && (
+              <div className="rounded-xl border border-purple-200 bg-gradient-to-r from-purple-50 via-purple-50/50 to-indigo-50/40 p-3.5 text-xs text-purple-950 space-y-1.5 transition-all">
+                <div className="flex items-center justify-between font-bold text-purple-900">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-purple-600 animate-pulse" />
+                    منطق ارزشیابی: شایستگی‌های فنی / پودمانی (کارگاهی اصلی)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-purple-100 text-purple-900 text-[11px] border border-purple-300">
+                    ۵ پودمان کارگاهی شایستگی‌محور
+                  </span>
+                </div>
+                <p className="leading-relaxed text-purple-800 text-[11.5px]">
+                  دروس اصلی کارگاهی رشته (مانند دانش فنی، نصب و راه‌اندازی، تولید محتوا، توسعه نرم‌افزار و...). ارزشیابی استاندارد در <strong>۵ پودمان تخصصی</strong> با سطوح شایستگی کارگاهی (شایستگی ۱ تا ۳ ضربدر ۵ + مستمر ۰ تا ۵ = نمره ۲۰). ملاک قبولی در هر پودمان نمره ۱۲ بوده و پودمان‌های تجدید شده دارای آزمون جبرانی مجزا هستند.
+                </p>
+              </div>
+            )}
+
+            {lessonForm.type === 'TECHNICAL_PRACTICAL_COMPETENCY' && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3.5 text-xs text-amber-950 space-y-1.5 transition-all">
+                <div className="flex items-center justify-between font-bold text-amber-900">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                    منطق ارزشیابی: شایستگی‌های فنی / عملی (غیرپودمانی)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[11px] border border-amber-300">
+                    سنجش کتبی و عملی آخر سال
+                  </span>
+                </div>
+                <p className="leading-relaxed text-amber-800 text-[11.5px]">
+                  این درس به ۵ پودمان تقسیم نمی‌شود؛ ارزشیابی آن بر اساس <strong>نمره آزمون کتبی</strong> و <strong>سنجش عملی کارگاهی آخر سال</strong> انجام می‌گیرد و عملکرد مهارتی و آزمون عملی ملاک اصلی تعیین نمره پایانی درس در کارنامه است.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* بخش تنظیمات پودمان (در صورت پودمانی بودن درس) */}
+          {lessonForm.isModular ? (
+            <div className="bg-gradient-to-l from-purple-50/60 via-purple-50/20 to-white rounded-2xl border border-purple-200 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-sm text-ink-darker">
+                    پودمان‌های این درس (نظام ۵ پودمانی)
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                    ۵ پودمان فعال
+                  </span>
+                </div>
+                <span className="text-xs text-purple-700 font-medium">
+                  ثبت خودکار در پایگاه داده
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                برای این درس به طور خودکار ۵ پودمان در دیتابیس ساخته می‌شود. می‌توانید در صورت تمایل عناوین اختصاصی پودمان‌ها را وارد نمایید:
+              </p>
+
               <div className="pt-2 border-t border-purple-100 space-y-2">
                 <label className="block text-xs font-bold text-purple-900 mb-1">
                   عناوین ۵ پودمان این درس (اختیاری):
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
                   {[0, 1, 2, 3, 4].map((idx) => (
-                    <div key={idx} className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-purple-200/80">
+                    <div
+                      key={idx}
+                      className={`flex items-center gap-2 bg-white px-2 py-1.5 rounded-xl border border-purple-200/80 min-w-0 w-full overflow-hidden ${
+                        idx === 4 ? 'sm:col-span-2' : ''
+                      }`}
+                    >
                       <span className="text-[11px] font-bold text-purple-700 w-16 shrink-0 text-center font-mono">
                         پودمان {idx + 1}:
                       </span>
@@ -936,14 +1037,19 @@ export const AcademicStructurePage: React.FC = () => {
                           setLessonForm({ ...lessonForm, podmanTitles: newTitles });
                         }}
                         placeholder={`عنوان پودمان ${idx + 1}`}
-                        className="flex-1 h-8 text-xs px-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500 font-medium"
+                        className="flex-1 min-w-0 w-full h-8 text-xs px-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500 font-medium bg-gray-50/50 focus:bg-white transition-colors"
                       />
                     </div>
                   ))}
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50/60 p-3.5 text-center text-xs text-gray-500">
+              <span className="font-semibold text-gray-700">این درس غیرپودمانی است: </span>
+              ارزشیابی نمرات به صورت کلاسی/ترمی یا کتبی و عملی سالانه ثبت شده و نیازی به پودمان‌بندی ندارد.
+            </div>
+          )}
 
           <div className="flex justify-end space-x-2 space-x-reverse pt-2">
             <Button
