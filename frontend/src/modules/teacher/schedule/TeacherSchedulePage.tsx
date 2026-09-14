@@ -62,6 +62,20 @@ interface ClassScheduleItem {
   classroomId: string;
   lessonId: string;
   teacherId: string;
+  isSplitPeriod?: boolean;
+  secondLessonId?: string;
+  secondTeacherId?: string;
+  secondLesson?: {
+    id: string;
+    name: string;
+    code?: string;
+  };
+  secondTeacher?: {
+    user: {
+      firstName: string;
+      lastName: string;
+    };
+  };
   dayOfWeek: DayOfWeekKey;
   periodNumber: number;
   startTime: string;
@@ -325,17 +339,43 @@ export const TeacherSchedulePage: React.FC = () => {
                         </div>
 
                         {/* Lesson Title */}
-                        <div className="pt-1">
-                          <h2 className="text-xl font-extrabold text-foreground flex items-center gap-2">
-                            <BookOpen className="w-5 h-5 text-primary shrink-0" />
-                            <span>{slot.lesson?.name}</span>
-                            {slot.lesson?.code && (
-                              <span className="text-xs font-normal text-muted-foreground">
-                                (کد درس: {toPersianDigits(slot.lesson.code)})
+                        {slot.isSplitPeriod ? (
+                          <div className="space-y-2 pt-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-md font-bold">
+                                تک‌زنگ (۲ درس ۴۵ دقیقه‌ای)
                               </span>
-                            )}
-                          </h2>
-                        </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div className="p-3 bg-primary-50/20 rounded-xl border border-primary/20 space-y-1">
+                                <span className="text-[11px] font-bold text-primary">۴۵ دقیقه اول</span>
+                                <h3 className="font-extrabold text-base text-foreground flex items-center gap-1.5">
+                                  <BookOpen className="w-4 h-4 text-primary shrink-0" />
+                                  <span>{slot.lesson?.name}</span>
+                                </h3>
+                              </div>
+                              <div className="p-3 bg-purple-50/30 rounded-xl border border-purple-200/60 space-y-1">
+                                <span className="text-[11px] font-bold text-purple-700">۴۵ دقیقه دوم</span>
+                                <h3 className="font-extrabold text-base text-foreground flex items-center gap-1.5">
+                                  <BookOpen className="w-4 h-4 text-purple-600 shrink-0" />
+                                  <span>{slot.secondLesson?.name || '—'}</span>
+                                </h3>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="pt-1">
+                            <h2 className="text-xl font-extrabold text-foreground flex items-center gap-2">
+                              <BookOpen className="w-5 h-5 text-primary shrink-0" />
+                              <span>{slot.lesson?.name}</span>
+                              {slot.lesson?.code && (
+                                <span className="text-xs font-normal text-muted-foreground">
+                                  (کد درس: {toPersianDigits(slot.lesson.code)})
+                                </span>
+                              )}
+                            </h2>
+                          </div>
+                        )}
 
                         {/* Classroom & Location Badges */}
                         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground pt-1">

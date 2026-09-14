@@ -50,6 +50,21 @@ export class CreateLessonDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @ApiPropertyOptional({ description: 'آیا درس به صورت پودمانی است؟ (مخصوص دروس فنی و مهارتی هنرستان)', default: false })
+  @IsBoolean()
+  @IsOptional()
+  isModular?: boolean;
+
+  @ApiPropertyOptional({ description: 'تعداد پودمان‌های درس (پیش‌فرض ۵ پودمان)', default: 5 })
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  podmanCount?: number;
+
+  @ApiPropertyOptional({ description: 'عناوین پودمان‌ها (اختیاری)', type: [String] })
+  @IsOptional()
+  podmanTitles?: string[];
 }
 
 export class CreateClassroomDto {
@@ -155,4 +170,24 @@ export class CreateScheduleDto {
   @IsOptional()
   @IsBoolean()
   replaceExisting?: boolean;
+
+  @ApiPropertyOptional({ description: 'تایید و ثبت حتی با وجود تداخل زمانی دبیر (عدم مسدودسازی)' })
+  @IsOptional()
+  @IsBoolean()
+  allowTeacherConflict?: boolean;
+
+  @ApiPropertyOptional({ description: 'آیا اسلات به صورت تک‌زنگ (دو درس ۴۵ دقیقه‌ای) باشد؟' })
+  @IsOptional()
+  @IsBoolean()
+  isSplitPeriod?: boolean;
+
+  @ApiPropertyOptional({ description: 'شناسه درس دوم در صورت تک‌زنگ بودن' })
+  @IsOptional()
+  @IsString()
+  secondLessonId?: string;
+
+  @ApiPropertyOptional({ description: 'شناسه دبیر دوم در صورت تک‌زنگ بودن' })
+  @IsOptional()
+  @IsString()
+  secondTeacherId?: string;
 }

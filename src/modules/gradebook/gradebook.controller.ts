@@ -10,6 +10,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { GradebookService } from './gradebook.service';
 import { BulkRecordGradeDto } from './dto/record-grade.dto';
+import { BulkRecordPodmanGradeDto } from './dto/record-podman-grade.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
@@ -42,6 +43,23 @@ export class GradebookController {
     );
   }
 
+  @Post('podman/bulk')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @ApiOperation({ summary: 'ثبت گروهی نمرات مستمر و شایستگی پودمان‌های هنرستان' })
+  async recordBulkPodmanGrades(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Body() dto: BulkRecordPodmanGradeDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.gradebookService.recordBulkPodmanGrades(
+      effectiveTenantId,
+      userId,
+      dto,
+    );
+  }
+
   @Get('classroom/:classroomId')
   @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'مشاهده ماتریس دفتر نمرات یک کلاس درس' })
@@ -53,6 +71,23 @@ export class GradebookController {
   ) {
     const effectiveTenantId = tenantId || userTenantId;
     return this.gradebookService.getClassGradebook(
+      effectiveTenantId,
+      classroomId,
+      lessonId,
+    );
+  }
+
+  @Get('classroom/:classroomId/podman-matrix')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
+  @ApiOperation({ summary: 'مشاهده ماتریس ارزشیابی پودمان‌های درس کارگاهی/فنی کلاس' })
+  async getClassPodmanMatrix(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('classroomId') classroomId: string,
+    @Query('lessonId') lessonId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.gradebookService.getClassPodmanMatrix(
       effectiveTenantId,
       classroomId,
       lessonId,

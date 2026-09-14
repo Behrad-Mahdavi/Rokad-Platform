@@ -45,6 +45,8 @@ const TENANT_BOUND_MODELS = [
   'ExamClassroom',
   'ExamParticipation',
   'GradeEntry',
+  'Podman',
+  'PodmanGrade',
   // Phase 5
   'CourseMaterial',
   'MaterialClassroom',

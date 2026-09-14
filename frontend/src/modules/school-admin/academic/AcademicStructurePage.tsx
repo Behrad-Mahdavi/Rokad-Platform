@@ -75,6 +75,9 @@ export const AcademicStructurePage: React.FC = () => {
     levelId: '',
     fieldId: '',
     type: 'SPECIALIZED',
+    isModular: false,
+    podmanCount: 5,
+    podmanTitles: ['پودمان ۱', 'پودمان ۲', 'پودمان ۳', 'پودمان ۴', 'پودمان ۵'],
   });
 
   const [lessonFilterLevel, setLessonFilterLevel] = useState<string>('ALL');
@@ -200,6 +203,9 @@ export const AcademicStructurePage: React.FC = () => {
         levelId: lessonForm.levelId || undefined,
         fieldId: lessonForm.fieldId && lessonForm.fieldId.trim() !== '' ? lessonForm.fieldId : undefined,
         type: lessonForm.type,
+        isModular: lessonForm.isModular,
+        podmanCount: lessonForm.isModular ? Number(lessonForm.podmanCount) || 5 : undefined,
+        podmanTitles: lessonForm.isModular ? lessonForm.podmanTitles : undefined,
       });
       setIsLessonModalOpen(false);
       setLessonForm((prev) => ({
@@ -207,6 +213,9 @@ export const AcademicStructurePage: React.FC = () => {
         name: '',
         code: '',
         units: 3,
+        isModular: false,
+        podmanCount: 5,
+        podmanTitles: ['پودمان ۱', 'پودمان ۲', 'پودمان ۳', 'پودمان ۴', 'پودمان ۵'],
       }));
       fetchData();
     } catch (err: any) {
@@ -499,7 +508,16 @@ export const AcademicStructurePage: React.FC = () => {
             columns={[
               {
                 header: 'نام درس',
-                cell: (l) => <div className="font-bold text-ink-darker">{l.name}</div>,
+                cell: (l) => (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold text-ink-darker">{l.name}</span>
+                    {l.isModular && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-purple-50 text-purple-700 border border-purple-200 shrink-0">
+                        پودمانی (۵ پودمان)
+                      </span>
+                    )}
+                  </div>
+                ),
               },
               {
                 header: 'کد درس',
@@ -866,6 +884,65 @@ export const AcademicStructurePage: React.FC = () => {
               onChange={(e) => setLessonForm({ ...lessonForm, units: Number(e.target.value) })}
               required
             />
+          </div>
+
+          {/* Checkbox: درس پودمانی */}
+          <div className="bg-gradient-to-l from-purple-50/60 via-purple-50/20 to-white rounded-2xl border border-purple-200 p-4 space-y-3">
+            <label className="flex items-start gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={lessonForm.isModular}
+                onChange={(e) =>
+                  setLessonForm({
+                    ...lessonForm,
+                    isModular: e.target.checked,
+                    type: e.target.checked ? 'SPECIALIZED' : lessonForm.type,
+                  })
+                }
+                className="mt-1 h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-sm text-ink-darker">
+                    درس پودمانی (شایستگی‌های فنی و کارگاهی هنرستان)
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                    نظام ۵ پودمانی
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                  این درس به ۵ پودمان مهارتی مستقل با ارزشیابی شایستگی‌محور (مستمر از ۵ + شایستگی از ۳ سطح) و شرط قبولی حداقل نمره ۱۲ در تک‌تک پودمان‌ها تقسیم می‌شود.
+                </p>
+              </div>
+            </label>
+
+            {lessonForm.isModular && (
+              <div className="pt-2 border-t border-purple-100 space-y-2">
+                <label className="block text-xs font-bold text-purple-900 mb-1">
+                  عناوین ۵ پودمان این درس (اختیاری):
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {[0, 1, 2, 3, 4].map((idx) => (
+                    <div key={idx} className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-purple-200/80">
+                      <span className="text-[11px] font-bold text-purple-700 w-16 shrink-0 text-center font-mono">
+                        پودمان {idx + 1}:
+                      </span>
+                      <input
+                        type="text"
+                        value={lessonForm.podmanTitles[idx] || `پودمان ${idx + 1}`}
+                        onChange={(e) => {
+                          const newTitles = [...lessonForm.podmanTitles];
+                          newTitles[idx] = e.target.value;
+                          setLessonForm({ ...lessonForm, podmanTitles: newTitles });
+                        }}
+                        placeholder={`عنوان پودمان ${idx + 1}`}
+                        className="flex-1 h-8 text-xs px-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500 font-medium"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end space-x-2 space-x-reverse pt-2">

@@ -289,6 +289,8 @@ model Tenant {
   examClassrooms      ExamClassroom[]
   examParticipations  ExamParticipation[]
   gradeEntries        GradeEntry[]
+  podmans             Podman[]
+  podmanGrades        PodmanGrade[]
 
   // Phase 5 Relations
   courseMaterials     CourseMaterial[]
@@ -360,6 +362,7 @@ model User {
   // Phase 4 Relations
   createdQuestions Question[]   @relation("CreatedQuestion")
   recordedGrades   GradeEntry[] @relation("RecordedGrade")
+  recordedPodmanGrades PodmanGrade[] @relation("RecordedPodmanGrade")
 
   // Phase 5 Relations
   chatMemberships  ChatChannelMember[]
@@ -489,6 +492,7 @@ model AcademicYear {
   lessonPlans         LessonPlan[]
   exams               Exam[]
   gradeEntries        GradeEntry[]
+  podmanGrades        PodmanGrade[]
 
   // Phase 5
   courseMaterials     CourseMaterial[]
@@ -573,10 +577,13 @@ model Lesson {
   unitCount   Int              @default(1)
   type        LessonType       @default(GENERAL)
   description String?
+  isModular   Boolean          @default(false) // آیا درس به صورت پودمانی است؟
+  podmanCount Int              @default(5)     // تعداد پودمان‌ها (معمولاً ۵)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
-  schedules          ClassSchedule[]
+  schedules          ClassSchedule[]  @relation("LessonSchedules")
+  secondSchedules    ClassSchedule[]  @relation("SecondLessonSchedules")
   studentAttendances StudentAttendance[]
   homeworks          Homework[]
 
@@ -586,6 +593,8 @@ model Lesson {
   questions          Question[]
   exams              Exam[]
   gradeEntries       GradeEntry[]
+  podmans            Podman[]
+  podmanGrades       PodmanGrade[]
 
   // Phase 5 Relations
   courseMaterials    CourseMaterial[]
@@ -622,6 +631,7 @@ model Classroom {
   // Phase 4 Relations
   examClassrooms     ExamClassroom[]
   gradeEntries       GradeEntry[]
+  podmanGrades       PodmanGrade[]
 
   // Phase 5 Relations
   materialClassrooms MaterialClassroom[]
@@ -656,10 +666,17 @@ model ClassSchedule {
   tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   classroomId String
   classroom   Classroom      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  lessonId    String
-  lesson      Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  teacherId   String
-  teacher     TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  lessonId        String
+  lesson          Lesson          @relation("LessonSchedules", fields: [lessonId], references: [id], onDelete: Cascade)
+  teacherId       String
+  teacher         TeacherProfile  @relation("TeacherSchedules", fields: [teacherId], references: [id], onDelete: Cascade)
+
+  // منطق تک زنگ (دو درس و دو دبیر در یک زنگ ۹۰ دقیقه‌ای: ۴۵ دقیقه اول و ۴۵ دقیقه دوم)
+  isSplitPeriod   Boolean         @default(false)
+  secondLessonId  String?
+  secondLesson    Lesson?         @relation("SecondLessonSchedules", fields: [secondLessonId], references: [id], onDelete: SetNull)
+  secondTeacherId String?
+  secondTeacher   TeacherProfile? @relation("SecondTeacherSchedules", fields: [secondTeacherId], references: [id], onDelete: SetNull)
   dayOfWeek   DayOfWeek
   periodNumber Int           // زنگ ۱، ۲، ۳
   startTime   String         // "08:00"
@@ -763,6 +780,7 @@ model StudentProfile {
   // Phase 4 Relations
   examParticipations  ExamParticipation[]
   gradeEntries        GradeEntry[]
+  podmanGrades        PodmanGrade[]
 
   // Phase 6 Relations
   feeContracts        StudentFeeContract[]
@@ -784,7 +802,8 @@ model TeacherProfile {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  schedules          ClassSchedule[]
+  schedules          ClassSchedule[]  @relation("TeacherSchedules")
+  secondSchedules    ClassSchedule[]  @relation("SecondTeacherSchedules")
   teacherAttendances TeacherAttendance[]
   homeworks          Homework[]
   parentVisitSlots   ParentVisitSlot[]
@@ -793,6 +812,7 @@ model TeacherProfile {
   lessonPlans        LessonPlan[]
   exams              Exam[]
   gradeEntries       GradeEntry[]
+  podmanGrades       PodmanGrade[]
 
   // Phase 5 Relations
   courseMaterials    CourseMaterial[]
@@ -1440,6 +1460,60 @@ model GradeEntry {
 
   @@index([tenantId, classroomId, lessonId, date])
   @@index([tenantId, studentId, gradeType])
+  @@index([tenantId, academicYearId])
+}
+
+// ساختار پودمان‌های درسی شاخه فنی و حرفه‌ای و کاردانش
+model Podman {
+  id          String        @id @default(uuid())
+  tenantId    String
+  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lessonId    String
+  lesson      Lesson        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  number      Int           // پودمان ۱، ۲، ۳، ۴، ۵
+  title       String        // عنوان مهارت/پودمان (e.g. "پودمان ۱: پایگاه داده")
+  description String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  grades      PodmanGrade[]
+
+  @@unique([lessonId, number])
+  @@index([tenantId, lessonId])
+}
+
+// نمرات و ارزشیابی شایستگی‌محور پودمانی
+model PodmanGrade {
+  id              String         @id @default(uuid())
+  tenantId        String
+  tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  academicYearId  String
+  academicYear    AcademicYear   @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  classroomId     String
+  classroom       Classroom      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  lessonId        String
+  lesson          Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  podmanId        String
+  podman          Podman         @relation(fields: [podmanId], references: [id], onDelete: Cascade)
+  studentId       String
+  student         StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId       String
+  teacher         TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  continuousScore Float          // نمره مستمر پودمان از ۵
+  competencyScore Int            // سطح شایستگی: ۱ (عدم احراز)، ۲ (در حد انتظار)، ۳ (بالاتر از حد انتظار)
+  finalScore      Float          // نمره نهایی پودمان از ۲۰: مستمر + شایستگی × ۵
+  isPassed        Boolean        // آیا نمره نهایی >= ۱۲ است؟
+  attemptType     String         @default("REGULAR") // REGULAR, RETAKE_1, RETAKE_2
+  date            DateTime       @default(now())
+  notes           String?
+  recordedById    String
+  recordedBy      User           @relation("RecordedPodmanGrade", fields: [recordedById], references: [id], onDelete: Cascade)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@unique([podmanId, studentId, attemptType])
+  @@index([tenantId, classroomId, lessonId])
+  @@index([tenantId, studentId])
   @@index([tenantId, academicYearId])
 }
 

@@ -61,6 +61,21 @@ interface StudentScheduleItem {
   classroomId: string;
   lessonId: string;
   teacherId: string;
+  isSplitPeriod?: boolean;
+  secondLessonId?: string;
+  secondTeacherId?: string;
+  secondLesson?: {
+    id: string;
+    name: string;
+    code?: string;
+  };
+  secondTeacher?: {
+    user: {
+      firstName: string;
+      lastName: string;
+      phone?: string;
+    };
+  };
   dayOfWeek: DayOfWeekKey;
   periodNumber: number;
   startTime: string;
@@ -337,41 +352,114 @@ export const StudentSchedulePage: React.FC = () => {
                           )}
                         </div>
 
-                        {/* Lesson Title */}
-                        <div className="pt-1">
-                          <h2 className="text-xl font-extrabold text-foreground flex items-center gap-2">
-                            <BookOpen className="w-5 h-5 text-primary shrink-0" />
-                            <span>{slot.lesson?.name}</span>
-                            {slot.lesson?.code && (
-                              <span className="text-xs font-normal text-muted-foreground">
-                                (کد: {toPersianDigits(slot.lesson.code)})
-                              </span>
-                            )}
-                          </h2>
-                        </div>
-
-                        {/* Teacher and Classroom Information */}
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground pt-1">
-                          {slot.teacher?.user && (
-                            <div className="flex items-center gap-1.5 bg-surface/60 px-2.5 py-1 rounded-md border border-border/40 font-semibold text-foreground">
-                              <UserCheck className="w-4 h-4 text-blue-500" />
-                              <span>
-                                استاد: {slot.teacher.user.firstName} {slot.teacher.user.lastName}
+                        {/* Lesson Title & Info */}
+                        {slot.isSplitPeriod ? (
+                          <div className="space-y-3 pt-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-md font-bold">
+                                تک‌زنگ (۲ درس ۴۵ دقیقه‌ای)
                               </span>
                             </div>
-                          )}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {/* Part 1 */}
+                              <div className="p-3 bg-primary-50/20 rounded-xl border border-primary/20 space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] font-bold text-primary">۴۵ دقیقه اول</span>
+                                  {slot.lesson?.code && (
+                                    <span className="text-[10px] text-muted-foreground font-mono">
+                                      کد: {toPersianDigits(slot.lesson.code)}
+                                    </span>
+                                  )}
+                                </div>
+                                <h3 className="font-extrabold text-base text-foreground flex items-center gap-1.5">
+                                  <BookOpen className="w-4 h-4 text-primary shrink-0" />
+                                  <span>{slot.lesson?.name}</span>
+                                </h3>
+                                {slot.teacher?.user && (
+                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                    <UserCheck className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                    <span>
+                                      استاد: {slot.teacher.user.firstName} {slot.teacher.user.lastName}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
 
-                          {classroom && (
-                            <div className="flex items-center gap-1.5 bg-surface/60 px-2.5 py-1 rounded-md border border-border/40">
-                              <GraduationCap className="w-4 h-4 text-purple-500" />
-                              <span>کلاس: {classroom.name}</span>
+                              {/* Part 2 */}
+                              <div className="p-3 bg-purple-50/30 rounded-xl border border-purple-200/60 space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] font-bold text-purple-700">۴۵ دقیقه دوم</span>
+                                  {slot.secondLesson?.code && (
+                                    <span className="text-[10px] text-muted-foreground font-mono">
+                                      کد: {toPersianDigits(slot.secondLesson.code)}
+                                    </span>
+                                  )}
+                                </div>
+                                <h3 className="font-extrabold text-base text-foreground flex items-center gap-1.5">
+                                  <BookOpen className="w-4 h-4 text-purple-600 shrink-0" />
+                                  <span>{slot.secondLesson?.name || '—'}</span>
+                                </h3>
+                                {slot.secondTeacher?.user && (
+                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                    <UserCheck className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                                    <span>
+                                      استاد: {slot.secondTeacher.user.firstName} {slot.secondTeacher.user.lastName}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          )}
 
-                          <span className="text-xs text-muted-foreground">
-                            روز: {DAYS.find((d) => d.key === slot.dayOfWeek)?.label}
-                          </span>
-                        </div>
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground pt-1">
+                              {classroom && (
+                                <div className="flex items-center gap-1.5 bg-surface/60 px-2.5 py-1 rounded-md border border-border/40">
+                                  <GraduationCap className="w-4 h-4 text-purple-500" />
+                                  <span>کلاس: {classroom.name}</span>
+                                </div>
+                              )}
+                              <span className="text-xs text-muted-foreground">
+                                روز: {DAYS.find((d) => d.key === slot.dayOfWeek)?.label}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="pt-1">
+                              <h2 className="text-xl font-extrabold text-foreground flex items-center gap-2">
+                                <BookOpen className="w-5 h-5 text-primary shrink-0" />
+                                <span>{slot.lesson?.name}</span>
+                                {slot.lesson?.code && (
+                                  <span className="text-xs font-normal text-muted-foreground">
+                                    (کد: {toPersianDigits(slot.lesson.code)})
+                                  </span>
+                                )}
+                              </h2>
+                            </div>
+
+                            {/* Teacher and Classroom Information */}
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground pt-1">
+                              {slot.teacher?.user && (
+                                <div className="flex items-center gap-1.5 bg-surface/60 px-2.5 py-1 rounded-md border border-border/40 font-semibold text-foreground">
+                                  <UserCheck className="w-4 h-4 text-blue-500" />
+                                  <span>
+                                    استاد: {slot.teacher.user.firstName} {slot.teacher.user.lastName}
+                                  </span>
+                                </div>
+                              )}
+
+                              {classroom && (
+                                <div className="flex items-center gap-1.5 bg-surface/60 px-2.5 py-1 rounded-md border border-border/40">
+                                  <GraduationCap className="w-4 h-4 text-purple-500" />
+                                  <span>کلاس: {classroom.name}</span>
+                                </div>
+                              )}
+
+                              <span className="text-xs text-muted-foreground">
+                                روز: {DAYS.find((d) => d.key === slot.dayOfWeek)?.label}
+                              </span>
+                            </div>
+                          </>
+                        )}
                       </div>
 
                       {/* Quick Actions for Student */}

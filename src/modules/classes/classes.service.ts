@@ -54,6 +54,9 @@ export class ClassesService {
       include: {
         level: true,
         field: true,
+        podmans: {
+          orderBy: { number: 'asc' },
+        },
         teacherLessons: {
           include: {
             teacher: {
@@ -113,21 +116,58 @@ export class ClassesService {
         ? Number((dto as any).units)
         : 1;
 
-    return this.prisma.lesson.create({
-      data: {
-        tenantId,
-        levelId: levelId!,
-        fieldId: sanitizedFieldId,
-        name: dto.name,
-        code: dto.code,
-        unitCount: unitCount > 0 ? unitCount : 1,
-        type: dto.type || 'GENERAL',
-        description: dto.description,
-      },
-      include: {
-        level: true,
-        field: true,
-      },
+    const isModular = Boolean(dto.isModular);
+    const podmanCount = isModular ? Math.max(1, dto.podmanCount || 5) : 5;
+
+    return this.prisma.$transaction(async (tx) => {
+      const lesson = await tx.lesson.create({
+        data: {
+          tenantId,
+          levelId: levelId!,
+          fieldId: sanitizedFieldId,
+          name: dto.name,
+          code: dto.code,
+          unitCount: unitCount > 0 ? unitCount : 1,
+          type: dto.type || 'GENERAL',
+          description: dto.description,
+          isModular,
+          podmanCount,
+        },
+        include: {
+          level: true,
+          field: true,
+        },
+      });
+
+      if (isModular) {
+        const podmanCreates: Array<{
+          tenantId: string;
+          lessonId: string;
+          number: number;
+          title: string;
+        }> = [];
+        for (let i = 1; i <= podmanCount; i++) {
+          const customTitle = dto.podmanTitles && dto.podmanTitles[i - 1]?.trim();
+          podmanCreates.push({
+            tenantId,
+            lessonId: lesson.id,
+            number: i,
+            title: customTitle || `پودمان ${i}`,
+          });
+        }
+        await tx.podman.createMany({
+          data: podmanCreates,
+        });
+      }
+
+      return tx.lesson.findUnique({
+        where: { id: lesson.id },
+        include: {
+          level: true,
+          field: true,
+          podmans: { orderBy: { number: 'asc' } },
+        },
+      });
     });
   }
 
@@ -429,17 +469,61 @@ export class ClassesService {
     const teacherConflict = await this.prisma.classSchedule.findFirst({
       where: {
         tenantId,
-        teacherId: dto.teacherId,
+        classroomId: { not: dto.classroomId },
+        OR: [{ teacherId: dto.teacherId }, { secondTeacherId: dto.teacherId }],
         dayOfWeek: dto.dayOfWeek,
         periodNumber: dto.periodNumber,
-        ...(existingSlot ? { id: { not: existingSlot.id } } : {}),
       },
-      include: { classroom: true },
+      include: {
+        classroom: true,
+        teacher: { include: { user: true } },
+        secondTeacher: { include: { user: true } },
+      },
     });
 
-    if (teacherConflict) {
+    let secondTeacherConflict: any = null;
+    if (dto.isSplitPeriod && dto.secondTeacherId) {
+      secondTeacherConflict = await this.prisma.classSchedule.findFirst({
+        where: {
+          tenantId,
+          classroomId: { not: dto.classroomId },
+          OR: [{ teacherId: dto.secondTeacherId }, { secondTeacherId: dto.secondTeacherId }],
+          dayOfWeek: dto.dayOfWeek,
+          periodNumber: dto.periodNumber,
+        },
+        include: {
+          classroom: true,
+          teacher: { include: { user: true } },
+          secondTeacher: { include: { user: true } },
+        },
+      });
+    }
+
+    if ((teacherConflict || secondTeacherConflict) && !dto.allowTeacherConflict) {
+      let conflictingTeacher = '';
+      if (teacherConflict) {
+        if (teacherConflict.teacherId === dto.teacherId && teacherConflict.teacher?.user) {
+          conflictingTeacher = `${teacherConflict.teacher.user.firstName || ''} ${teacherConflict.teacher.user.lastName || ''}`.trim();
+        } else if (teacherConflict.secondTeacherId === dto.teacherId && teacherConflict.secondTeacher?.user) {
+          conflictingTeacher = `${teacherConflict.secondTeacher.user.firstName || ''} ${teacherConflict.secondTeacher.user.lastName || ''}`.trim();
+        }
+      }
+      if (!conflictingTeacher && secondTeacherConflict) {
+        if (secondTeacherConflict.teacherId === dto.secondTeacherId && secondTeacherConflict.teacher?.user) {
+          conflictingTeacher = `${secondTeacherConflict.teacher.user.firstName || ''} ${secondTeacherConflict.teacher.user.lastName || ''}`.trim();
+        } else if (secondTeacherConflict.secondTeacherId === dto.secondTeacherId && secondTeacherConflict.secondTeacher?.user) {
+          conflictingTeacher = `${secondTeacherConflict.secondTeacher.user.firstName || ''} ${secondTeacherConflict.secondTeacher.user.lastName || ''}`.trim();
+        }
+      }
+      if (!conflictingTeacher) {
+        conflictingTeacher = 'دبیر انتخابی';
+      }
+
+      const conflictingClassroom =
+        teacherConflict?.classroom?.name || secondTeacherConflict?.classroom?.name || 'کلاس دیگر';
+
       throw new ConflictException(
-        `تداخل برنامه دبیر: این استاد در این روز و زنگ کلاسی، در کلاس '${teacherConflict.classroom.name}' تدریس دارد`,
+        `تداخل برنامه دبیر: ${conflictingTeacher} در این روز و زنگ کلاسی، در کلاس '${conflictingClassroom}' تدریس دارد`
       );
     }
 
@@ -455,6 +539,9 @@ export class ClassesService {
         classroomId: dto.classroomId,
         lessonId: dto.lessonId,
         teacherId: dto.teacherId,
+        isSplitPeriod: Boolean(dto.isSplitPeriod),
+        secondLessonId: dto.isSplitPeriod ? dto.secondLessonId || null : null,
+        secondTeacherId: dto.isSplitPeriod ? dto.secondTeacherId || null : null,
         dayOfWeek: dto.dayOfWeek,
         periodNumber: dto.periodNumber,
         startTime: dto.startTime,
@@ -468,6 +555,15 @@ export class ClassesService {
           },
         },
         teacher: {
+          include: { user: true },
+        },
+        secondLesson: {
+          include: {
+            level: true,
+            field: true,
+          },
+        },
+        secondTeacher: {
           include: { user: true },
         },
       },
@@ -538,6 +634,24 @@ export class ClassesService {
           },
         },
         teacher: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                phone: true,
+              },
+            },
+          },
+        },
+        secondLesson: {
+          include: {
+            level: true,
+            field: true,
+          },
+        },
+        secondTeacher: {
           include: {
             user: {
               select: {
@@ -657,10 +771,16 @@ export class ClassesService {
 
   async getTeacherSchedule(tenantId: string, teacherId: string) {
     return this.prisma.classSchedule.findMany({
-      where: { tenantId, teacherId },
+      where: {
+        tenantId,
+        OR: [{ teacherId }, { secondTeacherId: teacherId }],
+      },
       include: {
         classroom: true,
         lesson: true,
+        secondLesson: true,
+        teacher: { include: { user: true } },
+        secondTeacher: { include: { user: true } },
       },
       orderBy: [{ dayOfWeek: 'asc' }, { periodNumber: 'asc' }],
     });

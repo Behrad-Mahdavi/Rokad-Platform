@@ -301,6 +301,49 @@ export const ReportsPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Vocational Modular Lessons (دروس پودمانی هنرستان) */}
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-xs text-purple-900 flex items-center gap-1">
+                  <Award className="w-3.5 h-3.5 text-purple-600" />
+                  <span>کارنامه دروس شایستگی‌محور پودمانی (فنی و حرفه‌ای)</span>
+                </span>
+                <span className="text-[10px] text-gray-500 font-mono">
+                  فرمول: مستمر (۰-۵) + شایستگی (۱-۳ × ۵) | حد نصاب قبولی: ۱۲
+                </span>
+              </div>
+
+              <div className="border rounded-xl overflow-hidden text-xs">
+                <div className="grid grid-cols-8 gap-1 p-2 bg-purple-50 font-bold text-purple-950 text-center">
+                  <span className="col-span-2 text-right pr-2">عنوان درس پودمانی</span>
+                  <span>پودمان ۱</span>
+                  <span>پودمان ۲</span>
+                  <span>پودمان ۳</span>
+                  <span>پودمان ۴</span>
+                  <span>پودمان ۵</span>
+                  <span>معدل کل درس</span>
+                </div>
+                <div className="grid grid-cols-8 gap-1 p-2 border-t items-center text-center">
+                  <span className="col-span-2 text-right pr-2 font-bold text-ink-darker">نصب و راه‌اندازی سامانه‌ها</span>
+                  <span className="font-mono text-emerald-700 bg-emerald-50 py-0.5 rounded font-bold">۱۹.۵۰</span>
+                  <span className="font-mono text-emerald-700 bg-emerald-50 py-0.5 rounded font-bold">۱۴.۰۰</span>
+                  <span className="font-mono text-emerald-700 bg-emerald-50 py-0.5 rounded font-bold">۲۰.۰۰</span>
+                  <span className="font-mono text-emerald-700 bg-emerald-50 py-0.5 rounded font-bold">۱۳.۵۰</span>
+                  <span className="font-mono text-emerald-700 bg-emerald-50 py-0.5 rounded font-bold">۱۹.۰۰</span>
+                  <span className="font-mono font-black text-purple-700 bg-purple-100/70 py-0.5 rounded">۱۷.۲۰ (قبول)</span>
+                </div>
+                <div className="grid grid-cols-8 gap-1 p-2 border-t items-center text-center">
+                  <span className="col-span-2 text-right pr-2 font-bold text-ink-darker">تولید محتوای الکترونیک</span>
+                  <span className="font-mono text-emerald-700 bg-emerald-50 py-0.5 rounded font-bold">۱۹.۰۰</span>
+                  <span className="font-mono text-emerald-700 bg-emerald-50 py-0.5 rounded font-bold">۱۴.۵۰</span>
+                  <span className="font-mono text-emerald-700 bg-emerald-50 py-0.5 rounded font-bold">۱۹.۵۰</span>
+                  <span className="font-mono text-emerald-700 bg-emerald-50 py-0.5 rounded font-bold">۱۴.۰۰</span>
+                  <span className="font-mono text-emerald-700 bg-emerald-50 py-0.5 rounded font-bold">۱۹.۵۰</span>
+                  <span className="font-mono font-black text-purple-700 bg-purple-100/70 py-0.5 rounded">۱۷.۳۰ (قبول)</span>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-3 gap-3 p-3 bg-primary-light/30 rounded-xl text-center text-xs font-bold">
               <div>معدل کل: <span className="text-primary text-sm font-mono font-extrabold">۱۹.۳۱</span></div>
               <div>وضعیت تحصیلی: <span className="text-emerald-700 text-sm font-extrabold">قبول ممتاز</span></div>

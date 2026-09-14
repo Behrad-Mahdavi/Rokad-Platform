@@ -21,6 +21,8 @@ import {
   Clock,
   BookOpen,
   CheckCircle2,
+  Layers,
+  Award,
 } from 'lucide-react';
 import { toPersianDigits } from '../../../utils/jalali';
 
@@ -35,6 +37,35 @@ export const StudentGradesPage: React.FC = () => {
     { lesson: 'هندسه تحلیلی', units: 2, continuous: 19.0, midterm: 18.5, final: 19.0, total: 18.85 },
     { lesson: 'ادبیات فارسی', units: 2, continuous: 19.0, midterm: 19.0, final: 19.5, total: 19.2 },
     { lesson: 'زبان انگلیسی', units: 2, continuous: 20.0, midterm: 20.0, final: 20.0, total: 20.0 },
+  ];
+
+  const modularGrades = [
+    {
+      lesson: 'نصب و راه‌اندازی سامانه‌های رایانه‌ای',
+      units: 8,
+      podmans: [
+        { number: 1, title: 'راه‌اندازی سیستم‌عامل', continuous: 4.5, competency: 3, total: 19.5, isPassed: true },
+        { number: 2, title: 'بسته‌های نرم‌افزاری', continuous: 4.0, competency: 2, total: 14.0, isPassed: true },
+        { number: 3, title: 'چندرسانه‌ای', continuous: 5.0, competency: 3, total: 20.0, isPassed: true },
+        { number: 4, title: 'نرم‌افزارهای ارائه‌گر', continuous: 3.5, competency: 2, total: 13.5, isPassed: true },
+        { number: 5, title: 'پشتیبان‌گیری', continuous: 4.0, competency: 3, total: 19.0, isPassed: true },
+      ],
+      lessonAverage: 17.2,
+      isPassed: true,
+    },
+    {
+      lesson: 'تولید محتوای الکترونیک و برنامه‌سازی',
+      units: 8,
+      podmans: [
+        { number: 1, title: 'گرافیک رایانه‌ای', continuous: 4.0, competency: 3, total: 19.0, isPassed: true },
+        { number: 2, title: 'پویانمایی دوبعدی', continuous: 3.5, competency: 2, total: 13.5, isPassed: true },
+        { number: 3, title: 'تدوین صدا و تصویر', continuous: 4.5, competency: 3, total: 19.5, isPassed: true },
+        { number: 4, title: 'الگوریتم', continuous: 4.0, competency: 2, total: 14.0, isPassed: true },
+        { number: 5, title: 'برنامه‌سازی وب', continuous: 4.5, competency: 3, total: 19.5, isPassed: true },
+      ],
+      lessonAverage: 17.0,
+      isPassed: true,
+    },
   ];
 
   return (
@@ -198,6 +229,109 @@ export const StudentGradesPage: React.FC = () => {
                 ]}
                 keyExtractor={(_, idx) => String(idx)}
               />
+            </CardContent>
+          </Card>
+
+          {/* Modular Lessons Card (شایستگی‌های فنی و کارگاهی هنرستان) */}
+          <Card className="border-purple-200 shadow-sm overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-purple-50/70 via-indigo-50/50 to-transparent border-b border-purple-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <CardTitle className="text-sm flex items-center space-x-2 space-x-reverse text-purple-950 font-bold">
+                  <Layers className="h-4 w-4 text-purple-600 shrink-0" />
+                  <span>کارنامه دروس تخصصی و کارگاهی پودمانی (فنی و حرفه‌ای)</span>
+                  <Badge variant="neutral" className="bg-purple-100 text-purple-900 border-purple-200 text-[10px] mr-2">
+                    ارزشیابی شایستگی‌محور
+                  </Badge>
+                </CardTitle>
+                <span className="text-[11px] text-purple-800 font-medium">
+                  فرمول پودمان: مستمر (۰ تا ۵) + شایستگی (۱ تا ۳ × ۵) | حد نصاب قبولی: ۱۲
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4">
+              {modularGrades.map((modLesson, idx) => (
+                <div
+                  key={idx}
+                  className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3 hover:border-purple-300 transition-colors shadow-xs"
+                >
+                  <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xs shrink-0">
+                        {toPersianDigits(idx + 1)}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-xs sm:text-sm text-ink-darker">{modLesson.lesson}</h4>
+                        <span className="text-[11px] text-gray-500 font-mono">
+                          {toPersianDigits(modLesson.units)} واحد درسی تخصصی (۵ پودمان مصوب)
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-center">
+                      <div className="text-left sm:text-right">
+                        <div className="text-[10px] text-gray-400">میانگین نهایی درس:</div>
+                        <div className="font-mono font-black text-sm text-purple-700">
+                          {toPersianDigits(modLesson.lessonAverage.toFixed(2))} از ۲۰
+                        </div>
+                      </div>
+                      <Badge variant={modLesson.isPassed ? 'success' : 'destructive'} className="text-xs py-1">
+                        {modLesson.isPassed ? 'قبولی قطعی درس' : 'نیازمند آزمون مجدد'}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* 5 Podman Detailed Columns */}
+                  <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5 pt-1">
+                    {modLesson.podmans.map((pod) => (
+                      <div
+                        key={pod.number}
+                        className={`p-2.5 rounded-xl border flex flex-col justify-between space-y-2 ${
+                          pod.isPassed
+                            ? 'bg-emerald-50/50 border-emerald-200/80'
+                            : 'bg-rose-50/50 border-rose-200/80'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-xs text-ink-darker">پودمان {toPersianDigits(pod.number)}</span>
+                            <span
+                              className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                                pod.isPassed
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : 'bg-rose-100 text-rose-800'
+                              }`}
+                            >
+                              {pod.isPassed ? 'قبول' : 'تجدید'}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-gray-500 mt-0.5 line-clamp-1">{pod.title}</div>
+                        </div>
+
+                        <div className="space-y-1 pt-1 border-t border-gray-100 text-[10px]">
+                          <div className="flex justify-between text-gray-600">
+                            <span>مستمر (از ۵):</span>
+                            <span className="font-mono font-bold">{toPersianDigits(pod.continuous.toFixed(1))}</span>
+                          </div>
+                          <div className="flex justify-between text-gray-600">
+                            <span>شایستگی (۱-۳):</span>
+                            <span className="font-mono font-bold">سطح {toPersianDigits(pod.competency)}</span>
+                          </div>
+                          <div className="flex justify-between font-bold text-ink-darker pt-1 border-t border-gray-200">
+                            <span>نمره نهایی:</span>
+                            <span
+                              className={`font-mono text-xs ${
+                                pod.isPassed ? 'text-emerald-700 font-black' : 'text-rose-700 font-black'
+                              }`}
+                            >
+                              {toPersianDigits(pod.total.toFixed(2))}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </>

@@ -18,6 +18,7 @@ import { PersianDatePicker } from '../../../components/ui/PersianDatePicker';
 import {
   gregorianToJalaliStr,
   jalaliToGregorianDate,
+  toPersianDigits,
 } from '../../../utils/jalali';
 import {
   BookOpen,
@@ -29,6 +30,7 @@ import {
   Save,
   Users,
   AlertCircle,
+  AlertTriangle,
   Award,
   ShieldAlert,
   Sparkles,
@@ -43,6 +45,8 @@ import {
   X,
   FileCheck,
   GraduationCap,
+  Layers,
+  Calculator,
 } from 'lucide-react';
 
 interface NormalizedStudent {
@@ -79,8 +83,8 @@ export const GradebookPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const classroomIdParam = searchParams.get('classroomId');
 
-  // Tabs: 'SESSION' (active logbook cockpit) | 'MATRIX' (all grades overview)
-  const [activeTab, setActiveTab] = useState<'SESSION' | 'MATRIX'>('SESSION');
+  // Tabs: 'SESSION' (active logbook cockpit) | 'PODMAN' (vocational 5-podman evaluation) | 'MATRIX' (all grades overview)
+  const [activeTab, setActiveTab] = useState<'SESSION' | 'PODMAN' | 'MATRIX'>('SESSION');
 
   // Selectors
   const [classrooms, setClassrooms] = useState<any[]>([]);
@@ -90,6 +94,16 @@ export const GradebookPage: React.FC = () => {
   const [date, setDate] = useState<string>(gregorianToJalaliStr(new Date()));
   const [periodNumber, setPeriodNumber] = useState<number>(1);
   const [sessionTopic, setSessionTopic] = useState<string>('');
+
+  // Modular (Podman) State
+  const [selectedPodmanNumber, setSelectedPodmanNumber] = useState<number>(1);
+  const [podmanAttemptType, setPodmanAttemptType] = useState<'REGULAR' | 'RETAKE_1' | 'RETAKE_2'>('REGULAR');
+  const [podmanMatrixData, setPodmanMatrixData] = useState<any>(null);
+  const [podmanInputs, setPodmanInputs] = useState<
+    Record<string, { continuousScore: number | string; competencyScore: number; notes: string }>
+  >({});
+  const [isLoadingPodman, setIsLoadingPodman] = useState<boolean>(false);
+  const [isSavingPodman, setIsSavingPodman] = useState<boolean>(false);
 
   // Data
   const [students, setStudents] = useState<NormalizedStudent[]>([]);
@@ -271,6 +285,157 @@ export const GradebookPage: React.FC = () => {
 
     fetchSessionData();
   }, [selectedClassId, date, selectedLessonId]);
+
+  // Modular Lesson detection
+  const selectedLesson = useMemo(
+    () => lessons.find((l) => l.id === selectedLessonId),
+    [lessons, selectedLessonId]
+  );
+  const isModularLesson = Boolean(selectedLesson?.isModular);
+
+  // Fetch Podman Matrix
+  const fetchPodmanMatrix = async () => {
+    if (!selectedClassId || !selectedLessonId) return;
+    try {
+      setIsLoadingPodman(true);
+      const res = await apiClient.get(
+        `/gradebook/classroom/${selectedClassId}/podman-matrix?lessonId=${selectedLessonId}`
+      );
+      if (res.data) {
+        setPodmanMatrixData(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to load podman matrix', err);
+    } finally {
+      setIsLoadingPodman(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedClassId && selectedLessonId) {
+      fetchPodmanMatrix();
+    }
+  }, [selectedClassId, selectedLessonId]);
+
+  // Sync inputs when podmanMatrixData or selectedPodmanNumber changes
+  useEffect(() => {
+    if (!podmanMatrixData?.students) return;
+    const inputs: Record<
+      string,
+      { continuousScore: number | string; competencyScore: number; notes: string }
+    > = {};
+    for (const st of podmanMatrixData.students) {
+      const existing = st.podmanGrades?.[selectedPodmanNumber];
+      inputs[st.studentId] = {
+        continuousScore:
+          existing && existing.continuousScore !== undefined && existing.continuousScore !== null
+            ? existing.continuousScore
+            : '',
+        competencyScore: existing && existing.competencyScore ? existing.competencyScore : 2,
+        notes: existing?.notes || '',
+      };
+    }
+    setPodmanInputs(inputs);
+  }, [podmanMatrixData, selectedPodmanNumber]);
+
+  // Handlers for Podman Grade Editing
+  const updateStudentContinuousScore = (studentId: string, val: string | number) => {
+    setPodmanInputs((prev) => ({
+      ...prev,
+      [studentId]: {
+        ...(prev[studentId] || { competencyScore: 2, notes: '' }),
+        continuousScore: val,
+      },
+    }));
+  };
+
+  const updateStudentCompetencyScore = (studentId: string, val: number) => {
+    setPodmanInputs((prev) => ({
+      ...prev,
+      [studentId]: {
+        ...(prev[studentId] || { continuousScore: '', notes: '' }),
+        competencyScore: val,
+      },
+    }));
+  };
+
+  const updateStudentPodmanNotes = (studentId: string, notes: string) => {
+    setPodmanInputs((prev) => ({
+      ...prev,
+      [studentId]: {
+        ...(prev[studentId] || { continuousScore: '', competencyScore: 2 }),
+        notes,
+      },
+    }));
+  };
+
+  const handleQuickSetAllCompetency = (level: number) => {
+    setPodmanInputs((prev) => {
+      const next = { ...prev };
+      for (const stId of Object.keys(next)) {
+        next[stId] = { ...next[stId], competencyScore: level };
+      }
+      return next;
+    });
+  };
+
+  const handleSavePodmanGrades = async () => {
+    if (!selectedClassId || !selectedLessonId) return;
+    try {
+      setIsSavingPodman(true);
+      setErrorMessage(null);
+
+      const podmanObj = podmanMatrixData?.lesson?.podmans?.find(
+        (p: any) => p.number === selectedPodmanNumber
+      );
+
+      const gradesToSubmit = Object.entries(podmanInputs)
+        .filter(
+          ([_, val]) =>
+            val.continuousScore !== '' &&
+            val.continuousScore !== null &&
+            val.continuousScore !== undefined
+        )
+        .map(([studentId, val]) => {
+          const cScore =
+            typeof val.continuousScore === 'number'
+              ? val.continuousScore
+              : parseFloat(String(val.continuousScore)) || 0;
+          return {
+            studentId,
+            continuousScore: Math.min(5, Math.max(0, cScore)),
+            competencyScore: val.competencyScore || 2,
+            notes: val.notes || undefined,
+          };
+        });
+
+      if (gradesToSubmit.length === 0) {
+        alert('لطفاً نمره مستمر حداقل یک هنرجو را وارد نمایید.');
+        setIsSavingPodman(false);
+        return;
+      }
+
+      await apiClient.post('/gradebook/podman/bulk', {
+        classroomId: selectedClassId,
+        lessonId: selectedLessonId,
+        podmanId: podmanObj?.id,
+        podmanNumber: selectedPodmanNumber,
+        attemptType: podmanAttemptType,
+        grades: gradesToSubmit,
+      });
+
+      setSaveSuccess(`نمرات پودمان ${selectedPodmanNumber} با موفقیت در سامانه ثبت و ذخیره شد.`);
+      setTimeout(() => setSaveSuccess(null), 4000);
+      await fetchPodmanMatrix();
+    } catch (err: any) {
+      console.error('Failed to save podman grades', err);
+      setErrorMessage(
+        err.response?.data?.message || 'خطا در ذخیره نمرات پودمان. لطفاً دوباره تلاش کنید.'
+      );
+    } finally {
+      setIsSavingPodman(false);
+    }
+  };
 
   // Quick Attendance Status Setter
   const setAttendanceStatus = (
@@ -531,6 +696,24 @@ export const GradebookPage: React.FC = () => {
               دفتر کلاسی این جلسه
             </button>
             <button
+              onClick={() => setActiveTab('PODMAN')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                activeTab === 'PODMAN'
+                  ? 'bg-purple-600 text-white shadow-xs font-black'
+                  : isModularLesson
+                  ? 'text-purple-700 bg-purple-100/70 hover:bg-purple-200/80 font-bold'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>ارزشیابی پودمانی</span>
+              {isModularLesson && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-purple-200 text-purple-900 font-bold">
+                  ۵ پودمان
+                </span>
+              )}
+            </button>
+            <button
               onClick={() => setActiveTab('MATRIX')}
               className={`px-3 py-1.5 rounded-lg transition-colors ${
                 activeTab === 'MATRIX'
@@ -544,13 +727,19 @@ export const GradebookPage: React.FC = () => {
 
           <Button
             variant="primary"
-            onClick={handleSaveSession}
-            isLoading={isSaving}
+            onClick={activeTab === 'PODMAN' ? handleSavePodmanGrades : handleSaveSession}
+            isLoading={activeTab === 'PODMAN' ? isSavingPodman : isSaving}
             disabled={isLoading || students.length === 0}
-            className="flex items-center space-x-1.5 space-x-reverse text-xs font-bold"
+            className={`flex items-center space-x-1.5 space-x-reverse text-xs font-bold ${
+              activeTab === 'PODMAN' ? 'bg-purple-600 hover:bg-purple-700' : ''
+            }`}
           >
             <Save className="h-4 w-4" />
-            <span>ذخیره دفتر کلاسی</span>
+            <span>
+              {activeTab === 'PODMAN'
+                ? `ذخیره نمرات پودمان ${toPersianDigits(selectedPodmanNumber)}`
+                : 'ذخیره دفتر کلاسی'}
+            </span>
           </Button>
         </div>
       </div>
@@ -1195,6 +1384,530 @@ export const GradebookPage: React.FC = () => {
               >
                 <Save className="h-4 w-4" />
                 <span>ذخیره دفتر کلاسی</span>
+              </Button>
+            </div>
+          </StickyActionBar>
+        </div>
+      )}
+
+      {/* VOCATIONAL 5-PODMAN EVALUATION COCKPIT */}
+      {activeTab === 'PODMAN' && (
+        <div className="space-y-6">
+          {/* Official Rule & Assessment System Banner */}
+          <div className="rounded-2xl p-5 border border-purple-200 bg-gradient-to-r from-purple-50/90 via-indigo-50/80 to-purple-50/90 shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-sm font-black text-purple-950">
+                      سامانه ارزشیابی شایستگی‌محور پودمانی (فنی و حرفه‌ای و کاردانش)
+                    </h3>
+                    <Badge variant="neutral" className="bg-purple-200/80 text-purple-900 border-purple-300 text-[10px]">
+                      آیین‌نامه رسمی آموزش و پرورش
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-purple-800 mt-0.5">
+                    فرمول نمره هر پودمان: <strong>نمره مستمر (۰ تا ۵)</strong> + <strong>شایستگی پایانی (۱ تا ۳ × ۵)</strong> = نمره نهایی از ۲۰
+                  </p>
+                </div>
+              </div>
+
+              {/* Quick Competency Scoring Presets */}
+              <div className="flex items-center gap-2 self-end sm:self-center flex-wrap">
+                <span className="text-[11px] font-bold text-purple-900">تنظیم سریع شایستگی:</span>
+                <button
+                  type="button"
+                  onClick={() => handleQuickSetAllCompetency(2)}
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 transition-colors"
+                  title="سطح ۲: احراز شایستگی در حد انتظار (۱۰ نمره)"
+                >
+                  همه حد انتظار (۲)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickSetAllCompetency(3)}
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 transition-colors"
+                  title="سطح ۳: بالاتر از حد انتظار (۱۵ نمره)"
+                >
+                  همه بالاتر از انتظار (۳)
+                </button>
+              </div>
+            </div>
+
+            {/* Rule Callout Chips */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-2 border-t border-purple-200/70 text-xs">
+              <div className="bg-white/80 p-2.5 rounded-xl border border-purple-100 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span className="text-gray-700"><strong>حد نصاب قبولی هر پودمان:</strong> حداقل ۱۲ از ۲۰</span>
+              </div>
+              <div className="bg-white/80 p-2.5 rounded-xl border border-purple-100 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span className="text-gray-700"><strong>شرط قبولی درس:</strong> قبولی در تمام ۵ پودمان الزامی است</span>
+              </div>
+              <div className="bg-white/80 p-2.5 rounded-xl border border-purple-100 flex items-center gap-2">
+                <CalendarDays className="w-4 h-4 text-indigo-600 shrink-0" />
+                <span className="text-gray-700"><strong>فرصت‌های آزمون مجدد:</strong> دی‌ماه، خرداد و شهریور</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Podman & Attempt Selection Bar */}
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+            {/* 5 Podman Tabs */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-black text-ink-dark shrink-0 ml-1">انتخاب پودمان:</span>
+              {[1, 2, 3, 4, 5].map((num) => {
+                const podmanMeta = podmanMatrixData?.lesson?.podmans?.find((p: any) => p.number === num);
+                const isSelected = selectedPodmanNumber === num;
+                const passedCount =
+                  podmanMatrixData?.students?.filter((s: any) => s.podmanGrades?.[num]?.isPassed).length || 0;
+                const totalStudents = podmanMatrixData?.students?.length || 0;
+
+                return (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => setSelectedPodmanNumber(num)}
+                    className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all ${
+                      isSelected
+                        ? 'bg-purple-600 text-white border-purple-600 shadow-sm scale-105'
+                        : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200'
+                    }`}
+                  >
+                    <span>{podmanMeta?.title || `پودمان ${toPersianDigits(num)}`}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${
+                        isSelected
+                          ? 'bg-purple-800 text-purple-100'
+                          : 'bg-gray-200 text-gray-700'
+                      }`}
+                    >
+                      {toPersianDigits(passedCount)}/{toPersianDigits(totalStudents)} قبول
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Attempt Type (نوبت ارزشیابی) */}
+            <div className="flex items-center space-x-2 space-x-reverse shrink-0">
+              <label className="text-xs font-bold text-ink-dark shrink-0">نوبت آزمون:</label>
+              <select
+                value={podmanAttemptType}
+                onChange={(e: any) => setPodmanAttemptType(e.target.value)}
+                className="h-10 text-xs px-3 rounded-xl border border-gray-300 bg-white font-medium focus:ring-2 focus:ring-purple-500 outline-none"
+              >
+                <option value="REGULAR">ارزشیابی عادی (مستمر و پایانی نیم‌سال)</option>
+                <option value="RETAKE_1">آزمون جبرانی نوبت اول (دی‌ماه)</option>
+                <option value="RETAKE_2">آزمون جبرانی نوبت دوم (خرداد / شهریور)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Student Evaluation Cockpit Table */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="p-4 border-b border-gray-100 bg-gray-50/70 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              <div>
+                <h4 className="text-sm font-bold text-ink-darker flex items-center gap-2">
+                  <Calculator className="w-4 h-4 text-purple-600" />
+                  <span>
+                    ورود نمرات {podmanMatrixData?.lesson?.podmans?.find((p: any) => p.number === selectedPodmanNumber)?.title || `پودمان ${toPersianDigits(selectedPodmanNumber)}`}
+                  </span>
+                </h4>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  نمره مستمر (۰ تا ۵) را وارد کرده و سطح شایستگی پایانی (۱ تا ۳) را انتخاب نمایید تا نمره پودمان محاسبه گردد.
+                </p>
+              </div>
+
+              <Button
+                variant="primary"
+                onClick={handleSavePodmanGrades}
+                isLoading={isSavingPodman}
+                disabled={isLoadingPodman || students.length === 0}
+                className="bg-purple-600 hover:bg-purple-700 text-xs font-bold flex items-center gap-1.5"
+              >
+                <Save className="w-4 h-4" />
+                <span>ذخیره نمرات پودمان {toPersianDigits(selectedPodmanNumber)}</span>
+              </Button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50 text-xs">
+                    <TableHead className="w-12 text-center">#</TableHead>
+                    <TableHead className="min-w-[180px]">مشخصات هنرجو</TableHead>
+                    <TableHead className="w-40 text-center">نمره مستمر (۰ تا ۵)</TableHead>
+                    <TableHead className="min-w-[300px] text-center">سطح شایستگی پایانی (۱ تا ۳)</TableHead>
+                    <TableHead className="w-28 text-center">نمره نهایی (۲۰)</TableHead>
+                    <TableHead className="w-36 text-center">نتیجه پودمان</TableHead>
+                    <TableHead className="w-44 text-center">سابقه ۵ پودمان</TableHead>
+                    <TableHead className="min-w-[160px]">یادداشت دبیر</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {students.map((student, idx) => {
+                    const currentInput = podmanInputs[student.id] || {
+                      continuousScore: '',
+                      competencyScore: 2,
+                      notes: '',
+                    };
+                    const cScoreNum =
+                      typeof currentInput.continuousScore === 'number'
+                        ? currentInput.continuousScore
+                        : parseFloat(String(currentInput.continuousScore)) || 0;
+                    const compNum = currentInput.competencyScore || 2;
+                    const hasEnteredContinuous =
+                      currentInput.continuousScore !== '' &&
+                      currentInput.continuousScore !== null &&
+                      currentInput.continuousScore !== undefined;
+                    const finalScoreCalc = hasEnteredContinuous
+                      ? Math.min(20, cScoreNum + compNum * 5)
+                      : null;
+                    const isPassed = finalScoreCalc !== null ? finalScoreCalc >= 12 : false;
+
+                    const studentMatrixInfo = podmanMatrixData?.students?.find(
+                      (s: any) => s.studentId === student.id
+                    );
+
+                    return (
+                      <TableRow key={student.id} className="hover:bg-purple-50/30 transition-colors">
+                        <TableCell className="text-center font-mono text-xs text-gray-400">
+                          {idx + 1}
+                        </TableCell>
+
+                        {/* Student Details */}
+                        <TableCell>
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xs shrink-0">
+                              {student.firstName[0]}
+                            </div>
+                            <div>
+                              <div className="font-bold text-xs text-ink-darker">
+                                {student.firstName} {student.lastName}
+                              </div>
+                              <div className="text-[10px] text-gray-400 font-mono">
+                                {student.studentCode || '—'}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* Continuous Score Input (0 to 5) */}
+                        <TableCell className="text-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <input
+                              type="number"
+                              min="0"
+                              max="5"
+                              step="0.25"
+                              placeholder="۰ تا ۵"
+                              value={currentInput.continuousScore}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                if (v === '') {
+                                  updateStudentContinuousScore(student.id, '');
+                                } else {
+                                  const parsed = parseFloat(v);
+                                  if (!isNaN(parsed)) {
+                                    updateStudentContinuousScore(
+                                      student.id,
+                                      Math.max(0, Math.min(5, parsed))
+                                    );
+                                  }
+                                }
+                              }}
+                              className="w-24 h-9 text-center font-mono font-bold text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 outline-none bg-white"
+                            />
+                            {/* Fast preset pills */}
+                            <div className="flex items-center gap-1">
+                              {[3, 4, 5].map((preset) => (
+                                <button
+                                  key={preset}
+                                  type="button"
+                                  onClick={() => updateStudentContinuousScore(student.id, preset)}
+                                  className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 hover:bg-purple-100 text-gray-600 hover:text-purple-800 font-mono transition-colors"
+                                >
+                                  {toPersianDigits(preset)}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* Competency Level (1, 2, 3) */}
+                        <TableCell>
+                          <div className="grid grid-cols-3 gap-1">
+                            <button
+                              type="button"
+                              onClick={() => updateStudentCompetencyScore(student.id, 1)}
+                              className={`px-2 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${
+                                compNum === 1
+                                  ? 'bg-rose-100 border-rose-400 text-rose-800 shadow-xs ring-1 ring-rose-400'
+                                  : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-rose-50/50'
+                              }`}
+                              title="عدم احراز شایستگی (۵ نمره)"
+                            >
+                              <div className="font-extrabold">۱: عدم احراز</div>
+                              <div className="text-[9px] font-mono opacity-80">(۵ نمره)</div>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => updateStudentCompetencyScore(student.id, 2)}
+                              className={`px-2 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${
+                                compNum === 2
+                                  ? 'bg-amber-100 border-amber-400 text-amber-900 shadow-xs ring-1 ring-amber-400'
+                                  : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-amber-50/50'
+                              }`}
+                              title="احراز در حد انتظار (۱۰ نمره)"
+                            >
+                              <div className="font-extrabold">۲: حد انتظار</div>
+                              <div className="text-[9px] font-mono opacity-80">(۱۰ نمره)</div>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => updateStudentCompetencyScore(student.id, 3)}
+                              className={`px-2 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${
+                                compNum === 3
+                                  ? 'bg-emerald-100 border-emerald-400 text-emerald-900 shadow-xs ring-1 ring-emerald-400'
+                                  : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-emerald-50/50'
+                              }`}
+                              title="بالاتر از حد انتظار (۱۵ نمره)"
+                            >
+                              <div className="font-extrabold">۳: بالاتر از انتظار</div>
+                              <div className="text-[9px] font-mono opacity-80">(۱۵ نمره)</div>
+                            </button>
+                          </div>
+                        </TableCell>
+
+                        {/* Calculated Final Score */}
+                        <TableCell className="text-center">
+                          {finalScoreCalc !== null ? (
+                            <div className="inline-flex flex-col items-center">
+                              <span
+                                className={`font-mono font-black text-sm px-2.5 py-1 rounded-lg ${
+                                  isPassed
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : 'bg-rose-100 text-rose-800'
+                                }`}
+                              >
+                                {toPersianDigits(finalScoreCalc.toFixed(2))}
+                              </span>
+                              <span className="text-[9px] text-gray-400 font-mono mt-0.5">از ۲۰</span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400 font-mono">—</span>
+                          )}
+                        </TableCell>
+
+                        {/* Pass/Fail Status */}
+                        <TableCell className="text-center">
+                          {finalScoreCalc !== null ? (
+                            isPassed ? (
+                              <Badge variant="success" className="text-[11px] py-1 px-2">
+                                <CheckCircle2 className="w-3 h-3 ml-1" />
+                                قبول (احراز شایستگی)
+                              </Badge>
+                            ) : (
+                              <Badge variant="destructive" className="text-[11px] py-1 px-2">
+                                <AlertTriangle className="w-3 h-3 ml-1" />
+                                تجدید (آزمون مجدد)
+                              </Badge>
+                            )
+                          ) : (
+                            <span className="text-[11px] text-gray-400">ثبت نشده</span>
+                          )}
+                        </TableCell>
+
+                        {/* 5-Podman Mini Progress Track */}
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            {[1, 2, 3, 4, 5].map((pNum) => {
+                              const pGrade = studentMatrixInfo?.podmanGrades?.[pNum];
+                              const isThisActive = pNum === selectedPodmanNumber;
+                              return (
+                                <div
+                                  key={pNum}
+                                  className={`w-6 h-6 rounded text-[10px] font-bold flex items-center justify-center transition-all ${
+                                    isThisActive ? 'ring-2 ring-purple-600 scale-110' : ''
+                                  } ${
+                                    pGrade
+                                      ? pGrade.isPassed
+                                        ? 'bg-emerald-500 text-white'
+                                        : 'bg-rose-500 text-white'
+                                      : 'bg-gray-100 text-gray-400 border border-gray-200'
+                                  }`}
+                                  title={`پودمان ${pNum}: ${
+                                    pGrade
+                                      ? `${pGrade.finalScore} از ۲۰ (${pGrade.isPassed ? 'قبول' : 'تجدید'})`
+                                      : 'ثبت نشده'
+                                  }`}
+                                >
+                                  {toPersianDigits(pNum)}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </TableCell>
+
+                        {/* Teacher Notes */}
+                        <TableCell>
+                          <input
+                            type="text"
+                            placeholder="یادداشت دبیر..."
+                            value={currentInput.notes}
+                            onChange={(e) => updateStudentPodmanNotes(student.id, e.target.value)}
+                            className="w-full h-8 text-xs px-2 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:ring-1 focus:ring-purple-500 outline-none"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          {/* Master 5-Podman Class Matrix (کارنامه جامع ۵ پودمان کلاس) */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-bold text-ink-darker flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-purple-600" />
+                  <span>کارنامه جامع و ماتریس ۵ پودمان کل کلاس</span>
+                </h4>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  وضعیت قبولی در هر یک از پودمان‌های ۱ تا ۵، میانگین کل و وضعیت نهایی گذراندن درس
+                </p>
+              </div>
+
+              {podmanMatrixData && (
+                <div className="flex items-center gap-3 text-xs font-bold">
+                  <div className="bg-purple-50 text-purple-800 px-3 py-1.5 rounded-lg border border-purple-200">
+                    کل هنرجویان: {toPersianDigits(podmanMatrixData.classroom.totalStudents)}
+                  </div>
+                  <div className="bg-emerald-50 text-emerald-800 px-3 py-1.5 rounded-lg border border-emerald-200">
+                    قبولی قطعی درس:{' '}
+                    {toPersianDigits(
+                      podmanMatrixData.students?.filter((s: any) => s.allPodmansPassed).length || 0
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50 text-xs">
+                    <TableHead className="w-12 text-center">#</TableHead>
+                    <TableHead>نام هنرجو</TableHead>
+                    <TableHead className="text-center">پودمان ۱</TableHead>
+                    <TableHead className="text-center">پودمان ۲</TableHead>
+                    <TableHead className="text-center">پودمان ۳</TableHead>
+                    <TableHead className="text-center">پودمان ۴</TableHead>
+                    <TableHead className="text-center">پودمان ۵</TableHead>
+                    <TableHead className="text-center">میانگین کل (۲۰)</TableHead>
+                    <TableHead className="text-center">نتیجه قطعی درس</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {podmanMatrixData?.students?.map((st: any, idx: number) => {
+                    return (
+                      <TableRow key={st.studentId} className="text-xs">
+                        <TableCell className="text-center font-mono text-gray-400">
+                          {idx + 1}
+                        </TableCell>
+                        <TableCell className="font-bold text-ink-darker">
+                          {st.studentName}
+                        </TableCell>
+                        {[1, 2, 3, 4, 5].map((pNum) => {
+                          const pg = st.podmanGrades?.[pNum];
+                          return (
+                            <TableCell key={pNum} className="text-center">
+                              {pg ? (
+                                <span
+                                  className={`inline-block px-2 py-0.5 rounded font-mono font-bold text-xs ${
+                                    pg.isPassed
+                                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                      : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                  }`}
+                                >
+                                  {toPersianDigits(pg.finalScore.toFixed(1))}
+                                </span>
+                              ) : (
+                                <span className="text-gray-300 font-mono">—</span>
+                              )}
+                            </TableCell>
+                          );
+                        })}
+                        <TableCell className="text-center font-mono font-bold">
+                          {st.allPodmansPassed ? (
+                            <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-black">
+                              {toPersianDigits(st.lessonAverageOutOf20.toFixed(2))}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400" title="محاسبه میانگین منوط به قبولی در تمام ۵ پودمان است">
+                              {st.lessonAverageOutOf20 > 0
+                                ? `${toPersianDigits(st.lessonAverageOutOf20.toFixed(2))}*`
+                                : '—'}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {st.allPodmansPassed ? (
+                            <Badge variant="success" className="text-[11px] py-1 px-2.5">
+                              قبولی قطعی درس
+                            </Badge>
+                          ) : st.unpassedPodmanNumbers?.length > 0 ? (
+                            <Badge variant="warning" className="text-[10px] py-1 px-2">
+                              تجدید پودمان {st.unpassedPodmanNumbers.map(toPersianDigits).join('، ')}
+                            </Badge>
+                          ) : (
+                            <Badge variant="neutral" className="text-[10px] py-1 px-2">
+                              در حال آموزش
+                            </Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          {/* Sticky Action Bar for Podman */}
+          <StickyActionBar className="md:hidden">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-purple-600 text-white flex items-center justify-center font-bold text-xs">
+                  {toPersianDigits(selectedPodmanNumber)}
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-ink-darker">
+                    پودمان {toPersianDigits(selectedPodmanNumber)}: {podmanMatrixData?.lesson?.podmans?.find((p: any) => p.number === selectedPodmanNumber)?.title || `پودمان ${selectedPodmanNumber}`}
+                  </div>
+                  <div className="text-[10px] text-gray-500">
+                    نوبت: {podmanAttemptType === 'REGULAR' ? 'عادی' : podmanAttemptType === 'RETAKE_1' ? 'جبرانی دی‌ماه' : 'جبرانی خرداد/شهریور'}
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                variant="primary"
+                onClick={handleSavePodmanGrades}
+                isLoading={isSavingPodman}
+                disabled={isLoadingPodman || students.length === 0}
+                className="bg-purple-600 hover:bg-purple-700 flex items-center gap-1.5 text-xs font-bold px-5 h-11"
+              >
+                <Save className="h-4 w-4" />
+                <span>ذخیره نمرات پودمان {toPersianDigits(selectedPodmanNumber)}</span>
               </Button>
             </div>
           </StickyActionBar>
