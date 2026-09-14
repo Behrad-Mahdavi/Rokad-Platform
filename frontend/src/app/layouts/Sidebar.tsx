@@ -218,7 +218,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   );
 
   const renderFooterBanner = () => (
-    <div className="rounded-2xl bg-gradient-to-br from-ecosystem-light/60 via-white to-ecosystem-light/30 dark:from-[#151C28] dark:to-[#1C2536] p-3 border border-primary/30 text-center shadow-[2px_2px_0_#59BBAF]">
+    <div className="rounded-2xl bg-gradient-to-br from-ecosystem-light/60 via-white to-ecosystem-light/30 dark:from-[#151C28] dark:via-transparent dark:to-[#1C2536] p-3 border border-primary/30 dark:border-gray-800 text-center shadow-[2px_2px_0_#59BBAF]">
       <div className="flex items-center justify-center space-x-2 space-x-reverse text-primary-dark dark:text-primary font-bold text-xs">
         <img src="/logo.svg" alt="رُکاد" className="h-4 w-4 rounded-md object-cover inline-block shrink-0 shadow-2xs" />
         <span>هوشمندسازی رُکاد</span>

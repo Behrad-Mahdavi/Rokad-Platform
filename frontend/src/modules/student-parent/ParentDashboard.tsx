@@ -24,16 +24,16 @@ export const ParentDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="relative overflow-hidden bg-gradient-to-l from-purple-500/10 via-purple-100/30 to-white p-3.5 sm:p-5 md:p-6 rounded-2xl border border-purple-200 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="relative overflow-hidden bg-white dark:bg-[#151C28] bg-gradient-to-l from-purple-500/15 via-purple-500/5 to-transparent dark:from-purple-900/30 dark:via-purple-950/20 dark:to-transparent p-3.5 sm:p-5 md:p-6 rounded-2xl border border-purple-200 dark:border-[#242F42] shadow-[2.75px_2.75px_0_#652D90] dark:shadow-[2.75px_2.75px_0_#59BBAF] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 space-x-reverse mb-1">
-            <Users className="h-5 w-5 text-purple-600 shrink-0" />
-            <span className="text-base sm:text-lg font-bold text-ink-darker">
+            <Users className="h-5 w-5 text-purple-600 dark:text-purple-400 shrink-0" />
+            <span className="text-base sm:text-lg font-bold text-ink-darker dark:text-white">
               پرتال اولیاء گرامی: {user?.firstName} {user?.lastName}
             </span>
             <Badge variant="female" className="text-[11px]">فرزند: امیرعلی صادقی</Badge>
           </div>
-          <p className="text-[11px] sm:text-xs text-gray-500">
+          <p className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-300">
             پایش وضعیت تحصیلی، کارگاهی، مالی و ارتباط مستقیم با هنرآموزان و مشاوران هنرستان
           </p>
         </div>

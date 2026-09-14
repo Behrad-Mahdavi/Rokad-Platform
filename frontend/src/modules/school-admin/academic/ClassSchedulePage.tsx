@@ -449,9 +449,9 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
 
       {/* Classroom Info Banner */}
       {selectedClassroom && (
-        <div className="bg-gradient-to-l from-primary/5 via-blue-50/50 to-white p-4 rounded-xl border border-primary/20 flex flex-wrap items-center justify-between gap-4">
+        <div className="bg-white dark:bg-[#151C28] bg-gradient-to-l from-primary/10 via-primary/5 to-transparent dark:from-primary/20 dark:via-transparent dark:to-transparent p-4 rounded-xl border border-primary/20 dark:border-[#242F42] flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center space-x-1.5 space-x-reverse text-ink-darker font-bold text-base">
+            <div className="flex items-center space-x-1.5 space-x-reverse text-ink-darker dark:text-white font-bold text-base">
               <Building2 className="h-5 w-5 text-primary" />
               <span>{selectedClassroom.name}</span>
             </div>
@@ -936,7 +936,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
 
           <form onSubmit={handleSaveSchedule} className="space-y-4">
             {/* Single Bell (Split Period) Toggle Switch */}
-            <div className="bg-gradient-to-l from-primary/10 via-primary/5 to-white rounded-2xl border border-primary/20 p-4">
+            <div className="bg-white dark:bg-[#151C28] bg-gradient-to-l from-primary/10 via-primary/5 to-transparent dark:from-primary/20 dark:via-transparent dark:to-transparent rounded-2xl border border-primary/20 dark:border-[#242F42] p-4">
               <div
                 className="flex items-center justify-between cursor-pointer"
                 onClick={() => setForm((f) => ({ ...f, isSplitPeriod: !f.isSplitPeriod }))}

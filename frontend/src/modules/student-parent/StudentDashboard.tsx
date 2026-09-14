@@ -91,11 +91,11 @@ export const StudentDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <div className="relative overflow-hidden bg-gradient-to-l from-primary/10 via-primary-light/20 to-white p-3.5 sm:p-5 md:p-6 rounded-2xl border border-primary/20 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="relative overflow-hidden bg-white dark:bg-[#151C28] bg-gradient-to-l from-primary/15 via-primary/5 to-transparent dark:from-primary/20 dark:via-primary/5 dark:to-transparent p-3.5 sm:p-5 md:p-6 rounded-2xl border border-primary/30 dark:border-[#242F42] shadow-[2.75px_2.75px_0_#202A5A] dark:shadow-[2.75px_2.75px_0_#59BBAF] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 space-x-reverse mb-1">
             <GraduationCap className="h-6 w-6 text-primary shrink-0" />
-            <span className="text-base sm:text-lg font-bold text-ink-darker">
+            <span className="text-base sm:text-lg font-bold text-ink-darker dark:text-white">
               درود، {user?.firstName} {user?.lastName}
             </span>
             {scheduleData?.classroom ? (
@@ -111,7 +111,7 @@ export const StudentDashboard: React.FC = () => {
               <Badge variant="neutral" className="text-[11px]">هنرجوی هنرستان</Badge>
             )}
           </div>
-          <p className="text-[11px] sm:text-xs text-gray-500">
+          <p className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-300">
             برنامه کارگاهی، پروژه‌های عملی در انتظار تحویل و پودمان‌های ارزشیابی شما
           </p>
         </div>

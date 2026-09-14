@@ -264,19 +264,50 @@
   border-color: #242F42 !important;
 }
 
-/* اصلاح کنتراست متون تیره در دارک‌مود */
+/* اصلاح کنتراست متون تیره و جوهری در دارک‌مود */
+.dark h1:not([class*="dark:text-"]),
+.dark h2:not([class*="dark:text-"]),
+.dark h3:not([class*="dark:text-"]),
+.dark h4:not([class*="dark:text-"]),
+.dark h5:not([class*="dark:text-"]),
+.dark h6:not([class*="dark:text-"]) {
+  color: #FFFFFF;
+}
+
+.dark .text-ink-darker,
+.dark [class*="text-ink-darker"]:not([class*="dark:text-"]),
+.dark .text-ink-dark,
+.dark [class*="text-ink-dark"]:not([class*="dark:text-"]),
+.dark [class*="text-black"]:not([class*="dark:text-"]),
 .dark [class*="text-gray-900"]:not([class*="dark:text-"]),
 .dark [class*="text-gray-800"]:not([class*="dark:text-"]) {
   color: #FFFFFF !important;
 }
+
+.dark .text-ink-normal,
+.dark [class*="text-ink-normal"]:not([class*="dark:text-"]),
 .dark [class*="text-gray-700"]:not([class*="dark:text-"]) {
   color: #F1F5F9 !important;
 }
+
 .dark [class*="text-gray-600"]:not([class*="dark:text-"]) {
   color: #CBD5E1 !important;
 }
+
+.dark .text-ink-light,
+.dark [class*="text-ink-light"]:not([class*="dark:text-"]),
 .dark [class*="text-gray-500"]:not([class*="dark:text-"]) {
   color: #94A3B8 !important;
+}
+
+.dark .text-sec,
+.dark [class*="text-sec"]:not([class*="dark:text-"]),
+.dark [class*="text-sec-dark"]:not([class*="dark:text-"]),
+.dark [class*="text-sec-darker"]:not([class*="dark:text-"]),
+.dark [class*="text-male-normal"]:not([class*="dark:text-"]),
+.dark [class*="text-male-dark"]:not([class*="dark:text-"]),
+.dark [class*="text-male-darker"]:not([class*="dark:text-"]) {
+  color: #F1F5F9 !important;
 }
 
 /* وضعیت‌های رنگی در تم شب (Status Alerts & Badges) */

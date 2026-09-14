@@ -995,10 +995,10 @@ export const AcademicStructurePage: React.FC = () => {
 
           {/* بخش تنظیمات پودمان (در صورت پودمانی بودن درس) */}
           {lessonForm.isModular ? (
-            <div className="bg-gradient-to-l from-purple-50/60 via-purple-50/20 to-white rounded-2xl border border-purple-200 p-4 space-y-3">
+            <div className="bg-white dark:bg-[#151C28] bg-gradient-to-l from-purple-50/60 via-purple-50/20 to-transparent dark:from-purple-950/40 dark:via-transparent dark:to-transparent rounded-2xl border border-purple-200 dark:border-purple-900/50 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="font-extrabold text-sm text-ink-darker">
+                  <span className="font-extrabold text-sm text-ink-darker dark:text-white">
                     پودمان‌های این درس (نظام ۵ پودمانی)
                   </span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-100 text-purple-800 border border-purple-200">
