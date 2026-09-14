@@ -240,17 +240,17 @@ export const PersianDatePicker: React.FC<PersianDatePickerProps> = ({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         className={twMerge(
           clsx(
-            'flex h-11 w-full items-center justify-between rounded-md border bg-white px-3.5 py-2 text-sm ring-offset-white cursor-pointer select-none transition-colors shadow-xs',
-            disabled ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'hover:border-primary',
-            error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300',
+            'flex h-11 w-full items-center justify-between rounded-xl border bg-white dark:bg-[#1C2536] px-3.5 py-2 text-sm cursor-pointer select-none transition-colors shadow-xs',
+            disabled ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800' : 'hover:border-primary',
+            error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 dark:border-gray-700',
             isOpen ? 'border-primary ring-2 ring-primary/20' : '',
             className,
           ),
         )}
       >
         <div className="flex items-center gap-2 overflow-hidden">
-          <Calendar className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span className={clsx('truncate', displayValue ? 'text-ink-normal font-semibold' : 'text-gray-400')}>
+          <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span className={clsx('truncate', displayValue ? 'text-ink-normal dark:text-white font-semibold' : 'text-gray-400 dark:text-gray-500')}>
             {displayValue || placeholder}
           </span>
         </div>
@@ -260,7 +260,7 @@ export const PersianDatePicker: React.FC<PersianDatePickerProps> = ({
             <button
               type="button"
               onClick={handleClear}
-              className="p-1 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition-colors"
+              className="p-1 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               title="پاک کردن تاریخ"
             >
               <X className="w-3.5 h-3.5" />
@@ -269,18 +269,18 @@ export const PersianDatePicker: React.FC<PersianDatePickerProps> = ({
         </div>
       </div>
 
-      {error && <p className="mt-1.5 text-xs text-red-600 font-medium">{error}</p>}
-      {helperText && !error && <p className="mt-1 text-xs text-gray-500">{helperText}</p>}
+      {error && <p className="mt-1.5 text-xs text-red-600 dark:text-red-400 font-medium">{error}</p>}
+      {helperText && !error && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{helperText}</p>}
 
       {/* تقویم بازشو */}
       {isOpen && (
-        <div className="absolute z-50 mt-1.5 right-0 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 p-3.5 select-none animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute z-50 mt-1.5 right-0 w-72 bg-white dark:bg-[#151C28] rounded-2xl shadow-2xl border border-gray-200 dark:border-[#242F42] p-3.5 select-none animate-in fade-in zoom-in-95 duration-150">
           {/* هدر: انتخاب سال و ماه و ناوبری */}
           <div className="flex items-center justify-between gap-1 mb-3">
             <button
               type="button"
               onClick={handleNextMonth}
-              className="p-1 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+              className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors"
               title="ماه بعد"
             >
               <ChevronRight className="w-4 h-4" />
@@ -290,10 +290,10 @@ export const PersianDatePicker: React.FC<PersianDatePickerProps> = ({
               <select
                 value={viewDate.jm}
                 onChange={(e) => setViewDate({ ...viewDate, jm: parseInt(e.target.value, 10) })}
-                className="text-xs font-semibold text-gray-800 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-md py-1 px-2 cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+                className="text-xs font-semibold text-gray-800 dark:text-white bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md py-1 px-2 cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 {PERSIAN_MONTH_NAMES.map((m, idx) => (
-                  <option key={idx} value={idx + 1}>
+                  <option key={idx} value={idx + 1} className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">
                     {m}
                   </option>
                 ))}
@@ -302,10 +302,10 @@ export const PersianDatePicker: React.FC<PersianDatePickerProps> = ({
               <select
                 value={viewDate.jy}
                 onChange={(e) => setViewDate({ ...viewDate, jy: parseInt(e.target.value, 10) })}
-                className="text-xs font-semibold text-gray-800 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-md py-1 px-2 cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+                className="text-xs font-semibold text-gray-800 dark:text-white bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md py-1 px-2 cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 {yearOptions.map((y) => (
-                  <option key={y} value={y}>
+                  <option key={y} value={y} className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">
                     {toPersianDigits(y)}
                   </option>
                 ))}
@@ -315,7 +315,7 @@ export const PersianDatePicker: React.FC<PersianDatePickerProps> = ({
             <button
               type="button"
               onClick={handlePrevMonth}
-              className="p-1 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+              className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors"
               title="ماه قبل"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -323,13 +323,13 @@ export const PersianDatePicker: React.FC<PersianDatePickerProps> = ({
           </div>
 
           {/* روزهای هفته (شنبه تا جمعه) */}
-          <div className="grid grid-cols-7 gap-1 text-center mb-1.5 pb-1 border-b border-gray-100">
+          <div className="grid grid-cols-7 gap-1 text-center mb-1.5 pb-1 border-b border-gray-100 dark:border-gray-800">
             {PERSIAN_WEEK_DAYS.map((day, idx) => (
               <span
                 key={idx}
                 className={clsx(
                   'text-[11px] font-bold',
-                  idx === 6 ? 'text-red-500' : 'text-gray-400',
+                  idx === 6 ? 'text-red-500 dark:text-red-400' : 'text-gray-400 dark:text-gray-500',
                 )}
               >
                 {day}
@@ -368,10 +368,10 @@ export const PersianDatePicker: React.FC<PersianDatePickerProps> = ({
                     isSelected
                       ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-500/30'
                       : isToday
-                        ? 'border border-emerald-500 text-emerald-700 bg-emerald-50/60 font-bold'
+                        ? 'border border-emerald-500 text-emerald-700 dark:text-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/40 font-bold'
                         : isFriday
-                          ? 'text-red-500 hover:bg-red-50'
-                          : 'text-gray-700 hover:bg-gray-100',
+                          ? 'text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30'
+                          : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800',
                   )}
                 >
                   {toPersianDigits(day)}
@@ -381,18 +381,18 @@ export const PersianDatePicker: React.FC<PersianDatePickerProps> = ({
           </div>
 
           {/* پاورقی: دکمه امروز */}
-          <div className="mt-3 pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
+          <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs">
             <button
               type="button"
               onClick={handleSelectToday}
-              className="text-emerald-600 hover:text-emerald-700 font-semibold px-2 py-1 rounded hover:bg-emerald-50 transition-colors"
+              className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-semibold px-2 py-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors"
             >
               امروز ({toPersianDigits(todayJalali.jd)} {PERSIAN_MONTH_NAMES[todayJalali.jm - 1]})
             </button>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="text-gray-400 hover:text-gray-600 px-2 py-1 rounded hover:bg-gray-50 transition-colors"
+              className="text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 px-2 py-1 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               بستن
             </button>

@@ -101,14 +101,14 @@ export default {
           darker: '#231032',
         },
         ink: {
-          light: '#EAEAE9',
-          'light-hover': '#DFDFDF',
-          'light-active': '#BDBCBC',
-          normal: '#292827',
-          'normal-hover': '#252423',
-          'normal-active': '#21201F',
-          dark: '#1F1E1D',
-          darker: '#0E0E0E',
+          light: 'var(--text-light, #EAEAE9)',
+          'light-hover': 'var(--text-light-hover, #DFDFDF)',
+          'light-active': 'var(--text-light-active, #BDBCBC)',
+          normal: 'var(--text-normal, #292827)',
+          'normal-hover': 'var(--text-normal-hover, #252423)',
+          'normal-active': 'var(--text-normal-active, #21201F)',
+          dark: 'var(--text-dark, #1F1E1D)',
+          darker: 'var(--text-darker, #0E0E0E)',
         },
 
         // Dynamic Accent and Status Colors

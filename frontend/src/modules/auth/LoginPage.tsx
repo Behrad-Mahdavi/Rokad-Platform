@@ -113,7 +113,7 @@ export const LoginPage: React.FC = () => {
 
         {/* Branch Selector Switch */}
         <div className="pt-2">
-          <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 rounded-xl border border-gray-200 text-xs">
+          <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 dark:bg-[#1C2536] rounded-xl border border-gray-200 dark:border-gray-700 text-xs">
             <button
               type="button"
               onClick={() => {
@@ -124,7 +124,7 @@ export const LoginPage: React.FC = () => {
               className={`py-2 rounded-lg font-bold transition-all flex items-center justify-center space-x-1.5 space-x-reverse ${
                 tenantSlug === 'rokad-boys'
                   ? 'bg-sec text-white shadow-sm'
-                  : 'text-gray-600 hover:text-ink-dark'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-ink-dark dark:hover:text-white'
               }`}
             >
               <GraduationCap className="h-4 w-4 shrink-0" />
@@ -140,7 +140,7 @@ export const LoginPage: React.FC = () => {
               className={`py-2 rounded-lg font-bold transition-all flex items-center justify-center space-x-1.5 space-x-reverse ${
                 tenantSlug === 'rokad-girls'
                   ? 'bg-girl text-white shadow-sm'
-                  : 'text-gray-600 hover:text-ink-dark'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-ink-dark dark:hover:text-white'
               }`}
             >
               <GraduationCap className="h-4 w-4 shrink-0" />
@@ -152,7 +152,7 @@ export const LoginPage: React.FC = () => {
 
       <CardContent>
         {error && (
-          <div className="mb-4 flex items-center space-x-2 space-x-reverse rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200">
+          <div className="mb-4 flex items-center space-x-2 space-x-reverse rounded-lg bg-red-50 dark:bg-rose-950/40 p-3 text-xs text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>{error}</span>
           </div>
@@ -190,93 +190,93 @@ export const LoginPage: React.FC = () => {
         </form>
 
         {/* Demo Fast Login Presets */}
-        <div className="mt-6 pt-4 border-t border-gray-100">
-          <p className="text-[11px] font-bold text-gray-500 mb-2 text-right">
+        <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
+          <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-2 text-right">
             ورود سریع با نقش‌های پیش‌فرض هنرستان رُکاد:
           </p>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <button
               type="button"
               onClick={() => selectPreset('rokad-boys', '09121111111', 'RokadBoysPass2026!')}
-              className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
+              className="p-2 rounded-lg bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] text-right border border-gray-200 dark:border-gray-700 transition-colors"
             >
-              <div className="font-bold text-ink-dark flex items-center gap-1.5">
-                <Shield className="h-3.5 w-3.5 text-sec shrink-0" />
+              <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
+                <Shield className="h-3.5 w-3.5 text-sec dark:text-indigo-400 shrink-0" />
                 <span>مدیر پسرانه</span>
               </div>
-              <div className="text-[10px] text-gray-500">09121111111</div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400">09121111111</div>
             </button>
 
             <button
               type="button"
               onClick={() => selectPreset('rokad-girls', '09121111112', 'RokadGirlsPass2026!')}
-              className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
+              className="p-2 rounded-lg bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] text-right border border-gray-200 dark:border-gray-700 transition-colors"
             >
-              <div className="font-bold text-ink-dark flex items-center gap-1.5">
-                <Shield className="h-3.5 w-3.5 text-girl shrink-0" />
+              <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
+                <Shield className="h-3.5 w-3.5 text-girl dark:text-pink-400 shrink-0" />
                 <span>مدیر دخترانه</span>
               </div>
-              <div className="text-[10px] text-gray-500">09121111112</div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400">09121111112</div>
             </button>
 
             <button
               type="button"
               onClick={() => selectPreset('rokad-boys', '09123000001', 'RokadPass2026!')}
-              className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
+              className="p-2 rounded-lg bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] text-right border border-gray-200 dark:border-gray-700 transition-colors"
             >
-              <div className="font-bold text-ink-dark flex items-center gap-1.5">
-                <BookOpen className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+              <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
+                <BookOpen className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
                 <span>هنرآموز / معلم</span>
               </div>
-              <div className="text-[10px] text-gray-500">09123000001</div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400">09123000001</div>
             </button>
 
             <button
               type="button"
               onClick={() => selectPreset('rokad-boys', '09124000001', 'RokadPass2026!')}
-              className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
+              className="p-2 rounded-lg bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] text-right border border-gray-200 dark:border-gray-700 transition-colors"
             >
-              <div className="font-bold text-ink-dark flex items-center gap-1.5">
-                <GraduationCap className="h-3.5 w-3.5 text-sec shrink-0" />
+              <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
+                <GraduationCap className="h-3.5 w-3.5 text-sec dark:text-indigo-400 shrink-0" />
                 <span>هنرجوی پسرانه</span>
               </div>
-              <div className="text-[10px] text-gray-500">09124000001</div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400">09124000001</div>
             </button>
 
             <button
               type="button"
               onClick={() => selectPreset('rokad-girls', '09124000002', 'RokadPass2026!')}
-              className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
+              className="p-2 rounded-lg bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] text-right border border-gray-200 dark:border-gray-700 transition-colors"
             >
-              <div className="font-bold text-ink-dark flex items-center gap-1.5">
-                <GraduationCap className="h-3.5 w-3.5 text-girl shrink-0" />
+              <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
+                <GraduationCap className="h-3.5 w-3.5 text-girl dark:text-pink-400 shrink-0" />
                 <span>هنرجوی دخترانه</span>
               </div>
-              <div className="text-[10px] text-gray-500">09124000002</div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400">09124000002</div>
             </button>
 
             <button
               type="button"
               onClick={() => selectPreset('platform-root', '09120000000', 'RokadAdminPass2026!')}
-              className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors"
+              className="p-2 rounded-lg bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] text-right border border-gray-200 dark:border-gray-700 transition-colors"
             >
-              <div className="font-bold text-ink-dark flex items-center gap-1.5">
-                <Crown className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+              <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
+                <Crown className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
                 <span>سوپرادمین کلان</span>
               </div>
-              <div className="text-[10px] text-gray-500">09120000000</div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400">09120000000</div>
             </button>
 
             <button
               type="button"
               onClick={() => selectPreset('rokad-boys', '09125000001', 'RokadPass2026!')}
-              className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-right border border-gray-200 transition-colors col-span-2"
+              className="p-2 rounded-lg bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] text-right border border-gray-200 dark:border-gray-700 transition-colors col-span-2"
             >
-              <div className="font-bold text-ink-dark flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+              <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span>اولیاء هنرجو</span>
               </div>
-              <div className="text-[10px] text-gray-500">09125000001 • رمز: RokadPass2026!</div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400">09125000001 • رمز: RokadPass2026!</div>
             </button>
           </div>
         </div>

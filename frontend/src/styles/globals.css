@@ -221,23 +221,126 @@
   box-shadow: 1px 1px 0 #292827;
 }
 
-/* ۵. دارک‌مود استاندارد */
+/* ۵. دارک‌مود جامع و استاندارد */
 .dark {
   color-scheme: dark;
+  --text-light:        #64748B;
+  --text-light-hover:  #94A3B8;
+  --text-light-active: #CBD5E1;
+  --text-normal:       #CBD5E1;
+  --text-normal-hover: #E2E8F0;
+  --text-normal-active:#F8FAFC;
+  --text-dark:         #F1F5F9;
+  --text-darker:       #FFFFFF;
 }
+
+.dark html,
 .dark body {
-  background-color: #0B0F17;
-  color: #F1F5F9;
+  background-color: #0B0F17 !important;
+  color: #F1F5F9 !important;
 }
+
+/* کارت‌ها و کانتینرهای با بک‌گراند روشن */
+.dark [class*="bg-white"]:not([class*="dark:bg-"]) {
+  background-color: #151C28 !important;
+}
+.dark [class*="bg-gray-50"]:not([class*="dark:bg-"]) {
+  background-color: #111722 !important;
+}
+.dark [class*="bg-gray-100"]:not([class*="dark:bg-"]) {
+  background-color: #1A2232 !important;
+}
+
+/* حاشیه‌ها و تقسیم‌کننده‌ها در تم شب */
+.dark [class*="border-gray-100"]:not([class*="dark:border-"]),
+.dark [class*="border-gray-150"]:not([class*="dark:border-"]),
+.dark [class*="border-gray-200"]:not([class*="dark:border-"]),
+.dark [class*="border-gray-250"]:not([class*="dark:border-"]),
+.dark [class*="border-gray-300"]:not([class*="dark:border-"]) {
+  border-color: #242F42 !important;
+}
+.dark [class*="divide-gray-100"] > :not([hidden]) ~ :not([hidden]),
+.dark [class*="divide-gray-200"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: #242F42 !important;
+}
+
+/* اصلاح کنتراست متون تیره در دارک‌مود */
+.dark [class*="text-gray-900"]:not([class*="dark:text-"]),
+.dark [class*="text-gray-800"]:not([class*="dark:text-"]) {
+  color: #FFFFFF !important;
+}
+.dark [class*="text-gray-700"]:not([class*="dark:text-"]) {
+  color: #F1F5F9 !important;
+}
+.dark [class*="text-gray-600"]:not([class*="dark:text-"]) {
+  color: #CBD5E1 !important;
+}
+.dark [class*="text-gray-500"]:not([class*="dark:text-"]) {
+  color: #94A3B8 !important;
+}
+
+/* وضعیت‌های رنگی در تم شب (Status Alerts & Badges) */
+.dark [class*="bg-emerald-50"]:not([class*="dark:bg-"]) {
+  background-color: rgba(6, 78, 59, 0.45) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  color: #6EE7B7 !important;
+}
+.dark [class*="bg-rose-50"]:not([class*="dark:bg-"]) {
+  background-color: rgba(136, 19, 55, 0.45) !important;
+  border-color: rgba(244, 63, 94, 0.35) !important;
+  color: #FDA4AF !important;
+}
+.dark [class*="bg-amber-50"]:not([class*="dark:bg-"]) {
+  background-color: rgba(120, 53, 15, 0.45) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  color: #FCD34D !important;
+}
+.dark [class*="bg-blue-50"]:not([class*="dark:bg-"]) {
+  background-color: rgba(30, 58, 138, 0.45) !important;
+  border-color: rgba(59, 130, 246, 0.35) !important;
+  color: #93C5FD !important;
+}
+.dark [class*="bg-purple-50"]:not([class*="dark:bg-"]),
+.dark [class*="bg-purple-100"]:not([class*="dark:bg-"]) {
+  background-color: rgba(88, 28, 135, 0.45) !important;
+  border-color: rgba(168, 85, 247, 0.35) !important;
+  color: #D8B4FE !important;
+}
+
+.dark [class*="text-emerald-800"]:not([class*="dark:text-"]),
+.dark [class*="text-emerald-700"]:not([class*="dark:text-"]) {
+  color: #6EE7B7 !important;
+}
+.dark [class*="text-rose-800"]:not([class*="dark:text-"]),
+.dark [class*="text-rose-700"]:not([class*="dark:text-"]) {
+  color: #FDA4AF !important;
+}
+.dark [class*="text-amber-800"]:not([class*="dark:text-"]),
+.dark [class*="text-amber-700"]:not([class*="dark:text-"]) {
+  color: #FCD34D !important;
+}
+.dark [class*="text-blue-800"]:not([class*="dark:text-"]),
+.dark [class*="text-blue-700"]:not([class*="dark:text-"]) {
+  color: #93C5FD !important;
+}
+.dark [class*="text-purple-800"]:not([class*="dark:text-"]),
+.dark [class*="text-purple-700"]:not([class*="dark:text-"]),
+.dark [class*="text-purple-900"]:not([class*="dark:text-"]) {
+  color: #D8B4FE !important;
+}
+
+/* کارت برند نئوبروتالیسم رُکاد */
 .dark .rokad-card {
-  background: #151C28;
-  border-color: #242F42;
+  background: #151C28 !important;
+  border-color: #242F42 !important;
+  color: #F1F5F9 !important;
   box-shadow: 2.75px 2.75px 0 #59BBAF;
 }
 .dark .rokad-card:hover {
   transform: translateY(-2px);
   box-shadow: 3.5px 3.5px 0 #59BBAF;
 }
+
 .dark .rokad-btn-sec {
   background-color: #2B3875;
   border-color: #3F50A0;
@@ -248,6 +351,47 @@
   color: #F1F5F9;
   border-color: #2D3A50;
   box-shadow: 2px 2px 0 #0F172A;
+}
+
+/* سیستم جداول در دارک‌مود (Data Tables) */
+.dark table {
+  background-color: #151C28;
+  color: #E2E8F0;
+}
+.dark thead,
+.dark th {
+  background-color: #1C2536 !important;
+  color: #F1F5F9 !important;
+  border-color: #242F42 !important;
+}
+.dark tbody tr {
+  border-color: #242F42 !important;
+}
+.dark tbody tr:hover {
+  background-color: rgba(28, 37, 54, 0.6) !important;
+}
+.dark td {
+  border-color: #242F42 !important;
+  color: #CBD5E1;
+}
+
+/* فیلدهای ورودی فرم‌ها در دارک‌مود */
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="color"]),
+.dark select,
+.dark textarea {
+  background-color: #1C2536 !important;
+  color: #FFFFFF !important;
+  border-color: #2D3A50 !important;
+}
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: #59BBAF !important;
+  background-color: #1F2A3D !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748B !important;
 }
 
 /* ==========================================================================
