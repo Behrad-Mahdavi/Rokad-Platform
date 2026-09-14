@@ -378,6 +378,7 @@ model User {
   staffPayrollProfile   StaffPayrollProfile?
   payrollSlips          PayrollSlip[]         @relation("EmployeePayrollSlips")
   approvedPayrollSlips  PayrollSlip[]         @relation("ApprovedPayrollSlips")
+  pushSubscriptions     PushSubscription[]
 
   @@unique([tenantId, email])
   @@unique([tenantId, phone])
@@ -1978,5 +1979,20 @@ model PlatformSetting {
   updatedAt   DateTime @updatedAt
 
   @@index([key])
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  deviceOS  String?  // 'iOS' | 'Android' | 'Desktop' | 'Other'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 

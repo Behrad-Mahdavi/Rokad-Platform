@@ -5,6 +5,7 @@ import {
   Post,
   Param,
   Body,
+  Headers,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -12,6 +13,7 @@ import { NotificationsService, SystemNotification } from './notifications.servic
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentTenant } from '../../common/decorators/current-tenant.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('Operations — Notifications')
 @ApiBearerAuth()
@@ -48,5 +50,40 @@ export class NotificationsController {
   ) {
     await this.notificationsService.markAllAsRead(userId, notificationIds || []);
     return { success: true };
+  }
+
+  @Public()
+  @Get('push/public-key')
+  @ApiOperation({ summary: 'دریافت کلید عمومی VAPID برای ثبت وب‌پوش' })
+  getVapidPublicKey() {
+    return this.notificationsService.getVapidPublicKey();
+  }
+
+  @Post('push/subscribe')
+  @ApiOperation({ summary: 'ثبت یا به‌روزرسانی اشتراک وب‌پوش دستگاه کاربر' })
+  async subscribePush(
+    @CurrentUser('id') userId: string,
+    @Body() subscriptionData: any,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    await this.notificationsService.subscribePush(userId, subscriptionData, userAgent);
+    return { success: true, message: 'اشتراک اعلان با موفقیت ثبت شد' };
+  }
+
+  @Post('push/unsubscribe')
+  @ApiOperation({ summary: 'حذف اشتراک وب‌پوش دستگاه' })
+  async unsubscribePush(
+    @CurrentUser('id') userId: string,
+    @Body('endpoint') endpoint: string,
+  ) {
+    await this.notificationsService.unsubscribePush(userId, endpoint);
+    return { success: true, message: 'اشتراک اعلان با موفقیت لغو شد' };
+  }
+
+  @Post('push/test')
+  @ApiOperation({ summary: 'ارسال اعلان آزمایشی وب‌پوش برای تست دستگاه' })
+  async sendTestPush(@CurrentUser('id') userId: string) {
+    const result = await this.notificationsService.sendTestPush(userId);
+    return { success: true, ...result };
   }
 }

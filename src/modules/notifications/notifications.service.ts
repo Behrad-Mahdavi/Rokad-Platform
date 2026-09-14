@@ -1,4 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as webpush from 'web-push';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { Role } from '../../common/constants';
@@ -25,7 +27,7 @@ export interface SystemNotification {
 }
 
 @Injectable()
-export class NotificationsService {
+export class NotificationsService implements OnModuleInit {
   private readonly logger = new Logger(NotificationsService.name);
 
   // Fallback in-memory read store when Redis is offline
@@ -34,7 +36,25 @@ export class NotificationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    private readonly configService: ConfigService,
   ) {}
+
+  onModuleInit() {
+    const subject = this.configService.get<string>('VAPID_SUBJECT') || 'mailto:support@rokadschool.ir';
+    const publicKey = this.configService.get<string>('VAPID_PUBLIC_KEY');
+    const privateKey = this.configService.get<string>('VAPID_PRIVATE_KEY');
+
+    if (publicKey && privateKey) {
+      try {
+        webpush.setVapidDetails(subject, publicKey, privateKey);
+        this.logger.log('Web Push (VAPID) configured successfully.');
+      } catch (err: any) {
+        this.logger.error(`Failed to configure VAPID: ${err.message}`);
+      }
+    } else {
+      this.logger.warn('VAPID keys not configured. Web Push will be disabled.');
+    }
+  }
 
   private getReadSet(userId: string): Set<string> {
     if (!this.inMemoryReadStore.has(userId)) {
@@ -481,5 +501,169 @@ export class NotificationsService {
     return notifications.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
+  }
+
+  /**
+   * Return VAPID Public Key for client subscription
+   */
+  getVapidPublicKey(): { publicKey: string } {
+    return {
+      publicKey: this.configService.get<string>('VAPID_PUBLIC_KEY') || '',
+    };
+  }
+
+  /**
+   * Save or update push subscription for a user device
+   */
+  async subscribePush(
+    userId: string,
+    data: { endpoint: string; keys: { p256dh: string; auth: string } },
+    userAgent?: string,
+  ) {
+    const endpoint = data?.endpoint || (data as any)?.subscription?.endpoint;
+    if (!endpoint) {
+      this.logger.warn(`subscribePush: endpoint missing for user ${userId}`);
+      throw new BadRequestException('آدرس endpoint اشتراک مرورگر معتبر نیست.');
+    }
+
+    const p256dh = data?.keys?.p256dh || (data as any)?.p256dh || '';
+    const auth = data?.keys?.auth || (data as any)?.auth || '';
+
+    let deviceOS = 'Desktop';
+    if (userAgent) {
+      if (/iPhone|iPad|iPod/i.test(userAgent)) {
+        deviceOS = 'iOS';
+      } else if (/Android/i.test(userAgent)) {
+        deviceOS = 'Android';
+      }
+    }
+
+    this.logger.log(`Subscribing device [${deviceOS}] for user ${userId} (endpoint: ${endpoint.substring(0, 30)}...)`);
+
+    return this.prisma.pushSubscription.upsert({
+      where: { endpoint },
+      update: {
+        userId,
+        p256dh,
+        auth,
+        userAgent,
+        deviceOS,
+      },
+      create: {
+        userId,
+        endpoint,
+        p256dh,
+        auth,
+        userAgent,
+        deviceOS,
+      },
+    });
+  }
+
+  /**
+   * Remove subscription when user logs out or disables notifications
+   */
+  async unsubscribePush(userId: string, endpoint: string) {
+    if (!endpoint) return { count: 0 };
+    return this.prisma.pushSubscription.deleteMany({
+      where: {
+        userId,
+        endpoint,
+      },
+    });
+  }
+
+  /**
+   * Send Web Push notification to all active devices of a user
+   */
+  async sendPushToUser(
+    userId: string,
+    payload: {
+      title: string;
+      body: string;
+      url?: string;
+      icon?: string;
+      badge?: string;
+      tag?: string;
+    },
+  ) {
+    const subscriptions = await this.prisma.pushSubscription.findMany({
+      where: { userId },
+    });
+
+    if (!subscriptions.length) {
+      return { sent: 0, failed: 0 };
+    }
+
+    const jsonPayload = JSON.stringify({
+      title: payload.title,
+      body: payload.body,
+      url: payload.url || '/app',
+      icon: payload.icon || '/icons/pwa-192x192.png',
+      badge: payload.badge || '/icons/favicon-32x32.png',
+      tag: payload.tag || 'rokad-push',
+    });
+
+    let sent = 0;
+    let failed = 0;
+
+    await Promise.allSettled(
+      subscriptions.map(async (sub) => {
+        try {
+          const pushPromise = webpush.sendNotification(
+            {
+              endpoint: sub.endpoint,
+              keys: {
+                p256dh: sub.p256dh,
+                auth: sub.auth,
+              },
+            },
+            jsonPayload,
+            {
+              TTL: 60 * 60 * 24, // 24 hours
+              urgency: 'high',
+            },
+          );
+
+          // 6-second timeout per subscription to guard against network stalls
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Push Gateway Timeout')), 6000),
+          );
+
+          await Promise.race([pushPromise, timeoutPromise]);
+          sent++;
+        } catch (err: any) {
+          failed++;
+          this.logger.warn(`Push delivery failed for sub ${sub.id}: ${err.message} (status: ${err.statusCode})`);
+          // 404 or 410 means subscription has expired or unsubscribed
+          if (err.statusCode === 404 || err.statusCode === 410) {
+            this.logger.log(`Cleaning up expired subscription: ${sub.id}`);
+            await this.prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+          }
+        }
+      }),
+    );
+
+    return { sent, failed };
+  }
+
+  /**
+   * Send test push notification to verify device receipt (non-blocking)
+   */
+  async sendTestPush(userId: string) {
+    // Run push in background so client gets instant HTTP response without 30s timeout
+    this.sendPushToUser(userId, {
+      title: 'سامانه هوشمند رُکاد',
+      body: 'این یک پیام آزمایشی است. اعلان‌های برخط در دستگاه شما با موفقیت فعال شد! 🎉',
+      url: '/app',
+      tag: 'test-notification',
+    }).catch((err) => {
+      this.logger.error(`Error sending test push to ${userId}: ${err.message}`);
+    });
+
+    return {
+      sent: 1,
+      message: 'سیگنال اعلان تستی به دستگاه شما ارسال گردید.',
+    };
   }
 }

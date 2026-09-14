@@ -8,11 +8,15 @@ import { Badge } from '../../components/ui/Badge';
 import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { useSidebarStore } from '../../lib/ui/sidebar-store';
+import { useWebPush } from '../../hooks/useWebPush';
 import {
   LogOut,
   School,
   Shield,
   Bell,
+  BellRing,
+  Smartphone,
+  Send,
   CheckCircle2,
   Clock,
   User,
@@ -51,6 +55,19 @@ export const Header: React.FC = () => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isNotifLoading, setIsNotifLoading] = useState(false);
   const [notifFilter, setNotifFilter] = useState<'ALL' | 'UNREAD'>('ALL');
+
+  // Web Push state (iOS & Android)
+  const {
+    isSupported: isPushSupported,
+    needsIOSInstall,
+    isSubscribed: isPushSubscribed,
+    isLoading: isPushLoading,
+    error: pushError,
+    subscribe: subscribePush,
+    unsubscribe: unsubscribePush,
+    sendTestNotification,
+  } = useWebPush();
+  const [testPushStatus, setTestPushStatus] = useState<string | null>(null);
 
   const fetchNotifications = async () => {
     try {
@@ -288,6 +305,100 @@ export const Header: React.FC = () => {
                   خوانده‌نشده ({unreadCount})
                 </button>
               </div>
+
+              {/* Web Push (iOS & Android) Device Banner */}
+              {isPushSupported && (
+                <div className="mb-2.5 p-2.5 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 via-teal-50/40 to-primary/5 transition-all">
+                  {needsIOSInstall ? (
+                    <div className="space-y-1 text-right">
+                      <div className="flex items-center gap-1.5 text-amber-700 font-bold text-[11px]">
+                        <Smartphone className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+                        <span>فعال‌سازی اعلان در آیفون (iOS)</span>
+                      </div>
+                      <p className="text-[10px] text-gray-600 leading-relaxed">
+                        جهت دریافت نوتیفیکیشن در آیفون، ابتدا دکمه <span className="font-bold text-gray-800">Share (اشتراک‌گذاری)</span> در نوار پایین سافاری را لمس و گزینه <span className="font-bold text-primary">«Add to Home Screen»</span> را بزنید.
+                      </p>
+                    </div>
+                  ) : isPushSubscribed ? (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-1.5">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                          </span>
+                          <span className="text-[11px] font-bold text-emerald-800 truncate">
+                            نوتیفیکیشن این دستگاه فعال است
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              setTestPushStatus('در حال ارسال...');
+                              const ok = await sendTestNotification();
+                              if (ok) {
+                                setTestPushStatus('ارسال شد!');
+                                setTimeout(() => setTestPushStatus(null), 3000);
+                              } else {
+                                setTestPushStatus('خطا در ارسال');
+                                setTimeout(() => setTestPushStatus(null), 3000);
+                              }
+                            }}
+                            disabled={isPushLoading}
+                            className="px-2 py-0.5 bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-300 rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
+                            title="تست ارسال نوتیفیکیشن روی همین دستگاه"
+                          >
+                            {isPushLoading ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Send className="w-2.5 h-2.5" />}
+                            <span>{testPushStatus || 'تست اعلان'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => unsubscribePush()}
+                            disabled={isPushLoading}
+                            className="text-[9px] text-gray-400 hover:text-rose-600 px-1 py-0.5 rounded transition-colors cursor-pointer"
+                            title="غیرفعال کردن اعلان‌ها روی این دستگاه"
+                          >
+                            خاموش
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <BellRing className="w-3.5 h-3.5 text-primary shrink-0" />
+                          <span className="text-[11px] font-bold text-ink-darker truncate">
+                            دریافت فوری اعلان‌ها (پوش)
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const ok = await subscribePush();
+                            if (ok) {
+                              setTimeout(() => sendTestNotification(), 600);
+                            }
+                          }}
+                          disabled={isPushLoading}
+                          className="h-6 text-[10px] font-bold px-2 bg-primary hover:bg-primary-dark text-white rounded-lg flex items-center gap-1 transition-all shadow-2xs shrink-0 cursor-pointer"
+                        >
+                          {isPushLoading ? (
+                            <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="w-2.5 h-2.5" />
+                          )}
+                          <span>فعال‌سازی در این دستگاه</span>
+                        </button>
+                      </div>
+                      {pushError && (
+                        <p className="text-[9px] text-rose-600 leading-tight">{pushError}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Notification List */}
               <div className="space-y-2 max-h-80 overflow-y-auto pr-0.5">
