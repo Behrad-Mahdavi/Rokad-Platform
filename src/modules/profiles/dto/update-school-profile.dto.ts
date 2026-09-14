@@ -43,25 +43,67 @@ export class UpdateSchoolProfileDto {
 }
 
 export class CreateBlogPostDto {
-  @ApiProperty({ description: 'عنوان مقاله یا خبر', example: 'برگزاری کارگاه تخصصی هوش مصنوعی در هنرستان رُکاد' })
+  @ApiProperty({ description: 'عنوان مقاله، خبر یا پست رسانه', example: 'برگزاری کارگاه تخصصی هوش مصنوعی در هنرستان رُکاد' })
   @IsString()
   @IsNotEmpty()
   title: string;
 
-  @ApiProperty({ description: 'اسلاگ انگلیسی یا فارسی برای آدرس وبلاگ', example: 'ai-workshop-in-rokad' })
+  @ApiPropertyOptional({ description: 'اسلاگ انگلیسی یا فارسی برای آدرس وبلاگ', example: 'ai-workshop-in-rokad' })
   @IsString()
-  @IsNotEmpty()
-  slug: string;
+  @IsOptional()
+  slug?: string;
 
-  @ApiProperty({ description: 'متن کامل مقاله' })
+  @ApiProperty({ description: 'متن کامل نوشته یا توضیحات پست' })
   @IsString()
   @IsNotEmpty()
   content: string;
 
-  @ApiPropertyOptional({ description: 'تصویر شاخص مقاله' })
+  @ApiPropertyOptional({ description: 'تصویر شاخص مقاله یا تصویر اول' })
   @IsString()
   @IsOptional()
   coverImageUrl?: string;
+
+  @ApiPropertyOptional({ description: 'نوع پست: استاندارد، اسلایدی، سند، یا اطلاعیه', example: 'SLIDESHOW' })
+  @IsString()
+  @IsOptional()
+  postType?: string;
+
+  @ApiPropertyOptional({ description: 'لیست تصاویر اسلایدی', example: ['https://.../slide1.jpg', 'https://.../slide2.jpg'] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  mediaUrls?: string[];
+
+  @ApiPropertyOptional({ description: 'پیوست‌ها و فایل‌های قابل دانلود (JSON)' })
+  @IsOptional()
+  attachments?: any;
+
+  @ApiPropertyOptional({ description: 'نوع مخاطب: ALL (همه), ROLES (نقش‌های خاص), CLASSROOMS (کلاس‌های خاص)', default: 'ALL' })
+  @IsString()
+  @IsOptional()
+  audienceType?: string;
+
+  @ApiPropertyOptional({ description: 'نقش‌های مخاطب هدف', example: ['STUDENT', 'PARENT'] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  targetRoles?: string[];
+
+  @ApiPropertyOptional({ description: 'شناسه‌های کلاس‌های مخاطب هدف' })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  targetClassroomIds?: string[];
+
+  @ApiPropertyOptional({ description: 'آیا پست در بالای فید پین شود؟', default: false })
+  @IsBoolean()
+  @IsOptional()
+  isPinned?: boolean;
+
+  @ApiPropertyOptional({ description: 'آیا امکان ثبت کامنت مجاز است؟', default: true })
+  @IsBoolean()
+  @IsOptional()
+  allowComments?: boolean;
 
   @ApiPropertyOptional({ description: 'آیا بلافاصله منتشر شود؟', default: true })
   @IsBoolean()
@@ -73,4 +115,11 @@ export class CreateBlogPostDto {
   @IsString({ each: true })
   @IsOptional()
   tags?: string[];
+}
+
+export class CreateMediaCommentDto {
+  @ApiProperty({ description: 'متن نظر کاربر', example: 'بسیار عالی و کاربردی بود، خسته نباشید.' })
+  @IsString()
+  @IsNotEmpty()
+  content: string;
 }

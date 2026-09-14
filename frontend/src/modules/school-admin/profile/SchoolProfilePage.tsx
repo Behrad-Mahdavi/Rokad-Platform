@@ -181,20 +181,31 @@ export const SchoolProfilePage: React.FC = () => {
       {/* Header */}
       <ResponsivePageHeader
         icon={School}
-        title="پروفایل و هویت مدرسه"
-        description="مدیریت اطلاعات عمومی، پیام مدیریت، شبکه‌های اجتماعی و اخبار و دستاوردهای رسمی مدرسه"
+        title="پروفایل و هویت رسمی مدرسه"
+        description="مدیریت اطلاعات عمومی، پیام مدیریت، شبکه‌های اجتماعی و برندینگ رسمی هنرستان"
         actions={
-          activeTab === 'BLOGS' ? (
+          <div className="flex items-center space-x-2 space-x-reverse">
             <Button
-              variant="primary"
+              variant="outline"
               size="sm"
-              onClick={() => setIsBlogModalOpen(true)}
-              className="flex items-center space-x-1.5 space-x-reverse text-xs"
+              onClick={() => window.location.href = '/app/media'}
+              className="flex items-center space-x-1.5 space-x-reverse text-xs dark:bg-[#1C2536] dark:text-white dark:border-gray-700"
             >
-              <Plus className="h-4 w-4 ml-1" />
-              <span>انتشار خبر جدید</span>
+              <Sparkles className="h-4 w-4 ml-1 text-primary" />
+              <span>رسانه و رویدادهای هنرستان</span>
             </Button>
-          ) : undefined
+            {activeTab === 'BLOGS' && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setIsBlogModalOpen(true)}
+                className="flex items-center space-x-1.5 space-x-reverse text-xs"
+              >
+                <Plus className="h-4 w-4 ml-1" />
+                <span>انتشار خبر جدید</span>
+              </Button>
+            )}
+          </div>
         }
       />
 

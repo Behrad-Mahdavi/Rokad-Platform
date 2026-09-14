@@ -269,8 +269,10 @@ model Tenant {
   staffProfiles     StaffProfile[]
   parentProfiles    ParentProfile[]
   parentLinks       ParentStudentLink[]
-  profileBlogs      ProfileBlog[]
-  schoolProfile     SchoolProfile?
+  profileBlogs        ProfileBlog[]
+  blogLikes           ProfileBlogLike[]
+  blogComments        ProfileBlogComment[]
+  schoolProfile       SchoolProfile?
 
   // Phase 3 Operations Relations
   studentAttendances  StudentAttendance[]
@@ -352,6 +354,8 @@ model User {
   staffProfile      StaffProfile?
   parentProfile     ParentProfile?
   profileBlogs      ProfileBlog[]
+  blogLikes         ProfileBlogLike[]
+  blogComments      ProfileBlogComment[]
   mentoredClasses   Classroom[]      @relation("ClassMentor")
 
   // Phase 3 Relations
@@ -910,25 +914,67 @@ model ParentStudentLink {
 // ==========================================
 
 model ProfileBlog {
-  id            String    @id @default(uuid())
-  tenantId      String
-  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  authorId      String
-  author        User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  title         String
-  slug          String
-  content       String
-  coverImageUrl String?
-  isPublished   Boolean   @default(true)
-  publishedAt   DateTime? @default(now())
-  tags          String[]  @default([])
-  viewCount     Int       @default(0)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                 String               @id @default(uuid())
+  tenantId           String
+  tenant             Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  authorId           String
+  author             User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  title              String
+  slug               String
+  content            String
+  coverImageUrl      String?
+  postType           String               @default("STANDARD") // STANDARD, SLIDESHOW, DOCUMENT, ANNOUNCEMENT
+  mediaUrls          String[]             @default([])         // Multiple slide images
+  attachments        Json?                                     // [{ name: string, url: string, size?: number, mimeType?: string }]
+  audienceType       String               @default("ALL")      // ALL, ROLES, CLASSROOMS
+  targetRoles        String[]             @default([])         // ['STUDENT', 'PARENT', 'TEACHER', 'STAFF']
+  targetClassroomIds String[]             @default([])         // Classroom UUIDs
+  isPinned           Boolean              @default(false)
+  allowComments      Boolean              @default(true)
+  isPublished        Boolean              @default(true)
+  publishedAt        DateTime?            @default(now())
+  tags               String[]             @default([])
+  viewCount          Int                  @default(0)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  likes              ProfileBlogLike[]
+  comments           ProfileBlogComment[]
 
   @@unique([tenantId, slug])
   @@index([tenantId, authorId])
   @@index([tenantId, isPublished])
+  @@index([tenantId, isPinned])
+}
+
+model ProfileBlogLike {
+  id        String      @id @default(uuid())
+  tenantId  String
+  tenant    Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  blogId    String
+  blog      ProfileBlog @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+
+  @@unique([blogId, userId])
+  @@index([tenantId, blogId])
+}
+
+model ProfileBlogComment {
+  id         String      @id @default(uuid())
+  tenantId   String
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  blogId     String
+  blog       ProfileBlog @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  authorId   String
+  author     User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content    String
+  isApproved Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([tenantId, blogId])
 }
 
 model SchoolProfile {

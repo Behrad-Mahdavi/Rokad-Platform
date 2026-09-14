@@ -58,6 +58,7 @@ import { ParentVisitsPage } from '../modules/student-parent/visits/ParentVisitsP
 import { TeacherVisitsPage } from '../modules/teacher/visits/TeacherVisitsPage';
 import { StudentMattersPage } from '../modules/student-parent/matters/StudentMattersPage';
 import { QuestionBankPage } from '../modules/teacher/question-bank/QuestionBankPage';
+import { MediaFeedPage } from '../modules/shared/media/MediaFeedPage';
 
 import { ForbiddenPage } from '../modules/errors/ForbiddenPage';
 import { NotFoundPage } from '../modules/errors/NotFoundPage';
@@ -200,6 +201,7 @@ export const router = createBrowserRouter([
               { path: 'notices', element: <NoticeboardPage /> },
               { path: 'calendar', element: <CalendarPage /> },
               { path: 'polls', element: <PollsPage /> },
+              { path: 'media', element: <MediaFeedPage /> },
             ],
           },
         ],

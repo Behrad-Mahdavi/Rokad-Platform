@@ -567,7 +567,7 @@ async function main() {
   });
 
   const girlsAdminPasswordHash = await argon2.hash('RokadGirlsPass2026!');
-  await prisma.user.upsert({
+  const girlsAdmin = await prisma.user.upsert({
     where: {
       tenantId_phone: {
         tenantId: girlsTenant.id,
@@ -1088,21 +1088,118 @@ async function main() {
     },
   });
 
-  await prisma.profileBlog.upsert({
+  const sampleMediaPost1 = await prisma.profileBlog.upsert({
     where: {
       tenantId_slug: {
         tenantId: boysTenant.id,
-        slug: 'welcome-to-new-academic-year',
+        slug: 'ai-robotics-workshop-opening',
       },
     },
     update: {},
     create: {
       tenantId: boysTenant.id,
       authorId: boysAdmin.id,
-      title: 'پیام آغاز سال تحصیلی جدید ۱۴۰۴-۱۴۰۵',
-      slug: 'welcome-to-new-academic-year',
-      content: 'با تبریک آغاز سال تحصیلی جدید، تقویم اجرایی و برنامه‌های پژوهشی مدرسه اعلام گردید.',
-      tags: ['اطلاعیه', 'سال تحصیلی جدید', 'رُکاد'],
+      title: 'گزارش تصویری افتتاح کارگاه تخصصی هوش مصنوعی و برنامه‌نویسی وب هنرستان پسرانه',
+      slug: 'ai-robotics-workshop-opening',
+      content: 'به لطف خداوند و تلاش کادر تخصصی، فاز اول کارگاه کامپیوتر و هوش مصنوعی هنرستان پسرانه رُکاد با تجهیز ۲۰ ایستگاه کاری پیشرفته افتتاح گردید. هنرجویان عزیز از روز شنبه می‌توانند بر اساس برنامه زمان‌بندی در کارگاه‌ها حضور یابند.',
+      postType: 'SLIDESHOW',
+      mediaUrls: [
+        'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1000&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1000&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=1000&auto=format&fit=crop&q=80',
+      ],
+      attachments: [
+        { name: 'شیوه‌نامه_اجرایی_کارگاه_کامپیوتر_پاییز۱۴۰۵.pdf', url: 'https://example.com/workshop-guide.pdf', size: 2840000 },
+        { name: 'جدول_گروه‌بندی_هنرجویان.xlsx', url: 'https://example.com/groups.xlsx', size: 450000 },
+      ],
+      audienceType: 'ALL',
+      isPinned: true,
+      allowComments: true,
+      tags: ['کارگاه تخصصی', 'افتتاحیه', 'هوش مصنوعی', 'رُکاد پسرانه'],
+      isPublished: true,
+    },
+  });
+
+  // Seed sample like and comment on post 1
+  await prisma.profileBlogLike.upsert({
+    where: {
+      blogId_userId: {
+        blogId: sampleMediaPost1.id,
+        userId: teacherUser.id,
+      },
+    },
+    update: {},
+    create: {
+      tenantId: boysTenant.id,
+      blogId: sampleMediaPost1.id,
+      userId: teacherUser.id,
+    },
+  });
+
+  await prisma.profileBlogComment.create({
+    data: {
+      tenantId: boysTenant.id,
+      blogId: sampleMediaPost1.id,
+      authorId: teacherUser.id,
+      content: 'خدا قوت به تیم مدیریت، تجهیزات کارگاه بسیار استاندارد و آماده شروع پودمان‌های عملی است.',
+    },
+  }).catch(() => {});
+
+  // Post 2: Specific to students
+  await prisma.profileBlog.upsert({
+    where: {
+      tenantId_slug: {
+        tenantId: boysTenant.id,
+        slug: 'student-project-submission-guide',
+      },
+    },
+    update: {},
+    create: {
+      tenantId: boysTenant.id,
+      authorId: teacherUser.id,
+      title: 'دستورالعمل تحویل پروژه‌های کارگاهی پودمان اول (اختصاصی هنرجویان)',
+      slug: 'student-project-submission-guide',
+      content: 'هنرجویان گرامی پایه دهم و یازدهم شبکه و نرم‌افزار، مهلت ارسال فایل مخزن گیت‌هاب و مستندات پروژه تا پایان هفته جاری تمدید شد.',
+      postType: 'DOCUMENT',
+      mediaUrls: [
+        'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1000&auto=format&fit=crop&q=80',
+      ],
+      attachments: [
+        { name: 'قالب_استاندارد_مستندسازی_پروژه.pdf', url: 'https://example.com/template.pdf', size: 1200000 },
+      ],
+      audienceType: 'ROLES',
+      targetRoles: ['STUDENT'],
+      isPinned: false,
+      allowComments: true,
+      tags: ['پروژه', 'پودمان اول', 'شبکه و نرم‌افزار'],
+      isPublished: true,
+    },
+  });
+
+  // Post 3: Girls School Media Post (Isolated to girls branch)
+  await prisma.profileBlog.upsert({
+    where: {
+      tenantId_slug: {
+        tenantId: girlsTenant.id,
+        slug: 'girls-multimedia-exhibition',
+      },
+    },
+    update: {},
+    create: {
+      tenantId: girlsTenant.id,
+      authorId: girlsAdmin.id,
+      title: 'برگزاری نمایشگاه آثار هنرجویان رشته طراحی و گرافیک رایانه‌ای هنرستان دخترانه',
+      slug: 'girls-multimedia-exhibition',
+      content: 'نمایشگاه تخصصی دستاوردهای تجسمی و دیجیتال هنرجویان دخترانه رُکاد در آتلیه هنرستان برگزار گردید.',
+      postType: 'SLIDESHOW',
+      mediaUrls: [
+        'https://images.unsplash.com/photo-1561089489-f13d5e730d72?w=1000&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=1000&auto=format&fit=crop&q=80',
+      ],
+      audienceType: 'ALL',
+      isPinned: true,
+      allowComments: true,
+      tags: ['طراحی', 'نمایشگاه', 'رُکاد دخترانه'],
       isPublished: true,
     },
   });

@@ -56,6 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
     const commsSection = {
       section: 'ارتباطات و اطلاع‌رسانی',
       items: [
+        { title: 'رسانه هنرستان', href: '/app/media', icon: Sparkles },
         { title: 'بورد اطلاعیه‌ها', href: '/app/notices', icon: FileCheck },
         { title: 'تقویم و رویدادها (۱۴۰۵)', href: '/app/calendar', icon: CalendarDays },
         { title: 'نظرسنجی و آراء', href: '/app/polls', icon: Vote },
@@ -85,7 +86,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             section: 'مدیریت هنرستان',
             items: [
               { title: 'داشبورد مدیریت', href: '/app/admin/dashboard', icon: LayoutDashboard },
-              { title: 'پروفایل و وبلاگ مدرسه', href: '/app/admin/profile', icon: School },
+              { title: 'پروفایل رسمی مدرسه', href: '/app/admin/profile', icon: School },
               { title: 'ساختار سال و کلاس‌ها', href: '/app/admin/academic', icon: GraduationCap },
               { title: 'برنامه هفتگی کلاس‌ها', href: '/app/admin/schedule', icon: CalendarDays },
               { title: 'مدیریت هنرجویان و پرسنل', href: '/app/admin/members', icon: Users },
