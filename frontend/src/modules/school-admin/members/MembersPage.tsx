@@ -28,12 +28,23 @@ import {
   UploadCloud,
   Download,
   CheckCircle2,
+  UserCheck,
 } from 'lucide-react';
 import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
+import { useTenantStore } from '../../../lib/auth/tenant-store';
 
 import { read, utils, writeFile } from 'xlsx';
 
 export const MembersPage: React.FC = () => {
+  const { currentTenant } = useTenantStore();
+  const branchPrefix = (() => {
+    const slug = (currentTenant?.slug || '').toLowerCase();
+    const theme = (currentTenant?.theme || '').toUpperCase();
+    if (slug.includes('girl') || theme === 'FEMALE') return 'g';
+    if (slug.includes('college') || theme === 'COLLEGE') return 'c';
+    return 'b';
+  })();
+
   const [activeTab, setActiveTab] = useState<'STUDENTS' | 'TEACHERS'>('STUDENTS');
   const [students, setStudents] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
@@ -63,25 +74,25 @@ export const MembersPage: React.FC = () => {
   const handleDownloadExcelSample = () => {
     const sampleData = [
       {
-        'شماره دانش آموزی': '40310101',
         'کد ملی': '0012345678',
         'نام': 'امیرعلی',
         'نام خانوادگی': 'صادقی',
-        'نام پدر': 'رضا',
-        'موبایل دانش آموز': '09121112233',
-        'موبایل پدر': '09124445566',
+        'شماره دانش آموزی': '40310101',
         'شماره کلاس': '۱۰۱',
+        'موبایل دانش آموز': '09121112233',
+        'نام پدر': 'رضا',
+        'موبایل پدر': '09124445566',
         'جنسیت': 'پسر',
       },
       {
-        'شماره دانش آموزی': '40310102',
         'کد ملی': '0012345679',
         'نام': 'سارا',
         'نام خانوادگی': 'محمدی',
-        'نام پدر': 'علی',
-        'موبایل دانش آموز': '09122223344',
-        'موبایل پدر': '09125556677',
+        'شماره دانش آموزی': '40310102',
         'شماره کلاس': '۱۰۱',
+        'موبایل دانش آموز': '09122223344',
+        'نام پدر': 'علی',
+        'موبایل پدر': '09125556677',
         'جنسیت': 'دختر',
       },
     ];
@@ -137,16 +148,17 @@ export const MembersPage: React.FC = () => {
     nationalCode: '',
     studentNumber: '',
     classroomId: '',
-    password: 'StudentPass2026!',
+    password: '',
   });
 
   const [teacherForm, setTeacherForm] = useState({
     firstName: '',
     lastName: '',
     phone: '',
+    nationalCode: '',
     personnelCode: '',
     specialization: '',
-    password: 'TeacherPass2026!',
+    password: '',
     lessonIds: [] as string[],
   });
 
@@ -224,6 +236,7 @@ export const MembersPage: React.FC = () => {
         firstName: teacherForm.firstName.trim(),
         lastName: teacherForm.lastName.trim(),
         phone: teacherForm.phone.trim(),
+        nationalCode: teacherForm.nationalCode.trim() || undefined,
         personnelCode: teacherForm.personnelCode.trim() || undefined,
         specialization: teacherForm.specialization.trim() || undefined,
         speciality: teacherForm.specialization.trim() || undefined,
@@ -237,9 +250,10 @@ export const MembersPage: React.FC = () => {
         firstName: '',
         lastName: '',
         phone: '',
+        nationalCode: '',
         personnelCode: '',
         specialization: '',
-        password: 'TeacherPass2026!',
+        password: '',
         lessonIds: [],
       });
       fetchData();
@@ -526,7 +540,7 @@ export const MembersPage: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Input
-              label="کد ملی (۱۰ رقم)"
+              label="کد ملی (نام کاربری سامانه ورود یکپارچه)"
               placeholder="مثال: 0012345678"
               value={studentForm.nationalCode}
               onChange={(e) => setStudentForm({ ...studentForm, nationalCode: e.target.value })}
@@ -543,7 +557,7 @@ export const MembersPage: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Input
-              label="شماره تماس (نام کاربری ورود)"
+              label="شماره همراه (جهت اطلاع‌رسانی و پیامک خانواده)"
               placeholder="مثال: 09123333333"
               value={studentForm.phone}
               onChange={(e) => setStudentForm({ ...studentForm, phone: e.target.value })}
@@ -562,6 +576,30 @@ export const MembersPage: React.FC = () => {
                   </option>
                 ))}
               </select>
+            </div>
+          </div>
+
+          {/* Unified Credentials Card Preview */}
+          <div className="p-3 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 space-y-1 text-xs">
+            <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
+              <UserCheck className="h-4 w-4 text-primary" />
+              <span>سامانه ورود یکپارچه (تولید خودکار اطلاعات ورود):</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <div className="bg-white dark:bg-[#1E293B] p-2 rounded border border-gray-200 dark:border-gray-700">
+                <span className="text-[10px] text-gray-500 dark:text-gray-400 block">نام کاربری سامانه:</span>
+                <span className="font-mono font-bold text-ink-dark dark:text-white">
+                  {studentForm.nationalCode ? studentForm.nationalCode : 'کد ملی هنرجو'}
+                </span>
+              </div>
+              <div className="bg-white dark:bg-[#1E293B] p-2 rounded border border-gray-200 dark:border-gray-700">
+                <span className="text-[10px] text-gray-500 dark:text-gray-400 block">رمز عبور خودکار:</span>
+                <span className="font-mono font-bold text-primary">
+                  {studentForm.nationalCode
+                    ? `${branchPrefix}${studentForm.nationalCode}`
+                    : `${branchPrefix} + کد ملی`}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -629,13 +667,45 @@ export const MembersPage: React.FC = () => {
             />
           </div>
 
-          <Input
-            label="شماره تماس"
-            placeholder="مثال: 09122222222"
-            value={teacherForm.phone}
-            onChange={(e) => setTeacherForm({ ...teacherForm, phone: e.target.value })}
-            required
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <Input
+              label="کد ملی (نام کاربری ورود)"
+              placeholder="مثال: 0012345678"
+              value={teacherForm.nationalCode}
+              onChange={(e) => setTeacherForm({ ...teacherForm, nationalCode: e.target.value })}
+            />
+            <Input
+              label="شماره تماس"
+              placeholder="مثال: 09122222222"
+              value={teacherForm.phone}
+              onChange={(e) => setTeacherForm({ ...teacherForm, phone: e.target.value })}
+              required
+            />
+          </div>
+
+          {/* Teacher Unified Credentials Card */}
+          <div className="p-3 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 space-y-1 text-xs">
+            <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
+              <UserCheck className="h-4 w-4 text-primary" />
+              <span>شناسه ورود یکپارچه دبیر:</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <div className="bg-white dark:bg-[#1E293B] p-2 rounded border border-gray-200 dark:border-gray-700">
+                <span className="text-[10px] text-gray-500 dark:text-gray-400 block">نام کاربری سامانه:</span>
+                <span className="font-mono font-bold text-ink-dark dark:text-white">
+                  {teacherForm.nationalCode ? teacherForm.nationalCode : (teacherForm.phone || 'کد ملی یا موبایل')}
+                </span>
+              </div>
+              <div className="bg-white dark:bg-[#1E293B] p-2 rounded border border-gray-200 dark:border-gray-700">
+                <span className="text-[10px] text-gray-500 dark:text-gray-400 block">رمز عبور پیش‌فرض:</span>
+                <span className="font-mono font-bold text-primary">
+                  {teacherForm.nationalCode
+                    ? `${branchPrefix}${teacherForm.nationalCode}`
+                    : (teacherForm.phone || 'رمز پیش‌فرض')}
+                </span>
+              </div>
+            </div>
+          </div>
 
           {/* Multi-Select Lessons */}
           <div className="space-y-2">
@@ -842,12 +912,14 @@ export const MembersPage: React.FC = () => {
       >
         <div className="space-y-5">
           {/* Download Template Banner */}
-          <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center space-x-2.5 space-x-reverse">
-              <FileSpreadsheet className="h-5 w-5 text-emerald-600 shrink-0" />
+              <FileSpreadsheet className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <div>
-                <div className="text-xs font-bold text-emerald-900">فایل نمونه استاندارد اکسل</div>
-                <div className="text-[11px] text-emerald-700 mt-0.5">شامل ستون‌های: کد ملی، نام، نام خانوادگی، شماره کلاس و شماره تماس</div>
+                <div className="text-xs font-bold text-emerald-900 dark:text-emerald-200">فایل نمونه استاندارد اکسل</div>
+                <div className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-0.5">
+                  ستون‌های فایل: «کد ملی» (جهت تولید نام کاربری و رمز عبور)، نام، نام خانوادگی، شماره کلاس و شماره تماس
+                </div>
               </div>
             </div>
             <Button
@@ -855,11 +927,26 @@ export const MembersPage: React.FC = () => {
               variant="outline"
               size="sm"
               onClick={handleDownloadExcelSample}
-              className="text-xs shrink-0 bg-white border-emerald-300 text-emerald-800 hover:bg-emerald-100"
+              className="text-xs shrink-0 bg-white dark:bg-emerald-900/50 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100"
             >
               <Download className="h-3.5 w-3.5 ml-1" />
               <span>دانلود نمونه فایل</span>
             </Button>
+          </div>
+
+          {/* Unified Login Standard Notice for Excel */}
+          <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-xs space-y-1.5">
+            <div className="font-bold text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
+              <UserCheck className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <span>سامانه ورود یکپارچه رُکاد در اکسل:</span>
+            </div>
+            <p className="text-[11px] text-blue-800 dark:text-blue-300 leading-relaxed">
+              با بارگذاری فایل اکسل، اطلاعات ورود برای تک‌تک هنرجویان به صورت کاملاً خودکار تولید می‌گردد:
+              <br />
+              • <strong>نام کاربری:</strong> کد ملی ۱۰ رقمی هنرجو
+              <br />
+              • <strong>رمز عبور پیش‌فرض:</strong> پیش‌وند شعبه + کد ملی (<strong>{branchPrefix}</strong> + کد ملی، مثال: <strong>{branchPrefix}0012345678</strong>)
+            </p>
           </div>
 
           {/* Hidden File Input */}

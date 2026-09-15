@@ -14,6 +14,10 @@ import {
   LinkParentStudentDto,
 } from './dto/create-student.dto';
 import { Role } from '../../common/constants';
+import {
+  generateUnifiedCredentials,
+  normalizeNationalCode,
+} from '../../common/utils/credential.util';
 
 @Injectable()
 export class MembersService {
@@ -28,46 +32,85 @@ export class MembersService {
       errors: [] as string[],
     };
 
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { slug: true, theme: true, type: true, name: true },
+    });
+
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       try {
-        const studentCode = item['شماره دانش آموزی']?.toString() || item['کد ملی']?.toString() || `STD-${Math.floor(100000 + Math.random() * 900000)}`;
-        const nationalCode = item['کد ملی']?.toString() || undefined;
-        const phone = item['موبایل دانش آموز']?.toString() || item['موبایل پدر']?.toString() || item['موبایل مادر']?.toString() || `09${Math.floor(Math.random() * 1000000000).toString().padStart(9, '0')}`;
+        const rawNationalCode =
+          item['کد ملی'] ||
+          item['کدملی'] ||
+          item['کد_ملی'] ||
+          item['nationalCode'] ||
+          item['کد ملی دانش آموز'];
+        const phone =
+          item['موبایل دانش آموز']?.toString() ||
+          item['موبایل پدر']?.toString() ||
+          item['موبایل مادر']?.toString() ||
+          item['شماره همراه']?.toString() ||
+          `09${Math.floor(Math.random() * 1000000000).toString().padStart(9, '0')}`;
+
+        const creds = generateUnifiedCredentials({
+          tenant,
+          nationalCode: rawNationalCode,
+          fallbackPhone: phone,
+        });
+
+        const studentCode =
+          item['شماره دانش آموزی']?.toString() ||
+          creds.nationalId ||
+          `STD-${Math.floor(100000 + Math.random() * 900000)}`;
+
+        const nationalCode = creds.nationalId || undefined;
         const firstName = item['نام']?.toString() || 'دانش‌آموز';
         const lastName = item['نام خانوادگی']?.toString() || 'بدون فامیل';
         const fatherName = item['نام پدر']?.toString() || undefined;
-        const className = item['شماره کلاس']?.toString() || undefined;
+        const className = item['شماره کلاس']?.toString() || item['کلاس']?.toString() || undefined;
         const gender = item['جنسیت']?.toString() === 'دختر' ? 'FEMALE' : 'MALE';
 
         // Find classroom if provided
         let classroomId: string | undefined = undefined;
         if (className) {
           const classroom = await this.prisma.classroom.findFirst({
-            where: { tenantId, name: { contains: className } }
+            where: { tenantId, name: { contains: className } },
           });
           if (classroom) classroomId = classroom.id;
         }
 
-        const defaultPassword = phone;
-        const passwordHash = await argon2.hash(defaultPassword);
+        const passwordHash = await argon2.hash(creds.finalPassword);
 
         await this.prisma.$transaction(async (tx) => {
-          // Check if code or phone already exists
+          // Check if code, nationalId, username or phone already exists
           const existingUser = await tx.user.findFirst({
-            where: { tenantId, phone }
+            where: {
+              tenantId,
+              OR: [
+                { phone },
+                ...(creds.username ? [{ username: creds.username }] : []),
+                ...(creds.nationalId ? [{ nationalId: creds.nationalId }] : []),
+              ],
+            },
           });
 
           if (existingUser) {
-            throw new Error(`شماره موبایل ${phone} تکراری است`);
+            throw new Error(`کاربر با کد ملی یا شماره همراه ${creds.username || phone} تکراری است`);
           }
 
           const existingProfile = await tx.studentProfile.findFirst({
-            where: { tenantId, studentCode }
+            where: {
+              tenantId,
+              OR: [
+                { studentCode },
+                ...(nationalCode ? [{ nationalCode }] : []),
+              ],
+            },
           });
 
           if (existingProfile) {
-            throw new Error(`کد دانش‌آموزی ${studentCode} تکراری است`);
+            throw new Error(`کد دانش‌آموزی یا کد ملی ${studentCode} تکراری است`);
           }
 
           const user = await tx.user.create({
@@ -76,8 +119,9 @@ export class MembersService {
               firstName,
               lastName,
               phone,
+              username: creds.username,
               gender,
-              nationalId: nationalCode,
+              nationalId: creds.nationalId || undefined,
               passwordHash,
               role: Role.STUDENT as any,
               status: 'ACTIVE',
@@ -171,20 +215,53 @@ export class MembersService {
   }
 
   async createStudent(tenantId: string, dto: CreateStudentDto) {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { slug: true, theme: true, type: true, name: true },
+    });
+
+    const creds = generateUnifiedCredentials({
+      tenant,
+      nationalCode: dto.nationalCode,
+      fallbackPhone: dto.phone,
+      customPassword: dto.password,
+    });
+
     const studentCode =
       dto.studentCode ||
       dto.studentNumber ||
+      creds.nationalId ||
       `STD-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const existingCode = await this.prisma.studentProfile.findFirst({
-      where: { tenantId, studentCode },
+      where: {
+        tenantId,
+        OR: [
+          { studentCode },
+          ...(creds.nationalId ? [{ nationalCode: creds.nationalId }] : []),
+        ],
+      },
     });
     if (existingCode) {
-      throw new ConflictException(`شماره دانش‌آموزی '${studentCode}' قبلاً ثبت شده است`);
+      throw new ConflictException(`شماره دانش‌آموزی یا کد ملی '${studentCode}' قبلاً ثبت شده است`);
     }
 
-    const defaultPassword = dto.password || dto.phone;
-    const passwordHash = await argon2.hash(defaultPassword);
+    if (creds.username) {
+      const existingUser = await this.prisma.user.findFirst({
+        where: {
+          tenantId,
+          OR: [
+            { username: creds.username },
+            ...(creds.nationalId ? [{ nationalId: creds.nationalId }] : []),
+          ],
+        },
+      });
+      if (existingUser) {
+        throw new ConflictException(`کاربر با کد ملی / نام کاربری '${creds.username}' قبلاً در این مرکز ثبت شده است`);
+      }
+    }
+
+    const passwordHash = await argon2.hash(creds.finalPassword);
 
     return this.prisma.$transaction(async (tx) => {
       // 1. Create base User
@@ -194,8 +271,9 @@ export class MembersService {
           firstName: dto.firstName,
           lastName: dto.lastName,
           phone: dto.phone,
+          username: creds.username,
           gender: dto.gender,
-          nationalId: dto.nationalCode,
+          nationalId: creds.nationalId,
           passwordHash,
           role: Role.STUDENT as any,
           status: 'ACTIVE',
@@ -278,8 +356,19 @@ export class MembersService {
   }
 
   async createTeacher(tenantId: string, dto: CreateTeacherDto) {
-    const defaultPassword = dto.password || dto.phone;
-    const passwordHash = await argon2.hash(defaultPassword);
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { slug: true, theme: true, type: true, name: true },
+    });
+
+    const creds = generateUnifiedCredentials({
+      tenant,
+      nationalCode: dto.nationalCode,
+      fallbackPhone: dto.phone,
+      customPassword: dto.password,
+    });
+
+    const passwordHash = await argon2.hash(creds.finalPassword);
 
     return this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
@@ -288,6 +377,8 @@ export class MembersService {
           firstName: dto.firstName,
           lastName: dto.lastName,
           phone: dto.phone,
+          username: creds.username !== dto.phone ? creds.username : undefined,
+          nationalId: creds.nationalId,
           email: dto.email,
           passwordHash,
           role: Role.TEACHER as any,
@@ -396,8 +487,19 @@ export class MembersService {
   }
 
   async createCoach(tenantId: string, dto: CreateCoachDto) {
-    const defaultPassword = dto.password || dto.phone;
-    const passwordHash = await argon2.hash(defaultPassword);
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { slug: true, theme: true, type: true, name: true },
+    });
+
+    const creds = generateUnifiedCredentials({
+      tenant,
+      nationalCode: dto.nationalCode,
+      fallbackPhone: dto.phone,
+      customPassword: dto.password,
+    });
+
+    const passwordHash = await argon2.hash(creds.finalPassword);
 
     return this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
@@ -406,6 +508,8 @@ export class MembersService {
           firstName: dto.firstName,
           lastName: dto.lastName,
           phone: dto.phone,
+          username: creds.username !== dto.phone ? creds.username : undefined,
+          nationalId: creds.nationalId,
           passwordHash,
           role: Role.STAFF as any,
           status: 'ACTIVE',
@@ -438,8 +542,19 @@ export class MembersService {
   }
 
   async createStaff(tenantId: string, dto: CreateStaffDto) {
-    const defaultPassword = dto.password || dto.phone;
-    const passwordHash = await argon2.hash(defaultPassword);
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { slug: true, theme: true, type: true, name: true },
+    });
+
+    const creds = generateUnifiedCredentials({
+      tenant,
+      nationalCode: dto.nationalCode,
+      fallbackPhone: dto.phone,
+      customPassword: dto.password,
+    });
+
+    const passwordHash = await argon2.hash(creds.finalPassword);
 
     return this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
@@ -448,6 +563,8 @@ export class MembersService {
           firstName: dto.firstName,
           lastName: dto.lastName,
           phone: dto.phone,
+          username: creds.username !== dto.phone ? creds.username : undefined,
+          nationalId: creds.nationalId,
           passwordHash,
           role: Role.STAFF as any,
           status: 'ACTIVE',
@@ -487,8 +604,19 @@ export class MembersService {
   }
 
   async createParent(tenantId: string, dto: CreateParentDto) {
-    const defaultPassword = dto.password || dto.phone;
-    const passwordHash = await argon2.hash(defaultPassword);
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { slug: true, theme: true, type: true, name: true },
+    });
+
+    const creds = generateUnifiedCredentials({
+      tenant,
+      nationalCode: dto.nationalCode,
+      fallbackPhone: dto.phone,
+      customPassword: dto.password,
+    });
+
+    const passwordHash = await argon2.hash(creds.finalPassword);
 
     return this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
@@ -497,6 +625,8 @@ export class MembersService {
           firstName: dto.firstName,
           lastName: dto.lastName,
           phone: dto.phone,
+          username: creds.username !== dto.phone ? creds.username : undefined,
+          nationalId: creds.nationalId,
           passwordHash,
           role: Role.PARENT as any,
           status: 'ACTIVE',

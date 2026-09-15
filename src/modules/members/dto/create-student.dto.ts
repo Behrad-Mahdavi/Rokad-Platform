@@ -99,6 +99,11 @@ export class CreateTeacherDto {
   @IsNotEmpty()
   phone: string;
 
+  @ApiPropertyOptional({ description: 'کد ملی (نام کاربری ورود یکپارچه)', example: '0012345678' })
+  @IsString()
+  @IsOptional()
+  nationalCode?: string;
+
   @ApiPropertyOptional({ description: 'کد پرسنلی' })
   @IsString()
   @IsOptional()
@@ -174,6 +179,11 @@ export class CreateCoachDto {
   @IsNotEmpty()
   phone: string;
 
+  @ApiPropertyOptional({ description: 'کد ملی (نام کاربری ورود یکپارچه)', example: '0012345678' })
+  @IsString()
+  @IsOptional()
+  nationalCode?: string;
+
   @ApiPropertyOptional({
     description: 'نوع مربیگری (ACADEMIC_COUNSELOR, DISCIPLINARY, SPORTS, CULTURAL, HEALTH)',
     enum: CoachType,
@@ -210,6 +220,11 @@ export class CreateStaffDto {
   @IsNotEmpty()
   phone: string;
 
+  @ApiPropertyOptional({ description: 'کد ملی (نام کاربری ورود یکپارچه)', example: '0012345678' })
+  @IsString()
+  @IsOptional()
+  nationalCode?: string;
+
   @ApiPropertyOptional({ description: 'دپارتمان یا واحد اداری', example: 'امور دفتری و ثبت‌نام' })
   @IsString()
   @IsOptional()
@@ -241,6 +256,11 @@ export class CreateParentDto {
   @IsString()
   @IsNotEmpty()
   phone: string;
+
+  @ApiPropertyOptional({ description: 'کد ملی (نام کاربری ورود یکپارچه)', example: '0012345678' })
+  @IsString()
+  @IsOptional()
+  nationalCode?: string;
 
   @ApiPropertyOptional({ description: 'شغل ولی', example: 'مهندس عمران' })
   @IsString()

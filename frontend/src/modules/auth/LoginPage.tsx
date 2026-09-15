@@ -160,16 +160,16 @@ export const LoginPage: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="شناسه شعبه هنرستان"
-            placeholder="مثال: rokad-boys یا rokad-girls"
+            label="شناسه شعبه هنرستان یا کالج"
+            placeholder="مثال: rokad-boys یا rokad-girls یا rokad-college"
             value={tenantSlug}
             onChange={(e) => setTenantSlug(e.target.value)}
             required
           />
 
           <Input
-            label="شماره موبایل یا نام کاربری"
-            placeholder="مثال: 09121111111"
+            label="کد ملی یا نام کاربری"
+            placeholder="مثال: 0012345678 (کد ملی) یا شماره همراه"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             required
@@ -178,47 +178,84 @@ export const LoginPage: React.FC = () => {
           <Input
             label="رمز عبور"
             type="password"
-            placeholder="••••••••"
+            placeholder="مثال: b0012345678 یا رمز اختصاصی"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
 
+          {/* Unified Login Standard Notice */}
+          <div className="p-2.5 rounded-lg bg-primary/5 dark:bg-primary/10 border border-primary/20 text-[11px] text-ink-light space-y-1">
+            <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
+              <UserCheck className="h-3.5 w-3.5 text-primary" />
+              <span>سامانه ورود یکپارچه رُکاد</span>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+              نام کاربری = <strong>کد ملی</strong> | رمز عبور پیش‌فرض = <strong>پیش‌وند شعبه + کد ملی</strong>
+              <br />
+              <span className="text-[10px] text-primary dark:text-primary-light font-bold">
+                b پسرانه • g دخترانه • c کالج
+              </span>
+            </p>
+          </div>
+
           <Button type="submit" variant="primary" className="w-full h-11 text-base mt-2" isLoading={isLoading}>
-            ورود به سامانه هنرستان
+            ورود به سامانه یکپارچه
           </Button>
         </form>
 
         {/* Demo Fast Login Presets */}
         <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
           <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-2 text-right">
-            ورود سریع با نقش‌های پیش‌فرض هنرستان رُکاد:
+            ورود سریع با سامانه ورود یکپارچه رُکاد (کد ملی + رمز استاندارد):
           </p>
           <div className="grid grid-cols-2 gap-2 text-xs">
+            {/* Unified Boys Student */}
             <button
               type="button"
-              onClick={() => selectPreset('rokad-boys', '09121111111', 'RokadBoysPass2026!')}
-              className="p-2 rounded-lg bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] text-right border border-gray-200 dark:border-gray-700 transition-colors"
+              onClick={() => selectPreset('rokad-boys', '0012345678', 'b0012345678')}
+              className="p-2 rounded-lg bg-sec/5 dark:bg-sec/15 hover:bg-sec/10 dark:hover:bg-sec/25 text-right border border-sec/30 transition-colors"
             >
-              <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
-                <Shield className="h-3.5 w-3.5 text-sec dark:text-indigo-400 shrink-0" />
-                <span>مدیر پسرانه</span>
+              <div className="font-bold text-sec dark:text-indigo-400 flex items-center gap-1.5">
+                <GraduationCap className="h-3.5 w-3.5 shrink-0" />
+                <span>هنرجوی پسرانه</span>
               </div>
-              <div className="text-[10px] text-gray-500 dark:text-gray-400">09121111111</div>
+              <div className="text-[10px] text-gray-600 dark:text-gray-300 font-mono mt-0.5">
+                0012345678 • b...
+              </div>
             </button>
 
+            {/* Unified Girls Student */}
             <button
               type="button"
-              onClick={() => selectPreset('rokad-girls', '09121111112', 'RokadGirlsPass2026!')}
-              className="p-2 rounded-lg bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] text-right border border-gray-200 dark:border-gray-700 transition-colors"
+              onClick={() => selectPreset('rokad-girls', '0023456789', 'g0023456789')}
+              className="p-2 rounded-lg bg-pink-50 dark:bg-pink-950/20 hover:bg-pink-100 dark:hover:bg-pink-950/40 text-right border border-pink-200 dark:border-pink-800 transition-colors"
             >
-              <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
-                <Shield className="h-3.5 w-3.5 text-girl dark:text-pink-400 shrink-0" />
-                <span>مدیر دخترانه</span>
+              <div className="font-bold text-pink-700 dark:text-pink-300 flex items-center gap-1.5">
+                <GraduationCap className="h-3.5 w-3.5 shrink-0" />
+                <span>هنرجوی دخترانه</span>
               </div>
-              <div className="text-[10px] text-gray-500 dark:text-gray-400">09121111112</div>
+              <div className="text-[10px] text-gray-600 dark:text-gray-300 font-mono mt-0.5">
+                0023456789 • g...
+              </div>
             </button>
 
+            {/* Unified College Student */}
+            <button
+              type="button"
+              onClick={() => selectPreset('rokad-college', '0034567890', 'c0034567890')}
+              className="p-2 rounded-lg bg-teal-50 dark:bg-teal-950/20 hover:bg-teal-100 dark:hover:bg-teal-950/40 text-right border border-teal-200 dark:border-teal-800 transition-colors"
+            >
+              <div className="font-bold text-teal-700 dark:text-teal-300 flex items-center gap-1.5">
+                <GraduationCap className="h-3.5 w-3.5 shrink-0" />
+                <span>دانشجوی کالج</span>
+              </div>
+              <div className="text-[10px] text-gray-600 dark:text-gray-300 font-mono mt-0.5">
+                0034567890 • c...
+              </div>
+            </button>
+
+            {/* Teacher */}
             <button
               type="button"
               onClick={() => selectPreset('rokad-boys', '09123000001', 'RokadPass2026!')}
@@ -231,52 +268,43 @@ export const LoginPage: React.FC = () => {
               <div className="text-[10px] text-gray-500 dark:text-gray-400">09123000001</div>
             </button>
 
+            {/* Admin Boys */}
             <button
               type="button"
-              onClick={() => selectPreset('rokad-boys', '09124000001', 'RokadPass2026!')}
+              onClick={() => selectPreset('rokad-boys', '09121111111', 'RokadBoysPass2026!')}
               className="p-2 rounded-lg bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] text-right border border-gray-200 dark:border-gray-700 transition-colors"
             >
               <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
-                <GraduationCap className="h-3.5 w-3.5 text-sec dark:text-indigo-400 shrink-0" />
-                <span>هنرجوی پسرانه</span>
+                <Shield className="h-3.5 w-3.5 text-sec dark:text-indigo-400 shrink-0" />
+                <span>مدیر پسرانه</span>
               </div>
-              <div className="text-[10px] text-gray-500 dark:text-gray-400">09124000001</div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400">09121111111</div>
             </button>
 
+            {/* Admin Girls */}
             <button
               type="button"
-              onClick={() => selectPreset('rokad-girls', '09124000002', 'RokadPass2026!')}
+              onClick={() => selectPreset('rokad-girls', '09121111112', 'RokadGirlsPass2026!')}
               className="p-2 rounded-lg bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] text-right border border-gray-200 dark:border-gray-700 transition-colors"
             >
               <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
-                <GraduationCap className="h-3.5 w-3.5 text-girl dark:text-pink-400 shrink-0" />
-                <span>هنرجوی دخترانه</span>
+                <Shield className="h-3.5 w-3.5 text-girl dark:text-pink-400 shrink-0" />
+                <span>مدیر دخترانه</span>
               </div>
-              <div className="text-[10px] text-gray-500 dark:text-gray-400">09124000002</div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400">09121111112</div>
             </button>
 
+            {/* SuperAdmin */}
             <button
               type="button"
               onClick={() => selectPreset('platform-root', '09120000000', 'RokadAdminPass2026!')}
-              className="p-2 rounded-lg bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] text-right border border-gray-200 dark:border-gray-700 transition-colors"
-            >
-              <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
-                <Crown className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
-                <span>سوپرادمین کلان</span>
-              </div>
-              <div className="text-[10px] text-gray-500 dark:text-gray-400">09120000000</div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => selectPreset('rokad-boys', '09125000001', 'RokadPass2026!')}
               className="p-2 rounded-lg bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] text-right border border-gray-200 dark:border-gray-700 transition-colors col-span-2"
             >
               <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span>اولیاء هنرجو</span>
+                <Crown className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
+                <span>سوپرادمین کلان پلتفرم رُکاد</span>
               </div>
-              <div className="text-[10px] text-gray-500 dark:text-gray-400">09125000001 • رمز: RokadPass2026!</div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400">09120000000 • مدیریت کل سامانه‌ها</div>
             </button>
           </div>
         </div>

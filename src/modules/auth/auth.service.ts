@@ -15,6 +15,7 @@ import { RegisterSchoolDto } from './dto/register-school.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { Role, TenantType } from '../../common/constants';
+import { normalizePersianDigits } from '../../common/utils/jalali.util';
 
 @Injectable()
 export class AuthService {
@@ -129,14 +130,20 @@ export class AuthService {
       }
     }
 
-    // Look for user matching identifier in this tenant
+    const rawIdentifier = dto.identifier ? dto.identifier.trim() : '';
+    const cleanIdentifier = normalizePersianDigits(rawIdentifier);
+
+    // Look for user matching identifier in this tenant (national code, username, phone, or email)
     const user = await this.prisma.user.findFirst({
       where: {
         ...(tenantId ? { tenantId } : {}),
         OR: [
-          { phone: dto.identifier },
-          { email: dto.identifier },
-          { username: dto.identifier },
+          { username: cleanIdentifier },
+          { nationalId: cleanIdentifier },
+          { phone: cleanIdentifier },
+          { email: rawIdentifier.toLowerCase() },
+          { email: cleanIdentifier.toLowerCase() },
+          { studentProfile: { nationalCode: cleanIdentifier } },
         ],
       },
       include: {

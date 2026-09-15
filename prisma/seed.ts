@@ -319,8 +319,8 @@ async function main() {
 
   // Boys Fields: شبکه و نرم‌افزار رایانه - تولید و توسعه پایگاه اینترنتی - تولید محتوای چندرسانه‌ای
   const boysNetField10 = await prisma.studyField.upsert({
-    where: { tenantId_code: { tenantId: boysTenant.id, code: 'BOYS_NET_10' } },
-    update: { name: 'شبکه و نرم‌افزار رایانه' },
+    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade10Level.id, name: 'شبکه و نرم‌افزار رایانه' } },
+    update: { code: 'BOYS_NET_10' },
     create: {
       tenantId: boysTenant.id,
       levelId: grade10Level.id,
@@ -330,8 +330,8 @@ async function main() {
   });
 
   const boysWebField10 = await prisma.studyField.upsert({
-    where: { tenantId_code: { tenantId: boysTenant.id, code: 'BOYS_WEB_10' } },
-    update: { name: 'تولید و توسعه پایگاه اینترنتی' },
+    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade10Level.id, name: 'تولید و توسعه پایگاه اینترنتی' } },
+    update: { code: 'BOYS_WEB_10' },
     create: {
       tenantId: boysTenant.id,
       levelId: grade10Level.id,
@@ -341,8 +341,8 @@ async function main() {
   });
 
   const boysMediaField10 = await prisma.studyField.upsert({
-    where: { tenantId_code: { tenantId: boysTenant.id, code: 'BOYS_MEDIA_10' } },
-    update: { name: 'تولید محتوای چندرسانه‌ای' },
+    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade10Level.id, name: 'تولید محتوای چندرسانه‌ای' } },
+    update: { code: 'BOYS_MEDIA_10' },
     create: {
       tenantId: boysTenant.id,
       levelId: grade10Level.id,
@@ -353,8 +353,8 @@ async function main() {
 
   // Grade 11 Boys Fields
   await prisma.studyField.upsert({
-    where: { tenantId_code: { tenantId: boysTenant.id, code: 'BOYS_NET_11' } },
-    update: { name: 'شبکه و نرم‌افزار رایانه' },
+    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade11Level.id, name: 'شبکه و نرم‌افزار رایانه' } },
+    update: { code: 'BOYS_NET_11' },
     create: {
       tenantId: boysTenant.id,
       levelId: grade11Level.id,
@@ -364,8 +364,8 @@ async function main() {
   });
 
   await prisma.studyField.upsert({
-    where: { tenantId_code: { tenantId: boysTenant.id, code: 'BOYS_WEB_11' } },
-    update: { name: 'تولید و توسعه پایگاه اینترنتی' },
+    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade11Level.id, name: 'تولید و توسعه پایگاه اینترنتی' } },
+    update: { code: 'BOYS_WEB_11' },
     create: {
       tenantId: boysTenant.id,
       levelId: grade11Level.id,
@@ -375,8 +375,8 @@ async function main() {
   });
 
   await prisma.studyField.upsert({
-    where: { tenantId_code: { tenantId: boysTenant.id, code: 'BOYS_MEDIA_11' } },
-    update: { name: 'تولید محتوای چندرسانه‌ای' },
+    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade11Level.id, name: 'تولید محتوای چندرسانه‌ای' } },
+    update: { code: 'BOYS_MEDIA_11' },
     create: {
       tenantId: boysTenant.id,
       levelId: grade11Level.id,
@@ -387,8 +387,8 @@ async function main() {
 
   // Grade 12 Boys Fields
   await prisma.studyField.upsert({
-    where: { tenantId_code: { tenantId: boysTenant.id, code: 'BOYS_NET_12' } },
-    update: { name: 'شبکه و نرم‌افزار رایانه' },
+    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade12Level.id, name: 'شبکه و نرم‌افزار رایانه' } },
+    update: { code: 'BOYS_NET_12' },
     create: {
       tenantId: boysTenant.id,
       levelId: grade12Level.id,
@@ -398,8 +398,8 @@ async function main() {
   });
 
   await prisma.studyField.upsert({
-    where: { tenantId_code: { tenantId: boysTenant.id, code: 'BOYS_WEB_12' } },
-    update: { name: 'تولید و توسعه پایگاه اینترنتی' },
+    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade12Level.id, name: 'تولید و توسعه پایگاه اینترنتی' } },
+    update: { code: 'BOYS_WEB_12' },
     create: {
       tenantId: boysTenant.id,
       levelId: grade12Level.id,
@@ -409,8 +409,8 @@ async function main() {
   });
 
   await prisma.studyField.upsert({
-    where: { tenantId_code: { tenantId: boysTenant.id, code: 'BOYS_MEDIA_12' } },
-    update: { name: 'تولید محتوای چندرسانه‌ای' },
+    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade12Level.id, name: 'تولید محتوای چندرسانه‌ای' } },
+    update: { code: 'BOYS_MEDIA_12' },
     create: {
       tenantId: boysTenant.id,
       levelId: grade12Level.id,
@@ -644,8 +644,8 @@ async function main() {
 
   // Girls Field: شبکه و نرم‌افزار رایانه
   const girlsNet10 = await prisma.studyField.upsert({
-    where: { tenantId_code: { tenantId: girlsTenant.id, code: 'GIRLS_NET_10' } },
-    update: { name: 'شبکه و نرم‌افزار رایانه' },
+    where: { tenantId_levelId_name: { tenantId: girlsTenant.id, levelId: girlsGrade10.id, name: 'شبکه و نرم‌افزار رایانه' } },
+    update: { code: 'GIRLS_NET_10' },
     create: {
       tenantId: girlsTenant.id,
       levelId: girlsGrade10.id,
@@ -655,8 +655,8 @@ async function main() {
   });
 
   await prisma.studyField.upsert({
-    where: { tenantId_code: { tenantId: girlsTenant.id, code: 'GIRLS_NET_11' } },
-    update: { name: 'شبکه و نرم‌افزار رایانه' },
+    where: { tenantId_levelId_name: { tenantId: girlsTenant.id, levelId: girlsGrade11.id, name: 'شبکه و نرم‌افزار رایانه' } },
+    update: { code: 'GIRLS_NET_11' },
     create: {
       tenantId: girlsTenant.id,
       levelId: girlsGrade11.id,
@@ -666,8 +666,8 @@ async function main() {
   });
 
   await prisma.studyField.upsert({
-    where: { tenantId_code: { tenantId: girlsTenant.id, code: 'GIRLS_NET_12' } },
-    update: { name: 'شبکه و نرم‌افزار رایانه' },
+    where: { tenantId_levelId_name: { tenantId: girlsTenant.id, levelId: girlsGrade12.id, name: 'شبکه و نرم‌افزار رایانه' } },
+    update: { code: 'GIRLS_NET_12' },
     create: {
       tenantId: girlsTenant.id,
       levelId: girlsGrade12.id,
@@ -973,7 +973,8 @@ async function main() {
     },
   });
 
-  // Student
+  // Student (Boys School: username=0012345678, password=b0012345678)
+  const boysStudentPass = await argon2.hash('b0012345678');
   const studentUser = await prisma.user.upsert({
     where: {
       tenantId_phone: {
@@ -981,13 +982,19 @@ async function main() {
         phone: '09124000001',
       },
     },
-    update: {},
+    update: {
+      username: '0012345678',
+      nationalId: '0012345678',
+      passwordHash: boysStudentPass,
+    },
     create: {
       tenantId: boysTenant.id,
       firstName: 'امیرعلی',
       lastName: 'صادقی',
       phone: '09124000001',
-      passwordHash: defaultPass,
+      username: '0012345678',
+      nationalId: '0012345678',
+      passwordHash: boysStudentPass,
       role: 'STUDENT',
       gender: 'MALE',
       status: 'ACTIVE',
@@ -996,7 +1003,9 @@ async function main() {
 
   const studentProfile = await prisma.studentProfile.upsert({
     where: { userId: studentUser.id },
-    update: {},
+    update: {
+      nationalCode: '0012345678',
+    },
     create: {
       tenantId: boysTenant.id,
       userId: studentUser.id,
@@ -1022,6 +1031,49 @@ async function main() {
       classroomId: classroom10M1.id,
       studentId: studentProfile.id,
       status: 'ACTIVE',
+    },
+  });
+
+  // Student (Girls School: username=0023456789, password=g0023456789)
+  const girlsStudentPass = await argon2.hash('g0023456789');
+  const girlsStudentUser = await prisma.user.upsert({
+    where: {
+      tenantId_phone: {
+        tenantId: girlsTenant.id,
+        phone: '09124000002',
+      },
+    },
+    update: {
+      username: '0023456789',
+      nationalId: '0023456789',
+      passwordHash: girlsStudentPass,
+    },
+    create: {
+      tenantId: girlsTenant.id,
+      firstName: 'فاطمه',
+      lastName: 'کریمی',
+      phone: '09124000002',
+      username: '0023456789',
+      nationalId: '0023456789',
+      passwordHash: girlsStudentPass,
+      role: 'STUDENT',
+      gender: 'FEMALE',
+      status: 'ACTIVE',
+    },
+  });
+
+  await prisma.studentProfile.upsert({
+    where: { userId: girlsStudentUser.id },
+    update: {
+      nationalCode: '0023456789',
+    },
+    create: {
+      tenantId: girlsTenant.id,
+      userId: girlsStudentUser.id,
+      studentCode: 'G-STD-1404-002',
+      nationalCode: '0023456789',
+      fatherName: 'محمدرضا',
+      birthDate: new Date('2009-06-15'),
     },
   });
 
@@ -1848,6 +1900,49 @@ async function main() {
           mottoText: 'مرکز تخصصی آموزش‌های مهارتی و فناوری',
         },
       },
+    },
+  });
+
+  // Student (College: username=0034567890, password=c0034567890)
+  const collegeStudentPass = await argon2.hash('c0034567890');
+  const collegeStudentUser = await prisma.user.upsert({
+    where: {
+      tenantId_phone: {
+        tenantId: collegeTenant.id,
+        phone: '09124000003',
+      },
+    },
+    update: {
+      username: '0034567890',
+      nationalId: '0034567890',
+      passwordHash: collegeStudentPass,
+    },
+    create: {
+      tenantId: collegeTenant.id,
+      firstName: 'پارسا',
+      lastName: 'مرادی',
+      phone: '09124000003',
+      username: '0034567890',
+      nationalId: '0034567890',
+      passwordHash: collegeStudentPass,
+      role: 'STUDENT',
+      gender: 'MALE',
+      status: 'ACTIVE',
+    },
+  });
+
+  await prisma.studentProfile.upsert({
+    where: { userId: collegeStudentUser.id },
+    update: {
+      nationalCode: '0034567890',
+    },
+    create: {
+      tenantId: collegeTenant.id,
+      userId: collegeStudentUser.id,
+      studentCode: 'COL-STD-1404-001',
+      nationalCode: '0034567890',
+      fatherName: 'سعید',
+      birthDate: new Date('2005-08-20'),
     },
   });
 
