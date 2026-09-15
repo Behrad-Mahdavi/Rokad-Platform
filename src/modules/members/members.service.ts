@@ -24,7 +24,7 @@ export class MembersService {
   constructor(private readonly prisma: PrismaService) {}
 
   // 1. Students
-  async bulkImportStudents(tenantId: string, items: any[]) {
+  async bulkImportStudents(tenantId: string, items: any[]): Promise<any> {
     const results = {
       total: items.length,
       success: 0,
@@ -163,7 +163,7 @@ export class MembersService {
     return results;
   }
 
-  async listStudents(tenantId: string, search?: string) {
+  async listStudents(tenantId: string, search?: string): Promise<any> {
     const where: any = { tenantId };
     if (search) {
       where.OR = [
@@ -214,7 +214,7 @@ export class MembersService {
     });
   }
 
-  async createStudent(tenantId: string, dto: CreateStudentDto) {
+  async createStudent(tenantId: string, dto: CreateStudentDto): Promise<any> {
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: tenantId },
       select: { slug: true, theme: true, type: true, name: true },
@@ -319,7 +319,7 @@ export class MembersService {
   }
 
   // 2. Teachers
-  async listTeachers(tenantId: string) {
+  async listTeachers(tenantId: string): Promise<any> {
     return this.prisma.teacherProfile.findMany({
       where: { tenantId },
       include: {
@@ -355,7 +355,7 @@ export class MembersService {
     });
   }
 
-  async createTeacher(tenantId: string, dto: CreateTeacherDto) {
+  async createTeacher(tenantId: string, dto: CreateTeacherDto): Promise<any> {
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: tenantId },
       select: { slug: true, theme: true, type: true, name: true },
@@ -432,7 +432,7 @@ export class MembersService {
     });
   }
 
-  async assignLessonsToTeacher(tenantId: string, teacherId: string, lessonIds: string[]) {
+  async assignLessonsToTeacher(tenantId: string, teacherId: string, lessonIds: string[]): Promise<any> {
     const teacher = await this.prisma.teacherProfile.findFirst({
       where: { id: teacherId, tenantId },
     });
@@ -476,7 +476,7 @@ export class MembersService {
   }
 
   // 3. Coaches & Counselors
-  async listCoaches(tenantId: string) {
+  async listCoaches(tenantId: string): Promise<any> {
     return this.prisma.coachProfile.findMany({
       where: { tenantId },
       include: {
@@ -486,7 +486,7 @@ export class MembersService {
     });
   }
 
-  async createCoach(tenantId: string, dto: CreateCoachDto) {
+  async createCoach(tenantId: string, dto: CreateCoachDto): Promise<any> {
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: tenantId },
       select: { slug: true, theme: true, type: true, name: true },
@@ -531,7 +531,7 @@ export class MembersService {
   }
 
   // 4. Staff
-  async listStaff(tenantId: string) {
+  async listStaff(tenantId: string): Promise<any> {
     return this.prisma.staffProfile.findMany({
       where: { tenantId },
       include: {
@@ -541,7 +541,7 @@ export class MembersService {
     });
   }
 
-  async createStaff(tenantId: string, dto: CreateStaffDto) {
+  async createStaff(tenantId: string, dto: CreateStaffDto): Promise<any> {
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: tenantId },
       select: { slug: true, theme: true, type: true, name: true },
@@ -586,7 +586,7 @@ export class MembersService {
   }
 
   // 5. Parents
-  async listParents(tenantId: string) {
+  async listParents(tenantId: string): Promise<any> {
     return this.prisma.parentProfile.findMany({
       where: { tenantId },
       include: {
@@ -603,7 +603,7 @@ export class MembersService {
     });
   }
 
-  async createParent(tenantId: string, dto: CreateParentDto) {
+  async createParent(tenantId: string, dto: CreateParentDto): Promise<any> {
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: tenantId },
       select: { slug: true, theme: true, type: true, name: true },
@@ -650,7 +650,7 @@ export class MembersService {
   }
 
   // 6. Parent-Student Linking
-  async linkParentStudent(tenantId: string, dto: LinkParentStudentDto) {
+  async linkParentStudent(tenantId: string, dto: LinkParentStudentDto): Promise<any> {
     const parent = await this.prisma.parentProfile.findFirst({
       where: { id: dto.parentId, tenantId },
     });
@@ -690,7 +690,7 @@ export class MembersService {
     });
   }
 
-  async getParentStudents(tenantId: string, parentUserId: string) {
+  async getParentStudents(tenantId: string, parentUserId: string): Promise<any> {
     const parent = await this.prisma.parentProfile.findFirst({
       where: { tenantId, userId: parentUserId },
     });

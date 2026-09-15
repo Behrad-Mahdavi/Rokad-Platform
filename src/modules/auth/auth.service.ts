@@ -31,7 +31,7 @@ export class AuthService {
   /**
    * Register a new school and create its initial administrator
    */
-  async registerSchool(dto: RegisterSchoolDto, ipAddress?: string, userAgent?: string) {
+  async registerSchool(dto: RegisterSchoolDto, ipAddress?: string, userAgent?: string): Promise<any> {
     // Check if tenant slug is already taken
     const existingTenant = await this.prisma.tenant.findUnique({
       where: { slug: dto.slug },
@@ -118,7 +118,7 @@ export class AuthService {
   /**
    * Tenant-aware login with phone/email/username + password
    */
-  async login(dto: LoginDto, currentTenantId?: string, ipAddress?: string, userAgent?: string) {
+  async login(dto: LoginDto, currentTenantId?: string, ipAddress?: string, userAgent?: string): Promise<any> {
     let tenantId = currentTenantId;
 
     if (!tenantId && dto.tenantSlug) {
