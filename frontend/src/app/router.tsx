@@ -59,6 +59,8 @@ import { TeacherVisitsPage } from '../modules/teacher/visits/TeacherVisitsPage';
 import { StudentMattersPage } from '../modules/student-parent/matters/StudentMattersPage';
 import { QuestionBankPage } from '../modules/teacher/question-bank/QuestionBankPage';
 import { MediaFeedPage } from '../modules/shared/media/MediaFeedPage';
+import { EventsRoadmapPage } from '../modules/shared/events/EventsRoadmapPage';
+import { EventSinglePage } from '../modules/shared/events/EventSinglePage';
 
 import { ForbiddenPage } from '../modules/errors/ForbiddenPage';
 import { NotFoundPage } from '../modules/errors/NotFoundPage';
@@ -212,6 +214,8 @@ export const router = createBrowserRouter([
               { path: 'chat', element: <Navigate to="/app" replace /> },
               { path: 'notices', element: <NoticeboardPage /> },
               { path: 'calendar', element: <CalendarPage /> },
+              { path: 'events', element: <EventsRoadmapPage /> },
+              { path: 'events/:id', element: <EventSinglePage /> },
               { path: 'polls', element: <PollsPage /> },
               { path: 'media', element: <MediaFeedPage /> },
             ],

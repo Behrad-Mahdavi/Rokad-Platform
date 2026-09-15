@@ -62,4 +62,74 @@ export class CreateEventDto {
   @IsString()
   @IsOptional()
   location?: string;
+
+  @ApiPropertyOptional({ description: 'آدرس تصویر کاور یا بنر رویداد' })
+  @IsString()
+  @IsOptional()
+  coverUrl?: string;
+
+  @ApiPropertyOptional({ description: 'برچسب‌های رویداد', type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  tags?: string[];
+}
+
+export class UpdateEventDto {
+  @ApiPropertyOptional({ description: 'عنوان رویداد' })
+  @IsString()
+  @IsOptional()
+  title?: string;
+
+  @ApiPropertyOptional({ description: 'توضیحات تکمیلی رویداد' })
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @ApiPropertyOptional({ enum: EventType })
+  @IsEnum(EventType)
+  @IsOptional()
+  eventType?: EventType;
+
+  @ApiPropertyOptional({ description: 'تاریخ و زمان شروع' })
+  @IsDateString()
+  @IsOptional()
+  startDate?: string;
+
+  @ApiPropertyOptional({ description: 'تاریخ و زمان پایان' })
+  @IsDateString()
+  @IsOptional()
+  endDate?: string;
+
+  @ApiPropertyOptional({ description: 'آیا رویداد کل روز است؟' })
+  @IsBoolean()
+  @IsOptional()
+  isAllDay?: boolean;
+
+  @ApiPropertyOptional({ enum: TargetAudience })
+  @IsEnum(TargetAudience)
+  @IsOptional()
+  targetAudience?: TargetAudience;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  targetClassIds?: string[];
+
+  @ApiPropertyOptional({ description: 'محل برگزاری' })
+  @IsString()
+  @IsOptional()
+  location?: string;
+
+  @ApiPropertyOptional({ description: 'آدرس تصویر کاور رویداد' })
+  @IsString()
+  @IsOptional()
+  coverUrl?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  tags?: string[];
 }

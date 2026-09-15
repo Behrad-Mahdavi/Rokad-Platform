@@ -3,7 +3,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateEventDto } from './dto/create-event.dto';
+import { CreateEventDto, UpdateEventDto } from './dto/create-event.dto';
 
 @Injectable()
 export class CalendarService {
@@ -26,11 +26,13 @@ export class CalendarService {
         targetAudience: dto.targetAudience || 'ALL',
         targetClassIds: dto.targetClassIds || [],
         location: dto.location,
+        coverUrl: dto.coverUrl,
+        tags: dto.tags || [],
         createdById,
       },
       include: {
         createdBy: {
-          select: { firstName: true, lastName: true, role: true },
+          select: { firstName: true, lastName: true, role: true, avatarUrl: true },
         },
       },
     });
@@ -107,7 +109,101 @@ export class CalendarService {
     });
   }
 
-  async deleteEvent(tenantId: string, eventId: string) {
+  async getEventById(tenantId: string, eventId: string): Promise<any> {
+    const event = await this.prisma.schoolEvent.findFirst({
+      where: { id: eventId, tenantId },
+      include: {
+        createdBy: {
+          select: { firstName: true, lastName: true, role: true, avatarUrl: true, phone: true },
+        },
+        tenant: {
+          select: { id: true, name: true, slug: true, theme: true, logoUrl: true },
+        },
+      },
+    });
+
+    if (!event) {
+      throw new NotFoundException('رویداد مورد نظر یافت نشد');
+    }
+
+    return event;
+  }
+
+  async updateEvent(
+    tenantId: string,
+    eventId: string,
+    dto: UpdateEventDto,
+  ): Promise<any> {
+    const existing = await this.prisma.schoolEvent.findFirst({
+      where: { id: eventId, tenantId },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('رویداد مورد نظر یافت نشد');
+    }
+
+    return this.prisma.schoolEvent.update({
+      where: { id: eventId },
+      data: {
+        ...(dto.title ? { title: dto.title } : {}),
+        ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(dto.eventType ? { eventType: dto.eventType } : {}),
+        ...(dto.startDate ? { startDate: new Date(dto.startDate) } : {}),
+        ...(dto.endDate ? { endDate: new Date(dto.endDate) } : {}),
+        ...(dto.isAllDay !== undefined ? { isAllDay: dto.isAllDay } : {}),
+        ...(dto.targetAudience ? { targetAudience: dto.targetAudience } : {}),
+        ...(dto.targetClassIds ? { targetClassIds: dto.targetClassIds } : {}),
+        ...(dto.location !== undefined ? { location: dto.location } : {}),
+        ...(dto.coverUrl !== undefined ? { coverUrl: dto.coverUrl } : {}),
+        ...(dto.tags ? { tags: dto.tags } : {}),
+      },
+      include: {
+        createdBy: {
+          select: { firstName: true, lastName: true, role: true, avatarUrl: true },
+        },
+      },
+    });
+  }
+
+  async listRoadmapEvents(
+    tenantId: string,
+    eventType?: string,
+    audience?: string,
+    search?: string,
+  ): Promise<any> {
+    const where: any = { tenantId };
+
+    if (eventType && eventType !== 'ALL') {
+      where.eventType = eventType;
+    }
+
+    if (audience && audience !== 'ALL') {
+      where.OR = [
+        { targetAudience: 'ALL' },
+        { targetAudience: audience },
+      ];
+    }
+
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { location: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    return this.prisma.schoolEvent.findMany({
+      where,
+      include: {
+        createdBy: {
+          select: { firstName: true, lastName: true, role: true, avatarUrl: true },
+        },
+      },
+      orderBy: { startDate: 'asc' },
+    });
+  }
+
+  async deleteEvent(tenantId: string, eventId: string): Promise<any> {
     const event = await this.prisma.schoolEvent.findFirst({
       where: { id: eventId, tenantId },
     });

@@ -1347,9 +1347,96 @@ async function main() {
       endDate: new Date('2026-09-25T11:30:00.000Z'),
       targetAudience: 'STUDENTS',
       location: 'سالن امتحانات شماره ۱',
+      coverUrl: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=1200&q=80',
+      tags: ['آزمون', 'سنجش', 'پایه دهم'],
       createdById: boysAdmin.id,
     },
   });
+
+  const sampleRoadmapEvents = [
+    {
+      title: 'جشن آغاز سال تحصیلی و معارفه هنرجویان نوورود',
+      description: 'آیین بازگشایی هنرستان با حضور اساتید، هنرجویان پایه دهم و والدین گرامی به همراه رونمایی از نقشه راه آموزشی سال جدید تحصیلی.',
+      eventType: 'CULTURAL' as const,
+      startDate: new Date('2026-09-23T04:30:00.000Z'),
+      endDate: new Date('2026-09-23T08:30:00.000Z'),
+      isAllDay: false,
+      targetAudience: 'ALL' as const,
+      location: 'سالن همایش‌های مرکزی خوارزمی',
+      coverUrl: 'https://images.unsplash.com/photo-1523580494863-6f3031224c94?auto=format&fit=crop&w=1200&q=80',
+      tags: ['جشن', 'ورودی جدید', 'آغاز سال', 'معارفه'],
+    },
+    {
+      title: 'هکاتون تخصصی پاییزه هوش مصنوعی و وب راکد',
+      description: 'ماراتن ۴۸ ساعته برنامه‌نویسی و طراحی سامانه‌های هوشمند با داوری اساتید دانشگاه و کارشناسان ارشد صنعت نرم‌افزار، همراه با جوایز ویژه.',
+      eventType: 'ACADEMIC' as const,
+      startDate: new Date('2026-10-15T05:30:00.000Z'),
+      endDate: new Date('2026-10-17T13:30:00.000Z'),
+      isAllDay: false,
+      targetAudience: 'STUDENTS' as const,
+      location: 'لابراتوار کامپیوتر شماره ۱ و ۲ هنرستان',
+      coverUrl: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
+      tags: ['هکاتون', 'برنامه‌نویسی', 'هوش مصنوعی', 'مسابقه'],
+    },
+    {
+      title: 'مجمع عمومی انجمن اولیاء و مربیان و کارگاه فرزندپروری دیجیتال',
+      description: 'بررسی پیشرفت تحصیلی فصل پاییز، ارائه کارنامه میان‌ترم و کارگاه تخصصی راهکارهای حمایت والدین در عصر فناوری‌های دیجیتال.',
+      eventType: 'MEETING' as const,
+      startDate: new Date('2026-11-20T12:30:00.000Z'),
+      endDate: new Date('2026-11-20T15:30:00.000Z'),
+      isAllDay: false,
+      targetAudience: 'PARENTS' as const,
+      location: 'آمفی‌تئاتر فرهنگسرای اندیشه',
+      coverUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
+      tags: ['جلسه اولیاء', 'کارنامه', 'کارگاه مشاوره'],
+    },
+    {
+      title: 'شروع امتحانات هماهنگ نوبت اول (دی‌ماه)',
+      description: 'آغاز ماراتن امتحانات جامع ترم اول کلیه پایه‌های تحصیلی و استقرار حوزه‌های آزمون استاندارد.',
+      eventType: 'EXAM' as const,
+      startDate: new Date('2026-12-25T04:30:00.000Z'),
+      endDate: new Date('2027-01-10T08:30:00.000Z'),
+      isAllDay: true,
+      targetAudience: 'STUDENTS' as const,
+      location: 'حوزه‌های امتحانی شهید شهریاری',
+      coverUrl: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=1200&q=80',
+      tags: ['امتحان', 'دی ماه', 'نوبت اول'],
+    },
+    {
+      title: 'المپیاد درون‌مدرسه‌ای ورزش‌های الکترونیک و فوتسال جام فجر',
+      description: 'رقابت‌های هیجان‌انگیز ورزشی در رشته‌های فوتسال، تنیس روی میز و مسابقات ورزش‌های الکترونیک (E-Sports) بین کلاسی.',
+      eventType: 'SPORTS' as const,
+      startDate: new Date('2027-02-05T06:00:00.000Z'),
+      endDate: new Date('2027-02-12T12:00:00.000Z'),
+      isAllDay: false,
+      targetAudience: 'ALL' as const,
+      location: 'مجموعه ورزشی چندمنظوره راکد',
+      coverUrl: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=1200&q=80',
+      tags: ['ورزش', 'المپیاد', 'فوتسال', 'ای‌اسپورت'],
+    },
+    {
+      title: 'اردوی علمی-پژوهشی پارک فناوری پردیس و شتابدهنده‌ها',
+      description: 'بازدید یک‌روزه دانش‌آموزان رشته‌های کامپیوتر و الکترونیک از شرکت‌های دانش‌بنیان، مراکز هوش مصنوعی و شتابدهنده‌های نوآوری.',
+      eventType: 'EXCURSION' as const,
+      startDate: new Date('2027-02-28T04:00:00.000Z'),
+      endDate: new Date('2027-02-28T12:30:00.000Z'),
+      isAllDay: false,
+      targetAudience: 'STUDENTS' as const,
+      location: 'پارک فناوری پردیس، مرکز رشد',
+      coverUrl: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1200&q=80',
+      tags: ['اردو', 'پارک فناوری', 'هوش مصنوعی', 'بازدید علمی'],
+    },
+  ];
+
+  for (const ev of sampleRoadmapEvents) {
+    await prisma.schoolEvent.create({
+      data: {
+        tenantId: boysTenant.id,
+        ...ev,
+        createdById: boysAdmin.id,
+      },
+    });
+  }
 
   // Poll
   await prisma.poll.create({

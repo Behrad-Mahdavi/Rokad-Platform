@@ -973,7 +973,7 @@ model ProfileBlogComment {
   isApproved Boolean     @default(true)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
-
+  
   @@index([tenantId, blogId])
 }
 
@@ -1109,6 +1109,8 @@ model SchoolEvent {
   targetAudience TargetAudience @default(ALL)
   targetClassIds String[]       @default([])
   location       String?
+  coverUrl       String?
+  tags           String[]       @default([])
   createdById    String
   createdBy      User           @relation("CreatedEvent", fields: [createdById], references: [id], onDelete: Cascade)
   createdAt      DateTime       @default(now())

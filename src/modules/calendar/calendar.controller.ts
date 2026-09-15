@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
@@ -12,7 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CalendarService } from './calendar.service';
 import { SchoolCalendarService } from './school-calendar.service';
-import { CreateEventDto } from './dto/create-event.dto';
+import { CreateEventDto, UpdateEventDto } from './dto/create-event.dto';
 import {
   CreateTenantHolidayDto,
   CreateOfficialHolidayDto,
@@ -52,21 +53,56 @@ export class CalendarController {
   }
 
   @Get('events')
-  @ApiOperation({ summary: 'استعلام رویدادهای تقویم در یک بازه زمانی' })
+  @ApiOperation({ summary: 'استعلام رویدادهای تقویم در یک بازه زمانی یا رودمپ' })
   async listEvents(
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentTenant('id') tenantId: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('audience') audience?: string,
+    @Query('eventType') eventType?: string,
+    @Query('search') search?: string,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
-    return this.calendarService.listEvents(
+    if (startDate || endDate) {
+      return this.calendarService.listEvents(
+        effectiveTenantId,
+        startDate,
+        endDate,
+        audience,
+      );
+    }
+    return this.calendarService.listRoadmapEvents(
       effectiveTenantId,
-      startDate,
-      endDate,
+      eventType,
       audience,
+      search,
     );
+  }
+
+  @Get('events/:id')
+  @ApiOperation({ summary: 'دریافت جزئیات کامل یک رویداد (سینگل پیج)' })
+  async getEventById(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') eventId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.calendarService.getEventById(effectiveTenantId, eventId);
+  }
+
+  @Patch('events/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.CALENDAR_WRITE)
+  @ApiOperation({ summary: 'ویرایش رویداد' })
+  async updateEvent(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') eventId: string,
+    @Body() dto: UpdateEventDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.calendarService.updateEvent(effectiveTenantId, eventId, dto);
   }
 
   @Get('announcements')
