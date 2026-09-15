@@ -21,8 +21,11 @@ export class RedisIoAdapter extends IoAdapter {
     const port = parseInt(this.configService.get<string>('REDIS_PORT', '6379'), 10);
     const password = this.configService.get<string>('REDIS_PASSWORD', 'rokad_redis_secret');
 
+    let pubClient: Redis | null = null;
+    let subClient: Redis | null = null;
+
     try {
-      const pubClient = new Redis({
+      pubClient = new Redis({
         host,
         port,
         password: password || undefined,
@@ -36,7 +39,7 @@ export class RedisIoAdapter extends IoAdapter {
         this.logger.debug(`Redis pubClient error: ${err.message}`);
       });
 
-      const subClient = pubClient.duplicate();
+      subClient = pubClient.duplicate();
       subClient.on('error', (err) => {
         this.logger.debug(`Redis subClient error: ${err.message}`);
       });
@@ -48,6 +51,8 @@ export class RedisIoAdapter extends IoAdapter {
       this.logger.log('⚡ RedisIoAdapter connected successfully for WebSocket multi-instance synchronization');
     } catch (err: any) {
       this.logger.warn(`RedisIoAdapter fallback (in-memory WebSocket): ${err.message}`);
+      try { pubClient?.disconnect(false); } catch {}
+      try { subClient?.disconnect(false); } catch {}
     }
   }
 

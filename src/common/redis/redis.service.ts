@@ -44,6 +44,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       this.logger.log(`Connected to Redis on ${host}:${port}`);
     } catch (err: any) {
       this.logger.warn(`Redis connection failed: ${err?.message}. Operating in fallback mode.`);
+      try {
+        this.client?.disconnect(false);
+      } catch {}
       this.client = null;
     }
   }
