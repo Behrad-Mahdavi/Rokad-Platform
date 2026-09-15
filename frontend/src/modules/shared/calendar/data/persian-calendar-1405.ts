@@ -73,7 +73,7 @@ export const OFFICIAL_OCCASIONS_1405: CalendarOccasion[] = [
   { month: 2, day: 8, title: 'ولادت با سعادت امام رضا (ع)', isHoliday: false, type: 'RELIGIOUS' },
   { month: 2, day: 10, title: 'روز ملی خلیج فارس', isHoliday: false, type: 'NATIONAL' },
   { month: 2, day: 11, title: 'روز جهانی کار و کارگر', isHoliday: false, type: 'GLOBAL' },
-  { month: 2, day: 12, title: 'روز بزرگداشت معلم و شهادت استاد مرتضی مطهری', isHoliday: false, type: 'NATIONAL' },
+  { month: 2, day: 12, title: 'روز بزرگداشت مربی و شهادت استاد مرتضی مطهری', isHoliday: false, type: 'NATIONAL' },
   { month: 2, day: 25, title: 'روز بزرگداشت حکیم ابوالقاسم فردوسی و پاسداشت زبان فارسی', isHoliday: false, type: 'NATIONAL' },
   { month: 2, day: 26, title: 'شهادت امام جواد (ع)', isHoliday: false, type: 'RELIGIOUS' },
   { month: 2, day: 28, title: 'روز بزرگداشت حکیم عمر خیام', isHoliday: false, type: 'NATIONAL' },

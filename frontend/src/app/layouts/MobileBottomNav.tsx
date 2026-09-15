@@ -1,152 +1,185 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useTenantStore } from '../../lib/auth/tenant-store';
 import {
-  LayoutDashboard,
+  Boxes,
+  Trophy,
+  Home,
+  PlayCircle,
   CalendarDays,
-  Users,
-  MessageSquare,
-  Menu,
-  GraduationCap,
-  FileCheck,
-  HelpCircle,
-  BarChart3,
-  CreditCard,
-  Building2,
-  Activity,
-  BookOpen,
 } from 'lucide-react';
-import { UserRole } from '../../types/auth';
-import { useSidebarStore } from '../../lib/ui/sidebar-store';
 
 interface MobileBottomNavProps {
-  role: UserRole;
+  role?: string;
 }
 
-interface NavItemDef {
-  title: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-}
+export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
+  const location = useLocation();
+  const currentTenant = useTenantStore((state) => state.currentTenant);
+  const isGirlsBranch = currentTenant?.slug === 'rokad-girls';
 
-export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
-  const { toggle, isOpen } = useSidebarStore();
-
-  const getRoleItems = (): NavItemDef[] => {
-    switch (role) {
-      case 'SUPER_ADMIN':
-        return [
-          { title: 'داشبورد', href: '/app/super-admin/dashboard', icon: LayoutDashboard },
-          { title: 'مدارس', href: '/app/super-admin/tenants', icon: Building2 },
-          { title: 'اشتراک‌ها', href: '/app/super-admin/subscriptions', icon: CreditCard },
-          { title: 'عملیات', href: '/app/super-admin/ops', icon: Activity },
-        ];
-
-      case 'SCHOOL_ADMIN':
-      case 'STAFF':
-        return [
-          { title: 'داشبورد', href: '/app/admin/dashboard', icon: LayoutDashboard },
-          { title: 'برنامه هفتگی', href: '/app/admin/schedule', icon: CalendarDays },
-          { title: 'اعضا و کادر', href: '/app/admin/members', icon: Users },
-          { title: 'اطلاعیه‌ها', href: '/app/notices', icon: FileCheck },
-        ];
-
-      case 'TEACHER':
-        return [
-          { title: 'میز کار', href: '/app/teacher/dashboard', icon: LayoutDashboard },
-          { title: 'برنامه کلاس', href: '/app/teacher/schedule', icon: CalendarDays },
-          { title: 'دفتر کلاسی', href: '/app/teacher/gradebook', icon: BookOpen },
-          { title: 'تکالیف', href: '/app/teacher/homework', icon: FileCheck },
-        ];
-
-      case 'STUDENT':
-        return [
-          { title: 'داشبورد', href: '/app/student/dashboard', icon: LayoutDashboard },
-          { title: 'برنامه من', href: '/app/student/schedule', icon: CalendarDays },
-          { title: 'تکالیف', href: '/app/student/homework', icon: FileCheck },
-          { title: 'آزمون‌ها', href: '/app/student/exams', icon: HelpCircle },
-        ];
-
-      case 'PARENT':
-        return [
-          { title: 'داشبورد', href: '/app/parent/dashboard', icon: LayoutDashboard },
-          { title: 'برنامه کلاسی', href: '/app/parent/schedule', icon: CalendarDays },
-          { title: 'شهریه', href: '/app/parent/fees', icon: CreditCard },
-          { title: 'کارنامه', href: '/app/parent/reports', icon: BarChart3 },
-        ];
-
-      default:
-        return [
-          { title: 'اطلاعیه‌ها', href: '/app/notices', icon: FileCheck },
-          { title: 'تقویم', href: '/app/calendar', icon: CalendarDays },
-        ];
-    }
-  };
-
-  const navItems = getRoleItems();
+  const isHomeActive =
+    location.pathname === '/app' ||
+    location.pathname === '/app/' ||
+    location.pathname.endsWith('/dashboard');
 
   return (
     <nav
-      aria-label="Mobile Navigation"
-      className="fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-[#0B0F17]/95 backdrop-blur-md border-t border-gray-200/80 dark:border-gray-800 px-2 py-1.5 flex items-center justify-around md:hidden shadow-lg pb-[max(0.375rem,env(safe-area-inset-bottom))]"
+      aria-label="سوپراپلیکیشن ناوبری پایین"
+      dir="rtl"
+      className={clsx(
+        'fixed bottom-0 inset-x-0 z-40 px-3 py-1.5 flex items-center justify-between md:hidden shadow-lg pb-[max(0.5rem,env(safe-area-inset-bottom))] transition-colors',
+        isGirlsBranch
+          ? 'bg-girl dark:bg-[#2B0916] border-t-2 border-female-dark dark:border-[#52112A] text-white'
+          : 'bg-sec dark:bg-[#121828] border-t-2 border-male-dark dark:border-[#232F46] text-white'
+      )}
     >
-      {navItems.map((item) => (
-        <NavLink
-          key={item.href}
-          to={item.href}
-          className={({ isActive }) =>
-            twMerge(
-              clsx(
-                'flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all text-[10px] font-medium select-none min-w-0',
+      {/* 1. First on Right: پلتفرم کا */}
+      <NavLink
+        to="/app/ka-platform"
+        className={({ isActive }) =>
+          twMerge(
+            clsx(
+              'flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all text-[10px] font-medium select-none min-w-0',
+              isActive
+                ? 'text-white font-black scale-105'
+                : 'text-gray-200 dark:text-gray-300 hover:text-white',
+            ),
+          )
+        }
+      >
+        {({ isActive }) => (
+          <>
+            <div
+              className={clsx(
+                'h-7 w-7 rounded-xl flex items-center justify-center transition-all mb-0.5',
                 isActive
-                  ? 'text-primary font-bold scale-105'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-ink-dark dark:hover:text-white',
-              ),
-            )
-          }
-        >
-          {({ isActive }) => (
-            <>
-              <div
-                className={clsx(
-                  'h-7 w-7 rounded-lg flex items-center justify-center transition-colors mb-0.5',
-                  isActive
-                    ? 'bg-ecosystem-light dark:bg-ecosystem-darker/60 text-primary-darker dark:text-primary-light shadow-[1.5px_1.5px_0_#59BBAF]'
-                    : 'text-gray-500 dark:text-gray-400',
-                )}
-              >
-                <item.icon className="h-4 w-4 shrink-0" />
-              </div>
-              <span className="truncate max-w-[60px] text-center">{item.title}</span>
-            </>
-          )}
-        </NavLink>
-      ))}
-
-      {/* Menu / More Button */}
-      <button
-        type="button"
-        onClick={toggle}
-        className={clsx(
-          'flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all text-[10px] font-medium select-none min-w-0',
-          isOpen
-            ? 'text-primary font-bold'
-            : 'text-gray-500 dark:text-gray-400 hover:text-ink-dark dark:hover:text-white',
+                  ? 'bg-primary text-white border border-primary-light shadow-[1.5px_1.5px_0_#1F413D]'
+                  : 'text-inherit',
+              )}
+            >
+              <Boxes className="h-4 w-4 shrink-0" />
+            </div>
+            <span className="truncate max-w-[64px] text-center">پلتفرم کا</span>
+          </>
         )}
+      </NavLink>
+
+      {/* 2. Second on Right: باشگاه */}
+      <NavLink
+        to="/app/club"
+        className={({ isActive }) =>
+          twMerge(
+            clsx(
+              'flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all text-[10px] font-medium select-none min-w-0',
+              isActive
+                ? 'text-white font-black scale-105'
+                : 'text-gray-200 dark:text-gray-300 hover:text-white',
+            ),
+          )
+        }
+      >
+        {({ isActive }) => (
+          <>
+            <div
+              className={clsx(
+                'h-7 w-7 rounded-xl flex items-center justify-center transition-all mb-0.5',
+                isActive
+                  ? 'bg-primary text-white border border-primary-light shadow-[1.5px_1.5px_0_#1F413D]'
+                  : 'text-inherit',
+              )}
+            >
+              <Trophy className="h-4 w-4 shrink-0" />
+            </div>
+            <span className="truncate max-w-[64px] text-center">باشگاه</span>
+          </>
+        )}
+      </NavLink>
+
+      {/* 3. Center: هوم / صفحه اصلی (بدون تایتل با رنگ سبز پرایمری برند در انتخاب) */}
+      <NavLink
+        to="/app"
+        title="صفحه اصلی"
+        aria-label="صفحه اصلی"
+        className="flex flex-col items-center justify-center flex-1 py-0.5 px-1 select-none min-w-0 group"
       >
         <div
           className={clsx(
-            'h-7 w-7 rounded-lg flex items-center justify-center transition-colors mb-0.5',
-            isOpen
-              ? 'bg-ecosystem-light dark:bg-ecosystem-darker/60 text-primary-darker dark:text-primary-light shadow-[1.5px_1.5px_0_#59BBAF]'
-              : 'text-gray-500 dark:text-gray-400',
+            'w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 shadow-md',
+            isHomeActive
+              ? 'bg-primary text-white shadow-[2px_2px_0_#1F413D] border-2 border-primary-light -translate-y-1'
+              : isGirlsBranch
+              ? 'bg-[#B31449] dark:bg-[#4E0920] text-white border border-[#E0195B] hover:bg-girl'
+              : 'bg-[#2B3878] dark:bg-[#1C2640] text-white border border-male-dark hover:bg-sec',
           )}
         >
-          <Menu className="h-4 w-4 shrink-0" />
+          <Home className="h-5 w-5 shrink-0" />
         </div>
-        <span className="truncate">بیشتر</span>
-      </button>
+      </NavLink>
+
+      {/* 4. Left of Center: رسانه */}
+      <NavLink
+        to="/app/media"
+        className={({ isActive }) =>
+          twMerge(
+            clsx(
+              'flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all text-[10px] font-medium select-none min-w-0',
+              isActive
+                ? 'text-white font-black scale-105'
+                : 'text-gray-200 dark:text-gray-300 hover:text-white',
+            ),
+          )
+        }
+      >
+        {({ isActive }) => (
+          <>
+            <div
+              className={clsx(
+                'h-7 w-7 rounded-xl flex items-center justify-center transition-all mb-0.5',
+                isActive
+                  ? 'bg-primary text-white border border-primary-light shadow-[1.5px_1.5px_0_#1F413D]'
+                  : 'text-inherit',
+              )}
+            >
+              <PlayCircle className="h-4 w-4 shrink-0" />
+            </div>
+            <span className="truncate max-w-[64px] text-center">رسانه</span>
+          </>
+        )}
+      </NavLink>
+
+      {/* 5. Far Left: تقویم */}
+      <NavLink
+        to="/app/calendar"
+        className={({ isActive }) =>
+          twMerge(
+            clsx(
+              'flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all text-[10px] font-medium select-none min-w-0',
+              isActive
+                ? 'text-white font-black scale-105'
+                : 'text-gray-200 dark:text-gray-300 hover:text-white',
+            ),
+          )
+        }
+      >
+        {({ isActive }) => (
+          <>
+            <div
+              className={clsx(
+                'h-7 w-7 rounded-xl flex items-center justify-center transition-all mb-0.5',
+                isActive
+                  ? 'bg-primary text-white border border-primary-light shadow-[1.5px_1.5px_0_#1F413D]'
+                  : 'text-inherit',
+              )}
+            >
+              <CalendarDays className="h-4 w-4 shrink-0" />
+            </div>
+            <span className="truncate max-w-[64px] text-center">تقویم</span>
+          </>
+        )}
+      </NavLink>
     </nav>
   );
 };

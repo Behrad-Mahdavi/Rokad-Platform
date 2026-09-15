@@ -545,7 +545,7 @@ export const HomeworkPage: React.FC = () => {
                         />
                         <div className="col-span-2">
                           <Input
-                            label="بازخورد معلم"
+                            label="بازخورد مربی"
                             placeholder="مثال: راه‌حل مسئله شماره ۳ عالی بود."
                             value={feedbackInput}
                             onChange={(e) => setFeedbackInput(e.target.value)}

@@ -28,6 +28,8 @@ import {
   Award,
   FileQuestion,
   ChevronLeft,
+  Boxes,
+  Trophy,
 } from 'lucide-react';
 import { UserRole } from '../../types/auth';
 import { useSidebarStore } from '../../lib/ui/sidebar-store';
@@ -54,12 +56,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
 
   const getNavItems = (): { section: string; items: NavItem[] }[] => {
     const commsSection = {
-      section: 'ارتباطات و اطلاع‌رسانی',
+      section: 'ارتباطات و اکوسیستم',
       items: [
         { title: 'رسانه هنرستان', href: '/app/media', icon: Sparkles },
         { title: 'بورد اطلاعیه‌ها', href: '/app/notices', icon: FileCheck },
-        { title: 'تقویم و رویدادها (۱۴۰۵)', href: '/app/calendar', icon: CalendarDays },
+        { title: 'تقویم و رویدادها', href: '/app/calendar', icon: CalendarDays },
         { title: 'نظرسنجی و آراء', href: '/app/polls', icon: Vote },
+        { title: 'پلتفرم کا', href: '/app/ka-platform', icon: Boxes },
+        { title: 'باشگاه دانش‌آموزان', href: '/app/club', icon: Trophy },
       ],
     };
 
@@ -89,7 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               { title: 'پروفایل رسمی مدرسه', href: '/app/admin/profile', icon: School },
               { title: 'ساختار سال و کلاس‌ها', href: '/app/admin/academic', icon: GraduationCap },
               { title: 'برنامه هفتگی کلاس‌ها', href: '/app/admin/schedule', icon: CalendarDays },
-              { title: 'مدیریت هنرجویان و پرسنل', href: '/app/admin/members', icon: Users },
+              { title: 'مدیریت دانش‌آموزان و پرسنل', href: '/app/admin/members', icon: Users },
               { title: 'امور انضباطی و تشویقی', href: '/app/admin/matters', icon: ShieldAlert },
             ],
           },
@@ -107,7 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       case 'TEACHER':
         return [
           {
-            section: 'میز کار هنرآموز / دبیر',
+            section: 'میز کار مربی',
             items: [
               { title: 'داشبورد کلاس‌ها', href: '/app/teacher/dashboard', icon: LayoutDashboard },
               { title: 'برنامه هفتگی کلاس‌ها', href: '/app/teacher/schedule', icon: CalendarDays },
@@ -126,7 +130,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       case 'STUDENT':
         return [
           {
-            section: 'پرتال هنرجو',
+            section: 'پرتال دانش‌آموز',
             items: [
               { title: 'داشبورد تحصیلی', href: '/app/student/dashboard', icon: LayoutDashboard },
               { title: 'برنامه هفتگی کلاس', href: '/app/student/schedule', icon: CalendarDays },
@@ -143,7 +147,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       case 'PARENT':
         return [
           {
-            section: 'پرتال اولیاء هنرجو',
+            section: 'پرتال اولیاء دانش‌آموز',
             items: [
               { title: 'داشبورد فرزندان', href: '/app/parent/dashboard', icon: LayoutDashboard },
               { title: 'برنامه هفتگی فرزند', href: '/app/parent/schedule', icon: CalendarDays },

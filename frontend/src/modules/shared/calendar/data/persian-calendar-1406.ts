@@ -67,7 +67,7 @@ export const OFFICIAL_OCCASIONS_1406: CalendarOccasion[] = [
   { month: 2, day: 1, title: 'روز بزرگداشت سعدی شیرازی', isHoliday: false, type: 'NATIONAL' },
   { month: 2, day: 10, title: 'روز ملی خلیج فارس', isHoliday: false, type: 'NATIONAL' },
   { month: 2, day: 11, title: 'روز جهانی کار و کارگر', isHoliday: false, type: 'GLOBAL' },
-  { month: 2, day: 12, title: 'روز بزرگداشت معلم و شهادت استاد مرتضی مطهری', isHoliday: false, type: 'NATIONAL' },
+  { month: 2, day: 12, title: 'روز بزرگداشت مربی و شهادت استاد مرتضی مطهری', isHoliday: false, type: 'NATIONAL' },
   { month: 2, day: 14, title: 'ولادت حضرت معصومه (س) و روز دختران', isHoliday: false, type: 'RELIGIOUS' },
   { month: 2, day: 24, title: 'ولادت امام رضا (ع)', isHoliday: false, type: 'RELIGIOUS' },
   { month: 2, day: 25, title: 'روز بزرگداشت حکیم ابوالقاسم فردوسی و پاسداشت زبان فارسی', isHoliday: false, type: 'NATIONAL' },

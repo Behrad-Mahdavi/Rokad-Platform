@@ -368,13 +368,13 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
         description={
           canManageSchedule
             ? 'تنظیم ساعات ۶ زنگ درسی روزانه (شنبه تا پنج‌شنبه)، تخصیص درس و دبیر و بررسی تداخل'
-            : 'مشاهده ساعات ۶ زنگ درسی روزانه، اسامی دروس و هنرآموزان مدرس'
+            : 'مشاهده ساعات ۶ زنگ درسی روزانه، اسامی دروس و مربیان مدرس'
         }
         badge={
           isStudent ? (
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 text-[11px] font-bold">
               <GraduationCap className="h-3.5 w-3.5" />
-              <span>هنرجو: {currentUser?.firstName} {currentUser?.lastName}</span>
+              <span>دانش‌آموز: {currentUser?.firstName} {currentUser?.lastName}</span>
             </span>
           ) : !canManageSchedule ? (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-semibold">
@@ -441,7 +441,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
           </h3>
           <p className="text-xs text-gray-500 max-w-md mx-auto mt-2 leading-relaxed">
             {isStudent
-              ? 'هنرجوی گرامی، کلاس درس شما هنوز توسط مسئولین آموزش و مدیریت هنرستان در سامانه ثبت نهایی نشده است. پس از تخصیص قطعی به کلاس، برنامه هفتگی زنگ‌های کلاسی به صورت اختصاصی در این صفحه نمایش داده خواهد شد.'
+              ? 'دانش‌آموز گرامی، کلاس درس شما هنوز توسط مسئولین آموزش و مدیریت هنرستان در سامانه ثبت نهایی نشده است. پس از تخصیص قطعی به کلاس، برنامه هفتگی زنگ‌های کلاسی به صورت اختصاصی در این صفحه نمایش داده خواهد شد.'
               : 'در حال حاضر هیچ کلاسی در این سال تحصیلی یا برای شما ثبت نشده است.'}
           </p>
         </div>

@@ -129,7 +129,7 @@ export const NoticeboardPage: React.FC = () => {
           { key: 'ALL', label: 'همه اطلاعیه‌ها' },
           { key: 'STUDENTS', label: 'ویژه دانش‌آموزان' },
           { key: 'PARENTS', label: 'ویژه اولیاء' },
-          { key: 'TEACHERS', label: 'ویژه معلمان' },
+          { key: 'TEACHERS', label: 'ویژه مربیان' },
         ].map((tab) => (
           <button
             key={tab.key}

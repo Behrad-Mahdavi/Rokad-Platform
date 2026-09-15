@@ -98,8 +98,8 @@ export const MembersPage: React.FC = () => {
     ];
     const ws = utils.json_to_sheet(sampleData);
     const wb = utils.book_new();
-    utils.book_append_sheet(wb, ws, 'هنرجویان');
-    writeFile(wb, 'نمونه_ورود_گروهی_هنرجویان_رکاد.xlsx');
+    utils.book_append_sheet(wb, ws, 'دانش‌آموزان');
+    writeFile(wb, 'نمونه_ورود_گروهی_دانش‌آموزان_رکاد.xlsx');
   };
 
   const handleExcelFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -298,7 +298,7 @@ export const MembersPage: React.FC = () => {
       {/* Header & Actions */}
       <ResponsivePageHeader
         icon={Users}
-        title="مدیریت اعضا و ثبت‌نام هنرجویان و کادر هنرستان"
+        title="مدیریت اعضا و ثبت‌نام دانش‌آموزان و کادر هنرستان"
         description="ثبت پرونده تحصیلی، اطلاعات اولیاء، پرونده‌های الکترونیکی و ورود دسته‌جمعی"
         actions={
           activeTab === 'STUDENTS' ? (
@@ -328,7 +328,7 @@ export const MembersPage: React.FC = () => {
           ) : (
             <Button variant="primary" size="sm" onClick={() => setIsTeacherModalOpen(true)} className="w-full sm:w-auto">
               <Plus className="h-4 w-4 ml-1" />
-              <span>ثبت هنرآموز یا پرسنل جدید</span>
+              <span>ثبت مربی یا پرسنل جدید</span>
             </Button>
           )
         }
@@ -906,8 +906,8 @@ export const MembersPage: React.FC = () => {
           setExcelResult(null);
           setError(null);
         }}
-        title="ورود گروهی هنرجویان از طریق اکسل"
-        description="بارگذاری دسته‌جمعی مشخصات هنرجویان با استفاده از فایل اکسل (.xlsx یا .xls)"
+        title="ورود گروهی دانش‌آموزان از طریق اکسل"
+        description="بارگذاری دسته‌جمعی مشخصات دانش‌آموزان با استفاده از فایل اکسل (.xlsx یا .xls)"
         maxWidth="md"
       >
         <div className="space-y-5">
@@ -973,7 +973,7 @@ export const MembersPage: React.FC = () => {
             {excelRows.length > 0 && (
               <div className="mt-3 inline-flex items-center space-x-1 space-x-reverse bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold">
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>{excelRows.length} هنرجو در فایل شناسایی شد</span>
+                <span>{excelRows.length} دانش‌آموز در فایل شناسایی شد</span>
               </div>
             )}
           </div>
@@ -1029,7 +1029,7 @@ export const MembersPage: React.FC = () => {
               disabled={excelRows.length === 0}
               isLoading={isSubmitting}
             >
-              ثبت نهایی {excelRows.length > 0 ? `(${excelRows.length} هنرجو)` : ''}
+              ثبت نهایی {excelRows.length > 0 ? `(${excelRows.length} دانش‌آموز)` : ''}
             </Button>
           </div>
         </div>

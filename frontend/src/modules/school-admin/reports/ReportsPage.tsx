@@ -103,7 +103,7 @@ export const ReportsPage: React.FC = () => {
 
         <Card className="p-4 sm:p-5 border hover:border-primary transition-all">
           <div className="flex items-center justify-between mb-1.5">
-            <div className="text-xs text-gray-500 font-medium">میانگین حضور هنرجویان</div>
+            <div className="text-xs text-gray-500 font-medium">میانگین حضور دانش‌آموزان</div>
             <CalendarCheck className="h-4 w-4 text-primary" />
           </div>
           <div className="text-2xl font-extrabold text-emerald-700">۹۶.۴٪</div>
@@ -164,15 +164,15 @@ export const ReportsPage: React.FC = () => {
                 <div>
                   <div className="font-bold text-xs text-ink-darker flex items-center space-x-2 space-x-reverse">
                     <Send className="h-4 w-4 text-primary shrink-0" />
-                    <span>انتشار کارنامه برای اولیاء و هنرجویان</span>
+                    <span>انتشار کارنامه برای اولیاء و دانش‌آموزان</span>
                     <Badge variant={isReportCardPublished ? 'success' : 'neutral'} className="mr-2">
-                      {isReportCardPublished ? 'منتشر شده برای اولیاء و هنرجویان' : 'پنهان و منتشرنشده'}
+                      {isReportCardPublished ? 'منتشر شده برای اولیاء و دانش‌آموزان' : 'پنهان و منتشرنشده'}
                     </Badge>
                   </div>
                   <div className="text-[11px] text-gray-500 mt-1 leading-relaxed">
                     {isReportCardPublished
                       ? 'کارنامه‌ها هم‌اکنون برای دانش‌آموزان و اولیاء در پرتال قابل مشاهده و دانلود است.'
-                      : 'کارنامه‌ها فعلاً از دید اولیاء و هنرجویان مخفی است و فقط با فشردن دکمه زیر منتشر می‌شود.'}
+                      : 'کارنامه‌ها فعلاً از دید اولیاء و دانش‌آموزان مخفی است و فقط با فشردن دکمه زیر منتشر می‌شود.'}
                   </div>
                 </div>
                 <Button

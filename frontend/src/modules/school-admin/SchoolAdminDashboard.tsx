@@ -74,17 +74,14 @@ export const SchoolAdminDashboard: React.FC = () => {
       {/* Header Banner */}
       <div className="relative overflow-hidden bg-white dark:bg-[#151C28] bg-gradient-to-l from-primary/15 via-primary/5 to-transparent dark:from-primary/20 dark:via-primary/5 dark:to-transparent p-3.5 sm:p-5 md:p-6 rounded-2xl border border-primary/30 dark:border-[#242F42] shadow-[2.75px_2.75px_0_#202A5A] dark:shadow-[2.75px_2.75px_0_#59BBAF] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <div className="flex items-center space-x-2 space-x-reverse mb-1">
-            <span className="text-base sm:text-lg font-bold text-ink-darker dark:text-white">
+          <div className="flex items-center space-x-2 space-x-reverse">
+            <span className="text-lg sm:text-xl font-black text-ink-darker dark:text-white">
               درود، {user?.firstName} {user?.lastName}
             </span>
             <Badge variant="default" className="text-[11px]">
               مدیریت هنرستان
             </Badge>
           </div>
-          <p className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-300">
-            گزارش عملکرد برخط، کارگاه‌های تخصصی، پودمان‌ها و شاخص‌های کلیدی {currentTenant?.name || 'هنرستان فنی و حرفه‌ای رُکاد'}
-          </p>
         </div>
 
         <div className="flex items-center space-x-2 space-x-reverse">
@@ -113,7 +110,7 @@ export const SchoolAdminDashboard: React.FC = () => {
         {/* Card 1: Students */}
         <Card className="p-3.5 sm:p-5 border hover:border-primary transition-all">
           <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400 mb-1.5">
-            <span>هنرجویان فعال</span>
+            <span>دانش‌آموزان فعال</span>
             <GraduationCap className="h-4 w-4 text-primary" />
           </div>
           <div className="text-xl sm:text-2xl font-extrabold text-ink-darker dark:text-white">
@@ -128,7 +125,7 @@ export const SchoolAdminDashboard: React.FC = () => {
         {/* Card 2: Teachers */}
         <Card className="p-3.5 sm:p-5 border hover:border-blue-500 transition-all">
           <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400 mb-1.5">
-            <span>هنرآموزان و کادر تخصصی</span>
+            <span>مربیان و کادر تخصصی</span>
             <Users className="h-4 w-4 text-blue-500" />
           </div>
           <div className="text-xl sm:text-2xl font-extrabold text-ink-darker dark:text-white">

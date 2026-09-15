@@ -209,8 +209,8 @@ export const ParentVisitsPage: React.FC = () => {
       {/* Header Banner */}
       <ResponsivePageHeader
         icon={UserCheck}
-        title="سامانه ملاقات اولیا و معلمان"
-        description="رزرو وقت ملاقات حضوری یا جلسات برخط با دبیران، هنرآموزان و مشاوران مدرسه"
+        title="سامانه ملاقات اولیا و مربیان"
+        description="رزرو وقت ملاقات حضوری یا جلسات برخط با دبیران، مربیان و مشاوران مدرسه"
         actions={
           <div className="flex items-center gap-1.5">
             <button
@@ -470,7 +470,7 @@ export const ParentVisitsPage: React.FC = () => {
       <Modal
         isOpen={isBookModalOpen}
         onClose={() => setIsBookModalOpen(false)}
-        title="رزرو نوبت ملاقات با معلم"
+        title="رزرو نوبت ملاقات با مربی"
         maxWidth="md"
       >
         {selectedSlot && (
@@ -512,7 +512,7 @@ export const ParentVisitsPage: React.FC = () => {
                 >
                   {children.map((c: any) => (
                     <option key={c.studentId || c.id} value={c.studentId || c.id}>
-                      {c.student?.user?.firstName} {c.student?.user?.lastName} (کلاس {c.student?.classRoom?.name || 'هنرجو'})
+                      {c.student?.user?.firstName} {c.student?.user?.lastName} (کلاس {c.student?.classRoom?.name || 'دانش‌آموز'})
                     </option>
                   ))}
                 </select>

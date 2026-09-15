@@ -59,7 +59,7 @@ export const StudentMaterialsPage: React.FC = () => {
       <ResponsivePageHeader
         icon={BookOpen}
         title="محتوای آموزشی، جزوات و ویدیوها"
-        description="دانلود مستقیم جزوات درسی، نمونه سوالات و ویدیوهای بارگذاری‌شده توسط معلمان"
+        description="دانلود مستقیم جزوات درسی، نمونه سوالات و ویدیوهای بارگذاری‌شده توسط مربیان"
         actions={
           <div className="w-full sm:w-64">
             <input

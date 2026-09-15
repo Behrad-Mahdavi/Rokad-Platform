@@ -26,21 +26,7 @@ export const GuestGuard: React.FC = () => {
   const { isAuthenticated, user } = useAuthStore();
 
   if (isAuthenticated && user) {
-    switch (user.role) {
-      case 'SUPER_ADMIN':
-        return <Navigate to="/app/super-admin/dashboard" replace />;
-      case 'SCHOOL_ADMIN':
-      case 'STAFF':
-        return <Navigate to="/app/admin/dashboard" replace />;
-      case 'TEACHER':
-        return <Navigate to="/app/teacher/dashboard" replace />;
-      case 'STUDENT':
-        return <Navigate to="/app/student/dashboard" replace />;
-      case 'PARENT':
-        return <Navigate to="/app/parent/dashboard" replace />;
-      default:
-        return <Navigate to="/app/admin/dashboard" replace />;
-    }
+    return <Navigate to="/app" replace />;
   }
 
   return <Outlet />;

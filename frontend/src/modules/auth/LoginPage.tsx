@@ -58,27 +58,8 @@ export const LoginPage: React.FC = () => {
       // Update auth store
       login(user, accessToken, refreshToken);
 
-      // Redirect based on role
-      switch (user.role) {
-        case 'SUPER_ADMIN':
-          navigate('/app/super-admin/dashboard');
-          break;
-        case 'SCHOOL_ADMIN':
-        case 'STAFF':
-          navigate('/app/admin/dashboard');
-          break;
-        case 'TEACHER':
-          navigate('/app/teacher/dashboard');
-          break;
-        case 'STUDENT':
-          navigate('/app/student/dashboard');
-          break;
-        case 'PARENT':
-          navigate('/app/parent/dashboard');
-          break;
-        default:
-          navigate('/app/admin/dashboard');
-      }
+      // Redirect directly to Super-App Home
+      navigate('/app');
     } catch (err: any) {
       setError(
         err.message ||
@@ -263,7 +244,7 @@ export const LoginPage: React.FC = () => {
             >
               <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
                 <BookOpen className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-                <span>هنرآموز / معلم</span>
+                <span>مربی</span>
               </div>
               <div className="text-[10px] text-gray-500 dark:text-gray-400">09123000001</div>
             </button>

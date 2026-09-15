@@ -93,9 +93,9 @@ export const StudentDashboard: React.FC = () => {
       {/* Welcome Banner */}
       <div className="relative overflow-hidden bg-white dark:bg-[#151C28] bg-gradient-to-l from-primary/15 via-primary/5 to-transparent dark:from-primary/20 dark:via-primary/5 dark:to-transparent p-3.5 sm:p-5 md:p-6 rounded-2xl border border-primary/30 dark:border-[#242F42] shadow-[2.75px_2.75px_0_#202A5A] dark:shadow-[2.75px_2.75px_0_#59BBAF] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <div className="flex items-center space-x-2 space-x-reverse mb-1">
+          <div className="flex items-center space-x-2 space-x-reverse">
             <GraduationCap className="h-6 w-6 text-primary shrink-0" />
-            <span className="text-base sm:text-lg font-bold text-ink-darker dark:text-white">
+            <span className="text-lg sm:text-xl font-black text-ink-darker dark:text-white">
               درود، {user?.firstName} {user?.lastName}
             </span>
             {scheduleData?.classroom ? (
@@ -108,12 +108,9 @@ export const StudentDashboard: React.FC = () => {
                 </span>
               </Badge>
             ) : (
-              <Badge variant="neutral" className="text-[11px]">هنرجوی هنرستان</Badge>
+              <Badge variant="neutral" className="text-[11px]">دانش‌آموز هنرستان</Badge>
             )}
           </div>
-          <p className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-300">
-            برنامه کارگاهی، پروژه‌های عملی در انتظار تحویل و پودمان‌های ارزشیابی شما
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -186,7 +183,6 @@ export const StudentDashboard: React.FC = () => {
           <div className="text-xl sm:text-2xl font-extrabold text-foreground group-hover:text-primary transition-colors">
             پرونده منظم
           </div>
-          <p className="text-[11px] text-gray-500 font-medium mt-1">مشاهده سوابق و تشویق‌ها</p>
         </Card>
       </div>
 
@@ -198,7 +194,7 @@ export const StudentDashboard: React.FC = () => {
               <CalendarDays className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-ink-darker flex items-center gap-2">
+              <h3 className="font-black text-base sm:text-lg text-ink-darker flex items-center gap-2">
                 <span>برنامه کلاسی امروز شما</span>
                 <span className="text-xs px-2 py-0.5 rounded-md bg-primary/10 text-primary font-bold">
                   {DAY_NAMES[todayKey]}
@@ -269,7 +265,7 @@ export const StudentDashboard: React.FC = () => {
           <div className="flex justify-between items-center mb-4">
             <div>
               <h3 className="font-bold text-sm text-ink-darker">تکالیف درسی پیش‌رو</h3>
-              <p className="text-[11px] text-gray-400">تمرینات مشخص‌شده توسط معلمان</p>
+              <p className="text-[11px] text-gray-400">تمرینات مشخص‌شده توسط مربیان</p>
             </div>
             <a href="/app/student/homework" className="text-xs text-primary font-bold hover:underline">
               مشاهده همه ←

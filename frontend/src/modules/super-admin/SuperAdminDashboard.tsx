@@ -107,16 +107,13 @@ export const SuperAdminDashboard: React.FC = () => {
       {/* Header Title */}
       <div className="relative overflow-hidden bg-white dark:bg-[#151C28] bg-gradient-to-l from-primary/10 via-primary/5 to-transparent dark:from-primary/20 dark:via-primary/5 dark:to-transparent p-3.5 sm:p-5 md:p-6 rounded-2xl border border-primary/20 dark:border-[#242F42] shadow-[2.75px_2.75px_0_#202A5A] dark:shadow-[2.75px_2.75px_0_#59BBAF] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <div className="flex items-center space-x-2 space-x-reverse mb-1">
+          <div className="flex items-center space-x-2 space-x-reverse">
             <Crown className="h-5 w-5 text-amber-500 shrink-0" />
-            <span className="text-base sm:text-lg font-bold text-ink-darker dark:text-white">
+            <span className="text-lg sm:text-xl font-black text-ink-darker dark:text-white">
               مرکز فرماندهی کلان هنرستان‌های رُکاد
             </span>
             <Badge variant="default" className="text-[11px]">SuperAdmin Root</Badge>
           </div>
-          <p className="text-[11px] sm:text-xs text-gray-500">
-            نظارت عالی بر شعب هنرستان دخترانه و پسرانه، ساختار رشته‌های فنی، کارگاه‌ها، سهمیه‌ها و تراکنش‌های مالی
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -159,14 +156,14 @@ export const SuperAdminDashboard: React.FC = () => {
         {/* Card 2: Total Users */}
         <Card className="p-3.5 sm:p-5 border hover:border-blue-500 transition-all">
           <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
-            <span>هنرجویان و پرسنل فعال</span>
+            <span>دانش‌آموزان و پرسنل فعال</span>
             <Users className="h-4 w-4 text-blue-500" />
           </div>
           <div className="text-xl sm:text-2xl font-extrabold text-ink-darker">
             {((metrics?.users?.total || 650)).toLocaleString('fa-IR')} نفر
           </div>
           <p className="text-[11px] text-gray-500 font-medium mt-1">
-            ۵۲۰ هنرجو • ۱۳۰ هنرآموز و کادر اجرایی
+            ۵۲۰ دانش‌آموز • ۱۳۰ مربی و کادر اجرایی
           </p>
         </Card>
 

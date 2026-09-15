@@ -331,7 +331,7 @@ export const TenantsPage: React.FC = () => {
             cell: (t) => (
               <div className="text-xs">
                 <span className="font-bold">{t._count?.studentProfiles || 0}</span> دانش‌آموز •{' '}
-                <span className="font-bold">{t._count?.teacherProfiles || 0}</span> معلم
+                <span className="font-bold">{t._count?.teacherProfiles || 0}</span> مربی
               </div>
             ),
             mobileDetail: true,

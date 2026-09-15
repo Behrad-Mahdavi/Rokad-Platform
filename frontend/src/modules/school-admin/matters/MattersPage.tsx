@@ -178,7 +178,7 @@ export const MattersPage: React.FC = () => {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <ResponsivePageHeader
-        title="سامانه امور انضباطی و تشویقی هنرجویان"
+        title="سامانه امور انضباطی و تشویقی دانش‌آموزان"
         subtitle="ثبت تشویق‌ها، تذکرات کلاسی، موارد انضباطی و ارجاعات مشاوره‌ای"
         icon={<ShieldAlert className="h-5 w-5 text-amber-600" />}
         actions={
@@ -415,7 +415,7 @@ export const MattersPage: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-foreground mb-1.5">
-              انتخاب دانش‌آموز / هنرجو *
+              انتخاب دانش‌آموز / دانش‌آموز *
             </label>
             <select
               value={form.studentId}
@@ -423,7 +423,7 @@ export const MattersPage: React.FC = () => {
               className="w-full px-3 py-2 text-sm bg-surface/50 border border-border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-hidden"
               required
             >
-              <option value="">انتخاب از لیست هنرجویان...</option>
+              <option value="">انتخاب از لیست دانش‌آموزان...</option>
               {students.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.user?.firstName} {s.user?.lastName} (کد ملی: {s.user?.nationalCode || s.studentNumber || '-'})
@@ -517,7 +517,7 @@ export const MattersPage: React.FC = () => {
               className="w-4 h-4 rounded-sm border-border text-primary focus:ring-primary/20"
             />
             <label htmlFor="notifiedParents" className="text-xs font-medium text-foreground cursor-pointer">
-              ارسال پیامک و نوتیفیکیشن به اولیای هنرجو
+              ارسال پیامک و نوتیفیکیشن به اولیای دانش‌آموز
             </label>
           </div>
 

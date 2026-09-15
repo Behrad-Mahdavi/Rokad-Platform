@@ -160,7 +160,7 @@ export const StudentSchedulePage: React.FC = () => {
       <ResponsivePageHeader
         icon={CalendarDays}
         title={isParent ? 'برنامه هفتگی فرزند' : 'برنامه هفتگی کلاس من'}
-        description="زمان‌بندی زنگ‌های درسی، ساعات شروع و پایان کلاس‌ها و هنرآموزان هر مبحث"
+        description="زمان‌بندی زنگ‌های درسی، ساعات شروع و پایان کلاس‌ها و مربیان هر مبحث"
         badge={
           <div className="flex flex-wrap items-center gap-1.5">
             {classroom && (
@@ -170,7 +170,7 @@ export const StudentSchedulePage: React.FC = () => {
             )}
             {studentInfo && isParent && (
               <Badge variant="female" className="text-[11px]">
-                هنرجو: {studentInfo.user?.firstName} {studentInfo.user?.lastName}
+                دانش‌آموز: {studentInfo.user?.firstName} {studentInfo.user?.lastName}
               </Badge>
             )}
           </div>

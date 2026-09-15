@@ -63,6 +63,13 @@ import { MediaFeedPage } from '../modules/shared/media/MediaFeedPage';
 import { ForbiddenPage } from '../modules/errors/ForbiddenPage';
 import { NotFoundPage } from '../modules/errors/NotFoundPage';
 
+// Super-App Architecture Modules
+import { SuperAppHomePage } from '../modules/super-app/SuperAppHomePage';
+import { ProfileSettingsPage } from '../modules/profile/ProfileSettingsPage';
+import { NotificationsPage } from '../modules/notifications/NotificationsPage';
+import { KaPlatformPage } from '../modules/ka-platform/KaPlatformPage';
+import { ClubPage } from '../modules/club/ClubPage';
+
 export const router = createBrowserRouter([
   // 1. Guest / Auth Routes
   {
@@ -197,6 +204,11 @@ export const router = createBrowserRouter([
           {
             element: <SharedAppLayout />,
             children: [
+              { index: true, element: <SuperAppHomePage /> },
+              { path: 'profile', element: <ProfileSettingsPage /> },
+              { path: 'notifications', element: <NotificationsPage /> },
+              { path: 'ka-platform', element: <KaPlatformPage /> },
+              { path: 'club', element: <ClubPage /> },
               { path: 'chat', element: <Navigate to="/app" replace /> },
               { path: 'notices', element: <NoticeboardPage /> },
               { path: 'calendar', element: <CalendarPage /> },

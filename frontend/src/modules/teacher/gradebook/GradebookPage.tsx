@@ -410,7 +410,7 @@ export const GradebookPage: React.FC = () => {
         });
 
       if (gradesToSubmit.length === 0) {
-        alert('لطفاً نمره مستمر حداقل یک هنرجو را وارد نمایید.');
+        alert('لطفاً نمره مستمر حداقل یک دانش‌آموز را وارد نمایید.');
         setIsSavingPodman(false);
         return;
       }
@@ -565,11 +565,11 @@ export const GradebookPage: React.FC = () => {
         };
 
         const res = await apiClient.post('/gradebook/bulk', gradePayload);
-        gradeMessage = ` و نمرات پرسش کلاسی ${gradedStudents.length} هنرجو در لیست نمرات و کارنامه ثبت گردید`;
+        gradeMessage = ` و نمرات پرسش کلاسی ${gradedStudents.length} دانش‌آموز در لیست نمرات و کارنامه ثبت گردید`;
       }
 
       setSaveSuccess(
-        `دفتر کلاسی این جلسه با موفقیت ذخیره شد (حضور و غیاب برای تمام هنرجویان${gradeMessage}).`
+        `دفتر کلاسی این جلسه با موفقیت ذخیره شد (حضور و غیاب برای تمام دانش‌آموزان${gradeMessage}).`
       );
       setTimeout(() => setSaveSuccess(null), 5000);
 
@@ -834,7 +834,7 @@ export const GradebookPage: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] text-gray-500 font-medium">کل هنرجویان</span>
+            <span className="text-[11px] text-gray-500 font-medium">کل دانش‌آموزان</span>
             <div className="text-lg font-black text-ink-darker mt-0.5">{students.length}</div>
           </div>
           <Users className="w-5 h-5 text-gray-400" />
@@ -1107,7 +1107,7 @@ export const GradebookPage: React.FC = () => {
                     {/* Student Note */}
                     <input
                       type="text"
-                      placeholder="یادداشت جلسه برای این هنرجو..."
+                      placeholder="یادداشت جلسه برای این دانش‌آموز..."
                       value={currentAtt.note}
                       onChange={(e) => setAttendanceNote(student.id, e.target.value)}
                       className="w-full h-9 text-xs px-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white outline-none text-gray-700"
@@ -1124,7 +1124,7 @@ export const GradebookPage: React.FC = () => {
               <TableHeader>
                 <TableRow className="bg-gray-50/80">
                   <TableHead className="w-12 text-center font-bold">#</TableHead>
-                  <TableHead className="w-52">مشخصات هنرجو</TableHead>
+                  <TableHead className="w-52">مشخصات دانش‌آموز</TableHead>
                   <TableHead className="text-center w-72">حضور و غیاب جلسه</TableHead>
                   <TableHead className="w-64 text-center">نمره پرسش کلاسی (از ۲۰)</TableHead>
                   <TableHead className="text-center w-56">موارد انضباطی و تشویقی</TableHead>
@@ -1546,7 +1546,7 @@ export const GradebookPage: React.FC = () => {
                 <TableHeader>
                   <TableRow className="bg-gray-50 text-xs">
                     <TableHead className="w-12 text-center">#</TableHead>
-                    <TableHead className="min-w-[180px]">مشخصات هنرجو</TableHead>
+                    <TableHead className="min-w-[180px]">مشخصات دانش‌آموز</TableHead>
                     <TableHead className="w-40 text-center">نمره مستمر (۰ تا ۵)</TableHead>
                     <TableHead className="min-w-[300px] text-center">سطح شایستگی پایانی (۱ تا ۳)</TableHead>
                     <TableHead className="w-28 text-center">نمره نهایی (۲۰)</TableHead>
@@ -1796,7 +1796,7 @@ export const GradebookPage: React.FC = () => {
               {podmanMatrixData && (
                 <div className="flex items-center gap-3 text-xs font-bold">
                   <div className="bg-purple-50 text-purple-800 px-3 py-1.5 rounded-lg border border-purple-200">
-                    کل هنرجویان: {toPersianDigits(podmanMatrixData.classroom.totalStudents)}
+                    کل دانش‌آموزان: {toPersianDigits(podmanMatrixData.classroom.totalStudents)}
                   </div>
                   <div className="bg-emerald-50 text-emerald-800 px-3 py-1.5 rounded-lg border border-emerald-200">
                     قبولی قطعی درس:{' '}
@@ -1813,7 +1813,7 @@ export const GradebookPage: React.FC = () => {
                 <TableHeader>
                   <TableRow className="bg-gray-50 text-xs">
                     <TableHead className="w-12 text-center">#</TableHead>
-                    <TableHead>نام هنرجو</TableHead>
+                    <TableHead>نام دانش‌آموز</TableHead>
                     <TableHead className="text-center">پودمان ۱</TableHead>
                     <TableHead className="text-center">پودمان ۲</TableHead>
                     <TableHead className="text-center">پودمان ۳</TableHead>
@@ -1931,7 +1931,7 @@ export const GradebookPage: React.FC = () => {
                 <span>ماتریس ریز نمرات ثبت‌شده کلاس درس</span>
               </h3>
               <p className="text-xs text-gray-500 mt-0.5">
-                نمرات مستمر، پرسش‌های کلاسی، امتحانات و میانگین وزنی هر هنرجو
+                نمرات مستمر، پرسش‌های کلاسی، امتحانات و میانگین وزنی هر دانش‌آموز
               </p>
             </div>
 
@@ -1952,7 +1952,7 @@ export const GradebookPage: React.FC = () => {
               <TableHeader>
                 <TableRow className="bg-gray-50">
                   <TableHead className="w-12 text-center">#</TableHead>
-                  <TableHead>نام هنرجو</TableHead>
+                  <TableHead>نام دانش‌آموز</TableHead>
                   <TableHead>شماره دانش‌آموزی</TableHead>
                   <TableHead className="text-center">آخرین نمره فعالیت</TableHead>
                   <TableHead className="text-center">تعداد ارزشیابی‌ها</TableHead>
@@ -2031,7 +2031,7 @@ export const GradebookPage: React.FC = () => {
                       : 'ثبت مورد انضباطی یا تذکر'}
                   </h3>
                   <p className="text-xs text-gray-500">
-                    هنرجو: {matterModal.student.firstName} {matterModal.student.lastName}
+                    دانش‌آموز: {matterModal.student.firstName} {matterModal.student.lastName}
                   </p>
                 </div>
               </div>
@@ -2190,7 +2190,7 @@ export const GradebookPage: React.FC = () => {
                   <div>
                     <div className="text-xs font-bold text-ink-dark">اطلاع‌رسانی به اولیاء</div>
                     <div className="text-[10px] text-gray-500">
-                      ارسال پیامک و نوتیفیکیشن اختصاصی به والدین هنرجو
+                      ارسال پیامک و نوتیفیکیشن اختصاصی به والدین دانش‌آموز
                     </div>
                   </div>
                 </div>

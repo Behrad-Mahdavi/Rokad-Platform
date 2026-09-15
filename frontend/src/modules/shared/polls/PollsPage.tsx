@@ -387,7 +387,7 @@ export const PollsPage: React.FC = () => {
               ALL: 'عمومی (همه)',
               STUDENTS: 'دانش‌آموزان',
               PARENTS: 'اولیا',
-              TEACHERS: 'معلمان',
+              TEACHERS: 'مربیان',
             };
 
             const typeLabelMap = {
@@ -644,7 +644,7 @@ export const PollsPage: React.FC = () => {
                 <option value="ALL">عمومی (همه اعضا)</option>
                 <option value="STUDENTS">تنها دانش‌آموزان</option>
                 <option value="PARENTS">تنها اولیای گرامی</option>
-                <option value="TEACHERS">تنها کادر آموزشی و معلمان</option>
+                <option value="TEACHERS">تنها کادر آموزشی و مربیان</option>
               </select>
             </div>
           </div>

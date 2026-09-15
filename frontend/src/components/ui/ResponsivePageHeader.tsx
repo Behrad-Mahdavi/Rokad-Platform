@@ -15,14 +15,10 @@ interface ResponsivePageHeaderProps {
 export const ResponsivePageHeader: React.FC<ResponsivePageHeaderProps> = ({
   icon,
   title,
-  description,
-  subtitle,
   badge,
   actions,
   className,
 }) => {
-  const displayDescription = description || subtitle;
-
   return (
     <div
       className={twMerge(
@@ -33,28 +29,23 @@ export const ResponsivePageHeader: React.FC<ResponsivePageHeaderProps> = ({
       )}
     >
       <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
           {icon && (
-            <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-xl bg-primary-light dark:bg-primary-darker/60 flex items-center justify-center text-primary-darker dark:text-primary-light shrink-0 border border-primary/20 dark:border-primary/40 shadow-xs">
+            <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-primary-light dark:bg-primary-darker/60 flex items-center justify-center text-primary-darker dark:text-primary-light shrink-0 border border-primary/20 dark:border-primary/40 shadow-xs">
               {React.isValidElement(icon) ? (
                 icon
               ) : (
                 React.createElement(icon as React.ComponentType<{ className?: string }>, {
-                  className: 'h-3.5 w-3.5 sm:h-4 sm:w-4',
+                  className: 'h-4 w-4 sm:h-5 sm:w-5',
                 })
               )}
             </div>
           )}
-          <h2 className="text-sm sm:text-base md:text-lg font-bold text-ink-darker dark:text-white leading-snug">
+          <h1 className="text-base sm:text-lg md:text-xl font-black text-ink-darker dark:text-white leading-tight">
             {title}
-          </h2>
+          </h1>
           {badge}
         </div>
-        {displayDescription && (
-          <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
-            {displayDescription}
-          </p>
-        )}
       </div>
 
       {actions && (

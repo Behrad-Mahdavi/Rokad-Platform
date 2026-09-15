@@ -72,16 +72,13 @@ export const TeacherDashboard: React.FC = () => {
       {/* Header Banner */}
       <div className="relative overflow-hidden bg-white dark:bg-[#151C28] bg-gradient-to-l from-primary/15 via-primary/5 to-transparent dark:from-primary/20 dark:via-primary/5 dark:to-transparent p-3.5 sm:p-5 md:p-6 rounded-2xl border border-primary/30 dark:border-[#242F42] shadow-[2.75px_2.75px_0_#202A5A] dark:shadow-[2.75px_2.75px_0_#59BBAF] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <div className="flex items-center space-x-2 space-x-reverse mb-1">
+          <div className="flex items-center space-x-2 space-x-reverse">
             <BookOpen className="h-5 w-5 text-primary shrink-0" />
-            <span className="text-base sm:text-lg font-bold text-ink-darker dark:text-white">
+            <span className="text-lg sm:text-xl font-black text-ink-darker dark:text-white">
               خوش آمدید، {user?.firstName} {user?.lastName}
             </span>
-            <Badge variant="male" className="text-[11px]">هنرآموز تخصصی</Badge>
+            <Badge variant="male" className="text-[11px]">مربی تخصصی</Badge>
           </div>
-          <p className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-300">
-            برنامه کارگاهی امروز، پروژه‌های ارسالی هنرجویان و پودمان‌های ارزشیابی تحصیلی
-          </p>
         </div>
 
         <div className="flex items-center space-x-2 space-x-reverse">
@@ -150,8 +147,7 @@ export const TeacherDashboard: React.FC = () => {
         <Card className="p-4 sm:p-5 md:p-6">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h3 className="font-bold text-sm text-ink-darker">برنامه تدریس امروز شما</h3>
-              <p className="text-[11px] text-gray-400">زمان‌بندی زنگ‌های کلاسی و حضور و غیاب</p>
+              <h3 className="font-black text-base sm:text-lg text-ink-darker">برنامه تدریس امروز شما</h3>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="default">امروز</Badge>

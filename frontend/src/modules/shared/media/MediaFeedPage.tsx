@@ -376,9 +376,9 @@ export const MediaFeedPage: React.FC = () => {
       case 'STAFF':
         return <Badge variant="sec" className="text-[10px]">کادر اجرایی</Badge>;
       case 'TEACHER':
-        return <Badge variant="male" className="text-[10px]">هنرآموز / دبیر</Badge>;
+        return <Badge variant="male" className="text-[10px]">مربی / دبیر</Badge>;
       case 'STUDENT':
-        return <Badge variant="college" className="text-[10px]">هنرجو</Badge>;
+        return <Badge variant="college" className="text-[10px]">دانش‌آموز</Badge>;
       case 'PARENT':
         return <Badge variant="female" className="text-[10px]">اولیاء</Badge>;
       default:
@@ -398,9 +398,9 @@ export const MediaFeedPage: React.FC = () => {
     }
     if (post.audienceType === 'ROLES') {
       const roleLabels = post.targetRoles.map((r) => {
-        if (r === 'STUDENT') return 'هنرجویان';
+        if (r === 'STUDENT') return 'دانش‌آموزان';
         if (r === 'PARENT') return 'اولیاء';
-        if (r === 'TEACHER') return 'هنرآموزان';
+        if (r === 'TEACHER') return 'مربیان';
         return r;
       });
       return (
@@ -1090,7 +1090,7 @@ export const MediaFeedPage: React.FC = () => {
                     }}
                     className="rounded text-primary focus:ring-primary"
                   />
-                  <span>هنرجویان (دانش‌آموزان)</span>
+                  <span>دانش‌آموزان (دانش‌آموزان)</span>
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer">
                   <input
@@ -1114,7 +1114,7 @@ export const MediaFeedPage: React.FC = () => {
                     }}
                     className="rounded text-primary focus:ring-primary"
                   />
-                  <span>هنرآموزان و دبیران</span>
+                  <span>مربیان و دبیران</span>
                 </label>
               </div>
             )}

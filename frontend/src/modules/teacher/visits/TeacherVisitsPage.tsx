@@ -358,7 +358,7 @@ export const TeacherVisitsPage: React.FC = () => {
                         ولی: {b.parent?.user?.firstName} {b.parent?.user?.lastName}
                       </span>
                       <Badge variant="college">
-                        هنرجو: {b.student?.user?.firstName} {b.student?.user?.lastName}
+                        دانش‌آموز: {b.student?.user?.firstName} {b.student?.user?.lastName}
                       </Badge>
                       <Badge variant={b.status === 'CONFIRMED' ? 'success' : 'neutral'}>
                         {b.status === 'CONFIRMED' ? 'رزرو تایید شده' : 'لغو شده'}

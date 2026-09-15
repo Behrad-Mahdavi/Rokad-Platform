@@ -230,7 +230,7 @@ export const SubscriptionsPage: React.FC = () => {
                   </div>
                   <div className="flex items-center space-x-2 space-x-reverse">
                     <GraduationCap className="h-4 w-4 text-primary" />
-                    <span>حداکثر <strong>{plan.maxTeachers.toLocaleString('fa-IR')}</strong> معلم و کادر</span>
+                    <span>حداکثر <strong>{plan.maxTeachers.toLocaleString('fa-IR')}</strong> مربی و کادر</span>
                   </div>
                   <div className="flex items-center space-x-2 space-x-reverse">
                     <HardDrive className="h-4 w-4 text-primary" />
@@ -376,7 +376,7 @@ export const SubscriptionsPage: React.FC = () => {
               required
             />
             <Input
-              label="سقف معلم"
+              label="سقف مربی"
               type="number"
               value={createPlanForm.maxTeachers}
               onChange={(e) => setCreatePlanForm({ ...createPlanForm, maxTeachers: Number(e.target.value) })}
@@ -528,7 +528,7 @@ export const SubscriptionsPage: React.FC = () => {
             {/* Teachers Quota Bar */}
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
               <div className="flex justify-between text-xs font-bold text-ink-darker mb-1.5">
-                <span>سهمیه معلم و کادر</span>
+                <span>سهمیه مربی و کادر</span>
                 <span>
                   {selectedTenantQuota.quotas?.teachers?.currentUsage} از {selectedTenantQuota.quotas?.teachers?.maxAllowed}
                 </span>
