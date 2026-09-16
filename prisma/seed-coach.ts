@@ -22,13 +22,15 @@ async function main() {
     where: {
       tenantId_phone: {
         tenantId: boysTenant.id,
-        phone: '09124000001',
+        phone: '09129990001',
       },
     },
     update: {
       role: 'COACH',
       firstName: 'علیرضا',
       lastName: 'شایان (کوچ)',
+      username: 'coach_boys',
+      nationalId: '0099990001',
       status: 'ACTIVE',
       passwordHash: defaultPass,
     },
@@ -36,7 +38,9 @@ async function main() {
       tenantId: boysTenant.id,
       firstName: 'علیرضا',
       lastName: 'شایان (کوچ)',
-      phone: '09124000001',
+      phone: '09129990001',
+      username: 'coach_boys',
+      nationalId: '0099990001',
       email: 'coach.shayan@rokadschool.ir',
       passwordHash: defaultPass,
       role: 'COACH',

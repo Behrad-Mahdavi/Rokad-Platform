@@ -10,7 +10,6 @@ import {
   Lock,
   Phone,
   School,
-  UserCheck,
   AlertCircle,
   GraduationCap,
   Shield,
@@ -92,44 +91,6 @@ export const LoginPage: React.FC = () => {
         <CardDescription>
           سامانه هوشمند و یکپارچه هنرستان‌های غیردولتی دخترانه و پسرانه رُکاد
         </CardDescription>
-
-        {/* Branch Selector Switch */}
-        <div className="pt-2">
-          <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 dark:bg-[#1C2536] rounded-xl border border-gray-200 dark:border-gray-700 text-xs">
-            <button
-              type="button"
-              onClick={() => {
-                setTenantSlug('rokad-boys');
-                setIdentifier('09121111111');
-                setPassword('Rokad1404!');
-              }}
-              className={`py-2 rounded-lg font-bold transition-all flex items-center justify-center space-x-1.5 space-x-reverse ${
-                tenantSlug === 'rokad-boys'
-                  ? 'bg-sec text-white shadow-sm'
-                  : 'text-gray-600 dark:text-gray-300 hover:text-ink-dark dark:hover:text-white'
-              }`}
-            >
-              <GraduationCap className="h-4 w-4 shrink-0" />
-              <span>هنرستان پسرانه</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setTenantSlug('rokad-girls');
-                setIdentifier('09121111112');
-                setPassword('Rokad1404!');
-              }}
-              className={`py-2 rounded-lg font-bold transition-all flex items-center justify-center space-x-1.5 space-x-reverse ${
-                tenantSlug === 'rokad-girls'
-                  ? 'bg-girl text-white shadow-sm'
-                  : 'text-gray-600 dark:text-gray-300 hover:text-ink-dark dark:hover:text-white'
-              }`}
-            >
-              <GraduationCap className="h-4 w-4 shrink-0" />
-              <span>هنرستان دخترانه</span>
-            </button>
-          </div>
-        </div>
       </CardHeader>
 
       <CardContent>
@@ -165,21 +126,6 @@ export const LoginPage: React.FC = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-
-          {/* Unified Login Standard Notice */}
-          <div className="p-2.5 rounded-lg bg-primary/5 dark:bg-primary/10 border border-primary/20 text-[11px] text-ink-light space-y-1">
-            <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
-              <UserCheck className="h-3.5 w-3.5 text-primary" />
-              <span>سامانه ورود یکپارچه رُکاد</span>
-            </div>
-            <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-              نام کاربری = <strong>کد ملی</strong> | رمز عبور پیش‌فرض = <strong>پیش‌وند شعبه + کد ملی</strong>
-              <br />
-              <span className="text-[10px] text-primary dark:text-primary-light font-bold">
-                b پسرانه • g دخترانه • c کالج
-              </span>
-            </p>
-          </div>
 
           <Button type="submit" variant="primary" className="w-full h-11 text-base mt-2" isLoading={isLoading}>
             ورود به سامانه یکپارچه
@@ -253,14 +199,14 @@ export const LoginPage: React.FC = () => {
             {/* Coach */}
             <button
               type="button"
-              onClick={() => selectPreset('rokad-boys', '09124000001', 'RokadPass2026!')}
+              onClick={() => selectPreset('rokad-boys', '09129990001', 'RokadPass2026!')}
               className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 hover:bg-emerald-100 dark:hover:bg-emerald-950/40 text-right border border-emerald-200 dark:border-emerald-800 transition-colors"
             >
               <div className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
                 <Target className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span>کوچ و مشاور</span>
               </div>
-              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono">09124000001</div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono">09129990001</div>
             </button>
 
             {/* Admin Boys */}
