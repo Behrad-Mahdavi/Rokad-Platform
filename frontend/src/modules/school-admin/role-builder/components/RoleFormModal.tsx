@@ -57,6 +57,24 @@ export const RoleFormModal: React.FC<Props> = ({
     setError(null);
   }, [initialRole, isOpen]);
 
+  // Natural Language Summary generator
+  const naturalLanguageSummary = useMemo(() => {
+    if (selectedCodes.length === 0) {
+      return 'هنوز هیچ دسترسی برای این نقش انتخاب نشده است.';
+    }
+
+    const selectedItems = catalog.permissions.filter((p) => selectedCodes.includes(p.code));
+    const labels = selectedItems.map((item) => item.labelFa);
+
+    if (labels.length <= 4) {
+      return `کاربر دارنده این نقش می‌تواند: ${labels.join('، ')} را انجام دهد.`;
+    }
+
+    const firstFew = labels.slice(0, 4).join('، ');
+    const remainingCount = labels.length - 4;
+    return `کاربر دارنده این نقش می‌تواند: ${firstFew} و ${remainingCount} مورد دیگر از امکانات سامانه را مدیریت نماید.`;
+  }, [selectedCodes, catalog]);
+
   if (!isOpen) return null;
 
   const toggleCategory = (catKey: string) => {
@@ -75,31 +93,11 @@ export const RoleFormModal: React.FC<Props> = ({
     const allSelected = catCodes.every((c) => selectedCodes.includes(c));
 
     if (allSelected) {
-      // Unselect all in this category
       setSelectedCodes((prev) => prev.filter((c) => !catCodes.includes(c)));
     } else {
-      // Select all in this category
       setSelectedCodes((prev) => Array.from(new Set([...prev, ...catCodes])));
     }
   };
-
-  // Natural Language Summary generator
-  const naturalLanguageSummary = useMemo(() => {
-    if (selectedCodes.length === 0) {
-      return 'هنوز هیچ دسترسی برای این نقش انتخاب نشده است.';
-    }
-
-    const selectedItems = catalog.permissions.filter((p) => selectedCodes.includes(p.code));
-    const labels = selectedItems.map((item) => item.labelFa);
-
-    if (labels.length <= 4) {
-      return `کاربر دارنده این نقش می‌تواند: ${labels.join('، ')} را انجام دهد.`;
-    }
-
-    const firstFew = labels.slice(0, 4).join('، ');
-    const remainingCount = labels.length - 4;
-    return `کاربر دارنده این نقش می‌تواند: ${firstFew} و ${remainingCount} مورد دیگر از امکانات سامانه را مدیریت نماید.`;
-  }, [selectedCodes, catalog]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

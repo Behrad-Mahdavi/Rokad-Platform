@@ -271,7 +271,7 @@ export const RoleBuilderPage: React.FC = () => {
       )}
 
       {/* Role Create / Edit Modal */}
-      {catalog && (
+      {isRoleModalOpen && catalog && (
         <RoleFormModal
           isOpen={isRoleModalOpen}
           onClose={() => setIsRoleModalOpen(false)}
