@@ -29,6 +29,8 @@ import {
   PlayCircle,
   LayoutDashboard,
   ChevronLeft,
+  Compass,
+  Target,
 } from 'lucide-react';
 
 interface SuperAppCard {
@@ -55,14 +57,16 @@ export const SuperAppHomePage: React.FC = () => {
   const [unreadNoticesCount, setUnreadNoticesCount] = useState<number>(0);
   const [homeworkCount, setHomeworkCount] = useState<number>(0);
   const [examsCount, setExamsCount] = useState<number>(0);
+  const [eventsCount, setEventsCount] = useState<number>(0);
 
   useEffect(() => {
     const fetchQuickStats = async () => {
       try {
-        const [hwRes, exRes, noticesRes] = await Promise.allSettled([
+        const [hwRes, exRes, noticesRes, eventsRes] = await Promise.allSettled([
           apiClient.get('/homework'),
           apiClient.get('/exams'),
           apiClient.get('/notices'),
+          apiClient.get('/calendar/events'),
         ]);
 
         if (hwRes.status === 'fulfilled') {
@@ -76,6 +80,10 @@ export const SuperAppHomePage: React.FC = () => {
         if (noticesRes.status === 'fulfilled') {
           const list = Array.isArray(noticesRes.value.data) ? noticesRes.value.data : [];
           setUnreadNoticesCount(list.length);
+        }
+        if (eventsRes.status === 'fulfilled') {
+          const list = Array.isArray(eventsRes.value.data) ? eventsRes.value.data : [];
+          setEventsCount(list.length);
         }
       } catch {
         // silent fallback
@@ -449,6 +457,23 @@ export const SuperAppHomePage: React.FC = () => {
   };
 
   const sharedCards: SuperAppCard[] = [
+    {
+      id: 'events',
+      title: 'رویدادها و رودمپ',
+      href: '/app/events',
+      icon: Compass,
+      iconBg: 'bg-college-light dark:bg-[#38260D]',
+      iconColor: 'text-third dark:text-[#FBBF24]',
+      badge: eventsCount > 0 ? toPersianDigits(eventsCount) : undefined,
+    },
+    {
+      id: 'coaching',
+      title: 'کوچینگ و مربی‌گری',
+      href: '/app/coaching',
+      icon: Target,
+      iconBg: 'bg-club-light dark:bg-[#2A173E]',
+      iconColor: 'text-club dark:text-[#C084FC]',
+    },
     {
       id: 'media',
       title: 'رسانه',
