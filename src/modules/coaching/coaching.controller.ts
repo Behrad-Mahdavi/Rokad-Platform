@@ -42,7 +42,7 @@ export class CoachingController {
   }
 
   @Get('today')
-  @Roles(Role.TEACHER, Role.STAFF, Role.SCHOOL_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.COACH, Role.TEACHER, Role.STAFF, Role.SCHOOL_ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'دریافت جلسات روز جاری کوچ جهت ثبت حضور و غیاب' })
   async getCoachTodaySessions(
     @CurrentUser('id') userId: string,
@@ -54,7 +54,7 @@ export class CoachingController {
   }
 
   @Get('students')
-  @Roles(Role.TEACHER, Role.STAFF, Role.SCHOOL_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.COACH, Role.TEACHER, Role.STAFF, Role.SCHOOL_ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'دریافت لیست دانش‌آموزان تخصیص‌یافته به کوچ' })
   async getCoachStudents(
     @CurrentUser('id') userId: string,
@@ -90,7 +90,7 @@ export class CoachingController {
   }
 
   @Patch('sessions/:id')
-  @Roles(Role.TEACHER, Role.STAFF, Role.SCHOOL_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.COACH, Role.TEACHER, Role.STAFF, Role.SCHOOL_ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'ثبت حضور و غیاب و یادداشت‌های جلسه توسط کوچ' })
   async updateSessionAttendanceAndNotes(
     @CurrentUser('id') coachId: string,
@@ -122,7 +122,7 @@ export class CoachingController {
   }
 
   @Post('extra-requests/:id/respond')
-  @Roles(Role.TEACHER, Role.STAFF, Role.SCHOOL_ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.COACH, Role.TEACHER, Role.STAFF, Role.SCHOOL_ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'پاسخ و زمان‌بندی جلسه فوق‌العاده توسط کوچ' })
   async respondToExtraRequest(
     @CurrentUser('id') coachId: string,

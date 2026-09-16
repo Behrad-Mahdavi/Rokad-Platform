@@ -561,7 +561,7 @@ export class CoachingService {
     return this.prisma.user.findMany({
       where: {
         tenantId,
-        role: { in: [Role.TEACHER, Role.STAFF, Role.SCHOOL_ADMIN] },
+        role: { in: [Role.COACH, Role.TEACHER, Role.STAFF, Role.SCHOOL_ADMIN] },
         status: 'ACTIVE',
       },
       select: {

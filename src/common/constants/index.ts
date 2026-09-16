@@ -11,6 +11,7 @@ export enum Role {
   STUDENT = 'STUDENT',
   PARENT = 'PARENT',
   STAFF = 'STAFF',
+  COACH = 'COACH',
 }
 
 export enum TenantType {

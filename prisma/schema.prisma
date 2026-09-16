@@ -37,6 +37,7 @@ enum UserRole {
   STUDENT
   PARENT
   STAFF
+  COACH
 }
 
 enum UserStatus {

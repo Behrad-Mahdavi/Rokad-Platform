@@ -44,8 +44,8 @@ export class MediaController {
   }
 
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
-  @ApiOperation({ summary: 'انتشار پست جدید در رسانه هنرستان (ادمین و هنرآموز)' })
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF, Role.COACH)
+  @ApiOperation({ summary: 'انتشار پست جدید در رسانه هنرستان (ادمین، هنرآموز و کوچ)' })
   async createMediaPost(
     @CurrentUser('id') authorId: string,
     @CurrentUser('tenantId') userTenantId: string,
@@ -107,7 +107,7 @@ export class MediaController {
   }
 
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF, Role.COACH)
   @ApiOperation({ summary: 'حذف پست رسانه' })
   async deleteMediaPost(
     @CurrentUser('id') userId: string,

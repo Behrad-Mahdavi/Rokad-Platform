@@ -17,6 +17,7 @@ import {
   Users,
   Crown,
   BookOpen,
+  Target,
 } from 'lucide-react';
 import { ApiResponse } from '../../types/api';
 import { LoginResponse } from '../../types/auth';
@@ -247,6 +248,19 @@ export const LoginPage: React.FC = () => {
                 <span>مربی</span>
               </div>
               <div className="text-[10px] text-gray-500 dark:text-gray-400">09123000001</div>
+            </button>
+
+            {/* Coach */}
+            <button
+              type="button"
+              onClick={() => selectPreset('rokad-boys', '09124000001', 'RokadPass2026!')}
+              className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 hover:bg-emerald-100 dark:hover:bg-emerald-950/40 text-right border border-emerald-200 dark:border-emerald-800 transition-colors"
+            >
+              <div className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                <Target className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>کوچ و مشاور</span>
+              </div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono">09124000001</div>
             </button>
 
             {/* Admin Boys */}

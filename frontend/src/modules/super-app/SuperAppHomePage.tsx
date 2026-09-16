@@ -31,6 +31,7 @@ import {
   ChevronLeft,
   Compass,
   Target,
+  Sparkles,
 } from 'lucide-react';
 
 interface SuperAppCard {
@@ -107,6 +108,8 @@ export const SuperAppHomePage: React.FC = () => {
         return 'دانش‌آموز';
       case 'PARENT':
         return 'ولی دانش‌آموز';
+      case 'COACH':
+        return 'کوچ و مشاور';
       default:
         return 'کاربر';
     }
@@ -121,6 +124,8 @@ export const SuperAppHomePage: React.FC = () => {
         return '/app/admin/dashboard';
       case 'TEACHER':
         return '/app/teacher/dashboard';
+      case 'COACH':
+        return '/app/coaching';
       case 'PARENT':
         return '/app/parent/dashboard';
       case 'STUDENT':
@@ -386,6 +391,59 @@ export const SuperAppHomePage: React.FC = () => {
             icon: Users,
             iconBg: 'bg-club-light dark:bg-[#2A173E]',
             iconColor: 'text-club dark:text-[#C084FC]',
+          },
+        ];
+
+      case 'COACH':
+        return [
+          {
+            id: 'coaching-desk',
+            title: 'میز کار کوچینگ',
+            href: '/app/coaching',
+            icon: Target,
+            iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+            iconColor: 'text-primary-dark dark:text-primary',
+          },
+          {
+            id: 'sessions-calendar',
+            title: 'جلسات و تقویم',
+            href: '/app/calendar',
+            icon: CalendarDays,
+            iconBg: 'bg-male-light dark:bg-[#182346]',
+            iconColor: 'text-sec dark:text-[#8194EE]',
+          },
+          {
+            id: 'roadmap-events',
+            title: 'رودمپ رویدادها',
+            href: '/app/events',
+            icon: Compass,
+            iconBg: 'bg-college-light dark:bg-[#38260D]',
+            iconColor: 'text-third dark:text-[#FBBF24]',
+          },
+          {
+            id: 'notices',
+            title: 'تابلو اعلانات',
+            href: '/app/notices',
+            icon: FileCheck,
+            iconBg: 'bg-club-light dark:bg-[#2A173E]',
+            iconColor: 'text-club dark:text-[#C084FC]',
+            badge: unreadNoticesCount > 0 ? toPersianDigits(unreadNoticesCount) : undefined,
+          },
+          {
+            id: 'polls',
+            title: 'نظرسنجی و آراء',
+            href: '/app/polls',
+            icon: Vote,
+            iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+            iconColor: 'text-primary-dark dark:text-primary',
+          },
+          {
+            id: 'media',
+            title: 'رسانه هنرستان',
+            href: '/app/media',
+            icon: Sparkles,
+            iconBg: 'bg-female-light dark:bg-[#3D1426]',
+            iconColor: 'text-girl dark:text-[#F472B6]',
           },
         ];
 

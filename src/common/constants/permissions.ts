@@ -45,6 +45,8 @@ export enum AppPermission {
   HOMEWORK_READ = 'homework.read',
   HOMEWORK_WRITE = 'homework.write',
   CALENDAR_WRITE = 'calendar.write',
+  COACHING_READ = 'coaching.read',
+  COACHING_WRITE = 'coaching.write',
 
   // LMS & Grades (Phase 4 Prep)
   EXAM_READ = 'exam.read',

@@ -202,7 +202,7 @@ export const router = createBrowserRouter([
 
       // 2.6 Shared Communication & Live Routes (Available for all authenticated personas)
       {
-        element: <RoleGuard allowedRoles={['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF', 'TEACHER', 'STUDENT', 'PARENT']} />,
+        element: <RoleGuard allowedRoles={['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF', 'TEACHER', 'STUDENT', 'PARENT', 'COACH']} />,
         children: [
           {
             element: <SharedAppLayout />,

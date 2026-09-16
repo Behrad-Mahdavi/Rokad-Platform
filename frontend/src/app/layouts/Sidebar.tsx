@@ -164,6 +164,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
           commsSection,
         ];
 
+      case 'COACH':
+        return [
+          {
+            section: 'میز کار هدایت و مربی‌گری',
+            items: [
+              { title: 'داشبورد و جلسات کوچینگ', href: '/app/coaching', icon: Target },
+              { title: 'تقویم رویدادها و جلسات', href: '/app/calendar', icon: CalendarDays },
+              { title: 'رودمپ و رویدادها', href: '/app/events', icon: Compass },
+              { title: 'تابلو اعلانات', href: '/app/notices', icon: FileCheck },
+              { title: 'رسانه هنرستان', href: '/app/media', icon: Sparkles },
+              { title: 'نظرسنجی و آراء', href: '/app/polls', icon: Vote },
+            ],
+          },
+          commsSection,
+        ];
+
       default:
         return [commsSection];
     }

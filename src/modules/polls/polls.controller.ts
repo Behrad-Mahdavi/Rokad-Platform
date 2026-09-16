@@ -26,7 +26,7 @@ export class PollsController {
   constructor(private readonly pollsService: PollsService) {}
 
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF, Role.TEACHER, Role.COACH)
   @ApiOperation({ summary: 'ایجاد نظرسنجی جدید' })
   async createPoll(
     @CurrentUser('id') userId: string,

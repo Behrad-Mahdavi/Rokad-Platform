@@ -4,7 +4,8 @@ export type UserRole =
   | 'TEACHER'
   | 'STUDENT'
   | 'PARENT'
-  | 'STAFF';
+  | 'STAFF'
+  | 'COACH';
 
 export interface UserProfile {
   id: string;
