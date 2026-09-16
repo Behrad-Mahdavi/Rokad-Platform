@@ -16,6 +16,7 @@ import {
 } from '../../../utils/jalali';
 import { toast } from '../../../components/ui/toast/toast';
 import { useUndoableMutation } from '../../../lib/hooks/useUndoableMutation';
+import { TOAST_MESSAGES } from '../../../constants/toast-messages';
 import {
   CalendarDays,
   Clock,
@@ -252,11 +253,30 @@ export const EventsRoadmapPage: React.FC = () => {
   };
 
   // Undoable Delete Mutation with 5-second countdown & revert on undo
+  // Deletes on server immediately, then provides 5s window to restore!
   const { execute: executeUndoableDeleteEvent } = useUndoableMutation<SchoolEventItem>({
-    undoLabel: (ev) => `رویداد «${ev.title}» حذف شد.`,
+    undoLabel: (ev) => TOAST_MESSAGES.operations.calendarEventDeleted(ev.title),
     delayMs: 5000,
     optimisticUpdate: (ev) => {
       setEvents((prev) => prev.filter((item) => item.id !== ev.id));
+    },
+    mutationFn: async (ev) => {
+      await apiClient.delete(`/calendar/events/${ev.id}`);
+    },
+    undoFn: async (ev) => {
+      await apiClient.post('/calendar/events', {
+        title: ev.title,
+        description: ev.description,
+        eventType: ev.eventType,
+        startDate: ev.startDate,
+        endDate: ev.endDate,
+        isAllDay: ev.isAllDay,
+        targetAudience: ev.targetAudience,
+        location: ev.location,
+        coverUrl: ev.coverUrl,
+        tags: ev.tags,
+      });
+      await fetchEvents();
     },
     revertUpdate: (ev) => {
       setEvents((prev) => {
@@ -264,9 +284,6 @@ export const EventsRoadmapPage: React.FC = () => {
         return [ev, ...prev];
       });
       toast.info(`رویداد «${ev.title}» بازگردانی شد.`);
-    },
-    mutationFn: async (ev) => {
-      await apiClient.delete(`/calendar/events/${ev.id}`);
     },
     onError: (err, ev) => {
       toast.error(err?.response?.data?.message || `خطا در حذف رویداد «${ev.title}»`);
@@ -318,10 +335,10 @@ export const EventsRoadmapPage: React.FC = () => {
 
       if (isEditing && editingId) {
         await apiClient.patch(`/calendar/events/${editingId}`, payload);
-        toast.success(`رویداد «${form.title}» با موفقیت ویرایش شد.`);
+        toast.success(TOAST_MESSAGES.operations.calendarEventUpdated(form.title));
       } else {
         await apiClient.post('/calendar/events', payload);
-        toast.success(`رویداد «${form.title}» با موفقیت ثبت شد.`);
+        toast.success(TOAST_MESSAGES.operations.calendarEventCreated(form.title));
       }
 
       setIsModalOpen(false);

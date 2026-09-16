@@ -23,6 +23,7 @@ import { PermissionCatalogTab } from './components/PermissionCatalogTab';
 import { toPersianDigits } from '../../../lib/utils';
 import { toast } from '../../../components/ui/toast/toast';
 import { useUndoableMutation } from '../../../lib/hooks/useUndoableMutation';
+import { TOAST_MESSAGES } from '../../../constants/toast-messages';
 
 export const RoleBuilderPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'roles' | 'members' | 'catalog'>('roles');
@@ -71,11 +72,24 @@ export const RoleBuilderPage: React.FC = () => {
   }, [fetchAllData]);
 
   // Undoable Delete Mutation with Telegram 5s Timer
+  // Deletes on server immediately, then provides 5s window to restore!
   const { execute: executeUndoableDeleteRole } = useUndoableMutation<SchoolRoleItem>({
-    undoLabel: (role) => `نقش «${role.name}» حذف شد.`,
+    undoLabel: (role) => TOAST_MESSAGES.rbac.roleDeleted(role.name),
     delayMs: 5000,
     optimisticUpdate: (role) => {
       setRoles((prev) => prev.filter((r) => r.id !== role.id));
+    },
+    mutationFn: async (role) => {
+      await rbacApi.deleteSchoolRole(role.id);
+    },
+    undoFn: async (role) => {
+      await rbacApi.createSchoolRole({
+        name: role.name,
+        description: role.description,
+        permissionCodes: role.permissions.map((p) => p.code),
+      });
+      const updatedRoles = await rbacApi.getSchoolRoles();
+      setRoles(updatedRoles);
     },
     revertUpdate: (role) => {
       setRoles((prev) => {
@@ -83,9 +97,6 @@ export const RoleBuilderPage: React.FC = () => {
         return [...prev, role];
       });
       toast.info(`نقش «${role.name}» بازگردانی شد.`);
-    },
-    mutationFn: async (role) => {
-      await rbacApi.deleteSchoolRole(role.id);
     },
     onError: (err, role) => {
       toast.error(err?.response?.data?.message || `خطا در حذف نقش «${role.name}»`);
@@ -106,10 +117,10 @@ export const RoleBuilderPage: React.FC = () => {
     try {
       if (editingRole) {
         await rbacApi.updateSchoolRole(editingRole.id, data);
-        toast.success(`نقش «${data.name}» با موفقیت ویرایش شد.`);
+        toast.success(TOAST_MESSAGES.rbac.roleUpdated(data.name));
       } else {
         await rbacApi.createSchoolRole(data);
-        toast.success(`نقش جدید «${data.name}» با موفقیت ایجاد شد.`);
+        toast.success(TOAST_MESSAGES.rbac.roleCreated(data.name));
       }
       // Refresh roles
       const updatedRoles = await rbacApi.getSchoolRoles();

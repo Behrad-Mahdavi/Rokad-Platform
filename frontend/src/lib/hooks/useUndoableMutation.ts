@@ -1,8 +1,10 @@
 import { useRef, useEffect, useCallback } from 'react';
 import { toast } from '../../components/ui/toast/toast';
+import { TOAST_MESSAGES } from '../../constants/toast-messages';
 
 export interface UseUndoableMutationConfig<TVars> {
   mutationFn: (vars: TVars) => Promise<any>;
+  undoFn?: (vars: TVars) => Promise<any>;
   optimisticUpdate: (vars: TVars) => void;
   revertUpdate: (vars: TVars) => void;
   undoLabel: string | ((vars: TVars) => string);
@@ -21,13 +23,13 @@ export function useUndoableMutation<TVars = any>(
       {
         timerId: ReturnType<typeof setTimeout>;
         vars: TVars;
-        cancel: () => void;
+        cancel: () => Promise<void>;
       }
     >
   >(new Map());
 
   const execute = useCallback(
-    (vars: TVars) => {
+    async (vars: TVars) => {
       const actionId = `undo_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
       const delay = config.delayMs ?? 5000;
       const label =
@@ -38,11 +40,26 @@ export function useUndoableMutation<TVars = any>(
       // 1. Optimistic Update in UI immediately
       config.optimisticUpdate(vars);
 
-      let isCancelled = false;
+      // 2. Execute deletion on server FIRST!
+      try {
+        await config.mutationFn(vars);
+        config.onSuccess?.(vars);
+      } catch (err: any) {
+        // If server deletion fails, revert UI and show error immediately
+        config.revertUpdate(vars);
+        config.onError?.(err, vars);
+        toast.error(
+          err?.response?.data?.message || err?.message || TOAST_MESSAGES.common.errorFallback,
+        );
+        return;
+      }
 
-      const cancelAction = () => {
-        if (isCancelled) return;
-        isCancelled = true;
+      // 3. Deletion succeeded on server! Now start the 5-second countdown timer for Undo!
+      let isUndone = false;
+
+      const cancelAction = async () => {
+        if (isUndone) return;
+        isUndone = true;
 
         const entry = pendingActionsRef.current.get(actionId);
         if (entry) {
@@ -50,26 +67,20 @@ export function useUndoableMutation<TVars = any>(
           pendingActionsRef.current.delete(actionId);
         }
 
-        // Revert UI to previous state
-        config.revertUpdate(vars);
-      };
-
-      // 2. Setup delayed timer for real API execution
-      const timerId = setTimeout(async () => {
-        pendingActionsRef.current.delete(actionId);
-        if (isCancelled) return;
-
         try {
-          await config.mutationFn(vars);
-          config.onSuccess?.(vars);
-        } catch (err: any) {
-          // In case server rejects, revert and show error
+          if (config.undoFn) {
+            await config.undoFn(vars);
+          }
           config.revertUpdate(vars);
-          config.onError?.(err, vars);
+        } catch (undoErr: any) {
           toast.error(
-            err?.response?.data?.message || err?.message || 'خطا در اعمال عملیات',
+            undoErr?.response?.data?.message || undoErr?.message || 'خطا در بازگردانی عملیات',
           );
         }
+      };
+
+      const timerId = setTimeout(() => {
+        pendingActionsRef.current.delete(actionId);
       }, delay);
 
       pendingActionsRef.current.set(actionId, {
@@ -78,7 +89,7 @@ export function useUndoableMutation<TVars = any>(
         cancel: cancelAction,
       });
 
-      // 3. Show Telegram-style Undo Toast
+      // 4. Show Telegram-style Undo Toast with Countdown Timer
       toast.undoable({
         message: label,
         duration: delay,

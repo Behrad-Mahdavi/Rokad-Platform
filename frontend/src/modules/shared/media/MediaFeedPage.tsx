@@ -10,6 +10,7 @@ import { Skeleton } from '../../../components/ui/Skeleton';
 import { toPersianDigits } from '../../../lib/utils';
 import { toast } from '../../../components/ui/toast/toast';
 import { useUndoableMutation } from '../../../lib/hooks/useUndoableMutation';
+import { TOAST_MESSAGES } from '../../../constants/toast-messages';
 import {
   Heart,
   MessageCircle,
@@ -238,11 +239,26 @@ export const MediaFeedPage: React.FC = () => {
   };
 
   // Undoable Delete Mutation for Posts with 5-second countdown
+  // Deletes on server immediately, then provides 5s window to restore!
   const { execute: executeUndoableDeletePost } = useUndoableMutation<MediaPost>({
-    undoLabel: (p) => `پست «${p.title || 'رسانه'}» حذف شد.`,
+    undoLabel: (p) => TOAST_MESSAGES.communication.postDeleted(p.title),
     delayMs: 5000,
     optimisticUpdate: (p) => {
       setPosts((prev) => prev.filter((item) => item.id !== p.id));
+    },
+    mutationFn: async (p) => {
+      await apiClient.delete(`/media/${p.id}`);
+    },
+    undoFn: async (p) => {
+      await apiClient.post('/media', {
+        title: p.title,
+        content: p.content,
+        postType: p.postType,
+        mediaUrls: p.mediaUrls,
+        isPinned: p.isPinned,
+        allowComments: p.allowComments,
+      });
+      await fetchFeed();
     },
     revertUpdate: (p) => {
       setPosts((prev) => {
@@ -251,20 +267,18 @@ export const MediaFeedPage: React.FC = () => {
       });
       toast.info(`پست «${p.title || 'رسانه'}» بازگردانی شد.`);
     },
-    mutationFn: async (p) => {
-      await apiClient.delete(`/media/${p.id}`);
-    },
     onError: (err, p) => {
       toast.error(err?.response?.data?.message || `خطا در حذف پست «${p.title || ''}»`);
     },
   });
 
   // Undoable Delete Mutation for Comments with 5-second countdown
+  // Deletes on server immediately, then provides 5s window to restore!
   const { execute: executeUndoableDeleteComment } = useUndoableMutation<{
     post: MediaPost;
     comment: MediaComment;
   }>({
-    undoLabel: 'نظر حذف شد.',
+    undoLabel: TOAST_MESSAGES.communication.commentDeleted,
     delayMs: 5000,
     optimisticUpdate: ({ post, comment }) => {
       setPosts((prev) =>
@@ -279,6 +293,12 @@ export const MediaFeedPage: React.FC = () => {
           return p;
         }),
       );
+    },
+    mutationFn: async ({ comment }) => {
+      await apiClient.delete(`/media/comments/${comment.id}`);
+    },
+    undoFn: async ({ post, comment }) => {
+      await apiClient.post(`/media/${post.id}/comments`, { content: comment.content });
     },
     revertUpdate: ({ post, comment }) => {
       setPosts((prev) =>
@@ -295,9 +315,6 @@ export const MediaFeedPage: React.FC = () => {
       );
       toast.info('نظر بازگردانی شد.');
     },
-    mutationFn: async ({ comment }) => {
-      await apiClient.delete(`/media/comments/${comment.id}`);
-    },
     onError: (err) => {
       toast.error(err?.response?.data?.message || 'خطا در حذف نظر');
     },
@@ -308,7 +325,7 @@ export const MediaFeedPage: React.FC = () => {
     const shareUrl = `${window.location.origin}/app/media#${post.id}`;
     if (navigator.clipboard) {
       navigator.clipboard.writeText(shareUrl);
-      showToast('لینک اشتراک‌گذاری پست کپی شد');
+      showToast(TOAST_MESSAGES.communication.shareLinkCopied);
     } else {
       showToast(shareUrl);
     }
@@ -351,7 +368,7 @@ export const MediaFeedPage: React.FC = () => {
       if (res.data) {
         setPosts((prev) => [res.data, ...prev]);
         setIsCreateModalOpen(false);
-        showToast('پست با موفقیت در رسانه هنرستان منتشر شد');
+        showToast(TOAST_MESSAGES.communication.postCreated);
 
         // Reset form
         setTitle('');

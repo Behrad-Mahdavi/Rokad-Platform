@@ -13,6 +13,7 @@ import {
 } from '../../../utils/jalali';
 import { toast } from '../../../components/ui/toast/toast';
 import { useUndoableMutation } from '../../../lib/hooks/useUndoableMutation';
+import { TOAST_MESSAGES } from '../../../constants/toast-messages';
 import {
   CalendarDays,
   Clock,
@@ -160,22 +161,39 @@ export const EventSinglePage: React.FC = () => {
   };
 
   // Undoable Delete Mutation with 5-second countdown
+  // Deletes on server immediately, then provides 5s window to restore!
   const { execute: executeUndoableDelete } = useUndoableMutation<void>({
-    undoLabel: `رویداد «${event?.title || ''}» حذف شد.`,
+    undoLabel: TOAST_MESSAGES.operations.calendarEventDeleted(event?.title || ''),
     delayMs: 5000,
     optimisticUpdate: () => {
       navigate('/app/events');
-    },
-    revertUpdate: () => {
-      if (id) {
-        navigate(`/app/events/${id}`);
-        toast.info(`رویداد «${event?.title || ''}» بازگردانی شد.`);
-      }
     },
     mutationFn: async () => {
       if (id) {
         await apiClient.delete(`/calendar/events/${id}`);
       }
+    },
+    undoFn: async () => {
+      if (event) {
+        const res = await apiClient.post('/calendar/events', {
+          title: event.title,
+          description: event.description,
+          eventType: event.eventType,
+          startDate: event.startDate,
+          endDate: event.endDate,
+          isAllDay: event.isAllDay,
+          targetAudience: event.targetAudience,
+          location: event.location,
+          coverUrl: event.coverUrl,
+          tags: event.tags,
+        });
+        if (res.data?.id) {
+          navigate(`/app/events/${res.data.id}`);
+        }
+      }
+    },
+    revertUpdate: () => {
+      toast.info(`رویداد «${event?.title || ''}» بازگردانی شد.`);
     },
     onError: (err) => {
       toast.error(err?.response?.data?.message || 'خطا در حذف رویداد');

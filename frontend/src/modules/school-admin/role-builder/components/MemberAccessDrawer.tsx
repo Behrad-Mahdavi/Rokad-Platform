@@ -21,6 +21,7 @@ import { OverrideToggleModal } from './OverrideToggleModal';
 import { toPersianDigits } from '../../../../lib/utils';
 import { toast } from '../../../../components/ui/toast/toast';
 import { useUndoableMutation } from '../../../../lib/hooks/useUndoableMutation';
+import { TOAST_MESSAGES } from '../../../../constants/toast-messages';
 
 interface Props {
   userId: string | null;
@@ -48,7 +49,7 @@ export const MemberAccessDrawer: React.FC<Props> = ({
     targetUserId: string;
     perm: EffectivePermissionItem;
   }>({
-    undoLabel: ({ perm }) => `استثنای مجوز «${perm.labelFa}» حذف شد.`,
+    undoLabel: ({ perm }) => TOAST_MESSAGES.rbac.overrideRemoved(perm.labelFa),
     delayMs: 5000,
     optimisticUpdate: ({ perm }) => {
       setDetail((prev) => {
@@ -69,6 +70,18 @@ export const MemberAccessDrawer: React.FC<Props> = ({
         };
       });
     },
+    mutationFn: async ({ targetUserId, perm }) => {
+      await rbacApi.removeMemberOverride(targetUserId, perm.code);
+    },
+    undoFn: async ({ targetUserId, perm }) => {
+      if (perm.overrideEffect) {
+        await rbacApi.setMemberOverride(targetUserId, {
+          permissionCode: perm.code,
+          effect: perm.overrideEffect,
+          reason: perm.overrideReason || undefined,
+        });
+      }
+    },
     revertUpdate: () => {
       if (userId) {
         rbacApi.getMemberDetail(userId).then((d) => {
@@ -76,9 +89,6 @@ export const MemberAccessDrawer: React.FC<Props> = ({
           toast.info('حذف استثنای مجوز بازگردانده شد.');
         });
       }
-    },
-    mutationFn: async ({ targetUserId, perm }) => {
-      await rbacApi.removeMemberOverride(targetUserId, perm.code);
     },
     onSuccess: () => {
       if (userId) {
@@ -124,9 +134,11 @@ export const MemberAccessDrawer: React.FC<Props> = ({
         reason,
       });
       toast.success(
-        effect === 'GRANT'
-          ? `دسترسی «${selectedPermForOverride.labelFa}» به کاربر اعطا شد.`
-          : `دسترسی «${selectedPermForOverride.labelFa}» از کاربر سلب شد.`
+        TOAST_MESSAGES.rbac.permissionToggled(
+          selectedPermForOverride.labelFa,
+          detail?.fullName || 'کاربر',
+          effect === 'GRANT',
+        ),
       );
       // Refresh detail
       const updated = await rbacApi.getMemberDetail(userId);

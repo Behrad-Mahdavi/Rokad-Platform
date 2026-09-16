@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { toast } from '../../../components/ui/toast/toast';
 import { useUndoableMutation } from '../../../lib/hooks/useUndoableMutation';
+import { TOAST_MESSAGES } from '../../../constants/toast-messages';
 
 export const NoticeboardPage: React.FC = () => {
   const currentUser = useAuthStore((s) => s.user);
@@ -80,11 +81,26 @@ export const NoticeboardPage: React.FC = () => {
   }, []);
 
   // Undoable Delete Mutation for Notices with 5-second countdown
+  // Deletes on server immediately, then provides 5s window to restore!
   const { execute: executeUndoableDeleteNotice } = useUndoableMutation<any>({
-    undoLabel: (notice) => `اطلاعیه «${notice.title}» حذف شد.`,
+    undoLabel: (notice) => TOAST_MESSAGES.operations.noticeDeleted(notice.title),
     delayMs: 5000,
     optimisticUpdate: (notice) => {
       setAnnouncements((prev) => prev.filter((item) => item.id !== notice.id));
+    },
+    mutationFn: async (notice) => {
+      await apiClient.delete(`/calendar/events/${notice.id}`);
+    },
+    undoFn: async (notice) => {
+      await apiClient.post('/calendar/events', {
+        title: notice.title,
+        description: notice.description,
+        type: 'ANNOUNCEMENT',
+        startDate: notice.startDate || new Date().toISOString(),
+        endDate: notice.endDate || new Date(Date.now() + 86400000 * 30).toISOString(),
+        isAllDay: true,
+      });
+      await fetchAnnouncements();
     },
     revertUpdate: (notice) => {
       setAnnouncements((prev) => {
@@ -92,9 +108,6 @@ export const NoticeboardPage: React.FC = () => {
         return [notice, ...prev];
       });
       toast.info(`اطلاعیه «${notice.title}» بازگردانی شد.`);
-    },
-    mutationFn: async (notice) => {
-      await apiClient.delete(`/calendar/events/${notice.id}`);
     },
     onError: (err, notice) => {
       toast.error(err?.response?.data?.message || `خطا در حذف اطلاعیه «${notice.title}»`);
@@ -114,7 +127,7 @@ export const NoticeboardPage: React.FC = () => {
         endDate: new Date(Date.now() + 86400000 * 30).toISOString(),
         isAllDay: true,
       });
-      toast.success(`اطلاعیه «${form.title}» با موفقیت منتشر شد.`);
+      toast.success(TOAST_MESSAGES.operations.noticeCreated(form.title));
       setIsCreateOpen(false);
       setForm({
         title: '',
