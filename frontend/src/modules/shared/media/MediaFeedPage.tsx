@@ -8,6 +8,8 @@ import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { toPersianDigits } from '../../../lib/utils';
+import { toast } from '../../../components/ui/toast/toast';
+import { useUndoableMutation } from '../../../lib/hooks/useUndoableMutation';
 import {
   Heart,
   MessageCircle,
@@ -127,9 +129,6 @@ export const MediaFeedPage: React.FC = () => {
   // Lightbox preview state
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
-  // Toast notification state
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
   const isStaffOrAdmin =
     user?.role === 'SUPER_ADMIN' ||
     user?.role === 'SCHOOL_ADMIN' ||
@@ -137,8 +136,7 @@ export const MediaFeedPage: React.FC = () => {
     user?.role === 'TEACHER';
 
   const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
+    toast.success(msg);
   };
 
   // 1. Fetch Feed
@@ -239,42 +237,71 @@ export const MediaFeedPage: React.FC = () => {
     }
   };
 
-  // Handle Delete Comment
-  const handleDeleteComment = async (postId: string, commentId: string) => {
-    if (!window.confirm('آیا از حذف این نظر اطمینان دارید؟')) return;
-    try {
-      await apiClient.delete(`/media/comments/${commentId}`);
+  // Undoable Delete Mutation for Posts with 5-second countdown
+  const { execute: executeUndoableDeletePost } = useUndoableMutation<MediaPost>({
+    undoLabel: (p) => `پست «${p.title || 'رسانه'}» حذف شد.`,
+    delayMs: 5000,
+    optimisticUpdate: (p) => {
+      setPosts((prev) => prev.filter((item) => item.id !== p.id));
+    },
+    revertUpdate: (p) => {
+      setPosts((prev) => {
+        if (prev.some((item) => item.id === p.id)) return prev;
+        return [p, ...prev];
+      });
+      toast.info(`پست «${p.title || 'رسانه'}» بازگردانی شد.`);
+    },
+    mutationFn: async (p) => {
+      await apiClient.delete(`/media/${p.id}`);
+    },
+    onError: (err, p) => {
+      toast.error(err?.response?.data?.message || `خطا در حذف پست «${p.title || ''}»`);
+    },
+  });
+
+  // Undoable Delete Mutation for Comments with 5-second countdown
+  const { execute: executeUndoableDeleteComment } = useUndoableMutation<{
+    post: MediaPost;
+    comment: MediaComment;
+  }>({
+    undoLabel: 'نظر حذف شد.',
+    delayMs: 5000,
+    optimisticUpdate: ({ post, comment }) => {
       setPosts((prev) =>
         prev.map((p) => {
-          if (p.id === postId) {
+          if (p.id === post.id) {
             return {
               ...p,
-              comments: (p.comments || []).filter((c) => c.id !== commentId),
+              comments: (p.comments || []).filter((c) => c.id !== comment.id),
               commentCount: Math.max(0, p.commentCount - 1),
             };
           }
           return p;
         }),
       );
-      showToast('نظر با موفقیت حذف شد');
-    } catch (err: any) {
-      console.error('Failed to delete comment', err);
-      showToast('خطا در حذف نظر');
-    }
-  };
-
-  // Handle Delete Post
-  const handleDeletePost = async (postId: string) => {
-    if (!window.confirm('آیا از حذف این پست از رسانه هنرستان اطمینان دارید؟')) return;
-    try {
-      await apiClient.delete(`/media/${postId}`);
-      setPosts((prev) => prev.filter((p) => p.id !== postId));
-      showToast('پست با موفقیت حذف گردید');
-    } catch (err: any) {
-      console.error('Failed to delete post', err);
-      showToast('خطا در حذف پست');
-    }
-  };
+    },
+    revertUpdate: ({ post, comment }) => {
+      setPosts((prev) =>
+        prev.map((p) => {
+          if (p.id === post.id) {
+            return {
+              ...p,
+              comments: [...(p.comments || []), comment],
+              commentCount: p.commentCount + 1,
+            };
+          }
+          return p;
+        }),
+      );
+      toast.info('نظر بازگردانی شد.');
+    },
+    mutationFn: async ({ comment }) => {
+      await apiClient.delete(`/media/comments/${comment.id}`);
+    },
+    onError: (err) => {
+      toast.error(err?.response?.data?.message || 'خطا در حذف نظر');
+    },
+  });
 
   // Handle Share Post
   const handleSharePost = (post: MediaPost) => {
@@ -432,13 +459,6 @@ export const MediaFeedPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 left-6 z-50 bg-[#151C28] text-white border border-[#242F42] shadow-[3px_3px_0_#59BBAF] px-4 py-2.5 rounded-xl text-xs font-bold animate-in slide-in-from-bottom-5">
-          {toastMessage}
-        </div>
-      )}
-
       {/* Top Hero Banner */}
       <div className="relative overflow-hidden bg-white dark:bg-[#151C28] bg-gradient-to-l from-primary/15 via-primary/5 to-transparent dark:from-primary/20 dark:via-primary/5 dark:to-transparent p-4 sm:p-6 rounded-2xl border border-primary/30 dark:border-[#242F42] shadow-[2.75px_2.75px_0_#202A5A] dark:shadow-[2.75px_2.75px_0_#59BBAF] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -601,7 +621,7 @@ export const MediaFeedPage: React.FC = () => {
                     )}
                     {(isStaffOrAdmin || post.authorId === user?.id) && (
                       <button
-                        onClick={() => handleDeletePost(post.id)}
+                        onClick={() => executeUndoableDeletePost(post)}
                         className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                         title="حذف پست"
                       >
@@ -803,7 +823,7 @@ export const MediaFeedPage: React.FC = () => {
 
                             {(isStaffOrAdmin || comment.authorId === user?.id) && (
                               <button
-                                onClick={() => handleDeleteComment(post.id, comment.id)}
+                                onClick={() => executeUndoableDeleteComment({ post, comment })}
                                 className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors"
                                 title="حذف نظر"
                               >

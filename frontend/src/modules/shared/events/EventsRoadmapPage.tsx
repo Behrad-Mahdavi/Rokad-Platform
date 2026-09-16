@@ -14,6 +14,8 @@ import {
   formatJalaliDisplay,
   toPersianDigits,
 } from '../../../utils/jalali';
+import { toast } from '../../../components/ui/toast/toast';
+import { useUndoableMutation } from '../../../lib/hooks/useUndoableMutation';
 import {
   CalendarDays,
   Clock,
@@ -249,16 +251,32 @@ export const EventsRoadmapPage: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  // Delete event
-  const handleDeleteEvent = async (id: string, e: React.MouseEvent) => {
+  // Undoable Delete Mutation with 5-second countdown & revert on undo
+  const { execute: executeUndoableDeleteEvent } = useUndoableMutation<SchoolEventItem>({
+    undoLabel: (ev) => `رویداد «${ev.title}» حذف شد.`,
+    delayMs: 5000,
+    optimisticUpdate: (ev) => {
+      setEvents((prev) => prev.filter((item) => item.id !== ev.id));
+    },
+    revertUpdate: (ev) => {
+      setEvents((prev) => {
+        if (prev.some((item) => item.id === ev.id)) return prev;
+        return [ev, ...prev];
+      });
+      toast.info(`رویداد «${ev.title}» بازگردانی شد.`);
+    },
+    mutationFn: async (ev) => {
+      await apiClient.delete(`/calendar/events/${ev.id}`);
+    },
+    onError: (err, ev) => {
+      toast.error(err?.response?.data?.message || `خطا در حذف رویداد «${ev.title}»`);
+    },
+  });
+
+  // Delete event handler
+  const handleDeleteEvent = (ev: SchoolEventItem, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm('آیا از حذف این رویداد اطمینان دارید؟')) return;
-    try {
-      await apiClient.delete(`/calendar/events/${id}`);
-      setEvents((prev) => prev.filter((ev) => ev.id !== id));
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'خطا در حذف رویداد');
-    }
+    executeUndoableDeleteEvent(ev);
   };
 
   // Submit Modal
@@ -300,15 +318,19 @@ export const EventsRoadmapPage: React.FC = () => {
 
       if (isEditing && editingId) {
         await apiClient.patch(`/calendar/events/${editingId}`, payload);
+        toast.success(`رویداد «${form.title}» با موفقیت ویرایش شد.`);
       } else {
         await apiClient.post('/calendar/events', payload);
+        toast.success(`رویداد «${form.title}» با موفقیت ثبت شد.`);
       }
 
       setIsModalOpen(false);
       await fetchEvents();
     } catch (err: any) {
       console.error('Event submit error', err);
-      setFormError(err?.response?.data?.message || 'خطا در ذخیره‌سازی رویداد');
+      const msg = err?.response?.data?.message || 'خطا در ذخیره‌سازی رویداد';
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -551,7 +573,7 @@ export const EventsRoadmapPage: React.FC = () => {
                                     </button>
                                     <button
                                       title="حذف رویداد"
-                                      onClick={(e) => handleDeleteEvent(ev.id, e)}
+                                      onClick={(e) => handleDeleteEvent(ev, e)}
                                       className="rounded-lg p-1.5 text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/50"
                                     >
                                       <Trash2 className="w-4 h-4" />

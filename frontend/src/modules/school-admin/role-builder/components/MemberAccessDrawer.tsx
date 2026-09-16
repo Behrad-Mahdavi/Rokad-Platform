@@ -19,6 +19,8 @@ import {
 } from '../types/rbac.types';
 import { OverrideToggleModal } from './OverrideToggleModal';
 import { toPersianDigits } from '../../../../lib/utils';
+import { toast } from '../../../../components/ui/toast/toast';
+import { useUndoableMutation } from '../../../../lib/hooks/useUndoableMutation';
 
 interface Props {
   userId: string | null;
@@ -41,6 +43,54 @@ export const MemberAccessDrawer: React.FC<Props> = ({
   const [selectedPermForOverride, setSelectedPermForOverride] =
     useState<EffectivePermissionItem | null>(null);
 
+  // Undoable Mutation for removing member override with 5-second countdown
+  const { execute: executeUndoableRemoveOverride } = useUndoableMutation<{
+    targetUserId: string;
+    perm: EffectivePermissionItem;
+  }>({
+    undoLabel: ({ perm }) => `استثنای مجوز «${perm.labelFa}» حذف شد.`,
+    delayMs: 5000,
+    optimisticUpdate: ({ perm }) => {
+      setDetail((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          permissions: prev.permissions.map((p) =>
+            p.code === perm.code
+              ? {
+                  ...p,
+                  source: p.grantingRoles.length > 0 ? 'SCHOOL_ROLE' : 'NONE',
+                  isEffective: p.grantingRoles.length > 0,
+                  overrideEffect: null,
+                  overrideReason: null,
+                }
+              : p,
+          ),
+        };
+      });
+    },
+    revertUpdate: () => {
+      if (userId) {
+        rbacApi.getMemberDetail(userId).then((d) => {
+          setDetail(d);
+          toast.info('حذف استثنای مجوز بازگردانده شد.');
+        });
+      }
+    },
+    mutationFn: async ({ targetUserId, perm }) => {
+      await rbacApi.removeMemberOverride(targetUserId, perm.code);
+    },
+    onSuccess: () => {
+      if (userId) {
+        rbacApi.getMemberDetail(userId).then(setDetail);
+        onRefreshMembers();
+      }
+    },
+    onError: (err) => {
+      toast.error(err?.response?.data?.message || 'خطا در حذف استثنای دسترسی');
+    },
+  });
+
   useEffect(() => {
     if (!userId) {
       setDetail(null);
@@ -54,7 +104,9 @@ export const MemberAccessDrawer: React.FC<Props> = ({
         const data = await rbacApi.getMemberDetail(userId);
         setDetail(data);
       } catch (err: any) {
-        setError(err?.response?.data?.message || err?.message || 'خطا در بارگذاری جزئیات دسترسی');
+        const msg = err?.response?.data?.message || err?.message || 'خطا در بارگذاری جزئیات دسترسی';
+        setError(msg);
+        toast.error(msg);
       } finally {
         setLoading(false);
       }
@@ -63,29 +115,38 @@ export const MemberAccessDrawer: React.FC<Props> = ({
     fetchDetail();
   }, [userId]);
 
-  if (!userId) return null;
-
   const handleSaveOverride = async (effect: 'GRANT' | 'REVOKE', reason?: string) => {
-    if (!selectedPermForOverride) return;
-    await rbacApi.setMemberOverride(userId, {
-      permissionCode: selectedPermForOverride.code,
-      effect,
-      reason,
-    });
-    // Refresh detail
-    const updated = await rbacApi.getMemberDetail(userId);
-    setDetail(updated);
-    onRefreshMembers();
+    if (!userId || !selectedPermForOverride) return;
+    try {
+      await rbacApi.setMemberOverride(userId, {
+        permissionCode: selectedPermForOverride.code,
+        effect,
+        reason,
+      });
+      toast.success(
+        effect === 'GRANT'
+          ? `دسترسی «${selectedPermForOverride.labelFa}» به کاربر اعطا شد.`
+          : `دسترسی «${selectedPermForOverride.labelFa}» از کاربر سلب شد.`
+      );
+      // Refresh detail
+      const updated = await rbacApi.getMemberDetail(userId);
+      setDetail(updated);
+      onRefreshMembers();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'خطا در ثبت استثنای مجوز');
+      throw err;
+    }
   };
 
   const handleRemoveOverride = async () => {
-    if (!selectedPermForOverride) return;
-    await rbacApi.removeMemberOverride(userId, selectedPermForOverride.code);
-    // Refresh detail
-    const updated = await rbacApi.getMemberDetail(userId);
-    setDetail(updated);
-    onRefreshMembers();
+    if (!userId || !selectedPermForOverride) return;
+    executeUndoableRemoveOverride({
+      targetUserId: userId,
+      perm: selectedPermForOverride,
+    });
   };
+
+  if (!userId) return null;
 
   const filteredPermissions = (detail?.permissions || []).filter((p) => {
     const matchesSearch =
@@ -230,13 +291,26 @@ export const MemberAccessDrawer: React.FC<Props> = ({
                       </p>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setSelectedPermForOverride(item)}
-                      className="px-2 py-1 text-[11px] font-bold rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-primary hover:text-white hover:border-primary transition-colors shrink-0"
-                    >
-                      اورراید
-                    </button>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {item.overrideEffect && (
+                        <button
+                          type="button"
+                          onClick={() => executeUndoableRemoveOverride({ targetUserId: userId, perm: item })}
+                          title="حذف استثنا و بازگشت به حالت نقش پیش‌فرض"
+                          className="px-2 py-1 text-[11px] font-bold rounded-lg border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors flex items-center gap-1"
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                          <span>لغو اورراید</span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPermForOverride(item)}
+                        className="px-2 py-1 text-[11px] font-bold rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-primary hover:text-white hover:border-primary transition-colors shrink-0"
+                      >
+                        {item.overrideEffect ? 'ویرایش' : 'اورراید'}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Source and Override Badges */}

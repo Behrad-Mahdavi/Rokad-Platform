@@ -97,6 +97,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MiB
         importScripts: ['/push-worker.js'],
         globPatterns: ['**/*.{js,css,html,svg,png,ttf,woff,woff2,webmanifest}'],
         navigateFallback: '/index.html',

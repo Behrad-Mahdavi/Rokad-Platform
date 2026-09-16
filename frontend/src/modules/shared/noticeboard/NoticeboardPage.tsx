@@ -17,7 +17,10 @@ import {
   AlertCircle,
   FileText,
   Users,
+  Trash2,
 } from 'lucide-react';
+import { toast } from '../../../components/ui/toast/toast';
+import { useUndoableMutation } from '../../../lib/hooks/useUndoableMutation';
 
 export const NoticeboardPage: React.FC = () => {
   const currentUser = useAuthStore((s) => s.user);
@@ -76,6 +79,28 @@ export const NoticeboardPage: React.FC = () => {
     fetchAnnouncements();
   }, []);
 
+  // Undoable Delete Mutation for Notices with 5-second countdown
+  const { execute: executeUndoableDeleteNotice } = useUndoableMutation<any>({
+    undoLabel: (notice) => `اطلاعیه «${notice.title}» حذف شد.`,
+    delayMs: 5000,
+    optimisticUpdate: (notice) => {
+      setAnnouncements((prev) => prev.filter((item) => item.id !== notice.id));
+    },
+    revertUpdate: (notice) => {
+      setAnnouncements((prev) => {
+        if (prev.some((item) => item.id === notice.id)) return prev;
+        return [notice, ...prev];
+      });
+      toast.info(`اطلاعیه «${notice.title}» بازگردانی شد.`);
+    },
+    mutationFn: async (notice) => {
+      await apiClient.delete(`/calendar/events/${notice.id}`);
+    },
+    onError: (err, notice) => {
+      toast.error(err?.response?.data?.message || `خطا در حذف اطلاعیه «${notice.title}»`);
+    },
+  });
+
   const handleCreateNotice = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -89,10 +114,20 @@ export const NoticeboardPage: React.FC = () => {
         endDate: new Date(Date.now() + 86400000 * 30).toISOString(),
         isAllDay: true,
       });
+      toast.success(`اطلاعیه «${form.title}» با موفقیت منتشر شد.`);
       setIsCreateOpen(false);
+      setForm({
+        title: '',
+        description: '',
+        audience: 'ALL',
+        isPinned: false,
+        priority: 'NORMAL',
+      });
       fetchAnnouncements();
     } catch (err: any) {
-      setError(err.message || 'خطا در ثبت اطلاعیه.');
+      const msg = err?.response?.data?.message || err.message || 'خطا در ثبت اطلاعیه.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -191,6 +226,17 @@ export const NoticeboardPage: React.FC = () => {
                   <h3 className="font-bold text-base text-ink-darker">{notice.title}</h3>
                   <p className="text-xs text-gray-600 leading-relaxed">{notice.description}</p>
                 </div>
+
+                {isStaffOrAdmin && (
+                  <button
+                    type="button"
+                    title="حذف اطلاعیه"
+                    onClick={() => executeUndoableDeleteNotice(notice)}
+                    className="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors shrink-0"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
               </div>
 
               <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">

@@ -11,6 +11,8 @@ import {
   formatJalaliDisplay,
   toPersianDigits,
 } from '../../../utils/jalali';
+import { toast } from '../../../components/ui/toast/toast';
+import { useUndoableMutation } from '../../../lib/hooks/useUndoableMutation';
 import {
   CalendarDays,
   Clock,
@@ -157,15 +159,33 @@ export const EventSinglePage: React.FC = () => {
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${sIso}/${eIso}&details=${details}&location=${location}`;
   };
 
-  // Delete event
-  const handleDelete = async () => {
-    if (!id || !window.confirm('آیا از حذف این رویداد اطمینان دارید؟ این عملیات غیرقابل بازگشت است.')) return;
-    try {
-      await apiClient.delete(`/calendar/events/${id}`);
+  // Undoable Delete Mutation with 5-second countdown
+  const { execute: executeUndoableDelete } = useUndoableMutation<void>({
+    undoLabel: `رویداد «${event?.title || ''}» حذف شد.`,
+    delayMs: 5000,
+    optimisticUpdate: () => {
       navigate('/app/events');
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'خطا در حذف رویداد');
-    }
+    },
+    revertUpdate: () => {
+      if (id) {
+        navigate(`/app/events/${id}`);
+        toast.info(`رویداد «${event?.title || ''}» بازگردانی شد.`);
+      }
+    },
+    mutationFn: async () => {
+      if (id) {
+        await apiClient.delete(`/calendar/events/${id}`);
+      }
+    },
+    onError: (err) => {
+      toast.error(err?.response?.data?.message || 'خطا در حذف رویداد');
+    },
+  });
+
+  // Delete event
+  const handleDelete = () => {
+    if (!id || !event) return;
+    executeUndoableDelete();
   };
 
   // Open Edit Modal
