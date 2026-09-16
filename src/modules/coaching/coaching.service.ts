@@ -300,12 +300,26 @@ export class CoachingService {
     const excused = pastSessions.filter((s) => s.attendanceStatus === 'EXCUSED').length;
     const attendanceRate = totalPast > 0 ? Math.round((attended / totalPast) * 100) : 100;
 
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { name: true, slug: true, phone: true, address: true, logoUrl: true },
+    });
+
     return {
+      tenant: {
+        name: tenant?.name || 'هنرستان هوشمند رُکاد',
+        slug: tenant?.slug || 'rokad-school',
+        phone: tenant?.phone || '',
+        address: tenant?.address || '',
+        logoUrl: tenant?.logoUrl || '/logo.svg',
+      },
       student: {
         id: student.id,
         firstName: student.firstName,
         lastName: student.lastName,
-        studentCode: student.studentProfile?.studentCode,
+        studentCode: student.studentProfile?.studentCode || '---',
+        nationalCode: student.studentProfile?.nationalCode || student.nationalId || '---',
+        fatherName: student.studentProfile?.fatherName || '---',
         classroom: student.studentProfile?.enrollments[0]?.classroom?.name || 'کلاس عمومی',
         phone: student.phone,
       },
