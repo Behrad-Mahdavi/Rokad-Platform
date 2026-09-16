@@ -2,6 +2,7 @@ import {
   getTenantPasswordPrefix,
   normalizeNationalCode,
   generateUnifiedCredentials,
+  deriveStudentCode,
 } from './credential.util';
 
 describe('Unified Credential Generation System (سامانه ورود یکپارچه)', () => {
@@ -90,6 +91,22 @@ describe('Unified Credential Generation System (سامانه ورود یکپار
       expect(creds.username).toBe('0012345678');
       expect(creds.defaultPassword).toBe('b0012345678');
       expect(creds.finalPassword).toBe('MyCustomPass123!');
+    });
+  });
+
+  describe('Student Code Derivation (شماره دانش‌آموزی = کد ملی بدون صفر)', () => {
+    it('strips leading zeros from 10-digit national code', () => {
+      expect(deriveStudentCode('0012345678')).toBe('12345678');
+      expect(deriveStudentCode('۰۱۲۳۴۵۶۷۸۹')).toBe('123456789');
+      expect(deriveStudentCode('0923456789')).toBe('923456789');
+    });
+
+    it('keeps national code unchanged if there are no leading zeros', () => {
+      expect(deriveStudentCode('1234567890')).toBe('1234567890');
+    });
+
+    it('falls back to phone number without leading zero if national code is absent', () => {
+      expect(deriveStudentCode(null, '09123456789')).toBe('9123456789');
     });
   });
 });

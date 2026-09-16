@@ -1004,12 +1004,13 @@ async function main() {
   const studentProfile = await prisma.studentProfile.upsert({
     where: { userId: studentUser.id },
     update: {
+      studentCode: '12345678',
       nationalCode: '0012345678',
     },
     create: {
       tenantId: boysTenant.id,
       userId: studentUser.id,
-      studentCode: 'STD-1404-001',
+      studentCode: '12345678',
       nationalCode: '0012345678',
       fatherName: 'حسین',
       birthDate: new Date('2009-04-10'),
@@ -1065,12 +1066,13 @@ async function main() {
   await prisma.studentProfile.upsert({
     where: { userId: girlsStudentUser.id },
     update: {
+      studentCode: '23456789',
       nationalCode: '0023456789',
     },
     create: {
       tenantId: girlsTenant.id,
       userId: girlsStudentUser.id,
-      studentCode: 'G-STD-1404-002',
+      studentCode: '23456789',
       nationalCode: '0023456789',
       fatherName: 'محمدرضا',
       birthDate: new Date('2009-06-15'),
@@ -2021,12 +2023,13 @@ async function main() {
   await prisma.studentProfile.upsert({
     where: { userId: collegeStudentUser.id },
     update: {
+      studentCode: '34567890',
       nationalCode: '0034567890',
     },
     create: {
       tenantId: collegeTenant.id,
       userId: collegeStudentUser.id,
-      studentCode: 'COL-STD-1404-001',
+      studentCode: '34567890',
       nationalCode: '0034567890',
       fatherName: 'سعید',
       birthDate: new Date('2005-08-20'),

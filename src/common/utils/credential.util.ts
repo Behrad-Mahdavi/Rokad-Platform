@@ -100,3 +100,31 @@ export function generateUnifiedCredentials(params: {
     prefix,
   };
 }
+
+/**
+ * تولید شماره دانش‌آموزی استاندارد بر مبنای کد ملی بدون صفر:
+ * طبق استاندارد آموزش و پرورش و سامانه‌های سیدا/سناد، شماره دانش‌آموزی معادل کد ملی بدون صفر اول (صفرهای سمت چپ) است.
+ * مثال: 0012345678 -> 12345678
+ * مثال: 0923456789 -> 923456789
+ * در صورت عدم وجود کد ملی، از شماره همراه بدون صفر یا عدد تصادفی استفاده می‌شود.
+ */
+export function deriveStudentCode(
+  nationalCode?: string | number | null,
+  fallbackPhone?: string | number | null,
+): string {
+  const cleanNationalCode = normalizeNationalCode(nationalCode);
+  if (cleanNationalCode) {
+    const withoutLeadingZeros = cleanNationalCode.replace(/^0+/, '');
+    return withoutLeadingZeros || cleanNationalCode;
+  }
+
+  const cleanPhone = normalizePersianDigits(fallbackPhone)
+    .replace(/\D/g, '')
+    .replace(/^0+/, '')
+    .trim();
+  if (cleanPhone) {
+    return cleanPhone;
+  }
+
+  return String(Math.floor(10000000 + Math.random() * 90000000));
+}

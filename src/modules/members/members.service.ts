@@ -17,6 +17,7 @@ import { Role } from '../../common/constants';
 import {
   generateUnifiedCredentials,
   normalizeNationalCode,
+  deriveStudentCode,
 } from '../../common/utils/credential.util';
 
 @Injectable()
@@ -60,9 +61,8 @@ export class MembersService {
         });
 
         const studentCode =
-          item['شماره دانش آموزی']?.toString() ||
-          creds.nationalId ||
-          `STD-${Math.floor(100000 + Math.random() * 900000)}`;
+          item['شماره دانش آموزی']?.toString()?.trim() ||
+          deriveStudentCode(rawNationalCode || creds.nationalId, phone);
 
         const nationalCode = creds.nationalId || undefined;
         const firstName = item['نام']?.toString() || 'دانش‌آموز';
@@ -228,10 +228,9 @@ export class MembersService {
     });
 
     const studentCode =
-      dto.studentCode ||
-      dto.studentNumber ||
-      creds.nationalId ||
-      `STD-${Math.floor(100000 + Math.random() * 900000)}`;
+      dto.studentCode?.trim() ||
+      dto.studentNumber?.trim() ||
+      deriveStudentCode(dto.nationalCode || creds.nationalId, dto.phone);
 
     const existingCode = await this.prisma.studentProfile.findFirst({
       where: {

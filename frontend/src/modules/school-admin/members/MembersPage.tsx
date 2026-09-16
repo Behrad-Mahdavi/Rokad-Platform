@@ -77,7 +77,7 @@ export const MembersPage: React.FC = () => {
         'کد ملی': '0012345678',
         'نام': 'امیرعلی',
         'نام خانوادگی': 'صادقی',
-        'شماره دانش آموزی': '40310101',
+        'شماره دانش آموزی': '12345678',
         'شماره کلاس': '۱۰۱',
         'موبایل دانش آموز': '09121112233',
         'نام پدر': 'رضا',
@@ -88,7 +88,7 @@ export const MembersPage: React.FC = () => {
         'کد ملی': '0012345679',
         'نام': 'سارا',
         'نام خانوادگی': 'محمدی',
-        'شماره دانش آموزی': '40310102',
+        'شماره دانش آموزی': '12345679',
         'شماره کلاس': '۱۰۱',
         'موبایل دانش آموز': '09122223344',
         'نام پدر': 'علی',
@@ -194,13 +194,18 @@ export const MembersPage: React.FC = () => {
     setIsSubmitting(true);
     setError(null);
     try {
+      const derivedCode =
+        studentForm.studentNumber.trim() ||
+        studentForm.nationalCode.replace(/\D/g, '').replace(/^0+/, '') ||
+        undefined;
+
       const payload = {
         firstName: studentForm.firstName.trim(),
         lastName: studentForm.lastName.trim(),
         phone: studentForm.phone.trim(),
         nationalCode: studentForm.nationalCode.trim() || undefined,
-        studentCode: studentForm.studentNumber.trim() || undefined,
-        studentNumber: studentForm.studentNumber.trim() || undefined,
+        studentCode: derivedCode,
+        studentNumber: derivedCode,
         classroomId: studentForm.classroomId || undefined,
         password: studentForm.password || undefined,
       };
@@ -543,12 +548,20 @@ export const MembersPage: React.FC = () => {
               label="کد ملی (نام کاربری سامانه ورود یکپارچه)"
               placeholder="مثال: 0012345678"
               value={studentForm.nationalCode}
-              onChange={(e) => setStudentForm({ ...studentForm, nationalCode: e.target.value })}
+              onChange={(e) => {
+                const nat = e.target.value;
+                const derived = nat.replace(/\D/g, '').replace(/^0+/, '');
+                setStudentForm((prev) => ({
+                  ...prev,
+                  nationalCode: nat,
+                  studentNumber: derived,
+                }));
+              }}
               required
             />
             <Input
-              label="شماره دانش‌آموزی"
-              placeholder="مثال: STU-1404-001"
+              label="شماره دانش‌آموزی (کد ملی بدون صفر)"
+              placeholder="مثال: 12345678 (محاسبه خودکار)"
               value={studentForm.studentNumber}
               onChange={(e) => setStudentForm({ ...studentForm, studentNumber: e.target.value })}
               required

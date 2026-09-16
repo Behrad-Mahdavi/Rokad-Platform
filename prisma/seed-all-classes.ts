@@ -218,42 +218,42 @@ async function main() {
 
   const studentDataList = [
     // Class 101
-    { firstName: 'امیرعلی', lastName: 'صادقی', phone: '09124000001', code: 'STD-101-01', national: '0012345678', classIndex: 0 },
-    { firstName: 'پارسا', lastName: 'مرادی', phone: '09124000002', code: 'STD-101-02', national: '0012345679', classIndex: 0 },
-    { firstName: 'محمدطاها', lastName: 'کریمی', phone: '09124000003', code: 'STD-101-03', national: '0012345680', classIndex: 0 },
-    { firstName: 'علی‌اصغر', lastName: 'رضایی', phone: '09124000004', code: 'STD-101-04', national: '0012345681', classIndex: 0 },
-    { firstName: 'ایلیا', lastName: 'ناصری', phone: '09124000005', code: 'STD-101-05', national: '0012345682', classIndex: 0 },
-    { firstName: 'سامیار', lastName: 'حسینی', phone: '09124000006', code: 'STD-101-06', national: '0012345683', classIndex: 0 },
+    { firstName: 'امیرعلی', lastName: 'صادقی', phone: '09124000001', code: '12345678', national: '0012345678', classIndex: 0 },
+    { firstName: 'پارسا', lastName: 'مرادی', phone: '09124000002', code: '12345679', national: '0012345679', classIndex: 0 },
+    { firstName: 'محمدطاها', lastName: 'کریمی', phone: '09124000003', code: '12345680', national: '0012345680', classIndex: 0 },
+    { firstName: 'علی‌اصغر', lastName: 'رضایی', phone: '09124000004', code: '12345681', national: '0012345681', classIndex: 0 },
+    { firstName: 'ایلیا', lastName: 'ناصری', phone: '09124000005', code: '12345682', national: '0012345682', classIndex: 0 },
+    { firstName: 'سامیار', lastName: 'حسینی', phone: '09124000006', code: '12345683', national: '0012345683', classIndex: 0 },
 
     // Class 102
-    { firstName: 'علیرضا', lastName: 'قاسمی', phone: '09124000007', code: 'STD-102-01', national: '0012345684', classIndex: 1 },
-    { firstName: 'مهدی', lastName: 'حیدری', phone: '09124000008', code: 'STD-102-02', national: '0012345685', classIndex: 1 },
-    { firstName: 'یونس', lastName: 'اکبری', phone: '09124000009', code: 'STD-102-03', national: '0012345686', classIndex: 1 },
-    { firstName: 'برسام', lastName: 'زمانی', phone: '09124000010', code: 'STD-102-04', national: '0012345687', classIndex: 1 },
-    { firstName: 'امیررضا', lastName: 'ابراهیمی', phone: '09124000011', code: 'STD-102-05', national: '0012345688', classIndex: 1 },
+    { firstName: 'علیرضا', lastName: 'قاسمی', phone: '09124000007', code: '12345684', national: '0012345684', classIndex: 1 },
+    { firstName: 'مهدی', lastName: 'حیدری', phone: '09124000008', code: '12345685', national: '0012345685', classIndex: 1 },
+    { firstName: 'یونس', lastName: 'اکبری', phone: '09124000009', code: '12345686', national: '0012345686', classIndex: 1 },
+    { firstName: 'برسام', lastName: 'زمانی', phone: '09124000010', code: '12345687', national: '0012345687', classIndex: 1 },
+    { firstName: 'امیررضا', lastName: 'ابراهیمی', phone: '09124000011', code: '12345688', national: '0012345688', classIndex: 1 },
 
     // Class 103
-    { firstName: 'طاها', lastName: 'سعیدی', phone: '09124000012', code: 'STD-103-01', national: '0012345689', classIndex: 2 },
-    { firstName: 'متین', lastName: 'رستمی', phone: '09124000013', code: 'STD-103-02', national: '0012345690', classIndex: 2 },
-    { firstName: 'دانیال', lastName: 'شریفی', phone: '09124000014', code: 'STD-103-03', national: '0012345691', classIndex: 2 },
-    { firstName: 'پرهام', lastName: 'باقری', phone: '09124000015', code: 'STD-103-04', national: '0012345692', classIndex: 2 },
+    { firstName: 'طاها', lastName: 'سعیدی', phone: '09124000012', code: '12345689', national: '0012345689', classIndex: 2 },
+    { firstName: 'متین', lastName: 'رستمی', phone: '09124000013', code: '12345690', national: '0012345690', classIndex: 2 },
+    { firstName: 'دانیال', lastName: 'شریفی', phone: '09124000014', code: '12345691', national: '0012345691', classIndex: 2 },
+    { firstName: 'پرهام', lastName: 'باقری', phone: '09124000015', code: '12345692', national: '0012345692', classIndex: 2 },
 
     // Class 201 (Grade 11)
-    { firstName: 'کوروش', lastName: 'معتمدی', phone: '09124000016', code: 'STD-201-01', national: '0012345693', classIndex: 3 },
-    { firstName: 'آرتین', lastName: 'جعفری', phone: '09124000017', code: 'STD-201-02', national: '0012345694', classIndex: 3 },
-    { firstName: 'رهام', lastName: 'کیانی', phone: '09124000018', code: 'STD-201-03', national: '0012345695', classIndex: 3 },
-    { firstName: 'کیان', lastName: 'خسروی', phone: '09124000019', code: 'STD-201-04', national: '0012345696', classIndex: 3 },
+    { firstName: 'کوروش', lastName: 'معتمدی', phone: '09124000016', code: '12345693', national: '0012345693', classIndex: 3 },
+    { firstName: 'آرتین', lastName: 'جعفری', phone: '09124000017', code: '12345694', national: '0012345694', classIndex: 3 },
+    { firstName: 'رهام', lastName: 'کیانی', phone: '09124000018', code: '12345695', national: '0012345695', classIndex: 3 },
+    { firstName: 'کیان', lastName: 'خسروی', phone: '09124000019', code: '12345696', national: '0012345696', classIndex: 3 },
 
     // Class 202 (Grade 11)
-    { firstName: 'مانی', lastName: 'نیک‌بین', phone: '09124000020', code: 'STD-202-01', national: '0012345697', classIndex: 4 },
-    { firstName: 'شایان', lastName: 'مقصودی', phone: '09124000021', code: 'STD-202-02', national: '0012345698', classIndex: 4 },
-    { firstName: 'سپهر', lastName: 'کاظمیان', phone: '09124000022', code: 'STD-202-03', national: '0012345699', classIndex: 4 },
+    { firstName: 'مانی', lastName: 'نیک‌بین', phone: '09124000020', code: '12345697', national: '0012345697', classIndex: 4 },
+    { firstName: 'شایان', lastName: 'مقصودی', phone: '09124000021', code: '12345698', national: '0012345698', classIndex: 4 },
+    { firstName: 'سپهر', lastName: 'کاظمیان', phone: '09124000022', code: '12345699', national: '0012345699', classIndex: 4 },
 
     // Class 301 (Grade 12)
-    { firstName: 'سینا', lastName: 'موسوی', phone: '09124000023', code: 'STD-301-01', national: '0012345700', classIndex: 5 },
-    { firstName: 'فرزاد', lastName: 'بهرامی', phone: '09124000024', code: 'STD-301-02', national: '0012345701', classIndex: 5 },
-    { firstName: 'آرمین', lastName: 'نوری', phone: '09124000025', code: 'STD-301-03', national: '0012345702', classIndex: 5 },
-    { firstName: 'نوید', lastName: 'افشار', phone: '09124000026', code: 'STD-301-04', national: '0012345703', classIndex: 5 },
+    { firstName: 'سینا', lastName: 'موسوی', phone: '09124000023', code: '12345700', national: '0012345700', classIndex: 5 },
+    { firstName: 'فرزاد', lastName: 'بهرامی', phone: '09124000024', code: '12345701', national: '0012345701', classIndex: 5 },
+    { firstName: 'آرمین', lastName: 'نوری', phone: '09124000025', code: '12345702', national: '0012345702', classIndex: 5 },
+    { firstName: 'نوید', lastName: 'افشار', phone: '09124000026', code: '12345703', national: '0012345703', classIndex: 5 },
   ];
 
   const allStudentProfiles: { student: any; classroom: any; index: number }[] = [];

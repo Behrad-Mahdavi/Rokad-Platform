@@ -32,12 +32,12 @@ export class CreateStudentDto {
   @IsNotEmpty()
   phone: string;
 
-  @ApiPropertyOptional({ description: 'شماره دانش‌آموزی یکتا', example: 'STD-1404-001' })
+  @ApiPropertyOptional({ description: 'شماره دانش‌آموزی یکتا (معادل کد ملی بدون صفر)', example: '12345678' })
   @IsString()
   @IsOptional()
   studentCode?: string;
 
-  @ApiPropertyOptional({ description: 'شماره دانش‌آموزی (نام دیگر)' })
+  @ApiPropertyOptional({ description: 'شماره دانش‌آموزی (معادل کد ملی بدون صفر)' })
   @IsString()
   @IsOptional()
   studentNumber?: string;

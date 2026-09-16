@@ -362,7 +362,9 @@ describe('Rokad Multi-Tenant Platform — Phase 2 Core ERP & Structure Tests', (
         .expect(200);
 
       expect(res.body.success).toBe(true);
-      const hasBoysStudent = res.body.data.some((s: any) => s.studentCode === 'STD-1404-001');
+      const hasBoysStudent = res.body.data.some(
+        (s: any) => s.studentCode === '12345678' || s.studentCode === 'STD-1404-001',
+      );
       expect(hasBoysStudent).toBe(false);
     });
   });
