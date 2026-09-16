@@ -250,14 +250,7 @@ export const MediaFeedPage: React.FC = () => {
       await apiClient.delete(`/media/${p.id}`);
     },
     undoFn: async (p) => {
-      await apiClient.post('/media', {
-        title: p.title,
-        content: p.content,
-        postType: p.postType,
-        mediaUrls: p.mediaUrls,
-        isPinned: p.isPinned,
-        allowComments: p.allowComments,
-      });
+      await apiClient.patch(`/media/${p.id}/restore`);
       await fetchFeed();
     },
     revertUpdate: (p) => {
@@ -297,8 +290,8 @@ export const MediaFeedPage: React.FC = () => {
     mutationFn: async ({ comment }) => {
       await apiClient.delete(`/media/comments/${comment.id}`);
     },
-    undoFn: async ({ post, comment }) => {
-      await apiClient.post(`/media/${post.id}/comments`, { content: comment.content });
+    undoFn: async ({ comment }) => {
+      await apiClient.patch(`/media/comments/${comment.id}/restore`);
     },
     revertUpdate: ({ post, comment }) => {
       setPosts((prev) =>

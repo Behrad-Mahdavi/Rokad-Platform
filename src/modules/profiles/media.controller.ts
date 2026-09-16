@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
@@ -106,6 +107,20 @@ export class MediaController {
     return this.profilesService.deleteComment(effectiveTenantId, commentId, userId, userRole);
   }
 
+  @Patch('comments/:commentId/restore')
+  @ApiOperation({ summary: 'بازگردانی نظر حذف‌شده (Restore)' })
+  async restoreComment(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('commentId') commentId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    if (!effectiveTenantId) {
+      throw new ForbiddenException('کانتکست شعبه هنرستان مشخص نیست');
+    }
+    return this.profilesService.restoreBlogComment(effectiveTenantId, commentId);
+  }
+
   @Delete(':id')
   @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF, Role.COACH)
   @ApiOperation({ summary: 'حذف پست رسانه' })
@@ -121,5 +136,20 @@ export class MediaController {
       throw new ForbiddenException('کانتکست شعبه هنرستان مشخص نیست');
     }
     return this.profilesService.deleteBlogPost(effectiveTenantId, postId, userId, userRole);
+  }
+
+  @Patch(':id/restore')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF, Role.COACH)
+  @ApiOperation({ summary: 'بازگردانی پست رسانه حذف‌شده (Restore)' })
+  async restoreMediaPost(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') postId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    if (!effectiveTenantId) {
+      throw new ForbiddenException('کانتکست شعبه هنرستان مشخص نیست');
+    }
+    return this.profilesService.restoreBlogPost(effectiveTenantId, postId);
   }
 }

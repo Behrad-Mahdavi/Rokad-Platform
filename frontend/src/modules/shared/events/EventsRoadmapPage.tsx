@@ -264,18 +264,7 @@ export const EventsRoadmapPage: React.FC = () => {
       await apiClient.delete(`/calendar/events/${ev.id}`);
     },
     undoFn: async (ev) => {
-      await apiClient.post('/calendar/events', {
-        title: ev.title,
-        description: ev.description,
-        eventType: ev.eventType,
-        startDate: ev.startDate,
-        endDate: ev.endDate,
-        isAllDay: ev.isAllDay,
-        targetAudience: ev.targetAudience,
-        location: ev.location,
-        coverUrl: ev.coverUrl,
-        tags: ev.tags,
-      });
+      await apiClient.patch(`/calendar/events/${ev.id}/restore`);
       await fetchEvents();
     },
     revertUpdate: (ev) => {

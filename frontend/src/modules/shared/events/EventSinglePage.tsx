@@ -174,22 +174,9 @@ export const EventSinglePage: React.FC = () => {
       }
     },
     undoFn: async () => {
-      if (event) {
-        const res = await apiClient.post('/calendar/events', {
-          title: event.title,
-          description: event.description,
-          eventType: event.eventType,
-          startDate: event.startDate,
-          endDate: event.endDate,
-          isAllDay: event.isAllDay,
-          targetAudience: event.targetAudience,
-          location: event.location,
-          coverUrl: event.coverUrl,
-          tags: event.tags,
-        });
-        if (res.data?.id) {
-          navigate(`/app/events/${res.data.id}`);
-        }
+      if (id) {
+        await apiClient.patch(`/calendar/events/${id}/restore`);
+        navigate(`/app/events/${id}`);
       }
     },
     revertUpdate: () => {

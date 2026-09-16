@@ -74,13 +74,7 @@ export const MemberAccessDrawer: React.FC<Props> = ({
       await rbacApi.removeMemberOverride(targetUserId, perm.code);
     },
     undoFn: async ({ targetUserId, perm }) => {
-      if (perm.overrideEffect) {
-        await rbacApi.setMemberOverride(targetUserId, {
-          permissionCode: perm.code,
-          effect: perm.overrideEffect,
-          reason: perm.overrideReason || undefined,
-        });
-      }
+      await rbacApi.restoreMemberOverride(targetUserId, perm.code);
     },
     revertUpdate: () => {
       if (userId) {

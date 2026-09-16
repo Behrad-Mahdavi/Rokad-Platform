@@ -110,6 +110,23 @@ export class RbacController {
     return this.rbacService.deleteRole(effectiveTenantId, adminId, roleId);
   }
 
+  @Patch('roles/:id/restore')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @RequirePermissions(AppPermission.RBAC_MANAGE)
+  @ApiOperation({ summary: 'بازگردانی نقش سازمانی حذف‌شده (Restore)' })
+  async restoreSchoolRole(
+    @CurrentUser('id') adminId: string,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') roleId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    if (!effectiveTenantId) {
+      throw new ForbiddenException('کانتکست مدرسه مشخص نیست');
+    }
+    return this.rbacService.restoreRole(effectiveTenantId, adminId, roleId);
+  }
+
   // 3. Members & Access Management
   @Get('members')
   @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
@@ -200,6 +217,24 @@ export class RbacController {
       throw new ForbiddenException('کانتکست مدرسه مشخص نیست');
     }
     return this.rbacService.removeUserOverride(effectiveTenantId, adminId, userId, permissionCode);
+  }
+
+  @Patch('members/:userId/overrides/:permissionCode/restore')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @RequirePermissions(AppPermission.RBAC_MANAGE)
+  @ApiOperation({ summary: 'بازگردانی اورراید دسترسی حذف‌شده (Restore)' })
+  async restoreMemberOverride(
+    @CurrentUser('id') adminId: string,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('userId') userId: string,
+    @Param('permissionCode') permissionCode: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    if (!effectiveTenantId) {
+      throw new ForbiddenException('کانتکست مدرسه مشخص نیست');
+    }
+    return this.rbacService.restoreUserOverride(effectiveTenantId, adminId, userId, permissionCode);
   }
 
   // 4. Current User Permissions

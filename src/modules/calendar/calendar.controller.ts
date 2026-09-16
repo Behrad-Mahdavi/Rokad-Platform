@@ -134,6 +134,19 @@ export class CalendarController {
     return this.calendarService.deleteEvent(effectiveTenantId, eventId);
   }
 
+  @Patch('events/:id/restore')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.CALENDAR_WRITE)
+  @ApiOperation({ summary: 'بازگردانی رویداد یا اطلاعیه حذف‌شده (Restore)' })
+  async restoreEvent(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') eventId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.calendarService.restoreEvent(effectiveTenantId, eventId);
+  }
+
   // ==========================================
   // معماری تقویم شمسی: روز کاری و تعطیلات
   // ==========================================

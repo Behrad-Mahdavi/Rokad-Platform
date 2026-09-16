@@ -92,14 +92,7 @@ export const NoticeboardPage: React.FC = () => {
       await apiClient.delete(`/calendar/events/${notice.id}`);
     },
     undoFn: async (notice) => {
-      await apiClient.post('/calendar/events', {
-        title: notice.title,
-        description: notice.description,
-        type: 'ANNOUNCEMENT',
-        startDate: notice.startDate || new Date().toISOString(),
-        endDate: notice.endDate || new Date(Date.now() + 86400000 * 30).toISOString(),
-        isAllDay: true,
-      });
+      await apiClient.patch(`/calendar/events/${notice.id}/restore`);
       await fetchAnnouncements();
     },
     revertUpdate: (notice) => {

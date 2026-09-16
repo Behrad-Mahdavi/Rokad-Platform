@@ -40,6 +40,11 @@ export const rbacApi = {
     return res.data;
   },
 
+  restoreSchoolRole: async (roleId: string): Promise<SchoolRoleItem> => {
+    const res = await apiClient.patch<SchoolRoleItem>(`/rbac/roles/${roleId}/restore`);
+    return res.data;
+  },
+
   // 3. Members & Access
   getMembersAccess: async (params?: {
     search?: string;
@@ -86,6 +91,16 @@ export const rbacApi = {
   ): Promise<{ message: string }> => {
     const res = await apiClient.delete(
       `/rbac/members/${userId}/overrides/${permissionCode}`,
+    );
+    return res.data;
+  },
+
+  restoreMemberOverride: async (
+    userId: string,
+    permissionCode: string,
+  ): Promise<{ message: string }> => {
+    const res = await apiClient.patch(
+      `/rbac/members/${userId}/overrides/${permissionCode}/restore`,
     );
     return res.data;
   },

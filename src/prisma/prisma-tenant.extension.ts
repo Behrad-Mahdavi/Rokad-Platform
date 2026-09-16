@@ -65,14 +65,40 @@ const TENANT_BOUND_MODELS = [
   'TenantSubscription',
 ];
 
+const SOFT_DELETE_MODELS = [
+  'SchoolRole',
+  'UserPermissionOverride',
+  'SchoolEvent',
+  'ProfileBlog',
+  'ProfileBlogComment',
+];
+
 export function createTenantExtension(tenantContextService: TenantContextService) {
   return Prisma.defineExtension({
     name: 'prisma-multi-tenant-extension',
     query: {
       $allModels: {
         async $allOperations({ model, operation, args, query }) {
+          const extendedArgs = (args || {}) as any;
+
+          // Automatic Soft Delete Filter: hide deleted records unless explicitly queried with deletedAt
+          if (
+            model &&
+            SOFT_DELETE_MODELS.includes(model) &&
+            ['findFirst', 'findFirstOrThrow', 'findMany', 'count', 'aggregate', 'groupBy'].includes(
+              operation,
+            )
+          ) {
+            if (!extendedArgs.where) {
+              extendedArgs.where = {};
+            }
+            if (extendedArgs.where.deletedAt === undefined) {
+              extendedArgs.where.deletedAt = null;
+            }
+          }
+
           if (!model || !TENANT_BOUND_MODELS.includes(model)) {
-            return query(args);
+            return query(extendedArgs);
           }
 
           const store = tenantContextService.getStore();
@@ -82,15 +108,13 @@ export function createTenantExtension(tenantContextService: TenantContextService
           // If Platform SuperAdmin is querying without a specific tenant filter, allow global cross-tenant access
           if (isPlatform) {
             // If caller explicitly provided tenantId, let it through as is; do not force platform-root filter
-            return query(args);
+            return query(extendedArgs);
           }
 
           if (!tenantId) {
             // If model is tenant bound and no tenantId is in context, allow query only if args explicitly specifies tenantId or is platform context
-            return query(args);
+            return query(extendedArgs);
           }
-
-          const extendedArgs = args as any;
 
           // READ operations
           if (

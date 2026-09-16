@@ -211,9 +211,25 @@ export class CalendarService {
       throw new NotFoundException('رویداد مورد نظر یافت نشد');
     }
 
-    await this.prisma.schoolEvent.delete({
+    await this.prisma.schoolEvent.update({
       where: { id: eventId },
+      data: { deletedAt: new Date() },
     });
     return { message: 'رویداد با موفقیت حذف گردید' };
+  }
+
+  async restoreEvent(tenantId: string, eventId: string): Promise<any> {
+    const event = await this.prisma.schoolEvent.findFirst({
+      where: { id: eventId, tenantId, deletedAt: { not: null } },
+    });
+    if (!event) {
+      throw new NotFoundException('رویداد حذف‌شده مورد نظر یافت نشد');
+    }
+
+    const restored = await this.prisma.schoolEvent.update({
+      where: { id: eventId },
+      data: { deletedAt: null },
+    });
+    return { message: 'رویداد با موفقیت بازگردانده شد', data: restored };
   }
 }

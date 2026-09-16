@@ -128,7 +128,49 @@ export class RbacService {
     });
 
     if (existing) {
-      throw new ConflictException(`نقش سازمانی با نام '${dto.name}' قبلاً در این مدرسه ثبت شده است`);
+      if (!existing.deletedAt) {
+        throw new ConflictException(`نقش سازمانی با نام '${dto.name}' قبلاً در این مدرسه ثبت شده است`);
+      }
+
+      // If existing role was soft-deleted, restore and reactivate it with new permissions
+      await this.ensureCatalogPermissionsInDb();
+      const permissions = await this.prisma.permission.findMany({
+        where: { code: { in: dto.permissionCodes } },
+      });
+
+      await this.prisma.$transaction(async (tx) => {
+        await tx.schoolRole.update({
+          where: { id: existing.id },
+          data: {
+            deletedAt: null,
+            description: dto.description?.trim(),
+          },
+        });
+        await tx.rolePermission.deleteMany({ where: { schoolRoleId: existing.id } });
+        if (permissions.length > 0) {
+          await tx.rolePermission.createMany({
+            data: permissions.map((p) => ({
+              schoolRoleId: existing.id,
+              permissionId: p.id,
+            })),
+          });
+        }
+      });
+
+      await this.recordAuditLog(
+        tenantId,
+        adminId,
+        'RESTORE_AND_UPDATE_ROLE',
+        'SchoolRole',
+        existing.id,
+        null,
+        { name: existing.name, permissionCodes: dto.permissionCodes },
+      );
+
+      return this.prisma.schoolRole.findUnique({
+        where: { id: existing.id },
+        include: { permissions: { include: { permission: true } } },
+      });
     }
 
     await this.ensureCatalogPermissionsInDb();
@@ -294,8 +336,9 @@ export class RbacService {
       );
     }
 
-    await this.prisma.schoolRole.delete({
+    await this.prisma.schoolRole.update({
       where: { id: roleId },
+      data: { deletedAt: new Date() },
     });
 
     // Record Audit Log
@@ -310,6 +353,39 @@ export class RbacService {
     );
 
     return { message: `نقش '${role.name}' با موفقیت حذف شد` };
+  }
+
+  /**
+   * بازگردانی نقش سازمانی حذف‌شده (Restore Soft-Deleted Role)
+   */
+  async restoreRole(tenantId: string, adminId: string, roleId: string) {
+    const role = await this.prisma.schoolRole.findFirst({
+      where: { id: roleId, tenantId, deletedAt: { not: null } },
+    });
+
+    if (!role) {
+      throw new NotFoundException('نقش حذف‌شده مورد نظر یافت نشد');
+    }
+
+    const restored = await this.prisma.schoolRole.update({
+      where: { id: roleId },
+      data: { deletedAt: null },
+      include: {
+        permissions: { include: { permission: true } },
+      },
+    });
+
+    await this.recordAuditLog(
+      tenantId,
+      adminId,
+      'RESTORE_ROLE',
+      'SchoolRole',
+      roleId,
+      null,
+      { name: role.name },
+    );
+
+    return restored;
   }
 
   /**
@@ -714,8 +790,9 @@ export class RbacService {
       return { message: 'اوررایدی برای این پرمیشن وجود نداشت' };
     }
 
-    await this.prisma.userPermissionOverride.delete({
+    await this.prisma.userPermissionOverride.update({
       where: { id: existing.id },
+      data: { deletedAt: new Date() },
     });
 
     await this.invalidateUserPermissionsCache(tenantId, targetUserId);
@@ -732,6 +809,48 @@ export class RbacService {
     );
 
     return { message: 'اورراید با موفقیت حذف شد و به حالت ارث‌بری از نقش بازگشت' };
+  }
+
+  /**
+   * بازگردانی اورراید دسترسی حذف‌شده (Restore Soft-Deleted Override)
+   */
+  async restoreUserOverride(
+    tenantId: string,
+    adminId: string,
+    targetUserId: string,
+    permissionCode: string,
+  ) {
+    const existing = await this.prisma.userPermissionOverride.findFirst({
+      where: {
+        tenantId,
+        userId: targetUserId,
+        permissionCode,
+        deletedAt: { not: null },
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('اورراید حذف‌شده یافت نشد');
+    }
+
+    const restored = await this.prisma.userPermissionOverride.update({
+      where: { id: existing.id },
+      data: { deletedAt: null },
+    });
+
+    await this.invalidateUserPermissionsCache(tenantId, targetUserId);
+
+    await this.recordAuditLog(
+      tenantId,
+      adminId,
+      'RESTORE_PERMISSION_OVERRIDE',
+      'UserPermissionOverride',
+      existing.id,
+      null,
+      { permissionCode, effect: existing.effect },
+    );
+
+    return restored;
   }
 
   /**

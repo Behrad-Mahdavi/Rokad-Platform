@@ -742,14 +742,16 @@ model SchoolRole {
   name        String   // e.g. "ناظم پایه دهم", "مشاور تحصیلی", "حسابدار"
   description String?
   isSystem    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
 
   permissions RolePermission[]
   userRoles   UserSchoolRole[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
+  @@index([tenantId, deletedAt])
 }
 
 model RolePermission {
@@ -795,9 +797,11 @@ model UserPermissionOverride {
   reason         String?
   createdAt      DateTime                 @default(now())
   updatedAt      DateTime                 @updatedAt
+  deletedAt      DateTime?
 
   @@unique([tenantId, userId, permissionCode])
   @@index([tenantId, userId])
+  @@index([tenantId, deletedAt])
 }
 
 // ==========================================
@@ -977,6 +981,7 @@ model ProfileBlog {
   viewCount          Int                  @default(0)
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
+  deletedAt          DateTime?
 
   likes              ProfileBlogLike[]
   comments           ProfileBlogComment[]
@@ -985,6 +990,7 @@ model ProfileBlog {
   @@index([tenantId, authorId])
   @@index([tenantId, isPublished])
   @@index([tenantId, isPinned])
+  @@index([tenantId, deletedAt])
 }
 
 model ProfileBlogLike {
@@ -1013,8 +1019,10 @@ model ProfileBlogComment {
   isApproved Boolean     @default(true)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
+  deletedAt  DateTime?
   
   @@index([tenantId, blogId])
+  @@index([tenantId, deletedAt])
 }
 
 model SchoolProfile {
@@ -1155,8 +1163,10 @@ model SchoolEvent {
   createdBy      User           @relation("CreatedEvent", fields: [createdById], references: [id], onDelete: Cascade)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+  deletedAt      DateTime?
 
   @@index([tenantId, startDate, endDate])
+  @@index([tenantId, deletedAt])
 }
 
 model OfficialHoliday {

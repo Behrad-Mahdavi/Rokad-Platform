@@ -374,8 +374,22 @@ export class ProfilesService {
       throw new ConflictException('شما دسترسی حذف این نظر را ندارید');
     }
 
-    return this.prisma.profileBlogComment.delete({
+    return this.prisma.profileBlogComment.update({
       where: { id: commentId },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  async restoreBlogComment(tenantId: string, commentId: string) {
+    const comment = await this.prisma.profileBlogComment.findFirst({
+      where: { id: commentId, tenantId, deletedAt: { not: null } },
+    });
+    if (!comment) {
+      throw new NotFoundException('دیدگاه حذف‌شده مورد نظر یافت نشد');
+    }
+    return this.prisma.profileBlogComment.update({
+      where: { id: commentId },
+      data: { deletedAt: null },
     });
   }
 
@@ -438,8 +452,22 @@ export class ProfilesService {
       }
     }
 
-    return this.prisma.profileBlog.delete({
+    return this.prisma.profileBlog.update({
       where: { id: postId },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  async restoreBlogPost(tenantId: string, postId: string) {
+    const post = await this.prisma.profileBlog.findFirst({
+      where: { id: postId, tenantId, deletedAt: { not: null } },
+    });
+    if (!post) {
+      throw new NotFoundException('مقاله حذف‌شده مورد نظر یافت نشد');
+    }
+    return this.prisma.profileBlog.update({
+      where: { id: postId },
+      data: { deletedAt: null },
     });
   }
 }

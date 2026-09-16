@@ -83,11 +83,7 @@ export const RoleBuilderPage: React.FC = () => {
       await rbacApi.deleteSchoolRole(role.id);
     },
     undoFn: async (role) => {
-      await rbacApi.createSchoolRole({
-        name: role.name,
-        description: role.description,
-        permissionCodes: role.permissions.map((p) => p.code),
-      });
+      await rbacApi.restoreSchoolRole(role.id);
       const updatedRoles = await rbacApi.getSchoolRoles();
       setRoles(updatedRoles);
     },
