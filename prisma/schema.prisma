@@ -317,6 +317,11 @@ model Tenant {
   // Phase 7 SaaS SuperAdmin Relations
   subscriptions         TenantSubscription[]
 
+  // Coaching & Mentorship Relations
+  studentCoachLinks     StudentCoachLink[]
+  coachingSessions      CoachingSession[]
+  coachingExtraRequests CoachingExtraRequest[]
+
   @@index([status])
   @@index([parentTenantId])
   @@index([createdAt])
@@ -383,6 +388,14 @@ model User {
   payrollSlips          PayrollSlip[]         @relation("EmployeePayrollSlips")
   approvedPayrollSlips  PayrollSlip[]         @relation("ApprovedPayrollSlips")
   pushSubscriptions     PushSubscription[]
+
+  // Coaching Relations
+  studentCoachingLinks    StudentCoachLink[]     @relation("StudentCoachingLinks")
+  coachCoachingLinks      StudentCoachLink[]     @relation("CoachCoachingLinks")
+  studentCoachingSessions CoachingSession[]      @relation("StudentCoachingSessions")
+  coachCoachingSessions   CoachingSession[]      @relation("CoachCoachingSessions")
+  studentExtraRequests    CoachingExtraRequest[] @relation("StudentExtraRequests")
+  coachExtraRequests      CoachingExtraRequest[] @relation("CoachExtraRequests")
 
   @@unique([tenantId, email])
   @@unique([tenantId, phone])
@@ -2043,4 +2056,103 @@ model PushSubscription {
 
   @@index([userId])
 }
+
+// ==========================================
+// Coaching & Mentorship Module
+// ==========================================
+
+enum CoachLinkStatus {
+  ACTIVE
+  INACTIVE
+  TRANSFERRED
+}
+
+enum CoachingSessionType {
+  REGULAR     // جلسه دوره‌ای ثابت دو هفته یک‌بار
+  EXTRA       // جلسه فوق‌العاده درخواستی
+}
+
+enum CoachingAttendance {
+  PENDING     // در انتظار برگزاری
+  PRESENT     // حاضر
+  ABSENT      // غایب
+  EXCUSED     // غایب موجه
+}
+
+enum CoachingRequestStatus {
+  PENDING     // در انتظار بررسی کوچ
+  APPROVED    // تایید و زمان‌بندی شد
+  REJECTED    // رد شد
+}
+
+model StudentCoachLink {
+  id                  String           @id @default(uuid())
+  tenantId            String
+  tenant              Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  studentId           String
+  student             User             @relation("StudentCoachingLinks", fields: [studentId], references: [id], onDelete: Cascade)
+  coachId             String
+  coach               User             @relation("CoachCoachingLinks", fields: [coachId], references: [id], onDelete: Cascade)
+  status              CoachLinkStatus  @default(ACTIVE)
+  slotDayOfWeek       Int?             // 0=شنبه, 1=یکشنبه, ..., 5=پنج‌شنبه
+  slotStartTime       String?          // e.g. "10:20"
+  slotEndTime         String?          // e.g. "10:40"
+  slotDurationMinutes Int              @default(20)
+  recurrenceCycle     String           @default("BIWEEKLY") // دو هفته یک‌بار
+  startDate           DateTime?
+  notes               String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  sessions            CoachingSession[]
+
+  @@unique([tenantId, studentId, status])
+  @@index([tenantId, coachId])
+  @@index([tenantId, studentId])
+}
+
+model CoachingSession {
+  id                 String              @id @default(uuid())
+  tenantId           String
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  linkId             String?
+  link               StudentCoachLink?   @relation(fields: [linkId], references: [id], onDelete: SetNull)
+  studentId          String
+  student            User                @relation("StudentCoachingSessions", fields: [studentId], references: [id], onDelete: Cascade)
+  coachId            String
+  coach              User                @relation("CoachCoachingSessions", fields: [coachId], references: [id], onDelete: Cascade)
+  sessionType        CoachingSessionType @default(REGULAR)
+  scheduledDate      DateTime            // تاریخ و زمان برگزاری
+  durationMinutes    Int                 @default(20)
+  attendanceStatus   CoachingAttendance  @default(PENDING)
+  coachNotes         String?             // یادداشت‌ها و نکات ثبت‌شده توسط کوچ
+  actionItems        String?             // اهداف و برنامه‌های تعیین‌شده برای جلسه بعد
+  conductedAt        DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([tenantId, coachId, scheduledDate])
+  @@index([tenantId, studentId, scheduledDate])
+}
+
+model CoachingExtraRequest {
+  id                 String                @id @default(uuid())
+  tenantId           String
+  tenant             Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  studentId          String
+  student            User                  @relation("StudentExtraRequests", fields: [studentId], references: [id], onDelete: Cascade)
+  coachId            String
+  coach              User                  @relation("CoachExtraRequests", fields: [coachId], references: [id], onDelete: Cascade)
+  reason             String                // دلیل درخواست جلسه فوق‌العاده
+  preferredDate      String?               // زمان یا تاریخ پیشنهادی دانش‌آموز
+  status             CoachingRequestStatus @default(PENDING)
+  coachResponse      String?               // توضیح یا پیام کوچ
+  scheduledDate      DateTime?             // زمان تعیین‌شده در صورت تایید
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  @@index([tenantId, coachId, status])
+  @@index([tenantId, studentId])
+}
+
 

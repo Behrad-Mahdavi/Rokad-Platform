@@ -61,6 +61,7 @@ import { QuestionBankPage } from '../modules/teacher/question-bank/QuestionBankP
 import { MediaFeedPage } from '../modules/shared/media/MediaFeedPage';
 import { EventsRoadmapPage } from '../modules/shared/events/EventsRoadmapPage';
 import { EventSinglePage } from '../modules/shared/events/EventSinglePage';
+import { CoachingPage } from '../modules/shared/coaching/CoachingPage';
 
 import { ForbiddenPage } from '../modules/errors/ForbiddenPage';
 import { NotFoundPage } from '../modules/errors/NotFoundPage';
@@ -216,6 +217,7 @@ export const router = createBrowserRouter([
               { path: 'calendar', element: <CalendarPage /> },
               { path: 'events', element: <EventsRoadmapPage /> },
               { path: 'events/:id', element: <EventSinglePage /> },
+              { path: 'coaching', element: <CoachingPage /> },
               { path: 'polls', element: <PollsPage /> },
               { path: 'media', element: <MediaFeedPage /> },
             ],

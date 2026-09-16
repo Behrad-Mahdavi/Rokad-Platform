@@ -42,6 +42,7 @@ import { FinanceModule } from './modules/finance/finance.module';
 import { PayrollModule } from './modules/payroll/payroll.module';
 import { SaasAdminModule } from './modules/saas-admin/saas-admin.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { CoachingModule } from './modules/coaching/coaching.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -84,6 +85,7 @@ import { AppController } from './app.controller';
     PayrollModule,
     SaasAdminModule,
     NotificationsModule,
+    CoachingModule,
   ],
   controllers: [AppController],
   providers: [

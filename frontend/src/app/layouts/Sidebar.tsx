@@ -31,6 +31,7 @@ import {
   Boxes,
   Trophy,
   Compass,
+  Target,
 } from 'lucide-react';
 import { UserRole } from '../../types/auth';
 import { useSidebarStore } from '../../lib/ui/sidebar-store';
@@ -63,6 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
         { title: 'بورد اطلاعیه‌ها', href: '/app/notices', icon: FileCheck },
         { title: 'تقویم آموزشی', href: '/app/calendar', icon: CalendarDays },
         { title: 'رودمپ رویدادها', href: '/app/events', icon: Compass },
+        { title: 'کوچینگ و مربی‌گری', href: '/app/coaching', icon: Target },
         { title: 'نظرسنجی و آراء', href: '/app/polls', icon: Vote },
         { title: 'پلتفرم کا', href: '/app/ka-platform', icon: Boxes },
         { title: 'باشگاه دانش‌آموزان', href: '/app/club', icon: Trophy },

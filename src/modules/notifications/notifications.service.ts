@@ -20,7 +20,8 @@ export interface SystemNotification {
     | 'MATTER'
     | 'CHAT'
     | 'SYSTEM'
-    | 'ANNOUNCEMENT';
+    | 'ANNOUNCEMENT'
+    | 'COACHING';
   badge: 'default' | 'success' | 'warning' | 'destructive' | 'neutral' | 'college' | 'male' | 'female';
   targetUrl: string;
   createdAt: string;
