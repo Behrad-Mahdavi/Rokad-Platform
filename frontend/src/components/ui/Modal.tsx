@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { Button } from './Button';
+import { useScrollLock } from '../../lib/hooks/useScrollLock';
 
 interface ModalProps {
   isOpen: boolean;
@@ -19,18 +21,16 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   maxWidth = 'lg',
 }) => {
+  useScrollLock(isOpen);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleKeyDown);
-    } else {
-      document.body.style.overflow = 'auto';
     }
     return () => {
-      document.body.style.overflow = 'auto';
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
@@ -47,17 +47,26 @@ export const Modal: React.FC<ModalProps> = ({
     '4xl': 'max-w-4xl',
   }[maxWidth];
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+  const modalElement = (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 overscroll-contain"
+      onTouchMove={(e) => {
+        if (e.target === e.currentTarget) {
+          e.preventDefault();
+        }
+      }}
+    >
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
         onClick={onClose}
+        onWheel={(e) => e.preventDefault()}
+        onTouchMove={(e) => e.preventDefault()}
       />
 
       {/* Modal Dialog (Bottom Sheet on Mobile, Centered Neo-Brutalist Modal on Desktop) */}
       <div
-        className={`relative w-full ${maxWidthClasses} rounded-t-3xl sm:rounded-3xl bg-white dark:bg-[#151C28] text-ink-normal dark:text-white p-5 sm:p-6 border-2 border-primary/40 shadow-[4px_4px_0_#202A5A] dark:shadow-[4px_4px_0_#59BBAF] z-10 max-h-[88vh] sm:max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150 pb-[max(1.25rem,env(safe-area-inset-bottom))]`}
+        className={`relative w-full ${maxWidthClasses} rounded-t-3xl sm:rounded-3xl bg-white dark:bg-[#151C28] text-ink-normal dark:text-white p-5 sm:p-6 border-2 border-primary/40 shadow-[4px_4px_0_#202A5A] dark:shadow-[4px_4px_0_#59BBAF] z-10 max-h-[88vh] sm:max-h-[90vh] overflow-y-auto overscroll-contain animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150 pb-[max(1.25rem,env(safe-area-inset-bottom))]`}
       >
         {/* Mobile Drag Indicator Pill */}
         <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-3 sm:hidden shrink-0" />
@@ -88,4 +97,6 @@ export const Modal: React.FC<ModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modalElement, document.body);
 };

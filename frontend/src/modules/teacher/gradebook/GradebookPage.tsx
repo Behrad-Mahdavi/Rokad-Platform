@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { apiClient } from '../../../lib/api/client';
+import { useScrollLock } from '../../../lib/hooks/useScrollLock';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
@@ -132,6 +134,8 @@ export const GradebookPage: React.FC = () => {
     notifiedParents: false,
   });
   const [isSubmittingMatter, setIsSubmittingMatter] = useState<boolean>(false);
+
+  useScrollLock(matterModal.isOpen);
 
   // 1. Fetch classrooms & lessons on mount
   useEffect(() => {
@@ -2010,8 +2014,10 @@ export const GradebookPage: React.FC = () => {
       )}
 
       {/* QUICK DISCIPLINARY / COMMENDATION MODAL */}
-      {matterModal.isOpen && matterModal.student && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+      {matterModal.isOpen &&
+        matterModal.student &&
+        createPortal(
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-200 animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between pb-4 border-b border-gray-100">
               <div className="flex items-center gap-2.5">
@@ -2226,7 +2232,8 @@ export const GradebookPage: React.FC = () => {
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

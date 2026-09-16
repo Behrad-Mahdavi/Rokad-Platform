@@ -516,3 +516,16 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* قفل قطعی اسکرول پس‌زمینه هنگام باز بودن مودال‌ها، دیالوگ‌ها و دراورها */
+html.modal-scroll-locked,
+body.modal-scroll-locked {
+  overflow: hidden !important;
+  overscroll-behavior: contain !important;
+}
+
+body.modal-scroll-locked main,
+body.modal-scroll-locked #root,
+body.modal-scroll-locked [data-scroll-container] {
+  overflow: hidden !important;
+}

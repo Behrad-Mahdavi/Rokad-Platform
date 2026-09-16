@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Shield,
@@ -22,6 +23,7 @@ import { toPersianDigits } from '../../../../lib/utils';
 import { toast } from '../../../../components/ui/toast/toast';
 import { useUndoableMutation } from '../../../../lib/hooks/useUndoableMutation';
 import { TOAST_MESSAGES } from '../../../../constants/toast-messages';
+import { useScrollLock } from '../../../../lib/hooks/useScrollLock';
 
 interface Props {
   userId: string | null;
@@ -34,6 +36,8 @@ export const MemberAccessDrawer: React.FC<Props> = ({
   onClose,
   onRefreshMembers,
 }) => {
+  useScrollLock(Boolean(userId));
+
   const [detail, setDetail] = useState<MemberEffectiveDetailResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -171,7 +175,9 @@ export const MemberAccessDrawer: React.FC<Props> = ({
     return matchesSearch && matchesSource;
   });
 
-  return (
+  if (!userId) return null;
+
+  return createPortal(
     <>
       <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-xs flex justify-end animate-in fade-in">
         <div className="bg-white dark:bg-[#1E293B] w-full max-w-xl h-full shadow-2xl flex flex-col border-r border-gray-200 dark:border-gray-800 animate-in slide-in-from-left">
@@ -377,6 +383,7 @@ export const MemberAccessDrawer: React.FC<Props> = ({
           onRemoveOverride={handleRemoveOverride}
         />
       )}
-    </>
+    </>,
+    document.body
   );
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   AlertTriangle,
@@ -10,6 +11,7 @@ import {
   Square,
   Shield,
 } from 'lucide-react';
+import { useScrollLock } from '../../../../lib/hooks/useScrollLock';
 import {
   PermissionCatalogResponse,
   SchoolRoleItem,
@@ -56,6 +58,10 @@ export const RoleFormModal: React.FC<Props> = ({
     }
     setError(null);
   }, [initialRole, isOpen]);
+
+  useScrollLock(isOpen);
+
+  if (!isOpen) return null;
 
   // Natural Language Summary generator
   const naturalLanguageSummary = useMemo(() => {
@@ -126,7 +132,7 @@ export const RoleFormModal: React.FC<Props> = ({
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="bg-white dark:bg-[#1E293B] rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl border border-gray-200 dark:border-gray-800 animate-in fade-in zoom-in-95">
         {/* Modal Header */}
@@ -324,6 +330,7 @@ export const RoleFormModal: React.FC<Props> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

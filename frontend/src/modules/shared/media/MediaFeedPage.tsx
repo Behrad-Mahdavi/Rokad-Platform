@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuthStore } from '../../../lib/auth/auth-store';
 import { useTenantStore } from '../../../lib/auth/tenant-store';
 import { apiClient } from '../../../lib/api/client';
+import { useScrollLock } from '../../../lib/hooks/useScrollLock';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
@@ -129,6 +131,8 @@ export const MediaFeedPage: React.FC = () => {
 
   // Lightbox preview state
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+
+  useScrollLock(Boolean(lightboxImage));
 
   const isStaffOrAdmin =
     user?.role === 'SUPER_ADMIN' ||
@@ -892,26 +896,28 @@ export const MediaFeedPage: React.FC = () => {
       )}
 
       {/* Lightbox Modal */}
-      {lightboxImage && (
-        <div
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
-          onClick={() => setLightboxImage(null)}
-        >
-          <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center">
-            <button
-              onClick={() => setLightboxImage(null)}
-              className="absolute -top-12 left-0 p-2 text-white hover:text-gray-300 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            <img
-              src={lightboxImage}
-              alt="بزرگ‌نمایی تصویر"
-              className="max-w-full max-h-[85vh] rounded-2xl object-contain border border-white/20 shadow-2xl"
-            />
-          </div>
-        </div>
-      )}
+      {lightboxImage &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+            onClick={() => setLightboxImage(null)}
+          >
+            <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center">
+              <button
+                onClick={() => setLightboxImage(null)}
+                className="absolute -top-12 left-0 p-2 text-white hover:text-gray-300 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              <img
+                src={lightboxImage}
+                alt="بزرگ‌نمایی تصویر"
+                className="max-w-full max-h-[85vh] rounded-2xl object-contain border border-white/20 shadow-2xl"
+              />
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* Create Post Modal */}
       <Modal

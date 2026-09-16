@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { UserRole } from '../../types/auth';
 import { useSidebarStore } from '../../lib/ui/sidebar-store';
+import { useScrollLock } from '../../lib/hooks/useScrollLock';
 
 export interface NavItem {
   title: string;
@@ -43,13 +44,15 @@ export interface NavItem {
   badge?: string;
 }
 
-interface SidebarProps {
-  role: UserRole;
+export interface SidebarProps {
+  role?: UserRole;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   const { isOpen, close } = useSidebarStore();
   const location = useLocation();
+
+  useScrollLock(isOpen);
 
   // Auto-close mobile drawer when location/route changes
   useEffect(() => {

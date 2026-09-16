@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ShieldCheck,
   Shield,
@@ -9,6 +10,7 @@ import {
   AlertCircle,
   Sparkles,
 } from 'lucide-react';
+import { useScrollLock } from '../../../lib/hooks/useScrollLock';
 import { rbacApi } from './api/rbac.api';
 import {
   PermissionCatalogResponse,
@@ -45,6 +47,8 @@ export const RoleBuilderPage: React.FC = () => {
 
   // Delete modal state (only used for non-deletable roles with assigned members)
   const [roleToDelete, setRoleToDelete] = useState<SchoolRoleItem | null>(null);
+
+  useScrollLock(Boolean(roleToDelete));
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -310,39 +314,41 @@ export const RoleBuilderPage: React.FC = () => {
       )}
 
       {/* Warning Modal when Role has Assigned Members and cannot be deleted */}
-      {roleToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-[#1E293B] rounded-2xl w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-800 p-5 space-y-4">
-            <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400">
-              <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40">
-                <AlertCircle className="h-6 w-6" />
+      {roleToDelete &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+            <div className="bg-white dark:bg-[#1E293B] rounded-2xl w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-800 p-5 space-y-4">
+              <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400">
+                <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40">
+                  <AlertCircle className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm text-ink-dark dark:text-white">
+                    عدم امکان حذف نقش
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    نقش: <span className="font-bold text-ink-dark dark:text-white">{roleToDelete.name}</span>
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-black text-sm text-ink-dark dark:text-white">
-                  عدم امکان حذف نقش
-                </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  نقش: <span className="font-bold text-ink-dark dark:text-white">{roleToDelete.name}</span>
-                </p>
+
+              <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                این نقش در حال حاضر به <strong>{toPersianDigits(roleToDelete.assignedUsersCount)} کاربر</strong> اختصاص داده شده است و امکان حذف آن وجود ندارد. لطفاً ابتدا در تب «دسترسی اعضا»، این نقش را از کاربران سلب نمایید.
+              </div>
+
+              <div className="flex items-center justify-end pt-2 border-t border-gray-100 dark:border-gray-800">
+                <button
+                  type="button"
+                  onClick={() => setRoleToDelete(null)}
+                  className="px-4 py-2 text-xs font-bold bg-primary text-white hover:bg-primary-dark rounded-xl shadow-sm"
+                >
+                  متوجه شدم
+                </button>
               </div>
             </div>
-
-            <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-              این نقش در حال حاضر به <strong>{toPersianDigits(roleToDelete.assignedUsersCount)} کاربر</strong> اختصاص داده شده است و امکان حذف آن وجود ندارد. لطفاً ابتدا در تب «دسترسی اعضا»، این نقش را از کاربران سلب نمایید.
-            </div>
-
-            <div className="flex items-center justify-end pt-2 border-t border-gray-100 dark:border-gray-800">
-              <button
-                type="button"
-                onClick={() => setRoleToDelete(null)}
-                className="px-4 py-2 text-xs font-bold bg-primary text-white hover:bg-primary-dark rounded-xl shadow-sm"
-              >
-                متوجه شدم
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

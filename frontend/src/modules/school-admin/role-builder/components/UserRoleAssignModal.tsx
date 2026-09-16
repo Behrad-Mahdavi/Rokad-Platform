@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Shield, CheckSquare, Square, Save, AlertCircle } from 'lucide-react';
 import { MemberAccessItem, SchoolRoleItem } from '../types/rbac.types';
 import { rbacApi } from '../api/rbac.api';
+import { useScrollLock } from '../../../../lib/hooks/useScrollLock';
 
 interface Props {
   isOpen: boolean;
@@ -18,6 +20,8 @@ export const UserRoleAssignModal: React.FC<Props> = ({
   availableRoles,
   onSuccess,
 }) => {
+  useScrollLock(isOpen && Boolean(member));
+
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +58,7 @@ export const UserRoleAssignModal: React.FC<Props> = ({
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
       <div className="bg-white dark:bg-[#1E293B] rounded-2xl w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-800 p-5 space-y-4">
         {/* Header */}
@@ -162,6 +166,7 @@ export const UserRoleAssignModal: React.FC<Props> = ({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
