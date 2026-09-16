@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { RotateCcw, Trash2, AlertCircle } from 'lucide-react';
+import { RotateCcw, Trash2, Clock } from 'lucide-react';
+import { toPersianDigits } from '../../../lib/utils';
 
 export interface UndoToastProps {
   id: string | number;
@@ -19,7 +20,7 @@ export const UndoToast: React.FC<UndoToastProps> = ({
   icon: Icon = Trash2,
 }) => {
   const [isPaused, setIsPaused] = useState(false);
-  const [progress, setProgress] = useState(100);
+  const [remainingTime, setRemainingTime] = useState(duration);
 
   const startTimeRef = useRef<number>(Date.now());
   const remainingTimeRef = useRef<number>(duration);
@@ -32,8 +33,7 @@ export const UndoToast: React.FC<UndoToastProps> = ({
       if (!isPaused) {
         const elapsed = Date.now() - startTimeRef.current;
         const remaining = Math.max(0, remainingTimeRef.current - elapsed);
-        const percent = (remaining / duration) * 100;
-        setProgress(percent);
+        setRemainingTime(remaining);
 
         if (remaining <= 0) {
           onDismiss();
@@ -50,17 +50,18 @@ export const UndoToast: React.FC<UndoToastProps> = ({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isPaused, duration, onDismiss]);
+  }, [isPaused, onDismiss]);
 
   const handleMouseEnter = () => {
-    // Record remaining time and pause
+    // Record remaining time and pause countdown
     const elapsed = Date.now() - startTimeRef.current;
     remainingTimeRef.current = Math.max(0, remainingTimeRef.current - elapsed);
+    setRemainingTime(remainingTimeRef.current);
     setIsPaused(true);
   };
 
   const handleMouseLeave = () => {
-    // Reset start time and resume
+    // Reset start time and resume countdown
     startTimeRef.current = Date.now();
     setIsPaused(false);
   };
@@ -70,11 +71,13 @@ export const UndoToast: React.FC<UndoToastProps> = ({
     onDismiss();
   };
 
+  const secondsLeft = Math.max(1, Math.ceil(remainingTime / 1000));
+
   return (
     <div
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="relative overflow-hidden w-[360px] max-w-full rounded-2xl bg-gray-900/95 dark:bg-[#151D2A]/95 text-white shadow-2xl backdrop-blur-md border border-gray-700/60 dark:border-gray-700 p-3.5 transition-all select-none"
+      className="relative overflow-hidden w-[380px] max-w-full rounded-2xl bg-gray-900/95 dark:bg-[#151D2A]/95 text-white shadow-2xl backdrop-blur-md border border-gray-700/60 dark:border-gray-700 p-3.5 transition-all select-none"
       dir="rtl"
     >
       {/* Toast Content */}
@@ -88,26 +91,31 @@ export const UndoToast: React.FC<UndoToastProps> = ({
           </span>
         </div>
 
-        {/* Undo Action Button */}
-        <button
-          type="button"
-          onClick={handleUndoClick}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-dark text-white text-xs font-black shadow-sm transition-transform active:scale-95 shrink-0"
-        >
-          <RotateCcw className="h-3.5 w-3.5" />
-          <span>بازگردانی</span>
-        </button>
-      </div>
+        {/* Actions: Countdown Timer Badge & Undo Button */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Numerical Countdown Timer */}
+          <div
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold border transition-colors ${
+              isPaused
+                ? 'bg-amber-950/40 border-amber-700/50 text-amber-300'
+                : 'bg-gray-800/90 border-gray-700 text-amber-400'
+            }`}
+            title={isPaused ? 'تایمر متوقف شد (با خروج نشانگر ماوس ادامه می‌یابد)' : 'زمان باقی‌مانده برای بازگردانی'}
+          >
+            <Clock className={`h-3.5 w-3.5 ${isPaused ? '' : 'animate-pulse text-amber-400'}`} />
+            <span>{toPersianDigits(secondsLeft)} ثانیه</span>
+          </div>
 
-      {/* Telegram-style Progress Bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-800/50">
-        <div
-          className="h-full bg-primary transition-all ease-linear"
-          style={{
-            width: `${progress}%`,
-            transitionDuration: isPaused ? '0ms' : '50ms',
-          }}
-        />
+          {/* Undo Action Button */}
+          <button
+            type="button"
+            onClick={handleUndoClick}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-dark text-white text-xs font-black shadow-sm transition-transform active:scale-95 shrink-0"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span>بازگردانی</span>
+          </button>
+        </div>
       </div>
     </div>
   );
