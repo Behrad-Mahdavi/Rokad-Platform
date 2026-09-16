@@ -98,6 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               { title: 'ساختار سال و کلاس‌ها', href: '/app/admin/academic', icon: GraduationCap },
               { title: 'برنامه هفتگی کلاس‌ها', href: '/app/admin/schedule', icon: CalendarDays },
               { title: 'مدیریت دانش‌آموزان و پرسنل', href: '/app/admin/members', icon: Users },
+              { title: 'سازنده نقش‌ها و دسترسی‌ها', href: '/app/admin/roles', icon: ShieldCheck },
               { title: 'امور انضباطی و تشویقی', href: '/app/admin/matters', icon: ShieldAlert },
             ],
           },

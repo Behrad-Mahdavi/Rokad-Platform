@@ -33,6 +33,7 @@ export enum AppPermission {
   ROLE_READ = 'role.read',
   ROLE_WRITE = 'role.write',
   ROLE_ASSIGN = 'role.assign',
+  RBAC_MANAGE = 'rbac.manage',
 
   // Profiles & Blogs
   SCHOOL_PROFILE_WRITE = 'school.profile.write',

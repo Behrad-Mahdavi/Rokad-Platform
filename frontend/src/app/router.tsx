@@ -29,6 +29,7 @@ import { SchoolAdminDashboard } from '../modules/school-admin/SchoolAdminDashboa
 import { AcademicStructurePage } from '../modules/school-admin/academic/AcademicStructurePage';
 import { ClassSchedulePage } from '../modules/school-admin/academic/ClassSchedulePage';
 import { MembersPage } from '../modules/school-admin/members/MembersPage';
+import { RoleBuilderPage } from '../modules/school-admin/role-builder/RoleBuilderPage';
 import { FeesPage } from '../modules/school-admin/finance/FeesPage';
 import { PayrollPage } from '../modules/school-admin/finance/PayrollPage';
 import { ReportsPage } from '../modules/school-admin/reports/ReportsPage';
@@ -125,6 +126,7 @@ export const router = createBrowserRouter([
               { path: 'academic', element: <AcademicStructurePage /> },
               { path: 'schedule', element: <ClassSchedulePage /> },
               { path: 'members', element: <MembersPage /> },
+              { path: 'roles', element: <RoleBuilderPage /> },
               { path: 'profile', element: <SchoolProfilePage /> },
               { path: 'matters', element: <MattersPage /> },
               { path: 'finance/fees', element: <FeesPage /> },

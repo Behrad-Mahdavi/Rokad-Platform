@@ -263,6 +263,7 @@ model Tenant {
   classSchedules    ClassSchedule[]
   schoolRoles       SchoolRole[]
   userSchoolRoles   UserSchoolRole[]
+  permissionOverrides UserPermissionOverride[]
   studentProfiles   StudentProfile[]
   teacherProfiles   TeacherProfile[]
   teacherLessons    TeacherLesson[]
@@ -353,8 +354,10 @@ model User {
   auditLogs     AuditLog[]
 
   // Phase 2 Relations
-  userSchoolRoles   UserSchoolRole[]
-  studentProfile    StudentProfile?
+  userSchoolRoles     UserSchoolRole[]
+  permissionOverrides UserPermissionOverride[] @relation("UserPermissionOverrides")
+  grantedOverrides    UserPermissionOverride[] @relation("GrantedOverrides")
+  studentProfile      StudentProfile?
   teacherProfile    TeacherProfile?
   coachProfile      CoachProfile?
   staffProfile      StaffProfile?
@@ -771,6 +774,29 @@ model UserSchoolRole {
   createdAt    DateTime   @default(now())
 
   @@unique([tenantId, userId, schoolRoleId])
+  @@index([tenantId, userId])
+}
+
+enum PermissionOverrideEffect {
+  GRANT
+  REVOKE
+}
+
+model UserPermissionOverride {
+  id             String                   @id @default(uuid())
+  tenantId       String
+  tenant         Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User                     @relation("UserPermissionOverrides", fields: [userId], references: [id], onDelete: Cascade)
+  permissionCode String
+  effect         PermissionOverrideEffect
+  grantedById    String
+  grantedBy      User                     @relation("GrantedOverrides", fields: [grantedById], references: [id], onDelete: Cascade)
+  reason         String?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  @@unique([tenantId, userId, permissionCode])
   @@index([tenantId, userId])
 }
 
