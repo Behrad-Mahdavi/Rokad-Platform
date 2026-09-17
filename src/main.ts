@@ -45,8 +45,8 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
-  // Global Prefix
-  app.setGlobalPrefix('api/v1');
+  // Global Prefix (exclude root '/' for status/landing)
+  app.setGlobalPrefix('api/v1', { exclude: ['/'] });
 
   // Global Validation Pipe
   app.useGlobalPipes(
