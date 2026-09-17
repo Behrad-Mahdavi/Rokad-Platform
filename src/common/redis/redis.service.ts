@@ -91,4 +91,35 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       // Non-blocking catch
     }
   }
+
+  async incr(key: string, ttlSeconds?: number): Promise<number> {
+    try {
+      if (!this.client || this.client.status !== 'ready') return 1;
+      const count = await this.client.incr(key);
+      if (count === 1 && ttlSeconds) {
+        await this.client.expire(key, ttlSeconds);
+      }
+      return count;
+    } catch (err) {
+      return 1;
+    }
+  }
+
+  async ttl(key: string): Promise<number> {
+    try {
+      if (!this.client || this.client.status !== 'ready') return -1;
+      return await this.client.ttl(key);
+    } catch (err) {
+      return -1;
+    }
+  }
+
+  async expire(key: string, seconds: number): Promise<void> {
+    try {
+      if (!this.client || this.client.status !== 'ready') return;
+      await this.client.expire(key, seconds);
+    } catch (err) {
+      // Non-blocking catch
+    }
+  }
 }

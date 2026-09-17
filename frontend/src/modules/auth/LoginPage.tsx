@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { ApiResponse } from '../../types/api';
 import { LoginResponse } from '../../types/auth';
+import { TwoFactorVerificationModal } from './components/TwoFactorVerificationModal';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -32,27 +33,56 @@ export const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 2FA state
+  const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
+  const [tempToken, setTempToken] = useState('');
+
+  const handle2FASuccess = (res: any) => {
+    const loginData = res.data || res;
+    const { user, accessToken, refreshToken } = loginData;
+
+    setCurrentTenant({
+      id: user.tenantId,
+      name: loginData.tenant?.name || 'مدرسه رُکاد',
+      slug: tenantSlug,
+      type: 'SCHOOL',
+      theme: (loginData.tenant?.theme || 'ecosystem').toLowerCase() as any,
+    });
+
+    login(user, accessToken, refreshToken);
+    setIs2FAModalOpen(false);
+    navigate('/app');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
 
     try {
-      const res: ApiResponse<LoginResponse> = await apiClient.post(
+      const res: any = await apiClient.post(
         '/auth/login',
         { identifier, password },
         { headers: { 'x-tenant-slug': tenantSlug } },
       );
 
-      const { user, accessToken, refreshToken } = res.data;
+      // Check if 2FA verification is required
+      if (res?.requiresTwoFactor) {
+        setTempToken(res.tempToken);
+        setIs2FAModalOpen(true);
+        return;
+      }
+
+      const loginData = res.data || res;
+      const { user, accessToken, refreshToken } = loginData;
 
       // Update active tenant store
       setCurrentTenant({
         id: user.tenantId,
-        name: res.data.tenant?.name || 'مدرسه رُکاد',
+        name: loginData.tenant?.name || 'مدرسه رُکاد',
         slug: tenantSlug,
         type: 'SCHOOL',
-        theme: (res.data.tenant?.theme || 'ecosystem').toLowerCase() as any,
+        theme: (loginData.tenant?.theme || 'ecosystem').toLowerCase() as any,
       });
 
       // Update auth store
@@ -250,6 +280,13 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
       </CardContent>
+
+      <TwoFactorVerificationModal
+        isOpen={is2FAModalOpen}
+        tempToken={tempToken}
+        onSuccess={handle2FASuccess}
+        onClose={() => setIs2FAModalOpen(false)}
+      />
     </Card>
   );
 };

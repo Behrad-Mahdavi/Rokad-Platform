@@ -24,10 +24,22 @@ async function bootstrap() {
     },
   });
 
-  // Security Headers
+  // Security Headers Hardening (Defense in Depth)
   app.use(
     helmet({
-      contentSecurityPolicy: false, // Disabled for Swagger UI compatibility
+      contentSecurityPolicy: false, // Disabled for Swagger UI compatibility in development
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true,
+      },
+      frameguard: {
+        action: 'sameorigin',
+      },
+      noSniff: true,
+      referrerPolicy: {
+        policy: 'strict-origin-when-cross-origin',
+      },
     }),
   );
 

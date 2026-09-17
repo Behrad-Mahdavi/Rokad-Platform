@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ConflictException,
   NotFoundException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -14,6 +15,11 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { RegisterSchoolDto } from './dto/register-school.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { ChangePasswordDto, VerifyTwoFactorDto } from './dto/security.dto';
+import { TwoFactorService } from './two-factor.service';
+import { SessionService } from './session.service';
+import { BruteForceService } from '../../common/redis/brute-force.service';
+import { EncryptionService } from '../../common/crypto/encryption.service';
 import { Role, TenantType } from '../../common/constants';
 import { normalizePersianDigits } from '../../common/utils/jalali.util';
 
@@ -26,6 +32,10 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly twoFactorService: TwoFactorService,
+    private readonly sessionService: SessionService,
+    private readonly bruteForceService: BruteForceService,
+    private readonly encryptionService: EncryptionService,
   ) {}
 
   /**
@@ -84,6 +94,14 @@ export class AuthService {
       userAgent,
     );
 
+    await this.sessionService.createSession(
+      result.user.id,
+      result.tenant.id,
+      tokens.refreshToken,
+      ipAddress,
+      userAgent,
+    );
+
     this.eventEmitter.emit('audit.log', {
       tenantId: result.tenant.id,
       userId: result.user.id,
@@ -119,6 +137,12 @@ export class AuthService {
    * Tenant-aware login with phone/email/username + password
    */
   async login(dto: LoginDto, currentTenantId?: string, ipAddress?: string, userAgent?: string): Promise<any> {
+    const rawIdentifier = dto.identifier ? dto.identifier.trim() : '';
+    const cleanIdentifier = normalizePersianDigits(rawIdentifier);
+
+    // 1. Anti-Brute-Force & Lockout check
+    await this.bruteForceService.checkLoginAllowed(cleanIdentifier || rawIdentifier, ipAddress);
+
     let tenantId = currentTenantId;
 
     if (!tenantId && dto.tenantSlug) {
@@ -130,8 +154,8 @@ export class AuthService {
       }
     }
 
-    const rawIdentifier = dto.identifier ? dto.identifier.trim() : '';
-    const cleanIdentifier = normalizePersianDigits(rawIdentifier);
+    // Key Separation: calculate Blind Index for national ID search
+    const nationalBlind = this.encryptionService.blindIndex(cleanIdentifier);
 
     // Look for user matching identifier in this tenant (national code, username, phone, or email)
     const user = await this.prisma.user.findFirst({
@@ -140,10 +164,12 @@ export class AuthService {
         OR: [
           { username: cleanIdentifier },
           { nationalId: cleanIdentifier },
+          ...(nationalBlind ? [{ nationalIdBlindIndex: nationalBlind }] : []),
           { phone: cleanIdentifier },
           { email: rawIdentifier.toLowerCase() },
           { email: cleanIdentifier.toLowerCase() },
           { studentProfile: { nationalCode: cleanIdentifier } },
+          ...(nationalBlind ? [{ studentProfile: { nationalCodeBlindIndex: nationalBlind } }] : []),
         ],
       },
       include: {
@@ -152,6 +178,7 @@ export class AuthService {
     });
 
     if (!user) {
+      await this.bruteForceService.recordFailedAttempt(cleanIdentifier || rawIdentifier, ipAddress);
       throw new UnauthorizedException('اطلاعات ورود (نام کاربری یا رمز عبور) اشتباه است');
     }
 
@@ -166,8 +193,36 @@ export class AuthService {
     // Verify Password with Argon2
     const isPasswordValid = await argon2.verify(user.passwordHash, dto.password);
     if (!isPasswordValid) {
+      await this.bruteForceService.recordFailedAttempt(cleanIdentifier || rawIdentifier, ipAddress);
       throw new UnauthorizedException('اطلاعات ورود (نام کاربری یا رمز عبور) اشتباه است');
     }
+
+    // 2. If Two-Factor Authentication is enabled on this account
+    if (user.twoFactorEnabled) {
+      const tempToken = this.jwtService.sign(
+        {
+          sub: user.id,
+          tenantId: user.tenantId,
+          requiresTwoFactor: true,
+        },
+        {
+          secret: this.configService.get<string>(
+            'JWT_ACCESS_SECRET',
+            'rokad_super_secret_access_jwt_key_2026_x99!secure',
+          ),
+          expiresIn: '5m',
+        },
+      );
+
+      return {
+        requiresTwoFactor: true,
+        tempToken,
+        message: 'لطفاً کد ۶ رقمی اپلیکیشن احراز هویت دومرحله‌ای (Google Authenticator / 2FA) را وارد نمایید',
+      };
+    }
+
+    // 3. Clear brute force lock on success
+    await this.bruteForceService.recordLoginSuccess(cleanIdentifier || rawIdentifier, ipAddress);
 
     // Update last login
     await this.prisma.user.update({
@@ -181,6 +236,15 @@ export class AuthService {
       user.tenantId,
       user.role,
       user.isPlatformAdmin,
+      ipAddress,
+      userAgent,
+    );
+
+    // Register active user session
+    await this.sessionService.createSession(
+      user.id,
+      user.tenantId,
+      tokens.refreshToken,
       ipAddress,
       userAgent,
     );
@@ -211,8 +275,156 @@ export class AuthService {
         email: user.email,
         role: user.role,
         isPlatformAdmin: user.isPlatformAdmin,
+        twoFactorEnabled: user.twoFactorEnabled,
       },
       ...tokens,
+    };
+  }
+
+  /**
+   * Complete 2FA Login using 6-digit TOTP code or emergency recovery code
+   */
+  async verifyTwoFactorLogin(
+    dto: VerifyTwoFactorDto,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<any> {
+    let payload: any;
+    try {
+      payload = this.jwtService.verify(dto.tempToken, {
+        secret: this.configService.get<string>(
+          'JWT_ACCESS_SECRET',
+          'rokad_super_secret_access_jwt_key_2026_x99!secure',
+        ),
+      });
+    } catch {
+      throw new UnauthorizedException('مهلت ۵ دقیقه‌ای توکن موقت ورود به پایان رسیده است. لطفاً مجدداً لاگین کنید.');
+    }
+
+    if (!payload?.requiresTwoFactor || !payload?.sub) {
+      throw new UnauthorizedException('توکن نامعتبر است');
+    }
+
+    const userId = payload.sub;
+
+    // Check brute force attempts
+    await this.bruteForceService.checkLoginAllowed(userId, ipAddress);
+
+    const isValid = await this.twoFactorService.verify2FAToken(userId, dto.code);
+    if (!isValid) {
+      await this.bruteForceService.recordFailedAttempt(userId, ipAddress);
+      throw new UnauthorizedException('کد ۶ رقمی یا کد بازیابی اضطراری وارد شده نادرست است');
+    }
+
+    // Clear brute force counters
+    await this.bruteForceService.recordLoginSuccess(userId, ipAddress);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { tenant: true },
+    });
+
+    if (!user || user.status !== 'ACTIVE') {
+      throw new UnauthorizedException('حساب کاربری فعال نیست');
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        lastLoginAt: new Date(),
+        twoFactorLastStepUpAt: new Date(),
+      },
+    });
+
+    const tokens = await this.createTokenPair(
+      user.id,
+      user.tenantId,
+      user.role,
+      user.isPlatformAdmin,
+      ipAddress,
+      userAgent,
+    );
+
+    // Register active user session
+    await this.sessionService.createSession(
+      user.id,
+      user.tenantId,
+      tokens.refreshToken,
+      ipAddress,
+      userAgent,
+    );
+
+    this.eventEmitter.emit('audit.log', {
+      tenantId: user.tenantId,
+      userId: user.id,
+      action: 'LOGIN_2FA',
+      entity: 'Auth',
+      entityId: user.id,
+      ipAddress,
+      userAgent,
+    });
+
+    return {
+      message: 'ورود دومرحله‌ای با موفقیت انجام شد',
+      tenant: {
+        id: user.tenant.id,
+        name: user.tenant.name,
+        slug: user.tenant.slug,
+        theme: user.tenant.theme,
+      },
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        email: user.email,
+        role: user.role,
+        isPlatformAdmin: user.isPlatformAdmin,
+        twoFactorEnabled: true,
+      },
+      ...tokens,
+    };
+  }
+
+  /**
+   * Requirement 4: Change Password & Revoke all other sessions
+   */
+  async changePassword(
+    userId: string,
+    dto: ChangePasswordDto,
+    currentRefreshToken?: string,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) throw new NotFoundException('کاربر یافت نشد');
+
+    const isOldValid = await argon2.verify(user.passwordHash, dto.oldPassword);
+    if (!isOldValid) {
+      throw new BadRequestException('رمز عبور فعلی وارد شده نادرست است');
+    }
+
+    const passwordHash = await argon2.hash(dto.newPassword);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+
+    // Requirement 4: Revoke all other active sessions!
+    await this.sessionService.revokeAllOtherSessions(userId, currentRefreshToken);
+
+    this.eventEmitter.emit('audit.log', {
+      tenantId: user.tenantId,
+      userId: user.id,
+      action: 'CHANGE_PASSWORD',
+      entity: 'User',
+      entityId: user.id,
+    });
+
+    return {
+      success: true,
+      message: 'رمز عبور با موفقیت به‌روزرسانی شد و تمامی نشست‌های فعال در سایر دستگاه‌ها باطل گردیدند',
     };
   }
 

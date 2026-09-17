@@ -27,6 +27,7 @@ import {
   Send,
   Loader2,
 } from 'lucide-react';
+import { SecuritySection } from './components/SecuritySection';
 
 export const ProfileSettingsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -401,68 +402,8 @@ export const ProfileSettingsPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Change Password Section */}
-      <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#151C28]">
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500">
-              <KeyRound className="w-4 h-4" />
-            </div>
-            <div>
-              <CardTitle className="text-base font-extrabold">تغییر رمز عبور</CardTitle>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          {passSuccess && (
-            <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>{passSuccess}</span>
-            </div>
-          )}
-
-          {passError && (
-            <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 rounded-xl border border-rose-200 dark:border-rose-800 text-xs">
-              <span>{passError}</span>
-            </div>
-          )}
-
-          <form onSubmit={handlePasswordChange} className="space-y-3">
-            <Input
-              label="رمز عبور فعلی"
-              type="password"
-              value={passwordForm.currentPassword}
-              onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-              required
-              placeholder="••••••••"
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Input
-                label="رمز عبور جدید"
-                type="password"
-                value={passwordForm.newPassword}
-                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                required
-                placeholder="حداقل ۶ کاراکتر"
-              />
-              <Input
-                label="تکرار رمز عبور جدید"
-                type="password"
-                value={passwordForm.confirmPassword}
-                onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                required
-                placeholder="تکرار رمز عبور"
-              />
-            </div>
-            <div className="flex justify-end pt-2">
-              <Button type="submit" variant="primary" disabled={isUpdatingPass} className="text-xs">
-                {isUpdatingPass ? <Loader2 className="w-3.5 h-3.5 animate-spin ml-1.5" /> : <Lock className="w-3.5 h-3.5 ml-1.5" />}
-                ذخیره کلمه عبور جدید
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+      {/* Security Suite: 2FA, Active Sessions, and Password Management */}
+      <SecuritySection />
     </div>
   );
 };

@@ -4,8 +4,11 @@ import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
+import { TwoFactorService } from './two-factor.service';
+import { SessionService } from './session.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { StepUpGuard } from '../../common/guards/step-up.guard';
 
 @Module({
   imports: [
@@ -25,7 +28,21 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard],
-  exports: [AuthService, JwtAuthGuard, JwtModule],
+  providers: [
+    AuthService,
+    TwoFactorService,
+    SessionService,
+    JwtStrategy,
+    JwtAuthGuard,
+    StepUpGuard,
+  ],
+  exports: [
+    AuthService,
+    TwoFactorService,
+    SessionService,
+    JwtAuthGuard,
+    StepUpGuard,
+    JwtModule,
+  ],
 })
 export class AuthModule {}

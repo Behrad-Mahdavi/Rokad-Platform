@@ -328,6 +328,9 @@ model Tenant {
   academicMessages          AcademicMessage[]
   academicMessageRecipients AcademicMessageRecipient[]
 
+  // Security & Active Sessions
+  userSessions              UserSession[]
+
   @@index([status])
   @@index([parentTenantId])
   @@index([createdAt])
@@ -340,6 +343,7 @@ model User {
   email           String?
   phone           String?
   nationalId      String?
+  nationalIdBlindIndex   String?
   username        String?
   passwordHash    String
   firstName       String
@@ -354,7 +358,15 @@ model User {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
+  // Two-Factor Authentication (TOTP RFC 6238)
+  twoFactorEnabled       Boolean   @default(false)
+  twoFactorSecret        String?   // AES-256-GCM encrypted
+  twoFactorRecoveryCodes String[]  @default([])
+  twoFactorConfirmedAt   DateTime?
+  twoFactorLastStepUpAt  DateTime? // Timestamp of last sensitive step-up verification
+
   tokenFamilies RefreshTokenFamily[]
+  sessions      UserSession[]
   auditLogs     AuditLog[]
 
   // Phase 2 Relations
@@ -412,6 +424,7 @@ model User {
   @@unique([tenantId, email])
   @@unique([tenantId, phone])
   @@unique([tenantId, username])
+  @@index([tenantId, nationalIdBlindIndex])
   @@index([tenantId, role])
   @@index([tenantId, status])
   @@index([tenantId, createdAt])
@@ -491,14 +504,36 @@ model AuditLog {
   entityId  String?
   oldValues Json?
   newValues Json?
-  ipAddress String?
-  userAgent String?
-  createdAt DateTime @default(now())
+  ipAddress    String?
+  userAgent    String?
+  previousHash String?  // Hash of preceding log record (immutable chain)
+  hash         String?  // SHA-256(data + previousHash + pepper)
+  createdAt    DateTime @default(now())
 
   @@index([tenantId, createdAt])
   @@index([tenantId, entity, entityId])
   @@index([tenantId, action])
   @@index([userId, createdAt])
+}
+
+model UserSession {
+  id               String    @id @default(uuid())
+  tenantId         String
+  tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionTokenHash String    @unique
+  ipAddress        String?
+  userAgent        String?
+  browser          String?
+  os               String?
+  deviceType       String?   // 'DESKTOP' | 'MOBILE' | 'TABLET'
+  lastActiveAt     DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+  isRevoked        Boolean   @default(false)
+
+  @@index([userId, isRevoked])
+  @@index([tenantId, userId])
 }
 
 // ==========================================
@@ -825,6 +860,7 @@ model StudentProfile {
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   studentCode  String    // شماره دانش‌آموزی
   nationalCode String?   // کد ملی
+  nationalCodeBlindIndex String? // HMAC-SHA256 Blind Index for fast search
   fatherName   String?
   birthDate    DateTime?
   address      String?
@@ -849,6 +885,7 @@ model StudentProfile {
 
   @@unique([tenantId, studentCode])
   @@index([tenantId, nationalCode])
+  @@index([tenantId, nationalCodeBlindIndex])
 }
 
 model TeacherProfile {

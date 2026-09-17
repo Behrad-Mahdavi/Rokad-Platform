@@ -5,6 +5,7 @@ import {
   Body,
   Query,
   UseGuards,
+  Ip,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentService } from './payment.service';
@@ -24,11 +25,15 @@ import { Role } from '../../common/constants';
 import { AppPermission } from '../../common/constants/permissions';
 
 import { Public } from '../../common/decorators/public.decorator';
+import { BruteForceService } from '../../common/redis/brute-force.service';
 
 @ApiTags('Finance — Payments & Gateway (پرداخت آنلاین و درگاه بانکی)')
 @Controller('finance/payments')
 export class PaymentController {
-  constructor(private readonly paymentService: PaymentService) {}
+  constructor(
+    private readonly paymentService: PaymentService,
+    private readonly bruteForceService: BruteForceService,
+  ) {}
 
   @Post('initiate')
   @ApiBearerAuth()
@@ -57,9 +62,14 @@ export class PaymentController {
     @Query('Status') statusGet: string,
     @Query('authority') authorityLower: string,
     @Query('status') statusLower: string,
+    @Ip() ip: string,
   ) {
     const authority = authorityGet || authorityLower;
     const status = statusGet || statusLower;
+
+    // Requirement 3: Enforce strict rate limiting on payment verification
+    await this.bruteForceService.checkPaymentVerifyAllowed(authority || 'unknown', ip);
+
     return this.paymentService.verifyPayment(tenantIdQuery, {
       authority,
       status,
@@ -72,7 +82,11 @@ export class PaymentController {
   async verifyPaymentPost(
     @Query('tenantId') tenantIdQuery: string,
     @Body() dto: VerifyPaymentDto,
+    @Ip() ip: string,
   ) {
+    // Requirement 3: Enforce strict rate limiting on payment verification
+    await this.bruteForceService.checkPaymentVerifyAllowed(dto?.authority || 'unknown', ip);
+
     return this.paymentService.verifyPayment(tenantIdQuery, dto);
   }
 

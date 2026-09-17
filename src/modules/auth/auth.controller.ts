@@ -2,27 +2,44 @@ import {
   Controller,
   Post,
   Get,
+  Delete,
   Body,
+  Param,
   UseGuards,
-  Req,
   Ip,
   Headers,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { Request } from 'express';
 import { AuthService } from './auth.service';
+import { TwoFactorService } from './two-factor.service';
+import { SessionService } from './session.service';
 import { RegisterSchoolDto } from './dto/register-school.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import {
+  ChangePasswordDto,
+  DisableTwoFactorDto,
+  EnableTwoFactorDto,
+  StepUpVerifyDto,
+  VerifyTwoFactorDto,
+} from './dto/security.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { StepUpGuard } from '../../common/guards/step-up.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { CurrentTenant } from '../../common/decorators/current-tenant.decorator';
+import { Role } from '../../common/constants';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly twoFactorService: TwoFactorService,
+    private readonly sessionService: SessionService,
+  ) {}
 
   @Public()
   @Post('register-school')
@@ -45,6 +62,17 @@ export class AuthController {
     @Headers('user-agent') userAgent: string,
   ) {
     return this.authService.login(dto, tenantId, ip, userAgent);
+  }
+
+  @Public()
+  @Post('2fa/verify-login')
+  @ApiOperation({ summary: 'تکمیل ورود دو مرحله‌ای با کد ۶ رقمی TOTP یا کد بازیابی' })
+  async verifyTwoFactorLogin(
+    @Body() dto: VerifyTwoFactorDto,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.authService.verifyTwoFactorLogin(dto, ip, userAgent);
   }
 
   @Public()
@@ -81,5 +109,131 @@ export class AuthController {
       user,
       tenant,
     };
+  }
+
+  // ==========================================
+  // TWO-FACTOR AUTHENTICATION (TOTP RFC 6238)
+  // ==========================================
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('2fa/setup')
+  @ApiOperation({ summary: 'تولید کلید مخفی و تصویر QR Code جهت راه‌اندازی 2FA' })
+  async setup2FA(@CurrentUser('id') userId: string) {
+    return this.twoFactorService.generateSetup(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('2fa/enable')
+  @ApiOperation({ summary: 'تأیید و فعال‌سازی احراز هویت دومرحله‌ای با کد آزمایشی' })
+  async enable2FA(
+    @CurrentUser('id') userId: string,
+    @Body() dto: EnableTwoFactorDto,
+  ) {
+    return this.twoFactorService.enable2FA(userId, dto.code);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('2fa/disable')
+  @ApiOperation({ summary: 'غیرفعال‌سازی احراز هویت دومرحله‌ای با رمز عبور' })
+  async disable2FA(
+    @CurrentUser('id') userId: string,
+    @Body() dto: DisableTwoFactorDto,
+  ) {
+    return this.twoFactorService.disable2FA(userId, dto.password);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('2fa/step-up')
+  @ApiOperation({ summary: 'تأیید مجدد هویت امنیتی (Step-up Auth) برای ورود به مود حساس' })
+  async verifyStepUp(
+    @CurrentUser('id') userId: string,
+    @Body() dto: StepUpVerifyDto,
+  ) {
+    return this.twoFactorService.verifyStepUp(userId, dto.code);
+  }
+
+  // ==========================================
+  // PASSWORD MANAGEMENT & SESSION REVOCATION
+  // ==========================================
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('change-password')
+  @ApiOperation({ summary: 'تغییر رمز عبور با ابطال خودکار کلیه سشن‌های دیگر' })
+  async changePassword(
+    @CurrentUser('id') userId: string,
+    @Body() dto: ChangePasswordDto,
+    @Headers('x-refresh-token') currentRefreshToken?: string,
+  ) {
+    return this.authService.changePassword(userId, dto, currentRefreshToken);
+  }
+
+  // ==========================================
+  // ACTIVE SESSIONS & DEVICE MANAGEMENT
+  // ==========================================
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('sessions')
+  @ApiOperation({ summary: 'مشاهده لیست نشست‌ها و دستگاه‌های فعال کاربر جاری' })
+  async getSessions(
+    @CurrentUser('id') userId: string,
+    @Headers('x-refresh-token') currentRefreshToken?: string,
+  ) {
+    return this.sessionService.getUserSessions(userId, currentRefreshToken);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Delete('sessions/:id')
+  @ApiOperation({ summary: 'خاتمه دادن به یک نشست مشخص' })
+  async revokeSession(
+    @CurrentUser('id') userId: string,
+    @Param('id') sessionId: string,
+  ) {
+    return this.sessionService.revokeSession(userId, sessionId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('sessions/revoke-others')
+  @ApiOperation({ summary: 'خروج اضطراری از تمام دستگاه‌های دیگر' })
+  async revokeAllOtherSessions(
+    @CurrentUser('id') userId: string,
+    @Headers('x-refresh-token') currentRefreshToken?: string,
+  ) {
+    return this.sessionService.revokeAllOtherSessions(userId, currentRefreshToken);
+  }
+
+  // ==========================================
+  // SUPER-ADMIN SESSIONS MANAGEMENT (STEP-UP PROTECTED!)
+  // Requirement 5: Step-Up Authentication Required
+  // ==========================================
+
+  @UseGuards(JwtAuthGuard, RolesGuard, StepUpGuard)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @ApiBearerAuth()
+  @Get('admin/users/:userId/sessions')
+  @ApiOperation({ summary: 'مشاهده نشست‌های کاربر دیگر توسط ادمین (نیازمند Step-up 2FA)' })
+  async adminGetUserSessions(
+    @Param('userId') targetUserId: string,
+  ) {
+    return this.sessionService.getUserSessions(targetUserId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard, StepUpGuard)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @ApiBearerAuth()
+  @Delete('admin/users/:userId/sessions/:sessionId')
+  @ApiOperation({ summary: 'ابطال نشست کاربر دیگر توسط ادمین (نیازمند Step-up 2FA)' })
+  async adminRevokeUserSession(
+    @Param('userId') targetUserId: string,
+    @Param('sessionId') sessionId: string,
+  ) {
+    return this.sessionService.revokeSession(targetUserId, sessionId);
   }
 }
