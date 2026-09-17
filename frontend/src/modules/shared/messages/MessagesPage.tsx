@@ -54,7 +54,7 @@ export const MessagesPage: React.FC = () => {
     try {
       setLoading(true);
       if (activeTab === 'inbox' || activeTab === 'starred') {
-        const res = await apiClient.get('/messages/inbox', {
+        const res: any = await apiClient.get('/messages/inbox', {
           params: {
             starredOnly: activeTab === 'starred',
             unreadOnly: unreadOnly && activeTab === 'inbox',
