@@ -61,18 +61,19 @@ export const MessagesPage: React.FC = () => {
             search: searchQuery.trim() || undefined,
           },
         });
-        const result = res.data?.data || [];
-        setInboxItems(result);
-        if (res.data?.meta?.unreadCount !== undefined) {
-          setUnreadCount(res.data.meta.unreadCount);
+        const list = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+        setInboxItems(list);
+        if (res?.meta?.unreadCount !== undefined) {
+          setUnreadCount(res.meta.unreadCount);
         }
       } else if (activeTab === 'sent') {
-        const res = await apiClient.get('/messages/sent', {
+        const res: any = await apiClient.get('/messages/sent', {
           params: {
             search: searchQuery.trim() || undefined,
           },
         });
-        setSentItems(res.data?.data || []);
+        const list = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+        setSentItems(list);
       }
     } catch (err: any) {
       toast.error('خطا در دریافت لیست پیام‌ها');
@@ -88,8 +89,8 @@ export const MessagesPage: React.FC = () => {
   const handleToggleStar = async (e: React.MouseEvent, messageId: string) => {
     e.stopPropagation();
     try {
-      const res = await apiClient.patch(`/messages/${messageId}/star`);
-      const newStarred = res.data?.isStarred ?? false;
+      const res: any = await apiClient.patch(`/messages/${messageId}/star`);
+      const newStarred = res?.isStarred ?? res?.data?.isStarred ?? false;
 
       setInboxItems((prev) =>
         prev.map((item) =>
