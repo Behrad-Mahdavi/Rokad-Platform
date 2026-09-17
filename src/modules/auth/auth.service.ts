@@ -307,17 +307,19 @@ export class AuthService {
 
     const userId = payload.sub;
 
-    // Check brute force attempts
-    await this.bruteForceService.checkLoginAllowed(userId, ipAddress);
+    // Requirement: Strict 2FA-specific rate limiting (3 failed/5min → 5-min lock, 5 failed/5min → 15-min lock)
+    // This is intentionally stricter than the general login brute-force (5/10 attempts, 10-min window)
+    // because the 6-digit TOTP space (1M possibilities) is far smaller than a typical password space.
+    await this.bruteForceService.check2FAAllowed(userId, ipAddress);
 
     const isValid = await this.twoFactorService.verify2FAToken(userId, dto.code);
     if (!isValid) {
-      await this.bruteForceService.recordFailedAttempt(userId, ipAddress);
+      await this.bruteForceService.record2FAFailedAttempt(userId, ipAddress);
       throw new UnauthorizedException('کد ۶ رقمی یا کد بازیابی اضطراری وارد شده نادرست است');
     }
 
-    // Clear brute force counters
-    await this.bruteForceService.recordLoginSuccess(userId, ipAddress);
+    // Clear 2FA-specific rate-limit counters on success
+    await this.bruteForceService.record2FASuccess(userId, ipAddress);
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },

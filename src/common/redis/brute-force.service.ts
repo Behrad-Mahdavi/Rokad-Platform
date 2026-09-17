@@ -149,4 +149,108 @@ export class BruteForceService {
       );
     }
   }
+
+  /**
+   * Strict 2FA Code Rate Limiting (Protects 6-digit TOTP / Recovery space)
+   * Max 3-5 failed attempts per 5 minutes per user/IP
+   */
+  async check2FAAllowed(userId: string, ipAddress?: string): Promise<void> {
+    const ip = ipAddress || 'unknown';
+    const userLockKey = `brute:lock:2fa:user:${userId}`;
+    const ipLockKey = `brute:lock:2fa:ip:${ip}`;
+
+    const [userTtl, ipTtl] = await Promise.all([
+      this.redisService.ttl(userLockKey),
+      this.redisService.ttl(ipLockKey),
+    ]);
+
+    let maxTtl = Math.max(userTtl, ipTtl);
+
+    // Memory fallback
+    if (maxTtl <= 0) {
+      const now = Date.now();
+      const memUserLock = this.memoryLocks.get(`2fa:${userId}`);
+      const memIpLock = this.memoryLocks.get(`2fa:ip:${ip}`);
+      const memLock = Math.max(memUserLock || 0, memIpLock || 0);
+
+      if (memLock > now) {
+        maxTtl = Math.ceil((memLock - now) / 1000);
+      }
+    }
+
+    if (maxTtl > 0) {
+      const minutes = Math.ceil(maxTtl / 60);
+      this.logger.warn(`Blocked 2FA verification attempt for user ${userId} from ${ip}. Locked for ${maxTtl}s.`);
+      throw new HttpException(
+        {
+          success: false,
+          statusCode: HttpStatus.TOO_MANY_REQUESTS,
+          error: 'Too Many Requests',
+          message: `تعداد تلاش‌های ناموفق کد امنیتی دوعاملی بیش از حد مجاز است. لطفاً ${minutes} دقیقه دیگر مجدداً تلاش فرمایید.`,
+          remainingSeconds: maxTtl,
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+  }
+
+  /**
+   * Record failed 2FA verification attempt with strict cooldown
+   * 3 failed attempts in 5 minutes -> 5 minutes lock
+   * 5 failed attempts in 5 minutes -> 15 minutes lock
+   */
+  async record2FAFailedAttempt(userId: string, ipAddress?: string): Promise<number> {
+    const ip = ipAddress || 'unknown';
+    const userAttemptKey = `brute:attempt:2fa:user:${userId}`;
+    const ipAttemptKey = `brute:attempt:2fa:ip:${ip}`;
+
+    // 5-minute tracking window (300 seconds)
+    const [userAttempts, ipAttempts] = await Promise.all([
+      this.redisService.incr(userAttemptKey, 300),
+      this.redisService.incr(ipAttemptKey, 300),
+    ]);
+
+    const maxAttempts = Math.max(userAttempts, ipAttempts);
+
+    if (maxAttempts >= 5) {
+      // 15-minute lock
+      const lockSeconds = 900;
+      await Promise.all([
+        this.redisService.set(`brute:lock:2fa:user:${userId}`, 'locked', lockSeconds),
+        this.redisService.set(`brute:lock:2fa:ip:${ip}`, 'locked', lockSeconds),
+      ]);
+      this.memoryLocks.set(`2fa:${userId}`, Date.now() + lockSeconds * 1000);
+      this.memoryLocks.set(`2fa:ip:${ip}`, Date.now() + lockSeconds * 1000);
+      this.logger.warn(`2FA locked for user ${userId} and IP ${ip} for 15 minutes after ${maxAttempts} failed attempts.`);
+    } else if (maxAttempts >= 3) {
+      // 5-minute lock
+      const lockSeconds = 300;
+      await Promise.all([
+        this.redisService.set(`brute:lock:2fa:user:${userId}`, 'locked', lockSeconds),
+        this.redisService.set(`brute:lock:2fa:ip:${ip}`, 'locked', lockSeconds),
+      ]);
+      this.memoryLocks.set(`2fa:${userId}`, Date.now() + lockSeconds * 1000);
+      this.memoryLocks.set(`2fa:ip:${ip}`, Date.now() + lockSeconds * 1000);
+      this.logger.warn(`2FA locked for user ${userId} and IP ${ip} for 5 minutes after ${maxAttempts} failed attempts.`);
+    }
+
+    return maxAttempts;
+  }
+
+  /**
+   * Clear 2FA failed attempt counters on success
+   */
+  async record2FASuccess(userId: string, ipAddress?: string): Promise<void> {
+    const ip = ipAddress || 'unknown';
+
+    await Promise.all([
+      this.redisService.del(`brute:attempt:2fa:user:${userId}`),
+      this.redisService.del(`brute:lock:2fa:user:${userId}`),
+      this.redisService.del(`brute:attempt:2fa:ip:${ip}`),
+      this.redisService.del(`brute:lock:2fa:ip:${ip}`),
+    ]);
+
+    this.memoryLocks.delete(`2fa:${userId}`);
+    this.memoryLocks.delete(`2fa:ip:${ip}`);
+  }
 }

@@ -152,8 +152,9 @@ export class AuthController {
   async verifyStepUp(
     @CurrentUser('id') userId: string,
     @Body() dto: StepUpVerifyDto,
+    @Ip() ip: string,
   ) {
-    return this.twoFactorService.verifyStepUp(userId, dto.code);
+    return this.twoFactorService.verifyStepUp(userId, dto.code, ip);
   }
 
   // ==========================================

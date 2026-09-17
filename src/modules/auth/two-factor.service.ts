@@ -12,6 +12,7 @@ import * as argon2 from 'argon2';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EncryptionService } from '../../common/crypto/encryption.service';
 import { RedisService } from '../../common/redis/redis.service';
+import { BruteForceService } from '../../common/redis/brute-force.service';
 import { normalizePersianDigits } from '../../common/utils/jalali.util';
 
 @Injectable()
@@ -22,6 +23,7 @@ export class TwoFactorService {
     private readonly prisma: PrismaService,
     private readonly encryptionService: EncryptionService,
     private readonly redisService: RedisService,
+    private readonly bruteForceService: BruteForceService,
   ) {}
 
   /**
@@ -215,12 +217,24 @@ export class TwoFactorService {
    * Requirement 5: Step-Up Authentication
    * Verify TOTP code for sensitive actions (e.g. viewing/revoking other users' sessions)
    * Grants a 10-minute step-up grace period
+   *
+   * NOTE: Step-up uses the SAME 2FA-specific rate limiting as the login flow.
+   * This prevents an attacker who has already logged in from brute-forcing
+   * the 6-digit TOTP code to elevate their privileges on sensitive endpoints.
+   * Threshold: 3 failed attempts / 5 min → 5-min lock; 5 failed / 5 min → 15-min lock.
    */
-  async verifyStepUp(userId: string, code: string) {
+  async verifyStepUp(userId: string, code: string, ipAddress?: string) {
+    // Guard: 2FA-specific strict rate limiting (separate from login brute-force window)
+    await this.bruteForceService.check2FAAllowed(userId, ipAddress);
+
     const isValid = await this.verify2FAToken(userId, code);
     if (!isValid) {
+      await this.bruteForceService.record2FAFailedAttempt(userId, ipAddress);
       throw new UnauthorizedException('کد امنیتی دوعاملی نامعتبر است');
     }
+
+    // Clear step-up 2FA counters on success
+    await this.bruteForceService.record2FASuccess(userId, ipAddress);
 
     const now = new Date();
     await this.prisma.user.update({
