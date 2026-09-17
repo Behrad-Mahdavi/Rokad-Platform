@@ -64,7 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       section: 'ارتباطات و اکوسیستم',
       items: [
         { title: 'رسانه هنرستان', href: '/app/media', icon: Sparkles },
-        { title: 'بورد اطلاعیه‌ها', href: '/app/notices', icon: FileCheck },
+        { title: 'پیام‌ها و مکاتبات', href: '/app/messages', icon: MessageSquare },
         { title: 'تقویم آموزشی', href: '/app/calendar', icon: CalendarDays },
         { title: 'رودمپ رویدادها', href: '/app/events', icon: Compass },
         { title: 'کوچینگ و مربی‌گری', href: '/app/coaching', icon: Target },
@@ -176,7 +176,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               { title: 'داشبورد و جلسات کوچینگ', href: '/app/coaching', icon: Target },
               { title: 'تقویم رویدادها و جلسات', href: '/app/calendar', icon: CalendarDays },
               { title: 'رودمپ و رویدادها', href: '/app/events', icon: Compass },
-              { title: 'تابلو اعلانات', href: '/app/notices', icon: FileCheck },
+              { title: 'پیام‌ها و مکاتبات', href: '/app/messages', icon: MessageSquare },
               { title: 'رسانه هنرستان', href: '/app/media', icon: Sparkles },
               { title: 'نظرسنجی و آراء', href: '/app/polls', icon: Vote },
             ],

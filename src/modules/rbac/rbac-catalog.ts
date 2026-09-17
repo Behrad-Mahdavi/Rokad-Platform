@@ -376,6 +376,24 @@ export const PERMISSION_CATALOG: PermissionCatalogItem[] = [
     isSensitive: false,
     icon: 'Building2',
   },
+  {
+    code: 'message.broadcast',
+    labelFa: 'ارسال پیام همگانی به همه کاربران',
+    descriptionFa: 'امکان ارسال پیام گروهی به کل مدرسه، همه اساتید، همه دانش‌آموزان یا همه اولیاء',
+    category: 'OPERATIONS',
+    categoryFa: 'عملیات و تعاملات روزانه',
+    isSensitive: false,
+    icon: 'Megaphone',
+  },
+  {
+    code: 'message.class.write',
+    labelFa: 'ارسال پیام گروهی به کلاس',
+    descriptionFa: 'امکان ارسال پیام و بخشنامه به دانش‌آموزان و اولیای کلاس‌های آموزشی',
+    category: 'OPERATIONS',
+    categoryFa: 'عملیات و تعاملات روزانه',
+    isSensitive: false,
+    icon: 'MessageSquare',
+  },
 
   // 4. Finance (⚠️ Sensitive)
   {

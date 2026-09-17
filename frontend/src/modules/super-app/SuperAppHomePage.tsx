@@ -32,6 +32,7 @@ import {
   Compass,
   Target,
   Sparkles,
+  MessageSquare,
 } from 'lucide-react';
 
 interface SuperAppCard {
@@ -55,7 +56,7 @@ export const SuperAppHomePage: React.FC = () => {
   );
 
   // Quick stats state
-  const [unreadNoticesCount, setUnreadNoticesCount] = useState<number>(0);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState<number>(0);
   const [homeworkCount, setHomeworkCount] = useState<number>(0);
   const [examsCount, setExamsCount] = useState<number>(0);
   const [eventsCount, setEventsCount] = useState<number>(0);
@@ -63,10 +64,10 @@ export const SuperAppHomePage: React.FC = () => {
   useEffect(() => {
     const fetchQuickStats = async () => {
       try {
-        const [hwRes, exRes, noticesRes, eventsRes] = await Promise.allSettled([
+        const [hwRes, exRes, messagesRes, eventsRes] = await Promise.allSettled([
           apiClient.get('/homework'),
           apiClient.get('/exams'),
-          apiClient.get('/notices'),
+          apiClient.get('/messages/inbox?unreadOnly=true'),
           apiClient.get('/calendar/events'),
         ]);
 
@@ -78,9 +79,10 @@ export const SuperAppHomePage: React.FC = () => {
           const list = Array.isArray(exRes.value.data) ? exRes.value.data : [];
           setExamsCount(list.length);
         }
-        if (noticesRes.status === 'fulfilled') {
-          const list = Array.isArray(noticesRes.value.data) ? noticesRes.value.data : [];
-          setUnreadNoticesCount(list.length);
+        if (messagesRes.status === 'fulfilled') {
+          const res = messagesRes.value.data;
+          const count = res?.meta?.unreadCount ?? (Array.isArray(res?.data) ? res.data.length : 0);
+          setUnreadMessagesCount(count);
         }
         if (eventsRes.status === 'fulfilled') {
           const list = Array.isArray(eventsRes.value.data) ? eventsRes.value.data : [];
@@ -421,13 +423,13 @@ export const SuperAppHomePage: React.FC = () => {
             iconColor: 'text-third dark:text-[#FBBF24]',
           },
           {
-            id: 'notices',
-            title: 'تابلو اعلانات',
-            href: '/app/notices',
-            icon: FileCheck,
+            id: 'messages',
+            title: 'پیام‌ها و مکاتبات',
+            href: '/app/messages',
+            icon: MessageSquare,
             iconBg: 'bg-club-light dark:bg-[#2A173E]',
             iconColor: 'text-club dark:text-[#C084FC]',
-            badge: unreadNoticesCount > 0 ? toPersianDigits(unreadNoticesCount) : undefined,
+            badge: unreadMessagesCount > 0 ? toPersianDigits(unreadMessagesCount) : undefined,
           },
           {
             id: 'polls',
@@ -549,13 +551,13 @@ export const SuperAppHomePage: React.FC = () => {
       iconColor: 'text-sec dark:text-[#8194EE]',
     },
     {
-      id: 'notices',
-      title: 'اطلاعیه‌ها',
-      href: '/app/notices',
-      icon: Bell,
+      id: 'messages',
+      title: 'پیام‌ها',
+      href: '/app/messages',
+      icon: MessageSquare,
       iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
       iconColor: 'text-primary-dark dark:text-primary',
-      badge: unreadNoticesCount > 0 ? toPersianDigits(unreadNoticesCount) : undefined,
+      badge: unreadMessagesCount > 0 ? toPersianDigits(unreadMessagesCount) : undefined,
     },
     {
       id: 'polls',

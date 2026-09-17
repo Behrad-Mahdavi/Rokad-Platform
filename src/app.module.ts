@@ -43,6 +43,7 @@ import { PayrollModule } from './modules/payroll/payroll.module';
 import { SaasAdminModule } from './modules/saas-admin/saas-admin.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { CoachingModule } from './modules/coaching/coaching.module';
+import { MessagesModule } from './modules/messages/messages.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -86,6 +87,7 @@ import { AppController } from './app.controller';
     SaasAdminModule,
     NotificationsModule,
     CoachingModule,
+    MessagesModule,
   ],
   controllers: [AppController],
   providers: [

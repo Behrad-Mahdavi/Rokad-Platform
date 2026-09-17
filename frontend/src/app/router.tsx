@@ -63,6 +63,7 @@ import { MediaFeedPage } from '../modules/shared/media/MediaFeedPage';
 import { EventsRoadmapPage } from '../modules/shared/events/EventsRoadmapPage';
 import { EventSinglePage } from '../modules/shared/events/EventSinglePage';
 import { CoachingPage } from '../modules/shared/coaching/CoachingPage';
+import { MessagesPage } from '../modules/shared/messages/MessagesPage';
 
 import { ForbiddenPage } from '../modules/errors/ForbiddenPage';
 import { NotFoundPage } from '../modules/errors/NotFoundPage';
@@ -215,7 +216,8 @@ export const router = createBrowserRouter([
               { path: 'ka-platform', element: <KaPlatformPage /> },
               { path: 'club', element: <ClubPage /> },
               { path: 'chat', element: <Navigate to="/app" replace /> },
-              { path: 'notices', element: <NoticeboardPage /> },
+              { path: 'messages', element: <MessagesPage /> },
+              { path: 'notices', element: <Navigate to="/app/messages" replace /> },
               { path: 'calendar', element: <CalendarPage /> },
               { path: 'events', element: <EventsRoadmapPage /> },
               { path: 'events/:id', element: <EventSinglePage /> },

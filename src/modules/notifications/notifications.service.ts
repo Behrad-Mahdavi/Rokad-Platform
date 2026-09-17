@@ -498,6 +498,46 @@ export class NotificationsService implements OnModuleInit {
       }
     }
 
+    // Recent Academic Messages for this user
+    try {
+      const recentMessages = await this.prisma.academicMessageRecipient.findMany({
+        where: {
+          tenantId,
+          recipientId: user.id,
+          deletedAt: null,
+        },
+        include: {
+          message: {
+            include: {
+              sender: {
+                select: { firstName: true, lastName: true },
+              },
+            },
+          },
+        },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+      });
+
+      recentMessages.forEach((mr) => {
+        const senderName = `${mr.message.sender.firstName || ''} ${mr.message.sender.lastName || ''}`.trim() || 'مدیریت مجتمع';
+        const preview = mr.message.body.length > 70 ? `${mr.message.body.slice(0, 70)}...` : mr.message.body;
+        notifications.push({
+          id: `msg-${mr.id}`,
+          title: `پیام جدید: ${mr.message.title}`,
+          desc: `${senderName}: ${preview}`,
+          time: 'جدید',
+          read: mr.isRead || readIds.has(`msg-${mr.id}`),
+          type: 'ANNOUNCEMENT',
+          badge: mr.message.priority === 'URGENT' ? 'destructive' : mr.message.priority === 'IMPORTANT' ? 'warning' : 'default',
+          targetUrl: '/app/messages',
+          createdAt: mr.createdAt.toISOString(),
+        });
+      });
+    } catch {
+      // non-blocking
+    }
+
     // Sort by creation time descending
     return notifications.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),

@@ -324,6 +324,10 @@ model Tenant {
   coachingSessions      CoachingSession[]
   coachingExtraRequests CoachingExtraRequest[]
 
+  // Academic Messaging System Relations
+  academicMessages          AcademicMessage[]
+  academicMessageRecipients AcademicMessageRecipient[]
+
   @@index([status])
   @@index([parentTenantId])
   @@index([createdAt])
@@ -400,6 +404,10 @@ model User {
   coachCoachingSessions   CoachingSession[]      @relation("CoachCoachingSessions")
   studentExtraRequests    CoachingExtraRequest[] @relation("StudentExtraRequests")
   coachExtraRequests      CoachingExtraRequest[] @relation("CoachExtraRequests")
+
+  // Academic Messaging System Relations
+  sentAcademicMessages     AcademicMessage[]          @relation("SentAcademicMessages")
+  receivedAcademicMessages AcademicMessageRecipient[] @relation("ReceivedAcademicMessages")
 
   @@unique([tenantId, email])
   @@unique([tenantId, phone])
@@ -662,6 +670,7 @@ model Classroom {
   // Phase 5 Relations
   materialClassrooms MaterialClassroom[]
   chatChannels       ChatChannel[]
+  academicMessages   AcademicMessage[]
 
   @@unique([tenantId, academicYearId, name])
   @@unique([tenantId, academicYearId, code])
@@ -2190,6 +2199,78 @@ model CoachingExtraRequest {
 
   @@index([tenantId, coachId, status])
   @@index([tenantId, studentId])
+}
+
+// ==========================================
+// Academic Messaging System (مکاتبات و پیام‌ها)
+// ==========================================
+
+enum MessagePriority {
+  NORMAL
+  IMPORTANT
+  URGENT
+}
+
+enum MessageTargetType {
+  ALL
+  ROLE
+  CLASSROOM
+  INDIVIDUAL
+}
+
+enum MessageTargetAudience {
+  ALL
+  STUDENTS
+  PARENTS
+  TEACHERS
+  STAFF
+}
+
+model AcademicMessage {
+  id                String                 @id @default(uuid())
+  tenantId          String
+  tenant            Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  senderId          String
+  sender            User                   @relation("SentAcademicMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  title             String                 // عنوان / موضوع پیام
+  body              String                 // متن کامل پیام
+  priority          MessagePriority        @default(NORMAL)
+  targetType        MessageTargetType      @default(INDIVIDUAL)
+  targetAudience    MessageTargetAudience  @default(ALL)
+  targetClassroomId String?
+  targetClassroom   Classroom?             @relation(fields: [targetClassroomId], references: [id], onDelete: SetNull)
+  attachments       Json?                  // [{ name, url, type, size }]
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  recipients        AcademicMessageRecipient[]
+
+  @@index([tenantId, senderId, createdAt])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, targetClassroomId])
+}
+
+model AcademicMessageRecipient {
+  id          String           @id @default(uuid())
+  tenantId    String
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  messageId   String
+  message     AcademicMessage  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User             @relation("ReceivedAcademicMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  isRead      Boolean          @default(false)
+  readAt      DateTime?
+  isStarred   Boolean          @default(false)
+  isArchived  Boolean          @default(false)
+  deletedAt   DateTime?        // حذف نرم از صندوق دریافت‌کننده
+
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([messageId, recipientId])
+  @@index([tenantId, recipientId, isRead])
+  @@index([tenantId, recipientId, isStarred])
+  @@index([tenantId, recipientId, createdAt])
 }
 
 
