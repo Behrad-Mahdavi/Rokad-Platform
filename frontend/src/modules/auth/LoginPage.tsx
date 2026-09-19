@@ -38,10 +38,17 @@ export const LoginPage: React.FC = () => {
   const [tempToken, setTempToken] = useState('');
 
   const handle2FASuccess = (res: any) => {
-    const loginData = res.data || res;
-    const { user, accessToken, refreshToken } = loginData;
+    const loginData = res?.data || res;
+    const user = loginData?.user;
+    const accessToken = loginData?.accessToken;
+    const refreshToken = loginData?.refreshToken;
 
-    const tenant = loginData.tenant || user.tenant;
+    if (!user) {
+      setError(loginData?.message || 'اطلاعات کاربری پس از تأیید دو مرحله‌ای دریافت نشد.');
+      return;
+    }
+
+    const tenant = loginData?.tenant || user?.tenant;
     setCurrentTenant({
       id: user.tenantId,
       name: tenant?.name || 'مدرسه رُکاد',
@@ -64,21 +71,30 @@ export const LoginPage: React.FC = () => {
       const res: any = await apiClient.post(
         '/auth/login',
         { identifier, password },
-        { headers: { 'x-tenant-slug': tenantSlug } },
+        tenantSlug ? { headers: { 'x-tenant-slug': tenantSlug } } : undefined,
       );
 
+      const responsePayload = res?.data || res;
+
       // Check if 2FA verification is required
-      if (res?.requiresTwoFactor) {
-        setTempToken(res.tempToken);
+      if (responsePayload?.requiresTwoFactor || res?.requiresTwoFactor) {
+        const token = responsePayload?.tempToken || res?.tempToken;
+        setTempToken(token);
         setIs2FAModalOpen(true);
         return;
       }
 
-      const loginData = res.data || res;
-      const { user, accessToken, refreshToken } = loginData;
+      const loginData = responsePayload;
+      const user = loginData?.user;
+      const accessToken = loginData?.accessToken;
+      const refreshToken = loginData?.refreshToken;
+
+      if (!user) {
+        throw new Error(loginData?.message || 'اطلاعات کاربری دریافت نشد.');
+      }
 
       // Update active tenant store
-      const tenant = loginData.tenant || user.tenant;
+      const tenant = loginData?.tenant || user?.tenant;
       setCurrentTenant({
         id: user.tenantId,
         name: tenant?.name || 'مدرسه رُکاد',
