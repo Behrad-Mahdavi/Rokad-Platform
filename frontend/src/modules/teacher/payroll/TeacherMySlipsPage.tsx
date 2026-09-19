@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { apiClient } from '../../../lib/api/client';
+import { useAuthStore } from '../../../lib/auth/auth-store';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
@@ -77,7 +78,8 @@ export const TeacherMySlipsPage: React.FC = () => {
   }, []);
 
   const handlePrintSlip = (slipId: string) => {
-    const url = `/api/v1/finance/payroll/export/print/${slipId}`;
+    const token = useAuthStore.getState().accessToken;
+    const url = `/api/v1/finance/payroll/export/print/${slipId}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
     window.open(url, '_blank');
   };
 
