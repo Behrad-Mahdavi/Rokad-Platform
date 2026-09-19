@@ -6,7 +6,6 @@ interface TenantState {
   theme: BrandThemeKey;
   setCurrentTenant: (tenant: TenantInfo) => void;
   setTheme: (theme: BrandThemeKey) => void;
-  switchBranch: (branch: 'boys' | 'girls') => void;
   clearTenant: () => void;
 }
 
@@ -40,14 +39,6 @@ export const useTenantStore = create<TenantState>((set) => ({
       theme: ['ecosystem', 'male', 'female', 'college', 'club'].includes(rawTheme)
         ? rawTheme
         : 'male',
-    });
-  },
-
-  switchBranch: (branch: 'boys' | 'girls') => {
-    const target = ROKAD_BRANCHES[branch];
-    set({
-      currentTenant: target,
-      theme: target.theme as BrandThemeKey,
     });
   },
 
