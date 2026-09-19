@@ -1,20 +1,54 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CheckStatus, PaymentMethod } from '@prisma/client';
 
 @Injectable()
-export class ChequeReminderScheduler {
+export class ChequeReminderScheduler implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(ChequeReminderScheduler.name);
+  private timer: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  // Run daily at 09:00 AM
-  @Cron(CronExpression.EVERY_DAY_AT_9AM)
+  onModuleInit() {
+    this.scheduleDailyRun();
+    this.logger.log('Cheque maturity reminder scheduler initialized (daily at 09:00 AM).');
+  }
+
+  onModuleDestroy() {
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = null;
+    }
+  }
+
+  private scheduleDailyRun() {
+    const scheduleNext = () => {
+      const now = new Date();
+      const next = new Date();
+      next.setHours(9, 0, 0, 0);
+
+      if (next <= now) {
+        next.setDate(next.getDate() + 1);
+      }
+
+      const msUntilNext = next.getTime() - now.getTime();
+      this.timer = setTimeout(async () => {
+        try {
+          await this.handleDailyChequeReminders();
+        } catch (err: any) {
+          this.logger.error(`Cheque reminder job failed: ${err?.message}`);
+        }
+        scheduleNext();
+      }, msUntilNext);
+    };
+
+    scheduleNext();
+  }
+
   async handleDailyChequeReminders() {
     this.logger.log('Executing daily cheque maturity reminder job...');
     const now = new Date();
