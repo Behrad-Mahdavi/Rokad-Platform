@@ -2,7 +2,7 @@
   "name": "rokad-platform",
   "version": "1.0.0",
   "description": "Rokad Multi-Tenant School ERP & LMS SaaS Platform",
-  "author": "Rokad Team",
+  "author": "Rokad Studio Team",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {

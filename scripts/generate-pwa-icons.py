@@ -66,7 +66,7 @@ def generate_icon(size, output_path, is_maskable=False):
     print(f"Generated: {output_path} ({size}x{size})")
 
 if __name__ == "__main__":
-    out_dir = "/Users/behrad/Desktop/Projects/rokad-platform/frontend/public/icons"
+    out_dir = os.path.join(os.path.dirname(__file__), "../frontend/public/icons")
     generate_icon(192, f"{out_dir}/pwa-192x192.png")
     generate_icon(512, f"{out_dir}/pwa-512x512.png")
     generate_icon(180, f"{out_dir}/apple-touch-icon.png")

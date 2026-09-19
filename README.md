@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Behrad-Mahdavi/Rokad-Platform/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="License"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="License"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-22.x-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js"></a>
   <a href="https://nestjs.com/"><img src="https://img.shields.io/badge/NestJS-10.x-E0234E?style=for-the-badge&logo=nestjs&logoColor=white" alt="NestJS"></a>
   <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18.x-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React"></a>
@@ -201,7 +201,7 @@ rokad-platform/
 
 ### ۱. کلون مخزن و نصب وابستگی‌ها
 ```bash
-git clone https://github.com/Behrad-Mahdavi/Rokad-Platform.git
+git clone https://github.com/Rokad-Studio/Rokad-Platform.git
 cd Rokad-Platform
 pnpm install
 ```
@@ -299,5 +299,5 @@ npx ts-node scratch/test-finance-engine.ts
 پروژه تحت مجوز [MIT License](LICENSE) منتشر شده است. استفاده تجاری، توسعه و شخصی‌سازی آن با رعایت شرایط لایسنس مجاز است.
 
 <p align="center">
-  <sub>طراحی و توسعه یافته با ❤️ توسط تیم توسعه رُکاد</sub>
+  <sub>طراحی و توسعه یافته با ❤️ توسط تیم استودیو رُکاد (Rokad Studio Team)</sub>
 </p>

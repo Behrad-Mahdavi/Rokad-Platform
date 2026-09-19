@@ -2,7 +2,7 @@
 
 > **نسخه:** ۲.۰ (بازنویسی کامل و جامع)  
 > **دامنه شمول:** کلیه ماژول‌ها، صفحات، کامپوننت‌ها و جریان‌های کاری فرانت‌اند پلتفرم رُکاد (`frontend/src/`)  
-> **اسناد بالادستی و مکمل:** [CLAUDE.md](file:///Users/behrad/Desktop/Projects/rokad-platform/CLAUDE.md) (معماری و مهندسی)، [jalalidate.md](file:///Users/behrad/Desktop/Projects/rokad-platform/jalalidate.md) (معماری تقویم شمسی)
+> **اسناد بالادستی و مکمل:** [CLAUDE.md](CLAUDE.md) (معماری و مهندسی)، [jalalidate.md](jalalidate.md) (معماری تقویم شمسی)
 
 ---
 
@@ -107,7 +107,7 @@
 - فیلد خطا خورده فوکوس واضح گرفته و به طور خودکار در دید اسکرول می‌شود (`scrollIntoView`).
 
 ### ۴.۴ انتخابگر تاریخ شمسی (Jalali Date Picker)
-- طبق سند [jalalidate.md](file:///Users/behrad/Desktop/Projects/rokad-platform/jalalidate.md)، در موبایل انتخابگر تاریخ به صورت **Bottom Sheet** باز می‌شود.
+- طبق سند [jalalidate.md](jalalidate.md)، در موبایل انتخابگر تاریخ به صورت **Bottom Sheet** باز می‌شود.
 - امکان جابه‌جایی سریع بین ماه‌ها و سال‌ها با چرخ یا دراپ‌دان لمسی فراهم است و کلیدهای میانبر («امروز»، «فردا»، «هفته بعد») برای دسترسی تک‌لمسی تعبیه شده‌اند.
 
 ---
