@@ -32,7 +32,7 @@ import { SecuritySection } from './components/SecuritySection';
 export const ProfileSettingsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const { currentTenant, switchBranch } = useTenantStore();
+  const { currentTenant } = useTenantStore();
 
   // Dark mode state
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -193,11 +193,11 @@ export const ProfileSettingsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Branch quick badge */}
+              {/* School badge */}
               <div className="pt-1 flex items-center justify-center sm:justify-start gap-2">
-                <span className="text-[11px] text-gray-400">شعبه فعال:</span>
+                <span className="text-[11px] text-gray-400">مرکز آموزشی:</span>
                 <Badge variant={currentTenant?.slug === 'rokad-girls' ? 'female' : 'male'} className="text-[10px]">
-                  {currentTenant?.slug === 'rokad-girls' ? 'هنرستان دخترانه' : 'هنرستان پسرانه'}
+                  {currentTenant?.name || (currentTenant?.slug === 'rokad-girls' ? 'هنرستان دخترانه رُکاد' : 'هنرستان پسرانه رُکاد')}
                 </Badge>
               </div>
             </div>
@@ -270,54 +270,6 @@ export const ProfileSettingsPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Branch Switcher Section */}
-      <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#151C28]">
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-male/10 text-male">
-              <GraduationCap className="w-4 h-4" />
-            </div>
-            <div>
-              <CardTitle className="text-base font-extrabold">تغییر شعبه هنرستان</CardTitle>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => switchBranch('boys')}
-              className={`p-3 rounded-xl border text-right transition-all flex items-center justify-between cursor-pointer ${
-                currentTenant?.slug === 'rokad-boys'
-                  ? 'border-male bg-male/10 dark:bg-male/20 text-male-dark dark:text-male-light font-bold shadow-xs'
-                  : 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-male" />
-                <span className="text-xs font-bold">شعبه پسرانه</span>
-              </div>
-              {currentTenant?.slug === 'rokad-boys' && <CheckCircle2 className="w-4 h-4 text-male" />}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => switchBranch('girls')}
-              className={`p-3 rounded-xl border text-right transition-all flex items-center justify-between cursor-pointer ${
-                currentTenant?.slug === 'rokad-girls'
-                  ? 'border-female bg-female/10 dark:bg-female/20 text-female-dark dark:text-pink-300 font-bold shadow-xs'
-                  : 'border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-female" />
-                <span className="text-xs font-bold">شعبه دخترانه</span>
-              </div>
-              {currentTenant?.slug === 'rokad-girls' && <CheckCircle2 className="w-4 h-4 text-female" />}
-            </button>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Push Notifications Section */}
       {isPushSupported && (

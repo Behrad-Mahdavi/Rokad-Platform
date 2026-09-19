@@ -18,6 +18,7 @@ export interface UserProfile {
   avatarUrl?: string;
   permissions?: string[];
   isPlatformAdmin?: boolean;
+  twoFactorEnabled?: boolean;
 }
 
 export interface AuthTokens {

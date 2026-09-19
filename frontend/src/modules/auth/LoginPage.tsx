@@ -38,15 +38,23 @@ export const LoginPage: React.FC = () => {
   const [tempToken, setTempToken] = useState('');
 
   const handle2FASuccess = (res: any) => {
-    const loginData = res.data || res;
-    const { user, accessToken, refreshToken } = loginData;
+    const loginData = res?.data || res;
+    const user = loginData?.user;
+    const accessToken = loginData?.accessToken;
+    const refreshToken = loginData?.refreshToken;
 
+    if (!user) {
+      setError(loginData?.message || 'اطلاعات کاربری پس از تأیید دو مرحله‌ای دریافت نشد.');
+      return;
+    }
+
+    const tenant = loginData?.tenant || user?.tenant;
     setCurrentTenant({
       id: user.tenantId,
-      name: loginData.tenant?.name || 'مدرسه رُکاد',
-      slug: tenantSlug,
+      name: tenant?.name || 'مدرسه رُکاد',
+      slug: tenant?.slug || tenantSlug || 'rokad-boys',
       type: 'SCHOOL',
-      theme: (loginData.tenant?.theme || 'ecosystem').toLowerCase() as any,
+      theme: (tenant?.theme || 'ecosystem').toLowerCase() as any,
     });
 
     login(user, accessToken, refreshToken);
@@ -63,26 +71,36 @@ export const LoginPage: React.FC = () => {
       const res: any = await apiClient.post(
         '/auth/login',
         { identifier, password },
-        { headers: { 'x-tenant-slug': tenantSlug } },
+        tenantSlug ? { headers: { 'x-tenant-slug': tenantSlug } } : undefined,
       );
 
+      const responsePayload = res?.data || res;
+
       // Check if 2FA verification is required
-      if (res?.requiresTwoFactor) {
-        setTempToken(res.tempToken);
+      if (responsePayload?.requiresTwoFactor || res?.requiresTwoFactor) {
+        const token = responsePayload?.tempToken || res?.tempToken;
+        setTempToken(token);
         setIs2FAModalOpen(true);
         return;
       }
 
-      const loginData = res.data || res;
-      const { user, accessToken, refreshToken } = loginData;
+      const loginData = responsePayload;
+      const user = loginData?.user;
+      const accessToken = loginData?.accessToken;
+      const refreshToken = loginData?.refreshToken;
+
+      if (!user) {
+        throw new Error(loginData?.message || 'اطلاعات کاربری دریافت نشد.');
+      }
 
       // Update active tenant store
+      const tenant = loginData?.tenant || user?.tenant;
       setCurrentTenant({
         id: user.tenantId,
-        name: loginData.tenant?.name || 'مدرسه رُکاد',
-        slug: tenantSlug,
+        name: tenant?.name || 'مدرسه رُکاد',
+        slug: tenant?.slug || tenantSlug || 'rokad-boys',
         type: 'SCHOOL',
-        theme: (loginData.tenant?.theme || 'ecosystem').toLowerCase() as any,
+        theme: (tenant?.theme || 'ecosystem').toLowerCase() as any,
       });
 
       // Update auth store
@@ -133,15 +151,7 @@ export const LoginPage: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="شناسه شعبه هنرستان یا کالج"
-            placeholder="مثال: rokad-boys یا rokad-girls یا rokad-college"
-            value={tenantSlug}
-            onChange={(e) => setTenantSlug(e.target.value)}
-            required
-          />
-
-          <Input
-            label="کد ملی یا نام کاربری"
+            label="کد ملی، شماره همراه یا نام کاربری"
             placeholder="مثال: 0012345678 (کد ملی) یا شماره همراه"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
