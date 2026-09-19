@@ -58,6 +58,8 @@ export enum AppPermission {
   // Finance & HR (Phase 6 Prep)
   FINANCE_FEE_READ = 'finance.fee.read',
   FINANCE_FEE_WRITE = 'finance.fee.write',
+  FINANCE_CHECK_MANAGE = 'finance.check.manage',
+  FINANCE_FEE_IMPORT = 'finance.fee.import',
   FINANCE_PAYROLL_READ = 'finance.payroll.read',
   FINANCE_PAYROLL_WRITE = 'finance.payroll.write',
 }

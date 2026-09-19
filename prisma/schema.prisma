@@ -308,9 +308,11 @@ model Tenant {
   chatMessages        ChatMessage[]
 
   // Phase 6 Relations
+  feePlans              FeePlan[]
   studentFeeContracts   StudentFeeContract[]
   feeInstallments       FeeInstallment[]
   paymentTransactions   PaymentTransaction[]
+  feePayments           FeePayment[]
   feeReceipts           FeeReceipt[]
   staffPayrollProfiles  StaffPayrollProfile[]
   payrollSlips          PayrollSlip[]
@@ -404,6 +406,8 @@ model User {
   // Phase 6 Relations
   paymentTransactions   PaymentTransaction[]  @relation("PayerTransactions")
   issuedFeeReceipts     FeeReceipt[]          @relation("IssuedFeeReceipts")
+  recordedFeePayments   FeePayment[]          @relation("RecordedPayments")
+  checkStatusChangedPayments FeePayment[]     @relation("CheckStatusChangers")
   staffPayrollProfile   StaffPayrollProfile?
   payrollSlips          PayrollSlip[]         @relation("EmployeePayrollSlips")
   approvedPayrollSlips  PayrollSlip[]         @relation("ApprovedPayrollSlips")
@@ -567,6 +571,7 @@ model AcademicYear {
   courseMaterials     CourseMaterial[]
 
   // Phase 6
+  feePlans            FeePlan[]
   studentFeeContracts StudentFeeContract[]
 
   @@unique([tenantId, name])
@@ -608,6 +613,7 @@ model EducationalLevel {
   studyFields StudyField[]
   classrooms  Classroom[]
   lessons     Lesson[]
+  feePlans    FeePlan[]
 
   @@unique([tenantId, name])
   @@unique([tenantId, code])
@@ -706,6 +712,7 @@ model Classroom {
   materialClassrooms MaterialClassroom[]
   chatChannels       ChatChannel[]
   academicMessages   AcademicMessage[]
+  feePlans           FeePlan[]
 
   @@unique([tenantId, academicYearId, name])
   @@unique([tenantId, academicYearId, code])
@@ -1860,82 +1867,130 @@ enum ContractType {
   CONTRACTUAL
 }
 
-model StudentFeeContract {
+enum FeePlanScope {
+  ALL_SCHOOL
+  EDUCATIONAL_LEVEL
+  CLASSROOM
+  INDIVIDUAL
+}
+
+enum CheckStatus {
+  PENDING
+  CASHED
+  BOUNCED
+  REPLACED
+}
+
+model FeePlan {
   id                 String            @id @default(uuid())
   tenantId           String
   tenant             Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   academicYearId     String
   academicYear       AcademicYear      @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  studentId          String
-  student            StudentProfile    @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  contractNumber     String            // e.g. "FEE-1404-001"
-  totalAmount        Float             // کل مبلغ مصوب شهریه
-  discountAmount     Float             @default(0) // مبلغ تخفیف / بورسیه
-  finalPayableAmount Float             // مبلغ نهایی پس از کسر تخفیف
-  discountReason     String?
-  status             FeeContractStatus @default(ACTIVE)
-  notes              String?
+  title              String            // e.g. "شهریه سالانه پایه دهم ۱۴۰۴-۱۴۰۵"
+  amount             Decimal           @db.Decimal(15, 2)
+  appliesTo          FeePlanScope      @default(ALL_SCHOOL)
+  educationalLevelId String?
+  educationalLevel   EducationalLevel? @relation(fields: [educationalLevelId], references: [id], onDelete: SetNull)
+  classroomId        String?
+  classroom          Classroom?        @relation(fields: [classroomId], references: [id], onDelete: SetNull)
+  description        String?
+  installmentCount   Int               @default(1)
+  installmentConfig  Json?             // [{ number: 1, title: "پیش‌پرداخت", percentOrAmount: 30, dueMonthOffset: 0 }]
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 
-  installments FeeInstallment[]
-  transactions PaymentTransaction[]
-  receipts     FeeReceipt[]
+  contracts          StudentFeeContract[]
+
+  @@index([tenantId, academicYearId])
+}
+
+model StudentFeeContract {
+  id                  String             @id @default(uuid())
+  tenantId            String
+  tenant              Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  academicYearId      String
+  academicYear        AcademicYear       @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  studentId           String
+  student             StudentProfile     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  contractNumber      String             // e.g. "FEE-1404-001"
+  totalAmount         Decimal            @db.Decimal(15, 2) // کل مبلغ مصوب شهریه
+  discountAmount      Decimal            @default(0) @db.Decimal(15, 2) // مبلغ تخفیف / بورسیه
+  finalPayableAmount  Decimal            @db.Decimal(15, 2) // مبلغ نهایی پس از کسر تخفیف
+  balanceRemaining    Decimal            @default(0) @db.Decimal(15, 2) // مانده بدهی تاییدشده
+  discountReason      String?
+  status              FeeContractStatus  @default(ACTIVE)
+  notes               String?
+  feePlanId           String?
+  feePlan             FeePlan?           @relation(fields: [feePlanId], references: [id], onDelete: SetNull)
+  isIndividual        Boolean            @default(false)
+  hasFinancialHold    Boolean            @default(false) // برچسب چک برگشتی یا اخطار مالی
+  financialHoldReason String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  installments        FeeInstallment[]
+  transactions        PaymentTransaction[]
+  payments            FeePayment[]
+  receipts            FeeReceipt[]
 
   @@unique([tenantId, contractNumber])
   @@unique([tenantId, academicYearId, studentId])
   @@index([tenantId, status])
+  @@index([tenantId, hasFinancialHold])
 }
 
 model FeeInstallment {
-  id                String            @id @default(uuid())
+  id                String             @id @default(uuid())
   tenantId          String
-  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   contractId        String
   contract          StudentFeeContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  installmentNumber Int               // قسط ۱، ۲، ۳...
-  title             String            // e.g. "پیش‌پرداخت ثبت‌نام", "قسط آبان‌ماه"
-  dueDate           DateTime          // تاریخ سررسید قسط
-  amount            Float             // مبلغ مصوب قسط
-  paidAmount        Float             @default(0) // مبلغ واریزشده
-  status            InstallmentStatus @default(UNPAID)
+  installmentNumber Int                // قسط ۱، ۲، ۳...
+  title             String             // e.g. "پیش‌پرداخت ثبت‌نام", "قسط آبان‌ماه"
+  dueDate           DateTime           // تاریخ سررسید قسط
+  amount            Decimal            @db.Decimal(15, 2) // مبلغ مصوب قسط
+  paidAmount        Decimal            @default(0) @db.Decimal(15, 2) // مبلغ واریزشده
+  status            InstallmentStatus  @default(UNPAID)
   paidAt            DateTime?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
-  transactions PaymentTransaction[]
+  transactions      PaymentTransaction[]
+  payments          FeePayment[]
 
   @@unique([contractId, installmentNumber])
   @@index([tenantId, status, dueDate])
 }
 
 model PaymentTransaction {
-  id                     String         @id @default(uuid())
+  id                     String              @id @default(uuid())
   tenantId               String
-  tenant                 Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant                 Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   contractId             String?
   contract               StudentFeeContract? @relation(fields: [contractId], references: [id], onDelete: SetNull)
   installmentId          String?
-  installment            FeeInstallment? @relation(fields: [installmentId], references: [id], onDelete: SetNull)
+  installment            FeeInstallment?     @relation(fields: [installmentId], references: [id], onDelete: SetNull)
   payerUserId            String
-  payer                  User           @relation("PayerTransactions", fields: [payerUserId], references: [id], onDelete: Cascade)
-  gateway                PaymentGateway @default(ZARINPAL)
-  method                 PaymentMethod  @default(ONLINE_GATEWAY)
-  amount                 Float          // مبلغ پرداختی (ریال یا تومان طبق استاندارد سیستم)
-  status                 PaymentStatus  @default(PENDING)
-  authority              String?        // کد پیگیری درگاه پرداخت زرین‌پال
-  refId                  String?        // شماره مرجع / تراکنش بانکی زرین‌پال
-  trackingCode           String         // کد پیگیری یکتای داخلی رُکاد
-  cardPan                String?        // شماره کارت ماسک‌شده پرداخت‌کننده
+  payer                  User                @relation("PayerTransactions", fields: [payerUserId], references: [id], onDelete: Cascade)
+  gateway                PaymentGateway      @default(ZARINPAL)
+  method                 PaymentMethod       @default(ONLINE_GATEWAY)
+  amount                 Decimal             @db.Decimal(15, 2) // مبلغ پرداختی
+  status                 PaymentStatus       @default(PENDING)
+  authority              String?             // کد پیگیری درگاه پرداخت زرین‌پال
+  refId                  String?             // شماره مرجع / تراکنش بانکی زرین‌پال
+  trackingCode           String              // کد پیگیری یکتای داخلی رُکاد
+  cardPan                String?             // شماره کارت ماسک‌شده پرداخت‌کننده
   ipAddress              String?
   gatewayRequestPayload  Json?
   gatewayResponsePayload Json?
   errorMessage           String?
   verifiedAt             DateTime?
   idempotencyKey         String?
-  createdAt              DateTime       @default(now())
+  createdAt              DateTime            @default(now())
 
-  receipt FeeReceipt?
+  receipt                FeeReceipt?
+  feePayment             FeePayment?
 
   @@unique([tenantId, trackingCode])
   @@index([tenantId, authority])
@@ -1943,21 +1998,71 @@ model PaymentTransaction {
   @@index([tenantId, payerUserId])
 }
 
+model FeePayment {
+  id                     String              @id @default(uuid())
+  tenantId               String
+  tenant                 Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  feeContractId          String
+  feeContract            StudentFeeContract  @relation(fields: [feeContractId], references: [id], onDelete: Cascade)
+  installmentId          String?
+  installment            FeeInstallment?     @relation(fields: [installmentId], references: [id], onDelete: SetNull)
+  method                 PaymentMethod       @default(CASH)
+  amount                 Decimal             @db.Decimal(15, 2)
+  recordedById           String
+  recordedBy             User                @relation("RecordedPayments", fields: [recordedById], references: [id], onDelete: Cascade)
+  recordedAt             DateTime            @default(now())
+  note                   String?
+
+  // پرداخت نقدی
+  cashReceivedAt         DateTime?
+
+  // اختصاصی چک (استاندارد صیادی ایران)
+  checkNumber            String?
+  checkSayadId           String?             // کد صیادی ۱۶ رقمی
+  bankName               String?
+  branchName             String?
+  checkOwnerName         String?
+  checkDueDate           DateTime?
+  checkStatus            CheckStatus?        @default(PENDING)
+  checkStatusChangedAt   DateTime?
+  checkStatusChangedById String?
+  checkStatusChangedBy   User?               @relation("CheckStatusChangers", fields: [checkStatusChangedById], references: [id], onDelete: SetNull)
+
+  // زنجیره جایگزینی چک برگشتی (Self-relation)
+  replacedByPaymentId    String?             @unique
+  replacedByPayment      FeePayment?         @relation("PaymentReplacement", fields: [replacedByPaymentId], references: [id], onDelete: SetNull)
+  previousPayment        FeePayment?         @relation("PaymentReplacement")
+
+  // ارجاع به تراکنش درگاه آنلاین (در صورت ONLINE_GATEWAY)
+  gatewayTransactionId   String?             @unique
+  gatewayTransaction     PaymentTransaction? @relation(fields: [gatewayTransactionId], references: [id], onDelete: SetNull)
+
+  receipt                FeeReceipt?
+
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+
+  @@index([tenantId, feeContractId])
+  @@index([tenantId, checkDueDate, checkStatus])
+}
+
 model FeeReceipt {
-  id            String             @id @default(uuid())
+  id            String              @id @default(uuid())
   tenantId      String
-  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  transactionId String             @unique
-  transaction   PaymentTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  transactionId String?             @unique
+  transaction   PaymentTransaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  paymentId     String?             @unique
+  payment       FeePayment?         @relation(fields: [paymentId], references: [id], onDelete: SetNull)
   contractId    String
-  contract      StudentFeeContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  receiptNumber String             // e.g. "REC-1404-0012"
-  amount        Float
+  contract      StudentFeeContract  @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  receiptNumber String              // e.g. "REC-1404-0012"
+  amount        Decimal             @db.Decimal(15, 2)
   payerName     String
-  paymentMethod PaymentMethod      @default(ONLINE_GATEWAY)
-  issuedAt      DateTime           @default(now())
+  paymentMethod PaymentMethod       @default(ONLINE_GATEWAY)
+  issuedAt      DateTime            @default(now())
   issuedById    String?
-  issuedBy      User?              @relation("IssuedFeeReceipts", fields: [issuedById], references: [id], onDelete: SetNull)
+  issuedBy      User?               @relation("IssuedFeeReceipts", fields: [issuedById], references: [id], onDelete: SetNull)
 
   @@unique([tenantId, receiptNumber])
   @@index([tenantId, contractId])

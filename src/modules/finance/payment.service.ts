@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../../common/redis/redis.service';
 import {
@@ -62,8 +63,10 @@ export class PaymentService {
     }
 
     // Crucial: Recalculate remaining amount strictly on server-side
-    const remainingAmount = installment.amount - installment.paidAmount;
-    if (remainingAmount <= 0) {
+    const instAmt = new Prisma.Decimal(installment.amount);
+    const paidAmt = new Prisma.Decimal(installment.paidAmount);
+    const remainingAmount = instAmt.minus(paidAmt);
+    if (remainingAmount.lessThanOrEqualTo(0)) {
       throw new BadRequestException('مبلغ مانده این قسط صفر است');
     }
 
@@ -92,7 +95,7 @@ export class PaymentService {
     // Request payment from gateway
     const gatewayResult = await this.gatewayProvider.requestPayment({
       tenantId,
-      amount: remainingAmount,
+      amount: Number(remainingAmount),
       description,
       callbackUrl,
       mobile: installment.contract.student.user.phone || undefined,
@@ -104,7 +107,7 @@ export class PaymentService {
       data: {
         authority: gatewayResult.authority,
         gatewayRequestPayload: {
-          amount: remainingAmount,
+          amount: Number(remainingAmount),
           callbackUrl,
           description,
         },
@@ -193,7 +196,7 @@ export class PaymentService {
       // Call Gateway Verify API server-side
       const verifyResult = await this.gatewayProvider.verifyPayment({
         authority: dto.authority,
-        amount: transaction.amount,
+        amount: Number(transaction.amount),
       });
 
       if (!verifyResult.isSuccess) {
@@ -224,15 +227,18 @@ export class PaymentService {
           },
         });
 
-        // 2. Update Fee Installment
+        // 2. Update Fee Installment & Contract Balance
+        const txAmount = new Prisma.Decimal(transaction.amount);
+
         if (transaction.installmentId) {
           const inst = await tx.feeInstallment.findUnique({
             where: { id: transaction.installmentId },
           });
           if (inst) {
-            const newPaidAmount = inst.paidAmount + transaction.amount;
+            const newPaidAmount = new Prisma.Decimal(inst.paidAmount).add(txAmount);
+            const instAmount = new Prisma.Decimal(inst.amount);
             const newStatus =
-              newPaidAmount >= inst.amount ? 'PAID' : 'PARTIALLY_PAID';
+              newPaidAmount.greaterThanOrEqualTo(instAmount) ? 'PAID' : 'PARTIALLY_PAID';
 
             await tx.feeInstallment.update({
               where: { id: inst.id },
@@ -240,6 +246,24 @@ export class PaymentService {
                 paidAmount: newPaidAmount,
                 status: newStatus,
                 paidAt: newStatus === 'PAID' ? new Date() : inst.paidAt,
+              },
+            });
+          }
+        }
+
+        if (transaction.contractId) {
+          const contract = await tx.studentFeeContract.findUnique({
+            where: { id: transaction.contractId },
+          });
+          if (contract) {
+            const currentBal = new Prisma.Decimal(contract.balanceRemaining);
+            const newBal = currentBal.minus(txAmount);
+            const finalBal = newBal.lessThan(0) ? new Prisma.Decimal(0) : newBal;
+            await tx.studentFeeContract.update({
+              where: { id: contract.id },
+              data: {
+                balanceRemaining: finalBal,
+                status: finalBal.equals(0) ? 'COMPLETED' : contract.status,
               },
             });
           }
@@ -314,7 +338,9 @@ export class PaymentService {
       throw new BadRequestException('این قسط قبلاً تسویه شده است');
     }
 
-    const remainingAmount = installment.amount - installment.paidAmount;
+    const instAmount = new Prisma.Decimal(installment.amount);
+    const paidAmount = new Prisma.Decimal(installment.paidAmount);
+    const remainingAmount = instAmount.minus(paidAmount);
     const trackingCode = `OFF-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     return this.prisma.$transaction(async (tx) => {
@@ -343,6 +369,23 @@ export class PaymentService {
           paidAt: new Date(),
         },
       });
+
+      // Update contract balance
+      const contract = await tx.studentFeeContract.findUnique({
+        where: { id: installment.contractId },
+      });
+      if (contract) {
+        const curBal = new Prisma.Decimal(contract.balanceRemaining);
+        const newBal = curBal.minus(remainingAmount);
+        const finalBal = newBal.lessThan(0) ? new Prisma.Decimal(0) : newBal;
+        await tx.studentFeeContract.update({
+          where: { id: contract.id },
+          data: {
+            balanceRemaining: finalBal,
+            status: finalBal.equals(0) ? 'COMPLETED' : contract.status,
+          },
+        });
+      }
 
       const receiptNumber = `REC-OFF-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
       const payerName = `${installment.contract.student.user.firstName} ${installment.contract.student.user.lastName}`;

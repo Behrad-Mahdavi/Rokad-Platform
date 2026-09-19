@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
+  IsBoolean,
   IsDateString,
   IsInt,
   IsNotEmpty,
@@ -68,6 +69,16 @@ export class CreateFeeContractDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @ApiPropertyOptional({ description: 'شناسه طرح شهریه مرجع' })
+  @IsString()
+  @IsOptional()
+  feePlanId?: string;
+
+  @ApiPropertyOptional({ description: 'آیا قرارداد به صورت موردی/استثنا ثبت شده است', default: false })
+  @IsBoolean()
+  @IsOptional()
+  isIndividual?: boolean;
 
   @ApiProperty({
     description: 'لیست اقساط تعریف‌شده برای قرارداد',

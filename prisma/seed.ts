@@ -137,6 +137,8 @@ async function main() {
     // Finance & HR
     { code: 'finance.fee.read', module: 'FINANCE', name: 'مشاهده وضعیت شهریه دانش‌آموزان' },
     { code: 'finance.fee.write', module: 'FINANCE', name: 'ثبت فیش و تقسیط شهریه' },
+    { code: 'finance.check.manage', module: 'FINANCE', name: 'مدیریت و تغییر وضعیت چک‌ها' },
+    { code: 'finance.fee.import', module: 'FINANCE', name: 'ورود گروهی اطلاعات مالی از اکسل' },
     { code: 'finance.payroll.read', module: 'FINANCE', name: 'مشاهده فیش‌های حقوقی' },
     { code: 'finance.payroll.write', module: 'FINANCE', name: 'محاسبه و صدور حقوق' },
   ];
