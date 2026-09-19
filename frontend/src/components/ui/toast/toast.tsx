@@ -10,30 +10,73 @@ export interface UndoableToastOptions {
   icon?: React.ComponentType<{ className?: string }>;
 }
 
+export interface ToastOptions {
+  id?: string | number;
+  duration?: number;
+  description?: string;
+}
+
+// Deduplication cache to prevent duplicate toasts within 600ms
+const recentToasts = new Map<string, number>();
+const DEDUPE_INTERVAL_MS = 600;
+
+function isDuplicate(key: string): boolean {
+  const now = Date.now();
+  const last = recentToasts.get(key);
+  if (last && now - last < DEDUPE_INTERVAL_MS) {
+    return true;
+  }
+  recentToasts.set(key, now);
+
+  // Periodic cleanup
+  if (recentToasts.size > 100) {
+    for (const [k, time] of recentToasts.entries()) {
+      if (now - time > 5000) recentToasts.delete(k);
+    }
+  }
+  return false;
+}
+
 export const toast = {
-  success: (message: string, options?: { duration?: number; description?: string }) => {
+  success: (message: string, options?: ToastOptions) => {
+    const key = `success_${options?.id ?? message}`;
+    if (isDuplicate(key)) return key;
+
     return sonnerToast.success(message, {
+      id: options?.id ?? key,
       duration: options?.duration ?? 3000,
       description: options?.description,
     });
   },
 
-  error: (message: string, options?: { duration?: number; description?: string }) => {
+  error: (message: string, options?: ToastOptions) => {
+    const key = `error_${options?.id ?? message}`;
+    if (isDuplicate(key)) return key;
+
     return sonnerToast.error(message, {
+      id: options?.id ?? key,
       duration: options?.duration ?? 5000,
       description: options?.description,
     });
   },
 
-  warning: (message: string, options?: { duration?: number; description?: string }) => {
+  warning: (message: string, options?: ToastOptions) => {
+    const key = `warning_${options?.id ?? message}`;
+    if (isDuplicate(key)) return key;
+
     return sonnerToast.warning(message, {
+      id: options?.id ?? key,
       duration: options?.duration ?? 4000,
       description: options?.description,
     });
   },
 
-  info: (message: string, options?: { duration?: number; description?: string }) => {
+  info: (message: string, options?: ToastOptions) => {
+    const key = `info_${options?.id ?? message}`;
+    if (isDuplicate(key)) return key;
+
     return sonnerToast.info(message, {
+      id: options?.id ?? key,
       duration: options?.duration ?? 3000,
       description: options?.description,
     });
@@ -54,6 +97,9 @@ export const toast = {
    * نمایش توست بازگردانی تلگرامی با نوار پیشرفت و تایمر ۵ ثانیه
    */
   undoable: (options: UndoableToastOptions) => {
+    const key = `undo_${options.message}`;
+    if (isDuplicate(key)) return key;
+
     const duration = options.duration ?? 5000;
 
     return sonnerToast.custom(
@@ -66,7 +112,10 @@ export const toast = {
           onUndo={() => {
             options.onUndo();
             sonnerToast.dismiss(t);
-            sonnerToast.success('تغییرات با موفقیت بازگردانده شد', { duration: 2500 });
+            sonnerToast.success('تغییرات با موفقیت بازگردانده شد', {
+              id: 'undo_success',
+              duration: 2500,
+            });
           }}
           onDismiss={() => {
             if (options.onConfirm) {
@@ -77,6 +126,7 @@ export const toast = {
         />
       ),
       {
+        id: key,
         duration,
       },
     );

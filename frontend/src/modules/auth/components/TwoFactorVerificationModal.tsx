@@ -4,7 +4,7 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { apiClient } from '../../../lib/api/client';
 import { ShieldCheck, KeyRound, AlertCircle, ArrowRight } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '../../../components/ui/toast/toast';
 
 interface TwoFactorVerificationModalProps {
   isOpen: boolean;
