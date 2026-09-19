@@ -2,19 +2,26 @@
   <a href="https://rokad.ir" target="_blank" rel="noopener noreferrer">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="frontend/public/logo-rokad-white.svg">
-      <img src="frontend/public/logo-rokad.png" alt="Rokad Platform Logo" width="180" height="auto">
+      <img src="frontend/public/logo-rokad.png" alt="Rokad Platform Logo" width="200" height="auto">
     </picture>
   </a>
 </p>
 
-<h1 align="center">Rokad Platform (پلتفرم رُکاد)</h1>
+<h1 align="center">Rokad Platform</h1>
 
 <p align="center">
   <strong>Enterprise Multi-Tenant School ERP, Next-Generation LMS & Academy Operating System</strong>
 </p>
 
 <p align="center">
-  یک پلتفرم سازمانی چندمستأجره (Multi-Tenant) یکپارچه برای مدیریت هوشمند مدارس، هنرستان‌ها و آکادمی‌های آموزشی، مجهز به سوئیت امنیتی Zero-Trust، موتور پیشرفته مالی و خزانه‌داری چک‌های صیادی، سیستم یادگیری مدرن (LMS)، سیستم بلادرنگ پیام‌رسان و PWA پیشرفته.
+  A mission-critical, cloud-native operating system designed for modern schools, technical colleges, and educational institutes. Powered by a <strong>Zero-Trust Security Suite</strong>, an advanced <strong>Treasury & Sayad Cheque Engine</strong>, real-time communications, and an offline-first <strong>Progressive Web App (PWA)</strong>.
+</p>
+
+<p align="center">
+  <a href="README.fa.md"><strong>🇮🇷 مطالعه مستندات به زبان فارسی (Persian Documentation)</strong></a> •
+  <a href="ARCHITECTURE.md"><strong>Architecture Deep-Dive</strong></a> •
+  <a href="ROADMAP.md"><strong>Roadmap</strong></a> •
+  <a href="CHANGELOG.md"><strong>Changelog</strong></a>
 </p>
 
 <p align="center">
@@ -31,273 +38,330 @@
   <a href="#-security-suite--cryptographic-guarantees"><img src="https://img.shields.io/badge/Security-Zero--Trust_2FA-00C853?style=for-the-badge&logo=securityscorecard&logoColor=white" alt="Zero-Trust"></a>
 </p>
 
-<p align="center">
-  <a href="#-key-modules--features">قابلیت‌ها</a> •
-  <a href="#-architecture--tech-stack">معماری سیستم</a> •
-  <a href="#-security-suite--cryptographic-guarantees">امنیت سازمانی</a> •
-  <a href="#-financial-engine--sayad-cheque-ledger">موتور مالی و چک</a> •
-  <a href="#-quick-start">راه‌اندازی سریع</a> •
-  <a href="#-monorepo-structure">ساختار پروژه</a> •
-  <a href="#-api-documentation">مستندات API</a> •
-  <a href="#-contributing">مشارکت</a>
-</p>
+---
+
+## 📑 Table of Contents
+
+- [Executive Overview](#-executive-overview)
+- [System Architecture](#-system-architecture)
+- [Key Modules & Capabilities](#-key-modules--capabilities)
+  - [1. Zero-Trust Security Suite](#1--zero-trust-security-suite)
+  - [2. Treasury & Sayad Cheque Engine](#2--treasury--sayad-cheque-engine)
+  - [3. Academic Operations & Cloud LMS](#3--academic-operations--cloud-lms)
+  - [4. Real-Time Communications & PWA](#4--real-time-communications--pwa)
+  - [5. SaaS Multi-Tenancy & Operations Control](#5--saas-multi-tenancy--operations-control)
+- [Cryptographic Specifications](#-cryptographic-specifications)
+- [Tech Stack & Infrastructure](#-tech-stack--infrastructure)
+- [Quick Start in 3 Minutes](#-quick-start-in-3-minutes)
+- [Default Seed Accounts](#-default-seed-accounts)
+- [Monorepo Workspace Structure](#-monorepo-workspace-structure)
+- [Interactive API Documentation](#-interactive-api-documentation)
+- [Testing & Quality Assurance](#-testing--quality-assurance)
+- [Contributing & Governance](#-contributing--governance)
+- [License](#-license)
 
 ---
 
-## 🌟 خلاصه و چرایی رُکاد (Why Rokad?)
+## 🌟 Executive Overview
 
-پلتفرم **رُکاد** حاصل بازطراحی ساختار اداری و آموزشی مراکز تحصیلی و موسسات آموزشی با نگاهی مدرن، فوق‌سریع و با محوریت استانداردهای نرم‌افزارهای سازمانی مقیاس‌پذیر (B2B SaaS) است. برخلاف سیستم‌های سنتی مدرسه که تکه‌تکه و متکی بر نرم‌افزارهای قدیمی دسکتاپ هستند، رُکاد یک سیستم‌عامل جامع تحت وب و PWA است که از چندمستأجری کامل (`Multi-Tenancy`) با پایگاه داده ایمن، جداسازی دسترسی‌ها، رمزنگاری کلیدهای اختصاصی و رابط کاربری فارسی روان و جذاب بهره می‌برد.
+Legacy educational software is notoriously fragmented, reliant on fragile desktop installations, and lacking in data privacy and real-time synchronization. **Rokad Platform** is engineered from the ground up as a unified, enterprise-grade Software-as-a-Service (SaaS) operating system.
+
+### Core Architectural Pillars:
+* **Defense-in-Depth Multi-Tenancy:** Guaranteed complete tenant isolation via dual-layer protection (Prisma ORM dynamic extensions + PostgreSQL Row-Level Security).
+* **Cryptographic Data Protection:** Confidential student and financial records are protected by envelope encryption (**AES-256-GCM**) with **HMAC-SHA256 Blind Indexing** for performant encrypted queries.
+* **Tamper-Evident Audit Trails:** Every system mutation produces a cryptographically chained log entry (`SHA-256 PrevHash`) anchored periodically to an external immutable medium (Telegram audit channel).
+* **Automated Treasury:** Comprehensive management of Iranian Sayad Cheques with 16-digit verification, state machine lifecycle tracking, maturity reminder notifications, and direct Zarinpal online settlement.
+* **Frictionless UX:** Tailored for Persian typography (IRANSansXFaNum), Jalali calendar workflows, mobile bottom-sheet ergonomics, and offline PWA capability.
 
 ---
 
-## 🧩 ماژول‌های اصلی پلتفرم (Key Modules & Features)
+## 🏗️ System Architecture
 
 ```mermaid
 graph TD
-    A[Rokad Platform Core] --> B[Enterprise Security & RBAC]
-    A --> C[Financial & Treasury Engine]
-    A --> D[Academic & LMS Engine]
-    A --> E[Communication & Realtime PWA]
-    A --> F[Multi-Tenant SaaS Operations]
+    Client[Web Browser / Mobile PWA / Admin Portal] -->|HTTPS / WSS| Gateway[Reverse Proxy / API Gateway]
+    
+    subgraph "Application Layer (NestJS 10)"
+        Gateway --> AuthGuard[JWT / 2FA / Step-Up Guard]
+        AuthGuard --> TenantMW[AsyncLocalStorage Tenant Resolver]
+        TenantMW --> Controller[Domain Controllers & Gateways]
+        
+        Controller --> SecModule[Zero-Trust Security Suite]
+        Controller --> FinModule[Treasury & Fee Engine]
+        Controller --> AcadModule[LMS & Gradebook Engine]
+        Controller --> ChatModule[Socket.io Realtime Engine]
+    end
 
-    B --> B1[2FA TOTP & Step-Up Auth]
-    B --> B2[Chained Audit Logs + Telegram Anchor]
-    B --> B3[Envelope Encryption & Blind Index]
+    subgraph "Security & State Layer"
+        SecModule --> Redis[(Redis 7: Rate-Limits, Cache & Pub/Sub)]
+        SecModule --> ExtAnchor[External Telegram Audit Anchor]
+        ChatModule --> Redis
+    end
 
-    C --> C1[Fee Plans & Group Allocation]
-    C --> C2[Sayad Cheque Ledger & Maturity Reminders]
-    C --> C3[Zarinpal Online Gateway & Excel Two-Stage Import]
-
-    D --> D1[Classes, Lessons & Curriculums]
-    D --> D2[Gradebook & Continuous Assessment]
-    D --> D3[Online Exams & Question Bank]
-
-    E --> E1[Socket.io Multi-Room Chat]
-    E --> E2[WebPush Notifications & VAPID]
-    E --> E3[Parent-Teacher Visit Appointments]
-
-    F --> F1[Tenant Isolation & Custom Subdomains]
-    F --> F2[System Metrics & Health Monitors]
-    F --> F3[Tenant Branding & Theme Engine]
+    subgraph "Persistence & Object Storage"
+        FinModule --> Prisma[Prisma ORM with Tenant Filter Extension]
+        AcadModule --> Prisma
+        Prisma --> Postgres[(PostgreSQL 16 with RLS Policies)]
+        AcadModule --> MinIO[(MinIO S3 Object Storage)]
+    end
 ```
 
-### ۱. 🛡️ سوئیت امنیتی و رمزنگاری سازمانی (Enterprise Security Suite)
-* **احراز هویت دومرحله‌ای (2FA / TOTP):** پیاده‌سازی سازگار با Google Authenticator و Microsoft Authenticator با کدبازیابی و انقضای خودکار.
-* **احراز هویت ارتقایی (Step-Up Authentication):** ملزم کردن مدیران به ورود کد ۶ رقمی امنیتی پیش از انجام عملیات‌های حساس (تغییر سطح دسترسی، حذف کاربران، تسویه مالی).
-* **رمزنگاری لایه‌ای داده‌ها (Envelope Encryption):** رمزنگاری فیلدهای حساس کاربران نظیر کدهای ملی و شماره‌های تماس با الگوریتم **AES-256-GCM** همراه با کلید مشتق‌شده مجزا (`DEK`) برای هر رکورد.
-* **شاخص‌گذاری کور (Blind Indexing):** جستجوی سریع روی اطلاعات رمزنگاری‌شده با مکانیزم **HMAC-SHA256 Blind Index** بدون افشای متن اصلی.
-* **دفتر کل وقایع زنجیره‌ای با لنگر خارجی تلگرام (Cryptographic Chained Audit Logs & Telegram Anchor):**
-  * هر لاگ سیستمی دارای `SHA-256 PrevHash` است که یک بلاک‌چین لاگ ضددستکاری می‌سازد.
-  * ارسال خودکار خلاصه هش دوره‌ای لاگ‌ها به کانال تلگرام برای اثبات خارجی عدم دستکاری سرور (`External Anchor`).
-* **ضد بروت‌فورس و محدودساز نرخ درخواست (Anti-Brute Force Rate Limiting):** بلاک موقت IP و شناسه‌ها بر بستر Redis پس از دفعات خطای مجاز.
+---
+
+## 🧩 Key Modules & Capabilities
+
+### 1. 🛡️ Zero-Trust Security Suite
+Designed to meet the stringent security and compliance requirements of enterprise institutions:
+* **RFC 6238 Two-Factor Authentication (2FA TOTP):** Native compatibility with Google Authenticator and Microsoft Authenticator, paired with SHA-256 hashed recovery codes.
+* **Step-Up Authentication (`StepUpGuard`):** High-privilege administrative actions (role modifications, account deletions, financial debt overrides) require on-demand 6-digit TOTP re-verification.
+* **AES-256-GCM Envelope Encryption:** Personal Identifiable Information (PII) such as national identification numbers and contact details are encrypted with a distinct per-record Data Encryption Key (DEK).
+* **HMAC-SHA256 Blind Indexing:** Fast, exact-match queries over encrypted columns without ever decrypting database records into memory.
+* **Chained Cryptographic Audit Logs with Telegram Anchoring:**
+  * Implements a local blockchain-like ledger where every log contains `SHA-256(prevHash + payload)`.
+  * External anchoring cron broadcasts cryptographic ledger digests to an external private Telegram channel, providing mathematical proof against insider log alteration.
+* **Sliding-Window Anti-Brute-Force Rate Limiter:** Redis-backed rate limiting with progressive backoff penalties and IP blacklisting.
 
 ---
 
-### ۲. 💼 موتور مالی و خزانه‌داری چک‌های صیادی (Financial & Cheque Engine)
-* **محاسبات دقیق با `Decimal(15, 2)`:** مهاجرت کامل از ممیز شناور به مقادیر دقیق دسیمال جهت جلوگیری از مغایرت‌های مالی و بانکی.
-* **طرح‌های شهریه و تخصیص گروهی (`FeePlan`):** تعریف ساختار شهریه سال تحصیلی در سطح کل مدرسه، مقطع یا کلاس با پیکربندی پیش‌فرض اقساط، و بدهکار کردن همزمان صدها دانش‌آموز با یک کلیک.
-* **دفتر چک صیادی و ردیابی وضعیت‌ها (`FeePayment`):**
-  * ثبت چک‌های صیادی با اعتبارسنجی ۱۶ رقمی کد صیاد، سریال، بانک و تاریخ سررسید.
-  * ردیابی حالات چک: **در انتظار وصول (`PENDING`)**، **وصول شد (`CASHED`)**، **برگشت خورد (`BOUNCED`)**، **جایگزین شد (`REPLACED`)**.
-  * فعال‌سازی خودکار برچسب توقیف مالی (`hasFinancialHold`) در صورت برگشت چک.
-* **کرون‌جاب یادآوری سررسید چک‌ها (`ChequeReminderScheduler`):** هشدار روزانه سررسید چک‌ها در روزهای ۳ روز قبل، ۱ روز قبل و روز موعد به والدین دانش‌آموز.
-* **موتور ورود دسته‌جمعی از اکسل (`FeeImport`):** اعتبارسنجی دو مرحله‌ای (پیش‌نمایش خطاها و ثبت نهایی اتمیک) برای تخصیص شهریه و پرداخت‌ها.
-* **درگاه اختصاصی والدین با سوئیچ چندفرزندی:** مشاهده وضعیت اقساط، چک‌ها و پرداخت آنلاین از طریق درگاه پرداخت زرین‌پال.
+### 2. 💼 Treasury & Sayad Cheque Engine
+A high-precision accounting system engineered specifically for educational fee administration:
+* **`Decimal(15, 2)` Financial Precision:** Complete migration away from IEEE floating-point numbers, preventing fractional Rial/Toman rounding discrepancy.
+* **Dynamic Debt Balancing:** Real-time calculation and tracking of each student's `balanceRemaining`.
+* **Configurable Annual Fee Plans (`FeePlan`):** Create institutional fee models scoped to `ALL_SCHOOL`, `EDUCATIONAL_LEVEL`, or specific `CLASSROOM` targets, with atomic group allocation that creates student contracts in a single transaction.
+* **Sayad Cheque Lifecycle Ledger (`FeePayment`):**
+  * Strict validation for 16-digit Sayad IDs, series numbers, issuing bank, branch, and due date.
+  * State machine transitions: `PENDING` (awaits maturity, no balance deduction), `CASHED` (deducts debt, issues official receipt), `BOUNCED` (flags `hasFinancialHold = true`), and `REPLACED` (links replacement cheque or cash).
+* **Automated Maturity Reminders (`ChequeReminderScheduler`):** Daily cron job at 09:00 AM dispatching WebPush alerts and in-app messages to parents 3 days, 1 day, and on the morning of cheque maturity.
+* **Two-Stage Excel Batch Import:** Pre-validates uploaded `.xlsx` files against database constraints, highlights row-specific errors with exact cell references, and executes valid imports atomically.
+* **Multi-Child Parent Portal:** Guardians can toggle seamlessly between siblings, review upcoming installments, check cheque statuses, and settle debts via Zarinpal.
 
 ---
 
-### ۳. 🎓 سیستم مدیریت یادگیری و آموزش (LMS & Academic Operations)
-* **سامانه کلاس‌ها و برنامه‌ریزی درسی:** تخصیص دبیران، تقویم هفتگی و تداخل‌سنجی هوشمند ساعات کلاسی.
-* **دفتر نمرات هوشمند (Gradebook):** ثبت نمرات مستمر، ماهانه و پایانی با محاسبه ضرایب و صدور کارنامه PDF تحلیلی.
-* **آزمون‌های آنلاین و بانک سوالات:** برگزاری آزمون‌های چندگزینه‌ای و تشریحی با زمان‌بندی دقیق و تصحیح خودکار.
-* **تکالیف و پروژه‌ها:** بارگذاری صورت تکلیف، ارسال پاسخ توسط دانش‌آموز و سیستم بازخورد دبیر با پشتیبانی از ذخیره‌سازی ابری MinIO S3.
-* **حضور و غیاب الکترونیک:** ثبت تاخیر و غیبت روزانه همراه با اعلان فوری به والدین.
+### 3. 🎓 Academic Operations & Cloud LMS
+* **Curriculum & Schedule Scheduling:** Automated teacher allocation, course matrix management, and weekly classroom conflict detection.
+* **Smart Gradebook:** Weighted continuous evaluation, mid-term and final grading, class ranking percentiles, and one-click PDF report card generation.
+* **Online Assessment & Question Bank:** Timed multiple-choice and descriptive examinations with automated scoring and anti-cheat window blur tracking.
+* **Digital Homework Portal:** Assignment distribution, student file uploads, deadline timers, and teacher rubric evaluation backed by MinIO S3 object storage.
+* **Digital Attendance Register:** Daily period attendance tracking with instant automated absence notices sent to parents.
 
 ---
 
-### ۴. 💬 ارتباطات بلادرنگ و PWA (Realtime & Progressive Web App)
-* **چت سازمانی بلادرنگ:** مبتنی بر Socket.io با اتاق‌های درسی، گفتگوی اولیا با مربیان و همگام‌سازی توزیع‌شده با `@socket.io/redis-adapter`.
-* **نوتیفیکیشن‌های تحت وب (WebPush):** ارسال اعلان‌های مرورگر از طریق پروتکل VAPID بدون نیاز به باز بودن اپلیکیشن.
-* **رزرو جلسات اولیا و مربیان:** زمان‌بندی جلسات حضوری و آنلاین با سیستم تقویم تعاملی.
-* **پشتیبانی آفلاین و PWA:** قابلیت نصب به عنوان اپلیکیشن نیتیو روی موبایل و دسکتاپ با Service Worker پیشرفته.
+### 4. 💬 Real-Time Communications & PWA
+* **Socket.io Real-Time Messaging:** Classroom group chats, administrative announcements, and direct teacher-parent consultations synchronized across multiple server nodes via `@socket.io/redis-adapter`.
+* **VAPID WebPush Notifications:** Browser-level push alerts delivered even when the web application tab is inactive.
+* **Parent-Teacher Conference Booking:** Interactive appointment calendar for scheduling one-on-one virtual or in-person parent consultations.
+* **Offline-First Progressive Web App (PWA):** Service worker asset caching with Workbox, enabling instant cold starts and native mobile installation.
 
 ---
 
-### ۵. 🏢 کنسول سوپرادمین و عملیات چندمستأجره (SaaS Console)
-* تفکیک کامل داده‌های هر مدرسه با فیلتر `tenantId` در سطح Prisma و Guard های NestJS.
-* مدیریت دوره‌های اشتراک، فعال‌سازی ماژول‌ها و تعریف قالب نقش‌ها (`Role Templates`).
-* پایش سلامت زنده دیتابیس، ردیس، فضای ذخیره‌سازی و مصرف حافظه سرور.
+### 5. 🏢 SaaS Multi-Tenancy & Operations Control
+* **Dual-Layer Tenant Isolation:** Strict tenant separation enforced at both the ORM layer (Prisma query extensions) and database kernel layer (PostgreSQL RLS).
+* **SuperAdmin Operations Cockpit:** Real-time health metrics monitoring (PostgreSQL, Redis, MinIO, Heap memory, and CPU utilization).
+* **Tenant Provisioning Engine:** One-click school tenant onboarding with automatic database schema alignment, initial role distribution, and custom subdomain binding.
 
 ---
 
-## 🏗️ پشته فنی و معماری زیرساخت (Architecture & Tech Stack)
+## 🔒 Cryptographic Specifications
 
-| لایه | تکنولوژی | توضیحات |
+| Security Domain | Algorithm / Standard | Engineering Specification |
 | :--- | :--- | :--- |
-| **Backend Framework** | [NestJS 10](https://nestjs.com/) | فریمورک ماژولار سازمانی با معماری تزریق وابستگی (DI) و TypeScript |
-| **Database & ORM** | [PostgreSQL 16](https://www.postgresql.org/) + [Prisma 5](https://www.prisma.io/) | پایگاه‌داده رابطه‌ای امن با تایپ‌سیف بودن صددرصد کوئری‌ها |
-| **In-Memory & Cache** | [Redis 7](https://redis.io/) (ioredis) | مدیریت سشن‌ها، کش لایه دوم، صف‌های توزیع‌شده و WebSocket Adapter |
-| **Object Storage** | [MinIO](https://min.io/) | فضای ذخیره‌سازی سازگار با پروتکل Amazon S3 برای تکالیف، مدیا و اسناد |
-| **Real-time Protocol** | [Socket.io 4](https://socket.io/) | وب‌سوکت دوطرفه امن برای چت و نوتیفیکیشن‌ها |
-| **Frontend SPA & PWA**| [React 18](https://react.dev/) + [Vite 6](https://vitejs.dev/) | رابط کاربری مدرن با کامپوننت‌های بهینه‌شده، Tailwind CSS و PWA |
-| **Security & Auth** | Argon2id, JWT, Passport, otplib | رمزنگاری قدرتمند گذرواژه‌ها، احراز هویت توکن‌محور و TOTP 2FA |
-| **Payment Gateway** | Zarinpal (REST API) | اتصال به درگاه پرداخت اینترنتی شاپرک با ترنزکشن‌های اتمیک |
-| **Documentation** | [Swagger / OpenAPI 3](https://swagger.io/) | مستندات تعاملی API در مسیر `/api/docs` |
+| **Password Storage** | Argon2id | Memory: `64 MB` (`m=65536`), Time: `3 iterations` (`t=3`), Parallelism: `4 lanes` |
+| **PII Data Encryption** | AES-256-GCM | Envelope pattern: 256-bit Key, 96-bit random IV, 128-bit authentication tag |
+| **Encrypted Search** | HMAC-SHA256 | Keyed blind index using server-side secret pepper (`BLIND_INDEX_PEPPER`) |
+| **Two-Factor Auth** | RFC 6238 TOTP | SHA-1 HMAC, 30-second time-step, ±1 window drift tolerance, 8-character backup codes |
+| **Audit Ledger Integrity** | Merkle / Hash Chain | SHA-256 previous hash link; Periodic external cryptographic digest broadcast |
+| **Token Authentication** | JWT (RS256 / HS256) | Strict issuer/audience validation with Redis blacklist for revoked access tokens |
 
 ---
 
-## 📁 ساختار منوریپو (Monorepo Structure)
+## 🛠️ Tech Stack & Infrastructure
 
-```text
-rokad-platform/
-├── .github/                      # گردش‌های کاری CI/CD، قالب‌های ایشو و PR
-│   ├── workflows/ci.yml          # تست خودکار، بررسی لایه Lint و بیلد
-│   ├── ISSUE_TEMPLATE/           # فرم‌های گزارش باگ و پیشنهاد فیچر
-│   └── PULL_REQUEST_TEMPLATE.md  # چک‌لیست و الگوی درخواست ادغام
-├── prisma/                       # مدل‌های داده و مایگریشن‌های دیتابیس
-│   ├── schema.prisma             # تعاریف دیتابیس PostgreSQL با پریزما
-│   └── seed.ts                   # سیدر داده‌های اولیه نقش‌ها و مدارس
-├── src/                          # هسته بک‌اند (NestJS Core & Modules)
-│   ├── common/                   # گاردها، فیلترها، اینترسپتورها، متغیرهای محیطی
-│   │   ├── crypto/               # ماژول رمزنگاری AES-256 و Blind Index
-│   │   ├── guards/               # JwtAuth, Roles, Permissions, StepUp Guards
-│   │   └── constants/            # دسترسی‌های RBAC و نقش‌ها
-│   └── modules/                  # ماژول‌های مجزا با دامنه مشخص
-│       ├── auth/                 # احراز هویت، ثبت‌نام، 2FA و مدیریت سشن‌ها
-│       ├── finance/              # شهریه، اقساط، چک‌های صیادی، اکسل و زرین‌پال
-│       ├── academic/             # سال تحصیلی، مقاطع و رشته‌ها
-│       ├── classes/              # کلاس‌بندی و ثبت‌نام دانش‌آموزان
-│       ├── gradebook/            # دفتر نمرات و کارنامه‌ها
-│       ├── exams/                # آزمون‌های آنلاین و آزمون‌ساز
-│       ├── homework/             # تکالیف و فایل‌های ضمیمه
-│       ├── chat/                 # چت بلادرنگ کلاسی و پیام‌های خصوصی
-│       ├── notifications/        # پوش‌نوتیفیکیشن VAPID و پیام‌های سیستمی
-│       ├── audit-log/            # لاگ‌های زنجیره‌ای رمزنگاری‌شده و لنگر تلگرام
-│       └── saas-admin/           # کنسول سوپرادمین، مستأجرها و مانیتورینگ
-├── frontend/                     # کلاینت فرانت‌اند (React 18 + Vite)
-│   ├── src/
-│   │   ├── components/ui/        # دیزاین سیستم بومی رُکاد (کارت، مدال، جداول)
-│   │   ├── modules/              # صفحات تفکیک‌شده بر اساس نقش کاربر
-│   │   │   ├── super-admin/      # داشبورد مدیریت کلان سیستم
-│   │   │   ├── school-admin/     # پنل کادر مدیریت مدرسه (آموزش، مالی، کارمندان)
-│   │   │   ├── teacher/          # پنل دبیر (حضورغیاب، نمره‌دهی، تکالیف)
-│   │   │   └── student-parent/   # پورتال هنرجویان و درگاه اولیا
-│   │   └── lib/api/              # کلاینت Axios با مدیریت تجدید خودکار توکن
-│   └── vite.config.ts            # پیکربندی Vite و PWA Service Worker
-├── docker-compose.yml            # استک محلی PostgreSQL, Redis, MinIO
-└── package.json                  # ابزارهای مشترک و اسکریپت‌های پروژه
+```
+Backend Core     : NestJS 10 (TypeScript 5.7)
+Database         : PostgreSQL 16
+ORM              : Prisma ORM 5.22
+Cache & Queues   : Redis 7 (ioredis, @socket.io/redis-adapter)
+Object Storage   : MinIO S3 Compatible
+Frontend SPA/PWA : React 18 + Vite 6 + Tailwind CSS
+Real-Time Engine : Socket.io 4.8
+Task Scheduling  : NestJS Schedule (Cron)
+Documentation    : OpenAPI 3.0 / Swagger UI
+Containerization : Docker & Docker Compose
 ```
 
 ---
 
-## 🚀 راهنمای راه‌اندازی سریع (Quick Start Guide)
+## ⚡ Quick Start in 3 Minutes
 
-### پیش‌نیازها
-* **Node.js**: نسخه `20.x` یا بالاتر (توصیه: `v22.x`)
-* **pnpm**: نسخه `9.x` یا بالاتر (`npm i -g pnpm`)
-* **Docker & Docker Compose**: برای بالا آوردن سریع زیرساخت‌های پایگاه داده و کش
+### Prerequisites
+* **Node.js**: `v20.x` or `v22.x` (LTS recommended)
+* **pnpm**: `v9.x` (`npm install -g pnpm`)
+* **Docker & Docker Compose**
 
 ---
 
-### ۱. کلون مخزن و نصب وابستگی‌ها
+### Step 1: Clone Repository & Install Dependencies
 ```bash
 git clone https://github.com/Rokad-Studio/Rokad-Platform.git
 cd Rokad-Platform
 pnpm install
 ```
 
-### ۲. راه‌اندازی سرویس‌های زیرساخت (Postgres, Redis, MinIO)
-با استفاده از داکر کامپوز، کلیه دیتابیس‌ها و سرویس‌های ذخیره‌سازی محلی را با یک فرمان اجرا کنید:
+### Step 2: Spin Up Infrastructure Containers
+Start PostgreSQL 16, Redis 7, and MinIO S3 storage in detached mode:
 ```bash
 docker-compose up -d
 ```
 
-### ۳. تنظیم متغیرهای محیطی
-یک کپی از فایل نمونه محیطی ایجاد کنید:
+### Step 3: Configure Environment Variables
 ```bash
 cp .env.example .env
 ```
-> [!NOTE]
-> مقادیر پیش‌فرض `.env.example` برای اجرای لوکال با داکر کامپوز کاملاً سازگار است. در صورت نیاز می‌توانید توکن بات تلگرام یا کد پذیرنده زرین‌پال را در آن مقداردهی کنید.
+*(Default settings in `.env.example` match the local `docker-compose.yml` services out-of-the-box).*
 
-### ۴. مایگریشن و سید اولیه دیتابیس
+### Step 4: Run Database Migrations & Seed
 ```bash
 pnpm prisma:generate
 pnpm prisma db push
 pnpm prisma:seed
 ```
 
-### ۵. اجرای سرورهای توسعه (Development)
-اجرای همزمان بک‌اند و فرانت‌اند در دو ترمینال مجزا:
+### Step 5: Launch Development Servers
+Open two terminal windows:
 
-**ترمینال ۱ — سرور بک‌اند (NestJS):**
+**Terminal 1 — Backend API (NestJS):**
 ```bash
 pnpm start:dev
-# دسترس‌پذیر در: http://localhost:4000/api/v1
-# مستندات Swagger: http://localhost:4000/api/docs
+# API Server running at: http://localhost:4000/api/v1
+# Swagger UI available at: http://localhost:4000/api/docs
 ```
 
-**ترمینال ۲ — کلاینت فرانت‌اند (Vite React):**
+**Terminal 2 — Frontend Client (Vite React PWA):**
 ```bash
 pnpm --filter rokad-frontend dev
-# دسترس‌پذیر در: http://localhost:3000
+# Web App running at: http://localhost:3000
 ```
 
 ---
 
-## 🔑 حساب‌های کاربری نمونه جهت تست (Seed Credentials)
+## 🔑 Default Seed Accounts
 
-پس از اجرای `pnpm prisma:seed`، حساب‌های کاربری زیر با گذرواژه پیش‌فرض `Admin@123456` در سیستم آماده استفاده خواهند بود:
+After executing `pnpm prisma:seed`, the database is populated with initial sample accounts for testing all system personas.
 
-| نقش کاربری | شماره تماس / نام‌کاربری | رمز عبور | دامنه دسترسی |
-| :--- | :--- | :--- | :--- |
-| **سوپرادمین (SuperAdmin)** | `09120000001` | `Admin@123456` | مدیریت کامل پلتفرم و مستأجرها |
-| **مدیر مدرسه (School Admin)** | `09120000002` | `Admin@123456` | مدیریت کامل مدرسه، امور مالی و پرسنل |
-| **دبیر / استاد (Teacher)** | `09120000003` | `Admin@123456` | ثبت نمرات، حضورغیاب و تکالیف کلاس |
-| **اولیا (Parent)** | `09120000004` | `Admin@123456` | مشاهده شهریه، چک‌ها و وضعیت انضباطی فرزندان |
-| **دانش‌آموز (Student)** | `09120000005` | `Admin@123456` | مشاهده برنامه، آزمون‌ها و ارسال تکالیف |
+* **Universal Default Password:** `Admin@123456`
 
----
-
-## 📚 مستندات تعاملی API (Swagger Documentation)
-
-پلتفرم رُکاد مجهز به مستندات جامع بر پایه استاندارد OpenAPI 3 است که تمام کنترلرها، DTOها، کدهای وضعیت HTTP و شمای پاسخ‌ها را پوشش می‌دهد:
-
-* **آدرس مستندات محلی:** [http://localhost:4000/api/docs](http://localhost:4000/api/docs)
-* **پشتیبانی از Bearer Token:** امکان تست زنده اندپوینت‌ها با درج JWT Token در دکمه Authorize.
+| Persona / Role | Username / Mobile | Primary Capabilities |
+| :--- | :--- | :--- |
+| **SuperAdmin** | `09120000001` | Multi-tenant SaaS console, tenant provisioning, system health |
+| **School Admin** | `09120000002` | School academic terms, staff HR, fee contracts & Sayad cheque ledger |
+| **Teacher** | `09120000003` | Classroom gradebook, attendance sheets, exam question creation |
+| **Parent (Guardian)** | `09120000004` | Multi-child fee overview, online installment payment, cheque tracking |
+| **Student** | `09120000005` | Homework submissions, online exams, personalized weekly timetable |
 
 ---
 
-## 🧪 تست و اعتبارسنجی کیفیت (Testing & Verification)
+## 📁 Monorepo Workspace Structure
+
+```text
+rokad-platform/
+├── .github/                      # GitHub Workflows, Automation & Community Health
+│   ├── workflows/
+│   │   ├── ci.yml                # Automated CI testing with Postgres & Redis services
+│   │   ├── codeql.yml            # CodeQL Static Application Security Testing (SAST)
+│   │   └── labeler.yml           # Automated PR path labeler
+│   ├── ISSUE_TEMPLATE/           # Structured bug reports & feature requests
+│   ├── PULL_REQUEST_TEMPLATE.md  # Standardized PR checklist & review guidelines
+│   ├── SECURITY.md               # Security policy & vulnerability reporting procedures
+│   ├── dependabot.yml            # Automated weekly dependency updates
+│   └── labeler.yml               # PR categorization rules
+├── prisma/                       # Prisma Database Layer
+│   ├── schema.prisma             # Relational data schema & indexes
+│   └── seed.ts                   # Initial RBAC permissions & sample tenant seed
+├── src/                          # Backend Application Core (NestJS 10)
+│   ├── common/                   # Cross-cutting concerns
+│   │   ├── crypto/               # AES-256-GCM Envelope Encryption & HMAC Blind Index
+│   │   ├── guards/               # JwtAuth, Roles, Permissions, StepUp Guards
+│   │   └── constants/            # RBAC permissions catalog
+│   └── modules/                  # Domain-Driven Feature Modules
+│       ├── auth/                 # 2FA TOTP, session manager, rate limiting
+│       ├── finance/              # Treasury, Sayad cheques, Excel import, Zarinpal
+│       ├── academic/             # Academic years, curriculums, educational levels
+│       ├── classes/              # Classrooms, student enrollment, schedule matrices
+│       ├── gradebook/            # Continuous evaluation, transcripts, PDF cards
+│       ├── exams/                # Online assessment engine & question bank
+│       ├── homework/             # Assignments & MinIO S3 file uploads
+│       ├── chat/                 # Real-time WebSocket messaging & channels
+│       ├── notifications/        # VAPID WebPush & transactional alerts
+│       ├── audit-log/            # Cryptographic hash chains & Telegram anchor
+│       └── saas-admin/           # Multi-tenant supervisor, telemetry & branding
+├── frontend/                     # Client Application (React 18 + Vite 6 PWA)
+│   ├── src/
+│   │   ├── components/ui/        # Custom Design System primitives (RTL tailored)
+│   │   ├── modules/              # Persona-based route modules
+│   │   │   ├── super-admin/      # SaaS platform infrastructure & metrics
+│   │   │   ├── school-admin/     # Academic, HR, and finance management
+│   │   │   ├── teacher/          # Grading, attendance, homework review
+│   │   │   └── student-parent/   # Student portal & multi-child parent fee views
+│   │   └── lib/api/              # Axios client with automatic JWT token refresh
+│   └── vite.config.ts            # Vite bundler, PWA manifest & service workers
+├── docker-compose.yml            # PostgreSQL 16, Redis 7, MinIO S3 local environment
+├── package.json                  # Root dependencies & workspace scripts
+├── ARCHITECTURE.md               # Architectural specification & tenant isolation model
+├── CHANGELOG.md                  # Standard version release history
+├── CONTRIBUTING.md               # Engineering guidelines & Conventional Commits
+├── CODE_OF_CONDUCT.md           # Contributor Covenant Code of Conduct
+├── ROADMAP.md                    # Strategic product & technical roadmap
+├── LICENSE                       # MIT Open-Source License
+└── README.fa.md                  # Complete Persian documentation
+```
+
+---
+
+## 📚 Interactive API Documentation
+
+Rokad Platform provides built-in Swagger / OpenAPI 3.0 interactive documentation:
+
+* **Local Documentation URL:** [http://localhost:4000/api/docs](http://localhost:4000/api/docs)
+* **Bearer Token Authorization:** Easily authorize requests by entering your JWT token in the Swagger UI `Authorize` modal.
+
+---
+
+## 🧪 Testing & Quality Assurance
 
 ```bash
-# اجرای تست‌های واحد (Unit Tests)
+# Execute unit test suites
 pnpm test
 
-# بررسی و عیب‌یابی کدهای TypeScript
+# Run end-to-end integration tests
+pnpm test:e2e
+
+# Validate TypeScript type safety
 pnpm build
 pnpm --filter rokad-frontend build
 
-# اجرای اسکریپت تست اتمیک محاسبات مالی
+# Verify Prisma schema validity
+npx prisma validate
+
+# Execute atomic treasury & financial calculations test
 npx ts-node scratch/test-finance-engine.ts
 ```
 
 ---
 
-## 🤝 مشارکت در توسعه (Contributing)
+## 🤝 Contributing & Governance
 
-ما از مشارکت توسعه‌دهندگان، گزارش باگ‌ها و ارسال پول ریکوئست‌ها استقبال می‌کنیم!
-لطفاً پیش از ارسال تغییرات، فایل‌های زیر را مطالعه فرمایید:
-* [راهنمای جامع مشارکت (CONTRIBUTING.md)](CONTRIBUTING.md)
-* [مرام‌نامه جامعه کاربری (CODE_OF_CONDUCT.md)](CODE_OF_CONDUCT.md)
-* [شیوه‌نامه گزارش آسیب‌پذیری‌های امنیتی (.github/SECURITY.md)](.github/SECURITY.md)
+Contributions to Rokad Platform are welcome! Please consult the governance guidelines prior to submitting Pull Requests:
+
+* [Contribution Guidelines (CONTRIBUTING.md)](CONTRIBUTING.md)
+* [Code of Conduct (CODE_OF_CONDUCT.md)](CODE_OF_CONDUCT.md)
+* [Security Policy & Disclosure (.github/SECURITY.md)](.github/SECURITY.md)
 
 ---
 
-## 📄 مجوز و کپی‌رایت (License)
+## 📄 License
 
-پروژه تحت مجوز [MIT License](LICENSE) منتشر شده است. استفاده تجاری، توسعه و شخصی‌سازی آن با رعایت شرایط لایسنس مجاز است.
+Rokad Platform is open-source software licensed under the [MIT License](LICENSE).
 
 <p align="center">
-  <sub>طراحی و توسعه یافته با ❤️ توسط تیم استودیو رُکاد (Rokad Studio Team)</sub>
+  <sub>Architected and engineered with ❤️ by <strong>Rokad Studio Team</strong></sub>
 </p>
