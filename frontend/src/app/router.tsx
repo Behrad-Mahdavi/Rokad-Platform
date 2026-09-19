@@ -40,6 +40,7 @@ import { ExamsPage } from '../modules/teacher/exams/ExamsPage';
 import { GradebookPage } from '../modules/teacher/gradebook/GradebookPage';
 import { LessonPlansPage } from '../modules/teacher/lessons/LessonPlansPage';
 import { TeacherSchedulePage } from '../modules/teacher/schedule/TeacherSchedulePage';
+import { TeacherMySlipsPage } from '../modules/teacher/payroll/TeacherMySlipsPage';
 
 import { StudentDashboard } from '../modules/student-parent/StudentDashboard';
 import { StudentHomeworkPage } from '../modules/student-parent/homework/StudentHomeworkPage';
@@ -156,6 +157,7 @@ export const router = createBrowserRouter([
               { path: 'question-bank', element: <QuestionBankPage /> },
               { path: 'visits', element: <TeacherVisitsPage /> },
               { path: 'schedule', element: <TeacherSchedulePage /> },
+              { path: 'payroll', element: <TeacherMySlipsPage /> },
               { path: 'matters', element: <MattersPage /> },
             ],
           },

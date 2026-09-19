@@ -124,3 +124,123 @@ export class ApproveAndPaySlipDto {
   @IsNotEmpty()
   paymentRefNumber: string;
 }
+
+export class CreateTeacherContractDto {
+  @ApiProperty({ description: 'شناسه کاربری مدرس (User ID)' })
+  @IsString()
+  @IsNotEmpty()
+  teacherId: string;
+
+  @ApiProperty({ description: 'شناسه سال تحصیلی' })
+  @IsString()
+  @IsNotEmpty()
+  academicYearId: string;
+
+  @ApiProperty({
+    description: 'نوع نرخ پرداخت (HOURLY یا PER_SESSION)',
+    enum: ['HOURLY', 'PER_SESSION'],
+    default: 'HOURLY',
+  })
+  @IsEnum(['HOURLY', 'PER_SESSION'])
+  rateType: 'HOURLY' | 'PER_SESSION';
+
+  @ApiProperty({ description: 'مبلغ نرخ هر ساعت یا هر جلسه به تومان (عدد صحیح)', example: 350000 })
+  @IsInt()
+  @Min(0)
+  rateAmount: number;
+
+  @ApiPropertyOptional({ description: 'سقف ساعت تدریس ماهانه جهت هشدار', example: 120 })
+  @IsInt()
+  @IsOptional()
+  @Min(1)
+  monthlyHourCap?: number;
+
+  @ApiPropertyOptional({ description: 'حقوق ثابت پایه ماهانه (تومان)', example: 5000000 })
+  @IsInt()
+  @IsOptional()
+  @Min(0)
+  baseSalary?: number;
+
+  @ApiProperty({ description: 'تاریخ شروع اعتبار قرارداد (فرمت YYYY-MM-DD یا ISO)' })
+  @IsString()
+  @IsNotEmpty()
+  effectiveFrom: string;
+
+  @ApiPropertyOptional({ description: 'تاریخ پایان اعتبار قرارداد (اختیاری)' })
+  @IsString()
+  @IsOptional()
+  effectiveTo?: string;
+}
+
+export class CalculateMonthlyPayrollDto {
+  @ApiProperty({ description: 'سال شمسی مورد نظر', example: 1404 })
+  @IsInt()
+  @Min(1400)
+  @Max(1450)
+  year: number;
+
+  @ApiProperty({ description: 'ماه شمسی مورد نظر (۱ تا ۱۲)', example: 8 })
+  @IsInt()
+  @Min(1)
+  @Max(12)
+  month: number;
+
+  @ApiPropertyOptional({ description: 'شناسه سال تحصیلی (اختیاری؛ پیش‌فرض سال تحصیلی جاری)' })
+  @IsString()
+  @IsOptional()
+  academicYearId?: string;
+}
+
+export class ReviewPayrollSlipDto {
+  @ApiProperty({ description: 'مبلغ نهایی پرداختی تصویب‌شده به تومان (عدد صحیح)', example: 24500000 })
+  @IsInt()
+  @Min(0)
+  finalAmount: number;
+
+  @ApiProperty({ description: 'دلیل ویرایش عدد نهایی (الزامی جهت شفافیت و ممیزی)', example: 'اضافه تدریس کارگاه حل تمرین' })
+  @IsString()
+  @IsNotEmpty()
+  editReason: string;
+}
+
+export class CancelPayrollSlipDto {
+  @ApiProperty({ description: 'دلیل ابطال فیش حقوقی', example: 'اشتباه در تخصیص ساعت و نیاز به محاسبه مجدد' })
+  @IsString()
+  @IsNotEmpty()
+  cancelReason: string;
+}
+
+export class FinalizeMonthlyPayrollDto {
+  @ApiProperty({ description: 'سال شمسی مورد نظر', example: 1404 })
+  @IsInt()
+  @Min(1400)
+  @Max(1450)
+  year: number;
+
+  @ApiProperty({ description: 'ماه شمسی مورد نظر (۱ تا ۱۲)', example: 8 })
+  @IsInt()
+  @Min(1)
+  @Max(12)
+  month: number;
+}
+
+export class CreatePayrollAdjustmentDto {
+  @ApiProperty({ description: 'شناسه کاربری مدرس' })
+  @IsString()
+  @IsNotEmpty()
+  teacherId: string;
+
+  @ApiPropertyOptional({ description: 'شناسه فیش حقوقی مبدأ (در صورت وجود)' })
+  @IsString()
+  @IsOptional()
+  originalSlipId?: string;
+
+  @ApiProperty({ description: 'مبلغ تعدیل به تومان (مثبت برای بستانکاری/طلب، منفی برای کسورات/بدهی)', example: 500000 })
+  @IsInt()
+  amount: number;
+
+  @ApiProperty({ description: 'دلیل اصلاحیه و تعدیل حقوق', example: 'اصلاح عدم ثبت یک جلسه تدریس در ماه گذشته' })
+  @IsString()
+  @IsNotEmpty()
+  reason: string;
+}

@@ -158,14 +158,6 @@ export const SuperAppHomePage: React.FC = () => {
             iconColor: 'text-sec dark:text-[#8194EE]',
           },
           {
-            id: 'attendance',
-            title: 'حضور و غیاب',
-            href: '/app/teacher/attendance',
-            icon: UserCheck,
-            iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-            iconColor: 'text-primary-dark dark:text-primary',
-          },
-          {
             id: 'homework',
             title: 'تکالیف',
             href: '/app/teacher/homework',
@@ -220,6 +212,14 @@ export const SuperAppHomePage: React.FC = () => {
             icon: Users,
             iconBg: 'bg-club-light dark:bg-[#2A173E]',
             iconColor: 'text-club dark:text-[#C084FC]',
+          },
+          {
+            id: 'payroll',
+            title: 'فیش حقوقی',
+            href: '/app/teacher/payroll',
+            icon: Wallet,
+            iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+            iconColor: 'text-primary-dark dark:text-primary',
           },
         ];
 

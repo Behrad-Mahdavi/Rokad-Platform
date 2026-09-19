@@ -34,6 +34,11 @@ function enrichDataWithJalali(data: any): any {
     return data;
   }
 
+  // اگر داده از نوع اعشاری پرایسما (Decimal) باشد، به عدد تبدیل شود
+  if (typeof data.toNumber === 'function') {
+    return data.toNumber();
+  }
+
   if (Array.isArray(data)) {
     return data.map((item) => enrichDataWithJalali(item));
   }

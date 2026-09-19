@@ -317,6 +317,8 @@ model Tenant {
   staffPayrollProfiles  StaffPayrollProfile[]
   payrollSlips          PayrollSlip[]
   payrollItems          PayrollItem[]
+  teacherContracts      TeacherContract[]
+  payrollAdjustments    PayrollAdjustment[]
 
   // Phase 7 SaaS SuperAdmin Relations
   subscriptions         TenantSubscription[]
@@ -411,6 +413,12 @@ model User {
   staffPayrollProfile   StaffPayrollProfile?
   payrollSlips          PayrollSlip[]         @relation("EmployeePayrollSlips")
   approvedPayrollSlips  PayrollSlip[]         @relation("ApprovedPayrollSlips")
+  editedPayrollSlips    PayrollSlip[]         @relation("EditedPayrollSlips")
+  cancelledPayrollSlips PayrollSlip[]         @relation("CancelledPayrollSlips")
+  teacherContracts      TeacherContract[]     @relation("TeacherContracts")
+  createdContracts      TeacherContract[]     @relation("CreatedContracts")
+  teacherAdjustments    PayrollAdjustment[]   @relation("TeacherAdjustments")
+  createdAdjustments    PayrollAdjustment[]   @relation("CreatedAdjustments")
   pushSubscriptions     PushSubscription[]
 
   // Coaching Relations
@@ -573,6 +581,7 @@ model AcademicYear {
   // Phase 6
   feePlans            FeePlan[]
   studentFeeContracts StudentFeeContract[]
+  teacherContracts    TeacherContract[]
 
   @@unique([tenantId, name])
   @@index([tenantId, isCurrent])
@@ -1845,8 +1854,22 @@ enum InstallmentStatus {
 
 enum PayrollStatus {
   DRAFT
+  REVIEWED
+  ISSUED
+  SETTLED
   APPROVED
   PAID
+  CANCELLED
+}
+
+enum PayRateType {
+  HOURLY
+  PER_SESSION
+}
+
+enum AdjustmentStatus {
+  PENDING
+  APPLIED
   CANCELLED
 }
 
@@ -1858,6 +1881,7 @@ enum PayrollItemType {
   INSURANCE_DEDUCTION
   TAX_DEDUCTION
   ADVANCE_DEDUCTION
+  ADJUSTMENT
   OTHER
 }
 
@@ -2076,8 +2100,8 @@ model StaffPayrollProfile {
   userId             String       @unique
   user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   contractType       ContractType @default(FULL_TIME_SALARY)
-  baseMonthlySalary  Float        @default(0) // حقوق ثابت ماهیانه
-  hourlyRate         Float        @default(0) // نرخ تدریس هر ساعت برای دبیران حق‌التدریس
+  baseMonthlySalary  Decimal      @default(0) @db.Decimal(15, 0) // حقوق ثابت ماهیانه (تومان)
+  hourlyRate         Decimal      @default(0) @db.Decimal(15, 0) // نرخ تدریس هر ساعت برای دبیران حق‌التدریس (تومان)
   bankAccountNumber  String?      // شماره حساب بانکی
   bankShebaNumber    String?      // شماره شبا
   bankName           String?      // نام بانک (ملی، ملت، پاسارگاد...)
@@ -2089,27 +2113,99 @@ model StaffPayrollProfile {
   @@index([tenantId, isActive])
 }
 
-model PayrollSlip {
-  id               String        @id @default(uuid())
-  tenantId         String
-  tenant           Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  userId           String
-  user             User          @relation("EmployeePayrollSlips", fields: [userId], references: [id], onDelete: Cascade)
-  year             Int           // سال e.g. 1404
-  month            Int           // ماه e.g. 1..12
-  slipNumber       String        // e.g. "PAY-1404-08-01"
-  grossPay         Float         // جمع ناخالص حقوق و مزایا
-  totalDeductions  Float         @default(0) // جمع کسورات (بیمه، مالیات، مساعده)
-  netPay           Float         // خالص پرداختی
-  status           PayrollStatus @default(DRAFT)
-  paidAt           DateTime?
-  paidById         String?
-  paidBy           User?         @relation("ApprovedPayrollSlips", fields: [paidById], references: [id], onDelete: SetNull)
-  paymentRefNumber String?       // شماره پیگیری انتقال وجه بانکی / پایا
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+model TeacherContract {
+  id                String          @id @default(uuid())
+  tenantId          String
+  tenant            Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  teacherId         String
+  teacher           User            @relation("TeacherContracts", fields: [teacherId], references: [id], onDelete: Cascade)
+  academicYearId    String
+  academicYear      AcademicYear    @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  rateType          PayRateType     @default(HOURLY)
+  rateAmount        Decimal         @db.Decimal(15, 0) // نرخ به تومان (صحیح)
+  monthlyHourCap    Int?            // سقف ساعت تدریس ماهانه جهت هشدار
+  baseSalary        Decimal?        @db.Decimal(15, 0) // حقوق ثابت پایه ماهانه (اختیاری)
+  effectiveFrom     DateTime
+  effectiveTo       DateTime?
+  createdById       String
+  createdBy         User            @relation("CreatedContracts", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
-  items PayrollItem[]
+  @@index([tenantId, teacherId, academicYearId])
+  @@index([tenantId, effectiveFrom, effectiveTo])
+}
+
+model PayrollAdjustment {
+  id                String            @id @default(uuid())
+  tenantId          String
+  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  teacherId         String
+  teacher           User              @relation("TeacherAdjustments", fields: [teacherId], references: [id], onDelete: Cascade)
+  originalSlipId    String?
+  originalSlip      PayrollSlip?      @relation("SlipAdjustments", fields: [originalSlipId], references: [id], onDelete: SetNull)
+  amount            Decimal           @db.Decimal(15, 0) // مثبت برای بستانکاری، منفی برای کسورات (تومان)
+  reason            String            // شرح دلیل اصلاحیه
+  status            AdjustmentStatus  @default(PENDING)
+  appliedToSlipId   String?           // فیشی که این تعدیل در آن لحاظ شد
+  appliedToSlip     PayrollSlip?      @relation("AppliedSlipAdjustments", fields: [appliedToSlipId], references: [id], onDelete: SetNull)
+  createdById       String
+  createdBy         User              @relation("CreatedAdjustments", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt         DateTime          @default(now())
+  appliedAt         DateTime?
+
+  @@index([tenantId, teacherId, status])
+}
+
+model PayrollSlip {
+  id                  String        @id @default(uuid())
+  tenantId            String
+  tenant              Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId              String
+  user                User          @relation("EmployeePayrollSlips", fields: [userId], references: [id], onDelete: Cascade)
+  year                Int           // سال e.g. 1404
+  month               Int           // ماه e.g. 1..12
+  slipNumber          String        // e.g. "PAY-1404-08-01"
+
+  // محاسبات کارکرد و مبالغ سیستمی و نهایی (تومان بدون اعشار)
+  calculatedAmount    Decimal       @default(0) @db.Decimal(15, 0) // عدد خام محاسبه‌شده توسط سیستم (تغییرناپذیر برای ممیزی)
+  finalAmount         Decimal       @default(0) @db.Decimal(15, 0) // عددی که واقعاً پرداخت می‌شود (تایید/ویرایش‌شده توسط مدیر)
+  grossPay            Decimal       @default(0) @db.Decimal(15, 0) // جمع ناخالص حقوق و مزایا
+  totalDeductions     Decimal       @default(0) @db.Decimal(15, 0) // جمع کسورات (بیمه، مالیات، مساعده)
+  netPay              Decimal       @default(0) @db.Decimal(15, 0) // خالص پرداختی
+
+  status              PayrollStatus @default(DRAFT)
+
+  // اطلاعات ممیزی ویرایش دستی مدیر
+  editReason          String?
+  editedById          String?
+  editedBy            User?         @relation("EditedPayrollSlips", fields: [editedById], references: [id], onDelete: SetNull)
+  editedAt            DateTime?
+
+  // اطلاعات ابطال فیش
+  cancelReason        String?
+  cancelledById       String?
+  cancelledBy         User?         @relation("CancelledPayrollSlips", fields: [cancelledById], references: [id], onDelete: SetNull)
+  cancelledAt         DateTime?
+
+  // شفافیت آماری جلسات و ساعات
+  sourceSessionCount  Int           @default(0)
+  sourceHours         Decimal?      @db.Decimal(6, 2)
+  hasCapWarning       Boolean       @default(false)
+  capWarningDetails   String?
+
+  // پرداخت بانکی (از فاز ۶)
+  paidAt              DateTime?
+  paidById            String?
+  paidBy              User?         @relation("ApprovedPayrollSlips", fields: [paidById], references: [id], onDelete: SetNull)
+  paymentRefNumber    String?       // شماره پیگیری انتقال وجه بانکی / پایا
+
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  items               PayrollItem[]
+  adjustmentsOrigin   PayrollAdjustment[] @relation("SlipAdjustments")
+  adjustmentsApplied  PayrollAdjustment[] @relation("AppliedSlipAdjustments")
 
   @@unique([tenantId, userId, year, month])
   @@unique([tenantId, slipNumber])
@@ -2125,7 +2221,7 @@ model PayrollItem {
   payrollSlip       PayrollSlip     @relation(fields: [payrollSlipId], references: [id], onDelete: Cascade)
   type              PayrollItemType @default(BASE_SALARY)
   title             String          // e.g. "حقوق پایه ماهیانه", "حق‌التدریس ۳۰ ساعت حسابان", "کسر بیمه سهم کارمند"
-  amount            Float           // مبلغ مثبت برای مزایا و منفی برای کسورات
+  amount            Decimal         @db.Decimal(15, 0) // مبلغ مثبت برای مزایا و منفی برای کسورات (تومان)
   multiplierOrHours Float?          // ضریب یا تعداد ساعت
   notes             String?
 

@@ -130,6 +130,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               { title: 'طرح درس و محتوا', href: '/app/teacher/lessons', icon: BookOpen },
               { title: 'موارد انضباطی و تشویقی', href: '/app/teacher/matters', icon: ShieldAlert },
               { title: 'ملاقات با اولیاء', href: '/app/teacher/visits', icon: UserCheck },
+              { title: 'فیش‌های حقوقی من', href: '/app/teacher/payroll', icon: Wallet },
             ],
           },
           commsSection,

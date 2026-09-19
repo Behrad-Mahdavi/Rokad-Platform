@@ -61,6 +61,8 @@ const TENANT_BOUND_MODELS = [
   'StaffPayrollProfile',
   'PayrollSlip',
   'PayrollItem',
+  'TeacherContract',
+  'PayrollAdjustment',
   // Phase 7
   'TenantSubscription',
 ];

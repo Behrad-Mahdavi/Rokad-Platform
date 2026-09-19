@@ -154,3 +154,16 @@ export function formatJalaliDisplay(
 
   return dateFormatted;
 }
+
+/**
+ * دریافت سال، ماه و روز جاری شمسی
+ */
+export function getCurrentJalaliYearMonth(): { year: number; month: number; day: number } {
+  const now = new Date();
+  const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  return {
+    year: j.jy,
+    month: j.jm,
+    day: j.jd,
+  };
+}
