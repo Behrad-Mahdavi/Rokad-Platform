@@ -75,8 +75,8 @@ importers:
         specifier: ^1.2.7
         version: 1.2.8
       jalaliday:
-        specifier: ^2.3.0
-        version: 2.3.0
+        specifier: ^3.1.1
+        version: 3.1.1(dayjs@1.11.23)
       minio:
         specifier: ^8.0.7
         version: 8.0.7
@@ -3435,8 +3435,10 @@ packages:
   jalaali-js@1.2.8:
     resolution: {integrity: sha512-Jl/EwY84JwjW2wsWqeU4pNd22VNQ7EkjI36bDuLw31wH98WQW4fPjD0+mG7cdCK+Y8D6s9R3zLiQ3LaKu6bD8A==}
 
-  jalaliday@2.3.0:
-    resolution: {integrity: sha512-B/m3TqsRrTFED/HBDqON6rPKe0MpoLxNICZ5uZeZ/scHJUHKQNr1n+wdZSj8MxrY1Bmo05gllZeNEw4beXd2oQ==}
+  jalaliday@3.1.1:
+    resolution: {integrity: sha512-exZzDOfp/32Gj2YkEHNhBBMcltBCTrIe8RXLTfpCvdjYHNfbYSQiNeFVf4RR59FV+2fixUOCEFfzOzyXfgenlg==}
+    peerDependencies:
+      dayjs: ^1.11.13
 
   jest-changed-files@29.7.0:
     resolution: {integrity: sha512-fEArFiwf1BpQ+4bXSprcDc3/x4HSzL4al2tozwVpDFpsxALjLYdyiIK4e5Vz66GQJIbXJ82+35PtysofptNX2w==}
@@ -8852,7 +8854,9 @@ snapshots:
 
   jalaali-js@1.2.8: {}
 
-  jalaliday@2.3.0: {}
+  jalaliday@3.1.1(dayjs@1.11.23):
+    dependencies:
+      dayjs: 1.11.23
 
   jest-changed-files@29.7.0:
     dependencies:
