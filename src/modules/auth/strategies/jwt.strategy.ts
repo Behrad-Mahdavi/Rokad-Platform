@@ -48,12 +48,15 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     return {
       id: user.id,
       tenantId: user.tenantId,
+      username: user.username,
       email: user.email,
       phone: user.phone,
       role: user.role,
       isPlatformAdmin: user.isPlatformAdmin,
+      twoFactorEnabled: user.twoFactorEnabled,
       firstName: user.firstName,
       lastName: user.lastName,
+      avatarUrl: user.avatarUrl,
       tenant: user.tenant,
     };
   }

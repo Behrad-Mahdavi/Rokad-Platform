@@ -5,6 +5,7 @@ import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { apiClient } from '../../../lib/api/client';
+import { useAuthStore } from '../../../lib/auth/auth-store';
 import { formatToJalali, toPersianDigits } from '../../../lib/utils';
 import { toast } from '../../../components/ui/toast/toast';
 import {
@@ -35,8 +36,10 @@ interface SessionItem {
 }
 
 export const SecuritySection: React.FC = () => {
-  // 2FA state
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  // 2FA state (initialized from persistent auth store to prevent flicker)
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState<boolean>(() =>
+    Boolean(useAuthStore.getState().user?.twoFactorEnabled),
+  );
   const [loading2FAStatus, setLoading2FAStatus] = useState(true);
 
   // 2FA Setup Modal State
@@ -73,10 +76,20 @@ export const SecuritySection: React.FC = () => {
     try {
       setLoading2FAStatus(true);
       const res: any = await apiClient.get('/auth/me');
-      const user = res.data?.user || res.user;
-      setTwoFactorEnabled(Boolean(user?.twoFactorEnabled));
+      const user = res?.data?.user || res?.user || res?.data;
+      if (user && typeof user.twoFactorEnabled !== 'undefined') {
+        const isEnabled = Boolean(user.twoFactorEnabled);
+        setTwoFactorEnabled(isEnabled);
+        const currentUser = useAuthStore.getState().user;
+        if (currentUser && currentUser.twoFactorEnabled !== isEnabled) {
+          useAuthStore.getState().setUser({ ...currentUser, twoFactorEnabled: isEnabled });
+        }
+      }
     } catch {
-      // Ignore
+      const storedUser = useAuthStore.getState().user;
+      if (storedUser) {
+        setTwoFactorEnabled(Boolean(storedUser.twoFactorEnabled));
+      }
     } finally {
       setLoading2FAStatus(false);
     }
@@ -136,6 +149,10 @@ export const SecuritySection: React.FC = () => {
       });
       const data = res.data || res;
       setTwoFactorEnabled(true);
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser) {
+        useAuthStore.getState().setUser({ ...currentUser, twoFactorEnabled: true });
+      }
       setRecoveryCodes(data.recoveryCodes || []);
       toast.success('احراز هویت دومرحله‌ای با موفقیت فعال شد');
     } catch (err: any) {
@@ -156,6 +173,10 @@ export const SecuritySection: React.FC = () => {
         password: disablePassword,
       });
       setTwoFactorEnabled(false);
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser) {
+        useAuthStore.getState().setUser({ ...currentUser, twoFactorEnabled: false });
+      }
       setIsDisableModalOpen(false);
       setDisablePassword('');
       toast.success('احراز هویت دومرحله‌ای غیرفعال گردید');
