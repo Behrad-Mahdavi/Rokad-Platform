@@ -41,12 +41,13 @@ export const LoginPage: React.FC = () => {
     const loginData = res.data || res;
     const { user, accessToken, refreshToken } = loginData;
 
+    const tenant = loginData.tenant || user.tenant;
     setCurrentTenant({
       id: user.tenantId,
-      name: loginData.tenant?.name || 'مدرسه رُکاد',
-      slug: tenantSlug,
+      name: tenant?.name || 'مدرسه رُکاد',
+      slug: tenant?.slug || tenantSlug || 'rokad-boys',
       type: 'SCHOOL',
-      theme: (loginData.tenant?.theme || 'ecosystem').toLowerCase() as any,
+      theme: (tenant?.theme || 'ecosystem').toLowerCase() as any,
     });
 
     login(user, accessToken, refreshToken);
@@ -77,12 +78,13 @@ export const LoginPage: React.FC = () => {
       const { user, accessToken, refreshToken } = loginData;
 
       // Update active tenant store
+      const tenant = loginData.tenant || user.tenant;
       setCurrentTenant({
         id: user.tenantId,
-        name: loginData.tenant?.name || 'مدرسه رُکاد',
-        slug: tenantSlug,
+        name: tenant?.name || 'مدرسه رُکاد',
+        slug: tenant?.slug || tenantSlug || 'rokad-boys',
         type: 'SCHOOL',
-        theme: (loginData.tenant?.theme || 'ecosystem').toLowerCase() as any,
+        theme: (tenant?.theme || 'ecosystem').toLowerCase() as any,
       });
 
       // Update auth store
@@ -133,15 +135,7 @@ export const LoginPage: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="شناسه شعبه هنرستان یا کالج"
-            placeholder="مثال: rokad-boys یا rokad-girls یا rokad-college"
-            value={tenantSlug}
-            onChange={(e) => setTenantSlug(e.target.value)}
-            required
-          />
-
-          <Input
-            label="کد ملی یا نام کاربری"
+            label="کد ملی، شماره همراه یا نام کاربری"
             placeholder="مثال: 0012345678 (کد ملی) یا شماره همراه"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
