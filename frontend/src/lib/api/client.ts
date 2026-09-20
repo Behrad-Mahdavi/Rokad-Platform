@@ -75,12 +75,11 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const refreshToken = useAuthStore.getState().refreshToken;
+      const { refreshToken, accessToken } = useAuthStore.getState();
 
-      if (!refreshToken) {
-        useAuthStore.getState().logout();
+      if (!refreshToken || refreshToken.startsWith('mock-') || accessToken?.startsWith('mock-')) {
         isRefreshing = false;
-        return Promise.reject(error);
+        return Promise.reject(error.response?.data || error);
       }
 
       try {
@@ -94,17 +93,18 @@ apiClient.interceptors.response.use(
           },
         );
 
-        const newAccessToken = response.data.data.accessToken;
-        const newRefreshToken = response.data.data.refreshToken;
+        const newAccessToken = response.data?.data?.accessToken;
+        const newRefreshToken = response.data?.data?.refreshToken;
 
-        useAuthStore.getState().setTokens(newAccessToken, newRefreshToken);
-        processQueue(null, newAccessToken);
+        if (newAccessToken) {
+          useAuthStore.getState().setTokens(newAccessToken, newRefreshToken);
+          processQueue(null, newAccessToken);
 
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        return apiClient(originalRequest);
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          return apiClient(originalRequest);
+        }
       } catch (refreshErr) {
         processQueue(refreshErr, null);
-        useAuthStore.getState().logout();
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;

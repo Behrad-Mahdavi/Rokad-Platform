@@ -37,6 +37,7 @@ import {
   PartyPopper,
   Trophy,
   Compass,
+  Rocket,
 } from 'lucide-react';
 import { SchoolEventItem, INITIAL_SAMPLE_EVENTS } from './constants/sample-events';
 import { EventStepWizard } from './components/EventStepWizard';
@@ -49,6 +50,7 @@ import {
 } from 'lucide-react';
 
 const EVENT_CATEGORIES: Record<string, { label: string; icon: any; color: string }> = {
+  STARTUP_WEEKEND: { label: 'استارت‌آپ ویکند', icon: Rocket, color: 'bg-amber-100 text-amber-900 border-amber-400 dark:bg-amber-950/60 dark:text-amber-300' },
   ACADEMIC: { label: 'آموزشی و مهارت', icon: BookOpen, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' },
   CULTURAL: { label: 'فرهنگی و آیین‌ها', icon: PartyPopper, color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300' },
   SPORTS: { label: 'مسابقات و ورزش', icon: Trophy, color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' },
@@ -528,35 +530,37 @@ export const EventSinglePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Tabs Navigation: Step-by-Step Lifecycle vs Overview */}
-      <div className="flex flex-wrap items-center gap-3 p-2 rounded-2xl border-3 border-zinc-900 bg-white shadow-[4px_4px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[4px_4px_0px_0px_#f4f4f5]">
-        <button
-          onClick={() => setActiveMainTab('WORKFLOW')}
-          className={`flex-1 min-w-[200px] flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-sm font-black transition-all ${
-            activeMainTab === 'WORKFLOW'
-              ? 'bg-amber-400 text-zinc-950 border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]'
-              : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
-          }`}
-        >
-          <Workflow className="w-4 h-4" />
-          <span>چرخه گام‌به‌گام رویداد (ایده ➔ ستاره‌دهی ➔ پرس‌کاد ➔ بوم و متریال‌ها)</span>
-        </button>
+      {/* Main Tabs Navigation (Shown only for STARTUP_WEEKEND events) */}
+      {event.eventType === 'STARTUP_WEEKEND' && (
+        <div className="flex flex-wrap items-center gap-3 p-2 rounded-2xl border-3 border-zinc-900 bg-white shadow-[4px_4px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[4px_4px_0px_0px_#f4f4f5]">
+          <button
+            onClick={() => setActiveMainTab('WORKFLOW')}
+            className={`flex-1 min-w-[200px] flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-sm font-black transition-all ${
+              activeMainTab === 'WORKFLOW'
+                ? 'bg-amber-400 text-zinc-950 border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]'
+                : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
+            }`}
+          >
+            <Workflow className="w-4 h-4" />
+            <span>چرخه گام‌به‌گام رویداد (ایده ➔ ستاره‌دهی ➔ پرس‌کاد ➔ بوم و متریال‌ها)</span>
+          </button>
 
-        <button
-          onClick={() => setActiveMainTab('OVERVIEW')}
-          className={`flex-1 min-w-[180px] flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-sm font-black transition-all ${
-            activeMainTab === 'OVERVIEW'
-              ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-2 border-zinc-900 dark:border-zinc-100 shadow-[3px_3px_0px_0px_#18181b] dark:shadow-[3px_3px_0px_0px_#f4f4f5]'
-              : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
-          }`}
-        >
-          <CalendarDays className="w-4 h-4" />
-          <span>شناسنامه و زمان‌بندی کامل رویداد</span>
-        </button>
-      </div>
+          <button
+            onClick={() => setActiveMainTab('OVERVIEW')}
+            className={`flex-1 min-w-[180px] flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-sm font-black transition-all ${
+              activeMainTab === 'OVERVIEW'
+                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-2 border-zinc-900 dark:border-zinc-100 shadow-[3px_3px_0px_0px_#18181b] dark:shadow-[3px_3px_0px_0px_#f4f4f5]'
+                : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
+            }`}
+          >
+            <CalendarDays className="w-4 h-4" />
+            <span>شناسنامه و زمان‌بندی کامل رویداد</span>
+          </button>
+        </div>
+      )}
 
       {/* Render Active Tab Content */}
-      {activeMainTab === 'WORKFLOW' ? (
+      {event.eventType === 'STARTUP_WEEKEND' && activeMainTab === 'WORKFLOW' ? (
         <EventStepWizard eventId={event.id} eventTitle={event.title} />
       ) : (
         <div className="space-y-8">
@@ -681,6 +685,7 @@ export const EventSinglePage: React.FC = () => {
                 onChange={(e) => setForm({ ...form, eventType: e.target.value as any })}
                 className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
               >
+                <option value="STARTUP_WEEKEND">🚀 استارت‌آپ ویکند</option>
                 <option value="ACADEMIC">آموزشی و مهارت</option>
                 <option value="CULTURAL">فرهنگی و آیین‌ها</option>
                 <option value="SPORTS">مسابقات و ورزش</option>
