@@ -141,7 +141,7 @@ export class PayrollController {
   }
 
   @Post('finalize')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @RequirePermissions(AppPermission.FINANCE_PAYROLL_WRITE)
   @ApiOperation({ summary: 'صدور قطعی و دسته‌جمعی فیش‌های حقوقی ماه' })
   async finalizeMonth(

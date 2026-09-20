@@ -27,7 +27,7 @@ export class GradebookController {
   constructor(private readonly gradebookService: GradebookService) {}
 
   @Post('bulk')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'ثبت سریع و گروهی نمرات کلاسی دانش‌آموزان' })
   async recordBulkGrades(
     @CurrentUser('id') userId: string,
@@ -44,7 +44,7 @@ export class GradebookController {
   }
 
   @Post('podman/bulk')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'ثبت گروهی نمرات مستمر و شایستگی پودمان‌های هنرستان' })
   async recordBulkPodmanGrades(
     @CurrentUser('id') userId: string,

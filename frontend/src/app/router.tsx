@@ -131,6 +131,12 @@ export const router = createBrowserRouter([
               { path: 'roles', element: <RoleBuilderPage /> },
               { path: 'profile', element: <SchoolProfilePage /> },
               { path: 'matters', element: <MattersPage /> },
+              { path: 'attendance', element: <AttendancePage /> },
+              { path: 'gradebook', element: <GradebookPage /> },
+              { path: 'homework', element: <HomeworkPage /> },
+              { path: 'exams', element: <ExamsPage /> },
+              { path: 'lessons', element: <LessonPlansPage /> },
+              { path: 'question-bank', element: <QuestionBankPage /> },
               { path: 'finance/fees', element: <FeesPage /> },
               { path: 'finance/payroll', element: <PayrollPage /> },
               { path: 'reports', element: <ReportsPage /> },
@@ -139,10 +145,10 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // 2.3 Persona 3: Teacher
+      // 2.3 Persona 3: Teacher & Academic Deputy
       {
         path: 'teacher',
-        element: <RoleGuard allowedRoles={['TEACHER', 'SUPER_ADMIN']} />,
+        element: <RoleGuard allowedRoles={['TEACHER', 'SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF']} />,
         children: [
           {
             element: <TeacherLayout />,

@@ -106,6 +106,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             ],
           },
           {
+            section: 'آموزش و پایش کلاس‌ها',
+            items: [
+              { title: 'دفتر کلاسی و نمرات', href: '/app/admin/gradebook', icon: BookOpen },
+              { title: 'حضور و غیاب دانش‌آموزان', href: '/app/admin/attendance', icon: UserCheck },
+              { title: 'تکالیف و بازخورد', href: '/app/admin/homework', icon: FileCheck },
+              { title: 'آزمون‌های آنلاین و کارنامه', href: '/app/admin/exams', icon: HelpCircle },
+              { title: 'بانک سوالات متمرکز', href: '/app/admin/question-bank', icon: FileQuestion },
+              { title: 'طرح درس و محتوا', href: '/app/admin/lessons', icon: BookOpen },
+            ],
+          },
+          {
             section: 'امور مالی و اداری',
             items: [
               { title: 'شهریه و اقساط', href: '/app/admin/finance/fees', icon: Receipt },

@@ -34,11 +34,12 @@ export class PermissionsGuard implements CanActivate {
       throw new ForbiddenException('کاربر احراز هویت نشده است');
     }
 
-    // SuperAdmin and SchoolAdmin have full permissions
+    // SuperAdmin, SchoolAdmin and Staff (معاونین و کادر اداری مدرسه) have full permissions
     if (
       user.isPlatformAdmin ||
       user.role === Role.SUPER_ADMIN ||
-      user.role === Role.SCHOOL_ADMIN
+      user.role === Role.SCHOOL_ADMIN ||
+      user.role === Role.STAFF
     ) {
       return true;
     }

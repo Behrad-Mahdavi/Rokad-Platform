@@ -29,7 +29,7 @@ export class LearningMaterialsController {
   ) {}
 
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'ثبت و انتشار جزوه/ویدیوی جدید برای کلاس‌های درسی' })
   async createMaterial(
     @CurrentUser() user: any,
@@ -42,7 +42,7 @@ export class LearningMaterialsController {
   }
 
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'حذف جزوه یا محتوای آموزشی' })
   async deleteMaterial(
     @CurrentUser() user: any,

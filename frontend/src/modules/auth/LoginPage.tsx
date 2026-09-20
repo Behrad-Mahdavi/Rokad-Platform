@@ -13,6 +13,7 @@ import {
   AlertCircle,
   GraduationCap,
   Shield,
+  ShieldCheck,
   Users,
   Crown,
   BookOpen,
@@ -273,6 +274,32 @@ export const LoginPage: React.FC = () => {
                 <span>مدیر دخترانه</span>
               </div>
               <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09121111112</div>
+            </button>
+
+            {/* Vice Admin Boys */}
+            <button
+              type="button"
+              onClick={() => selectPreset('rokad-boys', '09122221111', 'RokadBoysPass2026!')}
+              className="p-2.5 min-h-[44px] rounded-xl bg-sec/5 dark:bg-sec/15 hover:bg-sec/10 dark:hover:bg-sec/25 text-right border border-sec/30 transition-colors flex flex-col justify-center"
+            >
+              <div className="font-bold text-sec dark:text-indigo-400 flex items-center gap-1.5">
+                <ShieldCheck className="h-3.5 w-3.5 text-sec dark:text-indigo-400 shrink-0" />
+                <span>معاون پسرانه</span>
+              </div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09122221111</div>
+            </button>
+
+            {/* Vice Admin Girls */}
+            <button
+              type="button"
+              onClick={() => selectPreset('rokad-girls', '09122221112', 'RokadGirlsPass2026!')}
+              className="p-2.5 min-h-[44px] rounded-xl bg-pink-50 dark:bg-pink-950/20 hover:bg-pink-100 dark:hover:bg-pink-950/40 text-right border border-pink-200 dark:border-pink-800 transition-colors flex flex-col justify-center"
+            >
+              <div className="font-bold text-pink-700 dark:text-pink-300 flex items-center gap-1.5">
+                <ShieldCheck className="h-3.5 w-3.5 text-girl dark:text-pink-400 shrink-0" />
+                <span>معاون دخترانه</span>
+              </div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09122221112</div>
             </button>
 
             {/* SuperAdmin */}

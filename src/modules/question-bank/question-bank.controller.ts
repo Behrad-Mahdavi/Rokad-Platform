@@ -30,7 +30,7 @@ export class QuestionBankController {
   constructor(private readonly questionBankService: QuestionBankService) {}
 
   @Post('categories')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'ایجاد سرفصل/فصل موضوعی جدید برای بانک سوالات' })
   async createCategory(
     @CurrentUser('tenantId') userTenantId: string,
@@ -53,7 +53,7 @@ export class QuestionBankController {
   }
 
   @Post('questions')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'طراحی و ثبت سوال جدید در بانک سوالات' })
   async createQuestion(
     @CurrentUser('id') userId: string,
@@ -105,7 +105,7 @@ export class QuestionBankController {
   }
 
   @Delete('questions/:id')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'حذف سوال از بانک سوالات' })
   async deleteQuestion(
     @CurrentUser('tenantId') userTenantId: string,
@@ -117,7 +117,7 @@ export class QuestionBankController {
   }
 
   @Delete('categories/:id')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'حذف سرفصل موضوعی' })
   async deleteCategory(
     @CurrentUser('tenantId') userTenantId: string,

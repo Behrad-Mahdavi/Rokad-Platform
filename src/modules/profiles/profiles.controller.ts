@@ -49,7 +49,7 @@ export class ProfilesController {
 
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @ApiBearerAuth()
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @RequirePermissions(AppPermission.SCHOOL_PROFILE_WRITE)
   @Patch('school')
   @ApiOperation({ summary: 'ویرایش مشخصات و شعار مدرسه (مدیر مدرسه)' })
@@ -99,7 +99,7 @@ export class ProfilesController {
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @ApiBearerAuth()
   @Post('blogs')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STUDENT)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF, Role.STUDENT)
   @RequirePermissions(AppPermission.BLOG_WRITE)
   @ApiOperation({ summary: 'ایجاد پست جدید در وبلاگ مدرسه توسط دبیران یا دانش‌آموزان' })
   async createBlogPost(
@@ -118,7 +118,7 @@ export class ProfilesController {
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @ApiBearerAuth()
   @Delete('blogs/:id')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @RequirePermissions(AppPermission.BLOG_WRITE)
   @ApiOperation({ summary: 'حذف مقاله یا پست وبلاگ مدرسه' })
   async deleteBlogPost(

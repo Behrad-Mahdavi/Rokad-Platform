@@ -44,7 +44,7 @@ export class RbacController {
 
   // 2. School Roles CRUD
   @Get('roles')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @RequirePermissions(AppPermission.RBAC_MANAGE)
   @ApiOperation({ summary: 'فهرست نقش‌های سازمانی تعریف‌شده در مدرسه جاری' })
   async listSchoolRoles(
@@ -59,7 +59,7 @@ export class RbacController {
   }
 
   @Post('roles')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @RequirePermissions(AppPermission.RBAC_MANAGE)
   @ApiOperation({ summary: 'ایجاد نقش سازمانی جدید در مدرسه' })
   async createSchoolRole(
@@ -76,7 +76,7 @@ export class RbacController {
   }
 
   @Patch('roles/:id')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @RequirePermissions(AppPermission.RBAC_MANAGE)
   @ApiOperation({ summary: 'ویرایش نام، توضیحات یا پرمیشن‌های نقش سازمانی' })
   async updateSchoolRole(
@@ -94,7 +94,7 @@ export class RbacController {
   }
 
   @Delete('roles/:id')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @RequirePermissions(AppPermission.RBAC_MANAGE)
   @ApiOperation({ summary: 'حذف نقش سازمانی (با اعتبارسنجی عدم تخصیص به کاربران)' })
   async deleteSchoolRole(
@@ -111,7 +111,7 @@ export class RbacController {
   }
 
   @Patch('roles/:id/restore')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @RequirePermissions(AppPermission.RBAC_MANAGE)
   @ApiOperation({ summary: 'بازگردانی نقش سازمانی حذف‌شده (Restore)' })
   async restoreSchoolRole(
@@ -129,7 +129,7 @@ export class RbacController {
 
   // 3. Members & Access Management
   @Get('members')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @RequirePermissions(AppPermission.RBAC_MANAGE)
   @ApiOperation({ summary: 'فهرست کاربران مدرسه با نقش‌های سازمانی و اوررایدهای فعال' })
   async listMembersAccess(
@@ -150,7 +150,7 @@ export class RbacController {
   }
 
   @Get('members/:userId/detail')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @RequirePermissions(AppPermission.RBAC_MANAGE)
   @ApiOperation({ summary: 'دریافت تفکیک کامل دسترسی‌های مؤثر کاربر جهت نمایش در دراور' })
   async getMemberEffectivePermissions(
@@ -166,7 +166,7 @@ export class RbacController {
   }
 
   @Patch('members/:userId/roles')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @RequirePermissions(AppPermission.RBAC_MANAGE)
   @ApiOperation({ summary: 'تخصیص یکپارچه نقش‌های سازمانی به یک کاربر' })
   async syncMemberRoles(
@@ -184,7 +184,7 @@ export class RbacController {
   }
 
   @Patch('members/:userId/overrides')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @RequirePermissions(AppPermission.RBAC_MANAGE)
   @ApiOperation({ summary: 'اعطا یا سلب موردی یک دسترسی برای کاربر (GRANT / REVOKE)' })
   async setMemberOverride(
@@ -202,7 +202,7 @@ export class RbacController {
   }
 
   @Delete('members/:userId/overrides/:permissionCode')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @RequirePermissions(AppPermission.RBAC_MANAGE)
   @ApiOperation({ summary: 'حذف اورراید موردی و بازگشت به ارث‌بری از نقش' })
   async removeMemberOverride(
@@ -220,7 +220,7 @@ export class RbacController {
   }
 
   @Patch('members/:userId/overrides/:permissionCode/restore')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @RequirePermissions(AppPermission.RBAC_MANAGE)
   @ApiOperation({ summary: 'بازگردانی اورراید دسترسی حذف‌شده (Restore)' })
   async restoreMemberOverride(

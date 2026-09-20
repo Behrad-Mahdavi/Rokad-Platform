@@ -42,7 +42,7 @@ export class ParentVisitsController {
   }
 
   @Delete('slots/:id')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'حذف یا لغو اسلات زمانی ملاقات' })
   async deleteSlot(
     @CurrentUser('tenantId') userTenantId: string,

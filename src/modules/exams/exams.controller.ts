@@ -36,7 +36,7 @@ export class ExamsController {
   constructor(private readonly examsService: ExamsService) {}
 
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'طراحی و تعریف آزمون جدید' })
   async createExam(
     @CurrentUser() user: any,
@@ -71,7 +71,7 @@ export class ExamsController {
   }
 
   @Post(':id/questions')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'افزودن سوال جدید به آزمون' })
   async addQuestionToExam(
     @CurrentUser() user: any,
@@ -85,7 +85,7 @@ export class ExamsController {
   }
 
   @Post(':id/questions/import-bank')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'ایمپورت سوالات از بانک سوالات به آزمون' })
   async importQuestionsFromBank(
     @CurrentUser() user: any,
@@ -104,7 +104,7 @@ export class ExamsController {
   }
 
   @Post(':id/questions/bulk')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'افزودن دسته‌جمعی سوالات (از اکسل یا فرم)' })
   async bulkAddQuestionsToExam(
     @CurrentUser() user: any,
@@ -123,7 +123,7 @@ export class ExamsController {
   }
 
   @Get(':id/participations')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'مشاهده لیست شرکت‌کنندگان آزمون' })
   async getExamParticipations(
     @CurrentUser() user: any,
@@ -168,7 +168,7 @@ export class ExamsController {
   }
 
   @Get('participations/:id/sheet')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'مشاهده کامل برگه پاسخ‌نامه دانش‌آموز جهت تصحیح سوالات تشریحی و اعطای نمره ارفاقی' })
   async getExamParticipationSheet(
     @CurrentUser('tenantId') userTenantId: string,
@@ -180,7 +180,7 @@ export class ExamsController {
   }
 
   @Patch('participations/:id/grade')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'تصحیح سوالات تشریحی، اعمال نمره ارفاقی و ثبت نمره نهایی توسط دبیر' })
   async gradeDescriptiveAnswers(
     @CurrentUser('tenantId') userTenantId: string,
@@ -197,7 +197,7 @@ export class ExamsController {
   }
 
   @Patch(':id/publish-results')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'انتشار رسمی یا لغو انتشار کارنامه آزمون برای کلیه دانش‌آموزان کلاس' })
   async togglePublishResults(
     @CurrentUser() user: any,
@@ -216,7 +216,7 @@ export class ExamsController {
   }
 
   @Get(':id/results')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'مشاهده کارنامه، نتایج کلاسی و سیگنال‌های تعویض تب آزمون' })
   async getExamResults(
     @CurrentUser('tenantId') userTenantId: string,

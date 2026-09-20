@@ -249,6 +249,38 @@ async function main() {
     },
   });
 
+  const boysVice = await prisma.user.upsert({
+    where: {
+      tenantId_phone: {
+        tenantId: boysTenant.id,
+        phone: '09122221111',
+      },
+    },
+    update: {
+      passwordHash: boysAdminPasswordHash,
+      role: 'STAFF',
+      status: 'ACTIVE',
+    },
+    create: {
+      tenantId: boysTenant.id,
+      firstName: 'محمدرضا',
+      lastName: 'کاظمی (معاون پسرانه)',
+      phone: '09122221111',
+      email: 'boys-vice@rokadschool.ir',
+      username: 'boysvice',
+      passwordHash: boysAdminPasswordHash,
+      role: 'STAFF',
+      status: 'ACTIVE',
+      staffProfile: {
+        create: {
+          tenantId: boysTenant.id,
+          department: 'آموزش',
+          jobTitle: 'معاون آموزشی',
+        },
+      },
+    },
+  });
+
   // 5. Seed Academic Structure for Boys School
   const academicYear = await prisma.academicYear.upsert({
     where: {
@@ -590,6 +622,38 @@ async function main() {
       passwordHash: girlsAdminPasswordHash,
       role: 'SCHOOL_ADMIN',
       status: 'ACTIVE',
+    },
+  });
+
+  const girlsVice = await prisma.user.upsert({
+    where: {
+      tenantId_phone: {
+        tenantId: girlsTenant.id,
+        phone: '09122221112',
+      },
+    },
+    update: {
+      passwordHash: girlsAdminPasswordHash,
+      role: 'STAFF',
+      status: 'ACTIVE',
+    },
+    create: {
+      tenantId: girlsTenant.id,
+      firstName: 'مریم',
+      lastName: 'سلیمانی (معاون دخترانه)',
+      phone: '09122221112',
+      email: 'girls-vice@rokadschool.ir',
+      username: 'girlsvice',
+      passwordHash: girlsAdminPasswordHash,
+      role: 'STAFF',
+      status: 'ACTIVE',
+      staffProfile: {
+        create: {
+          tenantId: girlsTenant.id,
+          department: 'آموزش',
+          jobTitle: 'معاون آموزشی',
+        },
+      },
     },
   });
 

@@ -149,7 +149,7 @@ export class MembersController {
   }
 
   @Post('staff')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @RequirePermissions(AppPermission.STAFF_WRITE)
   @ApiOperation({ summary: 'ثبت پرسنل اداری جدید' })
   async createStaff(

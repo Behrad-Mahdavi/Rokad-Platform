@@ -32,7 +32,7 @@ export class LessonPlansController {
   constructor(private readonly lessonPlansService: LessonPlansService) {}
 
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'ایجاد طرح درس سالانه یا ترمی جدید' })
   async createLessonPlan(
     @CurrentUser() user: any,
@@ -72,7 +72,7 @@ export class LessonPlansController {
   }
 
   @Post(':id/sessions')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'افزودن جلسه جدید به طرح درس' })
   async addSession(
     @CurrentUser('tenantId') userTenantId: string,
@@ -85,7 +85,7 @@ export class LessonPlansController {
   }
 
   @Patch('sessions/:sessionId/status')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'به‌روزرسانی وضعیت تدریس جلسه (تدریس شد، در حال تدریس، نیاز به جبرانی)' })
   async updateSessionStatus(
     @CurrentUser('tenantId') userTenantId: string,

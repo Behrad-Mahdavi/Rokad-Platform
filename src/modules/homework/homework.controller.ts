@@ -70,7 +70,7 @@ export class HomeworkController {
   }
 
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @RequirePermissions(AppPermission.HOMEWORK_WRITE)
   @ApiOperation({ summary: 'تعریف تکلیف جدید توسط دبیر' })
   async createHomework(
@@ -108,7 +108,7 @@ export class HomeworkController {
   }
 
   @Get(':id/submissions')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @RequirePermissions(AppPermission.HOMEWORK_READ)
   @ApiOperation({ summary: 'لیست تمام پاسخ‌های ارسالی برای یک تکلیف' })
   async getHomeworkSubmissions(
@@ -140,7 +140,7 @@ export class HomeworkController {
   }
 
   @Patch('submissions/:submissionId/grade')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @RequirePermissions(AppPermission.HOMEWORK_WRITE)
   @ApiOperation({ summary: 'تصحیح، نمره‌دهی و ثبت بازخورد روی پاسخ تکلیف توسط دبیر' })
   async gradeSubmission(
