@@ -74,10 +74,6 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
     setUnlockedSteps((prev) => {
       let next: number[];
       if (prev.includes(stepNum)) {
-        if (stepNum === 1) {
-          toast.info('مرحله اول (ثبت ایده) مرحله پایه است و نمی‌توان آن را قفل کرد.');
-          return prev;
-        }
         next = prev.filter((s) => s !== stepNum);
         toast.info(`مرحله ${toPersianDigits(stepNum)} برای دانش‌آموزان قفل شد 🔒`);
       } else {
@@ -257,7 +253,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                 </div>
 
                 {/* Lock/Unlock Toggle for Manager */}
-                {isManager && s.step !== 1 && (
+                {isManager && (
                   <button
                     type="button"
                     onClick={(e) => handleToggleStepUnlock(s.step, e)}
