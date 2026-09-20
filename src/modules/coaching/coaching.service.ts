@@ -100,7 +100,7 @@ export class CoachingService {
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
 
-    const isSuperOrSchoolAdmin = [Role.SUPER_ADMIN, Role.SCHOOL_ADMIN].includes(role);
+    const isSuperOrSchoolAdmin = [Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF].includes(role);
 
     // جلسات امروز
     const todaySessions = await this.prisma.coachingSession.findMany({

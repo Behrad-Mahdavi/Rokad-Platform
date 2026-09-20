@@ -50,7 +50,7 @@ export class CalendarController {
   }
 
   @Put('event-types')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @RequirePermissions(AppPermission.CALENDAR_WRITE)
   @ApiOperation({ summary: 'تعریف و اصلاح انواع رویدادهای مدرسه توسط مدیر' })
   async updateEventTypes(
@@ -190,7 +190,7 @@ export class CalendarController {
   }
 
   @Post('tenant-holidays')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @ApiOperation({ summary: 'ثبت روز تعطیل اختصاصی برای مدرسه' })
   async addTenantHoliday(
     @CurrentUser('tenantId') userTenantId: string,
@@ -212,7 +212,7 @@ export class CalendarController {
   }
 
   @Delete('tenant-holidays/:id')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @ApiOperation({ summary: 'حذف تعطیلی اختصاصی مدرسه' })
   async removeTenantHoliday(
     @CurrentUser('tenantId') userTenantId: string,

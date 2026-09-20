@@ -300,7 +300,7 @@ export const CoachingPage: React.FC = () => {
               </Button>
             )}
 
-            {isManager && ['SUPER_ADMIN', 'SCHOOL_ADMIN'].includes(currentUser?.role || '') && (
+            {isManager && ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF'].includes(currentUser?.role || '') && (
               <Button
                 onClick={handleOpenAssignModal}
                 variant="primary"
@@ -702,7 +702,7 @@ export const CoachingPage: React.FC = () => {
                 <h3 className="text-base font-black text-zinc-900 dark:text-zinc-100">
                   فهرست دانش‌آموزان و زمان‌بندی:
                 </h3>
-                {['SUPER_ADMIN', 'SCHOOL_ADMIN'].includes(currentUser?.role || '') && (
+                {['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF'].includes(currentUser?.role || '') && (
                   <Button
                     onClick={handleOpenAssignModal}
                     variant="outline"

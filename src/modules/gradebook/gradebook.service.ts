@@ -50,10 +50,24 @@ export class GradebookService {
       const teacherProf = await this.prisma.teacherProfile.findFirst({
         where: { userId: recordedById, tenantId },
       });
-      teacherId =
-        teacherProf?.id ||
-        (await this.prisma.teacherProfile.findFirst({ where: { tenantId } }))?.id ||
-        '';
+      if (teacherProf) {
+        teacherId = teacherProf.id;
+      } else {
+        const schedule = await this.prisma.classSchedule.findFirst({
+          where: { tenantId, classroomId: dto.classroomId, lessonId: dto.lessonId },
+        });
+        if (schedule?.teacherId) {
+          teacherId = schedule.teacherId;
+        } else {
+          const lessonTeacher = await this.prisma.teacherLesson.findFirst({
+            where: { tenantId, lessonId: dto.lessonId },
+          });
+          teacherId =
+            lessonTeacher?.teacherId ||
+            (await this.prisma.teacherProfile.findFirst({ where: { tenantId } }))?.id ||
+            '';
+        }
+      }
     }
 
     const createdEntries = await this.prisma.$transaction(async (tx) => {
@@ -461,10 +475,24 @@ export class GradebookService {
       const teacherProf = await this.prisma.teacherProfile.findFirst({
         where: { userId: recordedById, tenantId },
       });
-      teacherId =
-        teacherProf?.id ||
-        (await this.prisma.teacherProfile.findFirst({ where: { tenantId } }))?.id ||
-        '';
+      if (teacherProf) {
+        teacherId = teacherProf.id;
+      } else {
+        const schedule = await this.prisma.classSchedule.findFirst({
+          where: { tenantId, classroomId: dto.classroomId, lessonId: dto.lessonId },
+        });
+        if (schedule?.teacherId) {
+          teacherId = schedule.teacherId;
+        } else {
+          const lessonTeacher = await this.prisma.teacherLesson.findFirst({
+            where: { tenantId, lessonId: dto.lessonId },
+          });
+          teacherId =
+            lessonTeacher?.teacherId ||
+            (await this.prisma.teacherProfile.findFirst({ where: { tenantId } }))?.id ||
+            '';
+        }
+      }
     }
 
     const savedRecords = await this.prisma.$transaction(async (tx) => {

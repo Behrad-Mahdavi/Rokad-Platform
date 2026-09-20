@@ -46,7 +46,7 @@ export class ChatController {
   }
 
   @Post('channels/class')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @ApiOperation({ summary: 'ایجاد یا بازیابی کانال گفتگوی کلاسی' })
   async getOrCreateClassChannel(
     @CurrentUser('id') userId: string,

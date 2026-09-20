@@ -59,7 +59,7 @@ export class SaasPlatformOpsController {
   @Patch('branding/:tenantId')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @ApiOperation({ summary: 'تنظیم برندینگ اختصاصی، رنگ سازمانی و تصاویر مدرسه یا کالج' })
   async updateBranding(
     @Param('tenantId') tenantId: string,

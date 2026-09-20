@@ -38,7 +38,7 @@ export class FeatureFlagsController {
   }
 
   @Post('my-school/toggle')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @ApiOperation({ summary: 'تغییر وضعیت یک قابلیت برای مدرسه جاری' })
   async toggleMySchoolFlag(
     @CurrentUser('tenantId') userTenantId: string,

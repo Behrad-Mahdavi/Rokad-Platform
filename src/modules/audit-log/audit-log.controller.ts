@@ -17,7 +17,7 @@ import { Role } from '../../common/constants';
 @ApiTags('Audit Log — Immutable Security Logs')
 @Controller('audit-logs')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+@Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
 @ApiBearerAuth()
 export class AuditLogController {
   constructor(

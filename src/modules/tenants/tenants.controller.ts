@@ -50,7 +50,7 @@ export class TenantsController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @Patch('my-school')
   @ApiOperation({ summary: 'ویرایش تنظیمات و مشخصات مدرسه جاری (مدیر مدرسه)' })
   async updateMySchool(

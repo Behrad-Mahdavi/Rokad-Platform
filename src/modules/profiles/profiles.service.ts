@@ -446,7 +446,10 @@ export class ProfilesService {
     }
 
     if (userId && userRole) {
-      const isStaffOrAdmin = userRole === 'SUPER_ADMIN' || userRole === 'SCHOOL_ADMIN';
+      const isStaffOrAdmin =
+        userRole === 'SUPER_ADMIN' ||
+        userRole === 'SCHOOL_ADMIN' ||
+        userRole === 'STAFF';
       if (post.authorId !== userId && !isStaffOrAdmin) {
         throw new ConflictException('شما دسترسی حذف این پست را ندارید');
       }
