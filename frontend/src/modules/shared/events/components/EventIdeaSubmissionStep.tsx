@@ -80,7 +80,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
     title: '',
     description: '',
     authorName: '',
-    ideaNumber: 101,
+    ideaNumber: 1,
     status: 'APPROVED' as EventIdea['status'],
   });
 
@@ -88,10 +88,10 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
   const nextIdeaNumber = useMemo(() => {
     const maxExisting = ideas.reduce(
       (max, item) => Math.max(max, item.ideaNumber || 0),
-      100
+      0
     );
     const counterKey = `rokad_idea_counter_${eventId}`;
-    const storedCounter = parseInt(localStorage.getItem(counterKey) || '100', 10);
+    const storedCounter = parseInt(localStorage.getItem(counterKey) || '0', 10);
     return Math.max(maxExisting, storedCounter) + 1;
   }, [ideas, eventId]);
 
@@ -150,7 +150,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
       title: idea.title,
       description: idea.description,
       authorName: idea.authorName,
-      ideaNumber: idea.ideaNumber || 101,
+      ideaNumber: idea.ideaNumber || 1,
       status: idea.status || 'APPROVED',
     });
   };
@@ -395,7 +395,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
                     {/* Header: Idea Number & Badges */}
                     <div className="flex items-center justify-between gap-2">
                       <span className="px-3 py-1 rounded-lg border-2 border-zinc-900 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black text-xs shadow-[1px_1px_0px_0px_#18181b]">
-                        ایده #{toPersianDigits(idea.ideaNumber || 101)}
+                        ایده #{toPersianDigits(idea.ideaNumber || 1)}
                       </span>
 
                       <div className="flex items-center gap-1.5">

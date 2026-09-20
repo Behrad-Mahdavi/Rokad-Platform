@@ -45,7 +45,7 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
     title: '',
     description: '',
     authorName: '',
-    ideaNumber: 101,
+    ideaNumber: 1,
     status: 'APPROVED' as EventIdea['status'],
   });
 
@@ -68,7 +68,7 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
       title: idea.title,
       description: idea.description,
       authorName: idea.authorName,
-      ideaNumber: idea.ideaNumber || 101,
+      ideaNumber: idea.ideaNumber || 1,
       status: idea.status || 'APPROVED',
     });
   };
@@ -181,7 +181,7 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
                   {/* Top Bar: Idea Number & Admin Edit */}
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <span className="px-3 py-1 rounded-lg border-2 border-zinc-900 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black text-xs shadow-[1px_1px_0px_0px_#18181b]">
-                      ایده #{toPersianDigits(idea.ideaNumber || 101)}
+                      ایده #{toPersianDigits(idea.ideaNumber || 1)}
                     </span>
 
                     <div className="flex items-center gap-1.5">
@@ -258,7 +258,7 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
           <div className="space-y-5">
             <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
               <span className="px-3 py-1 rounded-xl text-xs font-black border-2 border-zinc-900 bg-amber-400 text-zinc-950">
-                ایده #{toPersianDigits(selectedIdeaDetail.ideaNumber || 101)}
+                ایده #{toPersianDigits(selectedIdeaDetail.ideaNumber || 1)}
               </span>
 
               {isManager && (
