@@ -19,6 +19,7 @@ import {
   School,
 } from 'lucide-react';
 import { SecuritySection } from './components/SecuritySection';
+import { toPersianDigits } from '../../lib/utils';
 
 export const ProfileSettingsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -284,6 +285,13 @@ export const ProfileSettingsPage: React.FC = () => {
 
       {/* Security Suite: 2FA, Active Sessions, and Password Management */}
       <SecuritySection />
+
+      {/* App Version & Build Footer */}
+      <div className="pt-6 pb-2 text-center select-none">
+        <p className="text-[11.5px] text-gray-400/80 dark:text-gray-500 font-medium tracking-wide">
+          سامانه هوشمند مدارس رُکاد • نسخه {toPersianDigits(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.7.12')}
+        </p>
+      </div>
     </div>
   );
 };
