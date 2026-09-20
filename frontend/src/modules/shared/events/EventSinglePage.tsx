@@ -542,7 +542,7 @@ export const EventSinglePage: React.FC = () => {
             }`}
           >
             <Workflow className="w-4 h-4" />
-            <span>چرخه گام‌به‌گام رویداد (ایده ➔ ستاره‌دهی ➔ پرس‌کاد ➔ بوم و متریال‌ها)</span>
+            <span>چرخه گام‌به‌گام رویداد (ایده ➔ رای‌گیری ➔ تشکیل تیم ➔ بوم)</span>
           </button>
 
           <button

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { EventIdea, EventIdeaSubmissionStep } from './EventIdeaSubmissionStep';
 import { EventIdeasListStep } from './EventIdeasListStep';
 import { EventVotingPorscadStep } from './EventVotingPorscadStep';
+import { EventTeamFormationStep } from './EventTeamFormationStep';
 import { EventCanvasMaterialsStep } from './EventCanvasMaterialsStep';
 import { useAuthStore } from '../../../../lib/auth/auth-store';
 import { toast } from '../../../../components/ui/toast/toast';
@@ -10,6 +11,7 @@ import {
   Lightbulb,
   Sparkles,
   Star,
+  Users,
   Layers,
   CheckCircle2,
   Workflow,
@@ -166,7 +168,14 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
     },
     {
       step: 4,
-      title: '۴. بوم و ورک‌شیت',
+      title: '۴. تشکیل تیم و اعضاء',
+      subtitle: 'ترکیب اعضای ایده‌ها',
+      icon: Users,
+      activeColor: 'bg-blue-600 text-white border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]',
+    },
+    {
+      step: 5,
+      title: '۵. بوم و ورک‌شیت',
       subtitle: 'بوم رویداد و متریال‌ها',
       icon: Layers,
       activeColor: 'bg-emerald-600 text-white border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]',
@@ -181,7 +190,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
           <div className="flex items-center gap-2">
             <Workflow className="w-5 h-5 text-primary" />
             <h3 className="text-sm md:text-base font-black text-zinc-900 dark:text-zinc-100">
-              چرخه گام‌به‌گام و تعاملی رویداد (ایده ➔ رای‌گیری ➔ بوم)
+              چرخه گام‌به‌گام و تعاملی رویداد (ایده ➔ رای‌گیری ➔ تشکیل تیم ➔ بوم)
             </h3>
           </div>
 
@@ -193,7 +202,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-zinc-100 dark:bg-zinc-800 text-xs font-black">
-                <span>مراحل باز: {toPersianDigits(unlockedSteps.length)} از ۴</span>
+                <span>مراحل باز: {toPersianDigits(unlockedSteps.length)} از ۵</span>
               </span>
             )}
             <span className="text-xs font-black text-zinc-500 dark:text-zinc-400">
@@ -203,7 +212,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
         </div>
 
         {/* Steps Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {STEPS_CONFIG.map((s) => {
             const IconComp = s.icon;
             const isCurrent = currentStep === s.step;
@@ -319,10 +328,20 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
         )}
 
         {currentStep === 4 && (
+          <EventTeamFormationStep
+            eventId={eventId}
+            eventTitle={eventTitle}
+            ideas={ideas}
+            onGoToVotingStep={() => setCurrentStep(3)}
+            onGoToCanvasStep={() => setCurrentStep(5)}
+          />
+        )}
+
+        {currentStep === 5 && (
           <EventCanvasMaterialsStep
             eventId={eventId}
             eventTitle={eventTitle}
-            onGoToVotingStep={() => setCurrentStep(3)}
+            onGoToVotingStep={() => setCurrentStep(4)}
             onGoToIdeasList={() => setCurrentStep(2)}
           />
         )}
