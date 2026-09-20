@@ -5,6 +5,7 @@ import { useAuthStore } from '../../../lib/auth/auth-store';
 import { useTenantStore } from '../../../lib/auth/tenant-store';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
+import { Select } from '../../../components/ui/Select';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
@@ -253,7 +254,7 @@ export const TenantsPage: React.FC = () => {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="h-10 text-xs px-3 rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+            className="h-10 text-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
           >
             <option value="">همه انواع مراکز</option>
             <option value="SCHOOL">مدرسه</option>
@@ -265,7 +266,7 @@ export const TenantsPage: React.FC = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 text-xs px-3 rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+            className="h-10 text-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
           >
             <option value="">همه وضعیت‌ها</option>
             <option value="ACTIVE">فعال</option>
@@ -435,19 +436,16 @@ export const TenantsPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">نوع سازمان</label>
-              <select
-                value={provisionForm.type}
-                onChange={(e) => setProvisionForm({ ...provisionForm, type: e.target.value as any })}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="SCHOOL">مدرسه</option>
-                <option value="COLLEGE">کالج / مرکز آموزش عالی</option>
-                <option value="CLUB">باشگاه ورزشی / کلوپ مهارتی</option>
-                <option value="MULTI_CAMPUS_NETWORK">مجتمع چندشعبه‌ای</option>
-              </select>
-            </div>
+            <Select
+              label="نوع سازمان"
+              value={provisionForm.type}
+              onChange={(e) => setProvisionForm({ ...provisionForm, type: e.target.value as any })}
+            >
+              <option value="SCHOOL">مدرسه</option>
+              <option value="COLLEGE">کالج / مرکز آموزش عالی</option>
+              <option value="CLUB">باشگاه ورزشی / کلوپ مهارتی</option>
+              <option value="MULTI_CAMPUS_NETWORK">مجتمع چندشعبه‌ای</option>
+            </Select>
 
             <Input
               label="زیردامنه اختصاصی (اختیاری)"
@@ -494,17 +492,16 @@ export const TenantsPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="pt-2 border-t border-gray-100">
-            <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">پلن اشتراک اولیه</label>
-            <select
+          <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+            <Select
+              label="پلن اشتراک اولیه"
               value={provisionForm.planCode}
               onChange={(e) => setProvisionForm({ ...provisionForm, planCode: e.target.value })}
-              className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="FREE_TRIAL">پلن آزمایشی ۱۴ روزه (۵۰ دانش‌آموز)</option>
               <option value="STANDARD_SCHOOL">پلن جامع مدارس استاندارد (۴۰۰ دانش‌آموز + مالی و آزمون)</option>
               <option value="PRO_CAMPUS">پلن سازمانی مجتمع‌ها و کالج‌ها (۱۵۰۰ دانش‌آموز + هوش مصنوعی)</option>
-            </select>
+            </Select>
           </div>
 
           <div className="flex justify-end space-x-2 space-x-reverse pt-4">

@@ -4,6 +4,7 @@ import { useAuthStore } from '../../../lib/auth/auth-store';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
+import { Select } from '../../../components/ui/Select';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { PersianDatePicker } from '../../../components/ui/PersianDatePicker';
@@ -1083,19 +1084,16 @@ export const CalendarPage: React.FC = () => {
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-ink-dark dark:text-zinc-300 mb-1">نوع رویداد</label>
-              <select
-                value={form.type}
-                onChange={(e) => setForm({ ...form, type: e.target.value })}
-                className="w-full min-h-[44px] rounded-xl border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 text-xs text-ink-normal dark:text-zinc-100 focus:ring-2 focus:ring-primary"
-              >
-                <option value="EVENT">رویداد عمومی / اردو</option>
-                <option value="EXAM">آزمون و امتحان هماهنگ</option>
-                <option value="MEETING">جلسه اولیاء و مربیان</option>
-                <option value="CEREMONY">جشن و مراسم مدرسه</option>
-              </select>
-            </div>
+            <Select
+              label="نوع رویداد"
+              value={form.type}
+              onChange={(e) => setForm({ ...form, type: e.target.value })}
+            >
+              <option value="EVENT">رویداد عمومی / اردو</option>
+              <option value="EXAM">آزمون و امتحان هماهنگ</option>
+              <option value="MEETING">جلسه اولیاء و مربیان</option>
+              <option value="CEREMONY">جشن و مراسم مدرسه</option>
+            </Select>
 
             <Input
               label="مکان برگزاری"

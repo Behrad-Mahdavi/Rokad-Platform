@@ -3,6 +3,7 @@ import { apiClient } from '../../../lib/api/client';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
+import { Select } from '../../../components/ui/Select';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
@@ -628,39 +629,33 @@ export const ExamsPage: React.FC = () => {
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-ink-dark mb-1">کلاس هدف</label>
-              <select
-                value={examForm.classroomId}
-                onChange={(e) => setExamForm({ ...examForm, classroomId: e.target.value })}
-                className="w-full rounded-xl border border-gray-300 bg-white p-2.5 text-xs text-ink-normal focus:ring-2 focus:ring-primary"
-                required
-              >
-                <option value="">انتخاب کلاس...</option>
-                {classrooms.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} ({c.code})
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="کلاس هدف"
+              value={examForm.classroomId}
+              onChange={(e) => setExamForm({ ...examForm, classroomId: e.target.value })}
+              required
+            >
+              <option value="">انتخاب کلاس...</option>
+              {classrooms.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({c.code})
+                </option>
+              ))}
+            </Select>
 
-            <div>
-              <label className="block text-xs font-medium text-ink-dark mb-1">درس مرتبط</label>
-              <select
-                value={examForm.lessonId}
-                onChange={(e) => setExamForm({ ...examForm, lessonId: e.target.value })}
-                className="w-full rounded-xl border border-gray-300 bg-white p-2.5 text-xs text-ink-normal focus:ring-2 focus:ring-primary"
-                required
-              >
-                <option value="">انتخاب درس...</option>
-                {lessons.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name} ({l.code})
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="درس مرتبط"
+              value={examForm.lessonId}
+              onChange={(e) => setExamForm({ ...examForm, lessonId: e.target.value })}
+              required
+            >
+              <option value="">انتخاب درس...</option>
+              {lessons.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name} ({l.code})
+                </option>
+              ))}
+            </Select>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -794,17 +789,14 @@ export const ExamsPage: React.FC = () => {
           {addQuestionMode === 'MANUAL' && (
             <form onSubmit={handleAddQuestion} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-ink-dark mb-1">نوع سوال</label>
-                  <select
-                    value={questionForm.type}
-                    onChange={(e) => setQuestionForm({ ...questionForm, type: e.target.value })}
-                    className="w-full rounded-xl border border-gray-300 bg-white p-2.5 text-xs text-ink-normal focus:ring-2 focus:ring-primary"
-                  >
-                    <option value="MULTIPLE_CHOICE">چهارگزینه‌ای (تستی)</option>
-                    <option value="DESCRIPTIVE">تشریحی</option>
-                  </select>
-                </div>
+                <Select
+                  label="نوع سوال"
+                  value={questionForm.type}
+                  onChange={(e) => setQuestionForm({ ...questionForm, type: e.target.value })}
+                >
+                  <option value="MULTIPLE_CHOICE">چهارگزینه‌ای (تستی)</option>
+                  <option value="DESCRIPTIVE">تشریحی</option>
+                </Select>
 
                 <Input
                   type="number"
@@ -890,7 +882,7 @@ export const ExamsPage: React.FC = () => {
                   <select
                     value={selectedBankCategory}
                     onChange={(e) => setSelectedBankCategory(e.target.value)}
-                    className="w-full h-9 px-3 text-xs rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full h-9 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   >
                     <option value="">تمام سرفصل‌های موضوعی</option>
                     {bankCategories.map((c: any) => (

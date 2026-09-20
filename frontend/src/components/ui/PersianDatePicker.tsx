@@ -290,7 +290,7 @@ export const PersianDatePicker: React.FC<PersianDatePickerProps> = ({
               <select
                 value={viewDate.jm}
                 onChange={(e) => setViewDate({ ...viewDate, jm: parseInt(e.target.value, 10) })}
-                className="text-xs font-semibold text-gray-800 dark:text-white bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md py-1 px-2 cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+                className="text-xs font-semibold text-gray-800 dark:text-white bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-1.5 pr-2.5 pl-7 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-2xs"
               >
                 {PERSIAN_MONTH_NAMES.map((m, idx) => (
                   <option key={idx} value={idx + 1} className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">
@@ -302,7 +302,7 @@ export const PersianDatePicker: React.FC<PersianDatePickerProps> = ({
               <select
                 value={viewDate.jy}
                 onChange={(e) => setViewDate({ ...viewDate, jy: parseInt(e.target.value, 10) })}
-                className="text-xs font-semibold text-gray-800 dark:text-white bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md py-1 px-2 cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+                className="text-xs font-semibold text-gray-800 dark:text-white bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-1.5 pr-2.5 pl-7 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-2xs"
               >
                 {yearOptions.map((y) => (
                   <option key={y} value={y} className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">

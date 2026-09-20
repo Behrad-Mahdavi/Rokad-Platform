@@ -3,6 +3,7 @@ import { apiClient } from '../../../lib/api/client';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
+import { Select } from '../../../components/ui/Select';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
@@ -413,49 +414,39 @@ export const MattersPage: React.FC = () => {
             </div>
           )}
 
-          <div>
-            <label className="block text-xs font-semibold text-foreground mb-1.5">
-              انتخاب دانش‌آموز / دانش‌آموز *
-            </label>
-            <select
-              value={form.studentId}
-              onChange={(e) => setForm({ ...form, studentId: e.target.value })}
-              className="w-full px-3 py-2 text-sm bg-surface/50 border border-border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-hidden"
-              required
-            >
-              <option value="">انتخاب از لیست دانش‌آموزان...</option>
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.user?.firstName} {s.user?.lastName} (کد ملی: {s.user?.nationalCode || s.studentNumber || '-'})
-                </option>
-              ))}
-            </select>
-          </div>
+          <Select
+            label="انتخاب دانش‌آموز *"
+            value={form.studentId}
+            onChange={(e) => setForm({ ...form, studentId: e.target.value })}
+            required
+          >
+            <option value="">انتخاب از لیست دانش‌آموزان...</option>
+            {students.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.user?.firstName} {s.user?.lastName} (کد ملی: {s.user?.nationalCode || s.studentNumber || '-'})
+              </option>
+            ))}
+          </Select>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-foreground mb-1.5">
-                نوع مورد *
-              </label>
-              <select
-                value={form.type}
-                onChange={(e) => {
-                  const val = e.target.value as any;
-                  setForm({
-                    ...form,
-                    type: val,
-                    points: val === 'POSITIVE' ? 2 : val === 'WARNING' ? -1 : -2,
-                  });
-                }}
-                className="w-full px-3 py-2 text-sm bg-surface/50 border border-border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-hidden"
-              >
-                <option value="POSITIVE">تشویق و تقدیر (+)</option>
-                <option value="WARNING">تذکر / اخطار کتبی (-)</option>
-                <option value="NEGATIVE">مورد انضباطی منفی (-)</option>
-                <option value="SUSPENSION">محرومیت موقت (-)</option>
-                <option value="COUNSELING_REFERRAL">ارجاع به مشاور (خنثی)</option>
-              </select>
-            </div>
+            <Select
+              label="نوع مورد *"
+              value={form.type}
+              onChange={(e) => {
+                const val = e.target.value as any;
+                setForm({
+                  ...form,
+                  type: val,
+                  points: val === 'POSITIVE' ? 2 : val === 'WARNING' ? -1 : -2,
+                });
+              }}
+            >
+              <option value="POSITIVE">تشویق و تقدیر (+)</option>
+              <option value="WARNING">تذکر / اخطار کتبی (-)</option>
+              <option value="NEGATIVE">مورد انضباطی منفی (-)</option>
+              <option value="SUSPENSION">محرومیت موقت (-)</option>
+              <option value="COUNSELING_REFERRAL">ارجاع به مشاور (خنثی)</option>
+            </Select>
 
             <div>
               <label className="block text-xs font-semibold text-foreground mb-1.5">

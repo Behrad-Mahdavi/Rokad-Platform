@@ -130,6 +130,52 @@
   code, kbd, samp, pre, .font-mono {
     font-family: 'IRANSansXFaNum', 'IRANSansX', sans-serif !important;
   }
+
+  /* ==========================================================================
+     GLOBAL MODERN SELECT & DROPDOWN STYLING
+     ========================================================================== */
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2.2' stroke='%2364748B'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
+    background-position: left 0.85rem center;
+    background-repeat: no-repeat;
+    background-size: 1.15rem;
+    padding-left: 2.5rem !important;
+    padding-right: 0.875rem;
+    cursor: pointer;
+    font-family: 'IRANSansXFaNum', 'IRANSansX', sans-serif;
+    border-radius: 0.75rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  }
+
+  select:not([class*="h-"]):not([class*="py-1"]):not([class*="text-xs"]) {
+    min-height: 44px;
+  }
+
+  select:focus {
+    outline: none;
+    border-color: #59BBAF !important;
+    box-shadow: 0 0 0 2px rgba(89, 187, 175, 0.25) !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2.2' stroke='%2359BBAF'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
+  }
+
+  select:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  select option {
+    background-color: #FFFFFF;
+    color: #1E293B;
+    font-family: 'IRANSansXFaNum', 'IRANSansX', sans-serif;
+    padding: 10px 14px;
+  }
+
+  select option:disabled {
+    color: #94A3B8;
+  }
 }
 
 /* ==========================================================================
@@ -262,6 +308,29 @@
 .dark [class*="divide-gray-100"] > :not([hidden]) ~ :not([hidden]),
 .dark [class*="divide-gray-200"] > :not([hidden]) ~ :not([hidden]) {
   border-color: #242F42 !important;
+}
+
+/* اصلاح منوهای کشویی و آپشن‌ها در دارک‌مود */
+.dark select {
+  background-color: #1C2536 !important;
+  border-color: #2D3748 !important;
+  color: #F8FAFC !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2.2' stroke='%2394A3B8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
+}
+
+.dark select:focus {
+  border-color: #59BBAF !important;
+  box-shadow: 0 0 0 2px rgba(89, 187, 175, 0.3) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2.2' stroke='%2359BBAF'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
+}
+
+.dark select option {
+  background-color: #1C2536 !important;
+  color: #F8FAFC !important;
+}
+
+.dark select option:disabled {
+  color: #64748B !important;
 }
 
 /* اصلاح کنتراست متون تیره و جوهری در دارک‌مود */

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../../../../components/ui/Modal';
 import { Button } from '../../../../components/ui/Button';
 import { Input } from '../../../../components/ui/Input';
+import { Select } from '../../../../components/ui/Select';
 import { apiClient } from '../../../../lib/api/client';
 import { toast } from '../../../../components/ui/toast/toast';
 import { toPersianDigits } from '../../../../lib/utils';
@@ -341,37 +342,27 @@ export const ComposeMessageModal: React.FC<Props> = ({
         {targetType === 'CLASSROOM' && allowed && (
           <div className="p-3.5 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1.5">
-                  انتخاب کلاس:
-                </label>
-                <select
-                  value={targetClassroomId}
-                  onChange={(e) => setTargetClassroomId(e.target.value)}
-                  className="w-full text-xs p-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-primary"
-                >
-                  {allowed.classrooms.map((cls) => (
-                    <option key={cls.id} value={cls.id}>
-                      {cls.name} {cls.code ? `(${cls.code})` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <Select
+                label="انتخاب کلاس:"
+                value={targetClassroomId}
+                onChange={(e) => setTargetClassroomId(e.target.value)}
+              >
+                {allowed.classrooms.map((cls) => (
+                  <option key={cls.id} value={cls.id}>
+                    {cls.name} {cls.code ? `(${cls.code})` : ''}
+                  </option>
+                ))}
+              </Select>
 
-              <div>
-                <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1.5">
-                  گیرندگان درون کلاس:
-                </label>
-                <select
-                  value={targetAudience}
-                  onChange={(e) => setTargetAudience(e.target.value as any)}
-                  className="w-full text-xs p-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="ALL">هم دانش‌آموزان و هم اولیاء</option>
-                  <option value="STUDENTS">فقط دانش‌آموزان کلاس</option>
-                  <option value="PARENTS">فقط اولیای دانش‌آموزان کلاس</option>
-                </select>
-              </div>
+              <Select
+                label="گیرندگان درون کلاس:"
+                value={targetAudience}
+                onChange={(e) => setTargetAudience(e.target.value as any)}
+              >
+                <option value="ALL">هم دانش‌آموزان و هم اولیاء</option>
+                <option value="STUDENTS">فقط دانش‌آموزان کلاس</option>
+                <option value="PARENTS">فقط اولیای دانش‌آموزان کلاس</option>
+              </Select>
             </div>
           </div>
         )}
@@ -460,18 +451,15 @@ export const ComposeMessageModal: React.FC<Props> = ({
           </div>
 
           <div>
-            <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
-              درجه اهمیت / اولویت:
-            </label>
-            <select
+            <Select
+              label="درجه اهمیت / اولویت:"
               value={priority}
               onChange={(e) => setPriority(e.target.value as any)}
-              className="w-full text-xs p-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="NORMAL">عادی</option>
               <option value="IMPORTANT">مهم (Important)</option>
               <option value="URGENT">فوری / اضطراری (Urgent)</option>
-            </select>
+            </Select>
           </div>
         </div>
 

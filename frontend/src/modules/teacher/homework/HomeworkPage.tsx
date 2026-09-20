@@ -6,6 +6,7 @@ import { apiClient } from '../../../lib/api/client';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
+import { Select } from '../../../components/ui/Select';
 import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
@@ -370,51 +371,45 @@ export const HomeworkPage: React.FC = () => {
           />
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">کلاس هدف</label>
-              <select
-                value={createForm.classroomId}
-                onChange={(e) => setCreateForm({ ...createForm, classroomId: e.target.value })}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary"
-                required
-              >
-                {classrooms.length === 0 ? (
-                  <option value="">در حال دریافت کلاس‌ها...</option>
-                ) : (
-                  <>
-                    <option value="">-- انتخاب کلاس درس --</option>
-                    {classrooms.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} ({c.code})
-                      </option>
-                    ))}
-                  </>
-                )}
-              </select>
-            </div>
+            <Select
+              label="کلاس هدف"
+              value={createForm.classroomId}
+              onChange={(e) => setCreateForm({ ...createForm, classroomId: e.target.value })}
+              required
+            >
+              {classrooms.length === 0 ? (
+                <option value="">در حال دریافت کلاس‌ها...</option>
+              ) : (
+                <>
+                  <option value="">-- انتخاب کلاس درس --</option>
+                  {classrooms.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.code})
+                    </option>
+                  ))}
+                </>
+              )}
+            </Select>
 
-            <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">درس مرتبط</label>
-              <select
-                value={createForm.lessonId}
-                onChange={(e) => setCreateForm({ ...createForm, lessonId: e.target.value })}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary"
-                required
-              >
-                {lessons.length === 0 ? (
-                  <option value="">هیچ درسی به شما تخصیص نیافته است</option>
-                ) : (
-                  <>
-                    <option value="">-- انتخاب کتاب یا درس --</option>
-                    {lessons.map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.name} {l.code ? `(${l.code})` : ''}
-                      </option>
-                    ))}
-                  </>
-                )}
-              </select>
-            </div>
+            <Select
+              label="درس مرتبط"
+              value={createForm.lessonId}
+              onChange={(e) => setCreateForm({ ...createForm, lessonId: e.target.value })}
+              required
+            >
+              {lessons.length === 0 ? (
+                <option value="">هیچ درسی به شما تخصیص نیافته است</option>
+              ) : (
+                <>
+                  <option value="">-- انتخاب کتاب یا درس --</option>
+                  {lessons.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name} {l.code ? `(${l.code})` : ''}
+                    </option>
+                  ))}
+                </>
+              )}
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
