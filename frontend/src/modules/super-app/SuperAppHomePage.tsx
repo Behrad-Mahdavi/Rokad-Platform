@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../lib/auth/auth-store';
 import { useTenantStore } from '../../lib/auth/tenant-store';
 import { apiClient } from '../../lib/api/client';
 import { formatToJalali, toPersianDigits } from '../../lib/utils';
 import { Badge } from '../../components/ui/Badge';
+import { HomeBannerSlider } from './components/HomeBannerSlider';
+import { BannerSettingsModal } from './components/BannerSettingsModal';
 import {
   BookOpen,
   FileCheck,
@@ -43,8 +45,20 @@ interface SuperAppCard {
 
 export const SuperAppHomePage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const user = useAuthStore((state) => state.user);
   const currentTenant = useTenantStore((state) => state.currentTenant);
+
+  // Admin Banner Settings Modal
+  const [isBannerSettingsOpen, setIsBannerSettingsOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('manageBanners') === 'true') {
+      setIsBannerSettingsOpen(true);
+      searchParams.delete('manageBanners');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   // Live Persian Date
   const [liveDate] = useState(() =>
@@ -538,7 +552,10 @@ export const SuperAppHomePage: React.FC = () => {
 
   return (
     <div className="space-y-5 pb-8 animate-in fade-in duration-300">
-      {/* Super-App Welcome Box: Name + Role next to it, Date on Left */}
+      {/* 1. Home Top Banner Slider (Max 3 Slides: Events, Announcements, Custom) */}
+      <HomeBannerSlider onOpenSettings={() => setIsBannerSettingsOpen(true)} />
+
+      {/* 2. Super-App Welcome Box: Name + Role next to it, Date on Left */}
       <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#151C28] border-[1.5px] border-primary-dark/30 dark:border-gray-800 shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17]">
         {/* Right side: Greeting, Name, and Role Badge */}
         <div className="flex items-center gap-2 flex-wrap min-w-0">
@@ -652,6 +669,11 @@ export const SuperAppHomePage: React.FC = () => {
           ))}
         </div>
       </div>
+      {/* Admin Banner Settings Modal */}
+      <BannerSettingsModal
+        isOpen={isBannerSettingsOpen}
+        onClose={() => setIsBannerSettingsOpen(false)}
+      />
     </div>
   );
 };

@@ -13,6 +13,7 @@ import {
   CalendarCheck,
   TrendingUp,
   ArrowUpRight,
+  SlidersHorizontal,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -214,7 +215,7 @@ export const SchoolAdminDashboard: React.FC = () => {
       </div>
 
       {/* Quick Shortcuts */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <Card
           onClick={() => navigate('/app/admin/members')}
           className="p-4 sm:p-5 cursor-pointer group flex flex-col justify-between min-h-[110px]"
@@ -251,6 +252,19 @@ export const SchoolAdminDashboard: React.FC = () => {
             </div>
             <h3 className="font-bold text-sm text-ink-darker dark:text-white mb-0.5">حقوق و دستمزد پرسنل</h3>
             <p className="text-xs text-gray-500 dark:text-gray-400">صدور فیش و تسویه حقوق</p>
+          </div>
+        </Card>
+
+        <Card
+          onClick={() => navigate('/app?manageBanners=true')}
+          className="p-4 sm:p-5 cursor-pointer group flex flex-col justify-between min-h-[110px]"
+        >
+          <div>
+            <div className="h-9 w-9 rounded-xl bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
+              <SlidersHorizontal className="h-4.5 w-4.5" />
+            </div>
+            <h3 className="font-bold text-sm text-ink-darker dark:text-white mb-0.5">بنرهای صفحه اصلی</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">مدیریت اسلایدر و اطلاعیه‌ها</p>
           </div>
         </Card>
       </div>
