@@ -19,6 +19,8 @@ async function bootstrap() {
         'Authorization',
         'x-tenant-id',
         'x-tenant-slug',
+        'x-app-version',
+        'X-App-Version',
         'Accept',
       ],
     },

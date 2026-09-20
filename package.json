@@ -1,6 +1,6 @@
 {
   "name": "rokad-platform",
-  "version": "1.0.0",
+  "version": "0.7.12",
   "description": "Rokad Multi-Tenant School ERP & LMS SaaS Platform",
   "author": "Rokad Studio Team",
   "private": true,
@@ -12,6 +12,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
+    "version:sync": "node scripts/sync-version.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",

@@ -81,6 +81,11 @@ export class AuditLogService implements OnModuleInit {
         payload: payload.newValues,
       });
 
+      const newValuesData = payload.newValues || payload.appVersion ? {
+        ...(typeof payload.newValues === 'object' && payload.newValues !== null ? payload.newValues : { value: payload.newValues }),
+        ...(payload.appVersion ? { _appVersion: payload.appVersion } : {}),
+      } : undefined;
+
       // 3. Save to database with hash chain
       await this.prisma.auditLog.create({
         data: {
@@ -91,7 +96,7 @@ export class AuditLogService implements OnModuleInit {
           entity: payload.entity,
           entityId: payload.entityId,
           oldValues: payload.oldValues ? JSON.parse(JSON.stringify(payload.oldValues)) : undefined,
-          newValues: payload.newValues ? JSON.parse(JSON.stringify(payload.newValues)) : undefined,
+          newValues: newValuesData ? JSON.parse(JSON.stringify(newValuesData)) : undefined,
           ipAddress: payload.ipAddress,
           userAgent: payload.userAgent,
           previousHash,

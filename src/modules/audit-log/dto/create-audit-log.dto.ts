@@ -8,4 +8,5 @@ export class CreateAuditLogDto {
   newValues?: any;
   ipAddress?: string;
   userAgent?: string;
+  appVersion?: string;
 }

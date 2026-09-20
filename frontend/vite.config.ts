@@ -2,12 +2,30 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
+import fs from 'fs';
+
+// Read version from root package.json for synchronized build-time injection
+let appVersion = '0.7.12';
+try {
+  const rootPkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../package.json'), 'utf-8'));
+  if (rootPkg.version) {
+    appVersion = rootPkg.version;
+  }
+} catch (e) {
+  console.warn('[Vite Config] Could not read root package.json, using fallback version');
+}
+
+const buildTime = new Date().toISOString();
 
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
+    __BUILD_TIME__: JSON.stringify(buildTime),
+  },
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       injectRegister: 'auto',
       devOptions: {
         enabled: true,

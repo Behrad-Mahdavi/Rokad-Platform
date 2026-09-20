@@ -43,6 +43,9 @@ apiClient.interceptors.request.use(
       config.headers['x-tenant-slug'] = currentTenant.slug;
     }
 
+    // Attach Client App Version for release version tracking and server error/audit logs
+    config.headers['X-App-Version'] = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.7.12';
+
     return config;
   },
   (error) => Promise.reject(error),

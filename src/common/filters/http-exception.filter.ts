@@ -22,6 +22,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let error = 'Internal Server Error';
     let errors: any = undefined;
 
+    const appVersion = (request.headers['x-app-version'] as string) || (request.headers['X-App-Version'] as string) || undefined;
+    const tenantId = (request as any)?.tenant?.id || (request as any)?.tenantId;
+
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const res = exception.getResponse();
@@ -38,11 +41,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
         }
       }
     } else if (exception instanceof Error) {
-      this.logger.error(`Unhandled Exception: ${exception.message}`, exception.stack);
+      this.logger.error(
+        `Unhandled Exception [Client-Version: ${appVersion || 'unknown'}]: ${exception.message}`,
+        exception.stack,
+      );
       message = exception.message;
     }
-
-    const tenantId = (request as any)?.tenant?.id || (request as any)?.tenantId;
 
     response.status(status).json({
       success: false,
@@ -53,6 +57,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
       path: request.url,
       tenantId: tenantId || undefined,
+      appVersion: appVersion || undefined,
     });
   }
 }
