@@ -21,19 +21,15 @@ import {
   Activity,
   Sliders,
   FileQuestion,
-  Calendar,
   GraduationCap,
   Bell,
-  PlayCircle,
   LayoutDashboard,
   ChevronLeft,
   Compass,
   Target,
   Sparkles,
   MessageSquare,
-  Star,
 } from 'lucide-react';
-import { CoinStackIcon } from '../../components/icons/CustomNavIcons';
 
 interface SuperAppCard {
   id: string;
@@ -407,14 +403,6 @@ export const SuperAppHomePage: React.FC = () => {
             iconColor: 'text-primary-dark dark:text-primary',
           },
           {
-            id: 'sessions-calendar',
-            title: 'جلسات و تقویم',
-            href: '/app/calendar',
-            icon: CalendarDays,
-            iconBg: 'bg-male-light dark:bg-[#182346]',
-            iconColor: 'text-sec dark:text-[#8194EE]',
-          },
-          {
             id: 'roadmap-events',
             title: 'رودمپ رویدادها',
             href: '/app/events',
@@ -438,14 +426,6 @@ export const SuperAppHomePage: React.FC = () => {
             icon: Vote,
             iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
             iconColor: 'text-primary-dark dark:text-primary',
-          },
-          {
-            id: 'media',
-            title: 'رسانه هنرستان',
-            href: '/app/media',
-            icon: Sparkles,
-            iconBg: 'bg-female-light dark:bg-[#3D1426]',
-            iconColor: 'text-girl dark:text-[#F472B6]',
           },
         ];
 
@@ -513,7 +493,8 @@ export const SuperAppHomePage: React.FC = () => {
           ];
       }
     })();
-    return (rawCards || []).filter((c) => c.id !== 'dashboard');
+    const BOTTOM_NAV_HREFS = ['/app/ka-platform', '/app/club', '/app/media', '/app/calendar', '/app'];
+    return (rawCards || []).filter((c) => c.id !== 'dashboard' && !BOTTOM_NAV_HREFS.includes(c.href));
   };
 
   const sharedCards: SuperAppCard[] = [
@@ -535,22 +516,6 @@ export const SuperAppHomePage: React.FC = () => {
       iconColor: 'text-club dark:text-[#C084FC]',
     },
     {
-      id: 'media',
-      title: 'رسانه',
-      href: '/app/media',
-      icon: PlayCircle,
-      iconBg: 'bg-female-light dark:bg-[#3D1426]',
-      iconColor: 'text-girl dark:text-[#F472B6]',
-    },
-    {
-      id: 'calendar',
-      title: 'تقویم',
-      href: '/app/calendar',
-      icon: Calendar,
-      iconBg: 'bg-male-light dark:bg-[#182346]',
-      iconColor: 'text-sec dark:text-[#8194EE]',
-    },
-    {
       id: 'messages',
       title: 'پیام‌ها',
       href: '/app/messages',
@@ -566,22 +531,6 @@ export const SuperAppHomePage: React.FC = () => {
       icon: Vote,
       iconBg: 'bg-college-light dark:bg-[#38260D]',
       iconColor: 'text-third dark:text-[#FBBF24]',
-    },
-    {
-      id: 'ka-platform',
-      title: 'پلتفرم کا',
-      href: '/app/ka-platform',
-      icon: CoinStackIcon,
-      iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-      iconColor: 'text-primary-dark dark:text-primary',
-    },
-    {
-      id: 'club',
-      title: 'باشگاه',
-      href: '/app/club',
-      icon: Star,
-      iconBg: 'bg-club-light dark:bg-[#2A173E]',
-      iconColor: 'text-club dark:text-[#C084FC]',
     },
   ];
 
@@ -676,7 +625,7 @@ export const SuperAppHomePage: React.FC = () => {
           ارتباطات و خدمات
         </h2>
 
-        <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5">
           {sharedCards.map((card) => (
             <button
               key={card.id}
