@@ -554,35 +554,108 @@
   }
 }
 
-/* اسکرول‌بار اختصاصی */
+/* ==========================================================================
+   ULTRA-MODERN FLOATING SCROLLBAR DESIGN SYSTEM (LIGHT & DARK MODES)
+   ========================================================================== */
+
+/* Standard CSS scrollbar properties for modern browsers & Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+}
+
+.dark * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(161, 161, 170, 0.35) transparent;
+}
+
+/* WebKit-based engines (Chrome, Safari, Edge, Android/iOS WebViews) */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-.dark ::-webkit-scrollbar-track {
-  background: #111827;
-}
-.dark ::-webkit-scrollbar-thumb {
-  background: #374151;
+  background: transparent !important;
+  margin: 2px;
 }
 
-/* Utilities for touch devices & scrollbars */
-.scrollbar-none::-webkit-scrollbar {
-  display: none;
+::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+  border: 1.5px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease;
 }
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.7);
+  border: 1px solid transparent;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: #59BBAF; /* Brand Primary Glow on dragging */
+  border: 1px solid transparent;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Dark Mode Scrollbars */
+.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border: 1.5px solid transparent;
+  background-clip: padding-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+.dark ::-webkit-scrollbar-thumb:active {
+  background-color: #59BBAF; /* Brand Primary Glow on dragging */
+}
+
+/* Specific Modals, Drawers & Popovers: floating ultra-thin sleek scrollbar */
+[role="dialog"] ::-webkit-scrollbar,
+.modal-content ::-webkit-scrollbar,
+.drawer-content ::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+[role="dialog"] ::-webkit-scrollbar-thumb,
+.modal-content ::-webkit-scrollbar-thumb,
+.drawer-content ::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+
+.dark [role="dialog"] ::-webkit-scrollbar-thumb,
+.dark .modal-content ::-webkit-scrollbar-thumb,
+.dark .drawer-content ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Utilities for hiding scrollbars while maintaining scroll functionality */
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+.no-scrollbar,
 .scrollbar-none {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Smooth scrolling on root */
+html {
+  scroll-behavior: smooth;
 }
 
 /* حداقل استاندارد ارگونومیک تاچ‌تارگت موبایل (WCAG AA 2.5.5 / 2.5.8) */

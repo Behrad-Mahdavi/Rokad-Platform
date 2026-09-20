@@ -714,11 +714,11 @@ export const CalendarPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsEventTypesModalOpen(true)}
-                  className="flex-1 sm:flex-initial min-h-[42px] px-3.5 py-2 rounded-xl border border-gray-200/90 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700/80 text-xs sm:text-sm font-bold text-gray-700 dark:text-zinc-200 hover:text-primary dark:hover:text-primary-light transition-all flex items-center justify-center gap-1.5 shadow-2xs shrink-0"
+                  className="flex-1 sm:flex-initial min-h-[42px] px-3.5 py-2 rounded-xl border border-gray-200/90 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700/80 text-xs sm:text-sm font-bold text-gray-700 dark:text-zinc-200 hover:text-primary dark:hover:text-primary-light transition-all flex items-center justify-center gap-1.5 shadow-2xs shrink-0 whitespace-nowrap"
                   title="مدیریت و تعریف انواع رویدادها"
                 >
                   <SlidersHorizontal className="w-4 h-4 text-primary shrink-0" />
-                  <span>انواع رویداد</span>
+                  <span className="whitespace-nowrap">انواع رویداد</span>
                 </button>
 
                 <button
@@ -727,21 +727,21 @@ export const CalendarPage: React.FC = () => {
                     if (selectedDay) setHolidayForm((p) => ({ ...p, date: selectedDay.jalaliStr }));
                     setIsHolidayModalOpen(true);
                   }}
-                  className="flex-1 sm:flex-initial min-h-[42px] px-3.5 py-2 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/60 dark:bg-rose-950/20 hover:bg-rose-100/60 dark:hover:bg-rose-950/40 text-xs sm:text-sm font-bold text-rose-700 dark:text-rose-400 transition-all flex items-center justify-center gap-1.5 shadow-2xs shrink-0"
+                  className="flex-1 sm:flex-initial min-h-[42px] px-3.5 py-2 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/60 dark:bg-rose-950/20 hover:bg-rose-100/60 dark:hover:bg-rose-950/40 text-xs sm:text-sm font-bold text-rose-700 dark:text-rose-400 transition-all flex items-center justify-center gap-1.5 shadow-2xs shrink-0 whitespace-nowrap"
                   title="ثبت تعطیلی مدرسه"
                 >
                   <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
-                  <span>تعطیلی مدرسه</span>
+                  <span className="whitespace-nowrap">تعطیلی مدرسه</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => handleOpenCreate(selectedDay?.jalaliStr)}
-                  className="flex-1 sm:flex-initial min-h-[42px] px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover active:scale-98 text-white text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs shrink-0"
+                  className="flex-1 sm:flex-initial min-h-[42px] px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover active:scale-98 text-white text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs shrink-0 whitespace-nowrap"
                   title="ثبت رویداد جدید در تقویم"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5] shrink-0" />
-                  <span>رویداد جدید</span>
+                  <span className="whitespace-nowrap">رویداد جدید</span>
                 </button>
               </div>
             </>
