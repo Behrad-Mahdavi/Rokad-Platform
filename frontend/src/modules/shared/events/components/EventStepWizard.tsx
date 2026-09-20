@@ -36,7 +36,6 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
   const currentUser = useAuthStore((s) => s.user);
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(currentUser?.role || '');
 
-  const [currentStep, setCurrentStep] = useState<number>(initialStep);
   const [selectedIdeaForVote, setSelectedIdeaForVote] = useState<string | null>(null);
 
   // Step Unlocking state for students
@@ -50,6 +49,21 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
     }
   });
 
+  const [currentStep, setCurrentStep] = useState<number>(() => {
+    if (!isManager && unlockedSteps.length > 0 && !unlockedSteps.includes(initialStep)) {
+      return Math.min(...unlockedSteps);
+    }
+    return initialStep;
+  });
+
+  // Auto redirect student if current step gets locked
+  useEffect(() => {
+    if (!isManager && unlockedSteps.length > 0 && !unlockedSteps.includes(currentStep)) {
+      const firstAvailable = Math.min(...unlockedSteps);
+      setCurrentStep(firstAvailable);
+    }
+  }, [unlockedSteps, isManager, currentStep]);
+
   // Storage key for event ideas & lock state
   const storageKey = `rokad_event_ideas_${eventId}`;
   const lockKey = `rokad_event_locked_${eventId}`;
@@ -57,6 +71,8 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
   const [isIdeaSubmissionLocked, setIsIdeaSubmissionLocked] = useState<boolean>(() => {
     return localStorage.getItem(lockKey) === 'true';
   });
+
+  const isStep1Locked = isIdeaSubmissionLocked || (!isManager && !unlockedSteps.includes(1));
 
   const handleToggleIdeaLock = () => {
     setIsIdeaSubmissionLocked((prev) => {
@@ -278,7 +294,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
             eventId={eventId}
             eventTitle={eventTitle}
             ideas={ideas}
-            isLocked={isIdeaSubmissionLocked}
+            isLocked={isStep1Locked}
             onToggleLock={handleToggleIdeaLock}
             onIdeaSubmitted={handleIdeaSubmitted}
             onUpdateIdea={handleUpdateIdea}
