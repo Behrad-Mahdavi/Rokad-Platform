@@ -26,7 +26,52 @@ interface EventStepWizardProps {
   initialStep?: number;
 }
 
-const DEFAULT_EVENT_IDEAS: EventIdea[] = [];
+const DEFAULT_EVENT_IDEAS: EventIdea[] = [
+  {
+    id: 'idea_sample_1',
+    eventId: 'evt_startup_weekend_2026',
+    ideaNumber: 1,
+    title: 'سامانه هوشمند مدیریت کارگاه‌های هنرستان (کارگاه پلاس)',
+    description: 'یک نرم‌افزار جامع تحت وب و موبایل برای رزرو تجهیزات کارگاه، ثبت کارنامه‌ی مهارتی دانش‌آموزان و مدیریت قطعات سخت‌افزاری.',
+    authorName: 'امیرحسین رضایی',
+    authorRole: 'دانش‌آموز',
+    createdAt: new Date(Date.now() - 3600000 * 48).toISOString(),
+    status: 'APPROVED',
+  },
+  {
+    id: 'idea_sample_2',
+    eventId: 'evt_startup_weekend_2026',
+    ideaNumber: 2,
+    title: 'پلتفرم به اشتراک‌گذاری کتاب و جزوات کنکوری (کتاب‌یار)',
+    description: 'شبکه اجتماعی داخلی مدرسه‌ای جهت تبادل و امانت‌دهی کتاب‌های درسی و جزوات آموزشی بین دانش‌آموزان پایه‌های مختلف.',
+    authorName: 'محمدحسین علیزاده',
+    authorRole: 'دانش‌آموز',
+    createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
+    status: 'APPROVED',
+  },
+  {
+    id: 'idea_sample_3',
+    eventId: 'evt_startup_weekend_2026',
+    ideaNumber: 3,
+    title: 'ربات هوشمند پاسخگویی به سوالات مهارتی (هنرآموز AI)',
+    description: 'یک دستیار هوش مصنوعی محلی برای پاسخگویی به سوالات برنامه‌نویسی و شبکه‌های کامپیوتری هنرجویان.',
+    authorName: 'علیرضا حسینی',
+    authorRole: 'دانش‌آموز',
+    createdAt: new Date(Date.now() - 3600000 * 12).toISOString(),
+    status: 'APPROVED',
+  },
+  {
+    id: 'idea_sample_4',
+    eventId: 'evt_startup_weekend_2026',
+    ideaNumber: 4,
+    title: 'سیستم هوشمند سوخت‌رسانی و عیب‌یابی خودرو هنرستان',
+    description: 'طرح مانیتورینگ آنلاین سنسورهای خودرو با اتصال اینترنت اشیاء جهت یادگیری بهتر دروس مکانیک خودرو.',
+    authorName: 'مهدی محمودی',
+    authorRole: 'دانش‌آموز',
+    createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
+    status: 'APPROVED',
+  },
+];
 
 export const EventStepWizard: React.FC<EventStepWizardProps> = ({
   eventId,

@@ -85,7 +85,11 @@ export const EventsRoadmapPage: React.FC = () => {
       const cached = localStorage.getItem(EVENTS_STORAGE_KEY);
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const hasStartup = parsed.some((e: any) => e.eventType === 'STARTUP_WEEKEND' || e.id === 'evt_startup_weekend_2026');
+          if (hasStartup) return parsed;
+          return [...INITIAL_SAMPLE_EVENTS, ...parsed];
+        }
       }
     } catch {}
     return INITIAL_SAMPLE_EVENTS;
