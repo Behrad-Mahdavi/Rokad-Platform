@@ -44,7 +44,6 @@ interface EventVotingPorscadStepProps {
   eventTitle: string;
   ideas: EventIdea[];
   selectedIdeaId?: string | null;
-  onRateIdea: (ideaId: string, rating: { score: number; comment?: string }) => void;
   onGoToIdeasList: () => void;
   onGoToCanvasStep: () => void;
 }
@@ -54,14 +53,12 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
   eventTitle,
   ideas,
   selectedIdeaId,
-  onRateIdea,
   onGoToIdeasList,
   onGoToCanvasStep,
 }) => {
   const currentUser = useAuthStore((s) => s.user);
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(currentUser?.role || '');
 
-  const [activeTab, setActiveTab] = useState<'PORSCAD_VOTING' | 'STAR_RATING'>('PORSCAD_VOTING');
   const [porscadPoll, setPorscadPoll] = useState<PorscadPollData | null>(null);
   const [isRefreshingAnalytics, setIsRefreshingAnalytics] = useState(false);
 
@@ -340,31 +337,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
 
   const currentIdea = ideas.find((i) => i.id === activeIdeaId) || ideas[0];
 
-  const sortedStarLeaderboard = [...ideas].sort((a, b) => {
-    const avgA = a.starRatings?.length
-      ? a.starRatings.reduce((sum, r) => sum + r.score, 0) / a.starRatings.length
-      : 0;
-    const avgB = b.starRatings?.length
-      ? b.starRatings.reduce((sum, r) => sum + r.score, 0) / b.starRatings.length
-      : 0;
-    return avgB - avgA;
-  });
 
-  const handleStarRatingSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentIdea) return;
-
-    setIsSubmittingRating(true);
-    setTimeout(() => {
-      onRateIdea(currentIdea.id, {
-        score: selectedScore,
-        comment: commentText.trim() || undefined,
-      });
-      setIsSubmittingRating(false);
-      setCommentText('');
-      toast.success(`امتیاز ${toPersianDigits(selectedScore)} ستاره به ایده «${currentIdea.title}» ثبت شد!`);
-    }, 300);
-  };
 
   const maxSelections = porscadPoll?.settings?.maxSelections || 1;
   const isMultiSelect = maxSelections > 1;
@@ -421,83 +394,55 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               onClick={onGoToCanvasStep}
               className="gap-2 text-xs font-black border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]"
             >
-              <span>رفتن به بوم رویداد</span>
+              <span>رفتن به تشکیل تیم</span>
               <ArrowLeft className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
-        {/* Tab Toggle & Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex gap-2 p-1.5 rounded-xl border-2 border-zinc-900 bg-zinc-100 dark:bg-zinc-800 max-w-md">
-            <button
-              onClick={() => setActiveTab('PORSCAD_VOTING')}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all ${
-                activeTab === 'PORSCAD_VOTING'
-                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-[2px_2px_0px_0px_#18181b]'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900'
-              }`}
+        {/* Action controls (Refresh Analytics / Finish Poll) */}
+        {porscadPoll?.isPublished && (
+          <div className="flex items-center gap-2 mb-4">
+            <Button
+              variant="outline"
+              onClick={handleRefreshAnalytics}
+              disabled={isRefreshingAnalytics}
+              className="gap-2 text-xs font-bold border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b]"
             >
-              <Vote className="w-4 h-4 text-amber-400" />
-              <span>نظرسنجی وب‌سرویس پرس‌کاد</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('STAR_RATING')}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all ${
-                activeTab === 'STAR_RATING'
-                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-[2px_2px_0px_0px_#18181b]'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900'
-              }`}
-            >
-              <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
-              <span>امتیازدهی ستاره‌ای داوری</span>
-            </button>
-          </div>
+              <RefreshCw className={`w-3.5 h-3.5 text-primary ${isRefreshingAnalytics ? 'animate-spin' : ''}`} />
+              <span>بروزرسانی آنلاین آمار</span>
+            </Button>
 
-          {/* Action buttons (Refresh Analytics / Finish Poll) */}
-          {porscadPoll?.isPublished && (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={handleRefreshAnalytics}
-                disabled={isRefreshingAnalytics}
-                className="gap-2 text-xs font-bold border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b]"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 text-primary ${isRefreshingAnalytics ? 'animate-spin' : ''}`} />
-                <span>بروزرسانی آنلاین آمار</span>
-              </Button>
-
-              {porscadPoll.isClosed ? (
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-emerald-700 bg-emerald-100 text-emerald-900 text-xs font-black">
-                    <Lock className="w-3.5 h-3.5" />
-                    <span>فرم بسته شد</span>
-                  </span>
-                  {isManager && (
-                    <button
-                      onClick={handleReopenAssessment}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border-2 border-zinc-900 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-black shadow-[2px_2px_0px_0px_#18181b]"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>بازگشایی فرم</span>
-                    </button>
-                  )}
-                </div>
-              ) : (
-                isManager && (
-                  <Button
-                    variant="outline"
-                    onClick={handleOpenFinishModal}
-                    className="gap-2 text-xs font-black border-2 border-zinc-900 bg-amber-300 hover:bg-amber-400 text-zinc-950 shadow-[3px_3px_0px_0px_#18181b]"
+            {porscadPoll.isClosed ? (
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-emerald-700 bg-emerald-100 text-emerald-900 text-xs font-black">
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>فرم بسته شد</span>
+                </span>
+                {isManager && (
+                  <button
+                    onClick={handleReopenAssessment}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border-2 border-zinc-900 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-black shadow-[2px_2px_0px_0px_#18181b]"
                   >
-                    <Trophy className="w-4 h-4 text-zinc-950" />
-                    <span>اتمام نظرسنجی و انتخاب ایده‌های برتر</span>
-                  </Button>
-                )
-              )}
-            </div>
-          )}
-        </div>
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>بازگشایی فرم</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              isManager && (
+                <Button
+                  variant="outline"
+                  onClick={handleOpenFinishModal}
+                  className="gap-2 text-xs font-black border-2 border-zinc-900 bg-amber-300 hover:bg-amber-400 text-zinc-950 shadow-[3px_3px_0px_0px_#18181b]"
+                >
+                  <Trophy className="w-4 h-4 text-zinc-950" />
+                  <span>اتمام نظرسنجی و انتخاب ایده‌های برتر</span>
+                </Button>
+              )
+            )}
+          </div>
+        )}
       </div>
 
       {/* ================= WINNING IDEAS PODIUM (SHOWS FOR ALL WHEN POLL IS CLOSED) ================= */}
@@ -660,11 +605,8 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
         </div>
       )}
 
-      {/* ================= TAB 1: PORSCAD VOTING & FORM BUILDER ================= */}
-      {activeTab === 'PORSCAD_VOTING' && (
-        <>
-          {/* 1. ADMIN FORM BUILDER (IF IN BUILDING MODE) */}
-          {isBuildingMode && isManager ? (
+      {/* ================= PORSCAD VOTING & FORM BUILDER ================= */}
+      {isBuildingMode && isManager ? (
             <div className="rounded-2xl border-3 border-zinc-900 bg-white p-6 md:p-8 shadow-[6px_6px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 space-y-6">
               <div className="border-b-2 border-zinc-900/10 pb-4">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-indigo-400 text-zinc-950 text-xs font-black mb-2 shadow-[2px_2px_0px_0px_#18181b]">
@@ -1162,185 +1104,6 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               </div>
             </div>
           )}
-        </>
-      )}
-
-      {/* ================= TAB 2: DETAILED STAR RATING & COMMENTS ================= */}
-      {activeTab === 'STAR_RATING' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="rounded-2xl border-3 border-zinc-900 bg-white p-5 shadow-[5px_5px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900">
-              <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-2">
-                انتخاب ایده برای ارزیابی و امتیازدهی داوری:
-              </label>
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-                {ideas.map((idea) => (
-                  <button
-                    key={idea.id}
-                    onClick={() => setActiveIdeaId(idea.id)}
-                    className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-black border-2 border-zinc-900 transition-all ${
-                      activeIdeaId === idea.id
-                        ? 'bg-amber-400 text-zinc-950 shadow-[3px_3px_0px_0px_#18181b]'
-                        : 'bg-zinc-50 text-zinc-700 hover:bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-300'
-                    }`}
-                  >
-                    {idea.title.length > 28 ? idea.title.substring(0, 28) + '...' : idea.title}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {currentIdea ? (
-              <div className="rounded-2xl border-3 border-zinc-900 bg-white p-6 md:p-8 shadow-[6px_6px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[6px_6px_0px_0px_#f4f4f5]">
-                <div className="border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-5 mb-6">
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-xs font-bold text-zinc-500">
-                      ثبت‌شده توسط: <strong className="text-zinc-800 dark:text-zinc-200">{currentIdea.authorName}</strong> ({currentIdea.authorRole})
-                    </span>
-                    <span className="text-[11px] font-bold text-zinc-400">
-                      {formatJalaliDisplay(currentIdea.createdAt, false)}
-                    </span>
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-black text-zinc-900 dark:text-zinc-50 leading-snug">
-                    {currentIdea.title}
-                  </h3>
-                  <p className="mt-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-line">
-                    {currentIdea.description}
-                  </p>
-                </div>
-
-                <form onSubmit={handleStarRatingSubmit} className="space-y-6">
-                  <div className="rounded-2xl border-2 border-zinc-900 bg-amber-50/70 p-6 text-center dark:border-zinc-300 dark:bg-zinc-800/80 shadow-[4px_4px_0px_0px_#18181b]">
-                    <h4 className="text-sm font-black text-zinc-900 dark:text-zinc-100 mb-2">
-                      به این ایده چند ستاره می‌دهید؟ (۱ تا ۵ ستاره)
-                    </h4>
-                    <p className="text-xs font-bold text-zinc-500 mb-4">
-                      بر اساس خلاقیت، جذابیت و سهولت پیاده‌سازی امتیاز دهید
-                    </p>
-
-                    <div className="flex items-center justify-center gap-3 my-4">
-                      {[1, 2, 3, 4, 5].map((starVal) => {
-                        const isFilled = (hoveredStar || selectedScore) >= starVal;
-                        return (
-                          <button
-                            type="button"
-                            key={starVal}
-                            onMouseEnter={() => setHoveredStar(starVal)}
-                            onMouseLeave={() => setHoveredStar(0)}
-                            onClick={() => setSelectedScore(starVal)}
-                            className="p-2 transition-transform hover:scale-125 active:scale-95 focus:outline-none"
-                          >
-                            <Star
-                              className={`w-10 h-10 md:w-12 md:h-12 transition-colors ${
-                                isFilled
-                                  ? 'fill-amber-400 text-amber-500 drop-shadow-[0_2px_4px_rgba(245,158,11,0.4)]'
-                                  : 'text-zinc-300 dark:text-zinc-600'
-                              }`}
-                            />
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <div className="inline-block px-4 py-1.5 rounded-xl border-2 border-zinc-900 bg-white font-black text-sm text-zinc-900 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 dark:text-zinc-100">
-                      امتیاز انتخابی شما: {toPersianDigits(hoveredStar || selectedScore)} از ۵ ستاره
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1.5 flex items-center gap-1.5">
-                      <MessageSquare className="w-4 h-4 text-indigo-500" />
-                      <span>نقد، پیشنهاد تکمیلی یا نظر داوری (اختیاری):</span>
-                    </label>
-                    <textarea
-                      rows={3}
-                      placeholder="نقاط قوت این ایده چیست؟ چه پیشنهادی برای بهتر شدنش دارید؟"
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-xs md:text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 placeholder:text-zinc-400 focus:outline-none"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-end">
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      disabled={isSubmittingRating}
-                      className="border-2 border-zinc-900 font-black gap-2 px-8 py-3 shadow-[4px_4px_0px_0px_#18181b]"
-                    >
-                      <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
-                      <span>{isSubmittingRating ? 'در حال ثبت...' : 'ثبت امتیاز و ستاره نهایی'}</span>
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            ) : null}
-          </div>
-
-          {/* Right Column: Leaderboard of Top Ideas */}
-          <div className="space-y-6">
-            <div className="rounded-2xl border-3 border-zinc-900 bg-white p-5 md:p-6 shadow-[5px_5px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[5px_5px_0px_0px_#f4f4f5]">
-              <div className="flex items-center justify-between border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-4 mb-4">
-                <div className="flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-amber-500" />
-                  <h3 className="text-base font-black text-zinc-900 dark:text-zinc-100">
-                    جدول رتبه‌بندی ستاره‌ای
-                  </h3>
-                </div>
-                <span className="text-[11px] font-bold text-zinc-500">بر اساس میانگین ستاره</span>
-              </div>
-
-              <div className="space-y-3">
-                {sortedStarLeaderboard.map((idea, index) => {
-                  const avg = idea.starRatings?.length
-                    ? (idea.starRatings.reduce((s, r) => s + r.score, 0) / idea.starRatings.length).toFixed(1)
-                    : '0';
-                  const totalV = idea.starRatings?.length || 0;
-
-                  return (
-                    <div
-                      key={idea.id}
-                      onClick={() => setActiveIdeaId(idea.id)}
-                      className={`cursor-pointer rounded-xl border-2 p-3 transition-all ${
-                        activeIdeaId === idea.id
-                          ? 'border-zinc-900 bg-amber-50 dark:bg-amber-950/40 shadow-[2px_2px_0px_0px_#18181b]'
-                          : 'border-zinc-200 hover:border-zinc-400 bg-white dark:border-zinc-800 dark:bg-zinc-800'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`w-6 h-6 rounded-lg flex items-center justify-center font-black text-xs border-2 border-zinc-900 ${
-                              index === 0
-                                ? 'bg-amber-400 text-zinc-950'
-                                : index === 1
-                                ? 'bg-zinc-300 text-zinc-950'
-                                : index === 2
-                                ? 'bg-amber-700 text-white'
-                                : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200'
-                            }`}
-                          >
-                            {toPersianDigits(index + 1)}
-                          </span>
-                          <span className="text-xs font-black text-zinc-900 dark:text-zinc-100 line-clamp-1 max-w-[140px]">
-                            {idea.title}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-1 font-black text-xs text-amber-600 dark:text-amber-400">
-                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
-                          <span>{toPersianDigits(avg)}</span>
-                          <span className="text-[10px] text-zinc-400 font-bold">({toPersianDigits(totalV)})</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       {/* ================= TOKEN MANAGEMENT MODAL ================= */}
       {isTokenModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/70 p-4 backdrop-blur-sm">

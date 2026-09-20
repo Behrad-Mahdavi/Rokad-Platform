@@ -125,24 +125,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
     setIdeas((prev) => prev.map((item) => (item.id === updatedIdea.id ? updatedIdea : item)));
   };
 
-  const handleRateIdea = (ideaId: string, rating: { score: number; comment?: string }) => {
-    setIdeas((prev) =>
-      prev.map((item) => {
-        if (item.id !== ideaId) return item;
-        const newRating = {
-          userId: 'user_' + Date.now(),
-          userName: currentUser ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() : 'شما (کاربر فعال)',
-          score: rating.score,
-          comment: rating.comment,
-          createdAt: new Date().toISOString(),
-        };
-        return {
-          ...item,
-          starRatings: [newRating, ...(item.starRatings || [])],
-        };
-      })
-    );
-  };
+
 
   const STEPS_CONFIG = [
     {
@@ -299,8 +282,8 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
             onToggleLock={handleToggleIdeaLock}
             onIdeaSubmitted={handleIdeaSubmitted}
             onUpdateIdea={handleUpdateIdea}
-            onGoToNextStep={() => setCurrentStep(2)}
-            onGoToVotingStep={() => setCurrentStep(3)}
+            onGoToNextStep={() => handleStepClick(2)}
+            onGoToVotingStep={() => handleStepClick(3)}
           />
         )}
 
@@ -309,9 +292,9 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
             ideas={ideas}
             onUpdateIdea={handleUpdateIdea}
             onSelectIdeaForVote={(id) => setSelectedIdeaForVote(id)}
-            onGoToSubmitStep={() => setCurrentStep(1)}
-            onGoToVotingStep={() => setCurrentStep(3)}
-            onGoToCanvasStep={() => setCurrentStep(4)}
+            onGoToSubmitStep={() => handleStepClick(1)}
+            onGoToVotingStep={() => handleStepClick(3)}
+            onGoToCanvasStep={() => handleStepClick(5)}
           />
         )}
 
@@ -321,9 +304,8 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
             eventTitle={eventTitle}
             ideas={ideas}
             selectedIdeaId={selectedIdeaForVote}
-            onRateIdea={handleRateIdea}
-            onGoToIdeasList={() => setCurrentStep(2)}
-            onGoToCanvasStep={() => setCurrentStep(4)}
+            onGoToIdeasList={() => handleStepClick(2)}
+            onGoToCanvasStep={() => handleStepClick(4)}
           />
         )}
 
@@ -332,8 +314,8 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
             eventId={eventId}
             eventTitle={eventTitle}
             ideas={ideas}
-            onGoToVotingStep={() => setCurrentStep(3)}
-            onGoToCanvasStep={() => setCurrentStep(5)}
+            onGoToVotingStep={() => handleStepClick(3)}
+            onGoToCanvasStep={() => handleStepClick(5)}
           />
         )}
 
@@ -341,8 +323,8 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
           <EventCanvasMaterialsStep
             eventId={eventId}
             eventTitle={eventTitle}
-            onGoToVotingStep={() => setCurrentStep(4)}
-            onGoToIdeasList={() => setCurrentStep(2)}
+            onGoToVotingStep={() => handleStepClick(4)}
+            onGoToIdeasList={() => handleStepClick(2)}
           />
         )}
       </div>
