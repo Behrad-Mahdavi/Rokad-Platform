@@ -8,7 +8,26 @@ import {
   IsString,
   Min,
 } from 'class-validator';
-import { LessonType, DayOfWeek } from '@prisma/client';
+export enum LessonType {
+  GENERAL = 'GENERAL',
+  NON_TECHNICAL_COMPETENCY = 'NON_TECHNICAL_COMPETENCY',
+  BASIC_COMPETENCY = 'BASIC_COMPETENCY',
+  TECHNICAL_MODULAR_COMPETENCY = 'TECHNICAL_MODULAR_COMPETENCY',
+  TECHNICAL_PRACTICAL_COMPETENCY = 'TECHNICAL_PRACTICAL_COMPETENCY',
+  SPECIALIZED = 'SPECIALIZED',
+  PRACTICAL = 'PRACTICAL',
+  OPTIONAL = 'OPTIONAL',
+}
+
+export enum DayOfWeek {
+  SATURDAY = 'SATURDAY',
+  SUNDAY = 'SUNDAY',
+  MONDAY = 'MONDAY',
+  TUESDAY = 'TUESDAY',
+  WEDNESDAY = 'WEDNESDAY',
+  THURSDAY = 'THURSDAY',
+  FRIDAY = 'FRIDAY',
+}
 
 export class CreateLessonDto {
   @ApiPropertyOptional({ description: 'شناسه مقطع تحصیلی' })
@@ -40,7 +59,7 @@ export class CreateLessonDto {
   @ApiPropertyOptional({
     description: 'نوع درس (GENERAL, SPECIALIZED, PRACTICAL, OPTIONAL)',
     enum: LessonType,
-    default: LessonType.GENERAL,
+    default: 'GENERAL',
   })
   @IsEnum(LessonType)
   @IsOptional()
@@ -146,7 +165,7 @@ export class CreateScheduleDto {
   @ApiProperty({
     description: 'روز هفته',
     enum: DayOfWeek,
-    example: DayOfWeek.SATURDAY,
+    example: 'SATURDAY',
   })
   @IsEnum(DayOfWeek)
   dayOfWeek: DayOfWeek;

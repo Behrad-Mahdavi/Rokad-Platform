@@ -5,6 +5,7 @@ node_modules/
 # Build & Dist
 dist/
 build/
+dev-dist/
 
 # Environment variables
 .env

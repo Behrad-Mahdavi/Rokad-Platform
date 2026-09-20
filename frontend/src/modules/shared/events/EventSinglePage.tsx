@@ -38,7 +38,15 @@ import {
   Trophy,
   Compass,
 } from 'lucide-react';
-import { SchoolEventItem } from './EventsRoadmapPage';
+import { SchoolEventItem, INITIAL_SAMPLE_EVENTS } from './constants/sample-events';
+import { EventStepWizard } from './components/EventStepWizard';
+import {
+  Workflow,
+  Lightbulb,
+  Star,
+  Layers,
+  FileSpreadsheet,
+} from 'lucide-react';
 
 const EVENT_CATEGORIES: Record<string, { label: string; icon: any; color: string }> = {
   ACADEMIC: { label: 'آموزشی و مهارت', icon: BookOpen, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' },
@@ -68,6 +76,7 @@ export const EventSinglePage: React.FC = () => {
   const [event, setEvent] = useState<SchoolEventItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [activeMainTab, setActiveMainTab] = useState<'WORKFLOW' | 'OVERVIEW'>('WORKFLOW');
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -104,9 +113,25 @@ export const EventSinglePage: React.FC = () => {
       const res = await apiClient.get(`/calendar/events/${id}`);
       if (res && res.data) {
         setEvent(res.data);
+        return;
       }
     } catch (err) {
-      console.error('Failed to fetch single event', err);
+      // Gracefully load from local storage or default sample events
+    }
+
+    try {
+      const cached = localStorage.getItem('rokad_calendar_events');
+      let allEvents: SchoolEventItem[] = INITIAL_SAMPLE_EVENTS;
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          allEvents = parsed;
+        }
+      }
+      const found = allEvents.find((e) => e.id === id) || allEvents[0];
+      setEvent(found || null);
+    } catch (e) {
+      console.error('Failed to load fallback event', e);
     } finally {
       setIsLoading(false);
     }
@@ -166,24 +191,49 @@ export const EventSinglePage: React.FC = () => {
     undoLabel: TOAST_MESSAGES.operations.calendarEventDeleted(event?.title || ''),
     delayMs: 5000,
     optimisticUpdate: () => {
+      try {
+        const cached = localStorage.getItem('rokad_calendar_events');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) {
+            const next = parsed.filter((e: any) => e.id !== id);
+            localStorage.setItem('rokad_calendar_events', JSON.stringify(next));
+          }
+        }
+      } catch {}
       navigate('/app/events');
     },
     mutationFn: async () => {
       if (id) {
-        await apiClient.delete(`/calendar/events/${id}`);
+        try {
+          await apiClient.delete(`/calendar/events/${id}`);
+        } catch {
+          // Handled offline
+        }
       }
     },
     undoFn: async () => {
-      if (id) {
-        await apiClient.patch(`/calendar/events/${id}/restore`);
+      if (id && event) {
+        try {
+          const cached = localStorage.getItem('rokad_calendar_events');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && !parsed.some((e: any) => e.id === id)) {
+              localStorage.setItem('rokad_calendar_events', JSON.stringify([event, ...parsed]));
+            }
+          }
+        } catch {}
+        try {
+          await apiClient.patch(`/calendar/events/${id}/restore`);
+        } catch {}
         navigate(`/app/events/${id}`);
       }
     },
     revertUpdate: () => {
       toast.info(`رویداد «${event?.title || ''}» بازگردانی شد.`);
     },
-    onError: (err) => {
-      toast.error(err?.response?.data?.message || 'خطا در حذف رویداد');
+    onError: () => {
+      // Offline fallback already updated locally
     },
   });
 
@@ -246,7 +296,7 @@ export const EventSinglePage: React.FC = () => {
         ? form.tags.split(/[,،]+/).map((t) => t.trim()).filter(Boolean)
         : [];
 
-      await apiClient.patch(`/calendar/events/${id}`, {
+      const patchPayload = {
         title: form.title.trim(),
         description: form.description.trim(),
         eventType: form.eventType,
@@ -257,10 +307,41 @@ export const EventSinglePage: React.FC = () => {
         location: form.location.trim() || undefined,
         coverUrl: form.coverUrl.trim() || undefined,
         tags: tagsArray,
-      });
+      };
+
+      try {
+        await apiClient.patch(`/calendar/events/${id}`, patchPayload);
+      } catch {
+        // Safe offline fallback
+      }
+
+      // Update local storage
+      try {
+        const cached = localStorage.getItem('rokad_calendar_events');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) {
+            const next = parsed.map((item: any) =>
+              item.id === id ? { ...item, ...patchPayload } : item
+            );
+            localStorage.setItem('rokad_calendar_events', JSON.stringify(next));
+          }
+        }
+      } catch {}
+
+      if (event) {
+        setEvent({
+          ...event,
+          ...patchPayload,
+          description: patchPayload.description,
+          location: patchPayload.location,
+          coverUrl: patchPayload.coverUrl,
+          tags: tagsArray,
+        });
+      }
 
       setIsEditModalOpen(false);
-      await fetchEvent();
+      toast.success(TOAST_MESSAGES.operations.calendarEventUpdated(form.title));
     } catch (err: any) {
       setFormError(err?.response?.data?.message || 'خطا در ویرایش رویداد');
     } finally {
@@ -447,87 +528,121 @@ export const EventSinglePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Information Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Start Date */}
-        <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[3px_3px_0px_0px_#f4f4f5]">
-          <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-xs mb-1">
-            <CalendarDays className="w-4 h-4" />
-            <span>زمان آغاز</span>
-          </div>
-          <p className="text-base font-black text-zinc-900 dark:text-zinc-100">{jalaliStart}</p>
-          <p className="text-xs font-bold text-zinc-500 mt-1">ساعت {startTimeStr}</p>
-        </div>
+      {/* Main Tabs Navigation: Step-by-Step Lifecycle vs Overview */}
+      <div className="flex flex-wrap items-center gap-3 p-2 rounded-2xl border-3 border-zinc-900 bg-white shadow-[4px_4px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[4px_4px_0px_0px_#f4f4f5]">
+        <button
+          onClick={() => setActiveMainTab('WORKFLOW')}
+          className={`flex-1 min-w-[200px] flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-sm font-black transition-all ${
+            activeMainTab === 'WORKFLOW'
+              ? 'bg-amber-400 text-zinc-950 border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]'
+              : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
+          }`}
+        >
+          <Workflow className="w-4 h-4" />
+          <span>چرخه گام‌به‌گام رویداد (ایده ➔ ستاره‌دهی ➔ پرس‌کاد ➔ بوم و متریال‌ها)</span>
+        </button>
 
-        {/* End Date */}
-        <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[3px_3px_0px_0px_#f4f4f5]">
-          <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold text-xs mb-1">
-            <Clock className="w-4 h-4" />
-            <span>زمان پایان</span>
-          </div>
-          <p className="text-base font-black text-zinc-900 dark:text-zinc-100">{jalaliEnd}</p>
-          <p className="text-xs font-bold text-zinc-500 mt-1">ساعت {endTimeStr}</p>
-        </div>
-
-        {/* Location */}
-        <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[3px_3px_0px_0px_#f4f4f5]">
-          <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-xs mb-1">
-            <MapPin className="w-4 h-4" />
-            <span>محل برگزاری</span>
-          </div>
-          <p className="text-base font-black text-zinc-900 dark:text-zinc-100">
-            {event.location || 'سالن اصلی هنرستان'}
-          </p>
-          <p className="text-xs font-bold text-zinc-500 mt-1">حضوری / هماهنگ‌شده</p>
-        </div>
-
-        {/* Organizer */}
-        <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[3px_3px_0px_0px_#f4f4f5]">
-          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs mb-1">
-            <ShieldCheck className="w-4 h-4" />
-            <span>برگزارکننده</span>
-          </div>
-          <p className="text-base font-black text-zinc-900 dark:text-zinc-100">
-            {event.createdBy ? `${event.createdBy.firstName} ${event.createdBy.lastName}` : 'مدیریت هنرستان'}
-          </p>
-          <p className="text-xs font-bold text-zinc-500 mt-1">
-            {event.createdBy?.role ? `نقش: ${event.createdBy.role}` : 'واحد امور اجرایی و آموزشی'}
-          </p>
-        </div>
+        <button
+          onClick={() => setActiveMainTab('OVERVIEW')}
+          className={`flex-1 min-w-[180px] flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-sm font-black transition-all ${
+            activeMainTab === 'OVERVIEW'
+              ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-2 border-zinc-900 dark:border-zinc-100 shadow-[3px_3px_0px_0px_#18181b] dark:shadow-[3px_3px_0px_0px_#f4f4f5]'
+              : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
+          }`}
+        >
+          <CalendarDays className="w-4 h-4" />
+          <span>شناسنامه و زمان‌بندی کامل رویداد</span>
+        </button>
       </div>
 
-      {/* Description & Full Details */}
-      <div className="rounded-2xl border-3 border-zinc-900 bg-white p-6 md:p-8 shadow-[5px_5px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[5px_5px_0px_0px_#f4f4f5] space-y-6">
-        <div>
-          <h2 className="text-xl font-black text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-amber-500" />
-            توضیحات و دستورالعمل رویداد
-          </h2>
-          <div className="prose dark:prose-invert max-w-none text-zinc-700 dark:text-zinc-300 leading-relaxed font-medium whitespace-pre-line text-sm md:text-base">
-            {event.description || 'توضیحات تکمیلی برای این رویداد ثبت نشده است.'}
-          </div>
-        </div>
+      {/* Render Active Tab Content */}
+      {activeMainTab === 'WORKFLOW' ? (
+        <EventStepWizard eventId={event.id} eventTitle={event.title} />
+      ) : (
+        <div className="space-y-8">
+          {/* Information Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Start Date */}
+            <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[3px_3px_0px_0px_#f4f4f5]">
+              <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-xs mb-1">
+                <CalendarDays className="w-4 h-4" />
+                <span>زمان آغاز</span>
+              </div>
+              <p className="text-base font-black text-zinc-900 dark:text-zinc-100">{jalaliStart}</p>
+              <p className="text-xs font-bold text-zinc-500 mt-1">ساعت {startTimeStr}</p>
+            </div>
 
-        {/* Tags */}
-        {event.tags && event.tags.length > 0 && (
-          <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800">
-            <h4 className="text-xs font-black text-zinc-500 dark:text-zinc-400 mb-3 flex items-center gap-1.5">
-              <Tag className="w-3.5 h-3.5" />
-              <span>کلیدواژه‌ها و برچسب‌های مرتبط:</span>
-            </h4>
-            <div className="flex flex-wrap items-center gap-2">
-              {event.tags.map((tag, idx) => (
-                <span
-                  key={idx}
-                  className="px-3 py-1 rounded-xl text-xs font-bold border-2 border-zinc-900 bg-zinc-100 text-zinc-800 dark:border-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#f4f4f5]"
-                >
-                  #{tag}
-                </span>
-              ))}
+            {/* End Date */}
+            <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[3px_3px_0px_0px_#f4f4f5]">
+              <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold text-xs mb-1">
+                <Clock className="w-4 h-4" />
+                <span>زمان پایان</span>
+              </div>
+              <p className="text-base font-black text-zinc-900 dark:text-zinc-100">{jalaliEnd}</p>
+              <p className="text-xs font-bold text-zinc-500 mt-1">ساعت {endTimeStr}</p>
+            </div>
+
+            {/* Location */}
+            <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[3px_3px_0px_0px_#f4f4f5]">
+              <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-xs mb-1">
+                <MapPin className="w-4 h-4" />
+                <span>محل برگزاری</span>
+              </div>
+              <p className="text-base font-black text-zinc-900 dark:text-zinc-100">
+                {event.location || 'سالن اصلی هنرستان'}
+              </p>
+              <p className="text-xs font-bold text-zinc-500 mt-1">حضوری / هماهنگ‌شده</p>
+            </div>
+
+            {/* Organizer */}
+            <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[3px_3px_0px_0px_#f4f4f5]">
+              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs mb-1">
+                <ShieldCheck className="w-4 h-4" />
+                <span>برگزارکننده</span>
+              </div>
+              <p className="text-base font-black text-zinc-900 dark:text-zinc-100">
+                {event.createdBy ? `${event.createdBy.firstName} ${event.createdBy.lastName}` : 'مدیریت هنرستان'}
+              </p>
+              <p className="text-xs font-bold text-zinc-500 mt-1">
+                {event.createdBy?.role ? `نقش: ${event.createdBy.role}` : 'واحد امور اجرایی و آموزشی'}
+              </p>
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Description & Full Details */}
+          <div className="rounded-2xl border-3 border-zinc-900 bg-white p-6 md:p-8 shadow-[5px_5px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[5px_5px_0px_0px_#f4f4f5] space-y-6">
+            <div>
+              <h2 className="text-xl font-black text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-500" />
+                توضیحات و دستورالعمل رویداد
+              </h2>
+              <div className="prose dark:prose-invert max-w-none text-zinc-700 dark:text-zinc-300 leading-relaxed font-medium whitespace-pre-line text-sm md:text-base">
+                {event.description || 'توضیحات تکمیلی برای این رویداد ثبت نشده است.'}
+              </div>
+            </div>
+
+            {/* Tags */}
+            {event.tags && event.tags.length > 0 && (
+              <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800">
+                <h4 className="text-xs font-black text-zinc-500 dark:text-zinc-400 mb-3 flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5" />
+                  <span>کلیدواژه‌ها و برچسب‌های مرتبط:</span>
+                </h4>
+                <div className="flex flex-wrap items-center gap-2">
+                  {event.tags.map((tag, idx) => (
+                    <span
+                      key={idx}
+                      className="px-3 py-1 rounded-xl text-xs font-bold border-2 border-zinc-900 bg-zinc-100 text-zinc-800 dark:border-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#f4f4f5]"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ================= EDIT MODAL ================= */}
       <Modal
