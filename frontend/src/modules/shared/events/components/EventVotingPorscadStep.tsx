@@ -456,10 +456,12 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               </div>
               <div>
                 <h4 className="text-sm md:text-base font-black">
-                  نظرسنجی به پایان رسید و نتایج و ایده‌های برگزیده به شرح زیر است:
+                  نظرسنجی به پایان رسید و ایده‌های برگزیده به شرح زیر است:
                 </h4>
                 <p className="text-xs font-bold text-zinc-800 mt-0.5">
-                  رتبه‌بندی {toPersianDigits(winningOptions.length)} ایده برتر بر اساس مجموع آرای ثبت‌شده در پرس‌کاد ({toPersianDigits(porscadPoll.totalVotes)} رای)
+                  {isManager
+                    ? `رتبه‌بندی ${toPersianDigits(winningOptions.length)} ایده برتر بر اساس مجموع آرای ثبت‌شده در پرس‌کاد (${toPersianDigits(porscadPoll.totalVotes)} رای)`
+                    : `تعداد ${toPersianDigits(winningOptions.length)} ایده برگزیده رویداد مشخص شده‌اند.`}
                 </p>
               </div>
             </div>
@@ -494,14 +496,20 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
             <div className="relative z-10 space-y-4">
               <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border-2 border-amber-400/60 bg-amber-400/20 text-amber-300 font-black text-xs shadow-[2px_2px_0px_0px_#000000]">
                 <Trophy className="w-4 h-4 text-amber-400 fill-amber-400" />
-                <span>سکوی افتخار: رتبه‌بندی {toPersianDigits(winningOptions.length)} ایده برتر رویداد</span>
+                <span>
+                  {isManager
+                    ? `سکوی افتخار: رتبه‌بندی ${toPersianDigits(winningOptions.length)} ایده برتر رویداد`
+                    : `ایده‌های برگزیده رویداد (${toPersianDigits(winningOptions.length)} طرح برنده)`}
+                </span>
               </div>
 
               <h3 className="text-xl md:text-3xl font-black text-amber-300">
                 نتایج نهایی و ایده‌های برگزیده رویداد «{eventTitle}»
               </h3>
               <p className="text-xs md:text-sm font-medium text-slate-300 leading-relaxed max-w-2xl">
-                نظرسنجی به پایان رسید و بر اساس آرای ثبت‌شده در وب‌سرویس پرس‌کاد، طرح‌های منتخب به ترتیب زیر مشخص گردیدند:
+                {isManager
+                  ? 'نظرسنجی به پایان رسید و بر اساس آرای ثبت‌شده در وب‌سرویس پرس‌کاد، طرح‌های منتخب به ترتیب زیر مشخص گردیدند:'
+                  : 'نظرسنجی به پایان رسید و ایده‌های برگزیده رویداد مشخص گردیدند:'}
               </p>
             </div>
           </div>
@@ -514,12 +522,14 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               const isSecondPlace = rankIdx === 1;
               const isThirdPlace = rankIdx === 2;
 
-              const cardContainerStyle = isFirstPlace
-                ? 'border-amber-500 bg-gradient-to-b from-amber-50/90 via-amber-100/30 to-white dark:from-amber-950/40 dark:via-zinc-900 dark:to-zinc-900 shadow-[6px_6px_0px_0px_#f59e0b] ring-2 ring-amber-400'
-                : isSecondPlace
-                ? 'border-slate-400 bg-gradient-to-b from-slate-100/80 via-slate-50 to-white dark:from-zinc-800/60 dark:via-zinc-900 dark:to-zinc-900 shadow-[6px_6px_0px_0px_#64748b]'
-                : isThirdPlace
-                ? 'border-amber-800 bg-gradient-to-b from-amber-100/60 via-orange-50 to-white dark:from-amber-950/30 dark:via-zinc-900 dark:to-zinc-900 shadow-[6px_6px_0px_0px_#92400e]'
+              const cardContainerStyle = isManager
+                ? isFirstPlace
+                  ? 'border-amber-500 bg-gradient-to-b from-amber-50/90 via-amber-100/30 to-white dark:from-amber-950/40 dark:via-zinc-900 dark:to-zinc-900 shadow-[6px_6px_0px_0px_#f59e0b] ring-2 ring-amber-400'
+                  : isSecondPlace
+                  ? 'border-slate-400 bg-gradient-to-b from-slate-100/80 via-slate-50 to-white dark:from-zinc-800/60 dark:via-zinc-900 dark:to-zinc-900 shadow-[6px_6px_0px_0px_#64748b]'
+                  : isThirdPlace
+                  ? 'border-amber-800 bg-gradient-to-b from-amber-100/60 via-orange-50 to-white dark:from-amber-950/30 dark:via-zinc-900 dark:to-zinc-900 shadow-[6px_6px_0px_0px_#92400e]'
+                  : 'border-zinc-900 bg-white dark:bg-zinc-900 shadow-[5px_5px_0px_0px_#18181b]'
                 : 'border-zinc-900 bg-white dark:bg-zinc-900 shadow-[5px_5px_0px_0px_#18181b]';
 
               const rankBadgeBg = isFirstPlace
@@ -544,19 +554,23 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                   className={`relative flex flex-col justify-between rounded-2xl border-3 p-6 transition-all ${cardContainerStyle}`}
                 >
                   <div className="space-y-4">
-                    {/* Rank Badge */}
+                    {/* Rank Badge & Manager Stats */}
                     <div className="flex items-center justify-between">
-                      <span className={`px-3 py-1 rounded-xl border-2 font-black text-xs ${rankBadgeBg}`}>
-                        {rankTitle}
+                      <span className={`px-3 py-1 rounded-xl border-2 font-black text-xs ${
+                        isManager ? rankBadgeBg : 'bg-amber-400 text-zinc-950 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b]'
+                      }`}>
+                        {isManager ? rankTitle : '✨ ایده برگزیده رویداد'}
                       </span>
-                      <div className="text-left">
-                        <span className="text-lg font-black text-zinc-900 dark:text-zinc-100">
-                          ٪{toPersianDigits(opt.percentage || 0)}
-                        </span>
-                        <span className="block text-[10px] font-bold text-zinc-500">
-                          {toPersianDigits(opt.voteCount)} رای
-                        </span>
-                      </div>
+                      {isManager && (
+                        <div className="text-left">
+                          <span className="text-lg font-black text-zinc-900 dark:text-zinc-100">
+                            ٪{toPersianDigits(opt.percentage || 0)}
+                          </span>
+                          <span className="block text-[10px] font-bold text-zinc-500">
+                            {toPersianDigits(opt.voteCount)} رای
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Idea Details */}
@@ -575,29 +589,29 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                       </p>
                     )}
 
-                    {/* Progress Bar */}
-                    <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-2.5 rounded-full overflow-hidden border border-zinc-300 dark:border-zinc-700">
-                      <div
-                        className={`h-full rounded-full transition-all duration-700 ${
-                          isFirstPlace ? 'bg-amber-400' : isSecondPlace ? 'bg-slate-400' : 'bg-amber-700'
-                        }`}
-                        style={{ width: `${opt.percentage || 0}%` }}
-                      />
-                    </div>
+                    {/* Manager Progress Bar */}
+                    {isManager && (
+                      <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-2.5 rounded-full overflow-hidden border border-zinc-300 dark:border-zinc-700">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${
+                            isFirstPlace ? 'bg-amber-400' : isSecondPlace ? 'bg-slate-400' : 'bg-amber-700'
+                          }`}
+                          style={{ width: `${opt.percentage || 0}%` }}
+                        />
+                      </div>
+                    )}
                   </div>
 
-                  {isFirstPlace && (
-                    <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-                      <Button
-                        variant="primary"
-                        onClick={onGoToCanvasStep}
-                        className="w-full text-xs font-black border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]"
-                      >
-                        <span>ورود به بوم رویداد (طرح منتخب)</span>
-                        <ArrowLeft className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  )}
+                  <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                    <Button
+                      variant="primary"
+                      onClick={onGoToCanvasStep}
+                      className="w-full text-xs font-black border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]"
+                    >
+                      <span>ورود به تشکیل تیم (طرح برگزیده)</span>
+                      <ArrowLeft className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               );
             })}
@@ -803,10 +817,12 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                         شناسه: <code className="font-mono text-[11px]">{porscadPoll.formPublicId || porscadPoll.formId}</code>
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs font-black text-zinc-700 dark:text-zinc-300">
-                      <Users className="w-4 h-4 text-primary" />
-                      <span>مجموع کل آرا: {toPersianDigits(porscadPoll.totalVotes)}</span>
-                    </div>
+                    {isManager && (
+                      <div className="flex items-center gap-1.5 text-xs font-black text-zinc-700 dark:text-zinc-300">
+                        <Users className="w-4 h-4 text-primary" />
+                        <span>مجموع کل آرا: {toPersianDigits(porscadPoll.totalVotes)}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Title */}
@@ -853,7 +869,8 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {porscadPoll.options.map((option, idx) => {
                       const isSelected = selectedOptionIds.includes(option.id) || selectedOptionIds.includes(option.ideaId || '');
-                      const isWinner = porscadPoll.isClosed && (porscadPoll.winningOptionId === option.id || porscadPoll.winningOptionId === option.ideaId);
+                      const winningIds = porscadPoll.winningOptionIds || (porscadPoll.winningOptionId ? [porscadPoll.winningOptionId] : []);
+                      const isWinner = porscadPoll.isClosed && (winningIds.includes(option.id) || winningIds.includes(option.ideaId || ''));
                       const matchingIdea = ideas.find((i) => i.id === option.ideaId || i.id === option.id);
                       const isInteractive = !porscadPoll.isClosed && !hasVoted;
 
@@ -886,15 +903,17 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                           )}
 
                           <div className="relative z-10 space-y-3">
-                            {/* Card Top: Number & Selection Indicator */}
+                            {/* Card Top: Selection Indicator & Winner Badge */}
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2">
-                                <span className="w-7 h-7 rounded-lg border-2 border-zinc-900 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 flex items-center justify-center font-black text-xs shadow-[1px_1px_0px_0px_#18181b]">
-                                  {toPersianDigits(idx + 1)}
-                                </span>
-                                {isManager && isWinner && (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-amber-600 bg-amber-400 text-zinc-950 text-[10px] font-black">
-                                    <Trophy className="w-3 h-3" />
+                                {(!porscadPoll.isClosed || isManager) && (
+                                  <span className="w-7 h-7 rounded-lg border-2 border-zinc-900 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 flex items-center justify-center font-black text-xs shadow-[1px_1px_0px_0px_#18181b]">
+                                    {toPersianDigits(idx + 1)}
+                                  </span>
+                                )}
+                                {isWinner && (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-amber-600 bg-amber-400 text-zinc-950 text-xs font-black shadow-[1px_1px_0px_0px_#18181b]">
+                                    <Trophy className="w-3.5 h-3.5" />
                                     <span>ایده برگزیده</span>
                                   </span>
                                 )}
@@ -902,14 +921,14 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
 
                               <div
                                 className={`w-6 h-6 ${isMultiSelect ? 'rounded-lg' : 'rounded-full'} border-2 flex items-center justify-center transition-all flex-shrink-0 ${
-                                  isWinner && isManager
+                                  isWinner
                                     ? 'border-amber-600 bg-amber-400 text-zinc-950 shadow-[1px_1px_0px_0px_#18181b]'
                                     : isSelected
                                     ? 'border-emerald-600 bg-emerald-500 text-white'
                                     : 'border-zinc-900 bg-white dark:border-zinc-300 dark:bg-zinc-800'
                                 }`}
                               >
-                                {isWinner && isManager ? (
+                                {isWinner ? (
                                   <Crown className="w-3.5 h-3.5 fill-zinc-950" />
                                 ) : isSelected ? (
                                   <Check className="w-3.5 h-3.5" />

@@ -129,10 +129,6 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
 
   const handleSaveStudentEdit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLocked) {
-      toast.error('مهلت ویرایش ایده قفل شده است.');
-      return;
-    }
     if (!userSubmittedIdea) return;
     if (!studentEditTitle.trim() || !studentEditDescription.trim()) {
       toast.error('لطفاً اسم و شرح ایده را وارد نمایید.');
@@ -305,19 +301,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
         )}
 
         {/* Locked Notice vs Existing Submitted Idea Edit vs New Submission Form */}
-        {isLocked ? (
-          <div className="p-8 text-center bg-zinc-50 dark:bg-zinc-800/60 rounded-2xl border-2 border-zinc-300 dark:border-zinc-700 space-y-4 my-6">
-            <div className="w-14 h-14 mx-auto rounded-2xl border-2 border-zinc-900 bg-rose-200 flex items-center justify-center shadow-[2px_2px_0px_0px_#18181b]">
-              <Lock className="w-7 h-7 text-rose-900" />
-            </div>
-            <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
-              مهلت ثبت و ویرایش ایده توسط مدیر رویداد بسته شده است
-            </h3>
-            <p className="text-xs md:text-sm font-medium text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
-              ایده‌های ثبت‌شده جمع‌آوری شده‌اند. شما می‌توانید ایده‌ها را در تالار ایده‌ها مشاهده کنید.
-            </p>
-          </div>
-        ) : userSubmittedIdea && !isManager ? (
+        {userSubmittedIdea && !isManager ? (
           <div className="space-y-6">
             <div className="p-4 rounded-xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/40 flex flex-wrap items-center justify-between gap-4 shadow-[2px_2px_0px_0px_#18181b]">
               <div className="flex items-center gap-3">
@@ -409,6 +393,18 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
                 </Button>
               </div>
             </form>
+          </div>
+        ) : isLocked ? (
+          <div className="p-8 text-center bg-zinc-50 dark:bg-zinc-800/60 rounded-2xl border-2 border-zinc-300 dark:border-zinc-700 space-y-4 my-6">
+            <div className="w-14 h-14 mx-auto rounded-2xl border-2 border-zinc-900 bg-rose-200 flex items-center justify-center shadow-[2px_2px_0px_0px_#18181b]">
+              <Lock className="w-7 h-7 text-rose-900" />
+            </div>
+            <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
+              مهلت ثبت ایده جدید توسط مدیر رویداد بسته شده است
+            </h3>
+            <p className="text-xs md:text-sm font-medium text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
+              ثبت ایده‌های جدید قفل شده است. شما می‌توانید ایده‌ها را در تالار ایده‌ها مشاهده کنید.
+            </p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
