@@ -28,22 +28,35 @@ export const ROKAD_BRANCHES: Record<'boys' | 'girls', TenantInfo> = {
   },
 };
 
-export const useTenantStore = create<TenantState>((set) => ({
-  currentTenant: ROKAD_BRANCHES.boys,
-  theme: 'male',
+import { persist, createJSONStorage } from 'zustand/middleware';
 
-  setCurrentTenant: (tenant) => {
-    const rawTheme = (tenant.theme || (tenant.slug === 'rokad-girls' ? 'female' : 'male')).toLowerCase() as BrandThemeKey;
-    set({
-      currentTenant: tenant,
-      theme: ['ecosystem', 'male', 'female', 'college', 'club'].includes(rawTheme)
-        ? rawTheme
-        : 'male',
-    });
-  },
+export const useTenantStore = create<TenantState>()(
+  persist(
+    (set) => ({
+      currentTenant: ROKAD_BRANCHES.boys,
+      theme: 'male',
 
-  setTheme: (theme) => set({ theme }),
+      setCurrentTenant: (tenant) => {
+        const isGirls = tenant.slug === 'rokad-girls' || tenant.theme?.toLowerCase() === 'female';
+        const rawTheme = (tenant.theme || (isGirls ? 'female' : 'male')).toLowerCase() as BrandThemeKey;
+        set({
+          currentTenant: tenant,
+          theme: ['ecosystem', 'male', 'female', 'college', 'club'].includes(rawTheme)
+            ? rawTheme
+            : isGirls
+            ? 'female'
+            : 'male',
+        });
+      },
 
-  clearTenant: () => set({ currentTenant: ROKAD_BRANCHES.boys, theme: 'male' }),
-}));
+      setTheme: (theme) => set({ theme }),
+
+      clearTenant: () => set({ currentTenant: ROKAD_BRANCHES.boys, theme: 'male' }),
+    }),
+    {
+      name: 'rokad_tenant_session',
+      storage: createJSONStorage(() => localStorage),
+    },
+  ),
+);
 

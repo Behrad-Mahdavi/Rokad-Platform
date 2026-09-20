@@ -2,6 +2,7 @@ import React from 'react';
 import { Award, Coins, Sparkles, Trophy, ShieldCheck, Clock, Users } from 'lucide-react';
 import { toPersianDigits } from '../../../lib/utils';
 import { Badge } from '../../../components/ui/Badge';
+import { useTenantStore } from '../../../lib/auth/tenant-store';
 
 interface KaHeaderBannerProps {
   score?: number;
@@ -26,6 +27,9 @@ export const KaHeaderBanner: React.FC<KaHeaderBannerProps> = ({
   pendingSubmissionsCount = 0,
   pendingClaimsCount = 0,
 }) => {
+  const { currentTenant } = useTenantStore();
+  const isGirlsSchool = currentTenant?.slug === 'rokad-girls' || currentTenant?.theme === 'female';
+
   return (
     <div className="relative overflow-hidden rounded-3xl border-2 border-primary/20 bg-gradient-to-br from-white via-[#F8F9FA] to-primary/5 dark:from-[#151C28] dark:via-[#101622] dark:to-primary/10 p-6 md:p-8 shadow-[4px_4px_0_#59BBAF] transition-all">
       {/* دکوراسیون پس‌زمینه */}
@@ -43,6 +47,10 @@ export const KaHeaderBanner: React.FC<KaHeaderBannerProps> = ({
                 <Sparkles className="w-3.5 h-3.5 ml-1 text-club-normal dark:text-club-light" />
               )}
               {isAdmin ? 'پنل مدیریت و داوری سامانه کا' : 'اکوسیستم گیمیفیکیشن «کا»'}
+            </Badge>
+
+            <Badge variant={isGirlsSchool ? 'female' : 'male'} className="text-xs">
+              {currentTenant?.name || (isGirlsSchool ? 'هنرستان دخترانه رُکاد' : 'هنرستان پسرانه رُکاد')}
             </Badge>
           </div>
 

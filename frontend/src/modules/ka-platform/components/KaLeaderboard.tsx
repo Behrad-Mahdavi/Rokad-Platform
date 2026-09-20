@@ -20,6 +20,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { Input } from '../../../components/ui/Input';
 import { KaEvaluationSliders } from './KaEvaluationSliders';
 import { useScrollLock } from '../../../lib/hooks/useScrollLock';
+import { useTenantStore } from '../../../lib/auth/tenant-store';
 
 interface StudentRank {
   studentId: string;
@@ -46,6 +47,8 @@ export const KaLeaderboard: React.FC = () => {
   const [loadingModal, setLoadingModal] = useState(false);
 
   const { user } = useAuthStore();
+  const { currentTenant } = useTenantStore();
+  const isGirlsSchool = currentTenant?.slug === 'rokad-girls' || currentTenant?.theme === 'female';
 
   // قفل کردن اسکرول صفحه هنگام باز بودن باتم شیت
   useScrollLock(Boolean(selectedStudentForModal));
@@ -65,7 +68,7 @@ export const KaLeaderboard: React.FC = () => {
 
   useEffect(() => {
     fetchLeaderboard();
-  }, []);
+  }, [currentTenant?.id, currentTenant?.slug]);
 
   const fetchLeaderboard = async () => {
     setLoading(true);
@@ -163,12 +166,17 @@ export const KaLeaderboard: React.FC = () => {
       {/* هدر بخش و توضیحات */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2">
-            <Trophy className="w-6 h-6 text-amber-500" />
-            تالار قهرمانان و لیدربورد هنرستان
-          </h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+              <Trophy className="w-6 h-6 text-amber-500" />
+              تالار قهرمانان و لیدربورد {currentTenant?.name || 'هنرستان'}
+            </h2>
+            <Badge variant={isGirlsSchool ? 'female' : 'male'} className="text-xs">
+              {isGirlsSchool ? 'شعبه دخترانه' : 'شعبه پسرانه'}
+            </Badge>
+          </div>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-            با کلیک روی نام هر هنرجو، می‌توانید روند پیشرفت و اسلایدرهای ۴ حوزه ارزیابی او را مشاهده کنید
+            رتبه‌بندی هنرجویان {isGirlsSchool ? 'هنرستان دخترانه' : 'هنرستان پسرانه'} • با کلیک روی نام هر هنرجو، اسلایدرهای ۴ حوزه ارزیابی او نمایش داده می‌شود
           </p>
         </div>
 
