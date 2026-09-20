@@ -50,7 +50,7 @@ export type { SchoolEventItem };
 
 const EVENT_CATEGORIES = [
   { key: 'ALL', label: 'همه رویدادها', icon: Layers, color: 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200' },
-  { key: 'STARTUP_WEEKEND', label: '🚀 استارت‌آپ ویکند', icon: Rocket, color: 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 font-black' },
+  { key: 'STARTUP_WEEKEND', label: 'استارت‌آپ ویکند', icon: Rocket, color: 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 font-black' },
   { key: 'ACADEMIC', label: 'آموزشی و مهارت', icon: BookOpen, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' },
   { key: 'CULTURAL', label: 'فرهنگی و جشن‌ها', icon: PartyPopper, color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300' },
   { key: 'SPORTS', label: 'مسابقات و ورزش', icon: Trophy, color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' },
@@ -839,7 +839,7 @@ export const EventsRoadmapPage: React.FC = () => {
                 onChange={(e) => setForm({ ...form, eventType: e.target.value as any })}
                 className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
               >
-                <option value="STARTUP_WEEKEND">🚀 استارت‌آپ ویکند (ایده‌پردازی و رای‌گیری)</option>
+                <option value="STARTUP_WEEKEND">استارت‌آپ ویکند</option>
                 <option value="ACADEMIC">آموزشی و مهارت</option>
                 <option value="CULTURAL">فرهنگی و آیین‌ها</option>
                 <option value="SPORTS">مسابقات و ورزش</option>

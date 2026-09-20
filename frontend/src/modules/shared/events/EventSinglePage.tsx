@@ -685,7 +685,7 @@ export const EventSinglePage: React.FC = () => {
                 onChange={(e) => setForm({ ...form, eventType: e.target.value as any })}
                 className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
               >
-                <option value="STARTUP_WEEKEND">🚀 استارت‌آپ ویکند</option>
+                <option value="STARTUP_WEEKEND">استارت‌آپ ویکند</option>
                 <option value="ACADEMIC">آموزشی و مهارت</option>
                 <option value="CULTURAL">فرهنگی و آیین‌ها</option>
                 <option value="SPORTS">مسابقات و ورزش</option>
