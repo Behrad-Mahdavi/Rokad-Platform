@@ -1,7 +1,6 @@
 import React from 'react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { ChevronDown } from 'lucide-react';
 
 export interface SelectOption {
   value: string | number;
@@ -57,7 +56,6 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             id={selectId}
             ref={ref}
             disabled={disabled}
-            style={{ backgroundImage: 'none' }}
             className={twMerge(
               clsx(
                 'w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs sm:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer pl-10 pr-3.5',
@@ -83,9 +81,6 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                 ))
               : children}
           </select>
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 dark:text-gray-400 group-focus-within:text-primary transition-colors">
-            <ChevronDown className="w-4 h-4" />
-          </div>
         </div>
         {error && <p className="text-xs text-red-600 dark:text-red-400 font-medium">{error}</p>}
         {helperText && !error && (

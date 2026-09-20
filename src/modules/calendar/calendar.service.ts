@@ -44,7 +44,7 @@ export class CalendarService {
     endDate?: string,
     audience?: string,
   ) {
-    const where: any = { tenantId };
+    const where: any = { tenantId, deletedAt: null };
 
     if (startDate && endDate) {
       where.AND = [
@@ -76,7 +76,7 @@ export class CalendarService {
     audience?: string,
     classroomId?: string,
   ) {
-    const where: any = { tenantId };
+    const where: any = { tenantId, deletedAt: null };
 
     const conditions: any[] = [];
     if (audience && audience !== 'ALL') {
@@ -111,7 +111,7 @@ export class CalendarService {
 
   async getEventById(tenantId: string, eventId: string): Promise<any> {
     const event = await this.prisma.schoolEvent.findFirst({
-      where: { id: eventId, tenantId },
+      where: { id: eventId, tenantId, deletedAt: null },
       include: {
         createdBy: {
           select: { firstName: true, lastName: true, role: true, avatarUrl: true, phone: true },
@@ -135,7 +135,7 @@ export class CalendarService {
     dto: UpdateEventDto,
   ): Promise<any> {
     const existing = await this.prisma.schoolEvent.findFirst({
-      where: { id: eventId, tenantId },
+      where: { id: eventId, tenantId, deletedAt: null },
     });
 
     if (!existing) {
@@ -171,7 +171,7 @@ export class CalendarService {
     audience?: string,
     search?: string,
   ): Promise<any> {
-    const where: any = { tenantId };
+    const where: any = { tenantId, deletedAt: null };
 
     if (eventType && eventType !== 'ALL') {
       where.eventType = eventType;
@@ -231,5 +231,54 @@ export class CalendarService {
       data: { deletedAt: null },
     });
     return { message: 'رویداد با موفقیت بازگردانده شد', data: restored };
+  }
+
+  async getEventTypes(tenantId: string) {
+    const defaultTypes = [
+      { code: 'ACADEMIC', titleFa: 'رویداد عمومی / آموزشی', color: 'emerald', baseType: 'ACADEMIC', isDefault: true },
+      { code: 'EXAM', titleFa: 'آزمون و امتحان هماهنگ', color: 'amber', baseType: 'EXAM', isDefault: true },
+      { code: 'MEETING', titleFa: 'جلسه اولیاء و مربیان', color: 'purple', baseType: 'MEETING', isDefault: true },
+      { code: 'CULTURAL', titleFa: 'جشن و مراسم مدرسه', color: 'rose', baseType: 'CULTURAL', isDefault: true },
+      { code: 'SPORTS', titleFa: 'مسابقات و رویداد ورزشی', color: 'blue', baseType: 'SPORTS', isDefault: true },
+      { code: 'EXCURSION', titleFa: 'اردو و بازدید علمی', color: 'teal', baseType: 'EXCURSION', isDefault: true },
+    ];
+
+    if (!tenantId) return defaultTypes;
+
+    try {
+      const tenant = await this.prisma.tenant.findUnique({
+        where: { id: tenantId },
+        select: { settings: true },
+      });
+
+      const settings = (tenant?.settings as Record<string, any>) || {};
+      if (Array.isArray(settings.eventTypes) && settings.eventTypes.length > 0) {
+        return settings.eventTypes;
+      }
+    } catch {
+      // Fallback to default types
+    }
+
+    return defaultTypes;
+  }
+
+  async updateEventTypes(tenantId: string, eventTypes: any[]) {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { settings: true },
+    });
+
+    const currentSettings = (tenant?.settings as Record<string, any>) || {};
+    const updatedSettings = {
+      ...currentSettings,
+      eventTypes,
+    };
+
+    await this.prisma.tenant.update({
+      where: { id: tenantId },
+      data: { settings: updatedSettings },
+    });
+
+    return { success: true, eventTypes };
   }
 }

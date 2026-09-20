@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Patch,
   Delete,
   Body,
@@ -37,6 +38,29 @@ export class CalendarController {
     private readonly calendarService: CalendarService,
     private readonly schoolCalendarService: SchoolCalendarService,
   ) {}
+
+  @Get('event-types')
+  @ApiOperation({ summary: 'دریافت لیست انواع رویدادهای تعریف‌شده در مدرسه' })
+  async getEventTypes(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.calendarService.getEventTypes(effectiveTenantId);
+  }
+
+  @Put('event-types')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @RequirePermissions(AppPermission.CALENDAR_WRITE)
+  @ApiOperation({ summary: 'تعریف و اصلاح انواع رویدادهای مدرسه توسط مدیر' })
+  async updateEventTypes(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Body() dto: { eventTypes: any[] },
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.calendarService.updateEventTypes(effectiveTenantId, dto?.eventTypes || []);
+  }
 
   @Post('events')
   @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)

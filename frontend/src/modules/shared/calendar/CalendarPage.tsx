@@ -35,7 +35,28 @@ import {
   CloudSun,
   Snowflake,
   Search,
+  Edit3,
+  Trash2,
+  SlidersHorizontal,
 } from 'lucide-react';
+import { toast } from '../../../components/ui/toast/toast';
+
+export interface EventTypeItem {
+  code: string;
+  titleFa: string;
+  color: string;
+  baseType: string;
+  isDefault?: boolean;
+}
+
+const DEFAULT_EVENT_TYPES: EventTypeItem[] = [
+  { code: 'ACADEMIC', titleFa: 'رویداد عمومی / آموزشی', color: 'emerald', baseType: 'ACADEMIC', isDefault: true },
+  { code: 'EXAM', titleFa: 'آزمون و امتحان هماهنگ', color: 'amber', baseType: 'EXAM', isDefault: true },
+  { code: 'MEETING', titleFa: 'جلسه اولیاء و مربیان', color: 'purple', baseType: 'MEETING', isDefault: true },
+  { code: 'CULTURAL', titleFa: 'جشن و مراسم مدرسه', color: 'rose', baseType: 'CULTURAL', isDefault: true },
+  { code: 'SPORTS', titleFa: 'مسابقات و رویداد ورزشی', color: 'blue', baseType: 'SPORTS', isDefault: true },
+  { code: 'EXCURSION', titleFa: 'اردو و بازدید علمی', color: 'teal', baseType: 'EXCURSION', isDefault: true },
+];
 import {
   PERSIAN_MONTHS,
   WEEK_DAYS,
@@ -86,17 +107,26 @@ export const CalendarPage: React.FC = () => {
   const [tenantHolidays, setTenantHolidays] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Modals & FAB
+  // Event Types State (Default + School-Admin Customized)
+  const [eventTypes, setEventTypes] = useState<EventTypeItem[]>(DEFAULT_EVENT_TYPES);
+
+  // Modals & Actions
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [deleteConfirmEvent, setDeleteConfirmEvent] = useState<{ id: string; title: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isEventTypesModalOpen, setIsEventTypesModalOpen] = useState(false);
+  const [isSavingEventTypes, setIsSavingEventTypes] = useState(false);
+  const [newTypeForm, setNewTypeForm] = useState({ titleFa: '', color: 'emerald', baseType: 'ACADEMIC' });
   const [isHolidayModalOpen, setIsHolidayModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form: Create Event
+  // Form: Create / Edit Event
   const [form, setForm] = useState({
     title: '',
     description: '',
-    type: 'EVENT',
+    type: 'ACADEMIC',
     startDate: todayInfo.jalaliStr,
     startTime: '08:00',
     endDate: todayInfo.jalaliStr,
@@ -110,13 +140,14 @@ export const CalendarPage: React.FC = () => {
     titleFa: 'تعطیلی به علت برودت شدید هوا و یخبندان معابر',
   });
 
-  // Fetch Events and Tenant Holidays from API
+  // Fetch Events, Event Types, and Tenant Holidays from API
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const [eventsRes, holidaysRes] = await Promise.allSettled([
+      const [eventsRes, holidaysRes, eventTypesRes] = await Promise.allSettled([
         apiClient.get('/calendar/events'),
         apiClient.get('/calendar/tenant-holidays'),
+        apiClient.get('/calendar/event-types'),
       ]);
 
       if (eventsRes.status === 'fulfilled') {
@@ -245,8 +276,138 @@ export const CalendarPage: React.FC = () => {
     });
   };
 
-  // Create Event Submit
-  const handleCreateEvent = async (e: React.FormEvent) => {
+  // Helpers for Event Types
+  const getTypeDotColor = (typeCode: string) => {
+    const found = eventTypes.find((t) => t.code === typeCode || t.baseType === typeCode);
+    if (!found) return 'bg-primary';
+    switch (found.color) {
+      case 'amber':
+        return 'bg-amber-500';
+      case 'purple':
+        return 'bg-purple-500';
+      case 'rose':
+        return 'bg-rose-500';
+      case 'blue':
+        return 'bg-blue-500';
+      case 'teal':
+        return 'bg-teal-500';
+      default:
+        return 'bg-primary';
+    }
+  };
+
+  const getTypeLabel = (typeCode: string) => {
+    const found = eventTypes.find((t) => t.code === typeCode || t.baseType === typeCode);
+    return found ? found.titleFa : typeCode;
+  };
+
+  const resetForm = () => {
+    setForm({
+      title: '',
+      description: '',
+      type: eventTypes[0]?.code || 'ACADEMIC',
+      startDate: todayInfo.jalaliStr,
+      startTime: '08:00',
+      endDate: todayInfo.jalaliStr,
+      endTime: '10:00',
+      location: 'سالن همایش‌های مدرسه',
+    });
+    setEditingEventId(null);
+    setError(null);
+  };
+
+  const handleOpenCreate = (dateStr?: string) => {
+    resetForm();
+    if (dateStr) {
+      setForm((p) => ({ ...p, startDate: dateStr, endDate: dateStr }));
+    }
+    setIsCreateOpen(true);
+  };
+
+  const handleOpenEdit = (ev: any) => {
+    setError(null);
+    setEditingEventId(ev.id);
+
+    let startDateStr = todayInfo.jalaliStr;
+    let startTimeStr = '08:00';
+    let endDateStr = todayInfo.jalaliStr;
+    let endTimeStr = '10:00';
+
+    if (ev.startDate) {
+      try {
+        startDateStr = gregorianToJalaliStr(ev.startDate);
+        const d = new Date(ev.startDate);
+        startTimeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      } catch {}
+    } else if (ev.jalaliDate) {
+      startDateStr = ev.jalaliDate;
+    }
+
+    if (ev.endDate) {
+      try {
+        endDateStr = gregorianToJalaliStr(ev.endDate);
+        const d = new Date(ev.endDate);
+        endTimeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      } catch {}
+    } else {
+      endDateStr = startDateStr;
+    }
+
+    let matchedType = ev.eventType || ev.type || 'ACADEMIC';
+    if (Array.isArray(ev.tags)) {
+      const typeTag = ev.tags.find((t: string) => t.startsWith('type:'));
+      if (typeTag) {
+        matchedType = typeTag.replace('type:', '');
+      }
+    }
+
+    setForm({
+      title: ev.title || '',
+      description: ev.description || '',
+      type: matchedType,
+      startDate: startDateStr,
+      startTime: startTimeStr,
+      endDate: endDateStr,
+      endTime: endTimeStr,
+      location: ev.location || '',
+    });
+    setIsCreateOpen(true);
+  };
+
+  const handleDeleteEvent = (eventId: string, title: string) => {
+    setDeleteConfirmEvent({ id: eventId, title });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmEvent) return;
+    setIsDeleting(true);
+    try {
+      await apiClient.delete(`/calendar/events/${deleteConfirmEvent.id}`);
+      setEvents((prev) => prev.filter((e) => e.id !== deleteConfirmEvent.id));
+      toast.success(`رویداد «${deleteConfirmEvent.title}» با موفقیت حذف شد.`);
+      setDeleteConfirmEvent(null);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'خطا در حذف رویداد.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleSaveEventTypes = async () => {
+    setIsSavingEventTypes(true);
+    try {
+      await apiClient.put('/calendar/event-types', { eventTypes });
+      toast.success('انواع رویدادهای مدرسه با موفقیت ذخیره شدند.');
+      setIsEventTypesModalOpen(false);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'خطا در ذخیره انواع رویداد.');
+    } finally {
+      setIsSavingEventTypes(false);
+    }
+  };
+
+  // Create / Edit Event Submit
+  const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
@@ -259,29 +420,32 @@ export const CalendarPage: React.FC = () => {
       const [eh, em] = form.endTime.split(':').map(Number);
       endDateObj.setHours(eh || 10, em || 0, 0, 0);
 
-      await apiClient.post('/calendar/events', {
+      const selectedTypeItem = eventTypes.find((t) => t.code === form.type);
+      const baseEventType = selectedTypeItem?.baseType || (['ACADEMIC', 'EXAM', 'MEETING', 'CULTURAL', 'SPORTS', 'EXCURSION'].includes(form.type) ? form.type : 'ACADEMIC');
+
+      const payload = {
         title: form.title,
         description: form.description,
-        eventType: form.type,
+        eventType: baseEventType,
         startDate: startDateObj.toISOString(),
         endDate: endDateObj.toISOString(),
         location: form.location,
-      });
+        tags: form.type !== baseEventType ? [`type:${form.type}`] : [],
+      };
+
+      if (editingEventId) {
+        await apiClient.patch(`/calendar/events/${editingEventId}`, payload);
+        toast.success(`رویداد «${form.title}» با موفقیت ویرایش شد.`);
+      } else {
+        await apiClient.post('/calendar/events', payload);
+        toast.success(`رویداد «${form.title}» با موفقیت ثبت شد.`);
+      }
 
       setIsCreateOpen(false);
-      setForm({
-        title: '',
-        description: '',
-        type: 'EVENT',
-        startDate: todayInfo.jalaliStr,
-        startTime: '08:00',
-        endDate: todayInfo.jalaliStr,
-        endTime: '10:00',
-        location: 'سالن همایش‌های مدرسه',
-      });
+      resetForm();
       fetchData();
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'خطا در ثبت رویداد.');
+      setError(err.response?.data?.message || err.message || 'خطا در ذخیره رویداد.');
     } finally {
       setIsSubmitting(false);
     }
@@ -532,7 +696,18 @@ export const CalendarPage: React.FC = () => {
 
           {/* Desktop Staff Action */}
           {isStaff && (
-            <div className="hidden md:flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap md:flex-nowrap">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEventTypesModalOpen(true)}
+                className="text-xs min-h-[44px] px-3 border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800"
+                title="مدیریت و تعریف انواع رویدادها"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5 ml-1 text-primary" />
+                <span className="hidden sm:inline">انواع رویداد</span>
+              </Button>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -543,22 +718,13 @@ export const CalendarPage: React.FC = () => {
                 className="text-xs min-h-[44px] px-3.5 border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30"
               >
                 <ShieldAlert className="w-3.5 h-3.5 ml-1 text-rose-600" />
-                <span>تعطیلی مدرسه</span>
+                <span className="hidden sm:inline">تعطیلی مدرسه</span>
               </Button>
 
               <Button
                 variant="primary"
                 size="sm"
-                onClick={() => {
-                  if (selectedDay) {
-                    setForm((p) => ({
-                      ...p,
-                      startDate: selectedDay.jalaliStr,
-                      endDate: selectedDay.jalaliStr,
-                    }));
-                  }
-                  setIsCreateOpen(true);
-                }}
+                onClick={() => handleOpenCreate(selectedDay?.jalaliStr)}
                 className="text-xs min-h-[44px] px-3.5"
               >
                 <Plus className="w-3.5 h-3.5 ml-1" />
@@ -718,25 +884,52 @@ export const CalendarPage: React.FC = () => {
                       {daySchoolEvents.map((ev) => (
                         <div
                           key={ev.id}
-                          className="p-2 rounded-xl bg-gray-50 dark:bg-zinc-800/80 border border-gray-200/80 dark:border-zinc-700/60 text-xs flex items-center justify-between gap-2"
+                          className="p-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800/80 border border-gray-200/80 dark:border-zinc-700/60 text-xs flex items-center justify-between gap-2"
                         >
                           <div className="flex items-center gap-2 min-w-0">
                             <span
-                              className={`w-2 h-2 rounded-full shrink-0 ${
-                                ev.type === 'EXAM'
-                                  ? 'bg-amber-500'
-                                  : ev.type === 'MEETING'
-                                  ? 'bg-purple-500'
-                                  : 'bg-primary'
-                              }`}
+                              className={`w-2 h-2 rounded-full shrink-0 ${getTypeDotColor(ev.type || ev.eventType)}`}
                             />
-                            <span className="font-bold text-ink-darker dark:text-zinc-100 truncate">{ev.title}</span>
+                            <div className="min-w-0">
+                              <span className="font-bold text-ink-darker dark:text-zinc-100 truncate block">{ev.title}</span>
+                              {ev.location && (
+                                <span className="text-[10px] text-gray-400 dark:text-zinc-400 truncate block">
+                                  {ev.location}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          {ev.location && (
-                            <span className="text-[10px] text-gray-400 dark:text-zinc-400 shrink-0 hidden sm:inline">
-                              {ev.location}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Badge variant="neutral" className="text-[10px]">
+                              {getTypeLabel(ev.type || ev.eventType)}
+                            </Badge>
+                            {isStaff && (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenEdit(ev);
+                                  }}
+                                  className="p-1.5 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                  title="ویرایش رویداد"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteEvent(ev.id, ev.title);
+                                  }}
+                                  className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
+                                  title="حذف رویداد"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       ))}
 
@@ -758,12 +951,7 @@ export const CalendarPage: React.FC = () => {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setForm((p) => ({
-                              ...p,
-                              startDate: day.jalaliStr,
-                              endDate: day.jalaliStr,
-                            }));
-                            setIsCreateOpen(true);
+                            handleOpenCreate(day.jalaliStr);
                           }}
                           className="min-h-[38px] px-2.5 py-1 text-[11px] font-bold text-primary hover:bg-primary/10 rounded-lg transition-colors flex items-center gap-1"
                         >
@@ -953,14 +1141,7 @@ export const CalendarPage: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        setForm((p) => ({
-                          ...p,
-                          startDate: selectedDay.jalaliStr,
-                          endDate: selectedDay.jalaliStr,
-                        }));
-                        setIsCreateOpen(true);
-                      }}
+                      onClick={() => handleOpenCreate(selectedDay.jalaliStr)}
                       className="text-xs min-h-[38px] px-3 border-gray-300 dark:border-zinc-700"
                     >
                       <Plus className="w-3.5 h-3.5 ml-1 text-primary" />
@@ -1007,17 +1188,45 @@ export const CalendarPage: React.FC = () => {
                     {getDaySchoolEvents(selectedDay.jalaliStr).map((ev) => (
                       <div
                         key={ev.id}
-                        className="p-2.5 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 dark:border-primary/30 text-xs flex items-center justify-between"
+                        className="p-2.5 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 dark:border-primary/30 text-xs flex items-center justify-between gap-2"
                       >
-                        <div>
-                          <p className="font-bold text-ink-darker dark:text-zinc-100">{ev.title}</p>
+                        <div className="min-w-0">
+                          <p className="font-bold text-ink-darker dark:text-zinc-100 truncate">{ev.title}</p>
                           {ev.description && (
-                            <p className="text-gray-500 dark:text-zinc-400 text-[11px] mt-0.5">{ev.description}</p>
+                            <p className="text-gray-500 dark:text-zinc-400 text-[11px] mt-0.5 line-clamp-2">{ev.description}</p>
+                          )}
+                          {ev.location && (
+                            <p className="text-gray-400 dark:text-zinc-400 text-[10px] mt-0.5 flex items-center gap-1">
+                              <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
+                              <span className="truncate">{ev.location}</span>
+                            </p>
                           )}
                         </div>
-                        <Badge variant="neutral" className="text-[10px]">
-                          {ev.type}
-                        </Badge>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Badge variant="neutral" className="text-[10px]">
+                            {getTypeLabel(ev.type || ev.eventType)}
+                          </Badge>
+                          {isStaff && (
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEdit(ev)}
+                                className="p-1.5 text-gray-500 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                title="ویرایش رویداد"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteEvent(ev.id, ev.title)}
+                                className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
+                                title="حذف رویداد"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1041,16 +1250,15 @@ export const CalendarPage: React.FC = () => {
         <div className="fixed bottom-6 left-5 z-40 md:hidden flex flex-col items-end gap-2">
           <button
             type="button"
-            onClick={() => {
-              if (selectedDay) {
-                setForm((p) => ({
-                  ...p,
-                  startDate: selectedDay.jalaliStr,
-                  endDate: selectedDay.jalaliStr,
-                }));
-              }
-              setIsCreateOpen(true);
-            }}
+            onClick={() => setIsEventTypesModalOpen(true)}
+            className="h-10 w-10 rounded-2xl bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 border border-gray-200 dark:border-zinc-700 shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+            title="مدیریت انواع رویداد"
+          >
+            <SlidersHorizontal className="w-4 h-4 text-primary" />
+          </button>
+          <button
+            type="button"
+            onClick={() => handleOpenCreate(selectedDay?.jalaliStr)}
             className="h-12 w-12 rounded-2xl bg-primary text-white shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
             title="ثبت رویداد جدید"
           >
@@ -1059,15 +1267,18 @@ export const CalendarPage: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL: CREATE EVENT */}
+      {/* MODAL: CREATE / EDIT EVENT */}
       <Modal
         isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        title="ثبت رویداد جدید در تقویم"
-        description="افزودن برنامه، آزمون یا جلسه به تقویم"
+        onClose={() => {
+          setIsCreateOpen(false);
+          setEditingEventId(null);
+        }}
+        title={editingEventId ? 'ویرایش رویداد' : 'ثبت رویداد جدید در تقویم'}
+        description={editingEventId ? 'ویرایش اطلاعات، تاریخ و محل برگزاری رویداد' : 'افزودن برنامه، آزمون یا جلسه به تقویم'}
         maxWidth="lg"
       >
-        <form onSubmit={handleCreateEvent} className="space-y-3.5">
+        <form onSubmit={handleSaveEvent} className="space-y-3.5">
           {error && (
             <div className="p-3 rounded-xl bg-red-50 dark:bg-rose-950/40 text-red-700 dark:text-red-300 text-xs border border-red-200 dark:border-red-800">
               {error}
@@ -1089,10 +1300,11 @@ export const CalendarPage: React.FC = () => {
               value={form.type}
               onChange={(e) => setForm({ ...form, type: e.target.value })}
             >
-              <option value="EVENT">رویداد عمومی / اردو</option>
-              <option value="EXAM">آزمون و امتحان هماهنگ</option>
-              <option value="MEETING">جلسه اولیاء و مربیان</option>
-              <option value="CEREMONY">جشن و مراسم مدرسه</option>
+              {eventTypes.map((t) => (
+                <option key={t.code} value={t.code}>
+                  {t.titleFa}
+                </option>
+              ))}
             </Select>
 
             <Input
@@ -1106,15 +1318,31 @@ export const CalendarPage: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <PersianDatePicker
-              label="تاریخ برگزاری"
+              label="تاریخ شروع"
               value={form.startDate}
-              onChange={(d) => setForm({ ...form, startDate: d, endDate: d })}
+              onChange={(d) => setForm({ ...form, startDate: d, endDate: form.endDate < d ? d : form.endDate })}
             />
             <Input
               label="ساعت شروع"
               type="time"
               value={form.startTime}
               onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+              required
+              className="min-h-[44px]"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <PersianDatePicker
+              label="تاریخ پایان"
+              value={form.endDate}
+              onChange={(d) => setForm({ ...form, endDate: d })}
+            />
+            <Input
+              label="ساعت پایان"
+              type="time"
+              value={form.endTime}
+              onChange={(e) => setForm({ ...form, endTime: e.target.value })}
               required
               className="min-h-[44px]"
             />
@@ -1135,7 +1363,10 @@ export const CalendarPage: React.FC = () => {
             <Button
               type="button"
               variant="ghost"
-              onClick={() => setIsCreateOpen(false)}
+              onClick={() => {
+                setIsCreateOpen(false);
+                setEditingEventId(null);
+              }}
               className="min-h-[44px] px-4"
             >
               انصراف
@@ -1146,10 +1377,180 @@ export const CalendarPage: React.FC = () => {
               isLoading={isSubmitting}
               className="min-h-[44px] px-5"
             >
-              ثبت رویداد
+              {editingEventId ? 'ذخیره تغییرات' : 'ثبت رویداد'}
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* MODAL: DELETE CONFIRMATION */}
+      <Modal
+        isOpen={!!deleteConfirmEvent}
+        onClose={() => setDeleteConfirmEvent(null)}
+        title="حذف رویداد از تقویم"
+        maxWidth="sm"
+      >
+        <div className="space-y-4 text-right">
+          <p className="text-sm text-gray-600 dark:text-zinc-300 leading-relaxed">
+            آیا از حذف رویداد <span className="font-bold text-ink-darker dark:text-white">«{deleteConfirmEvent?.title}»</span> اطمینان دارید؟ این اقدام قابل بازگشت نخواهد بود.
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setDeleteConfirmEvent(null)}
+              disabled={isDeleting}
+            >
+              انصراف
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={confirmDelete}
+              isLoading={isDeleting}
+              className="bg-rose-600 hover:bg-rose-700 text-white min-h-[40px] px-4"
+            >
+              حذف قطعی
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* MODAL: MANAGE EVENT TYPES */}
+      <Modal
+        isOpen={isEventTypesModalOpen}
+        onClose={() => setIsEventTypesModalOpen(false)}
+        title="مدیریت و تعریف انواع رویدادها"
+        description="افزودن، ویرایش و شخصی‌سازی دسته‌بندی‌ها و انواع رویدادهای تقویم مدرسه"
+        maxWidth="lg"
+      >
+        <div className="space-y-4 text-right">
+          {/* List of existing types */}
+          <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+            {eventTypes.map((type, index) => (
+              <div
+                key={type.code}
+                className="flex items-center justify-between p-2.5 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50/50 dark:bg-zinc-800/50 gap-2"
+              >
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className={`w-3 h-3 rounded-full shrink-0 ${getTypeDotColor(type.code)}`} />
+                  <input
+                    type="text"
+                    value={type.titleFa}
+                    onChange={(e) => {
+                      const updated = [...eventTypes];
+                      updated[index] = { ...updated[index], titleFa: e.target.value };
+                      setEventTypes(updated);
+                    }}
+                    className="text-xs font-bold bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-ink-darker dark:text-white flex-1 focus:ring-1 focus:ring-primary outline-none"
+                    placeholder="عنوان نوع رویداد"
+                  />
+                  <span className="text-[10px] text-gray-400 font-mono shrink-0 hidden sm:inline">
+                    ({type.code})
+                  </span>
+                </div>
+                {!type.isDefault && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEventTypes(eventTypes.filter((_, idx) => idx !== index));
+                    }}
+                    className="p-1.5 text-gray-400 hover:text-rose-500 rounded-lg transition-colors shrink-0"
+                    title="حذف این نوع"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Add New Type Section */}
+          <div className="p-3.5 rounded-xl border border-dashed border-gray-300 dark:border-zinc-700 bg-gray-50/40 dark:bg-zinc-800/30 space-y-3">
+            <span className="text-xs font-bold text-ink-darker dark:text-white block">تعریف نوع رویداد جدید:</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <input
+                type="text"
+                value={newTypeForm.titleFa}
+                onChange={(e) => setNewTypeForm({ ...newTypeForm, titleFa: e.target.value })}
+                placeholder="عنوان (مثال: کارگاه مهارت)"
+                className="text-xs rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-ink-darker dark:text-white outline-none focus:ring-1 focus:ring-primary min-h-[40px]"
+              />
+              <select
+                value={newTypeForm.baseType}
+                onChange={(e) => setNewTypeForm({ ...newTypeForm, baseType: e.target.value })}
+                className="text-xs rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-ink-darker dark:text-white outline-none focus:ring-1 focus:ring-primary min-h-[40px]"
+              >
+                <option value="ACADEMIC">پایه: آموزشی</option>
+                <option value="EXAM">پایه: آزمون</option>
+                <option value="MEETING">پایه: جلسات</option>
+                <option value="CULTURAL">پایه: فرهنگی</option>
+                <option value="SPORTS">پایه: ورزشی</option>
+                <option value="EXCURSION">پایه: اردو</option>
+              </select>
+              <select
+                value={newTypeForm.color}
+                onChange={(e) => setNewTypeForm({ ...newTypeForm, color: e.target.value })}
+                className="text-xs rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-ink-darker dark:text-white outline-none focus:ring-1 focus:ring-primary min-h-[40px]"
+              >
+                <option value="emerald">رنگ: سبز زمردی</option>
+                <option value="amber">رنگ: کهربایی / نارنجی</option>
+                <option value="purple">رنگ: ارغوانی / بنفش</option>
+                <option value="rose">رنگ: سرخابی / قرمز</option>
+                <option value="blue">رنگ: آبی کاربنی</option>
+                <option value="teal">رنگ: فیروزه‌ای</option>
+              </select>
+            </div>
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (!newTypeForm.titleFa.trim()) {
+                    toast.error('لطفاً عنوان نوع رویداد را وارد نمایید.');
+                    return;
+                  }
+                  const code = `CUSTOM_${Date.now()}`;
+                  setEventTypes((prev) => [
+                    ...prev,
+                    {
+                      code,
+                      titleFa: newTypeForm.titleFa.trim(),
+                      color: newTypeForm.color,
+                      baseType: newTypeForm.baseType,
+                      isDefault: false,
+                    },
+                  ]);
+                  setNewTypeForm({ titleFa: '', color: 'emerald', baseType: 'ACADEMIC' });
+                }}
+                className="text-xs min-h-[38px] px-3.5"
+              >
+                <Plus className="w-3.5 h-3.5 ml-1" />
+                <span>افزودن به لیست</span>
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setIsEventTypesModalOpen(false)}
+            >
+              انصراف
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              onClick={handleSaveEventTypes}
+              isLoading={isSavingEventTypes}
+              className="min-h-[44px] px-5"
+            >
+              ذخیره تغییرات
+            </Button>
+          </div>
+        </div>
       </Modal>
 
       {/* MODAL: CREATE TENANT (EMERGENCY) HOLIDAY */}
