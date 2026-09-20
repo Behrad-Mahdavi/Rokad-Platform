@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '../../../../components/ui/Button';
 import { Modal } from '../../../../components/ui/Modal';
 import { toast } from '../../../../components/ui/toast/toast';
@@ -103,10 +103,63 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
     return 'دانش‌آموز';
   }, [currentUser]);
 
+  // Find if current student has already submitted an idea for this event
+  const userSubmittedIdea = useMemo(() => {
+    if (!currentUser) return null;
+    return (
+      ideas.find((item) => {
+        const matchName =
+          item.authorName.trim().toLowerCase() === studentName.trim().toLowerCase() ||
+          (currentUser.lastName && item.authorName.includes(currentUser.lastName)) ||
+          (currentUser.firstName && item.authorName.includes(currentUser.firstName));
+        return matchName;
+      }) || null
+    );
+  }, [ideas, currentUser, studentName]);
+
+  const [studentEditTitle, setStudentEditTitle] = useState('');
+  const [studentEditDescription, setStudentEditDescription] = useState('');
+
+  useEffect(() => {
+    if (userSubmittedIdea) {
+      setStudentEditTitle(userSubmittedIdea.title);
+      setStudentEditDescription(userSubmittedIdea.description);
+    }
+  }, [userSubmittedIdea]);
+
+  const handleSaveStudentEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isLocked) {
+      toast.error('مهلت ویرایش ایده قفل شده است.');
+      return;
+    }
+    if (!userSubmittedIdea) return;
+    if (!studentEditTitle.trim() || !studentEditDescription.trim()) {
+      toast.error('لطفاً اسم و شرح ایده را وارد نمایید.');
+      return;
+    }
+
+    const updated: EventIdea = {
+      ...userSubmittedIdea,
+      title: studentEditTitle.trim(),
+      description: studentEditDescription.trim(),
+    };
+
+    if (onUpdateIdea) {
+      onUpdateIdea(updated);
+    }
+    toast.success('ویرایش ایده شما با موفقیت ذخیره شد ✨');
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isLocked) {
       toast.error('مهلت ثبت ایده به پایان رسیده و قفل شده است.');
+      return;
+    }
+
+    if (userSubmittedIdea && !isManager) {
+      toast.error('شما قبلاً ۱ ایده برای این رویداد ثبت کرده‌اید. در این مرحله فقط می‌توانید همان ایده را ویرایش نمایید.');
       return;
     }
 
@@ -251,18 +304,111 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
           </div>
         )}
 
-        {/* Locked Notice vs Form */}
+        {/* Locked Notice vs Existing Submitted Idea Edit vs New Submission Form */}
         {isLocked ? (
           <div className="p-8 text-center bg-zinc-50 dark:bg-zinc-800/60 rounded-2xl border-2 border-zinc-300 dark:border-zinc-700 space-y-4 my-6">
             <div className="w-14 h-14 mx-auto rounded-2xl border-2 border-zinc-900 bg-rose-200 flex items-center justify-center shadow-[2px_2px_0px_0px_#18181b]">
               <Lock className="w-7 h-7 text-rose-900" />
             </div>
             <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
-              مهلت ثبت ایده توسط مدیر رویداد بسته شده است
+              مهلت ثبت و ویرایش ایده توسط مدیر رویداد بسته شده است
             </h3>
             <p className="text-xs md:text-sm font-medium text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
-              ایده‌های ثبت‌شده جمع‌آوری شده‌اند. شما می‌توانید ایده‌ها را مشاهده کنید.
+              ایده‌های ثبت‌شده جمع‌آوری شده‌اند. شما می‌توانید ایده‌ها را در تالار ایده‌ها مشاهده کنید.
             </p>
+          </div>
+        ) : userSubmittedIdea && !isManager ? (
+          <div className="space-y-6">
+            <div className="p-4 rounded-xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/40 flex flex-wrap items-center justify-between gap-4 shadow-[2px_2px_0px_0px_#18181b]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl border-2 border-zinc-900 bg-amber-400 text-zinc-950 flex items-center justify-center font-black">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                    <span>ایده ثبت‌شده شما: ایده #{toPersianDigits(userSubmittedIdea.ideaNumber)}</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-500 text-white border border-zinc-900 font-bold">
+                      ثبت شده (۱ از ۱)
+                    </span>
+                  </h4>
+                  <p className="text-xs font-bold text-zinc-600 dark:text-zinc-300">
+                    هر دانش‌آموز مجاز به ثبت ۱ ایده است. در این مرحله می‌توانید عنوان و شرح ایده خود را ویرایش کنید.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveStudentEdit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 rounded-xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800/70 shadow-[2px_2px_0px_0px_#18181b]">
+                <div>
+                  <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1.5 flex items-center gap-1.5">
+                    <User className="w-4 h-4 text-primary" />
+                    <span>اسم ثبت‌کننده ایده:</span>
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    disabled
+                    value={userSubmittedIdea.authorName}
+                    className="w-full rounded-xl border-2 border-zinc-400 bg-white dark:bg-zinc-800 p-3 text-xs md:text-sm font-black text-zinc-900 dark:text-zinc-100 cursor-not-allowed shadow-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1.5 flex items-center gap-1.5">
+                    <Hash className="w-4 h-4 text-amber-500" />
+                    <span>شماره اختصاصی ایده شما:</span>
+                  </label>
+                  <div className="w-full rounded-xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/40 p-3 text-xs md:text-sm font-black text-amber-900 dark:text-amber-200 flex items-center justify-between">
+                    <span>کد شماره: #{toPersianDigits(userSubmittedIdea.ideaNumber)}</span>
+                    <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300">
+                      ثبت قانونی به اسم شما
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Idea Title Edit */}
+              <div>
+                <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1.5 flex items-center gap-1.5">
+                  <Lightbulb className="w-4 h-4 text-amber-500" />
+                  <span>اسم ایده (قابل ویرایش) *</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={studentEditTitle}
+                  onChange={(e) => setStudentEditTitle(e.target.value)}
+                  className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-xs md:text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-800 focus:outline-none"
+                />
+              </div>
+
+              {/* Idea Description Edit */}
+              <div>
+                <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1.5 flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-indigo-500" />
+                  <span>شرح ایده (قابل ویرایش) *</span>
+                </label>
+                <textarea
+                  required
+                  rows={5}
+                  value={studentEditDescription}
+                  onChange={(e) => setStudentEditDescription(e.target.value)}
+                  className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-xs md:text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-800 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t-2 border-zinc-900/10">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className="border-2 border-zinc-900 bg-indigo-500 text-white font-black gap-2 px-8 py-3.5 shadow-[4px_4px_0px_0px_#18181b]"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  <span>ذخیره ویرایش‌های ایده من</span>
+                </Button>
+              </div>
+            </form>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
