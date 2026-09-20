@@ -356,32 +356,32 @@ export const EventsRoadmapPage: React.FC = () => {
   return (
     <div className="space-y-8 pb-16">
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl border-3 border-zinc-900 bg-white p-6 shadow-[6px_6px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[6px_6px_0px_0px_#f4f4f5] md:p-8">
-        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+      <div className="relative overflow-hidden rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[4px_4px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-[3px_3px_0_#59BBAF] md:p-6">
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-primary font-bold text-sm tracking-wide mb-2">
-              <Compass className="w-5 h-5 text-indigo-600 dark:text-indigo-400 animate-spin-slow" />
-              <span>تقویم جامع عملیاتی و آموزشی</span>
+            <div className="flex items-center gap-2 text-primary font-bold text-xs tracking-wide mb-1.5">
+              <Compass className="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-spin-slow" />
+              <span>تقویم رویدادها و برنامه‌ها</span>
             </div>
-            <h1 className="text-3xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight md:text-4xl">
+            <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight md:text-3xl">
               رودمپ رویدادهای سالانه
             </h1>
-            <p className="mt-2 max-w-2xl text-base text-zinc-600 dark:text-zinc-400 leading-relaxed font-medium">
-              نمای زمان‌بندی تمام رویدادها، هکاتون‌ها، کارگاه‌های مهارتی، آزمون‌ها و آیین‌های شاخص هنرستان در طول سال تحصیلی با جزئیات کامل و سینگل پیج اختصاصی.
+            <p className="mt-1.5 max-w-xl text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed font-medium">
+              زمان‌بندی مسابقات، کارگاه‌ها و آزمون‌ها.
             </p>
 
             {/* Quick Metrics */}
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black border-2 border-zinc-900 bg-zinc-100 text-zinc-900 dark:border-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#f4f4f5]">
+            <div className="mt-3.5 flex flex-wrap items-center gap-2.5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-zinc-300 bg-zinc-100 text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
                 <Layers className="w-3.5 h-3.5" />
                 کل رویدادها: {toPersianDigits(totalCount)}
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black border-2 border-zinc-900 bg-cyan-100 text-cyan-900 dark:border-zinc-200 dark:bg-cyan-950 dark:text-cyan-300 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#f4f4f5]">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-cyan-300 bg-cyan-50 text-cyan-900 dark:border-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300">
                 <Clock className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                 پیش‌رو: {toPersianDigits(upcomingCount)}
               </span>
               {liveCount > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black border-2 border-zinc-900 bg-emerald-100 text-emerald-900 dark:border-zinc-200 dark:bg-emerald-950 dark:text-emerald-300 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#f4f4f5] animate-pulse">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 animate-pulse">
                   <Flame className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   در حال برگزاری: {toPersianDigits(liveCount)}
                 </span>
@@ -389,25 +389,25 @@ export const EventsRoadmapPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Action Button for Admins */}
-          <div className="flex flex-wrap items-center gap-3">
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center gap-2.5">
             {isManager && (
               <Button
                 onClick={handleOpenCreate}
                 variant="primary"
-                className="gap-2 px-5 py-3 text-base font-black border-3 border-zinc-900 shadow-[4px_4px_0px_0px_#18181b] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
+                className="min-h-[44px] gap-2 px-5 py-2.5 text-sm font-black border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-700 dark:shadow-[2px_2px_0_#59BBAF]"
               >
-                <Plus className="w-5 h-5" />
-                تعریف رویداد جدید
+                <Plus className="w-4 h-4" />
+                رویداد جدید
               </Button>
             )}
             <Link to="/app/calendar">
               <Button
                 variant="outline"
-                className="gap-2 px-4 py-3 font-bold border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#f4f4f5]"
+                className="min-h-[44px] gap-2 px-4 py-2.5 font-bold border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-200 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-none"
               >
                 <CalendarDays className="w-4 h-4" />
-                مشاهده تقویم ماهانه
+                تقویم ماهانه
               </Button>
             </Link>
           </div>
@@ -415,7 +415,7 @@ export const EventsRoadmapPage: React.FC = () => {
       </div>
 
       {/* Filter and View Controls Bar */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         {/* Search */}
         <div className="relative flex-1 max-w-md">
           <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
@@ -423,28 +423,28 @@ export const EventsRoadmapPage: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="جستجو در عنوان، مکان یا کلیدواژه‌ها..."
-            className="w-full rounded-xl border-2 border-zinc-900 bg-white pr-10 pl-4 py-2.5 text-sm font-medium placeholder:text-zinc-400 shadow-[3px_3px_0px_0px_#18181b] focus:outline-none focus:ring-2 focus:ring-primary dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[3px_3px_0px_0px_#f4f4f5]"
+            placeholder="جستجو در رویدادها..."
+            className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white pr-10 pl-4 py-2.5 text-sm font-medium placeholder:text-zinc-400 shadow-[2px_2px_0px_0px_#18181b] focus:outline-none focus:ring-2 focus:ring-primary dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:shadow-none"
           />
         </div>
 
         {/* View Mode Switcher */}
         <div className="flex items-center gap-2 self-end md:self-auto">
-          <div className="flex rounded-xl border-2 border-zinc-900 bg-white p-1 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[3px_3px_0px_0px_#f4f4f5]">
+          <div className="flex rounded-xl border-2 border-zinc-900 bg-white p-1 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-none">
             <button
               onClick={() => setViewMode('roadmap')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+              className={`min-h-[40px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-black transition-all ${
                 viewMode === 'roadmap'
                   ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
                   : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100'
               }`}
             >
               <Layers className="w-4 h-4" />
-              تایم‌لاین سالانه
+              تایم‌لاین
             </button>
             <button
               onClick={() => setViewMode('grid')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+              className={`min-h-[40px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-black transition-all ${
                 viewMode === 'grid'
                   ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
                   : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100'
@@ -466,13 +466,13 @@ export const EventsRoadmapPage: React.FC = () => {
             <button
               key={cat.key}
               onClick={() => setSelectedCategory(cat.key)}
-              className={`flex items-center gap-2 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-black border-2 transition-all cursor-pointer ${
+              className={`min-h-[44px] flex items-center gap-2 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer ${
                 isSelected
-                  ? 'border-zinc-900 bg-zinc-900 text-white shadow-[3px_3px_0px_0px_#000] dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 dark:shadow-[3px_3px_0px_0px_#fff]'
-                  : 'border-zinc-900/40 bg-white text-zinc-700 hover:border-zinc-900 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-200 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#f4f4f5]'
+                  ? 'border-zinc-900 bg-zinc-900 text-white shadow-[2px_2px_0px_0px_#000] dark:border-zinc-200 dark:bg-zinc-100 dark:text-zinc-900 dark:shadow-none'
+                  : 'border-zinc-300 bg-white text-zinc-700 hover:border-zinc-900 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-zinc-600 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-none'
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon className="w-4 h-4" />
               {cat.label}
             </button>
           );
@@ -483,19 +483,19 @@ export const EventsRoadmapPage: React.FC = () => {
       {isLoading ? (
         <div className="py-20 text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-zinc-900 border-t-transparent dark:border-zinc-100" />
-          <p className="mt-3 text-sm font-bold text-zinc-600 dark:text-zinc-400">در حال دریافت رودمپ رویدادها...</p>
+          <p className="mt-3 text-sm font-bold text-zinc-600 dark:text-zinc-400">در حال دریافت رویدادها...</p>
         </div>
       ) : filteredEvents.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-zinc-300 p-12 text-center dark:border-zinc-700">
           <CalendarDays className="mx-auto w-12 h-12 text-zinc-400 mb-3" />
           <h3 className="text-lg font-bold text-zinc-800 dark:text-zinc-200">رویدادی یافت نشد</h3>
           <p className="mt-1 text-sm text-zinc-500 max-w-sm mx-auto">
-            هیچ رویدادی مطابق با فیلترها و عبارت جستجوی انتخاب‌شده ثبت نشده است.
+            هیچ رویدادی مطابق با فیلترها و عبارت جستجو ثبت نشده است.
           </p>
           {isManager && (
-            <Button onClick={handleOpenCreate} variant="primary" className="mt-4 gap-2 font-bold border-2 border-zinc-900">
+            <Button onClick={handleOpenCreate} variant="primary" className="min-h-[44px] mt-4 gap-2 font-bold border-2 border-zinc-900">
               <Plus className="w-4 h-4" />
-              افزودن اولین رویداد
+              افزودن رویداد
             </Button>
           )}
         </div>
@@ -506,7 +506,7 @@ export const EventsRoadmapPage: React.FC = () => {
             <div key={`${group.year}-${group.monthIndex}`} className="space-y-6">
               {/* Month Header Banner */}
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 rounded-xl border-2 border-zinc-900 bg-primary px-4 py-2 text-white font-black text-base shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-200 dark:shadow-[3px_3px_0px_0px_#f4f4f5]">
+                <div className="flex items-center gap-2 rounded-xl border-2 border-zinc-900 bg-primary px-4 py-2 text-white font-black text-sm shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:shadow-none">
                   <Flag className="w-4 h-4" />
                   <span>{group.monthName}</span>
                   <span className="text-xs opacity-80">{toPersianDigits(group.year)}</span>
@@ -518,7 +518,7 @@ export const EventsRoadmapPage: React.FC = () => {
               </div>
 
               {/* Events in Month */}
-              <div className="relative mr-4 space-y-6 border-r-3 border-zinc-300 pr-6 dark:border-zinc-700">
+              <div className="relative mr-4 space-y-6 border-r-2 border-zinc-300 pr-6 dark:border-zinc-700">
                 {group.events.map((ev) => {
                   const status = getEventStatus(ev.startDate, ev.endDate);
                   const jalaliStartFormatted = formatJalaliDisplay(ev.startDate, true);
@@ -531,10 +531,10 @@ export const EventsRoadmapPage: React.FC = () => {
                       className="group relative cursor-pointer transition-all"
                     >
                       {/* Timeline Node Dot */}
-                      <div className="absolute -right-[33px] top-6 h-5 w-5 rounded-full border-3 border-zinc-900 bg-white shadow-[2px_2px_0px_0px_#000] transition-transform group-hover:scale-125 dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[2px_2px_0px_0px_#fff]" />
+                      <div className="absolute -right-[31px] top-6 h-4 w-4 rounded-full border-2 border-zinc-900 bg-white shadow-[1px_1px_0px_0px_#000] transition-transform group-hover:scale-125 dark:border-zinc-600 dark:bg-zinc-800 dark:shadow-none" />
 
                       {/* Event Card */}
-                      <div className="overflow-hidden rounded-2xl border-3 border-zinc-900 bg-white shadow-[5px_5px_0px_0px_#18181b] transition-all hover:-translate-y-1 hover:shadow-[7px_7px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[5px_5px_0px_0px_#f4f4f5] dark:hover:shadow-[7px_7px_0px_0px_#f4f4f5]">
+                      <div className="overflow-hidden rounded-2xl border-2 border-zinc-900 bg-white shadow-[3px_3px_0px_0px_#18181b] transition-all hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-none dark:hover:border-zinc-500">
                         <div className="flex flex-col lg:flex-row">
                           {/* Left Cover/Badge visual */}
                           {ev.coverUrl ? (
@@ -547,22 +547,22 @@ export const EventsRoadmapPage: React.FC = () => {
                             </div>
                           ) : (
                             <div className="flex h-32 w-full lg:h-auto lg:w-48 flex-shrink-0 items-center justify-center bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-900/30 dark:to-purple-900/30">
-                              <CalendarDays className="w-12 h-12 text-zinc-400 group-hover:text-primary transition-colors" />
+                              <CalendarDays className="w-10 h-10 text-zinc-400 group-hover:text-primary transition-colors" />
                             </div>
                           )}
 
                           {/* Event Body */}
                           <div className="flex-1 p-5 md:p-6 flex flex-col justify-between">
                             <div>
-                              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                              <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-black border ${status.bg}`}>
+                                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${status.bg}`}>
                                     {status.label}
                                   </span>
                                   <span className="px-2.5 py-0.5 rounded-full text-xs font-bold border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
                                     {EVENT_CATEGORIES.find((c) => c.key === ev.eventType)?.label || ev.eventType}
                                   </span>
-                                  <span className="text-xs font-bold text-zinc-500">
+                                  <span className="text-xs font-medium text-zinc-500">
                                     {AUDIENCE_MAP[ev.targetAudience] || ev.targetAudience}
                                   </span>
                                 </div>
@@ -573,14 +573,14 @@ export const EventsRoadmapPage: React.FC = () => {
                                     <button
                                       title="ویرایش رویداد"
                                       onClick={(e) => handleOpenEdit(ev, e)}
-                                      className="rounded-lg p-1.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                                      className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-lg p-2 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
                                     >
                                       <Edit3 className="w-4 h-4" />
                                     </button>
                                     <button
                                       title="حذف رویداد"
                                       onClick={(e) => handleDeleteEvent(ev, e)}
-                                      className="rounded-lg p-1.5 text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/50"
+                                      className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-lg p-2 text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/50"
                                     >
                                       <Trash2 className="w-4 h-4" />
                                     </button>
@@ -588,11 +588,11 @@ export const EventsRoadmapPage: React.FC = () => {
                                 )}
                               </div>
 
-                              <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-100 group-hover:text-primary transition-colors">
+                              <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100 group-hover:text-primary transition-colors">
                                 {ev.title}
                               </h3>
 
-                              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2 leading-relaxed">
+                              <p className="mt-1.5 text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2 leading-relaxed">
                                 {ev.description}
                               </p>
                             </div>
@@ -643,7 +643,7 @@ export const EventsRoadmapPage: React.FC = () => {
               <div
                 key={ev.id}
                 onClick={() => navigate(`/app/events/${ev.id}`)}
-                className="group flex flex-col justify-between overflow-hidden rounded-2xl border-3 border-zinc-900 bg-white shadow-[5px_5px_0px_0px_#18181b] transition-all hover:-translate-y-1 hover:shadow-[7px_7px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[5px_5px_0px_0px_#f4f4f5] cursor-pointer"
+                className="group flex flex-col justify-between overflow-hidden rounded-2xl border-2 border-zinc-900 bg-white shadow-[3px_3px_0px_0px_#18181b] transition-all hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-none dark:hover:border-zinc-500 cursor-pointer"
               >
                 <div>
                   {ev.coverUrl ? (
@@ -655,35 +655,35 @@ export const EventsRoadmapPage: React.FC = () => {
                       />
                     </div>
                   ) : (
-                    <div className="flex h-36 w-full items-center justify-center bg-gradient-to-br from-indigo-500/10 to-purple-500/10">
-                      <CalendarDays className="w-12 h-12 text-zinc-400 group-hover:text-primary transition-colors" />
+                    <div className="flex h-36 w-full items-center justify-center bg-gradient-to-br from-indigo-500/10 to-purple-500/10 dark:from-indigo-900/30 dark:to-purple-900/30">
+                      <CalendarDays className="w-10 h-10 text-zinc-400 group-hover:text-primary transition-colors" />
                     </div>
                   )}
 
                   <div className="p-5">
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-black border ${status.bg}`}>
+                    <div className="flex items-center justify-between gap-2 mb-2.5">
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${status.bg}`}>
                         {status.label}
                       </span>
-                      <span className="text-xs font-bold text-zinc-500">
+                      <span className="text-xs font-medium text-zinc-500">
                         {EVENT_CATEGORIES.find((c) => c.key === ev.eventType)?.label}
                       </span>
                     </div>
 
-                    <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100 group-hover:text-primary transition-colors line-clamp-1">
+                    <h3 className="text-base font-black text-zinc-900 dark:text-zinc-100 group-hover:text-primary transition-colors line-clamp-1">
                       {ev.title}
                     </h3>
-                    <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2 leading-relaxed">
+                    <p className="mt-1.5 text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2 leading-relaxed">
                       {ev.description}
                     </p>
                   </div>
                 </div>
 
                 <div className="p-5 pt-0">
-                  <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-2 text-xs font-bold text-zinc-600 dark:text-zinc-400">
+                  <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2 text-xs font-bold text-zinc-600 dark:text-zinc-400">
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-1.5 text-zinc-900 dark:text-zinc-200">
-                        <CalendarDays className="w-3.5 h-3.5 text-indigo-600" />
+                        <CalendarDays className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                         <span>{jalaliStartFormatted}</span>
                       </span>
                       <span className="flex items-center gap-1">
@@ -709,11 +709,11 @@ export const EventsRoadmapPage: React.FC = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={isEditing ? 'ویرایش رویداد' : 'تعریف رویداد جدید در رودمپ سالانه'}
+        title={isEditing ? 'ویرایش رویداد' : 'تعریف رویداد جدید'}
       >
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {formError && (
-            <div className="flex items-center gap-2 rounded-xl border-2 border-red-500 bg-red-50 p-3 text-xs font-bold text-red-700 dark:bg-red-950/50 dark:text-red-300">
+            <div className="flex items-center gap-2 rounded-xl border border-red-500 bg-red-50 p-3 text-xs font-bold text-red-700 dark:bg-red-950/50 dark:text-red-300">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{formError}</span>
             </div>
@@ -721,7 +721,7 @@ export const EventsRoadmapPage: React.FC = () => {
 
           {/* Title */}
           <div>
-            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
               عنوان رویداد *
             </label>
             <input
@@ -729,21 +729,21 @@ export const EventsRoadmapPage: React.FC = () => {
               required
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="مثال: مسابقه هکاتون پاییزه هوش مصنوعی و برنامه‌نویسی"
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] focus:outline-none dark:border-zinc-200 dark:bg-zinc-900"
+              placeholder="مثال: مسابقه برنامه‌نویسی پاییزی"
+              className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
             />
           </div>
 
           {/* Category & Target Audience */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
                 دسته‌بندی رویداد
               </label>
               <select
                 value={form.eventType}
                 onChange={(e) => setForm({ ...form, eventType: e.target.value as any })}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
               >
                 <option value="ACADEMIC">آموزشی و مهارت</option>
                 <option value="CULTURAL">فرهنگی و آیین‌ها</option>
@@ -756,15 +756,15 @@ export const EventsRoadmapPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
                 مخاطبین هدف
               </label>
               <select
                 value={form.targetAudience}
                 onChange={(e) => setForm({ ...form, targetAudience: e.target.value as any })}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
               >
-                <option value="ALL">عمومی (کلیه مخاطبین هنرستان)</option>
+                <option value="ALL">عمومی (کلیه مخاطبین)</option>
                 <option value="STUDENTS">صرفاً دانش‌آموزان</option>
                 <option value="TEACHERS">صرفاً مربیان و اساتید</option>
                 <option value="PARENTS">صرفاً اولیاء گرامی</option>
@@ -774,9 +774,9 @@ export const EventsRoadmapPage: React.FC = () => {
           </div>
 
           {/* Dates & Times */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
                 تاریخ شروع (شمسی) *
               </label>
               <PersianDatePicker
@@ -785,21 +785,21 @@ export const EventsRoadmapPage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
                 ساعت شروع
               </label>
               <input
                 type="time"
                 value={form.startTime}
                 onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
                 تاریخ پایان (شمسی)
               </label>
               <PersianDatePicker
@@ -808,81 +808,81 @@ export const EventsRoadmapPage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
                 ساعت پایان
               </label>
               <input
                 type="time"
                 value={form.endTime}
                 onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
               />
             </div>
           </div>
 
           {/* Location */}
           <div>
-            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
-              مکان / سالن یا لینک برگزاری آنلاین
+            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+              مکان یا لینک برگزاری
             </label>
             <input
               type="text"
               value={form.location}
               onChange={(e) => setForm({ ...form, location: e.target.value })}
-              placeholder="مثال: سالن آمفی‌تئاتر خوارزمی یا لینک اسکای‌روم"
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+              placeholder="مثال: سالن آمفی‌تئاتر خوارزمی یا لینک آنلاین"
+              className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
             />
           </div>
 
           {/* Cover Image URL */}
           <div>
-            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
-              آدرس تصویر بنر رویداد (URL کاور)
+            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+              آدرس تصویر بنر رویداد (URL)
             </label>
             <input
               type="url"
               value={form.coverUrl}
               onChange={(e) => setForm({ ...form, coverUrl: e.target.value })}
-              placeholder="https://images.unsplash.com/..."
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+              placeholder="https://..."
+              className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
             />
           </div>
 
           {/* Tags */}
           <div>
-            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
-              برچسب‌ها (با کاما یا ویرگول جدا کنید)
+            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+              برچسب‌ها (با ویرگول جدا کنید)
             </label>
             <input
               type="text"
               value={form.tags}
               onChange={(e) => setForm({ ...form, tags: e.target.value })}
-              placeholder="هوش مصنوعی، هکاتون، کدنویسی، جایزه"
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+              placeholder="هکاتون، کدنویسی، جایزه"
+              className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
               توضیحات و دستورالعمل رویداد
             </label>
             <textarea
-              rows={4}
+              rows={3}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="جزئیات برنامه، اهداف، شرایط شرکت، ملزومات همراه و..."
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+              placeholder="جزئیات برنامه، اهداف و شرایط شرکت..."
+              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
             />
           </div>
 
           {/* Submit Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsModalOpen(false)}
-              className="border-2 border-zinc-900 font-bold"
+              className="min-h-[44px] border-2 border-zinc-900 dark:border-zinc-700 font-bold"
             >
               انصراف
             </Button>
@@ -890,9 +890,9 @@ export const EventsRoadmapPage: React.FC = () => {
               type="submit"
               variant="primary"
               disabled={isSubmitting}
-              className="border-2 border-zinc-900 font-black px-6 shadow-[3px_3px_0px_0px_#18181b]"
+              className="min-h-[44px] border-2 border-zinc-900 dark:border-zinc-700 font-black px-6 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-none"
             >
-              {isSubmitting ? 'در حال ثبت...' : isEditing ? 'بروزرسانی رویداد' : 'افزودن به رودمپ سالانه'}
+              {isSubmitting ? 'در حال ثبت...' : isEditing ? 'بروزرسانی رویداد' : 'افزودن به رودمپ'}
             </Button>
           </div>
         </form>

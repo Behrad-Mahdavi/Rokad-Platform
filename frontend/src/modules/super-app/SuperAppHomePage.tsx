@@ -12,8 +12,6 @@ import {
   BarChart3,
   CalendarDays,
   Vote,
-  Boxes,
-  Trophy,
   Users,
   ShieldAlert,
   Receipt,
@@ -33,7 +31,9 @@ import {
   Target,
   Sparkles,
   MessageSquare,
+  Star,
 } from 'lucide-react';
+import { CoinStackIcon } from '../../components/icons/CustomNavIcons';
 
 interface SuperAppCard {
   id: string;
@@ -571,7 +571,7 @@ export const SuperAppHomePage: React.FC = () => {
       id: 'ka-platform',
       title: 'پلتفرم کا',
       href: '/app/ka-platform',
-      icon: Boxes,
+      icon: CoinStackIcon,
       iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
       iconColor: 'text-primary-dark dark:text-primary',
     },
@@ -579,7 +579,7 @@ export const SuperAppHomePage: React.FC = () => {
       id: 'club',
       title: 'باشگاه',
       href: '/app/club',
-      icon: Trophy,
+      icon: Star,
       iconBg: 'bg-club-light dark:bg-[#2A173E]',
       iconColor: 'text-club dark:text-[#C084FC]',
     },
@@ -590,7 +590,7 @@ export const SuperAppHomePage: React.FC = () => {
   return (
     <div className="space-y-5 pb-8 animate-in fade-in duration-300">
       {/* Super-App Welcome Box: Name + Role next to it, Date on Left */}
-      <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#151C28] border-[1.5px] border-primary-dark/30 dark:border-[#223046] shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#070A0F]">
+      <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#151C28] border-[1.5px] border-primary-dark/30 dark:border-gray-800 shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17]">
         {/* Right side: Greeting, Name, and Role Badge */}
         <div className="flex items-center gap-2 flex-wrap min-w-0">
           <div className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
@@ -599,7 +599,7 @@ export const SuperAppHomePage: React.FC = () => {
           </span>
           <Badge
             variant="default"
-            className="text-[10px] sm:text-xs py-0.5 px-2 font-bold bg-ecosystem-light dark:bg-[#163330] text-primary-darker dark:text-primary border border-primary-dark/40 dark:border-[#28544F]"
+            className="text-[10px] sm:text-xs py-0.5 px-2 font-bold"
           >
             {getRoleTitle()}
           </Badge>
@@ -613,14 +613,14 @@ export const SuperAppHomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Rectangular Dashboard Button - Spans width of 3 cards, half height of standard cards */}
+      {/* Rectangular Dashboard Button */}
       <button
         type="button"
         onClick={() => navigate(getDashboardHref())}
-        className="group w-full flex items-center justify-between px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-white dark:bg-[#151C28] border-[1.5px] border-primary-dark/30 dark:border-[#233147] hover:border-primary dark:hover:border-primary shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#070A0F] hover:shadow-[2.75px_2.75px_0_#59BBAF] dark:hover:shadow-[2.75px_2.75px_0_#070A0F] transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer min-h-[50px] sm:min-h-[56px]"
+        className="group w-full flex items-center justify-between px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-white dark:bg-[#151C28] border-[1.5px] border-primary-dark/30 dark:border-gray-800 hover:border-primary dark:hover:border-primary shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] hover:shadow-[2.75px_2.75px_0_#59BBAF] transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer min-h-[50px] sm:min-h-[56px]"
       >
         <div className="flex items-center gap-2.5 sm:gap-3">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center bg-ecosystem-light dark:bg-[#163330] text-primary-dark dark:text-primary shadow-2xs group-hover:scale-105 transition-transform">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center bg-primary/10 text-primary shadow-2xs group-hover:scale-105 transition-transform">
             <LayoutDashboard className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
           </div>
           <span className="font-black text-sm sm:text-base text-ink-darker dark:text-white group-hover:text-primary dark:group-hover:text-primary transition-colors">
@@ -636,7 +636,7 @@ export const SuperAppHomePage: React.FC = () => {
         </div>
       </button>
 
-      {/* Academic Cards: 3 Per Row, Centered Icon & Title, Brand Green Border & Hard Shadow */}
+      {/* Academic Cards */}
       <div className="space-y-2.5">
         <h2 className="font-black text-sm sm:text-base text-ink-darker dark:text-white px-1">
           بخش‌های آموزشی
@@ -648,10 +648,10 @@ export const SuperAppHomePage: React.FC = () => {
               key={card.id}
               type="button"
               onClick={() => navigate(card.href)}
-              className="group relative flex flex-col items-center justify-center text-center p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#151C28] border-[1.5px] border-primary-dark/30 dark:border-[#233147] hover:border-primary dark:hover:border-primary shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#070A0F] hover:shadow-[2.75px_2.75px_0_#59BBAF] dark:hover:shadow-[2.75px_2.75px_0_#070A0F] transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer min-h-[100px] sm:min-h-[115px]"
+              className="group relative flex flex-col items-center justify-center text-center p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#151C28] border-[1.5px] border-primary-dark/30 dark:border-gray-800 hover:border-primary dark:hover:border-primary shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] hover:shadow-[2.75px_2.75px_0_#59BBAF] transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer min-h-[96px] sm:min-h-[110px]"
             >
               {card.badge && (
-                <span className="absolute top-2 left-2 px-1.5 py-0.2 rounded-full bg-girl text-white text-[9px] font-black border border-white dark:border-[#151C28] shadow-xs">
+                <span className="absolute top-2 left-2 px-1.5 py-0.2 rounded-full bg-girl text-white text-[9px] font-black border border-white dark:border-gray-800 shadow-xs">
                   {card.badge}
                 </span>
               )}
@@ -670,7 +670,7 @@ export const SuperAppHomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Shared Services Cards: 3 Per Row, Centered Icon & Title, Brand Green Border & Hard Shadow */}
+      {/* Shared Services Cards */}
       <div className="space-y-2.5 pt-1">
         <h2 className="font-black text-sm sm:text-base text-ink-darker dark:text-white px-1">
           ارتباطات و خدمات
@@ -682,10 +682,10 @@ export const SuperAppHomePage: React.FC = () => {
               key={card.id}
               type="button"
               onClick={() => navigate(card.href)}
-              className="group relative flex flex-col items-center justify-center text-center p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#151C28] border-[1.5px] border-primary-dark/30 dark:border-[#233147] hover:border-primary dark:hover:border-primary shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#070A0F] hover:shadow-[2.75px_2.75px_0_#59BBAF] dark:hover:shadow-[2.75px_2.75px_0_#070A0F] transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer min-h-[100px] sm:min-h-[115px]"
+              className="group relative flex flex-col items-center justify-center text-center p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#151C28] border-[1.5px] border-primary-dark/30 dark:border-gray-800 hover:border-primary dark:hover:border-primary shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] hover:shadow-[2.75px_2.75px_0_#59BBAF] transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer min-h-[96px] sm:min-h-[110px]"
             >
               {card.badge && (
-                <span className="absolute top-2 left-2 px-1.5 py-0.2 rounded-full bg-girl text-white text-[9px] font-black border border-white dark:border-[#151C28] shadow-xs">
+                <span className="absolute top-2 left-2 px-1.5 py-0.2 rounded-full bg-girl text-white text-[9px] font-black border border-white dark:border-gray-800 shadow-xs">
                   {card.badge}
                 </span>
               )}

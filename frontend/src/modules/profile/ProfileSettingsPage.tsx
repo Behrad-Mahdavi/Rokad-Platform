@@ -1,31 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../lib/auth/auth-store';
 import { useTenantStore } from '../../lib/auth/tenant-store';
-import { useWebPush } from '../../hooks/useWebPush';
-import { toPersianDigits } from '../../lib/utils';
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+import { apiClient } from '../../lib/api/client';
+import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
 import { Badge } from '../../components/ui/Badge';
+import { toast } from '../../components/ui/toast/toast';
 import {
   User,
   Sun,
   Moon,
-  Shield,
-  KeyRound,
   LogOut,
-  GraduationCap,
-  BellRing,
-  Smartphone,
-  CheckCircle2,
   ChevronRight,
   Sparkles,
-  School,
-  Phone,
-  Lock,
-  Send,
+  Camera,
   Loader2,
+  School,
 } from 'lucide-react';
 import { SecuritySection } from './components/SecuritySection';
 
@@ -54,27 +45,66 @@ export const ProfileSettingsPage: React.FC = () => {
     }
   };
 
-  // Password change state
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [passSuccess, setPassSuccess] = useState<string | null>(null);
-  const [passError, setPassError] = useState<string | null>(null);
-  const [isUpdatingPass, setIsUpdatingPass] = useState(false);
+  // Avatar Upload State
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
-  // Web push
-  const {
-    isSupported: isPushSupported,
-    needsIOSInstall,
-    isSubscribed: isPushSubscribed,
-    isLoading: isPushLoading,
-    subscribe: subscribePush,
-    unsubscribe: unsubscribePush,
-    sendTestNotification,
-  } = useWebPush();
-  const [testPushStatus, setTestPushStatus] = useState<string | null>(null);
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('لطفاً یک فایل تصویری معتبر انتخاب فرمایید');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('حجم تصویر نمایه نباید بیشتر از ۵ مگابایت باشد');
+      return;
+    }
+
+    try {
+      setIsUploadingAvatar(true);
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64Url = reader.result as string;
+        if (user) {
+          useAuthStore.getState().setUser({
+            ...user,
+            avatarUrl: base64Url,
+          });
+        }
+
+        // Upload to storage API if available
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          const res: any = await apiClient.post('/storage/upload?module=avatars', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+          const uploadedUrl = res?.data?.url || res?.url;
+          if (uploadedUrl && user) {
+            useAuthStore.getState().setUser({
+              ...user,
+              avatarUrl: uploadedUrl,
+            });
+          }
+        } catch {
+          // Fallback: base64 preview is already updated and persisted in auth store
+        }
+
+        toast.success('تصویر نمایه با موفقیت به‌روزرسانی شد');
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      toast.error('خطا در بارگذاری تصویر نمایه');
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   const getRoleLabel = (role?: string) => {
     switch (role) {
@@ -95,31 +125,8 @@ export const ProfileSettingsPage: React.FC = () => {
     }
   };
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPassError(null);
-    setPassSuccess(null);
-
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPassError('تکرار کلمه عبور جدید با کلمه عبور همخوانی ندارد.');
-      return;
-    }
-    if (passwordForm.newPassword.length < 6) {
-      setPassError('کلمه عبور جدید باید حداقل ۶ کاراکتر باشد.');
-      return;
-    }
-
-    setIsUpdatingPass(true);
-    setTimeout(() => {
-      setIsUpdatingPass(false);
-      setPassSuccess('رمز عبور حساب کاربری با موفقیت به‌روزرسانی شد.');
-      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setTimeout(() => setPassSuccess(null), 4000);
-    }, 800);
-  };
-
   return (
-    <div className="max-w-2xl mx-auto space-y-5 pb-12 animate-in fade-in duration-300">
+    <div className="max-w-2xl mx-auto space-y-4 sm:space-y-5 pb-12 animate-in fade-in duration-300">
       {/* Top Bar with Back Button */}
       <div className="flex items-center justify-between pb-1">
         <div className="flex items-center gap-2">
@@ -127,7 +134,7 @@ export const ProfileSettingsPage: React.FC = () => {
             type="button"
             onClick={() => navigate(-1)}
             aria-label="بازگشت"
-            className="p-2 rounded-xl bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:text-primary transition-all active:scale-95 shadow-2xs"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:text-primary transition-all active:scale-95 shadow-2xs flex items-center justify-center cursor-pointer"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -149,210 +156,131 @@ export const ProfileSettingsPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* User Identity Hero Card */}
-      <Card className="overflow-hidden border border-primary/25 dark:border-gray-800 bg-gradient-to-br from-white via-primary/5 to-teal-500/10 dark:from-[#151C28] dark:via-[#151C28] dark:to-primary/15 shadow-sm">
-        <CardContent className="p-5">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-right">
-            {/* Big Avatar */}
-            <div className="relative shrink-0">
-              {user?.avatarUrl ? (
-                <img
-                  src={user.avatarUrl}
-                  alt={user.firstName}
-                  className="w-20 h-20 rounded-2xl object-cover border-2 border-primary shadow-md"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary-darker text-white flex items-center justify-center shadow-male dark:shadow-ecosystem border-2 border-white dark:border-gray-700">
-                  <User className="w-10 h-10 text-white" />
+      {/* User Identity Hero Card - Enhanced Premium Design */}
+      <div className="relative overflow-hidden rounded-2xl border border-gray-200/80 dark:border-zinc-800 bg-white dark:bg-[#151C28] p-4 sm:p-5 shadow-xs">
+        {/* Subtle Ambient Decorative Glow */}
+        <div className="absolute -top-16 -left-16 w-40 h-40 bg-gradient-to-br from-primary/15 to-teal-400/10 dark:from-primary/20 dark:to-transparent rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-16 -right-16 w-40 h-40 bg-gradient-to-tl from-indigo-500/10 to-transparent rounded-full blur-2xl pointer-events-none" />
+
+        <div className="relative z-10 flex items-center gap-4 sm:gap-5">
+          {/* Avatar with Gradient Ring & Interactive Camera Overlay */}
+          <div className="relative shrink-0 group">
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/png, image/jpeg, image/webp"
+              className="hidden"
+              onChange={handleAvatarUpload}
+            />
+            <div className="relative p-1 rounded-[24px] bg-gradient-to-tr from-primary/60 via-teal-400/50 to-indigo-500/50 shadow-sm">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-[20px] overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all block cursor-pointer group bg-white dark:bg-zinc-900"
+                title="تغییر عکس نمایه"
+                aria-label="تغییر عکس نمایه"
+              >
+                {user?.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.firstName}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-primary to-primary-darker text-white flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                    <User className="w-12 h-12 sm:w-14 sm:h-14 text-white/90" />
+                  </div>
+                )}
+
+                {/* Hover Camera Overlay */}
+                <div className="absolute inset-0 bg-black/45 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1">
+                  <Camera className="w-6 h-6 drop-shadow" />
+                  <span className="text-[10px] font-bold">تغییر عکس</span>
                 </div>
+              </button>
+            </div>
+
+            {/* Quick Upload Action Button Badge */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingAvatar}
+              className="absolute -bottom-1 -right-1 p-2 bg-primary hover:bg-primary-darker text-white rounded-xl shadow-md ring-2 ring-white dark:ring-zinc-900 transition-all active:scale-90 cursor-pointer flex items-center justify-center"
+              title="بارگذاری تصویر جدید"
+              aria-label="بارگذاری تصویر جدید"
+            >
+              {isUploadingAvatar ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Camera className="w-4 h-4" />
               )}
-              <span className="absolute -bottom-1 -right-1 p-1 bg-emerald-500 text-white rounded-lg ring-2 ring-white dark:ring-gray-800">
-                <Sparkles className="w-3 h-3" />
+            </button>
+          </div>
+
+          {/* User Info */}
+          <div className="flex-1 min-w-0 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-lg sm:text-xl font-black text-ink-darker dark:text-white tracking-tight">
+                {user ? `${user.firstName} ${user.lastName}` : 'کاربر مهمان'}
+              </h2>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-extrabold bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300 border border-primary/20">
+                {getRoleLabel(user?.role)}
               </span>
             </div>
 
-            {/* Information */}
-            <div className="flex-1 min-w-0 space-y-1.5">
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                <h2 className="text-lg font-black text-ink-darker dark:text-white">
-                  {user ? `${user.firstName} ${user.lastName}` : 'کاربر مهمان'}
-                </h2>
-                <Badge variant="default" className="text-[11px] py-0.5 px-2.5">
-                  {getRoleLabel(user?.role)}
-                </Badge>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 text-xs text-gray-500 dark:text-gray-400">
-                <div className="flex items-center gap-1">
-                  <Phone className="w-3.5 h-3.5 text-primary" />
-                  <span className="font-mono">{user?.phone ? toPersianDigits(user.phone) : 'ثبت نشده'}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <School className="w-3.5 h-3.5 text-male" />
-                  <span>{currentTenant?.name || 'هنرستان رُکاد'}</span>
-                </div>
-              </div>
-
-              {/* School badge */}
-              <div className="pt-1 flex items-center justify-center sm:justify-start gap-2">
-                <span className="text-[11px] text-gray-400">مرکز آموزشی:</span>
-                <Badge variant={currentTenant?.slug === 'rokad-girls' ? 'female' : 'male'} className="text-[10px]">
-                  {currentTenant?.name || (currentTenant?.slug === 'rokad-girls' ? 'هنرستان دخترانه رُکاد' : 'هنرستان پسرانه رُکاد')}
-                </Badge>
-              </div>
+            {/* School Title with Icon & Gray Text */}
+            <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-500 dark:text-zinc-400 font-medium">
+              <School className="w-4 h-4 text-gray-400 dark:text-zinc-500 shrink-0" />
+              <span className="truncate">
+                {currentTenant?.name || (currentTenant?.slug === 'rokad-girls' ? 'هنرستان دخترانه رُکاد' : 'هنرستان پسرانه رُکاد')}
+              </span>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Theme Selection Section */}
-      <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#151C28]">
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
-              <Sun className="w-4 h-4" />
+      {/* Theme Selection Section - Compact & Modern */}
+      <Card className="border border-gray-200/80 dark:border-zinc-800 bg-white dark:bg-[#151C28] p-3.5 sm:p-4 rounded-2xl shadow-2xs">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500 dark:bg-amber-400/10 dark:text-amber-400 shrink-0">
+              {isDark ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
             </div>
             <div>
-              <CardTitle className="text-base font-extrabold">حالت نمایش (تم)</CardTitle>
+              <h3 className="text-sm sm:text-base font-black text-ink-darker dark:text-white">حالت نمایش</h3>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="grid grid-cols-2 gap-3">
-            {/* Light Option */}
+
+          {/* Compact Segmented Control (No English in parentheses) */}
+          <div className="flex items-center bg-gray-100 dark:bg-zinc-800/90 p-1 rounded-xl border border-gray-200/60 dark:border-zinc-700/60 shrink-0">
             <button
               type="button"
               onClick={() => setTheme('light')}
-              className={`p-3.5 rounded-2xl border-2 transition-all flex flex-col items-center gap-2.5 text-center cursor-pointer ${
+              className={`min-h-[36px] px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 !isDark
-                  ? 'border-primary bg-primary/5 shadow-xs'
-                  : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700'
+                  ? 'bg-white dark:bg-zinc-700 text-amber-600 dark:text-amber-400 shadow-xs font-black'
+                  : 'text-gray-500 dark:text-zinc-400 hover:text-ink-darker dark:hover:text-white'
               }`}
             >
-              <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-2xs">
-                <Sun className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="font-bold text-xs block text-ink-darker dark:text-white">حالت روز (روشن)</span>
-              </div>
-              {!isDark && (
-                <div className="flex items-center gap-1 text-[10px] font-bold text-primary">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>فعال است</span>
-                </div>
-              )}
+              <Sun className="w-3.5 h-3.5" />
+              <span>روشن</span>
             </button>
-
-            {/* Dark Option */}
             <button
               type="button"
               onClick={() => setTheme('dark')}
-              className={`p-3.5 rounded-2xl border-2 transition-all flex flex-col items-center gap-2.5 text-center cursor-pointer ${
+              className={`min-h-[36px] px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 isDark
-                  ? 'border-primary bg-primary/10 shadow-xs'
-                  : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700'
+                  ? 'bg-zinc-900 text-teal-400 shadow-xs font-black border border-zinc-700/50'
+                  : 'text-gray-500 dark:text-zinc-400 hover:text-ink-darker dark:hover:text-white'
               }`}
             >
-              <div className="w-10 h-10 rounded-xl bg-slate-800 text-teal-300 flex items-center justify-center shadow-2xs">
-                <Moon className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="font-bold text-xs block text-ink-darker dark:text-white">حالت شب (تاریک)</span>
-              </div>
-              {isDark && (
-                <div className="flex items-center gap-1 text-[10px] font-bold text-primary">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>فعال است</span>
-                </div>
-              )}
+              <Moon className="w-3.5 h-3.5" />
+              <span>تاریک</span>
             </button>
           </div>
-        </CardContent>
+        </div>
       </Card>
-
-
-      {/* Push Notifications Section */}
-      {isPushSupported && (
-        <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#151C28]">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-teal-500/10 text-primary">
-                <BellRing className="w-4 h-4" />
-              </div>
-              <div>
-                <CardTitle className="text-base font-extrabold">اعلان‌های روی دستگاه (Web Push)</CardTitle>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {needsIOSInstall ? (
-              <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800/60 text-xs text-amber-800 dark:text-amber-300 space-y-1">
-                <div className="flex items-center gap-1.5 font-bold">
-                  <Smartphone className="w-4 h-4" />
-                  <span>راهنمای فعال‌سازی در آیفون (iOS)</span>
-                </div>
-                <p className="text-[11px] leading-relaxed text-gray-600 dark:text-gray-300">
-                  در سافاری دکمه Share را بزنید و سپس «Add to Home Screen» را انتخاب کنید تا امکان دریافت اعلان فعال شود.
-                </p>
-              </div>
-            ) : isPushSubscribed ? (
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800/60">
-                <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>اعلان‌های این دستگاه فعال و متصل است.</span>
-                </div>
-                <div className="flex items-center gap-2 self-end sm:self-auto">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setTestPushStatus('در حال ارسال...');
-                      const ok = await sendTestNotification();
-                      if (ok) {
-                        setTestPushStatus('ارسال شد!');
-                        setTimeout(() => setTestPushStatus(null), 2500);
-                      } else {
-                        setTestPushStatus('خطا در ارسال');
-                        setTimeout(() => setTestPushStatus(null), 2500);
-                      }
-                    }}
-                    disabled={isPushLoading}
-                    className="px-2.5 py-1 text-xs bg-white dark:bg-[#1E2738] text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 rounded-lg font-bold flex items-center gap-1 shadow-2xs hover:bg-emerald-50 transition-all cursor-pointer"
-                  >
-                    {isPushLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-                    <span>{testPushStatus || 'تست نوتیفیکیشن'}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => unsubscribePush()}
-                    disabled={isPushLoading}
-                    className="text-[11px] text-gray-400 hover:text-rose-500 transition-colors cursor-pointer"
-                  >
-                    غیرفعال‌سازی
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-200 dark:border-gray-700">
-                <span className="text-xs text-gray-600 dark:text-gray-300">
-                  اعلان‌های مستقیم روی این دستگاه غیرفعال هستند.
-                </span>
-                <Button
-                  size="sm"
-                  variant="primary"
-                  onClick={async () => {
-                    await subscribePush();
-                  }}
-                  disabled={isPushLoading}
-                  className="text-xs"
-                >
-                  {isPushLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin ml-1" /> : null}
-                  فعال‌سازی اعلان‌ها
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Security Suite: 2FA, Active Sessions, and Password Management */}
       <SecuritySection />

@@ -1,20 +1,17 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../../lib/api/client';
 import { useAuthStore } from '../../lib/auth/auth-store';
 import { useTenantStore } from '../../lib/auth/tenant-store';
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
-import { Skeleton } from '../../components/ui/Skeleton';
 import {
   Building2,
   Users,
   CreditCard,
   HardDrive,
-  Activity,
-  ShieldAlert,
   ArrowUpRight,
-  TrendingUp,
   LogIn,
   Crown,
 } from 'lucide-react';
@@ -25,15 +22,13 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from 'recharts';
 
 export const SuperAdminDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [metrics, setMetrics] = useState<any>(null);
   const [tenants, setTenants] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
 
   const mrrData = [
     { month: 'فروردین', mrr: 120 },
@@ -42,13 +37,6 @@ export const SuperAdminDashboard: React.FC = () => {
     { month: 'تیر', mrr: 280 },
     { month: 'مرداد', mrr: 360 },
     { month: 'شهریور', mrr: 480 },
-  ];
-
-  const tenantTypeData = [
-    { name: 'مدارس پسرانه', value: 45, color: '#202A5A' },
-    { name: 'مدارس دخترانه', value: 40, color: '#E0195B' },
-    { name: 'کالج و آموزشگاه', value: 25, color: '#F8A41D' },
-    { name: 'باشگاه‌های مهارتی', value: 15, color: '#652D90' },
   ];
 
   useEffect(() => {
@@ -71,11 +59,8 @@ export const SuperAdminDashboard: React.FC = () => {
 
   const handleFastImpersonate = async (tenant: any) => {
     try {
-      const res = await apiClient.post('/saas/tenants/impersonate', {
-        tenantId: tenant.id,
-        reason: 'پشتیبانی فنی سریع از داشبورد سوپرادمین',
-      });
-      const { accessToken, impersonatedUser } = res.data;
+      const res = await apiClient.post(`/saas/impersonate/${tenant.id}`);
+      const { user: impersonatedUser, accessToken } = res.data;
       useAuthStore.getState().login(
         {
           id: impersonatedUser.id,
@@ -96,43 +81,45 @@ export const SuperAdminDashboard: React.FC = () => {
         type: tenant.type,
         theme: tenant.theme || 'ecosystem',
       });
-      window.location.href = '/app/admin/dashboard';
+      navigate('/app/admin/dashboard');
     } catch (err: any) {
       alert(err.message || 'خطا در ورود نیابتی به مدرسه.');
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header Title */}
-      <div className="relative overflow-hidden bg-white dark:bg-[#151C28] bg-gradient-to-l from-primary/10 via-primary/5 to-transparent dark:from-primary/20 dark:via-primary/5 dark:to-transparent p-3.5 sm:p-5 md:p-6 rounded-2xl border border-primary/20 dark:border-[#242F42] shadow-[2.75px_2.75px_0_#202A5A] dark:shadow-[2.75px_2.75px_0_#59BBAF] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div className="flex items-center space-x-2 space-x-reverse">
-            <Crown className="h-5 w-5 text-amber-500 shrink-0" />
-            <span className="text-lg sm:text-xl font-black text-ink-darker dark:text-white">
-              مرکز فرماندهی کلان هنرستان‌های رُکاد
-            </span>
-            <Badge variant="default" className="text-[11px]">SuperAdmin Root</Badge>
+      <div className="relative overflow-hidden rokad-card p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-200 dark:border-amber-800">
+            <Crown className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-base sm:text-lg font-black text-ink-darker dark:text-white">
+              داشبورد مدیریت کلان رُکاد
+            </h1>
+            <Badge variant="default" className="text-[11px] mt-1">SuperAdmin Root</Badge>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.location.href = '/app/super-admin/ops'}
-            className="text-xs"
+            onClick={() => navigate('/app/super-admin/ops')}
+            className="flex-1 sm:flex-none"
           >
             لاگ‌های امنیتی
           </Button>
           <Button
             variant="primary"
             size="sm"
-            onClick={() => window.location.href = '/app/super-admin/tenants'}
-            className="text-xs flex items-center space-x-1 space-x-reverse"
+            onClick={() => navigate('/app/super-admin/tenants')}
+            className="flex-1 sm:flex-none"
           >
             <span>مدیریت شعب</span>
-            <ArrowUpRight className="h-3.5 w-3.5" />
+            <ArrowUpRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -140,72 +127,71 @@ export const SuperAdminDashboard: React.FC = () => {
       {/* 4 KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         {/* Card 1: Total Tenants */}
-        <Card className="p-3.5 sm:p-5 border hover:border-primary transition-all">
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
-            <span>شعب فعال هنرستان</span>
+        <Card className="p-4 sm:p-5">
+          <div className="flex justify-between items-center text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">
+            <span>شعب فعال</span>
             <Building2 className="h-4 w-4 text-primary" />
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-ink-darker">
-            ۲ شعبه تخصصی
+          <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">
+            ۲ شعبه
           </div>
-          <p className="text-[11px] text-emerald-600 font-medium mt-1">
-            هنرستان پسرانه و دخترانه رُکاد برخط
+          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1">
+            شعب پسرانه و دخترانه فعال
           </p>
         </Card>
 
         {/* Card 2: Total Users */}
-        <Card className="p-3.5 sm:p-5 border hover:border-blue-500 transition-all">
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
-            <span>دانش‌آموزان و پرسنل فعال</span>
+        <Card className="p-4 sm:p-5">
+          <div className="flex justify-between items-center text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">
+            <span>کاربران کلان</span>
             <Users className="h-4 w-4 text-blue-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-ink-darker">
+          <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">
             {((metrics?.users?.total || 650)).toLocaleString('fa-IR')} نفر
           </div>
-          <p className="text-[11px] text-gray-500 font-medium mt-1">
-            ۵۲۰ دانش‌آموز • ۱۳۰ مربی و کادر اجرایی
+          <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium mt-1">
+            ۵۲۰ دانش‌آموز • ۱۳۰ پرسنل
           </p>
         </Card>
 
         {/* Card 3: MRR */}
-        <Card className="p-3.5 sm:p-5 border hover:border-amber-500 transition-all">
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
-            <span>درآمد ماهانه پلتفرم</span>
+        <Card className="p-4 sm:p-5">
+          <div className="flex justify-between items-center text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">
+            <span>درآمد ماهانه</span>
             <CreditCard className="h-4 w-4 text-amber-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-ink-darker">
-            ۴۸۰ <span className="text-xs font-normal text-gray-500">میلیون تومان</span>
+          <div className="text-xl sm:text-2xl font-black text-amber-500 dark:text-amber-400 font-mono">
+            ۴۸۰ <span className="text-xs font-normal text-gray-500 dark:text-gray-400">میلیون تومان</span>
           </div>
-          <p className="text-[11px] text-emerald-600 font-medium mt-1">
-            +۲۴٪ رشد نسبت به ماه گذشته
+          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1">
+            +۲۴٪ رشد ماهانه
           </p>
         </Card>
 
         {/* Card 4: Cloud Storage */}
-        <Card className="p-3.5 sm:p-5 border hover:border-purple-500 transition-all">
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
-            <span>فضای ابری مصرف‌شده</span>
+        <Card className="p-4 sm:p-5">
+          <div className="flex justify-between items-center text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">
+            <span>فضای ذخیره‌سازی</span>
             <HardDrive className="h-4 w-4 text-purple-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-ink-darker">
-            ۱.۲ <span className="text-xs font-normal text-gray-500">ترابایت</span>
+          <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">
+            ۱.۲ <span className="text-xs font-normal text-gray-500 dark:text-gray-400">ترابایت</span>
           </div>
-          <p className="text-[11px] text-gray-500 font-medium mt-1">
-            ذخیره‌سازی توزیع‌شده ابری
+          <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium mt-1">
+            ذخیره‌سازی ابری امن
           </p>
         </Card>
       </div>
 
       {/* Analytics Visuals */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* MRR Growth Chart */}
-        <Card className="lg:col-span-2 p-6">
+        <Card className="lg:col-span-2 p-4 sm:p-5">
           <div className="flex justify-between items-center mb-4">
-            <div>
-              <h3 className="font-bold text-sm text-ink-darker">روند رشد درآمد ماهیانه پلتفرم</h3>
-              <p className="text-[11px] text-gray-400">نمودار فروش اشتراک‌های سالانه و ماهانه مدارس (میلیون تومان)</p>
-            </div>
-            <Badge variant="default">رشد اشتراک‌ها</Badge>
+            <h2 className="font-black text-sm sm:text-base text-ink-darker dark:text-white">
+              روند رشد درآمد
+            </h2>
+            <Badge variant="default">میلیون تومان</Badge>
           </div>
 
           <div className="h-64 w-full" dir="ltr">
@@ -227,31 +213,31 @@ export const SuperAdminDashboard: React.FC = () => {
         </Card>
 
         {/* Quick Impersonate List */}
-        <Card className="p-6 flex flex-col justify-between">
+        <Card className="p-4 sm:p-5 flex flex-col justify-between">
           <div>
-            <div className="flex items-center space-x-2 space-x-reverse mb-3">
+            <div className="flex items-center gap-2 mb-2">
               <LogIn className="h-4 w-4 text-primary" />
-              <h3 className="font-bold text-sm text-ink-darker">ورود نیابتی سریع</h3>
+              <h2 className="font-black text-sm text-ink-darker dark:text-white">ورود نیابتی سریع</h2>
             </div>
-            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-              ورود با یک کلیک به عنوان مدیریت شعب هنرستان رُکاد جهت پشتیبانی فنی و نظارت مستقیم:
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              انتخاب شعبه جهت نظارت و پشتیبانی:
             </p>
 
             <div className="space-y-2">
               {tenants.slice(0, 3).map((t) => (
                 <div
                   key={t.id}
-                  className="p-3 rounded-xl border bg-gray-50 flex items-center justify-between text-xs hover:bg-gray-100 transition-colors"
+                  className="p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 flex items-center justify-between text-xs transition-colors"
                 >
-                  <div className="truncate">
-                    <div className="font-bold text-ink-darker truncate">{t.name}</div>
+                  <div className="truncate min-w-0 pr-1">
+                    <div className="font-bold text-ink-darker dark:text-white truncate">{t.name}</div>
                     <div className="text-[10px] text-gray-400 font-mono">{t.slug}</div>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleFastImpersonate(t)}
-                    className="text-[11px] shrink-0"
+                    className="shrink-0"
                   >
                     ورود نیابتی
                   </Button>
@@ -260,12 +246,13 @@ export const SuperAdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          <a
-            href="/app/super-admin/tenants"
-            className="block text-center text-xs text-primary font-bold hover:underline pt-4 border-t border-gray-100"
+          <button
+            type="button"
+            onClick={() => navigate('/app/super-admin/tenants')}
+            className="w-full text-center text-xs text-primary font-bold hover:underline pt-3 mt-3 border-t border-gray-100 dark:border-gray-800 min-h-[36px] flex items-center justify-center"
           >
             مدیریت کامل شعب هنرستان ←
-          </a>
+          </button>
         </Card>
       </div>
     </div>

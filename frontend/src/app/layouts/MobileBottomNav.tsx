@@ -2,14 +2,13 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { useTenantStore } from '../../lib/auth/tenant-store';
 import {
-  Boxes,
-  Trophy,
+  Star,
   Home,
   PlayCircle,
   CalendarDays,
 } from 'lucide-react';
+import { CoinStackIcon } from '../../components/icons/CustomNavIcons';
 
 interface MobileBottomNavProps {
   role?: string;
@@ -17,8 +16,6 @@ interface MobileBottomNavProps {
 
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
   const location = useLocation();
-  const currentTenant = useTenantStore((state) => state.currentTenant);
-  const isGirlsBranch = currentTenant?.slug === 'rokad-girls';
 
   const isHomeActive =
     location.pathname === '/app' ||
@@ -29,93 +26,98 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
     <nav
       aria-label="سوپراپلیکیشن ناوبری پایین"
       dir="rtl"
-      className={clsx(
-        'fixed bottom-0 inset-x-0 z-40 px-3 py-1.5 flex items-center justify-between md:hidden shadow-lg pb-[max(0.5rem,env(safe-area-inset-bottom))] transition-colors',
-        isGirlsBranch
-          ? 'bg-girl dark:bg-[#2B0916] border-t-2 border-female-dark dark:border-[#52112A] text-white'
-          : 'bg-sec dark:bg-[#121828] border-t-2 border-male-dark dark:border-[#232F46] text-white'
-      )}
+      className="fixed bottom-0 inset-x-0 z-40 h-16 min-h-[64px] max-h-[64px] px-2 flex items-center justify-between md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.05)] bg-white/95 dark:bg-[#121824]/95 backdrop-blur-md border-t border-gray-200/90 dark:border-zinc-800/90 box-border select-none transition-colors"
     >
-      {/* 1. First on Right: پلتفرم کا */}
+      {/* 1. First on Right: پلتفرم کا (دسته‌سکه / چند سکه روی هم) */}
       <NavLink
         to="/app/ka-platform"
         className={({ isActive }) =>
           twMerge(
             clsx(
-              'flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all text-[10px] font-medium select-none min-w-0',
+              'h-full flex flex-col items-center justify-center flex-1 py-1 px-0.5 transition-all text-[10px] select-none min-w-0 active:scale-95',
               isActive
-                ? 'text-white font-black scale-105'
-                : 'text-gray-200 dark:text-gray-300 hover:text-white',
+                ? 'text-emerald-600 dark:text-teal-400 font-bold'
+                : 'text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 font-medium',
             ),
           )
         }
       >
         {({ isActive }) => (
           <>
-            <div
-              className={clsx(
-                'h-7 w-7 rounded-xl flex items-center justify-center transition-all mb-0.5',
-                isActive
-                  ? 'bg-primary text-white border border-primary-light shadow-[1.5px_1.5px_0_#1F413D]'
-                  : 'text-inherit',
-              )}
-            >
-              <Boxes className="h-4 w-4 shrink-0" />
+            <div className="h-7 w-7 flex items-center justify-center transition-all mb-0.5 shrink-0">
+              <CoinStackIcon
+                solid={isActive}
+                className={clsx(
+                  'h-6 w-6 shrink-0 transition-all',
+                  isActive
+                    ? 'text-emerald-600 dark:text-teal-400'
+                    : 'text-gray-400 dark:text-zinc-500',
+                )}
+              />
             </div>
-            <span className="truncate max-w-[64px] text-center">پلتفرم کا</span>
+            <span className="truncate max-w-[66px] text-center leading-tight shrink-0">پلتفرم کا</span>
           </>
         )}
       </NavLink>
 
-      {/* 2. Second on Right: باشگاه */}
+      {/* 2. Second on Right: باشگاه (ستاره) */}
       <NavLink
         to="/app/club"
         className={({ isActive }) =>
           twMerge(
             clsx(
-              'flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all text-[10px] font-medium select-none min-w-0',
+              'h-full flex flex-col items-center justify-center flex-1 py-1 px-0.5 transition-all text-[10px] select-none min-w-0 active:scale-95',
               isActive
-                ? 'text-white font-black scale-105'
-                : 'text-gray-200 dark:text-gray-300 hover:text-white',
+                ? 'text-emerald-600 dark:text-teal-400 font-bold'
+                : 'text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 font-medium',
             ),
           )
         }
       >
         {({ isActive }) => (
           <>
-            <div
-              className={clsx(
-                'h-7 w-7 rounded-xl flex items-center justify-center transition-all mb-0.5',
-                isActive
-                  ? 'bg-primary text-white border border-primary-light shadow-[1.5px_1.5px_0_#1F413D]'
-                  : 'text-inherit',
+            <div className="h-7 w-7 flex items-center justify-center transition-all mb-0.5 shrink-0">
+              {isActive ? (
+                <Star className="h-6 w-6 shrink-0 fill-current text-emerald-600 dark:text-teal-400" />
+              ) : (
+                <Star className="h-6 w-6 shrink-0 text-gray-400 dark:text-zinc-500" />
               )}
-            >
-              <Trophy className="h-4 w-4 shrink-0" />
             </div>
-            <span className="truncate max-w-[64px] text-center">باشگاه</span>
+            <span className="truncate max-w-[66px] text-center leading-tight shrink-0">باشگاه</span>
           </>
         )}
       </NavLink>
 
-      {/* 3. Center: هوم / صفحه اصلی (بدون تایتل با رنگ سبز پرایمری برند در انتخاب) */}
+      {/* 3. Center: هوم / صفحه اصلی (بزرگتر و برجسته) */}
       <NavLink
         to="/app"
         title="صفحه اصلی"
         aria-label="صفحه اصلی"
-        className="flex flex-col items-center justify-center flex-1 py-0.5 px-1 select-none min-w-0 group"
+        className="h-full flex flex-col items-center justify-center flex-1 py-1 px-0.5 select-none min-w-0 group"
       >
         <div
           className={clsx(
-            'w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 shadow-md',
+            'w-[52px] h-[52px] rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 shrink-0',
             isHomeActive
-              ? 'bg-primary text-white shadow-[2px_2px_0_#1F413D] border-2 border-primary-light -translate-y-1'
-              : isGirlsBranch
-              ? 'bg-[#B31449] dark:bg-[#4E0920] text-white border border-[#E0195B] hover:bg-girl'
-              : 'bg-[#2B3878] dark:bg-[#1C2640] text-white border border-male-dark hover:bg-sec',
+              ? 'text-emerald-600 dark:text-teal-400 bg-emerald-500/15 dark:bg-emerald-400/20 border-2 border-emerald-500/35 dark:border-emerald-400/35 shadow-[0_4px_16px_rgba(16,185,129,0.2)] -translate-y-2'
+              : 'text-gray-500 dark:text-zinc-400 bg-gray-100/90 dark:bg-zinc-800/90 border border-gray-200/80 dark:border-zinc-700/80 hover:text-gray-700 dark:hover:text-zinc-200 shadow-sm -translate-y-1.5',
           )}
         >
-          <Home className="h-5 w-5 shrink-0" />
+          {isHomeActive ? (
+            <svg
+              viewBox="0 0 24 24"
+              className="h-7 w-7 shrink-0 fill-current transition-all"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H15v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8H5a2 2 0 0 1-2-2z"
+              />
+            </svg>
+          ) : (
+            <Home className="h-7 w-7 shrink-0" />
+          )}
         </div>
       </NavLink>
 
@@ -125,27 +127,34 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
         className={({ isActive }) =>
           twMerge(
             clsx(
-              'flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all text-[10px] font-medium select-none min-w-0',
+              'h-full flex flex-col items-center justify-center flex-1 py-1 px-0.5 transition-all text-[10px] select-none min-w-0 active:scale-95',
               isActive
-                ? 'text-white font-black scale-105'
-                : 'text-gray-200 dark:text-gray-300 hover:text-white',
+                ? 'text-emerald-600 dark:text-teal-400 font-bold'
+                : 'text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 font-medium',
             ),
           )
         }
       >
         {({ isActive }) => (
           <>
-            <div
-              className={clsx(
-                'h-7 w-7 rounded-xl flex items-center justify-center transition-all mb-0.5',
-                isActive
-                  ? 'bg-primary text-white border border-primary-light shadow-[1.5px_1.5px_0_#1F413D]'
-                  : 'text-inherit',
+            <div className="h-7 w-7 flex items-center justify-center transition-all mb-0.5 shrink-0">
+              {isActive ? (
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-6 w-6 shrink-0 fill-current transition-all"
+                  aria-hidden="true"
+                >
+                  <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-2.5 5.5a1 1 0 0 0-1.5.86v7.28a1 1 0 0 0 1.5.86l6.3-3.64a1 1 0 0 0 0-1.72l-6.3-3.64z"
+                  />
+                </svg>
+              ) : (
+                <PlayCircle className="h-6 w-6 shrink-0 text-gray-400 dark:text-zinc-500" />
               )}
-            >
-              <PlayCircle className="h-4 w-4 shrink-0" />
             </div>
-            <span className="truncate max-w-[64px] text-center">رسانه</span>
+            <span className="truncate max-w-[66px] text-center leading-tight shrink-0">رسانه</span>
           </>
         )}
       </NavLink>
@@ -156,30 +165,46 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
         className={({ isActive }) =>
           twMerge(
             clsx(
-              'flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all text-[10px] font-medium select-none min-w-0',
+              'h-full flex flex-col items-center justify-center flex-1 py-1 px-0.5 transition-all text-[10px] select-none min-w-0 active:scale-95',
               isActive
-                ? 'text-white font-black scale-105'
-                : 'text-gray-200 dark:text-gray-300 hover:text-white',
+                ? 'text-emerald-600 dark:text-teal-400 font-bold'
+                : 'text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 font-medium',
             ),
           )
         }
       >
         {({ isActive }) => (
           <>
-            <div
-              className={clsx(
-                'h-7 w-7 rounded-xl flex items-center justify-center transition-all mb-0.5',
-                isActive
-                  ? 'bg-primary text-white border border-primary-light shadow-[1.5px_1.5px_0_#1F413D]'
-                  : 'text-inherit',
+            <div className="h-7 w-7 flex items-center justify-center transition-all mb-0.5 shrink-0">
+              {isActive ? (
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-6 w-6 shrink-0 fill-current transition-all"
+                  aria-hidden="true"
+                >
+                  {/* Top Binder Pins */}
+                  <path d="M8 2v3M16 2v3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+
+                  {/* Header Bar */}
+                  <path d="M6 4h12a3 3 0 0 1 3 3v2H3V7a3 3 0 0 1 3-3z" />
+
+                  {/* Days Body with 6 transparent day cutouts */}
+                  <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M3 11h18v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-8zm4 2.5a.7.7 0 0 1 .7-.7h1.6a.7.7 0 0 1 .7.7v1.6a.7.7 0 0 1-.7.7H7.7a.7.7 0 0 1-.7-.7v-1.6zm4 0a.7.7 0 0 1 .7-.7h1.6a.7.7 0 0 1 .7.7v1.6a.7.7 0 0 1-.7.7h-1.6a.7.7 0 0 1-.7-.7v-1.6zm4 0a.7.7 0 0 1 .7-.7h1.6a.7.7 0 0 1 .7.7v1.6a.7.7 0 0 1-.7.7h-1.6a.7.7 0 0 1-.7-.7v-1.6zm-8 4a.7.7 0 0 1 .7-.7h1.6a.7.7 0 0 1 .7.7v1.6a.7.7 0 0 1-.7.7H7.7a.7.7 0 0 1-.7-.7v-1.6zm4 0a.7.7 0 0 1 .7-.7h1.6a.7.7 0 0 1 .7.7v1.6a.7.7 0 0 1-.7.7h-1.6a.7.7 0 0 1-.7-.7v-1.6zm4 0a.7.7 0 0 1 .7-.7h1.6a.7.7 0 0 1 .7.7v1.6a.7.7 0 0 1-.7.7h-1.6a.7.7 0 0 1-.7-.7v-1.6z"
+                  />
+                </svg>
+              ) : (
+                <CalendarDays className="h-6 w-6 shrink-0 text-gray-400 dark:text-zinc-500" />
               )}
-            >
-              <CalendarDays className="h-4 w-4 shrink-0" />
             </div>
-            <span className="truncate max-w-[64px] text-center">تقویم</span>
+            <span className="truncate max-w-[66px] text-center leading-tight shrink-0">تقویم</span>
           </>
         )}
       </NavLink>
     </nav>
   );
 };
+
+

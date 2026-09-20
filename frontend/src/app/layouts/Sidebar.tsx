@@ -26,13 +26,13 @@ import {
   ShieldAlert,
   UserCheck,
   Award,
+  Star,
   FileQuestion,
   ChevronLeft,
-  Boxes,
-  Trophy,
   Compass,
   Target,
 } from 'lucide-react';
+import { CoinStackIcon } from '../../components/icons/CustomNavIcons';
 import { UserRole } from '../../types/auth';
 import { useSidebarStore } from '../../lib/ui/sidebar-store';
 import { useScrollLock } from '../../lib/hooks/useScrollLock';
@@ -69,8 +69,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
         { title: 'رودمپ رویدادها', href: '/app/events', icon: Compass },
         { title: 'کوچینگ و مربی‌گری', href: '/app/coaching', icon: Target },
         { title: 'نظرسنجی و آراء', href: '/app/polls', icon: Vote },
-        { title: 'پلتفرم کا', href: '/app/ka-platform', icon: Boxes },
-        { title: 'باشگاه دانش‌آموزان', href: '/app/club', icon: Trophy },
+        { title: 'پلتفرم کا', href: '/app/ka-platform', icon: CoinStackIcon },
+        { title: 'باشگاه دانش‌آموزان', href: '/app/club', icon: Star },
       ],
     };
 
@@ -207,7 +207,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
                 className={({ isActive }) =>
                   twMerge(
                     clsx(
-                      'flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[13px] sm:text-[14px] font-medium transition-all group select-none',
+                      'flex items-center justify-between px-3.5 py-2.5 min-h-[44px] rounded-xl text-[13px] sm:text-[14px] font-medium transition-all group select-none',
                       isActive
                         ? 'font-bold bg-ecosystem-light dark:bg-ecosystem-darker/60 text-ecosystem-darker dark:text-ecosystem-light border border-primary/40 shadow-[2px_2px_0_#59BBAF]'
                         : 'text-ink-normal dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60 hover:text-ink-darker dark:hover:text-white',
@@ -248,14 +248,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   );
 
   const renderFooterBanner = () => (
-    <div className="rounded-2xl bg-gradient-to-br from-ecosystem-light/60 via-white to-ecosystem-light/30 dark:from-[#151C28] dark:via-transparent dark:to-[#1C2536] p-3 border border-primary/30 dark:border-gray-800 text-center shadow-[2px_2px_0_#59BBAF]">
-      <div className="flex items-center justify-center space-x-2 space-x-reverse text-primary-dark dark:text-primary font-bold text-xs">
-        <img src="/logo.svg" alt="رُکاد" className="h-4 w-4 rounded-md object-cover inline-block shrink-0 shadow-2xs" />
-        <span>هوشمندسازی رُکاد</span>
+    <div className="rounded-xl bg-gray-50 dark:bg-[#161D2A] p-2.5 border border-gray-200 dark:border-gray-800 text-center">
+      <div className="flex items-center justify-center space-x-1.5 space-x-reverse text-gray-600 dark:text-gray-300 font-bold text-xs">
+        <img src="/logo.svg" alt="رُکاد" className="h-4 w-4 rounded-md object-cover inline-block shrink-0" />
+        <span>سامانه یکپارچه رُکاد</span>
       </div>
-      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 font-medium">
-        نسل نوین مدیریت یکپارچه آموزشی
-      </p>
     </div>
   );
 
@@ -298,11 +295,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               className="h-8 w-8 rounded-xl object-cover border border-primary/30 shadow-[1.5px_1.5px_0_#59BBAF] shrink-0"
             />
             <div>
-              <span className="font-black text-xs text-sec dark:text-white block leading-tight">
-                منوی ناوبری رُکاد
-              </span>
-              <span className="text-[10px] text-gray-400 font-medium leading-tight">
-                پلتفرم مدیریت آموزشی و اداری
+              <span className="font-black text-sm text-sec dark:text-white block leading-tight">
+                منوی رُکاد
               </span>
             </div>
           </div>
@@ -311,9 +305,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             type="button"
             onClick={close}
             aria-label="بستن منو"
-            className="h-8 w-8 rounded-lg text-gray-400 hover:text-ink-dark dark:hover:text-white hover:bg-gray-200/60 dark:hover:bg-gray-800 flex items-center justify-center transition-colors"
+            className="h-11 w-11 min-h-[44px] min-w-[44px] rounded-xl text-gray-400 hover:text-ink-dark dark:hover:text-white hover:bg-gray-200/60 dark:hover:bg-gray-800 flex items-center justify-center transition-colors"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 

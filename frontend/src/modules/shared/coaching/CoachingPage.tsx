@@ -268,34 +268,34 @@ export const CoachingPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-6 pb-16">
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl border-3 border-zinc-900 bg-white p-6 shadow-[6px_6px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[6px_6px_0px_0px_#f4f4f5] md:p-8">
-        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+      <div className="relative overflow-hidden rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[4px_4px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-[3px_3px_0_#59BBAF] md:p-6">
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-primary font-bold text-sm tracking-wide mb-2">
-              <Target className="w-5 h-5 text-indigo-600 dark:text-indigo-400 animate-pulse" />
-              <span>پلتفرم جامع هدایت و مربی‌گری فردی (کوچینگ)</span>
+            <div className="flex items-center gap-2 text-primary font-bold text-xs tracking-wide mb-1.5">
+              <Target className="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-pulse" />
+              <span>هدایت تحصیلی و کوچینگ</span>
             </div>
-            <h1 className="text-3xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight md:text-4xl">
-              {isStudent ? 'میز کار کوچینگ و جلسات من' : 'داشبورد مربی‌گری و کوچینگ هنرجویان'}
+            <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight md:text-3xl">
+              {isStudent ? 'میز کار کوچینگ من' : 'داشبورد مربی‌گری و کوچینگ'}
             </h1>
-            <p className="mt-2 max-w-2xl text-base text-zinc-600 dark:text-zinc-400 leading-relaxed font-medium">
+            <p className="mt-1.5 max-w-xl text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed font-medium">
               {isStudent
-                ? 'مشاهده زمان‌بندی ثابت جلسات ۲۰ دقیقه‌ای دو هفته یک‌بار، یادآورها، تاریخچه حضور و غیاب، و ثبت درخواست جلسات فوق‌العاده.'
-                : 'حضور و غیاب جلسات روز جاری، یادداشت‌های راهبردی هر جلسه، پرونده تحلیلی جامع دانش‌آموزان و مدیریت جلسات فوق‌العاده.'}
+                ? 'زمان‌بندی جلسات و ثبت درخواست جلسه.'
+                : 'مدیریت جلسات و پرونده هدایت تحصیلی.'}
             </p>
           </div>
 
           {/* Header Action Buttons */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
             {isStudent && (
               <Button
                 onClick={() => setIsExtraModalOpen(true)}
                 variant="primary"
-                className="gap-2 px-5 py-3 text-base font-black border-3 border-zinc-900 shadow-[4px_4px_0px_0px_#18181b] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
+                className="min-h-[44px] gap-2 px-5 py-2.5 text-sm font-black border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-700 dark:shadow-[2px_2px_0_#59BBAF]"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4" />
                 درخواست جلسه فوق‌العاده
               </Button>
             )}
@@ -304,7 +304,7 @@ export const CoachingPage: React.FC = () => {
               <Button
                 onClick={handleOpenAssignModal}
                 variant="primary"
-                className="gap-2 px-4 py-3 text-sm font-black border-3 border-zinc-900 shadow-[4px_4px_0px_0px_#18181b]"
+                className="min-h-[44px] gap-2 px-4 py-2.5 text-xs font-black border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:shadow-none"
               >
                 <Plus className="w-4 h-4" />
                 تخصیص کوچ جدید
@@ -321,20 +321,20 @@ export const CoachingPage: React.FC = () => {
         </div>
       ) : isStudent ? (
         /* ================= STUDENT VIEW ================= */
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Active Coach Card & Next Session Countdown Banner */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             {/* Coach Card */}
-            <div className="rounded-2xl border-3 border-zinc-900 bg-white p-6 shadow-[5px_5px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[5px_5px_0px_0px_#f4f4f5]">
-              <div className="flex items-center gap-2 text-xs font-black text-indigo-600 dark:text-indigo-400 mb-4">
+            <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-none">
+              <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-3.5">
                 <ShieldCheck className="w-4 h-4" />
                 <span>کوچ و مربی اختصاصی شما</span>
               </div>
 
               {contextData?.link?.coach ? (
-                <div className="space-y-4">
+                <div className="space-y-3.5">
                   <div className="flex items-center gap-3">
-                    <div className="h-14 w-14 rounded-full border-2 border-zinc-900 bg-indigo-50 dark:bg-indigo-950 flex items-center justify-center font-black text-xl text-primary overflow-hidden shadow-[2px_2px_0px_0px_#18181b]">
+                    <div className="h-12 w-12 rounded-full border-2 border-zinc-900 bg-indigo-50 dark:bg-indigo-950 flex items-center justify-center font-black text-lg text-primary overflow-hidden shadow-[1px_1px_0px_0px_#18181b] dark:border-zinc-700">
                       {contextData.link.coach.avatarUrl ? (
                         <img src={contextData.link.coach.avatarUrl} alt="" className="h-full w-full object-cover" />
                       ) : (
@@ -342,51 +342,51 @@ export const CoachingPage: React.FC = () => {
                       )}
                     </div>
                     <div>
-                      <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
+                      <h3 className="text-base font-black text-zinc-900 dark:text-zinc-100">
                         {contextData.link.coach.firstName} {contextData.link.coach.lastName}
                       </h3>
-                      <p className="text-xs font-bold text-zinc-500">مشاور و راهنمای هدایت تحصیلی</p>
+                      <p className="text-xs font-medium text-zinc-500">مشاور هدایت تحصیلی</p>
                     </div>
                   </div>
 
                   <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2 text-xs font-bold text-zinc-600 dark:text-zinc-400">
                     <div className="flex items-center justify-between">
-                      <span>برنامه ثابت جلسات:</span>
-                      <span className="font-black text-zinc-900 dark:text-zinc-100">
+                      <span>برنامه جلسات:</span>
+                      <span className="font-bold text-zinc-900 dark:text-zinc-100">
                         هر دو هفته یک‌بار ({PERSIAN_DAY_NAMES[contextData.link.slotDayOfWeek] || 'نامشخص'})
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>ساعت جلسه:</span>
-                      <span className="font-black text-zinc-900 dark:text-zinc-100">
+                      <span className="font-bold text-zinc-900 dark:text-zinc-100">
                         {toPersianDigits(contextData.link.slotStartTime)} الی {toPersianDigits(contextData.link.slotEndTime)} (۲۰ دقیقه)
                       </span>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="py-6 text-center text-xs font-bold text-zinc-500 space-y-2">
-                  <AlertCircle className="mx-auto w-8 h-8 text-amber-500 mb-1" />
-                  <p>هنوز مربی یا کوچی برای شما تخصیص داده نشده است.</p>
-                  <p className="text-[11px] text-zinc-400">پس از اتمام نظرسنجی، مربی شما ثبت خواهد شد.</p>
+                <div className="py-6 text-center text-xs font-bold text-zinc-500 space-y-1.5">
+                  <AlertCircle className="mx-auto w-7 h-7 text-amber-500 mb-1" />
+                  <p>کوچی برای شما تخصیص نیافته است.</p>
+                  <p className="text-[11px] text-zinc-400">پس از اتمام نظرسنجی مربی مشخص خواهد شد.</p>
                 </div>
               )}
             </div>
 
             {/* Next Session Reminder & Countdown */}
-            <div className="lg:col-span-2 rounded-2xl border-3 border-zinc-900 bg-gradient-to-br from-indigo-50 to-purple-50 p-6 shadow-[5px_5px_0px_0px_#18181b] dark:border-zinc-100 dark:from-zinc-900 dark:to-zinc-800 dark:shadow-[5px_5px_0px_0px_#f4f4f5] flex flex-col justify-between">
+            <div className="lg:col-span-2 rounded-2xl border-2 border-zinc-900 bg-gradient-to-br from-indigo-50 to-purple-50 p-5 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-700 dark:from-zinc-900 dark:to-zinc-800 dark:shadow-none flex flex-col justify-between">
               <div>
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black border-2 border-indigo-600 bg-white text-indigo-700 shadow-[2px_2px_0px_0px_#4f46e5] dark:bg-zinc-800 dark:text-indigo-300">
+                <div className="flex items-center justify-between gap-2 mb-2.5">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold border border-indigo-300 bg-white text-indigo-700 dark:border-indigo-800 dark:bg-zinc-800 dark:text-indigo-300">
                     <BellRing className="w-3.5 h-3.5 animate-bounce" />
-                    سیستم یادآور هوشمند جلسات
+                    یادآور هوشمند جلسه
                   </span>
                   <span className="text-xs font-bold text-zinc-500">
                     نرخ حضور: ٪{toPersianDigits(contextData?.stats?.attendanceRate || 100)}
                   </span>
                 </div>
 
-                <h3 className="text-xl md:text-2xl font-black text-zinc-900 dark:text-zinc-50 leading-snug">
+                <h3 className="text-lg md:text-xl font-black text-zinc-900 dark:text-zinc-50 leading-snug">
                   {contextData?.nextSession ? (
                     <>جلسه بعدی شما: {formatJalaliDisplay(contextData.nextSession.scheduledDate, true)} ساعت {new Date(contextData.nextSession.scheduledDate).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })}</>
                   ) : (
@@ -394,20 +394,20 @@ export const CoachingPage: React.FC = () => {
                   )}
                 </h3>
 
-                <p className="mt-2 text-xs md:text-sm text-zinc-600 dark:text-zinc-400 font-medium leading-relaxed">
-                  طبق الگوی دو هفته یک‌بار، روز جلسه به مدت ۲۰ دقیقه با کوچ اختصاصی خود هماهنگ هستید. در صورت داشتن سوال یا بحران تحصیلی فوری، می‌توانید دکمه درخواست جلسه فوق‌العاده را لمس فرمایید.
+                <p className="mt-1.5 text-xs md:text-sm text-zinc-600 dark:text-zinc-400 font-medium leading-relaxed">
+                  طبق الگوی دو هفته یک‌بار، روز جلسه به مدت ۲۰ دقیقه با مربی اختصاصی خود هماهنگ هستید.
                 </p>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-700 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-xs font-bold text-zinc-600 dark:text-zinc-300">
-                  <Clock className="w-4 h-4 text-primary" />
-                  <span>یادآوری صبح روز جلسه نیز به صورت اعلان پیامکی و نوتیفیکیشن برای شما ارسال می‌شود.</span>
+              <div className="mt-5 pt-3.5 border-t border-zinc-200 dark:border-zinc-700 flex flex-wrap items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                  <Clock className="w-4 h-4 text-primary shrink-0" />
+                  <span>یادآوری صبح روز جلسه از طریق نوتیفیکیشن ارسال می‌شود.</span>
                 </div>
                 <Button
                   onClick={() => setIsExtraModalOpen(true)}
                   variant="outline"
-                  className="gap-2 text-xs font-black border-2 border-zinc-900 bg-white shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[2px_2px_0px_0px_#f4f4f5]"
+                  className="min-h-[40px] gap-2 text-xs font-bold border-2 border-zinc-900 bg-white shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-none"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   درخواست جلسه خارج از نوبت
@@ -417,10 +417,10 @@ export const CoachingPage: React.FC = () => {
           </div>
 
           {/* Past Sessions History */}
-          <div className="rounded-2xl border-3 border-zinc-900 bg-white p-6 shadow-[5px_5px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[5px_5px_0px_0px_#f4f4f5] space-y-4">
+          <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-none space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                <CalendarDays className="w-5 h-5 text-primary" />
+              <h3 className="text-base font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                <CalendarDays className="w-4 h-4 text-primary" />
                 <span>سابقه جلسات و حضور و غیاب</span>
               </h3>
               <span className="text-xs font-bold text-zinc-500">
@@ -531,13 +531,13 @@ export const CoachingPage: React.FC = () => {
         /* ================= COACH / ADMIN VIEW ================= */
         <div className="space-y-6">
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-3">
+          <div className="flex items-center gap-2.5 overflow-x-auto border-b border-zinc-200 dark:border-zinc-800 pb-3">
             <button
               onClick={() => setActiveTab('today')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black border-2 transition-all cursor-pointer ${
+              className={`min-h-[44px] flex items-center gap-2 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer ${
                 activeTab === 'today'
-                  ? 'border-zinc-900 bg-zinc-900 text-white shadow-[3px_3px_0px_0px_#000] dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-                  : 'border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300'
+                  ? 'border-zinc-900 bg-zinc-900 text-white shadow-[2px_2px_0px_0px_#000] dark:border-zinc-200 dark:bg-zinc-100 dark:text-zinc-900 dark:shadow-none'
+                  : 'border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
               }`}
             >
               <Calendar className="w-4 h-4" />
@@ -546,10 +546,10 @@ export const CoachingPage: React.FC = () => {
 
             <button
               onClick={() => setActiveTab('students')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black border-2 transition-all cursor-pointer ${
+              className={`min-h-[44px] flex items-center gap-2 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer ${
                 activeTab === 'students'
-                  ? 'border-zinc-900 bg-zinc-900 text-white shadow-[3px_3px_0px_0px_#000] dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-                  : 'border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300'
+                  ? 'border-zinc-900 bg-zinc-900 text-white shadow-[2px_2px_0px_0px_#000] dark:border-zinc-200 dark:bg-zinc-100 dark:text-zinc-900 dark:shadow-none'
+                  : 'border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
               }`}
             >
               <Users className="w-4 h-4" />
@@ -558,10 +558,10 @@ export const CoachingPage: React.FC = () => {
 
             <button
               onClick={() => setActiveTab('extra-requests')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black border-2 transition-all cursor-pointer ${
+              className={`min-h-[44px] flex items-center gap-2 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer ${
                 activeTab === 'extra-requests'
-                  ? 'border-zinc-900 bg-zinc-900 text-white shadow-[3px_3px_0px_0px_#000] dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-                  : 'border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300'
+                  ? 'border-zinc-900 bg-zinc-900 text-white shadow-[2px_2px_0px_0px_#000] dark:border-zinc-200 dark:bg-zinc-100 dark:text-zinc-900 dark:shadow-none'
+                  : 'border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
               }`}
             >
               <MessageSquare className="w-4 h-4" />
@@ -574,7 +574,7 @@ export const CoachingPage: React.FC = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-black text-zinc-900 dark:text-zinc-100">
-                  جلسات کوچینگ زمان‌بندی‌شده برای امروز:
+                  جلسات کوچینگ امروز:
                 </h3>
                 <span className="text-xs font-bold text-zinc-500">
                   {toPersianDigits(contextData?.todaySessions?.length || 0)} جلسه ۲۰ دقیقه‌ای
@@ -583,7 +583,7 @@ export const CoachingPage: React.FC = () => {
 
               {contextData?.todaySessions?.length === 0 ? (
                 <div className="rounded-2xl border-2 border-dashed border-zinc-300 p-12 text-center text-xs font-bold text-zinc-500 dark:border-zinc-700">
-                  امروز جلسه کوچینگ زمان‌بندی شده‌ای برای شما وجود ندارد.
+                  امروز جلسه کوچینگ زمان‌بندی شده‌ای وجود ندارد.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -592,23 +592,23 @@ export const CoachingPage: React.FC = () => {
                     return (
                       <div
                         key={session.id}
-                        className="rounded-2xl border-3 border-zinc-900 bg-white p-5 shadow-[4px_4px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[4px_4px_0px_0px_#f4f4f5] flex flex-col justify-between space-y-4"
+                        className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-none flex flex-col justify-between space-y-4"
                       >
                         <div>
                           <div className="flex items-center justify-between mb-3">
-                            <span className="inline-flex items-center gap-1 text-xs font-black text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                            <span className="inline-flex items-center gap-1 text-xs font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-800">
                               <Clock className="w-3.5 h-3.5" />
                               ساعت {time} ({toPersianDigits(session.durationMinutes)} دقیقه)
                             </span>
                             {session.sessionType === 'EXTRA' && (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-black border border-purple-400 bg-purple-50 text-purple-800">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold border border-purple-400 bg-purple-50 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300">
                                 فوق‌العاده
                               </span>
                             )}
                           </div>
 
                           <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 rounded-full border-2 border-zinc-900 bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center font-black text-primary text-base overflow-hidden">
+                            <div className="h-12 w-12 rounded-full border-2 border-zinc-900 bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center font-black text-primary text-base overflow-hidden dark:border-zinc-700">
                               {session.student.avatarUrl ? (
                                 <img src={session.student.avatarUrl} alt="" className="h-full w-full object-cover" />
                               ) : (
@@ -620,7 +620,7 @@ export const CoachingPage: React.FC = () => {
                                 {session.student.firstName} {session.student.lastName}
                               </h4>
                               {session.student.studentProfile?.studentCode && (
-                                <p className="text-xs text-zinc-500 font-bold">
+                                <p className="text-xs text-zinc-500 font-medium">
                                   کد: {toPersianDigits(session.student.studentProfile.studentCode)}
                                 </p>
                               )}
@@ -640,30 +640,30 @@ export const CoachingPage: React.FC = () => {
                           <div className="flex items-center gap-1.5">
                             <button
                               onClick={() => handleMarkAttendance(session.id, 'PRESENT')}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-black border transition-all ${
+                              className={`min-h-[36px] px-3 py-1 rounded-lg text-xs font-bold border transition-all ${
                                 session.attendanceStatus === 'PRESENT'
                                   ? 'border-emerald-600 bg-emerald-600 text-white'
-                                  : 'border-zinc-300 text-zinc-600 hover:border-emerald-500 hover:text-emerald-700'
+                                  : 'border-zinc-300 text-zinc-600 hover:border-emerald-500 hover:text-emerald-700 dark:border-zinc-700 dark:text-zinc-300'
                               }`}
                             >
                               حاضر
                             </button>
                             <button
                               onClick={() => handleMarkAttendance(session.id, 'ABSENT')}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-black border transition-all ${
+                              className={`min-h-[36px] px-3 py-1 rounded-lg text-xs font-bold border transition-all ${
                                 session.attendanceStatus === 'ABSENT'
                                   ? 'border-rose-600 bg-rose-600 text-white'
-                                  : 'border-zinc-300 text-zinc-600 hover:border-rose-500 hover:text-rose-700'
+                                  : 'border-zinc-300 text-zinc-600 hover:border-rose-500 hover:text-rose-700 dark:border-zinc-700 dark:text-zinc-300'
                               }`}
                             >
                               غایب
                             </button>
                             <button
                               onClick={() => handleMarkAttendance(session.id, 'EXCUSED')}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-black border transition-all ${
+                              className={`min-h-[36px] px-3 py-1 rounded-lg text-xs font-bold border transition-all ${
                                 session.attendanceStatus === 'EXCUSED'
                                   ? 'border-amber-600 bg-amber-600 text-white'
-                                  : 'border-zinc-300 text-zinc-600 hover:border-amber-500 hover:text-amber-700'
+                                  : 'border-zinc-300 text-zinc-600 hover:border-amber-500 hover:text-amber-700 dark:border-zinc-700 dark:text-zinc-300'
                               }`}
                             >
                               موجه
@@ -673,14 +673,14 @@ export const CoachingPage: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleOpenNotes(session)}
-                              className="inline-flex items-center gap-1 text-xs font-black text-primary hover:underline"
+                              className="min-h-[36px] inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline px-2"
                             >
                               <FileText className="w-3.5 h-3.5" />
-                              <span>یادداشت جلسه</span>
+                              <span>یادداشت</span>
                             </button>
                             <button
                               onClick={() => openDossier(session.student.id)}
-                              className="inline-flex items-center gap-1 text-xs font-bold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400"
+                              className="min-h-[36px] inline-flex items-center gap-1 text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 px-2"
                             >
                               <Target className="w-3.5 h-3.5" />
                               <span>پرونده</span>
@@ -700,16 +700,16 @@ export const CoachingPage: React.FC = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-black text-zinc-900 dark:text-zinc-100">
-                  فهرست دانش‌آموزان متصل و زمان‌بندی ثابت دوهفته‌ای:
+                  فهرست دانش‌آموزان و زمان‌بندی:
                 </h3>
                 {['SUPER_ADMIN', 'SCHOOL_ADMIN'].includes(currentUser?.role || '') && (
                   <Button
                     onClick={handleOpenAssignModal}
                     variant="outline"
-                    className="gap-1.5 text-xs font-black border-2 border-zinc-900"
+                    className="min-h-[40px] gap-1.5 text-xs font-bold border-2 border-zinc-900 dark:border-zinc-700"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    تخصیص کوچ به دانش‌آموز
+                    تخصیص کوچ
                   </Button>
                 )}
               </div>
@@ -718,18 +718,18 @@ export const CoachingPage: React.FC = () => {
                 {contextData?.myStudents?.map((link: any) => (
                   <div
                     key={link.id}
-                    className="rounded-2xl border-3 border-zinc-900 bg-white p-5 shadow-[4px_4px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[4px_4px_0px_0px_#f4f4f5] flex flex-col justify-between space-y-4"
+                    className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-none flex flex-col justify-between space-y-4"
                   >
                     <div>
                       <div className="flex items-center justify-between mb-3">
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-black border border-indigo-200 bg-indigo-50 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold border border-indigo-200 bg-indigo-50 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
                           {PERSIAN_DAY_NAMES[link.slotDayOfWeek] || 'نامشخص'} ساعت {toPersianDigits(link.slotStartTime)}
                         </span>
-                        <span className="text-[11px] font-bold text-zinc-400">دو هفته یک‌بار</span>
+                        <span className="text-[11px] font-medium text-zinc-400">دو هفته یک‌بار</span>
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-full border-2 border-zinc-900 bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center font-black text-primary overflow-hidden">
+                        <div className="h-12 w-12 rounded-full border-2 border-zinc-900 bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center font-black text-primary overflow-hidden dark:border-zinc-700">
                           {link.student.avatarUrl ? (
                             <img src={link.student.avatarUrl} alt="" className="h-full w-full object-cover" />
                           ) : (
@@ -740,7 +740,7 @@ export const CoachingPage: React.FC = () => {
                           <h4 className="text-base font-black text-zinc-900 dark:text-zinc-100">
                             {link.student.firstName} {link.student.lastName}
                           </h4>
-                          <p className="text-xs text-zinc-500 font-bold">
+                          <p className="text-xs text-zinc-500 font-medium">
                             {link.student.studentProfile?.enrollments?.[0]?.classroom?.name || 'کلاس عمومی'}
                           </p>
                         </div>
@@ -751,10 +751,10 @@ export const CoachingPage: React.FC = () => {
                       <Button
                         onClick={() => openDossier(link.student.id)}
                         variant="outline"
-                        className="w-full gap-2 text-xs font-black border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b]"
+                        className="w-full min-h-[44px] gap-2 text-xs font-bold border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:shadow-none"
                       >
                         <Target className="w-3.5 h-3.5 text-primary" />
-                        مشاهده پرونده و کارنامه مربی‌گری
+                        مشاهده پرونده مربی‌گری
                       </Button>
                     </div>
                   </div>
@@ -767,35 +767,35 @@ export const CoachingPage: React.FC = () => {
           {activeTab === 'extra-requests' && (
             <div className="space-y-4">
               <h3 className="text-base font-black text-zinc-900 dark:text-zinc-100">
-                درخواست‌های جلسه فوق‌العاده در انتظار بررسی:
+                درخواست‌های جلسه فوق‌العاده:
               </h3>
 
               {contextData?.pendingExtraRequests?.length === 0 ? (
                 <div className="rounded-2xl border-2 border-dashed border-zinc-300 p-12 text-center text-xs font-bold text-zinc-500 dark:border-zinc-700">
-                  درخواست جلسه فوق‌العاده‌ای در صف بررسی وجود ندارد.
+                  درخواست جلسه‌ای در صف بررسی وجود ندارد.
                 </div>
               ) : (
                 <div className="space-y-3">
                   {contextData.pendingExtraRequests.map((req: any) => (
                     <div
                       key={req.id}
-                      className="rounded-2xl border-3 border-zinc-900 bg-white p-5 shadow-[4px_4px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[4px_4px_0px_0px_#f4f4f5] flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+                      className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-none flex flex-col md:flex-row md:items-center md:justify-between gap-4"
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-black text-zinc-900 dark:text-zinc-100">
                             {req.student.firstName} {req.student.lastName}
                           </span>
-                          <span className="px-2 py-0.5 rounded text-[11px] font-black border border-amber-400 bg-amber-50 text-amber-800">
+                          <span className="px-2 py-0.5 rounded text-[11px] font-bold border border-amber-400 bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
                             در انتظار زمان‌بندی
                           </span>
                         </div>
-                        <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed font-bold">
+                        <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed font-medium">
                           علت درخواست: {req.reason}
                         </p>
                         {req.preferredDate && (
                           <p className="text-[11px] text-zinc-500">
-                            زمان پیشنهادی دانش‌آموز: {req.preferredDate}
+                            زمان پیشنهادی: {req.preferredDate}
                           </p>
                         )}
                       </div>
@@ -804,7 +804,7 @@ export const CoachingPage: React.FC = () => {
                         <Button
                           onClick={() => handleOpenRespond(req)}
                           variant="primary"
-                          className="gap-1.5 text-xs font-black border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b]"
+                          className="min-h-[44px] gap-1.5 text-xs font-bold border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:shadow-none"
                         >
                           <CheckCircle2 className="w-4 h-4" />
                           تعیین زمان و تایید جلسه
@@ -823,37 +823,37 @@ export const CoachingPage: React.FC = () => {
       <Modal
         isOpen={isExtraModalOpen}
         onClose={() => setIsExtraModalOpen(false)}
-        title="درخواست جلسه فوق‌العاده با کوچ"
+        title="درخواست جلسه فوق‌العاده"
       >
         <form onSubmit={handleSubmitExtraRequest} className="space-y-4">
           <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-            در صورت مواجهه با چالش درسی، اضطراب امتحانات یا نیاز به مشاوره فوری، درخواست خود را همراه با علت ثبت نمایید تا کوچ در اولین فرصت زمان جلسه را برای شما تنظیم کند.
+            در صورت نیاز به مشاوره فوری، علت درخواست را ثبت کنید تا مربی زمان جلسه را هماهنگ کند.
           </p>
 
           <div>
-            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
-              موضوع و علت درخواست جلسه فوق‌العاده *
+            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+              موضوع و علت درخواست *
             </label>
             <textarea
               required
-              rows={4}
+              rows={3}
               value={extraReason}
               onChange={(e) => setExtraReason(e.target.value)}
-              placeholder="مثال: نیاز به راهنمایی در برنامه‌ریزی امتحانات نوبت اول..."
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+              placeholder="مثال: نیاز به راهنمایی در برنامه‌ریزی امتحانات..."
+              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
-              زمان پیشنهادی شما (اختیاری)
+            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+              زمان پیشنهادی (اختیاری)
             </label>
             <input
               type="text"
               value={extraPreferredDate}
               onChange={(e) => setExtraPreferredDate(e.target.value)}
               placeholder="مثال: چهارشنبه بعد از ساعت ۱۲"
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+              className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
             />
           </div>
 
@@ -862,7 +862,7 @@ export const CoachingPage: React.FC = () => {
               type="button"
               variant="outline"
               onClick={() => setIsExtraModalOpen(false)}
-              className="border-2 border-zinc-900 font-bold"
+              className="min-h-[44px] border-2 border-zinc-900 dark:border-zinc-700 font-bold"
             >
               انصراف
             </Button>
@@ -870,9 +870,9 @@ export const CoachingPage: React.FC = () => {
               type="submit"
               variant="primary"
               disabled={isSubmittingExtra}
-              className="border-2 border-zinc-900 font-black px-5 shadow-[3px_3px_0px_0px_#18181b]"
+              className="min-h-[44px] border-2 border-zinc-900 dark:border-zinc-700 font-black px-5 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-none"
             >
-              {isSubmittingExtra ? 'در حال ارسال...' : 'ارسال درخواست به کوچ'}
+              {isSubmittingExtra ? 'در حال ارسال...' : 'ارسال درخواست'}
             </Button>
           </div>
         </form>
@@ -882,21 +882,21 @@ export const CoachingPage: React.FC = () => {
       <Modal
         isOpen={isNotesModalOpen}
         onClose={() => setIsNotesModalOpen(false)}
-        title="ثبت یادداشت و ارزیابی جلسه کوچینگ"
+        title="ثبت یادداشت و ارزیابی جلسه"
       >
         <form onSubmit={handleSaveNotes} className="space-y-4">
           <div>
-            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
               وضعیت حضور و غیاب دانش‌آموز
             </label>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               <button
                 type="button"
                 onClick={() => setSessionAttendance('PRESENT')}
-                className={`flex-1 py-2 rounded-xl text-xs font-black border-2 transition-all ${
+                className={`min-h-[44px] flex-1 py-2 rounded-xl text-xs font-bold border-2 transition-all ${
                   sessionAttendance === 'PRESENT'
                     ? 'border-emerald-600 bg-emerald-600 text-white'
-                    : 'border-zinc-300 text-zinc-600'
+                    : 'border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300'
                 }`}
               >
                 حاضر
@@ -904,10 +904,10 @@ export const CoachingPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSessionAttendance('ABSENT')}
-                className={`flex-1 py-2 rounded-xl text-xs font-black border-2 transition-all ${
+                className={`min-h-[44px] flex-1 py-2 rounded-xl text-xs font-bold border-2 transition-all ${
                   sessionAttendance === 'ABSENT'
                     ? 'border-rose-600 bg-rose-600 text-white'
-                    : 'border-zinc-300 text-zinc-600'
+                    : 'border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300'
                 }`}
               >
                 غایب
@@ -915,10 +915,10 @@ export const CoachingPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSessionAttendance('EXCUSED')}
-                className={`flex-1 py-2 rounded-xl text-xs font-black border-2 transition-all ${
+                className={`min-h-[44px] flex-1 py-2 rounded-xl text-xs font-bold border-2 transition-all ${
                   sessionAttendance === 'EXCUSED'
                     ? 'border-amber-600 bg-amber-600 text-white'
-                    : 'border-zinc-300 text-zinc-600'
+                    : 'border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300'
                 }`}
               >
                 غایب موجه
@@ -927,28 +927,28 @@ export const CoachingPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
-              نکات و مشاهدات کوچ (محرمانه در پرونده مربی‌گری)
+            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+              نکات و ارزیابی جلسه
             </label>
             <textarea
-              rows={4}
+              rows={3}
               value={coachNotes}
               onChange={(e) => setCoachNotes(e.target.value)}
-              placeholder="نقاط قوت، چالش‌های فردی یا تحصیلی مطرح‌شده در جلسه..."
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+              placeholder="نقاط قوت، چالش‌ها یا مباحث مطرح‌شده..."
+              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
-              اهداف و برنامه‌های تعیین‌شده برای جلسه بعد
+            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+              برنامه‌ها و اهداف جلسه بعد
             </label>
             <input
               type="text"
               value={actionItems}
               onChange={(e) => setActionItems(e.target.value)}
-              placeholder="مثال: افزایش ساعت مطالعه به ۳ ساعت در روز، تحویل تمرین ریاضی..."
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+              placeholder="مثال: افزایش ساعت مطالعه، حل تمرین..."
+              className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
             />
           </div>
 
@@ -957,7 +957,7 @@ export const CoachingPage: React.FC = () => {
               type="button"
               variant="outline"
               onClick={() => setIsNotesModalOpen(false)}
-              className="border-2 border-zinc-900 font-bold"
+              className="min-h-[44px] border-2 border-zinc-900 dark:border-zinc-700 font-bold"
             >
               انصراف
             </Button>
@@ -965,9 +965,9 @@ export const CoachingPage: React.FC = () => {
               type="submit"
               variant="primary"
               disabled={isSavingNotes}
-              className="border-2 border-zinc-900 font-black px-5 shadow-[3px_3px_0px_0px_#18181b]"
+              className="min-h-[44px] border-2 border-zinc-900 dark:border-zinc-700 font-black px-5 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-none"
             >
-              {isSavingNotes ? 'در حال ثبت...' : 'ذخیره در پرونده جلسه'}
+              {isSavingNotes ? 'در حال ثبت...' : 'ذخیره یادداشت'}
             </Button>
           </div>
         </form>
@@ -977,17 +977,17 @@ export const CoachingPage: React.FC = () => {
       <Modal
         isOpen={isRespondModalOpen}
         onClose={() => setIsRespondModalOpen(false)}
-        title="پاسخ و زمان‌بندی جلسه فوق‌العاده"
+        title="زمان‌بندی جلسه فوق‌العاده"
       >
         <form onSubmit={handleSaveRespond} className="space-y-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={() => setRespondStatus('APPROVED')}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-black border-2 transition-all ${
+              className={`min-h-[44px] flex-1 py-2.5 rounded-xl text-xs font-bold border-2 transition-all ${
                 respondStatus === 'APPROVED'
                   ? 'border-emerald-600 bg-emerald-600 text-white'
-                  : 'border-zinc-300 text-zinc-600'
+                  : 'border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300'
               }`}
             >
               تایید و هماهنگی جلسه
@@ -995,10 +995,10 @@ export const CoachingPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setRespondStatus('REJECTED')}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-black border-2 transition-all ${
+              className={`min-h-[44px] flex-1 py-2.5 rounded-xl text-xs font-bold border-2 transition-all ${
                 respondStatus === 'REJECTED'
                   ? 'border-rose-600 bg-rose-600 text-white'
-                  : 'border-zinc-300 text-zinc-600'
+                  : 'border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300'
               }`}
             >
               رد درخواست
@@ -1006,10 +1006,10 @@ export const CoachingPage: React.FC = () => {
           </div>
 
           {respondStatus === 'APPROVED' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
-                  تاریخ برگزاری جلسه فوق‌العاده
+                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                  تاریخ جلسه فوق‌العاده
                 </label>
                 <PersianDatePicker
                   value={respondDate}
@@ -1017,29 +1017,29 @@ export const CoachingPage: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
                   ساعت شروع جلسه
                 </label>
                 <input
                   type="time"
                   value={respondTime}
                   onChange={(e) => setRespondTime(e.target.value)}
-                  className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                  className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
                 />
               </div>
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
-              پیام یا توضیحات کوچ برای دانش‌آموز
+            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+              پیام یا توضیحات کوچ
             </label>
             <textarea
               rows={3}
               value={respondNote}
               onChange={(e) => setRespondNote(e.target.value)}
               placeholder="مثال: جلسه در محل اتاق مشاوره برگزار می‌شود..."
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
             />
           </div>
 
@@ -1048,7 +1048,7 @@ export const CoachingPage: React.FC = () => {
               type="button"
               variant="outline"
               onClick={() => setIsRespondModalOpen(false)}
-              className="border-2 border-zinc-900 font-bold"
+              className="min-h-[44px] border-2 border-zinc-900 dark:border-zinc-700 font-bold"
             >
               انصراف
             </Button>
@@ -1056,9 +1056,9 @@ export const CoachingPage: React.FC = () => {
               type="submit"
               variant="primary"
               disabled={isSubmittingResponse}
-              className="border-2 border-zinc-900 font-black px-5 shadow-[3px_3px_0px_0px_#18181b]"
+              className="min-h-[44px] border-2 border-zinc-900 dark:border-zinc-700 font-black px-5 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-none"
             >
-              {isSubmittingResponse ? 'در حال ذخیره...' : 'ثبت و ارسال نوتیفیکیشن'}
+              {isSubmittingResponse ? 'در حال ذخیره...' : 'ثبت و ارسال'}
             </Button>
           </div>
         </form>
@@ -1068,18 +1068,18 @@ export const CoachingPage: React.FC = () => {
       <Modal
         isOpen={isAssignModalOpen}
         onClose={() => setIsAssignModalOpen(false)}
-        title="تخصیص کوچ به دانش‌آموز با برنامه دو هفته یک‌بار"
+        title="تخصیص کوچ به دانش‌آموز"
       >
         <form onSubmit={handleSaveAssign} className="space-y-4">
           <div>
-            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
               انتخاب دانش‌آموز *
             </label>
             <select
               required
               value={assignStudentId}
               onChange={(e) => setAssignStudentId(e.target.value)}
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+              className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
             >
               {unassignedStudents.map((st) => (
                 <option key={st.id} value={st.id}>
@@ -1090,14 +1090,14 @@ export const CoachingPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
               انتخاب مربی / کوچ *
             </label>
             <select
               required
               value={assignCoachId}
               onChange={(e) => setAssignCoachId(e.target.value)}
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+              className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
             >
               {availableCoaches.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -1109,13 +1109,13 @@ export const CoachingPage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
                 روز هفته
               </label>
               <select
                 value={assignDayOfWeek}
                 onChange={(e) => setAssignDayOfWeek(Number(e.target.value))}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
               >
                 {PERSIAN_DAY_NAMES.map((name, idx) => (
                   <option key={idx} value={idx}>
@@ -1126,26 +1126,26 @@ export const CoachingPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
                 ساعت شروع
               </label>
               <input
                 type="time"
                 value={assignStartTime}
                 onChange={(e) => setAssignStartTime(e.target.value)}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
                 ساعت پایان
               </label>
               <input
                 type="time"
                 value={assignEndTime}
                 onChange={(e) => setAssignEndTime(e.target.value)}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
               />
             </div>
           </div>
@@ -1155,7 +1155,7 @@ export const CoachingPage: React.FC = () => {
               type="button"
               variant="outline"
               onClick={() => setIsAssignModalOpen(false)}
-              className="border-2 border-zinc-900 font-bold"
+              className="min-h-[44px] border-2 border-zinc-900 dark:border-zinc-700 font-bold"
             >
               انصراف
             </Button>
@@ -1163,9 +1163,9 @@ export const CoachingPage: React.FC = () => {
               type="submit"
               variant="primary"
               disabled={isSavingAssign}
-              className="border-2 border-zinc-900 font-black px-5 shadow-[3px_3px_0px_0px_#18181b]"
+              className="min-h-[44px] border-2 border-zinc-900 dark:border-zinc-700 font-black px-5 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-none"
             >
-              {isSavingAssign ? 'در حال ثبت...' : 'ثبت و زمان‌بندی جلسات دوهفته‌ای'}
+              {isSavingAssign ? 'در حال ثبت...' : 'ثبت جلسات دوهفته‌ای'}
             </Button>
           </div>
         </form>

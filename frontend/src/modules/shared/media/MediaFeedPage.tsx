@@ -37,6 +37,7 @@ import {
   X,
   Maximize2,
   File,
+  ArrowRight,
 } from 'lucide-react';
 
 interface Attachment {
@@ -132,7 +133,19 @@ export const MediaFeedPage: React.FC = () => {
   // Lightbox preview state
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
-  useScrollLock(Boolean(lightboxImage));
+  // Single Post Popup State
+  const [selectedPost, setSelectedPost] = useState<MediaPost | null>(null);
+  const [popupSlideIndex, setPopupSlideIndex] = useState<number>(0);
+
+  useScrollLock(Boolean(lightboxImage || selectedPost));
+
+  useEffect(() => {
+    if (posts.length > 0 && window.location.hash) {
+      const hashId = window.location.hash.replace('#', '');
+      const matched = posts.find((p) => p.id === hashId);
+      if (matched) setSelectedPost(matched);
+    }
+  }, [posts]);
 
   const isStaffOrAdmin =
     user?.role === 'SUPER_ADMIN' ||
@@ -431,9 +444,9 @@ export const MediaFeedPage: React.FC = () => {
   const renderAudienceBadge = (post: MediaPost) => {
     if (post.audienceType === 'ALL') {
       return (
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-500/20">
+        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-500/20">
           <Users className="w-3 h-3" />
-          <span>عمومی (همه)</span>
+          <span>عمومی</span>
         </span>
       );
     }
@@ -445,17 +458,46 @@ export const MediaFeedPage: React.FC = () => {
         return r;
       });
       return (
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded-full border border-purple-500/20">
+        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded-full border border-purple-500/20">
           <Users className="w-3 h-3" />
-          <span>مخصوص: {roleLabels.join('، ') || 'نقش‌های خاص'}</span>
+          <span>{roleLabels.join('، ') || 'نقش‌های خاص'}</span>
         </span>
       );
     }
     if (post.audienceType === 'CLASSROOMS') {
       return (
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-full border border-blue-500/20">
+        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-full border border-blue-500/20">
           <GraduationCap className="w-3 h-3" />
           <span>کلاس‌های منتخب</span>
+        </span>
+      );
+    }
+    return null;
+  };
+
+  // Post type indicator helper
+  const renderPostTypeBadge = (post: MediaPost) => {
+    if (post.postType === 'ANNOUNCEMENT' || post.isPinned) {
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+          <Sparkles className="w-3 h-3" />
+          <span>اطلاعیه</span>
+        </span>
+      );
+    }
+    if (post.postType === 'SLIDESHOW' || (post.mediaUrls && post.mediaUrls.length > 0)) {
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-primary dark:text-primary-light bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
+          <ImageIcon className="w-3 h-3" />
+          <span>گزارش تصویری</span>
+        </span>
+      );
+    }
+    if (post.postType === 'DOCUMENT' || (post.attachments && post.attachments.length > 0)) {
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
+          <FileText className="w-3 h-3" />
+          <span>فایل‌ها</span>
         </span>
       );
     }
@@ -465,95 +507,79 @@ export const MediaFeedPage: React.FC = () => {
   // Filtered posts
   const filteredPosts = posts.filter((p) => {
     if (activeFilter === 'ALL') return true;
-    if (activeFilter === 'SLIDESHOW') return p.postType === 'SLIDESHOW' || p.mediaUrls?.length > 1;
-    if (activeFilter === 'DOCUMENT') return p.postType === 'DOCUMENT' || (p.attachments && p.attachments.length > 0);
     if (activeFilter === 'ANNOUNCEMENT') return p.postType === 'ANNOUNCEMENT' || p.isPinned;
+    if (activeFilter === 'SLIDESHOW') return p.postType === 'SLIDESHOW' || (p.mediaUrls && p.mediaUrls.length > 0);
+    if (activeFilter === 'DOCUMENT') return p.postType === 'DOCUMENT' || (p.attachments && p.attachments.length > 0);
     return true;
   });
 
   return (
-    <div className="space-y-6">
-      {/* Top Hero Banner */}
-      <div className="relative overflow-hidden bg-white dark:bg-[#151C28] bg-gradient-to-l from-primary/15 via-primary/5 to-transparent dark:from-primary/20 dark:via-primary/5 dark:to-transparent p-4 sm:p-6 rounded-2xl border border-primary/30 dark:border-[#242F42] shadow-[2.75px_2.75px_0_#202A5A] dark:shadow-[2.75px_2.75px_0_#59BBAF] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div className="flex items-center space-x-2 space-x-reverse mb-1.5">
-            <Sparkles className="h-5 w-5 text-primary shrink-0" />
-            <span className="text-lg sm:text-xl font-black text-ink-darker dark:text-white">
-              رسانه و رویدادهای هنرستان
-            </span>
-            <Badge variant="default" className="text-[11px]">
-              {currentTenant?.name || 'هنرستان رُکاد'}
-            </Badge>
-          </div>
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 max-w-2xl leading-relaxed">
-            شبکه رسانه‌ای و محتوایی یکپارچه، گزارش‌های تصویری کارگاهی، اخبار رسمی و اطلاعیه‌های مهم با امکان ثبت نظر و تعامل مستقیم
-          </p>
-        </div>
-
-        <div className="flex items-center space-x-2 space-x-reverse shrink-0">
-          {isStaffOrAdmin && (
-            <Button
-              variant="primary"
-              size="md"
-              onClick={() => setIsCreateModalOpen(true)}
-              className="text-xs sm:text-sm flex items-center space-x-1.5 space-x-reverse"
-            >
-              <Plus className="h-4 w-4" />
-              <span>انتشار پست رسانه‌ای</span>
-            </Button>
-          )}
-        </div>
+    <div className="space-y-4 sm:space-y-5">
+      {/* 4 Fixed Filter Options */}
+      <div className="w-full bg-gray-100 dark:bg-zinc-800/90 p-1.5 rounded-2xl border border-gray-200/80 dark:border-zinc-700/70 grid grid-cols-4 gap-1 sm:gap-1.5 select-none">
+        <button
+          type="button"
+          onClick={() => setActiveFilter('ALL')}
+          className={`min-h-[44px] py-2 px-1 sm:px-3 rounded-xl text-xs sm:text-sm font-bold transition-all text-center flex items-center justify-center ${
+            activeFilter === 'ALL'
+              ? 'bg-white dark:bg-zinc-700 text-ink-darker dark:text-white shadow-xs font-black'
+              : 'text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 hover:bg-white/50 dark:hover:bg-zinc-700/50'
+          }`}
+        >
+          همه پست‌ها
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveFilter('ANNOUNCEMENT')}
+          className={`min-h-[44px] py-2 px-1 sm:px-3 rounded-xl text-xs sm:text-sm font-bold transition-all text-center flex items-center justify-center ${
+            activeFilter === 'ANNOUNCEMENT'
+              ? 'bg-white dark:bg-zinc-700 text-ink-darker dark:text-white shadow-xs font-black'
+              : 'text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 hover:bg-white/50 dark:hover:bg-zinc-700/50'
+          }`}
+        >
+          اطلاعیه‌ها
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveFilter('SLIDESHOW')}
+          className={`min-h-[44px] py-2 px-1 sm:px-3 rounded-xl text-xs sm:text-sm font-bold transition-all text-center flex items-center justify-center ${
+            activeFilter === 'SLIDESHOW'
+              ? 'bg-white dark:bg-zinc-700 text-ink-darker dark:text-white shadow-xs font-black'
+              : 'text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 hover:bg-white/50 dark:hover:bg-zinc-700/50'
+          }`}
+        >
+          گزارش تصویری
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveFilter('DOCUMENT')}
+          className={`min-h-[44px] py-2 px-1 sm:px-3 rounded-xl text-xs sm:text-sm font-bold transition-all text-center flex items-center justify-center ${
+            activeFilter === 'DOCUMENT'
+              ? 'bg-white dark:bg-zinc-700 text-ink-darker dark:text-white shadow-xs font-black'
+              : 'text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 hover:bg-white/50 dark:hover:bg-zinc-700/50'
+          }`}
+        >
+          فایل‌ها
+        </button>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200/80 dark:border-gray-800 pb-3">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-          <button
-            onClick={() => setActiveFilter('ALL')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              activeFilter === 'ALL'
-                ? 'bg-sec dark:bg-primary text-white shadow-sm'
-                : 'bg-gray-100 dark:bg-[#1C2536] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800'
-            }`}
+      {/* Staff Action if applicable */}
+      {isStaffOrAdmin && (
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <span className="text-xs text-gray-500 dark:text-zinc-400 font-medium">
+            نمایش {toPersianDigits(filteredPosts.length)} پست
+          </span>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="text-xs flex items-center gap-1.5 min-h-[44px] px-3.5 shadow-2xs"
           >
-            همه پست‌ها ({toPersianDigits(posts.length)})
-          </button>
-          <button
-            onClick={() => setActiveFilter('SLIDESHOW')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              activeFilter === 'SLIDESHOW'
-                ? 'bg-sec dark:bg-primary text-white shadow-sm'
-                : 'bg-gray-100 dark:bg-[#1C2536] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800'
-            }`}
-          >
-            گالری و اسلایدها
-          </button>
-          <button
-            onClick={() => setActiveFilter('DOCUMENT')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              activeFilter === 'DOCUMENT'
-                ? 'bg-sec dark:bg-primary text-white shadow-sm'
-                : 'bg-gray-100 dark:bg-[#1C2536] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800'
-            }`}
-          >
-            اسناد و فایل‌ها
-          </button>
-          <button
-            onClick={() => setActiveFilter('ANNOUNCEMENT')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              activeFilter === 'ANNOUNCEMENT'
-                ? 'bg-sec dark:bg-primary text-white shadow-sm'
-                : 'bg-gray-100 dark:bg-[#1C2536] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800'
-            }`}
-          >
-            اطلاعیه‌ها و پین‌ها
-          </button>
+            <Plus className="h-4 w-4" />
+            <span>انتشار پست</span>
+          </Button>
         </div>
-
-        <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-          نمایش {toPersianDigits(filteredPosts.length)} پست رسانه‌ای
-        </span>
-      </div>
+      )}
 
       {/* Feed List */}
       {isLoading ? (
@@ -563,56 +589,55 @@ export const MediaFeedPage: React.FC = () => {
         </div>
       ) : filteredPosts.length === 0 ? (
         <Card className="p-12 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 flex items-center justify-center mx-auto mb-3">
+          <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-500 flex items-center justify-center mx-auto mb-3">
             <ImageIcon className="w-8 h-8" />
           </div>
           <h3 className="font-extrabold text-base text-ink-darker dark:text-white mb-1">
             هنوز مطلبی در این بخش منتشر نشده است
           </h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-gray-500 dark:text-zinc-400">
             پست‌های کارگاهی، گزارش‌های تصویری و اطلاعیه‌ها در این قسمت نمایش داده می‌شوند.
           </p>
         </Card>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-5">
           {filteredPosts.map((post) => {
-            const currentSlide = activeSlides[post.id] || 0;
             const hasSlides = post.mediaUrls && post.mediaUrls.length > 0;
             const isSlideCount = post.mediaUrls?.length || 0;
-            const isCommentsOpen = !!expandedComments[post.id];
 
             return (
               <Card
                 key={post.id}
-                className={`overflow-hidden transition-all border-[1.5px] ${
-                  post.isPinned ? 'border-primary/50' : 'border-[#EAEAEA] dark:border-[#242F42]'
-                }`}
+                className={`overflow-hidden transition-all border ${
+                  post.isPinned
+                    ? 'border-primary/50 dark:border-primary/60 shadow-xs'
+                    : 'border-gray-200/80 dark:border-zinc-800'
+                } bg-white dark:bg-zinc-900 rounded-2xl`}
               >
-                {/* Post Header */}
-                <div className="p-4 sm:p-5 pb-3 flex items-start justify-between gap-3 border-b border-gray-100 dark:border-gray-800/80">
-                  <div className="flex items-center space-x-3 space-x-reverse min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center font-bold text-primary shrink-0 overflow-hidden">
-                      {post.author?.avatarUrl ? (
-                        <img
-                          src={post.author.avatarUrl}
-                          alt={post.author.firstName}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span>
-                          {post.author?.firstName?.[0] || 'ر'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-ink-darker dark:text-white truncate">
-                          {post.author?.firstName} {post.author?.lastName}
-                        </span>
-                        {getRoleBadge(post.author?.role)}
+                {/* Post Header: Improved 2-row layout */}
+                <div className="p-3.5 sm:p-4 pb-3 border-b border-gray-100 dark:border-zinc-800/80 space-y-2.5">
+                  {/* Top Row: Author & Delete Action */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center font-bold text-primary shrink-0 overflow-hidden shadow-2xs">
+                        {post.author?.avatarUrl ? (
+                          <img
+                            src={post.author.avatarUrl}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span>{post.author?.firstName?.[0] || 'ر'}</span>
+                        )}
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">
-                        <span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-sm text-ink-darker dark:text-white truncate">
+                            {post.author?.firstName} {post.author?.lastName}
+                          </span>
+                          {getRoleBadge(post.author?.role)}
+                        </div>
+                        <span className="text-[11px] text-gray-400 dark:text-zinc-500 font-mono mt-0.5 block">
                           {new Date(post.createdAt).toLocaleDateString('fa-IR', {
                             month: 'long',
                             day: 'numeric',
@@ -620,160 +645,88 @@ export const MediaFeedPage: React.FC = () => {
                             minute: '2-digit',
                           })}
                         </span>
-                        <span>•</span>
-                        {renderAudienceBadge(post)}
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {post.isPinned && (
-                      <span className="flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-500/20">
-                        <Pin className="w-3 h-3" />
-                        <span>سنجاق‌شده</span>
-                      </span>
-                    )}
                     {(isStaffOrAdmin || post.authorId === user?.id) && (
                       <button
                         onClick={() => executeUndoableDeletePost(post)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                        className="min-h-[40px] min-w-[40px] flex items-center justify-center text-gray-400 hover:text-red-500 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors shrink-0"
                         title="حذف پست"
+                        aria-label="حذف پست"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     )}
                   </div>
+
+                  {/* Labels Row: Beautiful, clearly arranged pills */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                    {post.isPinned && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-300/50 dark:border-amber-800/50 shadow-2xs">
+                        <Pin className="w-3 h-3 text-amber-500" />
+                        <span>سنجاق‌شده</span>
+                      </span>
+                    )}
+                    {renderPostTypeBadge(post)}
+                    {renderAudienceBadge(post)}
+                  </div>
                 </div>
 
-                {/* Post Title & Content */}
-                <div className="p-4 sm:p-5 pt-3.5 space-y-2">
-                  <h3 className="text-base sm:text-lg font-black text-ink-darker dark:text-white leading-snug">
+                {/* Post Title & Media Preview (NO post.content in feed) */}
+                <div className="p-3.5 sm:p-4 pt-3 space-y-2.5">
+                  <h3
+                    onClick={() => setSelectedPost(post)}
+                    className="text-base sm:text-lg font-black text-ink-darker dark:text-white leading-snug cursor-pointer hover:text-primary dark:hover:text-primary-light transition-colors"
+                  >
                     {post.title}
                   </h3>
-                  <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
-                    {post.content}
-                  </p>
-                </div>
 
-                {/* Slideshow / Image Carousel */}
-                {hasSlides && (
-                  <div className="px-4 sm:px-5 pb-4">
-                    <div className="relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-black/5 dark:bg-black/40">
-                      {/* Image Frame */}
+                  {/* Media Cover Preview */}
+                  {hasSlides && (
+                    <div
+                      onClick={() => setSelectedPost(post)}
+                      className="relative rounded-xl overflow-hidden border border-gray-200/80 dark:border-zinc-800 bg-black/5 dark:bg-black/40 cursor-pointer group"
+                    >
                       <div className="relative aspect-[16/9] w-full flex items-center justify-center overflow-hidden">
                         <img
-                          src={post.mediaUrls[currentSlide]}
-                          alt={`${post.title} - اسلاید ${currentSlide + 1}`}
-                          className="w-full h-full object-cover cursor-pointer transition-all duration-300"
-                          onClick={() => setLightboxImage(post.mediaUrls[currentSlide])}
+                          src={post.mediaUrls[0]}
+                          alt={post.title}
+                          className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
                         />
-
-                        {/* Expand Button */}
-                        <button
-                          onClick={() => setLightboxImage(post.mediaUrls[currentSlide])}
-                          className="absolute top-3 left-3 p-1.5 rounded-lg bg-black/50 text-white hover:bg-black/70 transition-colors backdrop-blur-xs"
-                          title="بزرگ‌نمایی تصویر"
-                        >
-                          <Maximize2 className="w-4 h-4" />
-                        </button>
-
-                        {/* Navigation Arrows for Multiple Slides */}
                         {isSlideCount > 1 && (
-                          <>
-                            <button
-                              onClick={() =>
-                                setActiveSlides((prev) => ({
-                                  ...prev,
-                                  [post.id]: (currentSlide - 1 + isSlideCount) % isSlideCount,
-                                }))
-                              }
-                              className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors backdrop-blur-xs shadow-md"
-                              aria-label="اسلاید قبلی"
-                            >
-                              <ChevronRight className="w-5 h-5" />
-                            </button>
-                            <button
-                              onClick={() =>
-                                setActiveSlides((prev) => ({
-                                  ...prev,
-                                  [post.id]: (currentSlide + 1) % isSlideCount,
-                                }))
-                              }
-                              className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors backdrop-blur-xs shadow-md"
-                              aria-label="اسلاید بعدی"
-                            >
-                              <ChevronLeft className="w-5 h-5" />
-                            </button>
-                          </>
+                          <div className="absolute bottom-2.5 left-2.5 px-2.5 py-1 rounded-lg bg-black/70 text-white text-[11px] font-bold backdrop-blur-xs flex items-center gap-1.5 shadow-md">
+                            <ImageIcon className="w-3.5 h-3.5 text-primary" />
+                            <span>+{toPersianDigits(isSlideCount)} تصویر</span>
+                          </div>
                         )}
                       </div>
-
-                      {/* Dots and Slide Counter */}
-                      {isSlideCount > 1 && (
-                        <div className="flex items-center justify-between p-2.5 bg-gray-900/80 text-white text-[11px] backdrop-blur-xs">
-                          <div className="flex items-center gap-1.5 mr-1">
-                            {post.mediaUrls.map((_, idx) => (
-                              <button
-                                key={idx}
-                                onClick={() =>
-                                  setActiveSlides((prev) => ({ ...prev, [post.id]: idx }))
-                                }
-                                className={`h-1.5 rounded-full transition-all ${
-                                  idx === currentSlide ? 'w-5 bg-primary' : 'w-1.5 bg-white/40'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <span className="font-mono text-xs">
-                            {toPersianDigits(currentSlide + 1)} / {toPersianDigits(isSlideCount)}
-                          </span>
-                        </div>
-                      )}
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* File Attachments Box */}
-                {post.attachments && post.attachments.length > 0 && (
-                  <div className="px-4 sm:px-5 pb-4">
-                    <div className="p-3 rounded-xl bg-gray-50 dark:bg-[#1A2232] border border-gray-200 dark:border-gray-800 space-y-2">
-                      <span className="text-xs font-bold text-gray-500 dark:text-gray-400 block mb-1">
-                        فایل‌ها و پیوست‌های دانلودی:
-                      </span>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {post.attachments.map((att, idx) => (
-                          <a
-                            key={idx}
-                            href={att.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            download
-                            className="flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-700 hover:border-primary transition-all group"
-                          >
-                            <div className="flex items-center space-x-2 space-x-reverse min-w-0 pr-1">
-                              <File className="w-4 h-4 text-primary shrink-0" />
-                              <span className="text-xs font-bold text-ink-darker dark:text-white truncate">
-                                {att.name || 'سند پیوست'}
-                              </span>
-                            </div>
-                            <Download className="w-4 h-4 text-gray-400 group-hover:text-primary shrink-0 transition-colors" />
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
+                  {/* Attachments Pill Preview */}
+                  {post.attachments && post.attachments.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPost(post)}
+                      className="inline-flex items-center gap-2 p-2 px-3 rounded-xl bg-gray-50 dark:bg-zinc-800/80 border border-gray-200/80 dark:border-zinc-700/60 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:border-primary transition-colors shadow-2xs"
+                    >
+                      <File className="w-4 h-4 text-primary shrink-0" />
+                      <span>شامل {toPersianDigits(post.attachments.length)} فایل پیوست</span>
+                    </button>
+                  )}
+                </div>
 
                 {/* Action Bar */}
-                <div className="px-4 sm:px-5 py-3 border-t border-gray-100 dark:border-gray-800/80 flex items-center justify-between text-xs">
-                  <div className="flex items-center space-x-4 space-x-reverse">
+                <div className="px-3.5 sm:px-4 py-2 border-t border-gray-100 dark:border-zinc-800/80 flex items-center justify-between text-xs">
+                  <div className="flex items-center space-x-2 space-x-reverse">
                     {/* Like Button */}
                     <button
                       onClick={() => handleToggleLike(post.id)}
-                      className={`flex items-center space-x-1.5 space-x-reverse font-bold transition-transform active:scale-125 ${
+                      className={`min-h-[44px] px-3 py-2 rounded-xl flex items-center space-x-1.5 space-x-reverse font-bold transition-all active:scale-110 hover:bg-gray-100 dark:hover:bg-zinc-800 ${
                         post.isLikedByMe
                           ? 'text-rose-600 dark:text-rose-400'
-                          : 'text-gray-500 dark:text-gray-400 hover:text-rose-500'
+                          : 'text-gray-500 dark:text-zinc-400 hover:text-rose-500'
                       }`}
                     >
                       <Heart
@@ -782,41 +735,358 @@ export const MediaFeedPage: React.FC = () => {
                       <span>{toPersianDigits(post.likeCount)}</span>
                     </button>
 
-                    {/* Comments Toggle Button */}
+                    {/* Comments Count Button */}
                     <button
-                      onClick={() =>
-                        setExpandedComments((prev) => ({ ...prev, [post.id]: !prev[post.id] }))
-                      }
-                      className="flex items-center space-x-1.5 space-x-reverse text-gray-500 dark:text-gray-400 hover:text-primary font-bold transition-colors"
+                      onClick={() => setSelectedPost(post)}
+                      className="min-h-[44px] px-3 py-2 rounded-xl flex items-center space-x-1.5 space-x-reverse text-gray-500 dark:text-zinc-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-zinc-800 font-bold transition-colors"
                     >
                       <MessageCircle className="w-4 h-4" />
                       <span>{toPersianDigits(post.commentCount)} نظر</span>
                     </button>
                   </div>
 
-                  {/* Share Button */}
-                  <button
-                    onClick={() => handleSharePost(post)}
-                    className="flex items-center space-x-1.5 space-x-reverse text-gray-500 dark:text-gray-400 hover:text-primary font-bold transition-colors"
-                  >
-                    <Share2 className="w-4 h-4" />
-                    <span className="hidden sm:inline">اشتراک‌گذاری</span>
-                  </button>
-                </div>
+                  <div className="flex items-center gap-1.5">
+                    {/* Share Button */}
+                    <button
+                      onClick={() => handleSharePost(post)}
+                      className="min-h-[44px] px-3 py-2 rounded-xl flex items-center space-x-1.5 space-x-reverse text-gray-500 dark:text-zinc-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-zinc-800 font-bold transition-colors"
+                      title="اشتراک‌گذاری پست"
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </button>
 
-                {/* Expandable Comments Drawer */}
-                {isCommentsOpen && (
-                  <div className="bg-gray-50/70 dark:bg-[#121824]/60 p-4 sm:p-5 border-t border-gray-100 dark:border-gray-800 space-y-4">
-                    {/* Comment List */}
-                    {post.comments && post.comments.length > 0 ? (
-                      <div className="space-y-3">
-                        {post.comments.map((comment) => (
+                    {/* View Full Post Button (Popup Trigger) */}
+                    <button
+                      onClick={() => setSelectedPost(post)}
+                      className="min-h-[44px] px-3.5 py-2 rounded-xl flex items-center gap-1 bg-primary/10 hover:bg-primary/20 text-primary-darker dark:text-primary-light font-bold transition-all text-xs"
+                    >
+                      <span>مشاهده کامل</span>
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Advanced Single Post Popup with Modern Navigation Bar */}
+      {selectedPost &&
+        (() => {
+          const activePopupPost = posts.find((p) => p.id === selectedPost?.id) || selectedPost;
+          if (!activePopupPost) return null;
+
+          const currentIndex = filteredPosts.findIndex((p) => p.id === activePopupPost.id);
+          const totalPosts = filteredPosts.length;
+          const hasPrev = currentIndex > 0;
+          const hasNext = currentIndex !== -1 && currentIndex < totalPosts - 1;
+
+          const handlePrevPost = () => {
+            if (hasPrev) {
+              setSelectedPost(filteredPosts[currentIndex - 1]);
+              setPopupSlideIndex(0);
+            }
+          };
+
+          const handleNextPost = () => {
+            if (hasNext) {
+              setSelectedPost(filteredPosts[currentIndex + 1]);
+              setPopupSlideIndex(0);
+            }
+          };
+
+          const handleCloseModal = () => {
+            setSelectedPost(null);
+            if (window.location.hash) {
+              window.history.replaceState(null, '', window.location.pathname);
+            }
+          };
+
+          return (
+            <div
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 overscroll-contain animate-in fade-in duration-200"
+              onTouchMove={(e) => {
+                if (e.target === e.currentTarget) e.preventDefault();
+              }}
+            >
+              {/* Backdrop */}
+              <div
+                className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
+                onClick={handleCloseModal}
+              />
+
+              {/* Modal Container */}
+              <div className="relative w-full max-w-2xl max-h-[92vh] sm:max-h-[90vh] bg-white dark:bg-zinc-900 text-ink-normal dark:text-white rounded-t-3xl sm:rounded-3xl border border-gray-200/80 dark:border-zinc-800 shadow-2xl flex flex-col overflow-hidden z-10 animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200">
+                {/* Mobile Pull Handle Indicator */}
+                <div className="w-12 h-1 bg-gray-300 dark:bg-zinc-700 rounded-full mx-auto my-1.5 sm:hidden shrink-0" />
+
+                {/* STICKY TOP NAVIGATION BAR */}
+                <header className="sticky top-0 z-20 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border-b border-gray-200/80 dark:border-zinc-800 px-3 sm:px-5 py-2.5 flex items-center justify-between gap-2 shrink-0 select-none">
+                  {/* Right Side: Close Button & Category Badge */}
+                  <div className="flex items-center gap-2 min-w-0">
+                    <button
+                      type="button"
+                      onClick={handleCloseModal}
+                      className="min-h-[40px] min-w-[40px] rounded-xl bg-gray-100 hover:bg-gray-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-600 dark:text-zinc-300 flex items-center justify-center transition-all shrink-0 active:scale-95"
+                      title="بستن پنجره"
+                      aria-label="بستن"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      {renderPostTypeBadge(activePopupPost)}
+                    </div>
+                  </div>
+
+                  {/* Middle: Prev / Next Navigation Controls */}
+                  {totalPosts > 1 && currentIndex !== -1 && (
+                    <div className="flex items-center gap-0.5 bg-gray-100/90 dark:bg-zinc-800/90 px-1 py-1 rounded-xl border border-gray-200/60 dark:border-zinc-700/60 shrink-0">
+                      <button
+                        type="button"
+                        disabled={!hasPrev}
+                        onClick={handlePrevPost}
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-gray-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                        title="پست قبلی (جدیدتر)"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+
+                      <span className="text-[11px] font-bold px-1.5 text-gray-600 dark:text-zinc-300 font-mono">
+                        {toPersianDigits(currentIndex + 1)} / {toPersianDigits(totalPosts)}
+                      </span>
+
+                      <button
+                        type="button"
+                        disabled={!hasNext}
+                        onClick={handleNextPost}
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-gray-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                        title="پست بعدی (قدیمی‌تر)"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Left Side: Actions (Like with Counter, Share) */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleLike(activePopupPost.id)}
+                      className={`min-h-[40px] px-2.5 sm:px-3 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all border ${
+                        activePopupPost.isLikedByMe
+                          ? 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/60'
+                          : 'text-gray-600 dark:text-zinc-400 bg-gray-100/80 dark:bg-zinc-800/80 border-gray-200/60 dark:border-zinc-700/60 hover:text-rose-500 hover:bg-gray-200/60 dark:hover:bg-zinc-700/60'
+                      }`}
+                      title={activePopupPost.isLikedByMe ? 'پسندیده‌اید' : 'پسندیدن'}
+                    >
+                      <Heart className={`w-4 h-4 ${activePopupPost.isLikedByMe ? 'fill-current text-rose-500' : ''}`} />
+                      <span className="font-mono text-[11px] sm:text-xs">
+                        {toPersianDigits(activePopupPost.likeCount || 0)}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSharePost(activePopupPost)}
+                      className="min-h-[40px] min-w-[40px] rounded-xl bg-gray-100/80 dark:bg-zinc-800/80 hover:bg-gray-200/80 dark:hover:bg-zinc-700/80 border border-gray-200/60 dark:border-zinc-700/60 text-gray-600 dark:text-zinc-300 hover:text-primary flex items-center justify-center transition-all active:scale-95"
+                      title="اشتراک‌گذاری و کپی لینک"
+                      aria-label="اشتراک‌گذاری"
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </header>
+
+                {/* SCROLLABLE BODY */}
+                <div className="overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5">
+                  {/* Author Card & Badges */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-gray-100 dark:border-zinc-800">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center font-bold text-primary shrink-0 overflow-hidden shadow-2xs">
+                        {activePopupPost.author?.avatarUrl ? (
+                          <img src={activePopupPost.author.avatarUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span>{activePopupPost.author?.firstName?.[0] || 'ر'}</span>
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-sm text-ink-darker dark:text-white">
+                            {activePopupPost.author?.firstName} {activePopupPost.author?.lastName}
+                          </span>
+                          {getRoleBadge(activePopupPost.author?.role)}
+                        </div>
+                        <span className="text-[11px] text-gray-400 dark:text-zinc-500 font-mono">
+                          {new Date(activePopupPost.createdAt).toLocaleDateString('fa-IR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {activePopupPost.isPinned && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-300/50 dark:border-amber-800/50">
+                          <Pin className="w-3 h-3 text-amber-500" />
+                          <span>سنجاق</span>
+                        </span>
+                      )}
+                      {renderAudienceBadge(activePopupPost)}
+                    </div>
+                  </div>
+
+                  {/* Full Title */}
+                  <h2 className="text-base sm:text-lg md:text-xl font-black text-ink-darker dark:text-white leading-snug">
+                    {activePopupPost.title}
+                  </h2>
+
+                  {/* Full Description / Content */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-gray-50/90 dark:bg-zinc-800/60 border border-gray-200/70 dark:border-zinc-700/70 text-xs sm:text-sm text-ink-darker dark:text-zinc-200 leading-relaxed whitespace-pre-line font-medium shadow-2xs">
+                    {activePopupPost.content}
+                  </div>
+
+                  {/* Interactive Slideshow in Popup */}
+                  {activePopupPost.mediaUrls && activePopupPost.mediaUrls.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="relative rounded-2xl overflow-hidden border border-gray-200 dark:border-zinc-800 bg-black/5 dark:bg-black/40">
+                        <div className="relative aspect-[16/9] w-full flex items-center justify-center overflow-hidden">
+                          <img
+                            src={activePopupPost.mediaUrls[popupSlideIndex % activePopupPost.mediaUrls.length]}
+                            alt=""
+                            className="w-full h-full object-cover cursor-pointer"
+                            onClick={() => setLightboxImage(activePopupPost.mediaUrls[popupSlideIndex % activePopupPost.mediaUrls.length])}
+                          />
+
+                          <button
+                            onClick={() => setLightboxImage(activePopupPost.mediaUrls[popupSlideIndex % activePopupPost.mediaUrls.length])}
+                            className="absolute top-2.5 left-2.5 p-1.5 rounded-lg bg-black/60 text-white hover:bg-black/80 transition-colors"
+                            title="بزرگ‌نمایی تصویر"
+                          >
+                            <Maximize2 className="w-4 h-4" />
+                          </button>
+
+                          {activePopupPost.mediaUrls.length > 1 && (
+                            <>
+                              <button
+                                onClick={() =>
+                                  setPopupSlideIndex(
+                                    (prev) => (prev - 1 + activePopupPost.mediaUrls.length) % activePopupPost.mediaUrls.length
+                                  )
+                                }
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 min-h-[44px] min-w-[44px] p-2 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors flex items-center justify-center shadow-md"
+                                aria-label="تصویر قبلی"
+                              >
+                                <ChevronRight className="w-5 h-5" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  setPopupSlideIndex((prev) => (prev + 1) % activePopupPost.mediaUrls.length)
+                                }
+                                className="absolute left-2.5 top-1/2 -translate-y-1/2 min-h-[44px] min-w-[44px] p-2 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors flex items-center justify-center shadow-md"
+                                aria-label="تصویر بعدی"
+                              >
+                                <ChevronLeft className="w-5 h-5" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+
+                        {activePopupPost.mediaUrls.length > 1 && (
+                          <div className="flex items-center justify-between p-2.5 bg-gray-900/85 text-white text-xs">
+                            <div className="flex items-center gap-1.5 mr-1">
+                              {activePopupPost.mediaUrls.map((_, idx) => (
+                                <button
+                                  key={idx}
+                                  onClick={() => setPopupSlideIndex(idx)}
+                                  className={`h-1.5 rounded-full transition-all ${
+                                    idx === (popupSlideIndex % activePopupPost.mediaUrls.length) ? 'w-5 bg-primary' : 'w-1.5 bg-white/40'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-[11px] font-mono font-bold text-gray-300 ml-1">
+                              {toPersianDigits((popupSlideIndex % activePopupPost.mediaUrls.length) + 1)} از {toPersianDigits(activePopupPost.mediaUrls.length)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Small Thumbnails Row */}
+                      {activePopupPost.mediaUrls.length > 1 && (
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                          {activePopupPost.mediaUrls.map((url, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => setPopupSlideIndex(idx)}
+                              className={`relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${
+                                idx === (popupSlideIndex % activePopupPost.mediaUrls.length)
+                                  ? 'border-primary ring-2 ring-primary/30 scale-105'
+                                  : 'border-transparent opacity-60 hover:opacity-100'
+                              }`}
+                            >
+                              <img src={url} alt="" className="w-full h-full object-cover" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Attachments Section in Popup */}
+                  {activePopupPost.attachments && activePopupPost.attachments.length > 0 && (
+                    <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
+                      <h4 className="font-bold text-xs text-gray-700 dark:text-zinc-300 flex items-center gap-1.5">
+                        <FileText className="w-4 h-4 text-indigo-500" />
+                        <span>پیوست‌ها و فایل‌های ضمیمه ({toPersianDigits(activePopupPost.attachments.length)})</span>
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {activePopupPost.attachments.map((att, idx) => (
+                          <a
+                            key={idx}
+                            href={att.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-zinc-800/80 border border-gray-200/80 dark:border-zinc-700 hover:border-primary/50 transition-colors group shadow-2xs"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                                <FileText className="w-4 h-4" />
+                              </div>
+                              <span className="text-xs font-bold text-gray-700 dark:text-zinc-200 truncate group-hover:text-primary transition-colors">
+                                {att.name || 'فایل پیوست'}
+                              </span>
+                            </div>
+                            <Download className="w-4 h-4 text-gray-400 group-hover:text-primary shrink-0 mr-2" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Comments Section inside Modal */}
+                  <div className="pt-2 border-t border-gray-100 dark:border-zinc-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-xs sm:text-sm text-gray-700 dark:text-zinc-300 flex items-center gap-1.5">
+                        <MessageCircle className="w-4 h-4 text-primary" />
+                        <span>نظرات و بازخوردها ({toPersianDigits(activePopupPost.comments?.length || 0)})</span>
+                      </h4>
+                    </div>
+
+                    {activePopupPost.comments && activePopupPost.comments.length > 0 ? (
+                      <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                        {activePopupPost.comments.map((comment) => (
                           <div
                             key={comment.id}
-                            className="p-3 rounded-xl bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-gray-800 flex items-start justify-between gap-3 shadow-2xs"
+                            className="p-3 rounded-xl bg-gray-50 dark:bg-zinc-800/80 border border-gray-200/70 dark:border-zinc-700 flex items-start justify-between gap-3 shadow-2xs"
                           >
                             <div className="flex items-start space-x-2.5 space-x-reverse min-w-0">
-                              <div className="w-8 h-8 rounded-lg bg-primary/10 font-bold text-primary flex items-center justify-center shrink-0 text-xs mt-0.5">
+                              <div className="w-7 h-7 rounded-lg bg-primary/10 font-bold text-primary flex items-center justify-center shrink-0 text-xs mt-0.5">
                                 {comment.author?.firstName?.[0] || 'ک'}
                               </div>
                               <div className="min-w-0">
@@ -829,7 +1099,7 @@ export const MediaFeedPage: React.FC = () => {
                                     {new Date(comment.createdAt).toLocaleDateString('fa-IR')}
                                   </span>
                                 </div>
-                                <p className="text-xs text-gray-700 dark:text-gray-300 mt-1 leading-relaxed">
+                                <p className="text-xs text-gray-700 dark:text-zinc-300 mt-1 leading-relaxed">
                                   {comment.content}
                                 </p>
                               </div>
@@ -837,8 +1107,8 @@ export const MediaFeedPage: React.FC = () => {
 
                             {(isStaffOrAdmin || comment.authorId === user?.id) && (
                               <button
-                                onClick={() => executeUndoableDeleteComment({ post, comment })}
-                                className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors"
+                                onClick={() => executeUndoableDeleteComment({ post: activePopupPost, comment })}
+                                className="min-h-[32px] min-w-[32px] flex items-center justify-center text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                                 title="حذف نظر"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -848,52 +1118,51 @@ export const MediaFeedPage: React.FC = () => {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-2">
-                        هنوز نظری برای این پست ثبت نشده است. اولین نفری باشید که دیدگاه خود را می‌نویسید!
+                      <p className="text-xs text-gray-400 dark:text-zinc-500 py-1">
+                        هنوز نظری ثبت نشده است. اولین نفری باشید که دیدگاه خود را می‌نویسید!
                       </p>
                     )}
 
-                    {/* New Comment Input Box */}
-                    {post.allowComments ? (
-                      <div className="flex items-center space-x-2 space-x-reverse">
+                    {/* Add Comment Input */}
+                    {activePopupPost.allowComments ? (
+                      <div className="flex items-center gap-2 pt-1">
                         <input
                           type="text"
-                          placeholder="دیدگاه خود را اینجا بنویسید..."
-                          value={commentInputs[post.id] || ''}
+                          placeholder="دیدگاه خود را بنویسید..."
+                          value={commentInputs[activePopupPost.id] || ''}
                           onChange={(e) =>
-                            setCommentInputs((prev) => ({ ...prev, [post.id]: e.target.value }))
+                            setCommentInputs((prev) => ({ ...prev, [activePopupPost.id]: e.target.value }))
                           }
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
+                            if (e.key === 'Enter') {
                               e.preventDefault();
-                              handleAddComment(post.id);
+                              handleAddComment(activePopupPost.id);
                             }
                           }}
-                          className="flex-1 px-3.5 py-2 rounded-xl bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-700 text-xs sm:text-sm text-ink-darker dark:text-white focus:outline-none focus:border-primary transition-colors"
+                          className="flex-1 min-h-[44px] px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 text-xs sm:text-sm text-ink-darker dark:text-zinc-100 focus:outline-none focus:border-primary"
                         />
                         <Button
                           variant="primary"
                           size="sm"
-                          onClick={() => handleAddComment(post.id)}
-                          isLoading={isSubmittingComment[post.id]}
-                          className="h-9 px-3 shrink-0"
+                          onClick={() => handleAddComment(activePopupPost.id)}
+                          disabled={isSubmittingComment[activePopupPost.id] || !commentInputs[activePopupPost.id]?.trim()}
+                          className="min-h-[44px] px-4"
                         >
-                          <Send className="w-3.5 h-3.5 ml-1" />
+                          <Send className="w-4 h-4 ml-1" />
                           <span>ارسال</span>
                         </Button>
                       </div>
                     ) : (
-                      <div className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 p-2 rounded-lg text-center font-medium">
-                        امکان ثبت نظر توسط نویسنده این پست غیرفعال شده است.
-                      </div>
+                      <p className="text-xs text-amber-600 dark:text-amber-400 py-1">
+                        ثبت نظر برای این پست غیرفعال است.
+                      </p>
                     )}
                   </div>
-                )}
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
       {/* Lightbox Modal */}
       {lightboxImage &&
@@ -906,6 +1175,7 @@ export const MediaFeedPage: React.FC = () => {
               <button
                 onClick={() => setLightboxImage(null)}
                 className="absolute -top-12 left-0 p-2 text-white hover:text-gray-300 transition-colors"
+                aria-label="بستن تصویر"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -917,14 +1187,12 @@ export const MediaFeedPage: React.FC = () => {
             </div>
           </div>,
           document.body
-        )}
-
-      {/* Create Post Modal */}
+        )}      {/* Create Post Modal */}
       <Modal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        title="انتشار مطلب جدید در رسانه هنرستان"
-        description="ارسال پست‌های متنی، گالری‌های تصویری اسلایدی و فایل‌های پیوست با تعیین دقیق مخاطبان"
+        title="انتشار مطلب در رسانه هنرستان"
+        description="ارسال پست‌های متنی، گالری تصویری و پیوست‌ها."
         maxWidth="2xl"
       >
         <form onSubmit={handleCreatePost} className="space-y-4">
@@ -937,36 +1205,36 @@ export const MediaFeedPage: React.FC = () => {
 
           {/* Title */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-ink-normal/80 dark:text-gray-300">
+            <label className="text-xs font-bold text-ink-normal/80 dark:text-zinc-300">
               عنوان پست رسانه‌ای:
             </label>
             <input
               type="text"
               required
-              placeholder="مثال: برگزاری موفقیت‌آمیز آزمون جامع پودمان سوم شبکه و نرم‌افزار"
+              placeholder="مثال: برگزاری موفقیت‌آمیز رویداد یا کارگاه آموزشی"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-darker dark:text-white text-xs sm:text-sm font-medium focus:outline-none focus:border-primary"
+              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 text-ink-darker dark:text-zinc-100 text-xs sm:text-sm font-medium focus:outline-none focus:border-primary"
             />
           </div>
 
           {/* Content */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-ink-normal/80 dark:text-gray-300">
+            <label className="text-xs font-bold text-ink-normal/80 dark:text-zinc-300">
               متن کامل توضیحات و گزارش:
             </label>
             <textarea
               required
               rows={4}
-              placeholder="شرح کامل رویداد، دستاوردها، نکات کلیدی و اطلاعات مرتبط..."
+              placeholder="شرح کامل رویداد، دستاوردها و نکات کلیدی..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-darker dark:text-white text-xs sm:text-sm font-medium focus:outline-none focus:border-primary resize-none"
+              className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 text-ink-darker dark:text-zinc-100 text-xs sm:text-sm font-medium focus:outline-none focus:border-primary resize-none"
             />
           </div>
 
           {/* Media Images / Slides */}
-          <div className="p-3.5 rounded-xl bg-gray-50 dark:bg-[#1A2232] border border-gray-200 dark:border-gray-800 space-y-3">
+          <div className="p-3.5 rounded-xl bg-gray-50 dark:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <ImageIcon className="w-4 h-4 text-primary" />
@@ -975,7 +1243,7 @@ export const MediaFeedPage: React.FC = () => {
                 </span>
               </div>
               <span className="text-[11px] text-gray-500 font-mono">
-                {toPersianDigits(mediaUrls.length)} تصویر اضافه شده
+                {toPersianDigits(mediaUrls.length)} تصویر
               </span>
             </div>
 
@@ -985,9 +1253,9 @@ export const MediaFeedPage: React.FC = () => {
                 placeholder="آدرس اینترنتی تصویر (https://...)"
                 value={newImageUrl}
                 onChange={(e) => setNewImageUrl(e.target.value)}
-                className="flex-1 px-3 py-2 rounded-lg bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-700 text-xs text-ink-darker dark:text-white focus:outline-none focus:border-primary"
+                className="flex-1 min-h-[44px] px-3 py-2 rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 text-xs text-ink-darker dark:text-zinc-100 focus:outline-none focus:border-primary"
               />
-              <Button type="button" variant="outline" size="sm" onClick={handleAddMediaUrl}>
+              <Button type="button" variant="outline" size="sm" onClick={handleAddMediaUrl} className="min-h-[44px] px-3.5">
                 افزودن اسلاید
               </Button>
             </div>
@@ -997,7 +1265,7 @@ export const MediaFeedPage: React.FC = () => {
                 {mediaUrls.map((url, idx) => (
                   <div
                     key={idx}
-                    className="relative w-20 h-14 rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700 group"
+                    className="relative w-20 h-14 rounded-lg overflow-hidden border border-gray-300 dark:border-zinc-700 group"
                   >
                     <img src={url} alt="پیش‌نمایش" className="w-full h-full object-cover" />
                     <button
@@ -1014,12 +1282,12 @@ export const MediaFeedPage: React.FC = () => {
           </div>
 
           {/* File Attachments */}
-          <div className="p-3.5 rounded-xl bg-gray-50 dark:bg-[#1A2232] border border-gray-200 dark:border-gray-800 space-y-3">
+          <div className="p-3.5 rounded-xl bg-gray-50 dark:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <Paperclip className="w-4 h-4 text-primary" />
                 <span className="text-xs font-bold text-ink-darker dark:text-white">
-                  فایل‌های پیوست قابل دانلود:
+                  فایل‌های پیوست:
                 </span>
               </div>
               <span className="text-[11px] text-gray-500 font-mono">
@@ -1033,7 +1301,7 @@ export const MediaFeedPage: React.FC = () => {
                 placeholder="عنوان فایل (مثال: جزوه پودمان ۴.pdf)"
                 value={newAttachmentName}
                 onChange={(e) => setNewAttachmentName(e.target.value)}
-                className="px-3 py-2 rounded-lg bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-700 text-xs text-ink-darker dark:text-white focus:outline-none focus:border-primary"
+                className="min-h-[44px] px-3 py-2 rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 text-xs text-ink-darker dark:text-zinc-100 focus:outline-none focus:border-primary"
               />
               <div className="flex gap-2">
                 <input
@@ -1041,9 +1309,9 @@ export const MediaFeedPage: React.FC = () => {
                   placeholder="لینک مستقیم فایل"
                   value={newAttachmentUrl}
                   onChange={(e) => setNewAttachmentUrl(e.target.value)}
-                  className="flex-1 px-3 py-2 rounded-lg bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-700 text-xs text-ink-darker dark:text-white focus:outline-none focus:border-primary"
+                  className="flex-1 min-h-[44px] px-3 py-2 rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 text-xs text-ink-darker dark:text-zinc-100 focus:outline-none focus:border-primary"
                 />
-                <Button type="button" variant="outline" size="sm" onClick={handleAddAttachment}>
+                <Button type="button" variant="outline" size="sm" onClick={handleAddAttachment} className="min-h-[44px] px-3.5">
                   افزودن
                 </Button>
               </div>
@@ -1054,7 +1322,7 @@ export const MediaFeedPage: React.FC = () => {
                 {attachments.map((att, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-700 text-xs"
+                    className="flex items-center justify-between p-2 min-h-[40px] rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 text-xs"
                   >
                     <span className="font-bold text-ink-darker dark:text-white truncate">
                       {att.name}
@@ -1062,7 +1330,8 @@ export const MediaFeedPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== idx))}
-                      className="text-red-500 hover:text-red-700 p-1"
+                      className="min-h-[36px] min-w-[36px] flex items-center justify-center text-red-500 hover:text-red-700 p-1"
+                      aria-label="حذف فایل پیوست"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -1074,17 +1343,17 @@ export const MediaFeedPage: React.FC = () => {
 
           {/* Audience Target Selector */}
           <div className="space-y-2 pt-1">
-            <label className="text-xs font-bold text-ink-normal/80 dark:text-gray-300 block">
+            <label className="text-xs font-bold text-ink-normal/80 dark:text-zinc-300 block">
               جامعه مخاطب این مطلب:
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
               <button
                 type="button"
                 onClick={() => setAudienceType('ALL')}
-                className={`p-2.5 rounded-xl border font-bold text-center transition-all ${
+                className={`min-h-[44px] p-2.5 rounded-xl border font-bold text-center transition-all ${
                   audienceType === 'ALL'
                     ? 'border-primary bg-primary-light/50 dark:bg-primary/20 text-primary-darker dark:text-white shadow-2xs'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                    : 'border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 hover:border-gray-300'
                 }`}
               >
                 عمومی (کل هنرستان)
@@ -1092,10 +1361,10 @@ export const MediaFeedPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setAudienceType('ROLES')}
-                className={`p-2.5 rounded-xl border font-bold text-center transition-all ${
+                className={`min-h-[44px] p-2.5 rounded-xl border font-bold text-center transition-all ${
                   audienceType === 'ROLES'
                     ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 shadow-2xs'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                    : 'border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 hover:border-gray-300'
                 }`}
               >
                 نقش‌های مشخص
@@ -1103,10 +1372,10 @@ export const MediaFeedPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setAudienceType('CLASSROOMS')}
-                className={`p-2.5 rounded-xl border font-bold text-center transition-all ${
+                className={`min-h-[44px] p-2.5 rounded-xl border font-bold text-center transition-all ${
                   audienceType === 'CLASSROOMS'
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 shadow-2xs'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                    : 'border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 hover:border-gray-300'
                 }`}
               >
                 کلاس‌های مشخص
@@ -1115,8 +1384,8 @@ export const MediaFeedPage: React.FC = () => {
 
             {/* If ROLES selected */}
             {audienceType === 'ROLES' && (
-              <div className="p-3 rounded-xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900/40 flex flex-wrap gap-4 text-xs font-bold text-gray-700 dark:text-gray-300">
-                <label className="flex items-center gap-1.5 cursor-pointer">
+              <div className="p-3 rounded-xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900/40 flex flex-wrap gap-4 text-xs font-bold text-gray-700 dark:text-zinc-300">
+                <label className="flex items-center gap-1.5 cursor-pointer min-h-[36px]">
                   <input
                     type="checkbox"
                     checked={targetRoles.includes('STUDENT')}
@@ -1126,9 +1395,9 @@ export const MediaFeedPage: React.FC = () => {
                     }}
                     className="rounded text-primary focus:ring-primary"
                   />
-                  <span>دانش‌آموزان (دانش‌آموزان)</span>
+                  <span>دانش‌آموزان</span>
                 </label>
-                <label className="flex items-center gap-1.5 cursor-pointer">
+                <label className="flex items-center gap-1.5 cursor-pointer min-h-[36px]">
                   <input
                     type="checkbox"
                     checked={targetRoles.includes('PARENT')}
@@ -1140,7 +1409,7 @@ export const MediaFeedPage: React.FC = () => {
                   />
                   <span>اولیاء گرامی</span>
                 </label>
-                <label className="flex items-center gap-1.5 cursor-pointer">
+                <label className="flex items-center gap-1.5 cursor-pointer min-h-[36px]">
                   <input
                     type="checkbox"
                     checked={targetRoles.includes('TEACHER')}
@@ -1159,7 +1428,7 @@ export const MediaFeedPage: React.FC = () => {
             {audienceType === 'CLASSROOMS' && (
               <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 space-y-2">
                 <span className="text-xs font-bold text-blue-800 dark:text-blue-300 block">
-                  کلاس‌های مجاز برای مشاهده این مطلب را انتخاب کنید:
+                  کلاس‌های مجاز را انتخاب کنید:
                 </span>
                 <div className="flex flex-wrap gap-2 text-xs">
                   {classrooms.map((cls) => {
@@ -1175,10 +1444,10 @@ export const MediaFeedPage: React.FC = () => {
                             setTargetClassroomIds((ids) => [...ids, cls.id]);
                           }
                         }}
-                        className={`px-3 py-1.5 rounded-lg font-bold border transition-all ${
+                        className={`min-h-[40px] px-3 py-1.5 rounded-lg font-bold border transition-all ${
                           isSelected
                             ? 'bg-blue-600 text-white border-blue-700 shadow-2xs'
-                            : 'bg-white dark:bg-[#151C28] border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'
+                            : 'bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300'
                         }`}
                       >
                         {cls.name}
@@ -1191,35 +1460,36 @@ export const MediaFeedPage: React.FC = () => {
           </div>
 
           {/* Switches */}
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-gray-100 dark:border-gray-800 text-xs font-bold">
-            <label className="flex items-center gap-2 cursor-pointer">
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-gray-100 dark:border-zinc-800 text-xs font-bold">
+            <label className="flex items-center gap-2 cursor-pointer min-h-[44px]">
               <input
                 type="checkbox"
                 checked={isPinned}
                 onChange={(e) => setIsPinned(e.target.checked)}
                 className="rounded text-primary focus:ring-primary"
               />
-              <span className="text-ink-darker dark:text-white">سنجاق کردن در بالای فید رسانه</span>
+              <span className="text-ink-darker dark:text-white">سنجاق کردن در بالای فید</span>
             </label>
 
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className="flex items-center gap-2 cursor-pointer min-h-[44px]">
               <input
                 type="checkbox"
                 checked={allowComments}
                 onChange={(e) => setAllowComments(e.target.checked)}
                 className="rounded text-primary focus:ring-primary"
               />
-              <span className="text-ink-darker dark:text-white">امکان ثبت نظر توسط کاربران</span>
+              <span className="text-ink-darker dark:text-white">امکان ثبت نظر کاربران</span>
             </label>
           </div>
 
           {/* Submit */}
-          <div className="pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end space-x-2 space-x-reverse">
+          <div className="pt-3 border-t border-gray-100 dark:border-zinc-800 flex items-center justify-end space-x-2 space-x-reverse">
             <Button
               type="button"
               variant="outline"
               size="md"
               onClick={() => setIsCreateModalOpen(false)}
+              className="min-h-[44px] px-4"
             >
               انصراف
             </Button>
@@ -1228,8 +1498,9 @@ export const MediaFeedPage: React.FC = () => {
               variant="primary"
               size="md"
               isLoading={isSubmitting}
+              className="min-h-[44px] px-5"
             >
-              انتشار رسمی در رسانه
+              انتشار در رسانه
             </Button>
           </div>
         </form>

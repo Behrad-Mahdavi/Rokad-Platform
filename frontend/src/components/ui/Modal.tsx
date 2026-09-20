@@ -87,9 +87,9 @@ export const Modal: React.FC<ModalProps> = ({
             size="icon"
             onClick={onClose}
             aria-label="بستن"
-            className="h-8 w-8 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full shrink-0"
+            className="h-11 w-11 min-h-[44px] min-w-[44px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full shrink-0 flex items-center justify-center"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </Button>
         </div>
 

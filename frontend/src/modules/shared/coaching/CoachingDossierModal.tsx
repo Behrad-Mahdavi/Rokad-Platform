@@ -385,14 +385,14 @@ export const CoachingDossierModal: React.FC<CoachingDossierModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="کارنامه و پرونده تحلیلی جلسات مربی‌گری و هدایت تحصیلی"
+      title="پرونده جلسات هدایت تحصیلی و مربی‌گری"
       maxWidth="4xl"
     >
       {isLoading ? (
         <div className="py-20 text-center">
           <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent" />
           <p className="mt-3 text-sm font-bold text-zinc-600 dark:text-zinc-300">
-            در حال دریافت گزارش رسمی و پرونده دانش‌آموز...
+            در حال دریافت پرونده دانش‌آموز...
           </p>
         </div>
       ) : !data ? (
@@ -408,26 +408,26 @@ export const CoachingDossierModal: React.FC<CoachingDossierModalProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTab('sheet')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+                className={`min-h-[40px] sm:min-h-[44px] flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   activeTab === 'sheet'
                     ? 'bg-primary text-white shadow-sm'
                     : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                 }`}
               >
                 <FileText className="w-3.5 h-3.5" />
-                <span>پیش‌نمایش برگه رسمی (A4)</span>
+                <span>برگه رسمی (A4)</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('interactive')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+                className={`min-h-[40px] sm:min-h-[44px] flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   activeTab === 'interactive'
                     ? 'bg-primary text-white shadow-sm'
                     : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                 }`}
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
-                <span>نمای کارتی تعاملی</span>
+                <span>نمای کارتی</span>
               </button>
             </div>
 
@@ -437,19 +437,19 @@ export const CoachingDossierModal: React.FC<CoachingDossierModalProps> = ({
                 type="button"
                 onClick={handleExportExcel}
                 variant="outline"
-                className="gap-2 text-xs font-black border-emerald-600 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                className="min-h-[40px] sm:min-h-[44px] gap-2 text-xs font-bold border-emerald-600 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
               >
                 <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>خروجی اکسل (.xlsx)</span>
+                <span>خروجی اکسل</span>
               </Button>
 
               <Button
                 type="button"
                 onClick={handlePrint}
-                className="gap-2 text-xs font-black bg-zinc-900 hover:bg-zinc-800 text-white shadow-[2px_2px_0px_0px_#18181b] dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 dark:shadow-[2px_2px_0px_0px_#f4f4f5]"
+                className="min-h-[40px] sm:min-h-[44px] gap-2 text-xs font-bold bg-zinc-900 hover:bg-zinc-800 text-white shadow-[2px_2px_0px_0px_#18181b] dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 dark:shadow-none"
               >
                 <Printer className="w-4 h-4" />
-                <span>چاپ رسمی / ذخیره PDF</span>
+                <span>چاپ / PDF</span>
               </Button>
             </div>
           </div>

@@ -2,13 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../lib/auth/auth-store';
 import { apiClient } from '../../lib/api/client';
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import {
-  Award,
-  BookOpen,
-  Clock,
   FileCheck,
   HelpCircle,
   Play,
@@ -89,45 +86,44 @@ export const StudentDashboard: React.FC = () => {
     .sort((a: any, b: any) => a.periodNumber - b.periodNumber);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Welcome Banner */}
-      <div className="relative overflow-hidden bg-white dark:bg-[#151C28] bg-gradient-to-l from-primary/15 via-primary/5 to-transparent dark:from-primary/20 dark:via-primary/5 dark:to-transparent p-3.5 sm:p-5 md:p-6 rounded-2xl border border-primary/30 dark:border-[#242F42] shadow-[2.75px_2.75px_0_#202A5A] dark:shadow-[2.75px_2.75px_0_#59BBAF] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div className="flex items-center space-x-2 space-x-reverse">
-            <GraduationCap className="h-6 w-6 text-primary shrink-0" />
-            <span className="text-lg sm:text-xl font-black text-ink-darker dark:text-white">
+      <div className="relative overflow-hidden rokad-card p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+            <GraduationCap className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-base sm:text-lg font-black text-ink-darker dark:text-white">
               درود، {user?.firstName} {user?.lastName}
-            </span>
+            </h1>
             {scheduleData?.classroom ? (
-              <Badge variant="default" className="flex items-center gap-1 text-[11px]">
-                <GraduationCap className="h-3 w-3" />
-                <span>
-                  {scheduleData.classroom.level?.name ? `پایه ${scheduleData.classroom.level.name} - ` : ''}
-                  {scheduleData.classroom.field?.name ? `${scheduleData.classroom.field.name} ` : ''}
-                  ({scheduleData.classroom.name})
-                </span>
+              <Badge variant="default" className="text-[11px] mt-1">
+                {scheduleData.classroom.level?.name ? `پایه ${scheduleData.classroom.level.name} - ` : ''}
+                {scheduleData.classroom.field?.name ? `${scheduleData.classroom.field.name} ` : ''}
+                ({scheduleData.classroom.name})
               </Badge>
             ) : (
-              <Badge variant="neutral" className="text-[11px]">دانش‌آموز هنرستان</Badge>
+              <Badge variant="neutral" className="text-[11px] mt-1">دانش‌آموز هنرستان</Badge>
             )}
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Button
             variant="outline"
             size="sm"
             onClick={() => navigate('/app/student/schedule')}
-            className="text-xs flex items-center space-x-1 space-x-reverse"
+            className="flex-1 sm:flex-none"
           >
-            <Calendar className="h-3.5 w-3.5" />
-            <span>برنامه کلاس من</span>
+            <Calendar className="h-4 w-4" />
+            <span>برنامه هفتگی</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => navigate('/app/student/grades')}
-            className="text-xs"
+            className="flex-1 sm:flex-none"
           >
             کارنامه
           </Button>
@@ -135,76 +131,72 @@ export const StudentDashboard: React.FC = () => {
             variant="primary"
             size="sm"
             onClick={() => navigate('/app/student/exams')}
-            className="text-xs flex items-center space-x-1 space-x-reverse"
+            className="flex-1 sm:flex-none"
           >
             <span>آزمون‌ها</span>
-            <ArrowUpRight className="h-3.5 w-3.5" />
+            <ArrowUpRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
-        <Card className="p-3.5 sm:p-5 border hover:border-primary transition-all">
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
-            <span>معدل کل نیم‌سال</span>
+        <Card className="p-4 sm:p-5">
+          <div className="flex justify-between items-center text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">
+            <span>معدل نیم‌سال</span>
             <TrendingUp className="h-4 w-4 text-primary" />
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-primary">۱۹.۳۱</div>
-          <p className="text-[11px] text-emerald-600 font-medium mt-1">رتبه ۲ در پایه دهم</p>
+          <div className="text-xl sm:text-2xl font-black text-primary font-mono">۱۹.۳۱</div>
+          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1">رتبه ۲ پایه دهم</p>
         </Card>
 
-        <Card className="p-3.5 sm:p-5 border hover:border-amber-500 transition-all">
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
-            <span>تکالیف نیازمند تحویل</span>
+        <Card className="p-4 sm:p-5">
+          <div className="flex justify-between items-center text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">
+            <span>تکالیف جاری</span>
             <FileCheck className="h-4 w-4 text-amber-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-ink-darker">۲ تکلیف</div>
-          <p className="text-[11px] text-amber-600 font-medium mt-1">مهلت نزدیک‌ترین: فردا</p>
+          <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">۲ تکلیف</div>
+          <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium mt-1">مهلت نزدیک‌ترین: فردا</p>
         </Card>
 
-        <Card className="p-3.5 sm:p-5 border hover:border-blue-500 transition-all">
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
-            <span>آزمون‌های آنلاین فعال</span>
+        <Card className="p-4 sm:p-5">
+          <div className="flex justify-between items-center text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">
+            <span>آزمون‌های فعال</span>
             <HelpCircle className="h-4 w-4 text-blue-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-ink-darker">۱ آزمون</div>
-          <p className="text-[11px] text-blue-600 font-medium mt-1">آماده برگزاری آنلاین</p>
+          <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">۱ آزمون</div>
+          <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium mt-1">آماده شرکت آنلاین</p>
         </Card>
 
         <Card
           onClick={() => navigate('/app/student/matters')}
-          className="p-3.5 sm:p-5 border hover:border-purple-500 transition-all cursor-pointer group"
+          className="p-4 sm:p-5 cursor-pointer group"
         >
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-1.5">
-            <span>امور انضباطی و تشویقی</span>
+          <div className="flex justify-between items-center text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">
+            <span>پرونده انضباطی</span>
             <ShieldAlert className="h-4 w-4 text-purple-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-foreground group-hover:text-primary transition-colors">
+          <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white group-hover:text-primary transition-colors">
             پرونده منظم
           </div>
+          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1">بدون مورد منفی</p>
         </Card>
       </div>
 
       {/* Today's Schedule Card */}
-      <Card className="p-6">
+      <Card className="p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-          <div className="flex items-center space-x-2 space-x-reverse">
+          <div className="flex items-center gap-2">
             <div className="p-2 rounded-xl bg-primary/10 text-primary">
               <CalendarDays className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-black text-base sm:text-lg text-ink-darker flex items-center gap-2">
-                <span>برنامه کلاسی امروز شما</span>
+              <h2 className="font-black text-sm sm:text-base text-ink-darker dark:text-white flex items-center gap-2">
+                <span>برنامه کلاسی امروز</span>
                 <span className="text-xs px-2 py-0.5 rounded-md bg-primary/10 text-primary font-bold">
                   {DAY_NAMES[todayKey]}
                 </span>
-              </h3>
-              <p className="text-[11px] text-gray-400">
-                {scheduleData?.classroom
-                  ? `کلاس ${scheduleData.classroom.name}`
-                  : 'در حال بارگذاری...'}
-              </p>
+              </h2>
             </div>
           </div>
 
@@ -212,37 +204,37 @@ export const StudentDashboard: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => navigate('/app/student/schedule')}
-            className="text-xs self-start sm:self-auto"
+            className="self-start sm:self-auto"
           >
-            <span>مشاهده کل هفته</span>
-            <ArrowUpRight className="h-3.5 w-3.5 mr-1" />
+            <span>برنامه کامل</span>
+            <ArrowUpRight className="h-4 w-4 mr-1" />
           </Button>
         </div>
 
         {isScheduleLoading ? (
-          <div className="py-8 text-center text-xs text-gray-400">در حال بارگذاری برنامه درسی...</div>
+          <div className="py-8 text-center text-xs text-gray-400">در حال دریافت برنامه...</div>
         ) : todaySchedules.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {todaySchedules.map((item: any) => (
               <div
                 key={item.id}
-                className="p-3.5 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all flex flex-col justify-between text-xs"
+                className="p-3 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all flex flex-col justify-between text-xs"
               >
                 <div>
-                  <div className="flex items-center justify-between gap-1 mb-2">
+                  <div className="flex items-center justify-between gap-1 mb-1.5">
                     <span className="font-bold text-[11px] text-primary">
                       زنگ {item.periodNumber}
                     </span>
-                    <span className="font-mono text-[10px] text-gray-500 dir-ltr bg-white px-1.5 py-0.5 rounded border border-gray-100">
+                    <span className="font-mono text-[10px] text-gray-500 dark:text-gray-400 dir-ltr bg-white dark:bg-gray-800 px-1.5 py-0.5 rounded border border-gray-100 dark:border-gray-700">
                       {item.startTime} - {item.endTime}
                     </span>
                   </div>
-                  <div className="font-bold text-ink-darker line-clamp-1">
+                  <div className="font-bold text-ink-darker dark:text-white line-clamp-1">
                     {item.lesson?.name || 'درس'}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 text-[11px] text-gray-500 mt-2 pt-2 border-t border-primary/10">
+                <div className="flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400 mt-2 pt-2 border-t border-primary/10">
                   <User className="h-3 w-3 text-primary shrink-0" />
                   <span className="truncate">
                     {item.teacher?.user?.firstName} {item.teacher?.user?.lastName || 'دبیر'}
@@ -252,30 +244,33 @@ export const StudentDashboard: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="py-6 text-center text-xs text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-            برای روز {DAY_NAMES[todayKey]} زنگ درسی در سامانه ثبت نشده است یا امروز روز تعطیل است.
+          <div className="py-6 text-center text-xs text-gray-400 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+            امروز کلاس درسی برنامه‌ریزی نشده است.
           </div>
         )}
       </Card>
 
       {/* Main Content: Homework & Online Exams */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Homework List */}
-        <Card className="p-6">
+        <Card className="p-4 sm:p-5">
           <div className="flex justify-between items-center mb-4">
-            <div>
-              <h3 className="font-bold text-sm text-ink-darker">تکالیف درسی پیش‌رو</h3>
-              <p className="text-[11px] text-gray-400">تمرینات مشخص‌شده توسط مربیان</p>
-            </div>
-            <a href="/app/student/homework" className="text-xs text-primary font-bold hover:underline">
+            <h2 className="font-black text-sm sm:text-base text-ink-darker dark:text-white">
+              تکالیف درسی
+            </h2>
+            <button
+              type="button"
+              onClick={() => navigate('/app/student/homework')}
+              className="text-xs text-primary font-bold hover:underline min-h-[36px] flex items-center"
+            >
               مشاهده همه ←
-            </a>
+            </button>
           </div>
 
           <div className="space-y-3">
             {realHomework.length === 0 ? (
-              <div className="py-6 text-center text-xs text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                در حال حاضر هیچ تکلیف فعالی ثبت نشده است.
+              <div className="py-6 text-center text-xs text-gray-400 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+                تکلیف فعالی وجود ندارد.
               </div>
             ) : (
               realHomework.slice(0, 4).map((hw) => {
@@ -284,17 +279,17 @@ export const StudentDashboard: React.FC = () => {
                 const isSubmitted = mySub && !isGraded;
 
                 return (
-                  <div key={hw.id} className="p-3.5 rounded-xl border bg-gray-50 flex items-center justify-between text-xs gap-3">
+                  <div key={hw.id} className="p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 flex items-center justify-between text-xs gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold text-ink-darker truncate">{hw.title}</div>
-                      <div className="text-[11px] text-gray-500 mt-0.5 truncate">
+                      <div className="font-bold text-ink-darker dark:text-white truncate">{hw.title}</div>
+                      <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">
                         {hw.lesson?.name || 'درس'} •{' '}
                         {isGraded ? (
-                          <span className="text-emerald-600 font-bold">نمره ثبت شد: {mySub.score}</span>
+                          <span className="text-emerald-600 dark:text-emerald-400 font-bold">نمره: {mySub.score}</span>
                         ) : isSubmitted ? (
-                          <span className="text-blue-600 font-bold">در انتظار تصحیح دبیر</span>
+                          <span className="text-blue-600 dark:text-blue-400 font-bold">در انتظار تصحیح</span>
                         ) : (
-                          <span className="text-amber-600 font-bold">مهلت تحویل فعال</span>
+                          <span className="text-amber-600 dark:text-amber-400 font-bold">مهلت تحویل فعال</span>
                         )}
                       </div>
                     </div>
@@ -307,10 +302,10 @@ export const StudentDashboard: React.FC = () => {
                           `/app/student/homework?homeworkId=${hw.id}${!isGraded && !isSubmitted ? '&action=submit' : ''}`
                         )
                       }
-                      className="text-xs shrink-0 flex items-center space-x-1 space-x-reverse"
+                      className="shrink-0"
                     >
-                      <Send className="h-3 w-3" />
-                      <span>{isGraded ? 'مشاهده بازخورد' : isSubmitted ? 'مشاهده پاسخ' : 'ارسال پاسخ'}</span>
+                      <Send className="h-3.5 w-3.5" />
+                      <span>{isGraded ? 'بازخورد' : isSubmitted ? 'پاسخ' : 'ارسال'}</span>
                     </Button>
                   </div>
                 );
@@ -320,27 +315,26 @@ export const StudentDashboard: React.FC = () => {
         </Card>
 
         {/* Online Exams List */}
-        <Card className="p-6">
+        <Card className="p-4 sm:p-5">
           <div className="flex justify-between items-center mb-4">
-            <div>
-              <h3 className="font-bold text-sm text-ink-darker">آزمون‌های آنلاین فعال</h3>
-              <p className="text-[11px] text-gray-400">پاسخ‌برگ آنلاین با زمان‌بندی سرور</p>
-            </div>
+            <h2 className="font-black text-sm sm:text-base text-ink-darker dark:text-white">
+              آزمون‌های آنلاین
+            </h2>
             <Badge variant="success">آماده شرکت</Badge>
           </div>
 
           <div className="space-y-3">
             {realExams.length === 0 ? (
-              <div className="py-6 text-center text-xs text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                آزمون آنلاین فعالی در حال حاضر وجود ندارد.
+              <div className="py-6 text-center text-xs text-gray-400 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+                آزمون فعالی وجود ندارد.
               </div>
             ) : (
               realExams.slice(0, 3).map((ex) => (
-                <div key={ex.id} className="p-3.5 rounded-xl border bg-primary-light/30 border-primary/30 flex items-center justify-between text-xs gap-3">
+                <div key={ex.id} className="p-3.5 rounded-xl border bg-primary-light/30 dark:bg-primary-darker/20 border-primary/30 flex items-center justify-between text-xs gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-ink-darker truncate">{ex.title}</div>
-                    <div className="text-[11px] text-gray-500 mt-0.5 truncate">
-                      {ex.lesson?.name || 'درس'} • مدت: {ex.durationMinutes || 60} دقیقه
+                    <div className="font-bold text-ink-darker dark:text-white truncate">{ex.title}</div>
+                    <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                      {ex.lesson?.name || 'درس'} • {ex.durationMinutes || 60} دقیقه
                     </div>
                   </div>
 
@@ -348,10 +342,10 @@ export const StudentDashboard: React.FC = () => {
                     variant="primary"
                     size="sm"
                     onClick={() => navigate(`/app/student/exams?examId=${ex.id}&action=start`)}
-                    className="text-xs shrink-0 flex items-center space-x-1.5 space-x-reverse"
+                    className="shrink-0"
                   >
-                    <Play className="h-3 w-3" />
-                    <span>شروع آزمون</span>
+                    <Play className="h-3.5 w-3.5" />
+                    <span>شروع</span>
                   </Button>
                 </div>
               ))

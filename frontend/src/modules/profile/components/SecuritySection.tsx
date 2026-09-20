@@ -280,93 +280,108 @@ export const SecuritySection: React.FC = () => {
   return (
     <div className="space-y-5">
       {/* 1. Two-Factor Authentication Card */}
-      <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#151C28]">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <ShieldCheck className="w-4 h-4" />
+      <Card className="border border-gray-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs rounded-2xl overflow-hidden transition-all">
+        <CardHeader className="pb-3 border-b border-gray-100 dark:border-zinc-800/80">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                <ShieldCheck className="w-5 h-5" />
               </div>
-              <div>
-                <CardTitle className="text-base font-extrabold">
-                  احراز هویت دو مرحله‌ای (2FA / TOTP)
+              <div className="flex items-center gap-2 flex-wrap">
+                <CardTitle className="text-sm sm:text-base font-black text-ink-darker dark:text-white">
+                  احراز هویت دو مرحله‌ای
                 </CardTitle>
+                {twoFactorEnabled ? (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 shadow-2xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>فعال</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    <span>غیرفعال</span>
+                  </span>
+                )}
               </div>
             </div>
-            {twoFactorEnabled ? (
-              <Badge variant="success" className="text-xs px-2.5 py-0.5">
-                فعال و محافظت‌شده
-              </Badge>
-            ) : (
-              <Badge variant="warning" className="text-xs px-2.5 py-0.5">
-                غیرفعال
-              </Badge>
-            )}
+
+            {/* Action button at top left of the box */}
+            <div className="flex items-center gap-2">
+              {twoFactorEnabled ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsDisableModalOpen(true)}
+                  className="min-h-[36px] px-3.5 text-xs font-bold text-rose-600 border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl cursor-pointer"
+                >
+                  غیرفعال‌سازی
+                </Button>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleStartSetup}
+                  isLoading={isEnabling}
+                  className="min-h-[36px] px-3.5 text-xs font-bold gap-1.5 rounded-xl shadow-xs active:scale-95 transition-all cursor-pointer"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>فعال سازی</span>
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-0 space-y-3">
-          <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
-            با فعال‌سازی احراز هویت دو مرحله‌ای، علاوه بر رمز عبور، برای ورود به سیستم به کد ۶ رقمی اپلیکیشن‌های امنیتی استاندارد (مانند Google Authenticator، Microsoft Authenticator یا 2FAS) نیاز خواهید داشت.
+        <CardContent className="pt-3.5 pb-4">
+          <p className="text-xs text-gray-600 dark:text-zinc-300 leading-relaxed">
+            با فعال‌سازی این قابلیت، هنگام ورود علاوه بر گذرواژه، به کد یک‌بار مصرف اپلیکیشن‌های امنیتی روی تلفن همراه (مانند Google Authenticator) نیاز خواهید داشت تا دسترسی غیرمجاز به حساب کاربری غیرممکن شود.
           </p>
-
-          <div className="pt-1 flex items-center justify-between gap-3">
-            {twoFactorEnabled ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsDisableModalOpen(true)}
-                className="text-xs text-rose-600 border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-              >
-                غیرفعال‌سازی ۲FA
-              </Button>
-            ) : (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleStartSetup}
-                isLoading={isEnabling}
-                className="text-xs font-bold"
-              >
-                راه‌اندازی و فعال‌سازی ۲FA
-              </Button>
-            )}
-          </div>
         </CardContent>
       </Card>
 
-      {/* 2. Active Sessions & Device Management Card */}
-      <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#151C28]">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500">
-                <Laptop className="w-4 h-4" />
+      {/* 2. Active Devices & Sessions Card */}
+      <Card className="border border-gray-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs rounded-2xl overflow-hidden transition-all">
+        <CardHeader className="pb-3 border-b border-gray-100 dark:border-zinc-800/80">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-500 dark:bg-indigo-400/10 dark:text-indigo-400">
+                <Laptop className="w-5 h-5" />
               </div>
               <div>
-                <CardTitle className="text-base font-extrabold">
-                  دستگاه‌ها و نشست‌های متصل (Active Sessions)
+                <CardTitle className="text-sm sm:text-base font-black text-ink-darker dark:text-white">
+                  دستگاه‌های فعال
                 </CardTitle>
               </div>
             </div>
 
+            {/* Top Left Buttons - Swapped order: Refresh first, then Logout */}
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={fetchSessions}
                 disabled={loadingSessions}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-primary transition-colors cursor-pointer"
+                className="min-h-[36px] min-w-[36px] rounded-xl text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center cursor-pointer"
                 title="به‌روزرسانی نشست‌ها"
+                aria-label="به‌روزرسانی"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${loadingSessions ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 ${loadingSessions ? 'animate-spin text-primary' : ''}`} />
               </button>
 
-              {sessions.length > 1 && (
+              {sessions.length > 1 ? (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleRevokeAllOthers}
                   isLoading={isRevokingAll}
-                  className="text-[11px] text-rose-600 border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/30 h-8 px-2.5"
+                  className="text-xs font-bold text-rose-600 border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/30 min-h-[36px] px-3 rounded-xl cursor-pointer"
+                >
+                  خروج از سایر دستگاه‌ها
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled
+                  className="text-xs font-medium text-gray-400 dark:text-zinc-600 border-gray-200 dark:border-zinc-800 min-h-[36px] px-3 rounded-xl opacity-60 cursor-not-allowed"
                 >
                   خروج از سایر دستگاه‌ها
                 </Button>
@@ -374,43 +389,43 @@ export const SecuritySection: React.FC = () => {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-0 space-y-2.5">
+        <CardContent className="pt-3.5 space-y-2.5">
           {sessions.length === 0 ? (
-            <div className="text-center py-4 text-xs text-gray-400">
+            <div className="text-center py-6 text-xs text-gray-400 dark:text-zinc-500">
               هیچ نشستی ثبت نشده است
             </div>
           ) : (
             sessions.map((s) => (
               <div
                 key={s.id}
-                className={`p-3 rounded-xl border flex items-center justify-between gap-3 transition-all ${
+                className={`p-3 sm:p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-all ${
                   s.isCurrent
-                    ? 'border-emerald-500/40 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-2xs'
-                    : 'border-gray-200 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/30'
+                    ? 'border-emerald-500/40 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-2xs'
+                    : 'border-gray-200/80 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-800/30 hover:border-gray-300 dark:hover:border-zinc-700'
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-2 rounded-xl bg-white dark:bg-[#1E2738] border border-gray-200 dark:border-gray-700 shadow-2xs">
+                  <div className="p-2.5 rounded-xl bg-white dark:bg-zinc-800 border border-gray-200/80 dark:border-zinc-700/80 shadow-2xs shrink-0">
                     {getDeviceIcon(s.deviceType)}
                   </div>
 
-                  <div className="space-y-0.5 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-xs text-ink-dark dark:text-white truncate">
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-xs sm:text-sm text-ink-darker dark:text-white truncate">
                         {s.browser} روی {s.os}
                       </span>
                       {s.isCurrent && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                          دستگاه فعلی
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300/50 dark:border-emerald-800/50">
+                          دستگاه فعلی شما
                         </span>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 font-mono dir-ltr">
+                    <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-zinc-400 font-mono dir-ltr flex-wrap">
                       <span>IP: {s.ipAddress}</span>
-                      <span>•</span>
+                      <span className="text-gray-300 dark:text-zinc-600">•</span>
                       <span className="dir-rtl">
-                        فعالیت: {formatToJalali(s.lastActiveAt)}
+                        آخرین فعالیت: {formatToJalali(s.lastActiveAt)}
                       </span>
                     </div>
                   </div>
@@ -422,7 +437,8 @@ export const SecuritySection: React.FC = () => {
                     size="sm"
                     onClick={() => handleRevokeSession(s.id)}
                     isLoading={revokingId === s.id}
-                    className="text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 h-8 px-2 shrink-0"
+                    className="text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 min-h-[36px] px-2.5 rounded-xl shrink-0"
+                    title="خاتمه این نشست"
                   >
                     <LogOut className="w-3.5 h-3.5 ml-1" />
                     <span>خاتمه</span>
@@ -500,7 +516,7 @@ export const SecuritySection: React.FC = () => {
       <Modal
         isOpen={isSetupModalOpen}
         onClose={() => setIsSetupModalOpen(false)}
-        title="راه‌اندازی احراز هویت دومرحله‌ای (2FA)"
+        title="راه‌اندازی احراز هویت دومرحله‌ای"
         maxWidth="md"
       >
         <div className="space-y-4 text-right">

@@ -198,25 +198,16 @@ export function getMonthDays1405(monthNumber: number, year: number = 1405): DayC
     );
     const holidayOccasion = matchingOccasions.find((o) => o.isHoliday);
 
-    // محاسبه دقیق روز هفته برای سال ۱۴۰۵:
-    // ۱ فروردین ۱۴۰۵ مصادف با شنبه ۲۱ مارس ۲۰۲۶ است.
-    // شنبه اندیس ۰ در تقویم ایرانی است.
-    let dayOfYear = 0;
-    for (let m = 1; m < monthNumber; m++) {
-      dayOfYear += PERSIAN_MONTHS[m - 1].days;
-    }
-    dayOfYear += d - 1;
-
-    // روز هفته در سال ۱۴۰۵: (۰ + dayOfYear) % 7
-    const dayOfWeek = dayOfYear % 7;
+    // تاریخ میلادی متناظر و محاسبه دقیق روز هفته
+    const { gy, gm, gd } = jalaali.toGregorian(year, monthNumber, d);
+    const gregorianStr = `${gy}-${String(gm).padStart(2, '0')}-${String(gd).padStart(2, '0')}`;
+    const gDate = new Date(gy, gm - 1, gd);
+    // روز هفته در گاه‌شماری ایرانی: شنبه = ۰, یک‌شنبه = ۱, ..., پنج‌شنبه = ۵, جمعه = ۶
+    const dayOfWeek = (gDate.getDay() + 1) % 7;
     const isFriday = dayOfWeek === 6;
 
     const isOfficialHoliday = Boolean(holidayOccasion) || isFriday;
     const holidayReason = holidayOccasion?.title || (isFriday ? 'تعطیل هفتگی (جمعه)' : undefined);
-
-    // تاریخ میلادی متناظر
-    const { gy, gm, gd } = jalaali.toGregorian(year, monthNumber, d);
-    const gregorianStr = `${gy}-${String(gm).padStart(2, '0')}-${String(gd).padStart(2, '0')}`;
 
     result.push({
       year,

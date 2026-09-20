@@ -517,6 +517,18 @@
   scrollbar-width: none;
 }
 
+/* حداقل استاندارد ارگونومیک تاچ‌تارگت موبایل (WCAG AA 2.5.5 / 2.5.8) */
+.touch-target-min {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+@media (max-width: 640px) {
+  .mobile-touch-target {
+    min-height: 44px;
+  }
+}
+
 /* قفل قطعی اسکرول پس‌زمینه هنگام باز بودن مودال‌ها، دیالوگ‌ها و دراورها */
 html.modal-scroll-locked,
 body.modal-scroll-locked {
@@ -529,3 +541,4 @@ body.modal-scroll-locked #root,
 body.modal-scroll-locked [data-scroll-container] {
   overflow: hidden !important;
 }
+

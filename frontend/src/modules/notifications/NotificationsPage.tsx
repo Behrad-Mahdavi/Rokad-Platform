@@ -5,7 +5,6 @@ import { apiClient } from '../../lib/api/client';
 import { useWebPush } from '../../hooks/useWebPush';
 import { toPersianDigits } from '../../lib/utils';
 import { Card, CardContent } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import {
   Bell,
@@ -112,14 +111,14 @@ export const NotificationsPage: React.FC = () => {
             type="button"
             onClick={() => navigate(-1)}
             aria-label="بازگشت"
-            className="p-2 rounded-xl bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:text-primary transition-all active:scale-95 shadow-2xs"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:text-primary transition-all active:scale-95 shadow-2xs flex items-center justify-center cursor-pointer"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-black text-lg sm:text-xl text-ink-darker dark:text-white">
-                اعلان‌ها و رویدادها
+                اعلان‌ها
               </h1>
               {unreadCount > 0 && (
                 <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[11px] font-bold">
@@ -149,10 +148,10 @@ export const NotificationsPage: React.FC = () => {
             <div className="space-y-1.5 text-right">
               <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-bold text-xs">
                 <Smartphone className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                <span>فعال‌سازی اعلان در آیفون (iOS)</span>
+                <span>فعال‌سازی در آیفون</span>
               </div>
               <p className="text-[11px] text-gray-600 dark:text-gray-300 leading-relaxed">
-                جهت دریافت نوتیفیکیشن در آیفون، ابتدا دکمه <span className="font-bold text-gray-800 dark:text-gray-100">Share (اشتراک‌گذاری)</span> در نوار سافاری را لمس و گزینه <span className="font-bold text-primary">«Add to Home Screen»</span> را انتخاب فرمایید.
+                برای دریافت اعلان در آیفون، دکمه اشتراک‌گذاری در سافاری را زده و گزینه «افزودن به صفحه اصلی» را انتخاب فرمایید.
               </p>
             </div>
           ) : isPushSubscribed ? (
@@ -163,7 +162,7 @@ export const NotificationsPage: React.FC = () => {
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                 </span>
                 <span className="text-xs font-bold text-emerald-800 dark:text-emerald-400">
-                  اعلان‌های آنلاین روی این دستگاه فعال است
+                  اعلان‌های آنلاین فعال است
                 </span>
               </div>
               <div className="flex items-center gap-2 self-end sm:self-auto">
@@ -181,7 +180,7 @@ export const NotificationsPage: React.FC = () => {
                     }
                   }}
                   disabled={isPushLoading}
-                  className="px-2.5 py-1 bg-white dark:bg-[#1C2536] hover:bg-emerald-50 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700 rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
+                  className="px-3 py-1.5 min-h-[38px] bg-white dark:bg-[#1C2536] hover:bg-emerald-50 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700 rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
                 >
                   {isPushLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
                   <span>{testPushStatus || 'تست اعلان'}</span>
@@ -190,23 +189,21 @@ export const NotificationsPage: React.FC = () => {
                   type="button"
                   onClick={() => unsubscribePush()}
                   disabled={isPushLoading}
-                  className="text-[10px] text-gray-400 hover:text-rose-500 transition-colors cursor-pointer"
+                  className="text-[10px] text-gray-400 hover:text-rose-500 transition-colors cursor-pointer px-2 min-h-[38px] flex items-center"
                 >
-                  خاموش
+                  غیرفعال
                 </button>
               </div>
             </div>
           ) : (
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
+              <div className="flex items-center gap-2">
                 <BellRing className="w-4 h-4 text-primary shrink-0" />
-                <span className="text-xs font-bold text-ink-darker dark:text-white truncate">
-                  دریافت فوری پیام‌ها و هشدارهای مهم
-                </span>
+                <span className="text-xs font-bold text-ink-darker dark:text-white">دریافت اعلان‌های سامانه</span>
               </div>
               <Button
-                size="sm"
                 variant="primary"
+                size="sm"
                 onClick={async () => {
                   const ok = await subscribePush();
                   if (ok) {
@@ -217,7 +214,7 @@ export const NotificationsPage: React.FC = () => {
                 className="text-xs shrink-0"
               >
                 {isPushLoading ? <Loader2 className="w-3 h-3 animate-spin ml-1" /> : <CheckCircle2 className="w-3.5 h-3.5 ml-1" />}
-                فعال‌سازی در این دستگاه
+                فعال‌سازی
               </Button>
             </div>
           )}
@@ -229,7 +226,7 @@ export const NotificationsPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setFilter('ALL')}
-          className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center ${
             filter === 'ALL'
               ? 'bg-primary text-white shadow-xs'
               : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -240,7 +237,7 @@ export const NotificationsPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setFilter('UNREAD')}
-          className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center ${
             filter === 'UNREAD'
               ? 'bg-primary text-white shadow-xs'
               : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -292,17 +289,14 @@ export const NotificationsPage: React.FC = () => {
                 {notif.desc}
               </p>
 
-              <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800 text-[11px]">
-                <Badge variant={notif.badge || 'neutral'} className="text-[10px] py-0.5 px-2">
-                  {notif.type}
-                </Badge>
-                {notif.targetUrl && (
+              {notif.targetUrl && (
+                <div className="flex items-center justify-end pt-2 border-t border-gray-100 dark:border-gray-800 text-[11px]">
                   <span className="text-primary font-bold flex items-center gap-1 group-hover:underline">
-                    <span>مشاهده و جزئیات</span>
+                    <span>مشاهده جزئیات</span>
                     <ExternalLink className="w-3.5 h-3.5 ml-0.5" />
                   </span>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           ))
         )}
