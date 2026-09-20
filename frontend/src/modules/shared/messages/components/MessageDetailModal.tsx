@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../../../../components/ui/Modal';
 import { Button } from '../../../../components/ui/Button';
+import { FormattedMessageView } from '../../../../components/ui/FormattedMessageView';
 import { apiClient } from '../../../../lib/api/client';
 import { toast } from '../../../../components/ui/toast/toast';
 import { gregorianToJalaliStr, toPersianDigits } from '../../../../utils/jalali';
@@ -206,8 +207,8 @@ export const MessageDetailModal: React.FC<Props> = ({
             </div>
 
             {/* Message Body */}
-            <div className="p-4 rounded-2xl bg-gray-50/80 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 text-xs sm:text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed min-h-28">
-              {data.body}
+            <div className="p-4 rounded-2xl bg-gray-50/80 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 text-xs sm:text-sm text-gray-800 dark:text-gray-200 leading-relaxed min-h-28">
+              <FormattedMessageView content={data.body} />
             </div>
 
             {/* Attachments Section */}

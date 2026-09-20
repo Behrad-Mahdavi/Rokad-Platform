@@ -4,7 +4,6 @@ import { useAuthStore } from '../../lib/auth/auth-store';
 import { useTenantStore } from '../../lib/auth/tenant-store';
 import { apiClient } from '../../lib/api/client';
 import { formatToJalali, toPersianDigits } from '../../lib/utils';
-import { Badge } from '../../components/ui/Badge';
 import { HomeBannerSlider } from './components/HomeBannerSlider';
 import { BannerSettingsModal } from './components/BannerSettingsModal';
 import {
@@ -24,11 +23,11 @@ import {
   Sliders,
   FileQuestion,
   GraduationCap,
-  Bell,
   LayoutDashboard,
   ChevronLeft,
   Compass,
-  Target,
+  CalendarRange,
+  Scale,
   Sparkles,
   MessageSquare,
 } from 'lucide-react';
@@ -209,9 +208,9 @@ export const SuperAppHomePage: React.FC = () => {
           },
           {
             id: 'matters',
-            title: 'امور انضباطی',
+            title: 'انضباطی/تشویقی',
             href: '/app/teacher/matters',
-            icon: ShieldAlert,
+            icon: Scale,
             iconBg: 'bg-college-light dark:bg-[#38260D]',
             iconColor: 'text-third dark:text-[#FBBF24]',
           },
@@ -270,9 +269,9 @@ export const SuperAppHomePage: React.FC = () => {
           },
           {
             id: 'matters',
-            title: 'امور انضباطی',
+            title: 'انضباطی/تشویقی',
             href: '/app/admin/matters',
-            icon: ShieldAlert,
+            icon: Scale,
             iconBg: 'bg-college-light dark:bg-[#38260D]',
             iconColor: 'text-third dark:text-[#FBBF24]',
           },
@@ -390,9 +389,9 @@ export const SuperAppHomePage: React.FC = () => {
           },
           {
             id: 'matters',
-            title: 'امور انضباطی',
+            title: 'انضباطی/تشویقی',
             href: '/app/parent/matters',
-            icon: ShieldAlert,
+            icon: Scale,
             iconBg: 'bg-college-light dark:bg-[#38260D]',
             iconColor: 'text-third dark:text-[#FBBF24]',
           },
@@ -410,17 +409,17 @@ export const SuperAppHomePage: React.FC = () => {
         return [
           {
             id: 'coaching-desk',
-            title: 'میز کار کوچینگ',
+            title: 'کوچینگ',
             href: '/app/coaching',
-            icon: Target,
+            icon: Compass,
             iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
             iconColor: 'text-primary-dark dark:text-primary',
           },
           {
             id: 'roadmap-events',
-            title: 'رودمپ رویدادها',
+            title: 'رویدادها',
             href: '/app/events',
-            icon: Compass,
+            icon: CalendarRange,
             iconBg: 'bg-college-light dark:bg-[#38260D]',
             iconColor: 'text-third dark:text-[#FBBF24]',
           },
@@ -490,7 +489,7 @@ export const SuperAppHomePage: React.FC = () => {
           },
           {
             id: 'materials',
-            title: 'جزوات و منابع',
+            title: 'محتوای آموزشی',
             href: '/app/student/materials',
             icon: BookOpen,
             iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
@@ -498,9 +497,9 @@ export const SuperAppHomePage: React.FC = () => {
           },
           {
             id: 'matters',
-            title: 'امور انضباطی',
+            title: 'انضباطی/تشویقی',
             href: '/app/student/matters',
-            icon: ShieldAlert,
+            icon: Scale,
             iconBg: 'bg-female-light dark:bg-[#3D1426]',
             iconColor: 'text-girl dark:text-[#F472B6]',
           },
@@ -514,18 +513,18 @@ export const SuperAppHomePage: React.FC = () => {
   const sharedCards: SuperAppCard[] = [
     {
       id: 'events',
-      title: 'رویدادها و رودمپ',
+      title: 'رویدادها',
       href: '/app/events',
-      icon: Compass,
+      icon: CalendarRange,
       iconBg: 'bg-college-light dark:bg-[#38260D]',
       iconColor: 'text-third dark:text-[#FBBF24]',
       badge: eventsCount > 0 ? toPersianDigits(eventsCount) : undefined,
     },
     {
       id: 'coaching',
-      title: 'کوچینگ و مربی‌گری',
+      title: 'کوچینگ',
       href: '/app/coaching',
-      icon: Target,
+      icon: Compass,
       iconBg: 'bg-club-light dark:bg-[#2A173E]',
       iconColor: 'text-club dark:text-[#C084FC]',
     },
@@ -550,125 +549,242 @@ export const SuperAppHomePage: React.FC = () => {
 
   const academicCards = getAcademicCards();
 
+  // Determine if this is a Girls or Boys account based on tenant theme/slug/name or user profile
+  const isGirlsAccount =
+    currentTenant?.slug?.includes('girl') ||
+    currentTenant?.theme === 'female' ||
+    currentTenant?.name?.includes('دخترانه') ||
+    (user as any)?.gender === 'FEMALE';
+
+  // Design System Persona Tokens: Blue (Male/Sec) vs Pink (Female/Girl)
+  const welcomeTheme = isGirlsAccount
+    ? {
+        gradient:
+          'bg-gradient-to-l from-girl via-[#EA2D6D] to-[#CA1752] dark:from-[#650B29] dark:via-[#520921] dark:to-[#3F0719]',
+        btnText:
+          'text-girl dark:text-pink-400 hover:text-[#CA1752] dark:hover:text-white',
+        btnIcon: 'text-girl dark:text-pink-400',
+      }
+    : {
+        gradient:
+          'bg-gradient-to-l from-sec via-[#283570] to-[#1A2248] dark:from-[#182044] dark:via-[#131A38] dark:to-[#0E142C]',
+        btnText:
+          'text-sec dark:text-[#8194EE] hover:text-[#283570] dark:hover:text-white',
+        btnIcon: 'text-sec dark:text-[#8194EE]',
+      };
+
+  // 1- پیام ها و برنامه هفتگی
+  const studentRow1: SuperAppCard[] = [
+    {
+      id: 'messages',
+      title: 'پیام‌ها',
+      href: '/app/messages',
+      icon: MessageSquare,
+      iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+      iconColor: 'text-primary-dark dark:text-primary',
+      badge: unreadMessagesCount > 0 ? toPersianDigits(unreadMessagesCount) : undefined,
+    },
+    {
+      id: 'schedule',
+      title: 'برنامه هفتگی',
+      href: '/app/student/schedule',
+      icon: CalendarDays,
+      iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+      iconColor: 'text-primary-dark dark:text-primary',
+    },
+  ];
+
+  // 2- تکالیف، آزمون ها و نمرات و کارنامه
+  const studentRow2: SuperAppCard[] = [
+    {
+      id: 'homework',
+      title: 'تکالیف',
+      href: '/app/student/homework',
+      icon: FileCheck,
+      iconBg: 'bg-club-light dark:bg-[#2A173E]',
+      iconColor: 'text-club dark:text-[#C084FC]',
+      badge: homeworkCount > 0 ? toPersianDigits(homeworkCount) : undefined,
+    },
+    {
+      id: 'exams',
+      title: 'آزمون‌ها',
+      href: '/app/student/exams',
+      icon: HelpCircle,
+      iconBg: 'bg-college-light dark:bg-[#38260D]',
+      iconColor: 'text-third dark:text-[#FBBF24]',
+      badge: examsCount > 0 ? toPersianDigits(examsCount) : undefined,
+    },
+    {
+      id: 'grades',
+      title: 'نمرات و کارنامه',
+      href: '/app/student/grades',
+      icon: BarChart3,
+      iconBg: 'bg-male-light dark:bg-[#182346]',
+      iconColor: 'text-sec dark:text-[#8194EE]',
+    },
+  ];
+
+  // 3- محتوای آموزشی، کوچینگ، انضباطی/تشویقی
+  const studentRow3: SuperAppCard[] = [
+    {
+      id: 'materials',
+      title: 'محتوای آموزشی',
+      href: '/app/student/materials',
+      icon: BookOpen,
+      iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+      iconColor: 'text-primary-dark dark:text-primary',
+    },
+    {
+      id: 'coaching',
+      title: 'کوچینگ',
+      href: '/app/coaching',
+      icon: Compass,
+      iconBg: 'bg-club-light dark:bg-[#2A173E]',
+      iconColor: 'text-club dark:text-[#C084FC]',
+    },
+    {
+      id: 'matters',
+      title: 'انضباطی/تشویقی',
+      href: '/app/student/matters',
+      icon: Scale,
+      iconBg: 'bg-female-light dark:bg-[#3D1426]',
+      iconColor: 'text-girl dark:text-[#F472B6]',
+    },
+  ];
+
+  // 4- رویدادها و نظرسنجی
+  const studentRow4: SuperAppCard[] = [
+    {
+      id: 'events',
+      title: 'رویدادها',
+      href: '/app/events',
+      icon: CalendarRange,
+      iconBg: 'bg-college-light dark:bg-[#38260D]',
+      iconColor: 'text-third dark:text-[#FBBF24]',
+      badge: eventsCount > 0 ? toPersianDigits(eventsCount) : undefined,
+    },
+    {
+      id: 'polls',
+      title: 'نظرسنجی',
+      href: '/app/polls',
+      icon: Vote,
+      iconBg: 'bg-college-light dark:bg-[#38260D]',
+      iconColor: 'text-third dark:text-[#FBBF24]',
+    },
+  ];
+
+  const renderCard = (card: SuperAppCard) => (
+    <button
+      key={card.id}
+      type="button"
+      onClick={() => navigate(card.href)}
+      className="group relative flex flex-col items-center justify-center text-center p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#151C28] border-[1.5px] border-primary-dark/30 dark:border-gray-800 hover:border-primary dark:hover:border-primary shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] hover:shadow-[2.75px_2.75px_0_#59BBAF] transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer min-h-[96px] sm:min-h-[110px]"
+    >
+      {card.badge && (
+        <span className="absolute top-2.5 left-2.5 z-10 min-w-[20px] h-[20px] px-1.5 rounded-full bg-girl text-white text-[10px] font-black flex items-center justify-center leading-none border border-white dark:border-gray-800 shadow-xs select-none">
+          <span className="inline-block transform -translate-y-[0.5px]">{card.badge}</span>
+        </span>
+      )}
+
+      <div
+        className={`w-11 h-11 sm:w-13 sm:h-13 rounded-2xl flex items-center justify-center mb-2 transition-transform group-hover:scale-105 shadow-2xs ${card.iconBg} ${card.iconColor}`}
+      >
+        <card.icon className="w-5 h-5 sm:w-6 sm:h-6" />
+      </div>
+
+      <span className="font-black text-xs sm:text-[13px] text-ink-darker dark:text-gray-100 group-hover:text-primary dark:group-hover:text-primary transition-colors text-center line-clamp-1">
+        {card.title}
+      </span>
+    </button>
+  );
+
   return (
     <div className="space-y-5 pb-8 animate-in fade-in duration-300">
       {/* 1. Home Top Banner Slider (Max 3 Slides: Events, Announcements, Custom) */}
       <HomeBannerSlider onOpenSettings={() => setIsBannerSettingsOpen(true)} />
 
-      {/* 2. Super-App Welcome Box: Name + Role next to it, Date on Left */}
-      <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#151C28] border-[1.5px] border-primary-dark/30 dark:border-gray-800 shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17]">
-        {/* Right side: Greeting, Name, and Role Badge */}
-        <div className="flex items-center gap-2 flex-wrap min-w-0">
-          <div className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
-          <span className="font-black text-sm sm:text-base text-ink-darker dark:text-white">
-            درود، {user?.firstName} {user?.lastName}
-          </span>
-          <Badge
-            variant="default"
-            className="text-[10px] sm:text-xs py-0.5 px-2 font-bold"
-          >
-            {getRoleTitle()}
-          </Badge>
-        </div>
-
-        {/* Left side: Persian Date */}
-        <div className="text-left shrink-0">
-          <span className="text-xs font-bold text-gray-500 dark:text-gray-300">
-            {liveDate}
-          </span>
-        </div>
-      </div>
-
-      {/* Rectangular Dashboard Button */}
-      <button
-        type="button"
-        onClick={() => navigate(getDashboardHref())}
-        className="group w-full flex items-center justify-between px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-white dark:bg-[#151C28] border-[1.5px] border-primary-dark/30 dark:border-gray-800 hover:border-primary dark:hover:border-primary shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] hover:shadow-[2.75px_2.75px_0_#59BBAF] transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer min-h-[50px] sm:min-h-[56px]"
+      {/* 2. Super-App Welcome Box: Dynamic Design System Theme (Blue for Boys, Pink for Girls) */}
+      <div
+        className={`relative overflow-hidden p-4 sm:p-5 rounded-2xl ${welcomeTheme.gradient} text-white transition-all`}
       >
-        <div className="flex items-center gap-2.5 sm:gap-3">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center bg-primary/10 text-primary shadow-2xs group-hover:scale-105 transition-transform">
-            <LayoutDashboard className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
+        {/* Subtle decorative glass orbs */}
+        <div className="absolute top-0 left-0 -ml-10 -mt-10 w-36 h-36 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+        <div className="absolute bottom-0 right-0 -mr-10 -mb-10 w-28 h-28 rounded-full bg-black/10 blur-2xl pointer-events-none" />
+
+        {/* Row 1: Greeting + Name on Right, Role Badge on Left */}
+        <div className="relative z-10 flex items-center justify-between gap-3 min-w-0">
+          {/* Right: Dot + User Name */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-white shrink-0 shadow-xs ring-2 ring-white/30 animate-pulse" />
+            <span className="font-black text-base sm:text-lg lg:text-xl text-white tracking-tight truncate">
+              درود، {user?.firstName} {user?.lastName}
+            </span>
           </div>
-          <span className="font-black text-sm sm:text-base text-ink-darker dark:text-white group-hover:text-primary dark:group-hover:text-primary transition-colors">
-            داشبورد
+
+          {/* Left: Role Badge */}
+          <span className="inline-flex items-center rounded-full bg-white/20 hover:bg-white/25 text-white border border-white/35 text-xs sm:text-[13px] py-1 px-3 sm:px-3.5 font-extrabold backdrop-blur-md shadow-2xs shrink-0 transition-colors">
+            {getRoleTitle()}
           </span>
         </div>
 
-        <div className="flex items-center gap-1 text-primary-dark dark:text-primary">
-          <span className="text-[11px] sm:text-xs font-bold hidden min-[360px]:inline">
-            ورود به پنل
-          </span>
-          <ChevronLeft className="w-4 h-4 sm:w-4.5 sm:h-4.5 group-hover:-translate-x-0.5 transition-transform" />
-        </div>
-      </button>
+        {/* Row 2: Date on Right, Dashboard Button on Left */}
+        <div className="relative z-10 mt-3.5 sm:mt-4 flex items-center justify-between gap-3 flex-wrap">
+          {/* Bottom Right: Persian Date */}
+          <div className="flex items-center gap-2 text-xs sm:text-[13px] font-bold text-white/95">
+            <CalendarDays className="w-4 h-4 text-white/85 shrink-0" />
+            <span>{liveDate}</span>
+          </div>
 
-      {/* Academic Cards */}
-      <div className="space-y-2.5">
-        <h2 className="font-black text-sm sm:text-base text-ink-darker dark:text-white px-1">
-          بخش‌های آموزشی
-        </h2>
-
-        <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
-          {academicCards.map((card) => (
-            <button
-              key={card.id}
-              type="button"
-              onClick={() => navigate(card.href)}
-              className="group relative flex flex-col items-center justify-center text-center p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#151C28] border-[1.5px] border-primary-dark/30 dark:border-gray-800 hover:border-primary dark:hover:border-primary shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] hover:shadow-[2.75px_2.75px_0_#59BBAF] transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer min-h-[96px] sm:min-h-[110px]"
-            >
-              {card.badge && (
-                <span className="absolute top-2 left-2 px-1.5 py-0.2 rounded-full bg-girl text-white text-[9px] font-black border border-white dark:border-gray-800 shadow-xs">
-                  {card.badge}
-                </span>
-              )}
-
-              <div
-                className={`w-11 h-11 sm:w-13 sm:h-13 rounded-2xl flex items-center justify-center mb-2 transition-transform group-hover:scale-105 shadow-2xs ${card.iconBg} ${card.iconColor}`}
-              >
-                <card.icon className="w-5 h-5 sm:w-6 sm:h-6" />
-              </div>
-
-              <span className="font-black text-xs sm:text-[13px] text-ink-darker dark:text-gray-100 group-hover:text-primary dark:group-hover:text-primary transition-colors text-center line-clamp-1">
-                {card.title}
-              </span>
-            </button>
-          ))}
+          {/* Bottom Left: Dashboard Button */}
+          <button
+            type="button"
+            onClick={() => navigate(getDashboardHref())}
+            className={`group inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl bg-white dark:bg-[#151C28] ${welcomeTheme.btnText} font-black text-xs sm:text-[13px] shadow-[2px_2px_0_rgba(0,0,0,0.12)] dark:shadow-[2px_2px_0_rgba(255,255,255,0.15)] hover:shadow-[2.5px_2.5px_0_rgba(0,0,0,0.18)] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer shrink-0 mr-auto`}
+          >
+            <LayoutDashboard
+              className={`w-4 h-4 ${welcomeTheme.btnIcon} group-hover:scale-110 transition-transform`}
+            />
+            <span>ورود به داشبورد</span>
+            <ChevronLeft
+              className={`w-3.5 h-3.5 ${welcomeTheme.btnIcon} group-hover:-translate-x-0.5 transition-transform`}
+            />
+          </button>
         </div>
       </div>
 
-      {/* Shared Services Cards */}
-      <div className="space-y-2.5 pt-1">
-        <h2 className="font-black text-sm sm:text-base text-ink-darker dark:text-white px-1">
-          ارتباطات و خدمات
-        </h2>
+      {/* Student Cards (4 Custom Rows) vs Other Roles */}
+      {user?.role === 'STUDENT' || !user?.role ? (
+        <div className="space-y-2.5 sm:space-y-3.5">
+          {/* 1- پیام ها و برنامه هفتگی */}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
+            {studentRow1.map(renderCard)}
+          </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5">
-          {sharedCards.map((card) => (
-            <button
-              key={card.id}
-              type="button"
-              onClick={() => navigate(card.href)}
-              className="group relative flex flex-col items-center justify-center text-center p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#151C28] border-[1.5px] border-primary-dark/30 dark:border-gray-800 hover:border-primary dark:hover:border-primary shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] hover:shadow-[2.75px_2.75px_0_#59BBAF] transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer min-h-[96px] sm:min-h-[110px]"
-            >
-              {card.badge && (
-                <span className="absolute top-2 left-2 px-1.5 py-0.2 rounded-full bg-girl text-white text-[9px] font-black border border-white dark:border-gray-800 shadow-xs">
-                  {card.badge}
-                </span>
-              )}
+          {/* 2- تکالیف، آزمون ها و نمرات و کارنامه */}
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+            {studentRow2.map(renderCard)}
+          </div>
 
-              <div
-                className={`w-11 h-11 sm:w-13 sm:h-13 rounded-2xl flex items-center justify-center mb-2 transition-transform group-hover:scale-105 shadow-2xs ${card.iconBg} ${card.iconColor}`}
-              >
-                <card.icon className="w-5 h-5 sm:w-6 sm:h-6" />
-              </div>
+          {/* 3- محتوای آموزشی، کوچینگ، انضباطی/تشویقی */}
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+            {studentRow3.map(renderCard)}
+          </div>
 
-              <span className="font-black text-xs sm:text-[13px] text-ink-darker dark:text-gray-100 group-hover:text-primary dark:group-hover:text-primary transition-colors text-center line-clamp-1">
-                {card.title}
-              </span>
-            </button>
-          ))}
+          {/* 4- رویدادها و نظرسنجی */}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
+            {studentRow4.map(renderCard)}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="space-y-2.5 sm:space-y-3.5">
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+            {academicCards.map(renderCard)}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5">
+            {sharedCards.map(renderCard)}
+          </div>
+        </div>
+      )}
       {/* Admin Banner Settings Modal */}
       <BannerSettingsModal
         isOpen={isBannerSettingsOpen}

@@ -14,6 +14,20 @@ export default {
           dark: '#438C83',
           darker: '#1F413D',
         },
+        // Global Neutral Palette Alignment: Map zinc to cool slate/navy
+        zinc: {
+          50: '#F8FAFC',
+          100: '#F1F5F9',
+          200: '#E2E8F0',
+          300: '#CBD5E1',
+          400: '#94A3B8',
+          500: '#64748B',
+          600: '#475569',
+          700: '#242F42',
+          800: '#1C2536',
+          900: '#151C28',
+          950: '#0B0F17',
+        },
         girl: {
           DEFAULT: '#E0195B',
           hover: '#CA1752',

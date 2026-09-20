@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../../../../components/ui/Modal';
 import { Button } from '../../../../components/ui/Button';
 import { Input } from '../../../../components/ui/Input';
-import { Select } from '../../../../components/ui/Select';
+import { RichTextEditor } from '../../../../components/ui/RichTextEditor';
 import { apiClient } from '../../../../lib/api/client';
 import { toast } from '../../../../components/ui/toast/toast';
 import { toPersianDigits } from '../../../../lib/utils';
+import { useAuthStore } from '../../../../lib/auth/auth-store';
 import {
   AllowedRecipientsData,
   MessageAttachment,
@@ -27,6 +28,11 @@ import {
   Search,
   Check,
   UploadCloud,
+  User,
+  AlertTriangle,
+  Globe,
+  CheckCircle2,
+  ChevronDown,
 } from 'lucide-react';
 
 interface Props {
@@ -38,6 +44,114 @@ interface Props {
   defaultSubject?: string;
 }
 
+interface CustomDropdownOption {
+  value: string;
+  label: string;
+  icon?: React.ComponentType<{ className?: string }>;
+}
+
+interface CustomDropdownProps {
+  label?: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  value: string;
+  onChange: (value: string) => void;
+  options: CustomDropdownOption[];
+  placeholder?: string;
+  className?: string;
+}
+
+// Custom Styled Dropdown Component with smooth popover, checkmarks, and custom styling
+const CustomDropdown: React.FC<CustomDropdownProps> = ({
+  label,
+  icon: Icon,
+  value,
+  onChange,
+  options,
+  placeholder = 'انتخاب کنید...',
+  className = '',
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  return (
+    <div className={`space-y-1.5 text-right relative ${className}`} ref={dropdownRef}>
+      {label && (
+        <label className="text-xs font-black text-ink-darker dark:text-white block">
+          {label}
+        </label>
+      )}
+
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setIsOpen((prev) => !prev)}
+          className={`w-full h-11 px-3.5 rounded-xl border-[1.5px] text-xs sm:text-sm font-bold flex items-center justify-between transition-all cursor-pointer select-none active:translate-x-[0.5px] active:translate-y-[0.5px] ${
+            isOpen
+              ? 'border-primary bg-white dark:bg-[#151C28] ring-2 ring-primary/15 shadow-[2px_2px_0_#59BBAF]'
+              : 'border-gray-200 dark:border-gray-700 bg-gray-50/90 dark:bg-gray-900 text-ink-darker dark:text-white hover:border-primary/50 shadow-2xs'
+          }`}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            {Icon && <Icon className="w-4 h-4 text-primary shrink-0" />}
+            <span className="truncate">
+              {selectedOption ? selectedOption.label : placeholder}
+            </span>
+          </div>
+
+          <ChevronDown
+            className={`w-4 h-4 text-gray-400 transition-transform duration-200 shrink-0 ${
+              isOpen ? 'rotate-180 text-primary' : ''
+            }`}
+          />
+        </button>
+
+        {isOpen && (
+          <div className="absolute top-full right-0 left-0 mt-1.5 z-50 p-1.5 bg-white dark:bg-[#151C28] rounded-2xl border-[1.5px] border-primary-dark/25 dark:border-gray-700 shadow-xl max-h-56 overflow-y-auto space-y-0.5 animate-in fade-in-50 zoom-in-95 duration-150">
+            {options.map((opt) => {
+              const isSelected = opt.value === value;
+              const OptIcon = opt.icon;
+              return (
+                <div
+                  key={opt.value}
+                  onClick={() => {
+                    onChange(opt.value);
+                    setIsOpen(false);
+                  }}
+                  className={`px-3 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between cursor-pointer transition-colors ${
+                    isSelected
+                      ? 'bg-primary/10 dark:bg-primary/20 text-primary font-black border border-primary/25'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-800/80 text-ink-normal dark:text-gray-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    {OptIcon && <OptIcon className="w-3.5 h-3.5 text-gray-400 shrink-0" />}
+                    <span className="truncate">{opt.label}</span>
+                  </div>
+                  {isSelected && <Check className="w-4 h-4 text-primary shrink-0 mr-2" />}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const ComposeMessageModal: React.FC<Props> = ({
   isOpen,
   onClose,
@@ -46,16 +160,26 @@ export const ComposeMessageModal: React.FC<Props> = ({
   defaultRecipientName,
   defaultSubject,
 }) => {
+  const currentUser = useAuthStore((s) => s.user);
+  const userRole = currentUser?.role || '';
+  const isStudentOrParent = userRole === 'STUDENT' || userRole === 'PARENT';
+  const canSendGroup = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF', 'TEACHER'].includes(userRole);
+
   const [allowed, setAllowed] = useState<AllowedRecipientsData | null>(null);
   const [loadingAllowed, setLoadingAllowed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
 
+  // High-level Recipient Mode: Individual vs Group
+  const [recipientMode, setRecipientMode] = useState<'INDIVIDUAL' | 'GROUP'>('INDIVIDUAL');
+
+  // Group Category: Classroom | Role | Broadcast All
+  const [groupCategory, setGroupCategory] = useState<'CLASSROOM' | 'ROLE' | 'ALL'>('CLASSROOM');
+
   // Form State
   const [title, setTitle] = useState(defaultSubject || '');
   const [body, setBody] = useState('');
   const [priority, setPriority] = useState<MessagePriority>('NORMAL');
-  const [targetType, setTargetType] = useState<MessageTargetType>('INDIVIDUAL');
   const [targetAudience, setTargetAudience] = useState<MessageTargetAudience>('ALL');
   const [targetClassroomId, setTargetClassroomId] = useState<string>('');
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>(
@@ -63,8 +187,9 @@ export const ComposeMessageModal: React.FC<Props> = ({
   );
   const [attachments, setAttachments] = useState<MessageAttachment[]>([]);
 
-  // User search query for individual selector
+  // User search query and role filter for individual selector
   const [userSearch, setUserSearch] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState<string>('ALL');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load allowed recipients when modal opens
@@ -78,17 +203,12 @@ export const ComposeMessageModal: React.FC<Props> = ({
         const data = res.data?.data || res.data;
         setAllowed(data);
 
-        // Auto-select initial target type based on permissions
+        // Pre-configure initial state
         if (defaultRecipientId) {
-          setTargetType('INDIVIDUAL');
+          setRecipientMode('INDIVIDUAL');
           setSelectedUserIds([defaultRecipientId]);
-        } else if (data.canBroadcast) {
-          setTargetType('ALL');
-        } else if (data.canClassroom && data.classrooms?.length > 0) {
-          setTargetType('CLASSROOM');
+        } else if (data.classrooms?.length > 0) {
           setTargetClassroomId(data.classrooms[0].id);
-        } else {
-          setTargetType('INDIVIDUAL');
         }
       } catch (err: any) {
         toast.error('خطا در دریافت فهرست مخاطبان مجاز');
@@ -125,7 +245,7 @@ export const ComposeMessageModal: React.FC<Props> = ({
         const uploadData = uploadRes.data?.data || uploadRes.data;
         fileUrl = uploadData?.fileUrl || uploadData?.url;
       } catch {
-        // Fallback: convert small file to base64 Data URL so user is never blocked
+        // Fallback: convert small file to base64 Data URL
         fileUrl = await new Promise((resolve) => {
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result as string);
@@ -173,15 +293,21 @@ export const ComposeMessageModal: React.FC<Props> = ({
       return;
     }
 
-    if (targetType === 'INDIVIDUAL' && selectedUserIds.length === 0) {
-      toast.error('لطفاً حداقل یک مخاطب برای پیام خود انتخاب کنید');
+    // Force individual mode for students and parents
+    const effectiveMode = isStudentOrParent ? 'INDIVIDUAL' : recipientMode;
+
+    if (effectiveMode === 'INDIVIDUAL' && selectedUserIds.length === 0) {
+      toast.error('لطفاً حداقل یک مخاطب برای ارسال پیام انتخاب کنید');
       return;
     }
 
-    if (targetType === 'CLASSROOM' && !targetClassroomId) {
+    if (effectiveMode === 'GROUP' && groupCategory === 'CLASSROOM' && !targetClassroomId) {
       toast.error('لطفاً کلاس آموزشی مورد نظر را انتخاب نمایید');
       return;
     }
+
+    const resolvedTargetType: MessageTargetType =
+      effectiveMode === 'INDIVIDUAL' ? 'INDIVIDUAL' : groupCategory;
 
     try {
       setSubmitting(true);
@@ -189,10 +315,13 @@ export const ComposeMessageModal: React.FC<Props> = ({
         title: title.trim(),
         body: body.trim(),
         priority,
-        targetType,
-        targetAudience,
-        targetClassroomId: targetType === 'CLASSROOM' ? targetClassroomId : undefined,
-        recipientIds: targetType === 'INDIVIDUAL' ? selectedUserIds : undefined,
+        targetType: resolvedTargetType,
+        targetAudience: effectiveMode === 'GROUP' ? targetAudience : undefined,
+        targetClassroomId:
+          effectiveMode === 'GROUP' && groupCategory === 'CLASSROOM'
+            ? targetClassroomId
+            : undefined,
+        recipientIds: effectiveMode === 'INDIVIDUAL' ? selectedUserIds : undefined,
         attachments,
       });
 
@@ -208,192 +337,262 @@ export const ComposeMessageModal: React.FC<Props> = ({
   };
 
   const filteredUsers = (allowed?.users || []).filter((u) => {
+    if (userRoleFilter !== 'ALL') {
+      if (userRoleFilter === 'ADMIN' && !['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF'].includes(u.role)) {
+        return false;
+      }
+      if (userRoleFilter === 'TEACHER' && u.role !== 'TEACHER') return false;
+      if (userRoleFilter === 'STUDENT' && u.role !== 'STUDENT') return false;
+      if (userRoleFilter === 'PARENT' && u.role !== 'PARENT') return false;
+    }
+
     if (!userSearch.trim()) return true;
     const q = userSearch.toLowerCase().trim();
     const fullName = `${u.firstName} ${u.lastName}`.toLowerCase();
     const roleName = u.role.toLowerCase();
     const cls = (u.classroomName || '').toLowerCase();
-    return fullName.includes(q) || roleName.includes(q) || cls.includes(q);
+    const child = (u.childName || '').toLowerCase();
+    return (
+      fullName.includes(q) ||
+      roleName.includes(q) ||
+      cls.includes(q) ||
+      child.includes(q)
+    );
   });
 
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'SUPER_ADMIN':
       case 'SCHOOL_ADMIN':
-        return <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 font-bold">مدیریت</span>;
+        return (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-club-light dark:bg-[#2A173E] text-club dark:text-[#C084FC] border border-club/30 font-bold">
+            مدیریت
+          </span>
+        );
+      case 'STAFF':
+        return (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-club-light dark:bg-[#2A173E] text-club dark:text-[#C084FC] border border-club/30 font-bold">
+            معاونت / کادر
+          </span>
+        );
       case 'TEACHER':
-        return <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 font-bold">استاد / دبیر</span>;
+        return (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-male-light dark:bg-[#182346] text-sec dark:text-[#8194EE] border border-sec/30 font-bold">
+            استاد / مربی
+          </span>
+        );
       case 'STUDENT':
-        return <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 font-bold">هنرجو</span>;
+        return (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-ecosystem-light dark:bg-[#163330] text-primary-dark dark:text-primary border border-primary/30 font-bold">
+            دانش‌آموز
+          </span>
+        );
       case 'PARENT':
-        return <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 font-bold">ولی دانش‌آموز</span>;
+        return (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-college-light dark:bg-[#38260D] text-third dark:text-[#FBBF24] border border-third/30 font-bold">
+            ولی دانش‌آموز
+          </span>
+        );
       default:
-        return <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 font-bold">کادر</span>;
+        return (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold">
+            کادر
+          </span>
+        );
     }
   };
+
+  const selectedUsersList = (allowed?.users || []).filter((u) =>
+    selectedUserIds.includes(u.id),
+  );
+
+  // Classroom options for dropdown
+  const classroomOptions: CustomDropdownOption[] = (allowed?.classrooms || []).map((cls) => ({
+    value: cls.id,
+    label: `کلاس ${cls.name} ${cls.code ? `(${cls.code})` : ''}`,
+    icon: Building,
+  }));
+
+  // Classroom audience options (no English words)
+  const classroomAudienceOptions: CustomDropdownOption[] = [
+    { value: 'ALL', label: 'هم دانش‌آموزان و هم اولیاء' },
+    { value: 'STUDENTS', label: 'فقط دانش‌آموزان کلاس' },
+    { value: 'PARENTS', label: 'فقط اولیای دانش‌آموزان کلاس' },
+  ];
+
+  // Role audience options (no English words)
+  const roleAudienceOptions: CustomDropdownOption[] = [
+    { value: 'TEACHERS', label: 'تمامی دبیران و اساتید مدرسه' },
+    { value: 'STUDENTS', label: 'تمامی دانش‌آموزان مدرسه' },
+    { value: 'PARENTS', label: 'تمامی اولیاء محترم' },
+    { value: 'STAFF', label: 'تمامی کادر اجرایی مدرسه' },
+    { value: 'ALL', label: 'تمام اعضای مدرسه (همگانی)' },
+  ];
+
+  // Priority options (all English words removed!)
+  const priorityOptions: CustomDropdownOption[] = [
+    { value: 'NORMAL', label: 'عادی' },
+    { value: 'IMPORTANT', label: 'مهم' },
+    { value: 'URGENT', label: 'فوری و اضطراری' },
+  ];
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="ارسال پیام جدید" maxWidth="xl">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* 1. Target Type Selector */}
-        {allowed && (
+        {/* 1. Primary Choice: پیام فردی vs پیام گروهی (برای دانش‌آموز و والدین حذف می‌شود) */}
+        {canSendGroup && !isStudentOrParent && (
           <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block">
-              نوع و نحوه ارسال پیام:
+            <label className="text-xs font-black text-ink-darker dark:text-white block">
+              نوع ارسال پیام:
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {allowed.canBroadcast && (
-                <button
-                  type="button"
-                  onClick={() => setTargetType('ALL')}
-                  className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
-                    targetType === 'ALL'
-                      ? 'border-primary bg-primary/10 text-primary shadow-xs'
-                      : 'border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-600 dark:text-gray-400'
-                  }`}
-                >
-                  <Users className="w-4 h-4" />
-                  <span>همگانی (کل مدرسه)</span>
-                </button>
-              )}
-
-              {allowed.canBroadcast && (
-                <button
-                  type="button"
-                  onClick={() => setTargetType('ROLE')}
-                  className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
-                    targetType === 'ROLE'
-                      ? 'border-primary bg-primary/10 text-primary shadow-xs'
-                      : 'border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-600 dark:text-gray-400'
-                  }`}
-                >
-                  <Shield className="w-4 h-4" />
-                  <span>بر اساس نقش</span>
-                </button>
-              )}
-
-              {allowed.canClassroom && allowed.classrooms.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTargetType('CLASSROOM');
-                    if (!targetClassroomId && allowed.classrooms.length > 0) {
-                      setTargetClassroomId(allowed.classrooms[0].id);
-                    }
-                  }}
-                  className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
-                    targetType === 'CLASSROOM'
-                      ? 'border-primary bg-primary/10 text-primary shadow-xs'
-                      : 'border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-600 dark:text-gray-400'
-                  }`}
-                >
-                  <Building className="w-4 h-4" />
-                  <span>کلاس آموزشی</span>
-                </button>
-              )}
-
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+              {/* Option 1: پیام فردی (بدون توضیحات اضافی) */}
               <button
                 type="button"
-                onClick={() => setTargetType('INDIVIDUAL')}
-                className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
-                  targetType === 'INDIVIDUAL'
-                    ? 'border-primary bg-primary/10 text-primary shadow-xs'
-                    : 'border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-600 dark:text-gray-400'
+                onClick={() => setRecipientMode('INDIVIDUAL')}
+                className={`h-12 px-4 rounded-xl border-[1.5px] transition-all flex items-center justify-center gap-2.5 cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
+                  recipientMode === 'INDIVIDUAL'
+                    ? 'border-primary bg-primary/10 dark:bg-primary/20 text-primary shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] font-black'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] hover:border-primary/40 text-gray-700 dark:text-gray-300 shadow-2xs font-bold'
                 }`}
               >
-                <GraduationCap className="w-4 h-4" />
-                <span>پیام فردی / مستقیم</span>
+                <User className="w-4 h-4" />
+                <span className="text-xs sm:text-sm">پیام فردی</span>
+              </button>
+
+              {/* Option 2: پیام گروهی (بدون توضیحات اضافی) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setRecipientMode('GROUP');
+                  if (allowed?.canClassroom && allowed.classrooms?.length > 0) {
+                    setGroupCategory('CLASSROOM');
+                    if (!targetClassroomId) setTargetClassroomId(allowed.classrooms[0].id);
+                  } else if (allowed?.canBroadcast) {
+                    setGroupCategory('ROLE');
+                  }
+                }}
+                className={`h-12 px-4 rounded-xl border-[1.5px] transition-all flex items-center justify-center gap-2.5 cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
+                  recipientMode === 'GROUP'
+                    ? 'border-primary bg-primary/10 dark:bg-primary/20 text-primary shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] font-black'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] hover:border-primary/40 text-gray-700 dark:text-gray-300 shadow-2xs font-bold'
+                }`}
+              >
+                <Users className="w-4 h-4" />
+                <span className="text-xs sm:text-sm">پیام گروهی</span>
               </button>
             </div>
           </div>
         )}
 
-        {/* 1.1 Target Sub-options: ROLE */}
-        {targetType === 'ROLE' && (
-          <div className="p-3 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2">
-            <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block">
-              انتخاب گروه مخاطبان:
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {[
-                { key: 'ALL', label: 'تمام اعضای مدرسه' },
-                { key: 'TEACHERS', label: 'تمامی دبیران و اساتید' },
-                { key: 'STUDENTS', label: 'تمامی دانش‌آموزان' },
-                { key: 'PARENTS', label: 'تمامی اولیاء محترم' },
-              ].map((opt) => (
-                <button
-                  key={opt.key}
-                  type="button"
-                  onClick={() => setTargetAudience(opt.key as any)}
-                  className={`px-3 py-2 rounded-lg text-xs font-bold border transition-all ${
-                    targetAudience === opt.key
-                      ? 'bg-primary text-white border-primary'
-                      : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 1.2 Target Sub-options: CLASSROOM */}
-        {targetType === 'CLASSROOM' && allowed && (
-          <div className="p-3.5 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Select
-                label="انتخاب کلاس:"
-                value={targetClassroomId}
-                onChange={(e) => setTargetClassroomId(e.target.value)}
-              >
-                {allowed.classrooms.map((cls) => (
-                  <option key={cls.id} value={cls.id}>
-                    {cls.name} {cls.code ? `(${cls.code})` : ''}
-                  </option>
-                ))}
-              </Select>
-
-              <Select
-                label="گیرندگان درون کلاس:"
-                value={targetAudience}
-                onChange={(e) => setTargetAudience(e.target.value as any)}
-              >
-                <option value="ALL">هم دانش‌آموزان و هم اولیاء</option>
-                <option value="STUDENTS">فقط دانش‌آموزان کلاس</option>
-                <option value="PARENTS">فقط اولیای دانش‌آموزان کلاس</option>
-              </Select>
-            </div>
-          </div>
-        )}
-
-        {/* 1.3 Target Sub-options: INDIVIDUAL USER PICKER */}
-        {targetType === 'INDIVIDUAL' && (
-          <div className="p-3.5 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2.5">
+        {/* 2. Recipient Selector: فردی یا گروهی */}
+        {isStudentOrParent || recipientMode === 'INDIVIDUAL' ? (
+          /* ================= INDIVIDUAL RECIPIENT PICKER ================= */
+          <div className="p-3.5 sm:p-4 bg-gray-50/80 dark:bg-[#151C28]/70 rounded-2xl border-[1.5px] border-primary-dark/20 dark:border-gray-800 space-y-3 shadow-2xs">
+            {/* Header with Selected Count */}
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+              <label className="text-xs font-black text-ink-darker dark:text-white">
                 انتخاب گیرنده یا گیرندگان پیام:
               </label>
-              <span className="text-[11px] font-mono text-primary font-bold">
-                {toPersianDigits(selectedUserIds.length)} مخاطب انتخاب شده
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary-dark dark:text-primary font-bold">
+                  {toPersianDigits(selectedUserIds.length)} مخاطب انتخاب شده
+                </span>
+                {selectedUserIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedUserIds([])}
+                    className="text-[10px] text-gray-400 hover:text-rose-500 font-bold transition-colors cursor-pointer"
+                  >
+                    لغو همه
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="relative">
-              <Search className="w-4 h-4 absolute right-3 top-2.5 text-gray-400" />
-              <input
-                type="text"
-                value={userSearch}
-                onChange={(e) => setUserSearch(e.target.value)}
-                placeholder="جستجوی نام یا نقش کاربر..."
-                className="w-full pr-9 pl-3 py-2 text-xs rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-primary"
-              />
+            {/* Selected Users Chips Bar */}
+            {selectedUsersList.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap max-h-20 overflow-y-auto p-2 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+                {selectedUsersList.map((u) => (
+                  <span
+                    key={u.id}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-lg bg-primary/10 text-primary-dark dark:text-primary border border-primary/20"
+                  >
+                    <span>
+                      {u.firstName} {u.lastName}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleUser(u.id)}
+                      className="hover:text-rose-600 p-0.5 rounded cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Search Input & Role Filters */}
+            <div className="space-y-2">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  placeholder="جستجوی نام، نام خانوادگی، نقش یا کلاس..."
+                  className="w-full h-10 pr-9 pl-3 text-xs rounded-xl border-[1.5px] border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-ink-darker dark:text-white outline-none focus:border-primary shadow-2xs font-medium"
+                />
+                {userSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setUserSearch('')}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Role filter chips */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[11px]">
+                {[
+                  { key: 'ALL', label: 'همه افراد' },
+                  { key: 'ADMIN', label: 'مدیر و معاون' },
+                  { key: 'TEACHER', label: 'مربیان و اساتید' },
+                  ...(!isStudentOrParent || userRole === 'STUDENT'
+                    ? [{ key: 'STUDENT', label: 'دانش‌آموزان' }]
+                    : []),
+                  ...(!isStudentOrParent || userRole === 'PARENT'
+                    ? [{ key: 'PARENT', label: 'اولیاء' }]
+                    : []),
+                ].map((rf) => (
+                  <button
+                    key={rf.key}
+                    type="button"
+                    onClick={() => setUserRoleFilter(rf.key)}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition-all shrink-0 cursor-pointer ${
+                      userRoleFilter === rf.key
+                        ? 'bg-primary text-white shadow-2xs'
+                        : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border border-gray-200/80 dark:border-gray-700/80 hover:border-primary/40'
+                    }`}
+                  >
+                    {rf.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1 divide-y divide-gray-100 dark:divide-gray-800">
-              {filteredUsers.length === 0 ? (
-                <div className="text-center py-4 text-xs text-gray-400">
-                  هیچ کاربری یافت نشد.
+            {/* Scrollable User List */}
+            <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 divide-y divide-gray-100 dark:divide-gray-800/80">
+              {loadingAllowed ? (
+                <div className="text-center py-6 text-xs text-gray-400">
+                  در حال بارگذاری فهرست مخاطبان مجاز...
+                </div>
+              ) : filteredUsers.length === 0 ? (
+                <div className="text-center py-6 text-xs text-gray-400">
+                  هیچ کاربری با این مشخصات در فهرست مخاطبان مجاز شما یافت نشد.
                 </div>
               ) : (
                 filteredUsers.map((u) => {
@@ -402,86 +601,189 @@ export const ComposeMessageModal: React.FC<Props> = ({
                     <div
                       key={u.id}
                       onClick={() => handleToggleUser(u.id)}
-                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
+                      className={`flex items-center justify-between p-2 sm:p-2.5 rounded-xl cursor-pointer transition-all ${
                         isSelected
-                          ? 'bg-primary/10 dark:bg-primary/20 text-primary font-bold'
-                          : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                          ? 'bg-primary/10 dark:bg-primary/20 text-primary border border-primary/30'
+                          : 'hover:bg-white dark:hover:bg-gray-900 text-ink-darker dark:text-gray-200'
                       }`}
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <div
-                          className={`w-4 h-4 rounded border flex items-center justify-center ${
-                            isSelected ? 'bg-primary border-primary text-white' : 'border-gray-400'
+                          className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
+                            isSelected
+                              ? 'bg-primary border-primary text-white shadow-2xs'
+                              : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800'
                           }`}
                         >
                           {isSelected && <Check className="w-3 h-3" />}
                         </div>
-                        <span className="text-xs">
-                          {u.firstName} {u.lastName}
-                        </span>
-                        {u.classroomName && (
-                          <span className="text-[10px] text-gray-400">({u.classroomName})</span>
-                        )}
-                        {u.childName && (
-                          <span className="text-[10px] text-gray-400">(ولیِ {u.childName})</span>
-                        )}
+
+                        {/* Avatar */}
+                        <div className="w-7 h-7 rounded-lg bg-ecosystem-light dark:bg-[#163330] text-primary-dark dark:text-primary flex items-center justify-center font-black text-xs shrink-0 border border-primary/20">
+                          {u.firstName?.[0] || 'ک'}
+                        </div>
+
+                        <div className="min-w-0">
+                          <span className="text-xs font-black block truncate">
+                            {u.firstName} {u.lastName}
+                          </span>
+                          <div className="flex items-center gap-1.5 text-[10px] text-gray-400 truncate">
+                            {u.classroomName && <span>کلاس: {u.classroomName}</span>}
+                            {u.childName && <span>ولیِ {u.childName}</span>}
+                          </div>
+                        </div>
                       </div>
-                      <div>{getRoleBadge(u.role)}</div>
+
+                      <div className="shrink-0 mr-2">{getRoleBadge(u.role)}</div>
                     </div>
                   );
                 })
               )}
             </div>
           </div>
+        ) : (
+          /* ================= GROUP RECIPIENT PICKER ================= */
+          <div className="p-3.5 sm:p-4 bg-gray-50/80 dark:bg-[#151C28]/70 rounded-2xl border-[1.5px] border-primary-dark/20 dark:border-gray-800 space-y-3.5 shadow-2xs">
+            {/* Group Category Selector Tabs */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-ink-darker dark:text-white block">
+                انتخاب گروه مخاطب:
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {allowed?.canClassroom && (
+                  <button
+                    type="button"
+                    onClick={() => setGroupCategory('CLASSROOM')}
+                    className={`py-2 px-3 rounded-xl border-[1.5px] text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      groupCategory === 'CLASSROOM'
+                        ? 'border-primary bg-primary text-white shadow-[2px_2px_0_#438C83]'
+                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:border-primary/40'
+                    }`}
+                  >
+                    <Building className="w-3.5 h-3.5" />
+                    <span>کلاس آموزشی</span>
+                  </button>
+                )}
+
+                {allowed?.canBroadcast && (
+                  <button
+                    type="button"
+                    onClick={() => setGroupCategory('ROLE')}
+                    className={`py-2 px-3 rounded-xl border-[1.5px] text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      groupCategory === 'ROLE'
+                        ? 'border-primary bg-primary text-white shadow-[2px_2px_0_#438C83]'
+                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:border-primary/40'
+                    }`}
+                  >
+                    <Shield className="w-3.5 h-3.5" />
+                    <span>گروه نقشی</span>
+                  </button>
+                )}
+
+                {allowed?.canBroadcast && (
+                  <button
+                    type="button"
+                    onClick={() => setGroupCategory('ALL')}
+                    className={`py-2 px-3 rounded-xl border-[1.5px] text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      groupCategory === 'ALL'
+                        ? 'border-primary bg-primary text-white shadow-[2px_2px_0_#438C83]'
+                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:border-primary/40'
+                    }`}
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>کل مدرسه</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Group Options: Classroom (Custom Dropdowns) */}
+            {groupCategory === 'CLASSROOM' && allowed && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <CustomDropdown
+                  label="انتخاب کلاس آموزشی:"
+                  icon={Building}
+                  value={targetClassroomId}
+                  onChange={setTargetClassroomId}
+                  options={classroomOptions}
+                  placeholder="کلاس مورد نظر را انتخاب نمایید..."
+                />
+
+                <CustomDropdown
+                  label="گیرندگان درون کلاس:"
+                  icon={Users}
+                  value={targetAudience}
+                  onChange={(val) => setTargetAudience(val as any)}
+                  options={classroomAudienceOptions}
+                />
+              </div>
+            )}
+
+            {/* Group Options: Role (Custom Dropdown) */}
+            {groupCategory === 'ROLE' && (
+              <div className="space-y-2 pt-1">
+                <CustomDropdown
+                  label="انتخاب گروه نقشی:"
+                  icon={Shield}
+                  value={targetAudience}
+                  onChange={(val) => setTargetAudience(val as any)}
+                  options={roleAudienceOptions}
+                />
+              </div>
+            )}
+
+            {/* Group Options: Broadcast All */}
+            {groupCategory === 'ALL' && (
+              <div className="p-3 rounded-xl bg-ecosystem-light/60 dark:bg-[#163330]/50 border border-primary/30 text-primary-dark dark:text-primary flex items-center gap-2.5 text-xs font-bold">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>
+                  این پیام به صورت سراسری برای تمام اساتید، دانش‌آموزان، اولیاء و کادر اجرایی ارسال خواهد شد.
+                </span>
+              </div>
+            )}
+          </div>
         )}
 
-        {/* 2. Message Title & Priority */}
+        {/* 3. Message Subject & Priority (Custom Dropdown) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="sm:col-span-2">
-            <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+          <div className="sm:col-span-2 space-y-1.5">
+            <label className="text-xs font-black text-ink-darker dark:text-white block">
               عنوان و موضوع پیام:
             </label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="مثال: دستورالعمل آزمون نوبت اول، هماهنگی کلاس فوق‌العاده..."
+              placeholder="مثال: دستورالعمل آزمون، برنامه کلاسی، هماهنگی جلسات..."
               required
-              className="text-xs"
+              className="text-xs font-bold h-11 border-[1.5px]"
             />
           </div>
 
           <div>
-            <Select
+            <CustomDropdown
               label="درجه اهمیت / اولویت:"
+              icon={AlertTriangle}
               value={priority}
-              onChange={(e) => setPriority(e.target.value as any)}
-            >
-              <option value="NORMAL">عادی</option>
-              <option value="IMPORTANT">مهم (Important)</option>
-              <option value="URGENT">فوری / اضطراری (Urgent)</option>
-            </Select>
+              onChange={(val) => setPriority(val as any)}
+              options={priorityOptions}
+            />
           </div>
         </div>
 
-        {/* 3. Message Body */}
-        <div>
-          <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
-            متن پیام:
-          </label>
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={5}
-            required
-            placeholder="متن پیام خود را اینجا بنویسید..."
-            className="w-full text-xs p-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-primary leading-relaxed"
-          />
-        </div>
+        {/* 4. Message Body with Rich Text Editor */}
+        <RichTextEditor
+          label="متن پیام:"
+          value={body}
+          onChange={setBody}
+          rows={5}
+          required
+          placeholder="متن پیام خود را اینجا بنویسید... برای ساختاردهی می‌توانید از دکمه‌های ویرایشگر بالا استفاده کنید."
+        />
 
-        {/* 4. Attachments Section */}
+        {/* 5. Attachments Section */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+            <label className="text-xs font-black text-ink-darker dark:text-white flex items-center gap-1.5">
               <Paperclip className="w-3.5 h-3.5 text-primary" />
               <span>پیوست‌ها (فایل، عکس، اسناد):</span>
             </label>
@@ -490,7 +792,7 @@ export const ComposeMessageModal: React.FC<Props> = ({
               type="button"
               disabled={uploadingFile}
               onClick={() => fileInputRef.current?.click()}
-              className="text-xs font-bold text-primary hover:text-primary-dark flex items-center gap-1 px-2.5 py-1 rounded-lg border border-primary/30 hover:bg-primary/5 transition-colors"
+              className="text-xs font-bold text-primary hover:text-primary-dark flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[1.5px] border-primary/30 hover:bg-primary/5 transition-colors cursor-pointer"
             >
               <UploadCloud className="w-3.5 h-3.5" />
               <span>{uploadingFile ? 'در حال آپلود...' : 'افزودن پیوست'}</span>
@@ -509,7 +811,7 @@ export const ComposeMessageModal: React.FC<Props> = ({
               {attachments.map((att, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-2 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-xs"
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-xs shadow-2xs"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     {att.type === 'image' ? (
@@ -524,10 +826,12 @@ export const ComposeMessageModal: React.FC<Props> = ({
                       </div>
                     )}
                     <div className="min-w-0">
-                      <p className="font-bold truncate text-gray-800 dark:text-gray-200">{att.name}</p>
+                      <p className="font-bold truncate text-ink-darker dark:text-gray-200">
+                        {att.name}
+                      </p>
                       {att.size && (
                         <p className="text-[10px] text-gray-400 font-mono">
-                          {toPersianDigits((att.size / 1024).toFixed(0))} KB
+                          {toPersianDigits((att.size / 1024).toFixed(0))} کیلوبایت
                         </p>
                       )}
                     </div>
@@ -536,7 +840,8 @@ export const ComposeMessageModal: React.FC<Props> = ({
                   <button
                     type="button"
                     onClick={() => handleRemoveAttachment(idx)}
-                    className="text-gray-400 hover:text-rose-600 p-1 rounded-md"
+                    className="text-gray-400 hover:text-rose-600 p-1 rounded-lg cursor-pointer"
+                    title="حذف پیوست"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -546,12 +851,23 @@ export const ComposeMessageModal: React.FC<Props> = ({
           )}
         </div>
 
-        {/* Form Actions */}
-        <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-          <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
+        {/* Modal Actions Footer */}
+        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-gray-100 dark:border-gray-800">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+            disabled={submitting}
+            className="text-xs font-bold"
+          >
             انصراف
           </Button>
-          <Button type="submit" variant="primary" isLoading={submitting} className="font-bold">
+          <Button
+            type="submit"
+            variant="primary"
+            isLoading={submitting}
+            className="font-black text-xs border-[1.5px] border-primary-dark shadow-[2px_2px_0_#438C83]"
+          >
             <Send className="w-4 h-4 ml-1.5" />
             <span>ارسال پیام</span>
           </Button>

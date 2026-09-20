@@ -24,10 +24,12 @@ import {
   AlertTriangle,
   RefreshCw,
   Archive,
+  X,
+  ChevronDown,
 } from 'lucide-react';
 
 export const MessagesPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'inbox' | 'sent' | 'starred'>('inbox');
+  const [activeTab, setActiveTab] = useState<'inbox' | 'sent'>('inbox');
   const [loading, setLoading] = useState(true);
 
   // Data
@@ -53,11 +55,10 @@ export const MessagesPage: React.FC = () => {
   const fetchMessages = useCallback(async () => {
     try {
       setLoading(true);
-      if (activeTab === 'inbox' || activeTab === 'starred') {
+      if (activeTab === 'inbox') {
         const res: any = await apiClient.get('/messages/inbox', {
           params: {
-            starredOnly: activeTab === 'starred',
-            unreadOnly: unreadOnly && activeTab === 'inbox',
+            unreadOnly: unreadOnly,
             search: searchQuery.trim() || undefined,
           },
         });
@@ -142,179 +143,230 @@ export const MessagesPage: React.FC = () => {
     switch (role) {
       case 'SUPER_ADMIN':
       case 'SCHOOL_ADMIN':
-        return <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 font-medium">مدیریت</span>;
+        return (
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-club-light dark:bg-[#2A173E] text-club dark:text-[#C084FC] border border-club/30">
+            مدیریت
+          </span>
+        );
       case 'TEACHER':
-        return <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 font-medium">استاد</span>;
+        return (
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-male-light dark:bg-[#182346] text-sec dark:text-[#8194EE] border border-sec/30">
+            استاد
+          </span>
+        );
       case 'STUDENT':
-        return <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 font-medium">دانش‌آموز</span>;
+        return (
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-ecosystem-light dark:bg-[#163330] text-primary-dark dark:text-primary border border-primary/30">
+            دانش‌آموز
+          </span>
+        );
       case 'PARENT':
-        return <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 font-medium">ولی</span>;
+        return (
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-college-light dark:bg-[#38260D] text-third dark:text-[#FBBF24] border border-third/30">
+            ولی
+          </span>
+        );
       default:
         return null;
     }
   };
 
   return (
-    <div className="space-y-6 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      {/* 1. Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#151C28] p-5 sm:p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black">
+    <div className="space-y-4 sm:space-y-5 pb-12 max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 animate-in fade-in duration-300">
+      {/* 1. Header & Controls Master Panel */}
+      <div className="bg-white dark:bg-[#151C28] rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-gray-800 shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] p-4 sm:p-5 space-y-4">
+        {/* Top Row: Title & Action Buttons (Side by side on all viewports) */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black shadow-2xs shrink-0">
               <MessageSquare className="w-5 h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">
-                  سامانه پیام‌ها و مکاتبات
-                </h1>
-                {unreadCount > 0 && (
-                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-primary text-white font-bold animate-pulse">
-                    {toPersianDigits(unreadCount)} جدید
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                ارسال و دریافت پیام‌های رسمی، بخشنامه‌های کلاسی و پیوست‌های تحصیلی
-              </p>
+            <div className="flex items-center gap-2 min-w-0">
+              <h1 className="text-lg sm:text-2xl font-black text-ink-darker dark:text-white truncate">
+                پیام‌ها
+              </h1>
+              {unreadCount > 0 && (
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-girl text-white font-black animate-pulse shadow-xs shrink-0">
+                  {toPersianDigits(unreadCount)} جدید
+                </span>
+              )}
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2.5">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={fetchMessages}
-            isLoading={loading}
-            className="text-xs"
-            title="بروزرسانی پیام‌ها"
-          >
-            <RefreshCw className="w-3.5 h-3.5 ml-1.5" />
-            <span>بروزرسانی</span>
-          </Button>
-
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => {
-              setReplyRecipient(null);
-              setIsComposeOpen(true);
-            }}
-            className="font-bold text-xs"
-          >
-            <Plus className="w-4 h-4 ml-1.5" />
-            <span>ارسال پیام جدید</span>
-          </Button>
-        </div>
-      </div>
-
-      {/* 2. Tabs Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 dark:border-gray-800 pb-3">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setActiveTab('inbox')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
-              activeTab === 'inbox'
-                ? 'bg-primary text-white shadow-xs'
-                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            <Inbox className="w-4 h-4" />
-            <span>صندوق ورودی</span>
-            {unreadCount > 0 && (
-              <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                  activeTab === 'inbox' ? 'bg-white text-primary' : 'bg-primary text-white'
-                }`}
-              >
-                {toPersianDigits(unreadCount)}
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('sent')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
-              activeTab === 'sent'
-                ? 'bg-primary text-white shadow-xs'
-                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            <Send className="w-4 h-4" />
-            <span>پیام‌های ارسالی</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('starred')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
-              activeTab === 'starred'
-                ? 'bg-primary text-white shadow-xs'
-                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            <Star className="w-4 h-4" />
-            <span>ستاره‌دارها</span>
-          </button>
-        </div>
-
-        {/* Filters and Search */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 sm:w-60">
-            <Search className="w-3.5 h-3.5 absolute right-3 top-2.5 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="جستجو در پیام‌ها..."
-              className="w-full pr-8 pl-3 py-1.5 text-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-
-          <select
-            value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value)}
-            className="text-xs py-1.5 px-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="ALL">همه اولویت‌ها</option>
-            <option value="URGENT">فقط فوری</option>
-            <option value="IMPORTANT">فقط مهم</option>
-            <option value="NORMAL">عادی</option>
-          </select>
-
-          {activeTab === 'inbox' && (
+          {/* Action Buttons Group (Left side of box, alongside title) */}
+          <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => setUnreadOnly(!unreadOnly)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${
-                unreadOnly
-                  ? 'bg-primary/10 border-primary text-primary'
-                  : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50'
+              type="button"
+              onClick={fetchMessages}
+              disabled={loading}
+              className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-800 text-ink-normal dark:text-gray-200 border-[1.5px] border-gray-200 dark:border-gray-700 hover:border-primary dark:hover:border-primary shadow-[1.5px_1.5px_0_rgba(0,0,0,0.05)] dark:shadow-[1.5px_1.5px_0_#0B0F17] hover:shadow-[2px_2px_0_#59BBAF] transition-all active:translate-x-[1px] active:translate-y-[1px] cursor-pointer flex items-center justify-center shrink-0"
+              title="بروزرسانی پیام‌ها"
+              aria-label="بروزرسانی پیام‌ها"
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : 'text-gray-500 hover:text-primary'
+                  }`}
+              />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setReplyRecipient(null);
+                setIsComposeOpen(true);
+              }}
+              className="h-10 px-3.5 sm:px-4 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs sm:text-sm border-[1.5px] border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] hover:shadow-[2.5px_2.5px_0_#438C83] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer inline-flex items-center gap-1.5 sm:gap-2 shrink-0"
+            >
+              <Plus className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              <span>ارسال پیام جدید</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Subtle Divider */}
+        <div className="border-t border-gray-100 dark:border-gray-800/80" />
+
+        {/* Bottom Row: Segmented View Switcher & Filters */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          {/* Segmented View Tabs */}
+          <div className="inline-flex items-center p-1 rounded-xl bg-gray-100/90 dark:bg-gray-800/90 border border-gray-200/70 dark:border-gray-700/70 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setActiveTab('inbox')}
+              className={`flex-1 sm:flex-initial px-3.5 sm:px-4 py-2 rounded-lg text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${activeTab === 'inbox'
+                  ? 'bg-white dark:bg-[#151C28] text-primary-dark dark:text-primary border border-primary/25 dark:border-gray-700 shadow-[1.5px_1.5px_0_#59BBAF] dark:shadow-[1.5px_1.5px_0_#0B0F17]'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-ink-darker dark:hover:text-white font-bold'
+                }`}
+            >
+              <Inbox className="w-3.5 h-3.5" />
+              <span>صندوق ورودی</span>
+              {unreadCount > 0 && (
+                <span
+                  className={`min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black flex items-center justify-center leading-none ${activeTab === 'inbox' ? 'bg-primary text-white' : 'bg-girl text-white'
+                    }`}
+                >
+                  <span className="inline-block transform -translate-y-[0.5px]">
+                    {toPersianDigits(unreadCount)}
+                  </span>
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('sent')}
+              className={`flex-1 sm:flex-initial px-3.5 sm:px-4 py-2 rounded-lg text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
+                activeTab === 'sent'
+                  ? 'bg-white dark:bg-[#151C28] text-primary-dark dark:text-primary border border-primary/25 dark:border-gray-700 shadow-[1.5px_1.5px_0_#59BBAF] dark:shadow-[1.5px_1.5px_0_#0B0F17]'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-ink-darker dark:hover:text-white font-bold'
               }`}
             >
-              خوانده‌نشده
+              <Send className="w-3.5 h-3.5" />
+              <span>پیام‌های ارسالی</span>
             </button>
-          )}
+          </div>
+
+          {/* Search & Filters Group */}
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            {/* Search Input with Clear Button */}
+            <div className="relative flex-1 sm:w-60 min-w-[160px]">
+              <Search className="w-3.5 h-3.5 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="جستجو در پیام‌ها..."
+                className="w-full h-10 pr-9 pl-8 text-xs rounded-xl border-[1.5px] border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-ink-darker dark:text-white outline-none focus:border-primary focus:bg-white dark:focus:bg-gray-900 transition-colors shadow-2xs font-medium"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0.5 rounded-md cursor-pointer"
+                  title="پاک کردن جستجو"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Priority Filter Dropdown with Custom Chevron */}
+            <div className="relative shrink-0">
+              <select
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value)}
+                className="h-10 appearance-none text-xs pr-3 pl-8 rounded-xl border-[1.5px] border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-ink-normal dark:text-gray-200 outline-none focus:border-primary shadow-2xs cursor-pointer font-bold transition-all hover:border-gray-300 dark:hover:border-gray-600"
+              >
+                <option value="ALL" className="bg-white dark:bg-[#151C28]">
+                  همه اولویت‌ها
+                </option>
+                <option value="URGENT" className="bg-white dark:bg-[#151C28]">
+                  فقط فوری
+                </option>
+                <option value="IMPORTANT" className="bg-white dark:bg-[#151C28]">
+                  فقط مهم
+                </option>
+                <option value="NORMAL" className="bg-white dark:bg-[#151C28]">
+                  عادی
+                </option>
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
+            </div>
+
+            {/* Unread Only Toggle */}
+            {activeTab === 'inbox' && (
+              <button
+                type="button"
+                onClick={() => setUnreadOnly(!unreadOnly)}
+                className={`h-10 px-3 rounded-xl text-xs font-black border-[1.5px] transition-all cursor-pointer shrink-0 active:translate-x-[1px] active:translate-y-[1px] flex items-center gap-1.5 ${
+                  unreadOnly
+                    ? 'bg-primary/10 border-primary text-primary-dark dark:text-primary shadow-2xs'
+                    : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-primary/40'
+                }`}
+              >
+                <div
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    unreadOnly ? 'bg-primary ring-2 ring-primary/30' : 'bg-gray-300 dark:bg-gray-600'
+                  }`}
+                />
+                <span>خوانده‌نشده</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* 3. Messages List */}
+      {/* 2. Messages List */}
       {loading ? (
-        <div className="py-20 flex flex-col items-center justify-center space-y-3 bg-white dark:bg-[#151C28] rounded-3xl border border-gray-100 dark:border-gray-800">
+        <div className="py-20 flex flex-col items-center justify-center space-y-3 bg-white dark:bg-[#151C28] rounded-2xl border-[1.5px] border-primary-dark/20 dark:border-gray-800 shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17]">
           <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs text-gray-400">در حال بارگذاری پیام‌ها...</p>
+          <p className="text-xs font-bold text-gray-400">در حال بارگذاری پیام‌ها...</p>
         </div>
-      ) : activeTab === 'inbox' || activeTab === 'starred' ? (
+      ) : activeTab === 'inbox' ? (
         filteredInboxItems.length === 0 ? (
-          <div className="py-20 text-center bg-white dark:bg-[#151C28] rounded-3xl border border-gray-100 dark:border-gray-800 space-y-3">
-            <div className="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 mx-auto flex items-center justify-center">
+          <div className="py-16 text-center bg-white dark:bg-[#151C28] rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-gray-800 shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] space-y-3 p-6">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary mx-auto flex items-center justify-center shadow-2xs">
               <Inbox className="w-7 h-7" />
             </div>
-            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300">
-              {activeTab === 'starred' ? 'هیچ پیام ستاره‌داری یافت نشد' : 'صندوق ورودی شما خالی است'}
+            <h3 className="text-base font-black text-ink-darker dark:text-white">
+              صندوق ورودی شما خالی است
             </h3>
-            <p className="text-xs text-gray-400 max-w-sm mx-auto">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 max-w-sm mx-auto leading-relaxed">
               پیام‌های جدید ارسال‌شده توسط اساتید، کادر مدرسه یا هم‌کلاسی‌ها در این قسمت نمایش داده می‌شوند.
             </p>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setReplyRecipient(null);
+                  setIsComposeOpen(true);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs border-[1.5px] border-primary-dark shadow-[2px_2px_0_#438C83] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>ارسال پیام جدید</span>
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-2.5">
@@ -326,54 +378,57 @@ export const MessagesPage: React.FC = () => {
                 <div
                   key={item.recipientRecordId}
                   onClick={() => setSelectedMessageId(item.message.id)}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                    isUnread
-                      ? 'bg-primary/5 dark:bg-primary/10 border-primary/30 shadow-2xs'
-                      : 'bg-white dark:bg-[#151C28] border-gray-100 dark:border-gray-800 hover:border-gray-300 hover:shadow-2xs'
-                  }`}
+                  className={`group relative p-3.5 sm:p-4 rounded-2xl border-[1.5px] transition-all duration-150 cursor-pointer flex items-center justify-between gap-3 active:translate-x-[1px] active:translate-y-[1px] ${isUnread
+                      ? 'bg-primary/5 dark:bg-primary/10 border-primary-dark/40 dark:border-primary/40 shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] hover:shadow-[2.5px_2.5px_0_#59BBAF]'
+                      : 'bg-white dark:bg-[#151C28] border-gray-200/80 dark:border-gray-800 shadow-[2px_2px_0_rgba(0,0,0,0.03)] dark:shadow-[2px_2px_0_#0B0F17] hover:border-primary dark:hover:border-primary hover:shadow-[2px_2px_0_#59BBAF]'
+                    }`}
                 >
-                  <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                    {/* Unread dot */}
+                  <div className="flex items-center gap-3 sm:gap-3.5 min-w-0 flex-1">
+                    {/* Unread indicator */}
                     <div className="w-2.5 flex items-center justify-center shrink-0">
-                      {isUnread && <div className="w-2 h-2 rounded-full bg-primary" />}
+                      {isUnread ? (
+                        <div className="w-2.5 h-2.5 rounded-full bg-primary ring-2 ring-primary/30 animate-pulse" />
+                      ) : (
+                        <div className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-700" />
+                      )}
                     </div>
 
                     {/* Sender Avatar */}
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 text-primary flex items-center justify-center font-black text-xs shrink-0 border border-primary/20">
+                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-ecosystem-light dark:bg-[#163330] text-primary-dark dark:text-primary flex items-center justify-center font-black text-sm shrink-0 border border-primary/30 shadow-2xs">
                       {item.message.sender?.firstName?.[0] || 'ر'}
                     </div>
 
                     {/* Content Snippet */}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-black text-gray-900 dark:text-white">
+                        <span className="text-xs sm:text-sm font-black text-ink-darker dark:text-white group-hover:text-primary dark:group-hover:text-primary transition-colors">
                           {item.message.sender?.firstName} {item.message.sender?.lastName}
                         </span>
                         {getSenderRoleBadge(item.message.sender?.role)}
                         {getPriorityBadge(item.message.priority)}
                         {item.message.classroom && (
-                          <span className="text-[10px] text-gray-400 flex items-center gap-1">
+                          <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1 bg-gray-100 dark:bg-gray-800/80 px-1.5 py-0.5 rounded-md">
                             <Building className="w-3 h-3 text-primary" />
                             {item.message.classroom.name}
                           </span>
                         )}
                       </div>
 
-                      <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate mt-0.5">
+                      <h4 className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-200 truncate mt-1 group-hover:text-primary-dark dark:group-hover:text-primary transition-colors">
                         {item.message.title}
                       </h4>
 
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                      <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
                         {item.message.body}
                       </p>
                     </div>
                   </div>
 
-                  {/* Meta / Right Side */}
-                  <div className="flex items-center gap-3 shrink-0">
+                  {/* Meta / Left Side (RTL) */}
+                  <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
                     {hasAttachments && (
                       <div
-                        className="flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-lg"
+                        className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-lg border border-gray-200/60 dark:border-gray-700"
                         title="دارای فایل پیوست"
                       >
                         <Paperclip className="w-3 h-3 text-primary" />
@@ -381,19 +436,18 @@ export const MessagesPage: React.FC = () => {
                       </div>
                     )}
 
-                    <span className="text-[11px] text-gray-400 font-mono">
+                    <span className="text-[10px] sm:text-xs text-gray-400 font-mono font-medium">
                       {gregorianToJalaliStr(item.createdAt)}
                     </span>
 
                     <button
                       type="button"
                       onClick={(e) => handleToggleStar(e, item.message.id)}
-                      className={`p-1.5 rounded-lg transition-colors ${
-                        item.isStarred
+                      className={`p-1.5 rounded-lg transition-colors cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-950/40 ${item.isStarred
                           ? 'text-amber-500 hover:text-amber-600'
                           : 'text-gray-300 dark:text-gray-600 hover:text-amber-500'
-                      }`}
-                      title="ستاره‌دار"
+                        }`}
+                      title={item.isStarred ? 'حذف از ستاره‌دارها' : 'ستاره‌دار کردن'}
                     >
                       <Star className={`w-4 h-4 ${item.isStarred ? 'fill-amber-400' : ''}`} />
                     </button>
@@ -406,16 +460,29 @@ export const MessagesPage: React.FC = () => {
       ) : (
         /* Sent Items */
         filteredSentItems.length === 0 ? (
-          <div className="py-20 text-center bg-white dark:bg-[#151C28] rounded-3xl border border-gray-100 dark:border-gray-800 space-y-3">
-            <div className="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 mx-auto flex items-center justify-center">
+          <div className="py-16 text-center bg-white dark:bg-[#151C28] rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-gray-800 shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] space-y-3 p-6">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary mx-auto flex items-center justify-center shadow-2xs">
               <Send className="w-7 h-7" />
             </div>
-            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300">
+            <h3 className="text-base font-black text-ink-darker dark:text-white">
               هیچ پیام ارسالی ثبت نشده است
             </h3>
-            <p className="text-xs text-gray-400 max-w-sm mx-auto">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 max-w-sm mx-auto leading-relaxed">
               پیام‌هایی که برای دیگر کاربران، کلاس‌ها یا کل مدرسه ارسال می‌کنید در اینجا آرشیو می‌گردند.
             </p>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setReplyRecipient(null);
+                  setIsComposeOpen(true);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs border-[1.5px] border-primary-dark shadow-[2px_2px_0_#438C83] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>ارسال پیام جدید</span>
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-2.5">
@@ -426,51 +493,51 @@ export const MessagesPage: React.FC = () => {
                 <div
                   key={item.id}
                   onClick={() => setSelectedMessageId(item.id)}
-                  className="p-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-[#151C28] hover:border-gray-300 transition-all cursor-pointer flex items-center justify-between gap-3 shadow-2xs"
+                  className="group relative p-3.5 sm:p-4 rounded-2xl border-[1.5px] border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] shadow-[2px_2px_0_rgba(0,0,0,0.03)] dark:shadow-[2px_2px_0_#0B0F17] hover:border-primary dark:hover:border-primary hover:shadow-[2px_2px_0_#59BBAF] transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] cursor-pointer flex items-center justify-between gap-3"
                 >
-                  <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                  <div className="flex items-center gap-3 sm:gap-3.5 min-w-0 flex-1">
+                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-ecosystem-light dark:bg-[#163330] text-primary-dark dark:text-primary flex items-center justify-center font-bold text-xs shrink-0 border border-primary/30 shadow-2xs">
                       <Send className="w-4 h-4" />
                     </div>
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-bold text-primary">
+                        <span className="text-xs sm:text-sm font-black text-primary-dark dark:text-primary">
                           {item.targetType === 'ALL'
                             ? 'ارسال همگانی'
                             : item.targetType === 'ROLE'
-                            ? 'ارسال به گروه نقشی'
-                            : item.targetType === 'CLASSROOM'
-                            ? `کلاس ${item.classroom?.name || ''}`
-                            : 'پیام مستقیم / فردی'}
+                              ? 'ارسال به گروه نقشی'
+                              : item.targetType === 'CLASSROOM'
+                                ? `کلاس ${item.classroom?.name || ''}`
+                                : 'پیام مستقیم / فردی'}
                         </span>
                         {item.recipientsCount !== undefined && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold">
                             {toPersianDigits(item.recipientsCount)} گیرنده
                           </span>
                         )}
                         {getPriorityBadge(item.priority)}
                       </div>
 
-                      <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate mt-0.5">
+                      <h4 className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-200 truncate mt-1 group-hover:text-primary-dark dark:group-hover:text-primary transition-colors">
                         {item.title}
                       </h4>
 
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                      <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
                         {item.body}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
                     {hasAttachments && (
-                      <div className="flex items-center gap-1 text-[11px] text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-lg">
+                      <div className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-lg border border-gray-200/60 dark:border-gray-700">
                         <Paperclip className="w-3 h-3 text-primary" />
                         <span className="font-mono">{toPersianDigits(item.attachments.length)}</span>
                       </div>
                     )}
 
-                    <span className="text-[11px] text-gray-400 font-mono">
+                    <span className="text-[10px] sm:text-xs text-gray-400 font-mono font-medium">
                       {gregorianToJalaliStr(item.createdAt)}
                     </span>
                   </div>

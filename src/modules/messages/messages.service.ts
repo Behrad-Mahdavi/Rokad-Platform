@@ -53,7 +53,10 @@ export class MessagesService {
       throw new NotFoundException('کاربر ارسال‌کننده یافت نشد');
     }
 
-    const isAdmin = sender.role === 'SUPER_ADMIN' || sender.role === 'SCHOOL_ADMIN';
+    const isAdmin =
+      sender.role === 'SUPER_ADMIN' ||
+      sender.role === 'SCHOOL_ADMIN' ||
+      sender.role === 'STAFF';
     const isTeacher = sender.role === 'TEACHER';
     const isStudent = sender.role === 'STUDENT';
     const isParent = sender.role === 'PARENT';
@@ -670,12 +673,15 @@ export class MessagesService {
 
     if (!user) throw new NotFoundException('کاربر یافت نشد');
 
-    const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'SCHOOL_ADMIN';
+    const isAdmin =
+      user.role === 'SUPER_ADMIN' ||
+      user.role === 'SCHOOL_ADMIN' ||
+      user.role === 'STAFF';
     const isTeacher = user.role === 'TEACHER';
     const isStudent = user.role === 'STUDENT';
     const isParent = user.role === 'PARENT';
 
-    // 10.1 Admins: Get all classrooms and users
+    // 10.1 Admins & Staff (مدیر و معاون): Get all classrooms and users
     if (isAdmin) {
       const [classrooms, users] = await Promise.all([
         this.prisma.classroom.findMany({
@@ -699,7 +705,8 @@ export class MessagesService {
       };
     }
 
-    // 10.2 Teachers: Get their classrooms and students/parents/admins
+    // 10.2 Teachers (مربیان و کوچ‌ها):
+    // به دانش‌آموزان و اولیای مربوط به خودشون (فردی و گروهی)، و به سایر مربیان و مدیر و معاون (فردی)
     if (isTeacher) {
       const teacherProfile = user.teacherProfile;
       const schedules = teacherProfile
@@ -770,7 +777,14 @@ export class MessagesService {
         }
       }
 
-      // Add school admins
+      // Add other teachers (سایر مربیان و کوچ‌ها)
+      const otherTeachers = await this.prisma.user.findMany({
+        where: { tenantId, role: 'TEACHER', status: 'ACTIVE', id: { not: userId } },
+        select: { id: true, firstName: true, lastName: true, role: true, avatarUrl: true },
+      });
+      otherTeachers.forEach((t) => userMap.set(t.id, t));
+
+      // Add school admins and staff (مدیر و معاون)
       const admins = await this.prisma.user.findMany({
         where: { tenantId, role: { in: ['SCHOOL_ADMIN', 'SUPER_ADMIN', 'STAFF'] }, status: 'ACTIVE' },
         select: { id: true, firstName: true, lastName: true, role: true, avatarUrl: true },
@@ -786,12 +800,13 @@ export class MessagesService {
       };
     }
 
-    // 10.3 Students: Only individual to teachers, classmates, admins
+    // 10.3 Students (دانش‌آموزان):
+    // امکان ارسال پیام فردی به مدیر، معاون، مربیان و کوچ مربوط به خودشون و دانش‌آموزان دیگه
     if (isStudent) {
       const userMap = new Map<string, any>();
 
       for (const en of user.studentProfile?.enrollments || []) {
-        // Teachers of their classes
+        // Teachers of their classes (مربیان و کوچ‌های مربوطه)
         for (const sc of en.classroom?.schedules || []) {
           if (sc.teacher?.user) {
             userMap.set(sc.teacher.user.id, {
@@ -802,23 +817,18 @@ export class MessagesService {
             });
           }
         }
-
-        // Classmates
-        for (const cEn of en.classroom?.enrollments || []) {
-          if (cEn.student?.user && cEn.student.user.id !== userId) {
-            userMap.set(cEn.student.user.id, {
-              id: cEn.student.user.id,
-              firstName: cEn.student.user.firstName,
-              lastName: cEn.student.user.lastName,
-              role: 'STUDENT',
-            });
-          }
-        }
       }
 
-      // Admins
+      // Classmates & all other active students (دانش‌آموزان دیگر)
+      const otherStudents = await this.prisma.user.findMany({
+        where: { tenantId, role: 'STUDENT', status: 'ACTIVE', id: { not: userId } },
+        select: { id: true, firstName: true, lastName: true, role: true, avatarUrl: true },
+      });
+      otherStudents.forEach((st) => userMap.set(st.id, st));
+
+      // Admins & Staff (مدیر و معاون)
       const admins = await this.prisma.user.findMany({
-        where: { tenantId, role: { in: ['SCHOOL_ADMIN', 'SUPER_ADMIN'] }, status: 'ACTIVE' },
+        where: { tenantId, role: { in: ['SCHOOL_ADMIN', 'SUPER_ADMIN', 'STAFF'] }, status: 'ACTIVE' },
         select: { id: true, firstName: true, lastName: true, role: true, avatarUrl: true },
       });
       admins.forEach((adm) => userMap.set(adm.id, adm));
@@ -832,7 +842,8 @@ export class MessagesService {
       };
     }
 
-    // 10.4 Parents: Only individual to teachers and admins
+    // 10.4 Parents (والدین):
+    // امکان ارسال پیام فردی به مدیر، معاون، مربیان و کوچ مربوطه و سایر والدین
     if (isParent) {
       const userMap = new Map<string, any>();
 
@@ -851,8 +862,16 @@ export class MessagesService {
         }
       }
 
+      // Other parents (سایر والدین)
+      const otherParents = await this.prisma.user.findMany({
+        where: { tenantId, role: 'PARENT', status: 'ACTIVE', id: { not: userId } },
+        select: { id: true, firstName: true, lastName: true, role: true, avatarUrl: true },
+      });
+      otherParents.forEach((p) => userMap.set(p.id, p));
+
+      // Admins & Staff (مدیر و معاون)
       const admins = await this.prisma.user.findMany({
-        where: { tenantId, role: { in: ['SCHOOL_ADMIN', 'SUPER_ADMIN'] }, status: 'ACTIVE' },
+        where: { tenantId, role: { in: ['SCHOOL_ADMIN', 'SUPER_ADMIN', 'STAFF'] }, status: 'ACTIVE' },
         select: { id: true, firstName: true, lastName: true, role: true, avatarUrl: true },
       });
       admins.forEach((adm) => userMap.set(adm.id, adm));

@@ -16,7 +16,7 @@ import {
   TrendingUp,
   User,
   GraduationCap,
-  ShieldAlert,
+  Scale,
 } from 'lucide-react';
 
 const getPersianDayKey = (): string => {
@@ -173,8 +173,8 @@ export const StudentDashboard: React.FC = () => {
           className="p-4 sm:p-5 cursor-pointer group"
         >
           <div className="flex justify-between items-center text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">
-            <span>پرونده انضباطی</span>
-            <ShieldAlert className="h-4 w-4 text-purple-500" />
+            <span>انضباطی/تشویقی</span>
+            <Scale className="h-4 w-4 text-purple-500" />
           </div>
           <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white group-hover:text-primary transition-colors">
             پرونده منظم

@@ -14,11 +14,13 @@ const buttonVariants = cva(
         sec:
           'bg-male-normal hover:bg-male-normal-hover text-white border-[1.5px] border-male-dark dark:border-male-light/30 shadow-[2.5px_2.5px_0_#0B0F1F] dark:shadow-[2.5px_2.5px_0_#59BBAF] dark:bg-[#2B3875] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[3px_3px_0_#0B0F1F] active:shadow-[1px_1px_0_#0B0F1F]',
         secondary:
-          'bg-male-normal hover:bg-male-normal-hover text-white border-[1.5px] border-male-dark dark:border-male-light/30 shadow-[2.5px_2.5px_0_#0B0F1F] dark:shadow-[2.5px_2.5px_0_#59BBAF] dark:bg-[#2B3875] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[3px_3px_0_#0B0F1F] active:shadow-[1px_1px_0_#0B0F1F]',
+          'bg-white dark:bg-[#161D2A] text-ink-normal dark:text-gray-200 border-[1.5px] border-[#DFDFDF] dark:border-[#2D3A50] shadow-[2px_2px_0_#BDBCBC] dark:shadow-[2px_2px_0_#0F172A] hover:bg-[#F4F4F3] dark:hover:bg-[#1C2536] hover:border-ink-normal dark:hover:border-gray-500 hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[2.5px_2.5px_0_#292827] dark:hover:shadow-[2.5px_2.5px_0_#0B0F17] active:shadow-[1px_1px_0_#292827]',
+        neutral:
+          'bg-white dark:bg-[#161D2A] text-ink-normal dark:text-gray-200 border-[1.5px] border-[#DFDFDF] dark:border-[#2D3A50] shadow-[2px_2px_0_#BDBCBC] dark:shadow-[2px_2px_0_#0F172A] hover:bg-[#F4F4F3] dark:hover:bg-[#1C2536] hover:border-ink-normal dark:hover:border-gray-500 hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[2.5px_2.5px_0_#292827] dark:hover:shadow-[2.5px_2.5px_0_#0B0F17] active:shadow-[1px_1px_0_#292827]',
         male:
           'bg-male-normal hover:bg-male-normal-hover text-white border-[1.5px] border-male-dark dark:border-male-light/30 shadow-[2.5px_2.5px_0_#0B0F1F] dark:shadow-[2.5px_2.5px_0_#59BBAF] dark:bg-[#2B3875] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[3px_3px_0_#0B0F1F] active:shadow-[1px_1px_0_#0B0F1F]',
         outline:
-          'bg-white dark:bg-[#161D2A] text-ink-normal dark:text-white border-[1.5px] border-[#DFDFDF] dark:border-[#2D3A50] shadow-[2px_2px_0_#BDBCBC] dark:shadow-[2px_2px_0_#0F172A] hover:bg-[#F8F9FA] dark:hover:bg-[#1C2536] hover:border-ink-normal dark:hover:border-primary/50 hover:shadow-[2.5px_2.5px_0_#292827] dark:hover:shadow-[2.5px_2.5px_0_#59BBAF]',
+          'bg-white dark:bg-[#161D2A] text-ink-normal dark:text-gray-200 border-[1.5px] border-[#DFDFDF] dark:border-[#2D3A50] shadow-[2px_2px_0_#BDBCBC] dark:shadow-[2px_2px_0_#0F172A] hover:bg-[#F8F9FA] dark:hover:bg-[#1C2536] hover:border-ink-normal dark:hover:border-gray-500 hover:shadow-[2.5px_2.5px_0_#292827] dark:hover:shadow-[2.5px_2.5px_0_#0B0F17]',
         female:
           'bg-female-normal hover:bg-female-normal-hover text-white border-[1.5px] border-female-dark shadow-[2.5px_2.5px_0_#4E0920] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[3px_3px_0_#4E0920] active:shadow-[1px_1px_0_#4E0920]',
         girl:
@@ -28,7 +30,7 @@ const buttonVariants = cva(
         club:
           'bg-club-normal hover:bg-club-normal-hover text-white border-[1.5px] border-club-dark shadow-[2.5px_2.5px_0_#231032] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[3px_3px_0_#231032] active:shadow-[1px_1px_0_#231032]',
         ghost:
-          'bg-transparent hover:bg-gray-100/80 dark:hover:bg-gray-800 text-ink-normal dark:text-white',
+          'bg-transparent hover:bg-gray-100/90 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-ink-darker dark:hover:text-white',
         destructive:
           'bg-red-600 hover:bg-red-700 text-white border-[1.5px] border-red-800 shadow-[2.5px_2.5px_0_#7F1D1D] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[3px_3px_0_#7F1D1D] active:shadow-[1px_1px_0_#7F1D1D]',
       },

@@ -75,10 +75,10 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             )}
             {options
               ? options.map((opt) => (
-                  <option key={opt.value} value={opt.value} disabled={opt.disabled}>
-                    {opt.label}
-                  </option>
-                ))
+                <option key={opt.value} value={opt.value} disabled={opt.disabled}>
+                  {opt.label}
+                </option>
+              ))
               : children}
           </select>
         </div>

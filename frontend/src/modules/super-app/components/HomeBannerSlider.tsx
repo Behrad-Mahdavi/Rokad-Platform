@@ -236,18 +236,13 @@ export const HomeBannerSlider: React.FC<HomeBannerSliderProps> = ({ onOpenSettin
           </div>
         </div>
 
-        {/* Slide Content: Title and Subtitle */}
-        <div className="relative z-10 space-y-1.5 max-w-2xl py-0.5">
+        {/* Slide Content: Title (Enlarged, without short description) */}
+        <div className="relative z-10 max-w-2xl py-1">
           <h3
-            className={`font-black text-sm sm:text-base md:text-lg leading-tight line-clamp-1 transition-all ${currentTheme.textTitle}`}
+            className={`font-black text-base sm:text-lg md:text-xl lg:text-2xl leading-snug line-clamp-2 transition-all ${currentTheme.textTitle}`}
           >
             {currentSlide.title}
           </h3>
-          <p
-            className={`text-xs sm:text-[13px] leading-relaxed line-clamp-2 transition-all ${currentTheme.textSubtitle}`}
-          >
-            {currentSlide.subtitle}
-          </p>
         </div>
 
         {/* Bottom Bar: Action CTA Button & Slider Controls (Dots + Arrows) */}
@@ -295,21 +290,21 @@ export const HomeBannerSlider: React.FC<HomeBannerSliderProps> = ({ onOpenSettin
               })}
             </div>
 
-            {/* Navigation Arrows (RTL aware: Right is Prev, Left is Next) */}
+            {/* Navigation Arrows */}
             {activeSlides.length > 1 && (
               <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  onClick={handlePrev}
-                  aria-label="اسلاید قبلی"
+                  onClick={handleNext}
+                  aria-label="اسلاید بعدی"
                   className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/80 hover:bg-white dark:bg-gray-800/80 dark:hover:bg-gray-800 text-ink-darker dark:text-white border border-gray-200/80 dark:border-gray-700 shadow-2xs hover:scale-105 active:scale-95 transition-transform cursor-pointer"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
                 <button
                   type="button"
-                  onClick={handleNext}
-                  aria-label="اسلاید بعدی"
+                  onClick={handlePrev}
+                  aria-label="اسلاید قبلی"
                   className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/80 hover:bg-white dark:bg-gray-800/80 dark:hover:bg-gray-800 text-ink-darker dark:text-white border border-gray-200/80 dark:border-gray-700 shadow-2xs hover:scale-105 active:scale-95 transition-transform cursor-pointer"
                 >
                   <ChevronLeft className="w-4 h-4" />

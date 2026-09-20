@@ -157,7 +157,7 @@ export const ProfileSettingsPage: React.FC = () => {
       </div>
 
       {/* User Identity Hero Card - Enhanced Premium Design */}
-      <div className="relative overflow-hidden rounded-2xl border border-gray-200/80 dark:border-zinc-800 bg-white dark:bg-[#151C28] p-4 sm:p-5 shadow-xs">
+      <div className="relative overflow-hidden rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] p-4 sm:p-5 shadow-xs">
         {/* Subtle Ambient Decorative Glow */}
         <div className="absolute -top-16 -left-16 w-40 h-40 bg-gradient-to-br from-primary/15 to-teal-400/10 dark:from-primary/20 dark:to-transparent rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -bottom-16 -right-16 w-40 h-40 bg-gradient-to-tl from-indigo-500/10 to-transparent rounded-full blur-2xl pointer-events-none" />
@@ -177,7 +177,7 @@ export const ProfileSettingsPage: React.FC = () => {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploadingAvatar}
-                className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-[20px] overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all block cursor-pointer group bg-white dark:bg-zinc-900"
+                className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-[20px] overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all block cursor-pointer group bg-white dark:bg-[#151C28]"
                 title="تغییر عکس نمایه"
                 aria-label="تغییر عکس نمایه"
               >
@@ -206,7 +206,7 @@ export const ProfileSettingsPage: React.FC = () => {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploadingAvatar}
-              className="absolute -bottom-1 -right-1 p-2 bg-primary hover:bg-primary-darker text-white rounded-xl shadow-md ring-2 ring-white dark:ring-zinc-900 transition-all active:scale-90 cursor-pointer flex items-center justify-center"
+              className="absolute -bottom-1 -right-1 p-2 bg-primary hover:bg-primary-darker text-white rounded-xl shadow-md ring-2 ring-white dark:ring-[#151C28] transition-all active:scale-90 cursor-pointer flex items-center justify-center"
               title="بارگذاری تصویر جدید"
               aria-label="بارگذاری تصویر جدید"
             >
@@ -230,8 +230,8 @@ export const ProfileSettingsPage: React.FC = () => {
             </div>
 
             {/* School Title with Icon & Gray Text */}
-            <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-500 dark:text-zinc-400 font-medium">
-              <School className="w-4 h-4 text-gray-400 dark:text-zinc-500 shrink-0" />
+            <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium">
+              <School className="w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0" />
               <span className="truncate">
                 {currentTenant?.name || (currentTenant?.slug === 'rokad-girls' ? 'هنرستان دخترانه رُکاد' : 'هنرستان پسرانه رُکاد')}
               </span>
@@ -241,7 +241,7 @@ export const ProfileSettingsPage: React.FC = () => {
       </div>
 
       {/* Theme Selection Section - Compact & Modern */}
-      <Card className="border border-gray-200/80 dark:border-zinc-800 bg-white dark:bg-[#151C28] p-3.5 sm:p-4 rounded-2xl shadow-2xs">
+      <Card className="border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] p-3.5 sm:p-4 rounded-2xl shadow-2xs">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500 dark:bg-amber-400/10 dark:text-amber-400 shrink-0">
@@ -253,14 +253,14 @@ export const ProfileSettingsPage: React.FC = () => {
           </div>
 
           {/* Compact Segmented Control (No English in parentheses) */}
-          <div className="flex items-center bg-gray-100 dark:bg-zinc-800/90 p-1 rounded-xl border border-gray-200/60 dark:border-zinc-700/60 shrink-0">
+          <div className="flex items-center bg-gray-100 dark:bg-[#1C2536]/90 p-1 rounded-xl border border-gray-200/60 dark:border-gray-700/60 shrink-0">
             <button
               type="button"
               onClick={() => setTheme('light')}
               className={`min-h-[36px] px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 !isDark
-                  ? 'bg-white dark:bg-zinc-700 text-amber-600 dark:text-amber-400 shadow-xs font-black'
-                  : 'text-gray-500 dark:text-zinc-400 hover:text-ink-darker dark:hover:text-white'
+                  ? 'bg-white dark:bg-[#242F42] text-amber-600 dark:text-amber-400 shadow-xs font-black'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-ink-darker dark:hover:text-white'
               }`}
             >
               <Sun className="w-3.5 h-3.5" />
@@ -271,8 +271,8 @@ export const ProfileSettingsPage: React.FC = () => {
               onClick={() => setTheme('dark')}
               className={`min-h-[36px] px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 isDark
-                  ? 'bg-zinc-900 text-teal-400 shadow-xs font-black border border-zinc-700/50'
-                  : 'text-gray-500 dark:text-zinc-400 hover:text-ink-darker dark:hover:text-white'
+                  ? 'bg-[#151C28] text-teal-400 shadow-xs font-black border border-gray-700/50'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-ink-darker dark:hover:text-white'
               }`}
             >
               <Moon className="w-3.5 h-3.5" />

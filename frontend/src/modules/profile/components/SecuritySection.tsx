@@ -280,8 +280,8 @@ export const SecuritySection: React.FC = () => {
   return (
     <div className="space-y-5">
       {/* 1. Two-Factor Authentication Card */}
-      <Card className="border border-gray-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs rounded-2xl overflow-hidden transition-all">
-        <CardHeader className="pb-3 border-b border-gray-100 dark:border-zinc-800/80">
+      <Card className="border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] shadow-xs rounded-2xl overflow-hidden transition-all">
+        <CardHeader className="pb-3 border-b border-gray-100 dark:border-gray-800/80">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2.5">
               <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
@@ -332,15 +332,15 @@ export const SecuritySection: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent className="pt-3.5 pb-4">
-          <p className="text-xs text-gray-600 dark:text-zinc-300 leading-relaxed">
+          <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
             با فعال‌سازی این قابلیت، هنگام ورود علاوه بر گذرواژه، به کد یک‌بار مصرف اپلیکیشن‌های امنیتی روی تلفن همراه (مانند Google Authenticator) نیاز خواهید داشت تا دسترسی غیرمجاز به حساب کاربری غیرممکن شود.
           </p>
         </CardContent>
       </Card>
 
       {/* 2. Active Devices & Sessions Card */}
-      <Card className="border border-gray-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs rounded-2xl overflow-hidden transition-all">
-        <CardHeader className="pb-3 border-b border-gray-100 dark:border-zinc-800/80">
+      <Card className="border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] shadow-xs rounded-2xl overflow-hidden transition-all">
+        <CardHeader className="pb-3 border-b border-gray-100 dark:border-gray-800/80">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2.5">
               <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-500 dark:bg-indigo-400/10 dark:text-indigo-400">
@@ -359,7 +359,7 @@ export const SecuritySection: React.FC = () => {
                 type="button"
                 onClick={fetchSessions}
                 disabled={loadingSessions}
-                className="min-h-[36px] min-w-[36px] rounded-xl text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center cursor-pointer"
+                className="min-h-[36px] min-w-[36px] rounded-xl text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-[#1C2536] transition-colors flex items-center justify-center cursor-pointer"
                 title="به‌روزرسانی نشست‌ها"
                 aria-label="به‌روزرسانی"
               >
@@ -381,7 +381,7 @@ export const SecuritySection: React.FC = () => {
                   variant="outline"
                   size="sm"
                   disabled
-                  className="text-xs font-medium text-gray-400 dark:text-zinc-600 border-gray-200 dark:border-zinc-800 min-h-[36px] px-3 rounded-xl opacity-60 cursor-not-allowed"
+                  className="text-xs font-medium text-gray-400 dark:text-gray-600 border-gray-200 dark:border-gray-800 min-h-[36px] px-3 rounded-xl opacity-60 cursor-not-allowed"
                 >
                   خروج از سایر دستگاه‌ها
                 </Button>
@@ -391,7 +391,7 @@ export const SecuritySection: React.FC = () => {
         </CardHeader>
         <CardContent className="pt-3.5 space-y-2.5">
           {sessions.length === 0 ? (
-            <div className="text-center py-6 text-xs text-gray-400 dark:text-zinc-500">
+            <div className="text-center py-6 text-xs text-gray-400 dark:text-gray-500">
               هیچ نشستی ثبت نشده است
             </div>
           ) : (
@@ -401,11 +401,11 @@ export const SecuritySection: React.FC = () => {
                 className={`p-3 sm:p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-all ${
                   s.isCurrent
                     ? 'border-emerald-500/40 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-2xs'
-                    : 'border-gray-200/80 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-800/30 hover:border-gray-300 dark:hover:border-zinc-700'
+                    : 'border-gray-200/80 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1C2536]/30 hover:border-gray-300 dark:hover:border-gray-700'
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-2.5 rounded-xl bg-white dark:bg-zinc-800 border border-gray-200/80 dark:border-zinc-700/80 shadow-2xs shrink-0">
+                  <div className="p-2.5 rounded-xl bg-white dark:bg-[#1C2536] border border-gray-200/80 dark:border-gray-700/80 shadow-2xs shrink-0">
                     {getDeviceIcon(s.deviceType)}
                   </div>
 
@@ -421,9 +421,9 @@ export const SecuritySection: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-zinc-400 font-mono dir-ltr flex-wrap">
+                    <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 font-mono dir-ltr flex-wrap">
                       <span>IP: {s.ipAddress}</span>
-                      <span className="text-gray-300 dark:text-zinc-600">•</span>
+                      <span className="text-gray-300 dark:text-gray-600">•</span>
                       <span className="dir-rtl">
                         آخرین فعالیت: {formatToJalali(s.lastActiveAt)}
                       </span>

@@ -69,7 +69,7 @@ import {
 
 export const CalendarPage: React.FC = () => {
   const currentUser = useAuthStore((s) => s.user);
-  const isStaff = ['SCHOOL_ADMIN', 'STAFF', 'TEACHER', 'SUPER_ADMIN'].includes(currentUser?.role || '');
+  const canManageCalendar = ['SCHOOL_ADMIN', 'SUPER_ADMIN'].includes(currentUser?.role || '');
 
   // Exact Today info from system date
   const todayInfo = useMemo(() => getTodayJalali(), []);
@@ -520,7 +520,7 @@ export const CalendarPage: React.FC = () => {
   return (
     <div className="w-full max-w-7xl mx-auto space-y-3 sm:space-y-4 pb-20 md:pb-8">
       {/* 1. GOOGLE CALENDAR TOP APP BAR */}
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200/80 dark:border-zinc-800 shadow-xs p-3 sm:p-4 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 select-none">
+      <div className="bg-white dark:bg-[#151C28] rounded-2xl border border-gray-200/80 dark:border-gray-800 shadow-xs p-3 sm:p-4 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 select-none">
         {/* Right (RTL): Month Title Dropdown, Steppers & Today Button */}
         <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
           {/* Custom Month & Year Picker Popover */}
@@ -531,7 +531,7 @@ export const CalendarPage: React.FC = () => {
               className={`min-h-[44px] px-3.5 sm:px-4 py-2 rounded-xl border transition-all flex items-center gap-2 select-none shrink-0 ${
                 isMonthPickerOpen
                   ? 'bg-primary/10 dark:bg-primary/20 border-primary dark:border-primary text-primary dark:text-primary-light ring-2 ring-primary/20'
-                  : 'bg-gray-50 dark:bg-zinc-800/80 hover:bg-gray-100 dark:hover:bg-zinc-800 border-gray-200/80 dark:border-zinc-700/80 text-ink-darker dark:text-white'
+                  : 'bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] border-gray-200/80 dark:border-gray-700/80 text-ink-darker dark:text-white'
               }`}
               title="انتخاب سریع ماه و سال"
             >
@@ -540,7 +540,7 @@ export const CalendarPage: React.FC = () => {
                 {PERSIAN_MONTHS.find((m) => m.id === selectedMonth)?.name} {toPersianDigits(selectedYear)}
               </span>
               <ChevronDown
-                className={`w-3.5 h-3.5 text-gray-400 dark:text-zinc-400 transition-transform duration-200 shrink-0 ${
+                className={`w-3.5 h-3.5 text-gray-400 dark:text-gray-400 transition-transform duration-200 shrink-0 ${
                   isMonthPickerOpen ? 'rotate-180 text-primary' : ''
                 }`}
               />
@@ -548,17 +548,17 @@ export const CalendarPage: React.FC = () => {
 
             {/* Custom Month & Year Picker Floating Menu */}
             {isMonthPickerOpen && (
-              <div className="absolute right-0 top-full mt-2 z-40 w-72 sm:w-80 p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 shadow-2xl animate-in fade-in zoom-in-95 duration-150 select-none">
+              <div className="absolute right-0 top-full mt-2 z-40 w-72 sm:w-80 p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-700 shadow-2xl animate-in fade-in zoom-in-95 duration-150 select-none">
                 {/* Year Stepper Header */}
-                <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-zinc-800">
-                  <span className="text-xs font-bold text-gray-500 dark:text-zinc-400">
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-800">
+                  <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
                     انتخاب ماه و سال
                   </span>
-                  <div className="flex items-center gap-1 bg-gray-100 dark:bg-zinc-800/90 p-1 rounded-xl border border-gray-200/60 dark:border-zinc-700/60">
+                  <div className="flex items-center gap-1 bg-gray-100 dark:bg-[#1C2536]/90 p-1 rounded-xl border border-gray-200/60 dark:border-gray-700/60">
                     <button
                       type="button"
                       onClick={() => setSelectedYear((y) => y - 1)}
-                      className="h-7 w-7 rounded-lg hover:bg-white dark:hover:bg-zinc-700 flex items-center justify-center text-gray-600 dark:text-zinc-300 transition-colors"
+                      className="h-7 w-7 rounded-lg hover:bg-white dark:hover:bg-[#242F42] flex items-center justify-center text-gray-600 dark:text-gray-300 transition-colors"
                       title="سال قبل"
                     >
                       <ChevronRight className="w-4 h-4" />
@@ -569,7 +569,7 @@ export const CalendarPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setSelectedYear((y) => y + 1)}
-                      className="h-7 w-7 rounded-lg hover:bg-white dark:hover:bg-zinc-700 flex items-center justify-center text-gray-600 dark:text-zinc-300 transition-colors"
+                      className="h-7 w-7 rounded-lg hover:bg-white dark:hover:bg-[#242F42] flex items-center justify-center text-gray-600 dark:text-gray-300 transition-colors"
                       title="سال بعد"
                     >
                       <ChevronLeft className="w-4 h-4" />
@@ -594,7 +594,7 @@ export const CalendarPage: React.FC = () => {
                         className={`min-h-[42px] px-2 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center relative ${
                           isSelected
                             ? 'bg-primary text-white shadow-xs font-black scale-102 z-10'
-                            : 'bg-gray-50 dark:bg-zinc-800/70 hover:bg-gray-100 dark:hover:bg-zinc-700 text-ink-darker dark:text-zinc-200 border border-transparent hover:border-gray-200 dark:hover:border-zinc-600'
+                            : 'bg-gray-50 dark:bg-[#1C2536]/70 hover:bg-gray-100 dark:hover:bg-[#242F42] text-ink-darker dark:text-gray-200 border border-transparent hover:border-gray-200 dark:hover:border-gray-600'
                         }`}
                       >
                         <span>{m.name}</span>
@@ -608,7 +608,7 @@ export const CalendarPage: React.FC = () => {
                 </div>
 
                 {/* Footer Jump to Today / Current Month */}
-                <div className="pt-3 mt-3 border-t border-gray-100 dark:border-zinc-800 flex items-center justify-between gap-2">
+                <div className="pt-3 mt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between gap-2">
                   <button
                     type="button"
                     onClick={() => {
@@ -623,7 +623,7 @@ export const CalendarPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsMonthPickerOpen(false)}
-                    className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300"
+                    className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   >
                     بستن
                   </button>
@@ -637,7 +637,7 @@ export const CalendarPage: React.FC = () => {
             <button
               type="button"
               onClick={handlePrevMonth}
-              className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl border border-gray-200 dark:border-zinc-700/80 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center justify-center text-gray-600 dark:text-zinc-300 hover:text-ink-darker dark:hover:text-white transition-colors"
+              className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl border border-gray-200 dark:border-gray-700/80 hover:bg-gray-100 dark:hover:bg-[#1C2536] flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-ink-darker dark:hover:text-white transition-colors"
               title="ماه قبل"
               aria-label="ماه قبل"
             >
@@ -646,7 +646,7 @@ export const CalendarPage: React.FC = () => {
             <button
               type="button"
               onClick={handleNextMonth}
-              className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl border border-gray-200 dark:border-zinc-700/80 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center justify-center text-gray-600 dark:text-zinc-300 hover:text-ink-darker dark:hover:text-white transition-colors"
+              className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl border border-gray-200 dark:border-gray-700/80 hover:bg-gray-100 dark:hover:bg-[#1C2536] flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-ink-darker dark:hover:text-white transition-colors"
               title="ماه بعد"
               aria-label="ماه بعد"
             >
@@ -658,12 +658,12 @@ export const CalendarPage: React.FC = () => {
           <button
             type="button"
             onClick={handleJumpToToday}
-            className="h-10 sm:h-11 px-3 sm:px-3.5 rounded-xl border border-gray-200 dark:border-zinc-700/80 hover:border-primary/40 bg-gray-50 dark:bg-zinc-800/80 hover:bg-primary/5 dark:hover:bg-primary/10 text-xs sm:text-sm font-bold text-gray-700 dark:text-zinc-200 hover:text-primary dark:hover:text-primary-light transition-all flex items-center gap-1.5 shrink-0 shadow-2xs"
+            className="h-10 sm:h-11 px-3 sm:px-3.5 rounded-xl border border-gray-200 dark:border-gray-700/80 hover:border-primary/40 bg-gray-50 dark:bg-[#1C2536]/80 hover:bg-primary/5 dark:hover:bg-primary/10 text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary-light transition-all flex items-center gap-1.5 shrink-0 shadow-2xs"
             title="پرش به تاریخ امروز"
           >
             <span className="w-2 h-2 rounded-full bg-primary inline-block" />
             <span>امروز</span>
-            <span className="text-[10px] sm:text-xs text-gray-400 dark:text-zinc-400 mr-0.5 font-mono">
+            <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-400 mr-0.5 font-mono">
               ({toPersianDigits(todayInfo.day)})
             </span>
           </button>
@@ -672,15 +672,15 @@ export const CalendarPage: React.FC = () => {
         {/* Left (RTL): View Mode Switcher & Staff Actions */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3">
           {/* Google Calendar View Mode Segmented Controls */}
-          <div className="flex items-center bg-gray-100/90 dark:bg-zinc-800/90 p-1 rounded-xl text-xs font-bold border border-gray-200/60 dark:border-zinc-700/60 shrink-0">
+          <div className="flex items-center bg-gray-100/90 dark:bg-[#1C2536]/90 p-1 rounded-xl text-xs font-bold border border-gray-200/60 dark:border-gray-700/60 shrink-0">
             {/* 1. راست: مناسبت‌ها */}
             <button
               type="button"
               onClick={() => setViewMode('SCHEDULE')}
               className={`flex-1 sm:flex-initial min-h-[42px] px-4 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                 viewMode === 'SCHEDULE'
-                  ? 'bg-white dark:bg-zinc-900 text-primary dark:text-primary-light shadow-xs font-black'
-                  : 'text-gray-600 dark:text-zinc-400 hover:text-ink-darker dark:hover:text-white'
+                  ? 'bg-white dark:bg-[#151C28] text-primary dark:text-primary-light shadow-xs font-black'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-ink-darker dark:hover:text-white'
               }`}
               title="نمای مناسبت‌ها و رویدادها"
             >
@@ -694,8 +694,8 @@ export const CalendarPage: React.FC = () => {
               onClick={() => setViewMode('MONTH')}
               className={`flex-1 sm:flex-initial min-h-[42px] px-4 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                 viewMode === 'MONTH'
-                  ? 'bg-white dark:bg-zinc-900 text-primary dark:text-primary-light shadow-xs font-black'
-                  : 'text-gray-600 dark:text-zinc-400 hover:text-ink-darker dark:hover:text-white'
+                  ? 'bg-white dark:bg-[#151C28] text-primary dark:text-primary-light shadow-xs font-black'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-ink-darker dark:hover:text-white'
               }`}
               title="نمای تقویم"
             >
@@ -704,17 +704,17 @@ export const CalendarPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Desktop & Mobile Staff Action Buttons */}
-          {isStaff && (
+          {/* Desktop & Mobile Admin Action Buttons */}
+          {canManageCalendar && (
             <>
               {/* Divider between Views and Actions */}
-              <div className="hidden xl:block h-7 w-px bg-gray-200 dark:bg-zinc-700/60 shrink-0" />
+              <div className="hidden xl:block h-7 w-px bg-gray-200 dark:bg-gray-700/60 shrink-0" />
 
               <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                 <button
                   type="button"
                   onClick={() => setIsEventTypesModalOpen(true)}
-                  className="flex-1 sm:flex-initial min-h-[42px] px-3.5 py-2 rounded-xl border border-gray-200/90 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700/80 text-xs sm:text-sm font-bold text-gray-700 dark:text-zinc-200 hover:text-primary dark:hover:text-primary-light transition-all flex items-center justify-center gap-1.5 shadow-2xs shrink-0 whitespace-nowrap"
+                  className="flex-1 sm:flex-initial min-h-[42px] px-3.5 py-2 rounded-xl border border-gray-200/90 dark:border-gray-700 bg-white dark:bg-[#1C2536] hover:bg-gray-50 dark:hover:bg-[#242F42] text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-primary dark:hover:text-primary-light transition-all flex items-center justify-center gap-1.5 shadow-2xs shrink-0 whitespace-nowrap"
                   title="مدیریت و تعریف انواع رویدادها"
                 >
                   <SlidersHorizontal className="w-4 h-4 text-primary shrink-0" />
@@ -760,8 +760,8 @@ export const CalendarPage: React.FC = () => {
                 onClick={() => setFilterType('ALL')}
                 className={`min-h-[40px] sm:min-h-[44px] px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 inline-flex items-center justify-center ${
                   filterType === 'ALL'
-                    ? 'bg-ink-darker dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-2xs'
-                    : 'bg-white dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-700'
+                    ? 'bg-ink-darker dark:bg-white text-white dark:text-[#151C28] shadow-2xs'
+                    : 'bg-white dark:bg-[#1C2536] text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#242F42]'
                 }`}
               >
                 همه روزها ({toPersianDigits(monthDays.length)})
@@ -772,7 +772,7 @@ export const CalendarPage: React.FC = () => {
                 className={`min-h-[40px] sm:min-h-[44px] px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 inline-flex items-center gap-1.5 ${
                   filterType === 'HOLIDAYS'
                     ? 'bg-rose-600 text-white shadow-2xs'
-                    : 'bg-white dark:bg-zinc-800 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/30'
+                    : 'bg-white dark:bg-[#1C2536] text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/30'
                 }`}
               >
                 <span
@@ -788,7 +788,7 @@ export const CalendarPage: React.FC = () => {
                 className={`min-h-[40px] sm:min-h-[44px] px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 inline-flex items-center gap-1.5 ${
                   filterType === 'SCHOOL_EVENTS'
                     ? 'bg-primary text-white shadow-2xs'
-                    : 'bg-white dark:bg-zinc-800 text-primary dark:text-primary-light border border-primary/30 dark:border-primary/40 hover:bg-primary/5 dark:hover:bg-primary/10'
+                    : 'bg-white dark:bg-[#1C2536] text-primary dark:text-primary-light border border-primary/30 dark:border-primary/40 hover:bg-primary/5 dark:hover:bg-primary/10'
                 }`}
               >
                 <span
@@ -800,16 +800,16 @@ export const CalendarPage: React.FC = () => {
               </button>
             </div>
 
-            <span className="text-[11px] font-bold text-gray-400 dark:text-zinc-500 hidden sm:inline shrink-0">
+            <span className="text-[11px] font-bold text-gray-400 dark:text-gray-400 hidden sm:inline shrink-0">
               {toPersianDigits(currentMonthMeta.days)} روز
             </span>
           </div>
 
           {scheduleItems.length === 0 ? (
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 p-8 text-center">
-              <CalendarCheck className="w-12 h-12 text-gray-300 dark:text-zinc-600 mx-auto mb-2" />
-              <h4 className="font-bold text-sm text-gray-700 dark:text-zinc-200">هیچ مناسبت یا رویدادی با این فیلتر یافت نشد</h4>
-              <p className="text-xs text-gray-400 dark:text-zinc-400 mt-1">
+            <div className="bg-white dark:bg-[#151C28] rounded-2xl border border-gray-200 dark:border-gray-800 p-8 text-center">
+              <CalendarCheck className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+              <h4 className="font-bold text-sm text-gray-700 dark:text-gray-200">هیچ مناسبت یا رویدادی با این فیلتر یافت نشد</h4>
+              <p className="text-xs text-gray-400 dark:text-gray-400 mt-1">
                 می‌توانید فیلتر را به «همه روزها» تغییر دهید یا مناسبت جدیدی را مشاهده فرمایید.
               </p>
             </div>
@@ -826,12 +826,12 @@ export const CalendarPage: React.FC = () => {
                   <div
                     key={day.jalaliStr}
                     onClick={() => setSelectedDay(day)}
-                    className={`bg-white dark:bg-zinc-900 rounded-2xl border p-3 sm:p-4 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs cursor-pointer ${
+                    className={`bg-white dark:bg-[#151C28] rounded-2xl border p-3 sm:p-4 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs cursor-pointer ${
                       day.isToday
                         ? 'border-primary dark:border-primary-light ring-2 ring-primary/20 dark:ring-primary-light/25 bg-primary/[0.02] dark:bg-primary/[0.08]'
                         : isHoliday
                         ? 'border-rose-200/80 dark:border-rose-800/60 bg-rose-50/20 dark:bg-rose-950/40 hover:border-rose-300 dark:hover:border-rose-700'
-                        : 'border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700'
+                        : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700'
                     }`}
                   >
                     {/* Date Block (Right) */}
@@ -843,7 +843,7 @@ export const CalendarPage: React.FC = () => {
                             ? 'bg-primary text-white font-black shadow-xs'
                             : isHoliday
                             ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-bold border border-rose-200/50 dark:border-rose-800/50'
-                            : 'bg-gray-100 dark:bg-zinc-800 text-ink-darker dark:text-zinc-100 font-bold'
+                            : 'bg-gray-100 dark:bg-[#1C2536] text-ink-darker dark:text-gray-100 font-bold'
                         }`}
                       >
                         <span className="text-base leading-none">{toPersianDigits(day.day)}</span>
@@ -857,7 +857,7 @@ export const CalendarPage: React.FC = () => {
                         <div className="flex items-center gap-1.5">
                           <span
                             className={`text-xs font-black ${
-                              isHoliday ? 'text-rose-600 dark:text-rose-400' : 'text-gray-800 dark:text-zinc-200'
+                              isHoliday ? 'text-rose-600 dark:text-rose-400' : 'text-gray-800 dark:text-gray-200'
                             }`}
                           >
                             {day.dayOfWeekName}
@@ -868,7 +868,7 @@ export const CalendarPage: React.FC = () => {
                             </span>
                           )}
                         </div>
-                        <span className="text-[10px] text-gray-400 dark:text-zinc-400 font-mono block mt-0.5">
+                        <span className="text-[10px] text-gray-400 dark:text-gray-400 font-mono block mt-0.5">
                           {day.gregorianStr}
                         </span>
                       </div>
@@ -898,16 +898,16 @@ export const CalendarPage: React.FC = () => {
                       {daySchoolEvents.map((ev) => (
                         <div
                           key={ev.id}
-                          className="p-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800/80 border border-gray-200/80 dark:border-zinc-700/60 text-xs flex items-center justify-between gap-2"
+                          className="p-2.5 rounded-xl bg-gray-50 dark:bg-[#1C2536]/80 border border-gray-200/80 dark:border-gray-700/60 text-xs flex items-center justify-between gap-2"
                         >
                           <div className="flex items-center gap-2 min-w-0">
                             <span
                               className={`w-2 h-2 rounded-full shrink-0 ${getTypeDotColor(ev.type || ev.eventType)}`}
                             />
                             <div className="min-w-0">
-                              <span className="font-bold text-ink-darker dark:text-zinc-100 truncate block">{ev.title}</span>
+                              <span className="font-bold text-ink-darker dark:text-gray-100 truncate block">{ev.title}</span>
                               {ev.location && (
-                                <span className="text-[10px] text-gray-400 dark:text-zinc-400 truncate block">
+                                <span className="text-[10px] text-gray-400 dark:text-gray-400 truncate block">
                                   {ev.location}
                                 </span>
                               )}
@@ -917,7 +917,7 @@ export const CalendarPage: React.FC = () => {
                             <Badge variant="neutral" className="text-[10px]">
                               {getTypeLabel(ev.type || ev.eventType)}
                             </Badge>
-                            {isStaff && (
+                            {canManageCalendar && (
                               <div className="flex items-center gap-1">
                                 <button
                                   type="button"
@@ -949,7 +949,7 @@ export const CalendarPage: React.FC = () => {
 
                       {/* Occasions List */}
                       {day.occasions.filter((occ) => occ !== day.holidayReason && occ !== 'تعطیل هفتگی (جمعه)').length > 0 && (
-                        <div className="text-[11px] text-gray-600 dark:text-zinc-300 flex items-center gap-1.5 py-0.5 truncate">
+                        <div className="text-[11px] text-gray-600 dark:text-gray-300 flex items-center gap-1.5 py-0.5 truncate">
                           <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
                           <span className="truncate">
                             {day.occasions.filter((occ) => occ !== day.holidayReason && occ !== 'تعطیل هفتگی (جمعه)').join(' • ')}
@@ -959,7 +959,7 @@ export const CalendarPage: React.FC = () => {
                     </div>
 
                     {/* Left: Quick Action Button */}
-                    {isStaff && (
+                    {canManageCalendar && (
                       <div className="shrink-0 pt-1 sm:pt-0 self-end sm:self-center">
                         <button
                           type="button"
@@ -985,9 +985,9 @@ export const CalendarPage: React.FC = () => {
       {/* 4. VIEW 2: GOOGLE CALENDAR MONTH VIEW (Clean 7-Col Grid + Split Inspector) */}
       {viewMode === 'MONTH' && (
         <div className="space-y-3 sm:space-y-4 animate-in fade-in duration-200">
-          <Card className="p-2 sm:p-3 md:p-4 bg-white dark:bg-zinc-900 border border-gray-200/80 dark:border-zinc-800 shadow-xs rounded-2xl overflow-hidden">
+          <Card className="p-2 sm:p-3 md:p-4 bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-gray-800 shadow-xs rounded-2xl overflow-hidden">
             {/* Weekday Strip */}
-            <div className="grid grid-cols-7 bg-gray-50/90 dark:bg-zinc-800/80 py-1.5 sm:py-2 px-1 rounded-xl mb-1.5 sm:mb-2 border border-gray-200/60 dark:border-zinc-700/80 text-center text-xs sm:text-sm font-bold text-gray-500 dark:text-zinc-300">
+            <div className="grid grid-cols-7 bg-gray-50/90 dark:bg-[#1C2536]/80 py-1.5 sm:py-2 px-1 rounded-xl mb-1.5 sm:mb-2 border border-gray-200/60 dark:border-gray-700/80 text-center text-xs sm:text-sm font-bold text-gray-500 dark:text-gray-300">
               {WEEK_DAYS.map((wd) => (
                 <div key={wd.id} className={wd.id === 6 ? 'text-rose-600 dark:text-rose-400 font-black' : ''}>
                   <span className="hidden sm:inline">{wd.name}</span>
@@ -1002,7 +1002,7 @@ export const CalendarPage: React.FC = () => {
               {Array.from({ length: leadingBlankDays }).map((_, i) => (
                 <div
                   key={`blank-${i}`}
-                  className="min-h-[48px] sm:min-h-[62px] md:min-h-[72px] rounded-xl sm:rounded-2xl bg-gray-50/40 dark:bg-zinc-800/25 border border-dashed border-gray-200/50 dark:border-zinc-800/80"
+                  className="min-h-[48px] sm:min-h-[62px] md:min-h-[72px] rounded-xl sm:rounded-2xl bg-gray-50/40 dark:bg-[#1C2536]/25 border border-dashed border-gray-200/50 dark:border-gray-800/80"
                 />
               ))}
 
@@ -1025,7 +1025,7 @@ export const CalendarPage: React.FC = () => {
                         ? 'ring-2 ring-primary dark:ring-primary-light border-primary dark:border-primary-light bg-primary/5 dark:bg-primary/20 shadow-xs'
                         : isHoliday
                         ? 'bg-rose-50/40 dark:bg-rose-950/40 border-rose-200/80 dark:border-rose-800/60 hover:border-rose-300 dark:hover:border-rose-700'
-                        : 'bg-white dark:bg-zinc-900 border-gray-200/80 dark:border-zinc-800 hover:border-primary/40 dark:hover:border-zinc-700 hover:bg-gray-50/50 dark:hover:bg-zinc-800/60'
+                        : 'bg-white dark:bg-[#151C28] border-gray-200/80 dark:border-gray-800 hover:border-primary/40 dark:hover:border-gray-700 hover:bg-gray-50/50 dark:hover:bg-[#1C2536]/60'
                     }`}
                   >
                     {/* Day Number Row - Center Aligned */}
@@ -1039,7 +1039,7 @@ export const CalendarPage: React.FC = () => {
                           className={`text-base sm:text-lg md:text-xl font-black leading-none text-center flex items-center justify-center ${
                             isHoliday
                               ? 'text-rose-600 dark:text-rose-400'
-                              : 'text-ink-darker dark:text-zinc-100 group-hover:text-primary dark:group-hover:text-primary-light transition-colors'
+                              : 'text-ink-darker dark:text-gray-100 group-hover:text-primary dark:group-hover:text-primary-light transition-colors'
                           }`}
                         >
                           {toPersianDigits(day.day)}
@@ -1124,8 +1124,8 @@ export const CalendarPage: React.FC = () => {
 
           {/* Google Calendar Split Day Details (Immediately visible under month grid) */}
           {selectedDay && (
-            <Card className="p-3.5 sm:p-5 bg-white dark:bg-zinc-900 border border-gray-200/80 dark:border-zinc-800 shadow-xs rounded-2xl animate-in fade-in duration-150">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-gray-100 dark:border-zinc-800 gap-2">
+            <Card className="p-3.5 sm:p-5 bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-gray-800 shadow-xs rounded-2xl animate-in fade-in duration-150">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800 gap-2">
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-base sm:text-lg font-black text-ink-darker dark:text-white">
@@ -1138,7 +1138,7 @@ export const CalendarPage: React.FC = () => {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-400 dark:text-zinc-400 font-mono mt-0.5">
+                  <p className="text-xs text-gray-400 dark:text-gray-400 font-mono mt-0.5">
                     {selectedDay.gregorianStr}
                   </p>
                 </div>
@@ -1151,12 +1151,12 @@ export const CalendarPage: React.FC = () => {
                     {selectedDay.isOfficialHoliday ? 'تعطیل رسمی' : 'روزِ آموزشی'}
                   </Badge>
 
-                  {isStaff && (
+                  {canManageCalendar && (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleOpenCreate(selectedDay.jalaliStr)}
-                      className="text-xs min-h-[38px] px-3 border-gray-300 dark:border-zinc-700"
+                      className="text-xs min-h-[38px] px-3 border-gray-300 dark:border-gray-700"
                     >
                       <Plus className="w-3.5 h-3.5 ml-1 text-primary" />
                       <span>ثبت رویداد</span>
@@ -1180,12 +1180,12 @@ export const CalendarPage: React.FC = () => {
                 {/* Occasions List */}
                 {selectedDay.occasions.length > 0 && (
                   <div className="space-y-1">
-                    <span className="text-xs font-bold text-gray-700 dark:text-zinc-300 block">مناسبت‌های روز:</span>
+                    <span className="text-xs font-bold text-gray-700 dark:text-gray-300 block">مناسبت‌های روز:</span>
                     <div className="flex flex-wrap gap-1.5">
                       {selectedDay.occasions.map((occ, idx) => (
                         <span
                           key={idx}
-                          className="px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 text-xs text-gray-700 dark:text-zinc-200 flex items-center gap-1.5"
+                          className="px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-[#1C2536] border border-gray-100 dark:border-gray-700 text-xs text-gray-700 dark:text-gray-200 flex items-center gap-1.5"
                         >
                           <Check className="w-3 h-3 text-emerald-600" />
                           <span>{occ}</span>
@@ -1198,19 +1198,19 @@ export const CalendarPage: React.FC = () => {
                 {/* School Events */}
                 {getDaySchoolEvents(selectedDay.jalaliStr).length > 0 && (
                   <div className="space-y-1.5 pt-1">
-                    <span className="text-xs font-bold text-gray-700 dark:text-zinc-300 block">برنامه‌ها و آزمون‌های مدرسه:</span>
+                    <span className="text-xs font-bold text-gray-700 dark:text-gray-300 block">برنامه‌ها و آزمون‌های مدرسه:</span>
                     {getDaySchoolEvents(selectedDay.jalaliStr).map((ev) => (
                       <div
                         key={ev.id}
                         className="p-2.5 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 dark:border-primary/30 text-xs flex items-center justify-between gap-2"
                       >
                         <div className="min-w-0">
-                          <p className="font-bold text-ink-darker dark:text-zinc-100 truncate">{ev.title}</p>
+                          <p className="font-bold text-ink-darker dark:text-gray-100 truncate">{ev.title}</p>
                           {ev.description && (
-                            <p className="text-gray-500 dark:text-zinc-400 text-[11px] mt-0.5 line-clamp-2">{ev.description}</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-[11px] mt-0.5 line-clamp-2">{ev.description}</p>
                           )}
                           {ev.location && (
-                            <p className="text-gray-400 dark:text-zinc-400 text-[10px] mt-0.5 flex items-center gap-1">
+                            <p className="text-gray-400 dark:text-gray-400 text-[10px] mt-0.5 flex items-center gap-1">
                               <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
                               <span className="truncate">{ev.location}</span>
                             </p>
@@ -1220,7 +1220,7 @@ export const CalendarPage: React.FC = () => {
                           <Badge variant="neutral" className="text-[10px]">
                             {getTypeLabel(ev.type || ev.eventType)}
                           </Badge>
-                          {isStaff && (
+                          {canManageCalendar && (
                             <div className="flex items-center gap-1">
                               <button
                                 type="button"
@@ -1249,7 +1249,7 @@ export const CalendarPage: React.FC = () => {
                 {!selectedDay.holidayReason &&
                   selectedDay.occasions.length === 0 &&
                   getDaySchoolEvents(selectedDay.jalaliStr).length === 0 && (
-                    <p className="text-xs text-gray-400 dark:text-zinc-500 py-2 text-center">
+                    <p className="text-xs text-gray-400 dark:text-gray-400 py-2 text-center">
                       هیچ رویداد یا مناسبت رسمی برای این روز ثبت نشده است.
                     </p>
                   )}
@@ -1259,8 +1259,8 @@ export const CalendarPage: React.FC = () => {
         </div>
       )}
 
-      {/* 6. FLOATING ACTION BUTTON (FAB) FOR MOBILE STAFF */}
-      {isStaff && (
+      {/* 6. FLOATING ACTION BUTTON (FAB) FOR MOBILE ADMINS */}
+      {canManageCalendar && (
         <div className="fixed bottom-6 left-5 z-40 md:hidden">
           <button
             type="button"
@@ -1323,7 +1323,7 @@ export const CalendarPage: React.FC = () => {
                     </span>
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-gray-400 dark:text-zinc-400 transition-transform duration-200 shrink-0 ${
+                    className={`w-4 h-4 text-gray-400 dark:text-gray-400 transition-transform duration-200 shrink-0 ${
                       isTypeDropdownOpen ? 'rotate-180 text-primary' : ''
                     }`}
                   />
@@ -1345,7 +1345,7 @@ export const CalendarPage: React.FC = () => {
                           className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs sm:text-sm text-right transition-colors ${
                             isSelected
                               ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light font-bold'
-                              : 'text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-700/60'
+                              : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#242F42]'
                           }`}
                         >
                           <div className="flex items-center gap-2 truncate min-w-0">
@@ -1403,13 +1403,13 @@ export const CalendarPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-ink-dark dark:text-zinc-300 mb-1">توضیحات تکمیلی</label>
+            <label className="block text-xs font-bold text-ink-dark dark:text-gray-300 mb-1">توضیحات تکمیلی</label>
             <textarea
               rows={2}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="نکات ضروری و جزئیات شرکت..."
-              className="w-full rounded-xl border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-2.5 text-xs text-ink-normal dark:text-zinc-100 focus:ring-2 focus:ring-primary resize-none"
+              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] p-2.5 text-xs text-ink-normal dark:text-gray-100 focus:ring-2 focus:ring-primary resize-none"
             />
           </div>
 
@@ -1445,7 +1445,7 @@ export const CalendarPage: React.FC = () => {
         maxWidth="sm"
       >
         <div className="space-y-4 text-right">
-          <p className="text-sm text-gray-600 dark:text-zinc-300 leading-relaxed">
+          <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
             آیا از حذف رویداد <span className="font-bold text-ink-darker dark:text-white">«{deleteConfirmEvent?.title}»</span> اطمینان دارید؟ این اقدام قابل بازگشت نخواهد بود.
           </p>
           <div className="flex justify-end gap-2 pt-2">
@@ -1484,7 +1484,7 @@ export const CalendarPage: React.FC = () => {
             {eventTypes.map((type, index) => (
               <div
                 key={type.code}
-                className="flex items-center justify-between p-2.5 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50/50 dark:bg-zinc-800/50 gap-2"
+                className="flex items-center justify-between p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-[#1C2536]/50 gap-2"
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <span className={`w-3 h-3 rounded-full shrink-0 ${getTypeDotColor(type.code)}`} />
@@ -1496,7 +1496,7 @@ export const CalendarPage: React.FC = () => {
                       updated[index] = { ...updated[index], titleFa: e.target.value };
                       setEventTypes(updated);
                     }}
-                    className="text-xs font-bold bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-ink-darker dark:text-white flex-1 focus:ring-1 focus:ring-primary outline-none"
+                    className="text-xs font-bold bg-white dark:bg-[#1C2536] border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-1.5 text-ink-darker dark:text-white flex-1 focus:ring-1 focus:ring-primary outline-none"
                     placeholder="عنوان نوع رویداد"
                   />
                   <span className="text-[10px] text-gray-400 font-mono shrink-0 hidden sm:inline">
@@ -1520,7 +1520,7 @@ export const CalendarPage: React.FC = () => {
           </div>
 
           {/* Add New Type Section */}
-          <div className="p-3.5 rounded-xl border border-dashed border-gray-300 dark:border-zinc-700 bg-gray-50/40 dark:bg-zinc-800/30 space-y-3">
+          <div className="p-3.5 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50/40 dark:bg-[#1C2536]/30 space-y-3">
             <span className="text-xs font-bold text-ink-darker dark:text-white block">تعریف نوع رویداد جدید:</span>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <input
@@ -1528,12 +1528,12 @@ export const CalendarPage: React.FC = () => {
                 value={newTypeForm.titleFa}
                 onChange={(e) => setNewTypeForm({ ...newTypeForm, titleFa: e.target.value })}
                 placeholder="عنوان (مثال: کارگاه مهارت)"
-                className="text-xs rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-ink-darker dark:text-white outline-none focus:ring-1 focus:ring-primary min-h-[40px]"
+                className="text-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3 py-2 text-ink-darker dark:text-white outline-none focus:ring-1 focus:ring-primary min-h-[40px]"
               />
               <select
                 value={newTypeForm.baseType}
                 onChange={(e) => setNewTypeForm({ ...newTypeForm, baseType: e.target.value })}
-                className="text-xs rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-ink-darker dark:text-white outline-none focus:ring-1 focus:ring-primary min-h-[40px]"
+                className="text-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3 py-2 text-ink-darker dark:text-white outline-none focus:ring-1 focus:ring-primary min-h-[40px]"
               >
                 <option value="ACADEMIC">پایه: آموزشی</option>
                 <option value="EXAM">پایه: آزمون</option>
@@ -1545,7 +1545,7 @@ export const CalendarPage: React.FC = () => {
               <select
                 value={newTypeForm.color}
                 onChange={(e) => setNewTypeForm({ ...newTypeForm, color: e.target.value })}
-                className="text-xs rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-ink-darker dark:text-white outline-none focus:ring-1 focus:ring-primary min-h-[40px]"
+                className="text-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3 py-2 text-ink-darker dark:text-white outline-none focus:ring-1 focus:ring-primary min-h-[40px]"
               >
                 <option value="emerald">رنگ: سبز زمردی</option>
                 <option value="amber">رنگ: کهربایی / نارنجی</option>
@@ -1586,7 +1586,7 @@ export const CalendarPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
+          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
             <Button
               type="button"
               variant="ghost"
