@@ -83,19 +83,26 @@ export const CalendarPage: React.FC = () => {
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
   const monthPickerRef = useRef<HTMLDivElement>(null);
 
+  // Custom Event Type Dropdown in Modal State & Outside Click Handling
+  const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
+  const typeDropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (monthPickerRef.current && !monthPickerRef.current.contains(event.target as Node)) {
         setIsMonthPickerOpen(false);
       }
+      if (typeDropdownRef.current && !typeDropdownRef.current.contains(event.target as Node)) {
+        setIsTypeDropdownOpen(false);
+      }
     };
-    if (isMonthPickerOpen) {
+    if (isMonthPickerOpen || isTypeDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isMonthPickerOpen]);
+  }, [isMonthPickerOpen, isTypeDropdownOpen]);
 
   // Google Calendar View Modes:
   // 'MONTH' (ماهانه - پیش‌فرض) | 'SCHEDULE' (مناسبت‌ها)
@@ -291,6 +298,8 @@ export const CalendarPage: React.FC = () => {
         return 'bg-blue-500';
       case 'teal':
         return 'bg-teal-500';
+      case 'emerald':
+        return 'bg-emerald-500';
       default:
         return 'bg-primary';
     }
@@ -314,6 +323,7 @@ export const CalendarPage: React.FC = () => {
     });
     setEditingEventId(null);
     setError(null);
+    setIsTypeDropdownOpen(false);
   };
 
   const handleOpenCreate = (dateStr?: string) => {
@@ -510,7 +520,7 @@ export const CalendarPage: React.FC = () => {
   return (
     <div className="w-full max-w-7xl mx-auto space-y-3 sm:space-y-4 pb-20 md:pb-8">
       {/* 1. GOOGLE CALENDAR TOP APP BAR */}
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200/80 dark:border-zinc-800 shadow-xs p-3 sm:px-5 sm:py-3.5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 select-none">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200/80 dark:border-zinc-800 shadow-xs p-3 sm:p-4 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 select-none">
         {/* Right (RTL): Month Title Dropdown, Steppers & Today Button */}
         <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
           {/* Custom Month & Year Picker Popover */}
@@ -660,14 +670,14 @@ export const CalendarPage: React.FC = () => {
         </div>
 
         {/* Left (RTL): View Mode Switcher & Staff Actions */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3">
           {/* Google Calendar View Mode Segmented Controls */}
-          <div className="flex items-center bg-gray-100/90 dark:bg-zinc-800/90 p-1 rounded-xl text-xs font-bold w-full md:w-auto border border-gray-200/60 dark:border-zinc-700/60">
+          <div className="flex items-center bg-gray-100/90 dark:bg-zinc-800/90 p-1 rounded-xl text-xs font-bold border border-gray-200/60 dark:border-zinc-700/60 shrink-0">
             {/* 1. راست: مناسبت‌ها */}
             <button
               type="button"
               onClick={() => setViewMode('SCHEDULE')}
-              className={`flex-1 md:flex-initial min-h-[44px] px-3.5 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              className={`flex-1 sm:flex-initial min-h-[42px] px-4 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                 viewMode === 'SCHEDULE'
                   ? 'bg-white dark:bg-zinc-900 text-primary dark:text-primary-light shadow-xs font-black'
                   : 'text-gray-600 dark:text-zinc-400 hover:text-ink-darker dark:hover:text-white'
@@ -682,7 +692,7 @@ export const CalendarPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setViewMode('MONTH')}
-              className={`flex-1 md:flex-initial min-h-[44px] px-3.5 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              className={`flex-1 sm:flex-initial min-h-[42px] px-4 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                 viewMode === 'MONTH'
                   ? 'bg-white dark:bg-zinc-900 text-primary dark:text-primary-light shadow-xs font-black'
                   : 'text-gray-600 dark:text-zinc-400 hover:text-ink-darker dark:hover:text-white'
@@ -694,43 +704,47 @@ export const CalendarPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Desktop Staff Action */}
+          {/* Desktop & Mobile Staff Action Buttons */}
           {isStaff && (
-            <div className="flex items-center gap-1.5 flex-wrap md:flex-nowrap">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEventTypesModalOpen(true)}
-                className="text-xs min-h-[44px] px-3 border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800"
-                title="مدیریت و تعریف انواع رویدادها"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5 ml-1 text-primary" />
-                <span className="hidden sm:inline">انواع رویداد</span>
-              </Button>
+            <>
+              {/* Divider between Views and Actions */}
+              <div className="hidden xl:block h-7 w-px bg-gray-200 dark:bg-zinc-700/60 shrink-0" />
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (selectedDay) setHolidayForm((p) => ({ ...p, date: selectedDay.jalaliStr }));
-                  setIsHolidayModalOpen(true);
-                }}
-                className="text-xs min-h-[44px] px-3.5 border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-              >
-                <ShieldAlert className="w-3.5 h-3.5 ml-1 text-rose-600" />
-                <span className="hidden sm:inline">تعطیلی مدرسه</span>
-              </Button>
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <button
+                  type="button"
+                  onClick={() => setIsEventTypesModalOpen(true)}
+                  className="flex-1 sm:flex-initial min-h-[42px] px-3.5 py-2 rounded-xl border border-gray-200/90 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700/80 text-xs sm:text-sm font-bold text-gray-700 dark:text-zinc-200 hover:text-primary dark:hover:text-primary-light transition-all flex items-center justify-center gap-1.5 shadow-2xs shrink-0"
+                  title="مدیریت و تعریف انواع رویدادها"
+                >
+                  <SlidersHorizontal className="w-4 h-4 text-primary shrink-0" />
+                  <span>انواع رویداد</span>
+                </button>
 
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => handleOpenCreate(selectedDay?.jalaliStr)}
-                className="text-xs min-h-[44px] px-3.5"
-              >
-                <Plus className="w-3.5 h-3.5 ml-1" />
-                <span>رویداد جدید</span>
-              </Button>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedDay) setHolidayForm((p) => ({ ...p, date: selectedDay.jalaliStr }));
+                    setIsHolidayModalOpen(true);
+                  }}
+                  className="flex-1 sm:flex-initial min-h-[42px] px-3.5 py-2 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/60 dark:bg-rose-950/20 hover:bg-rose-100/60 dark:hover:bg-rose-950/40 text-xs sm:text-sm font-bold text-rose-700 dark:text-rose-400 transition-all flex items-center justify-center gap-1.5 shadow-2xs shrink-0"
+                  title="ثبت تعطیلی مدرسه"
+                >
+                  <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                  <span>تعطیلی مدرسه</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleOpenCreate(selectedDay?.jalaliStr)}
+                  className="flex-1 sm:flex-initial min-h-[42px] px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover active:scale-98 text-white text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs shrink-0"
+                  title="ثبت رویداد جدید در تقویم"
+                >
+                  <Plus className="w-4 h-4 stroke-[2.5] shrink-0" />
+                  <span>رویداد جدید</span>
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -1247,15 +1261,7 @@ export const CalendarPage: React.FC = () => {
 
       {/* 6. FLOATING ACTION BUTTON (FAB) FOR MOBILE STAFF */}
       {isStaff && (
-        <div className="fixed bottom-6 left-5 z-40 md:hidden flex flex-col items-end gap-2">
-          <button
-            type="button"
-            onClick={() => setIsEventTypesModalOpen(true)}
-            className="h-10 w-10 rounded-2xl bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 border border-gray-200 dark:border-zinc-700 shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
-            title="مدیریت انواع رویداد"
-          >
-            <SlidersHorizontal className="w-4 h-4 text-primary" />
-          </button>
+        <div className="fixed bottom-6 left-5 z-40 md:hidden">
           <button
             type="button"
             onClick={() => handleOpenCreate(selectedDay?.jalaliStr)}
@@ -1295,17 +1301,65 @@ export const CalendarPage: React.FC = () => {
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Select
-              label="نوع رویداد"
-              value={form.type}
-              onChange={(e) => setForm({ ...form, type: e.target.value })}
-            >
-              {eventTypes.map((t) => (
-                <option key={t.code} value={t.code}>
-                  {t.titleFa}
-                </option>
-              ))}
-            </Select>
+            {/* Custom Modern Event Type Dropdown */}
+            <div className="w-full text-right space-y-1.5 min-w-0" ref={typeDropdownRef}>
+              <label className="block text-xs sm:text-[13px] font-bold text-ink-normal/80 dark:text-gray-300">
+                نوع رویداد
+              </label>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsTypeDropdownOpen((prev) => !prev)}
+                  className={`w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border transition-all flex items-center justify-between text-xs sm:text-sm font-medium ${
+                    isTypeDropdownOpen
+                      ? 'border-primary ring-2 ring-primary/20 bg-white dark:bg-[#1C2536]'
+                      : 'border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] hover:border-gray-300 dark:hover:border-gray-600 text-ink-normal dark:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${getTypeDotColor(form.type)}`} />
+                    <span className="truncate font-medium text-ink-normal dark:text-white">
+                      {eventTypes.find((t) => t.code === form.type)?.titleFa || form.type}
+                    </span>
+                  </div>
+                  <ChevronDown
+                    className={`w-4 h-4 text-gray-400 dark:text-zinc-400 transition-transform duration-200 shrink-0 ${
+                      isTypeDropdownOpen ? 'rotate-180 text-primary' : ''
+                    }`}
+                  />
+                </button>
+
+                {/* Dropdown Options Popup - strictly bounded to container */}
+                {isTypeDropdownOpen && (
+                  <div className="absolute top-full mt-1.5 inset-x-0 z-50 rounded-xl bg-white dark:bg-[#1C2536] border border-gray-200 dark:border-gray-700 shadow-2xl p-1.5 space-y-1 max-h-56 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 overscroll-contain">
+                    {eventTypes.map((t) => {
+                      const isSelected = t.code === form.type;
+                      return (
+                        <button
+                          key={t.code}
+                          type="button"
+                          onClick={() => {
+                            setForm((p) => ({ ...p, type: t.code }));
+                            setIsTypeDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs sm:text-sm text-right transition-colors ${
+                            isSelected
+                              ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light font-bold'
+                              : 'text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-700/60'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 truncate min-w-0">
+                            <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${getTypeDotColor(t.code)}`} />
+                            <span className="truncate">{t.titleFa}</span>
+                          </div>
+                          {isSelected && <Check className="w-4 h-4 text-primary shrink-0 mr-2" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
 
             <Input
               label="مکان برگزاری"
