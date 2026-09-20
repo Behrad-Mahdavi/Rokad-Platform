@@ -46,6 +46,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { CoachingModule } from './modules/coaching/coaching.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { AppController } from './app.controller';
+import { KaModule } from './modules/ka/ka.module';
 
 @Module({
   imports: [
@@ -90,6 +91,7 @@ import { AppController } from './app.controller';
     NotificationsModule,
     CoachingModule,
     MessagesModule,
+    KaModule,
   ],
   controllers: [AppController],
   providers: [

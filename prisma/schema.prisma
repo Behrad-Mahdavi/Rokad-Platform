@@ -225,52 +225,52 @@ enum GradeType {
 }
 
 model Tenant {
-  id           String       @id @default(uuid())
-  type         TenantType   @default(SCHOOL)
-  name         String
-  slug         String       @unique
-  subdomain    String?      @unique
-  customDomain String?      @unique
-  theme        BrandTheme   @default(ECOSYSTEM)
-  status       TenantStatus @default(ACTIVE)
+  id             String         @id @default(uuid())
+  type           TenantType     @default(SCHOOL)
+  name           String
+  slug           String         @unique
+  subdomain      String?        @unique
+  customDomain   String?        @unique
+  theme          BrandTheme     @default(ECOSYSTEM)
+  status         TenantStatus   @default(ACTIVE)
   calendarSystem CalendarSystem @default(JALALI)
-  logoUrl      String?
-  phone        String?
-  email        String?
-  address      String?
-  settings     Json?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  logoUrl        String?
+  phone          String?
+  email          String?
+  address        String?
+  settings       Json?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
   // Multi-Campus / Multi-Branch Hierarchy
   parentTenantId String?
   parentTenant   Tenant?  @relation("TenantHierarchy", fields: [parentTenantId], references: [id], onDelete: SetNull)
   subTenants     Tenant[] @relation("TenantHierarchy")
 
-  users             User[]
-  featureFlags      TenantFeatureFlag[]
-  auditLogs         AuditLog[]
-  tokenFamilies     RefreshTokenFamily[]
+  users         User[]
+  featureFlags  TenantFeatureFlag[]
+  auditLogs     AuditLog[]
+  tokenFamilies RefreshTokenFamily[]
 
   // Phase 2 ERP Relations
-  academicYears     AcademicYear[]
-  terms             Term[]
-  educationalLevels EducationalLevel[]
-  studyFields       StudyField[]
-  lessons           Lesson[]
-  classrooms        Classroom[]
-  classEnrollments  ClassEnrollment[]
-  classSchedules    ClassSchedule[]
-  schoolRoles       SchoolRole[]
-  userSchoolRoles   UserSchoolRole[]
+  academicYears       AcademicYear[]
+  terms               Term[]
+  educationalLevels   EducationalLevel[]
+  studyFields         StudyField[]
+  lessons             Lesson[]
+  classrooms          Classroom[]
+  classEnrollments    ClassEnrollment[]
+  classSchedules      ClassSchedule[]
+  schoolRoles         SchoolRole[]
+  userSchoolRoles     UserSchoolRole[]
   permissionOverrides UserPermissionOverride[]
-  studentProfiles   StudentProfile[]
-  teacherProfiles   TeacherProfile[]
-  teacherLessons    TeacherLesson[]
-  coachProfiles     CoachProfile[]
-  staffProfiles     StaffProfile[]
-  parentProfiles    ParentProfile[]
-  parentLinks       ParentStudentLink[]
+  studentProfiles     StudentProfile[]
+  teacherProfiles     TeacherProfile[]
+  teacherLessons      TeacherLesson[]
+  coachProfiles       CoachProfile[]
+  staffProfiles       StaffProfile[]
+  parentProfiles      ParentProfile[]
+  parentLinks         ParentStudentLink[]
   profileBlogs        ProfileBlog[]
   blogLikes           ProfileBlogLike[]
   blogComments        ProfileBlogComment[]
@@ -290,38 +290,38 @@ model Tenant {
   tenantHolidays      TenantHoliday[]
 
   // Phase 4 LMS & Exam Relations
-  lessonPlans         LessonPlan[]
-  questionCategories  QuestionCategory[]
-  questions           Question[]
-  exams               Exam[]
-  examClassrooms      ExamClassroom[]
-  examParticipations  ExamParticipation[]
-  gradeEntries        GradeEntry[]
-  podmans             Podman[]
-  podmanGrades        PodmanGrade[]
+  lessonPlans        LessonPlan[]
+  questionCategories QuestionCategory[]
+  questions          Question[]
+  exams              Exam[]
+  examClassrooms     ExamClassroom[]
+  examParticipations ExamParticipation[]
+  gradeEntries       GradeEntry[]
+  podmans            Podman[]
+  podmanGrades       PodmanGrade[]
 
   // Phase 5 Relations
-  courseMaterials     CourseMaterial[]
-  materialClassrooms  MaterialClassroom[]
-  chatChannels        ChatChannel[]
-  chatChannelMembers  ChatChannelMember[]
-  chatMessages        ChatMessage[]
+  courseMaterials    CourseMaterial[]
+  materialClassrooms MaterialClassroom[]
+  chatChannels       ChatChannel[]
+  chatChannelMembers ChatChannelMember[]
+  chatMessages       ChatMessage[]
 
   // Phase 6 Relations
-  feePlans              FeePlan[]
-  studentFeeContracts   StudentFeeContract[]
-  feeInstallments       FeeInstallment[]
-  paymentTransactions   PaymentTransaction[]
-  feePayments           FeePayment[]
-  feeReceipts           FeeReceipt[]
-  staffPayrollProfiles  StaffPayrollProfile[]
-  payrollSlips          PayrollSlip[]
-  payrollItems          PayrollItem[]
-  teacherContracts      TeacherContract[]
-  payrollAdjustments    PayrollAdjustment[]
+  feePlans             FeePlan[]
+  studentFeeContracts  StudentFeeContract[]
+  feeInstallments      FeeInstallment[]
+  paymentTransactions  PaymentTransaction[]
+  feePayments          FeePayment[]
+  feeReceipts          FeeReceipt[]
+  staffPayrollProfiles StaffPayrollProfile[]
+  payrollSlips         PayrollSlip[]
+  payrollItems         PayrollItem[]
+  teacherContracts     TeacherContract[]
+  payrollAdjustments   PayrollAdjustment[]
 
   // Phase 7 SaaS SuperAdmin Relations
-  subscriptions         TenantSubscription[]
+  subscriptions TenantSubscription[]
 
   // Coaching & Mentorship Relations
   studentCoachLinks     StudentCoachLink[]
@@ -333,7 +333,13 @@ model Tenant {
   academicMessageRecipients AcademicMessageRecipient[]
 
   // Security & Active Sessions
-  userSessions              UserSession[]
+  userSessions UserSession[]
+
+  // Ka Platform Gamification
+  kaActivities        KaActivity[]
+  kaStudentActivities KaStudentActivity[]
+  kaRewards           KaReward[]
+  kaStudentRewards    KaStudentReward[]
 
   @@index([status])
   @@index([parentTenantId])
@@ -341,30 +347,30 @@ model Tenant {
 }
 
 model User {
-  id              String     @id @default(uuid())
-  tenantId        String
-  tenant          Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  email           String?
-  phone           String?
-  nationalId      String?
-  nationalIdBlindIndex   String?
-  username        String?
-  passwordHash    String
-  firstName       String
-  lastName        String
-  gender          Gender?
-  role            UserRole   @default(STUDENT)
-  isPlatformAdmin Boolean    @default(false)
-  status          UserStatus @default(ACTIVE)
-  avatarUrl       String?
-  metadata        Json?
-  lastLoginAt     DateTime?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  id                   String     @id @default(uuid())
+  tenantId             String
+  tenant               Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email                String?
+  phone                String?
+  nationalId           String?
+  nationalIdBlindIndex String?
+  username             String?
+  passwordHash         String
+  firstName            String
+  lastName             String
+  gender               Gender?
+  role                 UserRole   @default(STUDENT)
+  isPlatformAdmin      Boolean    @default(false)
+  status               UserStatus @default(ACTIVE)
+  avatarUrl            String?
+  metadata             Json?
+  lastLoginAt          DateTime?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
 
   // Two-Factor Authentication (TOTP RFC 6238)
   twoFactorEnabled       Boolean   @default(false)
-  twoFactorSecret        String?   // AES-256-GCM encrypted
+  twoFactorSecret        String? // AES-256-GCM encrypted
   twoFactorRecoveryCodes String[]  @default([])
   twoFactorConfirmedAt   DateTime?
   twoFactorLastStepUpAt  DateTime? // Timestamp of last sensitive step-up verification
@@ -378,14 +384,14 @@ model User {
   permissionOverrides UserPermissionOverride[] @relation("UserPermissionOverrides")
   grantedOverrides    UserPermissionOverride[] @relation("GrantedOverrides")
   studentProfile      StudentProfile?
-  teacherProfile    TeacherProfile?
-  coachProfile      CoachProfile?
-  staffProfile      StaffProfile?
-  parentProfile     ParentProfile?
-  profileBlogs      ProfileBlog[]
-  blogLikes         ProfileBlogLike[]
-  blogComments      ProfileBlogComment[]
-  mentoredClasses   Classroom[]      @relation("ClassMentor")
+  teacherProfile      TeacherProfile?
+  coachProfile        CoachProfile?
+  staffProfile        StaffProfile?
+  parentProfile       ParentProfile?
+  profileBlogs        ProfileBlog[]
+  blogLikes           ProfileBlogLike[]
+  blogComments        ProfileBlogComment[]
+  mentoredClasses     Classroom[]              @relation("ClassMentor")
 
   // Phase 3 Relations
   recordedStudentAttendances StudentAttendance[]  @relation("RecordedStudentAttendance")
@@ -397,29 +403,29 @@ model User {
   reportedMatters            DisciplinaryMatter[] @relation("ReportedMatter")
 
   // Phase 4 Relations
-  createdQuestions Question[]   @relation("CreatedQuestion")
-  recordedGrades   GradeEntry[] @relation("RecordedGrade")
+  createdQuestions     Question[]    @relation("CreatedQuestion")
+  recordedGrades       GradeEntry[]  @relation("RecordedGrade")
   recordedPodmanGrades PodmanGrade[] @relation("RecordedPodmanGrade")
 
   // Phase 5 Relations
   chatMemberships  ChatChannelMember[]
-  sentChatMessages ChatMessage[]        @relation("SentChatMessage")
+  sentChatMessages ChatMessage[]       @relation("SentChatMessage")
 
   // Phase 6 Relations
-  paymentTransactions   PaymentTransaction[]  @relation("PayerTransactions")
-  issuedFeeReceipts     FeeReceipt[]          @relation("IssuedFeeReceipts")
-  recordedFeePayments   FeePayment[]          @relation("RecordedPayments")
-  checkStatusChangedPayments FeePayment[]     @relation("CheckStatusChangers")
-  staffPayrollProfile   StaffPayrollProfile?
-  payrollSlips          PayrollSlip[]         @relation("EmployeePayrollSlips")
-  approvedPayrollSlips  PayrollSlip[]         @relation("ApprovedPayrollSlips")
-  editedPayrollSlips    PayrollSlip[]         @relation("EditedPayrollSlips")
-  cancelledPayrollSlips PayrollSlip[]         @relation("CancelledPayrollSlips")
-  teacherContracts      TeacherContract[]     @relation("TeacherContracts")
-  createdContracts      TeacherContract[]     @relation("CreatedContracts")
-  teacherAdjustments    PayrollAdjustment[]   @relation("TeacherAdjustments")
-  createdAdjustments    PayrollAdjustment[]   @relation("CreatedAdjustments")
-  pushSubscriptions     PushSubscription[]
+  paymentTransactions        PaymentTransaction[] @relation("PayerTransactions")
+  issuedFeeReceipts          FeeReceipt[]         @relation("IssuedFeeReceipts")
+  recordedFeePayments        FeePayment[]         @relation("RecordedPayments")
+  checkStatusChangedPayments FeePayment[]         @relation("CheckStatusChangers")
+  staffPayrollProfile        StaffPayrollProfile?
+  payrollSlips               PayrollSlip[]        @relation("EmployeePayrollSlips")
+  approvedPayrollSlips       PayrollSlip[]        @relation("ApprovedPayrollSlips")
+  editedPayrollSlips         PayrollSlip[]        @relation("EditedPayrollSlips")
+  cancelledPayrollSlips      PayrollSlip[]        @relation("CancelledPayrollSlips")
+  teacherContracts           TeacherContract[]    @relation("TeacherContracts")
+  createdContracts           TeacherContract[]    @relation("CreatedContracts")
+  teacherAdjustments         PayrollAdjustment[]  @relation("TeacherAdjustments")
+  createdAdjustments         PayrollAdjustment[]  @relation("CreatedAdjustments")
+  pushSubscriptions          PushSubscription[]
 
   // Coaching Relations
   studentCoachingLinks    StudentCoachLink[]     @relation("StudentCoachingLinks")
@@ -506,20 +512,20 @@ model TenantFeatureFlag {
 }
 
 model AuditLog {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action    String
-  entity    String
-  entityId  String?
-  oldValues Json?
-  newValues Json?
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action       String
+  entity       String
+  entityId     String?
+  oldValues    Json?
+  newValues    Json?
   ipAddress    String?
   userAgent    String?
-  previousHash String?  // Hash of preceding log record (immutable chain)
-  hash         String?  // SHA-256(data + previousHash + pepper)
+  previousHash String? // Hash of preceding log record (immutable chain)
+  hash         String? // SHA-256(data + previousHash + pepper)
   createdAt    DateTime @default(now())
 
   @@index([tenantId, createdAt])
@@ -529,20 +535,20 @@ model AuditLog {
 }
 
 model UserSession {
-  id               String    @id @default(uuid())
+  id               String   @id @default(uuid())
   tenantId         String
-  tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   userId           String
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sessionTokenHash String    @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionTokenHash String   @unique
   ipAddress        String?
   userAgent        String?
   browser          String?
   os               String?
-  deviceType       String?   // 'DESKTOP' | 'MOBILE' | 'TABLET'
-  lastActiveAt     DateTime  @default(now())
-  createdAt        DateTime  @default(now())
-  isRevoked        Boolean   @default(false)
+  deviceType       String? // 'DESKTOP' | 'MOBILE' | 'TABLET'
+  lastActiveAt     DateTime @default(now())
+  createdAt        DateTime @default(now())
+  isRevoked        Boolean  @default(false)
 
   @@index([userId, isRevoked])
   @@index([tenantId, userId])
@@ -553,15 +559,15 @@ model UserSession {
 // ==========================================
 
 model AcademicYear {
-  id        String    @id @default(uuid())
+  id        String   @id @default(uuid())
   tenantId  String
-  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  name      String    // e.g. "۱۴۰۴-۱۴۰۵"
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name      String // e.g. "۱۴۰۴-۱۴۰۵"
   startDate DateTime
   endDate   DateTime
-  isCurrent Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  isCurrent Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   terms               Term[]
   classrooms          Classroom[]
@@ -570,13 +576,13 @@ model AcademicYear {
   disciplinaryMatters DisciplinaryMatter[]
 
   // Phase 4
-  lessonPlans         LessonPlan[]
-  exams               Exam[]
-  gradeEntries        GradeEntry[]
-  podmanGrades        PodmanGrade[]
+  lessonPlans  LessonPlan[]
+  exams        Exam[]
+  gradeEntries GradeEntry[]
+  podmanGrades PodmanGrade[]
 
   // Phase 5
-  courseMaterials     CourseMaterial[]
+  courseMaterials CourseMaterial[]
 
   // Phase 6
   feePlans            FeePlan[]
@@ -593,16 +599,16 @@ model Term {
   tenant         Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   academicYearId String
   academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  name           String       // e.g. "نیم‌سال اول", "نیم‌سال دوم", "تابستان"
+  name           String // e.g. "نیم‌سال اول", "نیم‌سال دوم", "تابستان"
   startDate      DateTime
   endDate        DateTime
   isCurrent      Boolean      @default(false)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  lessonPlans    LessonPlan[]
-  exams          Exam[]
-  gradeEntries   GradeEntry[]
+  lessonPlans     LessonPlan[]
+  exams           Exam[]
+  gradeEntries    GradeEntry[]
   courseMaterials CourseMaterial[]
 
   @@unique([academicYearId, name])
@@ -613,8 +619,8 @@ model EducationalLevel {
   id         String   @id @default(uuid())
   tenantId   String
   tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  name       String   // e.g. "متوسطه اول", "متوسطه دوم", "کالج"
-  code       String   // e.g. "HIGH_SCHOOL_2"
+  name       String // e.g. "متوسطه اول", "متوسطه دوم", "کالج"
+  code       String // e.g. "HIGH_SCHOOL_2"
   orderIndex Int      @default(1)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -635,8 +641,8 @@ model StudyField {
   tenant    Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   levelId   String
   level     EducationalLevel @relation(fields: [levelId], references: [id], onDelete: Cascade)
-  name      String           // e.g. "ریاضی و فیزیک", "علوم تجربی", "شبکه و نرم‌افزار"
-  code      String           // e.g. "MATH_PHYSICS"
+  name      String // e.g. "ریاضی و فیزیک", "علوم تجربی", "شبکه و نرم‌افزار"
+  code      String // e.g. "MATH_PHYSICS"
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 
@@ -656,18 +662,18 @@ model Lesson {
   level       EducationalLevel @relation(fields: [levelId], references: [id], onDelete: Cascade)
   fieldId     String?
   field       StudyField?      @relation(fields: [fieldId], references: [id], onDelete: SetNull)
-  name        String           // e.g. "حسابان ۱", "فیزیک پیشرفته", "ادبیات فارسی"
-  code        String           // e.g. "CALC-10"
+  name        String // e.g. "حسابان ۱", "فیزیک پیشرفته", "ادبیات فارسی"
+  code        String // e.g. "CALC-10"
   unitCount   Int              @default(1)
   type        LessonType       @default(GENERAL)
   description String?
   isModular   Boolean          @default(false) // آیا درس به صورت پودمانی است؟
-  podmanCount Int              @default(5)     // تعداد پودمان‌ها (معمولاً ۵)
+  podmanCount Int              @default(5) // تعداد پودمان‌ها (معمولاً ۵)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
-  schedules          ClassSchedule[]  @relation("LessonSchedules")
-  secondSchedules    ClassSchedule[]  @relation("SecondLessonSchedules")
+  schedules          ClassSchedule[]     @relation("LessonSchedules")
+  secondSchedules    ClassSchedule[]     @relation("SecondLessonSchedules")
   studentAttendances StudentAttendance[]
   homeworks          Homework[]
 
@@ -681,8 +687,8 @@ model Lesson {
   podmanGrades       PodmanGrade[]
 
   // Phase 5 Relations
-  courseMaterials    CourseMaterial[]
-  teacherLessons     TeacherLesson[]
+  courseMaterials CourseMaterial[]
+  teacherLessons  TeacherLesson[]
 
   @@unique([tenantId, code])
   @@index([tenantId, levelId])
@@ -700,8 +706,8 @@ model Classroom {
   field          StudyField?      @relation(fields: [fieldId], references: [id], onDelete: SetNull)
   mentorId       String?
   mentor         User?            @relation("ClassMentor", fields: [mentorId], references: [id], onDelete: SetNull)
-  name           String           // e.g. "کلاس دهم ریاضی ۱"
-  code           String           // e.g. "CLS-10-M1"
+  name           String // e.g. "کلاس دهم ریاضی ۱"
+  code           String // e.g. "CLS-10-M1"
   capacity       Int              @default(30)
   roomNumber     String?
   createdAt      DateTime         @default(now())
@@ -713,9 +719,9 @@ model Classroom {
   homeworks          Homework[]
 
   // Phase 4 Relations
-  examClassrooms     ExamClassroom[]
-  gradeEntries       GradeEntry[]
-  podmanGrades       PodmanGrade[]
+  examClassrooms ExamClassroom[]
+  gradeEntries   GradeEntry[]
+  podmanGrades   PodmanGrade[]
 
   // Phase 5 Relations
   materialClassrooms MaterialClassroom[]
@@ -752,10 +758,10 @@ model ClassSchedule {
   tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   classroomId String
   classroom   Classroom      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  lessonId        String
-  lesson          Lesson          @relation("LessonSchedules", fields: [lessonId], references: [id], onDelete: Cascade)
-  teacherId       String
-  teacher         TeacherProfile  @relation("TeacherSchedules", fields: [teacherId], references: [id], onDelete: Cascade)
+  lessonId    String
+  lesson      Lesson         @relation("LessonSchedules", fields: [lessonId], references: [id], onDelete: Cascade)
+  teacherId   String
+  teacher     TeacherProfile @relation("TeacherSchedules", fields: [teacherId], references: [id], onDelete: Cascade)
 
   // منطق تک زنگ (دو درس و دو دبیر در یک زنگ ۹۰ دقیقه‌ای: ۴۵ دقیقه اول و ۴۵ دقیقه دوم)
   isSplitPeriod   Boolean         @default(false)
@@ -763,12 +769,12 @@ model ClassSchedule {
   secondLesson    Lesson?         @relation("SecondLessonSchedules", fields: [secondLessonId], references: [id], onDelete: SetNull)
   secondTeacherId String?
   secondTeacher   TeacherProfile? @relation("SecondTeacherSchedules", fields: [secondTeacherId], references: [id], onDelete: SetNull)
-  dayOfWeek   DayOfWeek
-  periodNumber Int           // زنگ ۱، ۲، ۳
-  startTime   String         // "08:00"
-  endTime     String         // "09:30"
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  dayOfWeek       DayOfWeek
+  periodNumber    Int // زنگ ۱، ۲، ۳
+  startTime       String // "08:00"
+  endTime         String // "09:30"
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   studentAttendances StudentAttendance[]
 
@@ -785,8 +791,8 @@ model ClassSchedule {
 model Permission {
   id          String   @id @default(uuid())
   code        String   @unique // e.g. "attendance.write", "grades.manage"
-  module      String   // e.g. "ERP_ACADEMIC", "LMS", "FINANCE"
-  name        String   // e.g. "ثبت و ویرایش حضور و غیاب"
+  module      String // e.g. "ERP_ACADEMIC", "LMS", "FINANCE"
+  name        String // e.g. "ثبت و ویرایش حضور و غیاب"
   description String?
   createdAt   DateTime @default(now())
 
@@ -796,12 +802,12 @@ model Permission {
 }
 
 model SchoolRole {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  name        String   // e.g. "ناظم پایه دهم", "مشاور تحصیلی", "حسابدار"
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String // e.g. "ناظم پایه دهم", "مشاور تحصیلی", "حسابدار"
   description String?
-  isSystem    Boolean  @default(false)
+  isSystem    Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
@@ -869,20 +875,20 @@ model UserPermissionOverride {
 // ==========================================
 
 model StudentProfile {
-  id           String    @id @default(uuid())
-  tenantId     String
-  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  userId       String    @unique
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  studentCode  String    // شماره دانش‌آموزی
-  nationalCode String?   // کد ملی
+  id                     String    @id @default(uuid())
+  tenantId               String
+  tenant                 Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId                 String    @unique
+  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentCode            String // شماره دانش‌آموزی
+  nationalCode           String? // کد ملی
   nationalCodeBlindIndex String? // HMAC-SHA256 Blind Index for fast search
-  fatherName   String?
-  birthDate    DateTime?
-  address      String?
-  medicalNotes String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  fatherName             String?
+  birthDate              DateTime?
+  address                String?
+  medicalNotes           String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   enrollments         ClassEnrollment[]
   parentLinks         ParentStudentLink[]
@@ -892,12 +898,18 @@ model StudentProfile {
   disciplinaryMatters DisciplinaryMatter[]
 
   // Phase 4 Relations
-  examParticipations  ExamParticipation[]
-  gradeEntries        GradeEntry[]
-  podmanGrades        PodmanGrade[]
+  examParticipations ExamParticipation[]
+  gradeEntries       GradeEntry[]
+  podmanGrades       PodmanGrade[]
 
   // Phase 6 Relations
-  feeContracts        StudentFeeContract[]
+  feeContracts StudentFeeContract[]
+
+  // Ka Platform Gamification
+  kaScore             Float               @default(0)
+  kaToken             Float               @default(0)
+  kaStudentActivities KaStudentActivity[]
+  kaStudentRewards    KaStudentReward[]
 
   @@unique([tenantId, studentCode])
   @@index([tenantId, nationalCode])
@@ -910,28 +922,28 @@ model TeacherProfile {
   tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   userId         String         @unique
   user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  speciality     String?        // تخصص (e.g. "ریاضیات و هندسه")
-  degree         String?        // مدرک تحصیلی (e.g. "کارشناسی ارشد")
+  speciality     String? // تخصص (e.g. "ریاضیات و هندسه")
+  degree         String? // مدرک تحصیلی (e.g. "کارشناسی ارشد")
   employmentType EmploymentType @default(FULL_TIME)
   bio            String?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  schedules          ClassSchedule[]  @relation("TeacherSchedules")
-  secondSchedules    ClassSchedule[]  @relation("SecondTeacherSchedules")
+  schedules          ClassSchedule[]     @relation("TeacherSchedules")
+  secondSchedules    ClassSchedule[]     @relation("SecondTeacherSchedules")
   teacherAttendances TeacherAttendance[]
   homeworks          Homework[]
   parentVisitSlots   ParentVisitSlot[]
 
   // Phase 4 Relations
-  lessonPlans        LessonPlan[]
-  exams              Exam[]
-  gradeEntries       GradeEntry[]
-  podmanGrades       PodmanGrade[]
+  lessonPlans  LessonPlan[]
+  exams        Exam[]
+  gradeEntries GradeEntry[]
+  podmanGrades PodmanGrade[]
 
   // Phase 5 Relations
-  courseMaterials    CourseMaterial[]
-  teacherLessons     TeacherLesson[]
+  courseMaterials CourseMaterial[]
+  teacherLessons  TeacherLesson[]
 
   @@index([tenantId])
 }
@@ -971,8 +983,8 @@ model StaffProfile {
   tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   userId     String   @unique
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  department String?  // e.g. "امور مالی", "امور دفتری"
-  jobTitle   String?  // e.g. "مسئول ثبت‌نام"
+  department String? // e.g. "امور مالی", "امور دفتری"
+  jobTitle   String? // e.g. "مسئول ثبت‌نام"
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -985,8 +997,8 @@ model ParentProfile {
   tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   userId      String   @unique
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  occupation  String?  // شغل
-  education   String?  // تحصیلات
+  occupation  String? // شغل
+  education   String? // تحصیلات
   workPhone   String?
   homeAddress String?
   createdAt   DateTime @default(now())
@@ -1020,33 +1032,33 @@ model ParentStudentLink {
 // ==========================================
 
 model ProfileBlog {
-  id                 String               @id @default(uuid())
+  id                 String    @id @default(uuid())
   tenantId           String
-  tenant             Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant             Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   authorId           String
-  author             User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author             User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   title              String
   slug               String
   content            String
   coverImageUrl      String?
-  postType           String               @default("STANDARD") // STANDARD, SLIDESHOW, DOCUMENT, ANNOUNCEMENT
-  mediaUrls          String[]             @default([])         // Multiple slide images
-  attachments        Json?                                     // [{ name: string, url: string, size?: number, mimeType?: string }]
-  audienceType       String               @default("ALL")      // ALL, ROLES, CLASSROOMS
-  targetRoles        String[]             @default([])         // ['STUDENT', 'PARENT', 'TEACHER', 'STAFF']
-  targetClassroomIds String[]             @default([])         // Classroom UUIDs
-  isPinned           Boolean              @default(false)
-  allowComments      Boolean              @default(true)
-  isPublished        Boolean              @default(true)
-  publishedAt        DateTime?            @default(now())
-  tags               String[]             @default([])
-  viewCount          Int                  @default(0)
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
+  postType           String    @default("STANDARD") // STANDARD, SLIDESHOW, DOCUMENT, ANNOUNCEMENT
+  mediaUrls          String[]  @default([]) // Multiple slide images
+  attachments        Json? // [{ name: string, url: string, size?: number, mimeType?: string }]
+  audienceType       String    @default("ALL") // ALL, ROLES, CLASSROOMS
+  targetRoles        String[]  @default([]) // ['STUDENT', 'PARENT', 'TEACHER', 'STAFF']
+  targetClassroomIds String[]  @default([]) // Classroom UUIDs
+  isPinned           Boolean   @default(false)
+  allowComments      Boolean   @default(true)
+  isPublished        Boolean   @default(true)
+  publishedAt        DateTime? @default(now())
+  tags               String[]  @default([])
+  viewCount          Int       @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
   deletedAt          DateTime?
 
-  likes              ProfileBlogLike[]
-  comments           ProfileBlogComment[]
+  likes    ProfileBlogLike[]
+  comments ProfileBlogComment[]
 
   @@unique([tenantId, slug])
   @@index([tenantId, authorId])
@@ -1082,7 +1094,7 @@ model ProfileBlogComment {
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
   deletedAt  DateTime?
-  
+
   @@index([tenantId, blogId])
   @@index([tenantId, deletedAt])
 }
@@ -1091,7 +1103,7 @@ model SchoolProfile {
   id             String   @id @default(uuid())
   tenantId       String   @unique
   tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  motto          String?  // شعار مدرسه
+  motto          String? // شعار مدرسه
   aboutHtml      String?
   headerImageUrl String?
   socialLinks    Json?
@@ -1120,11 +1132,11 @@ model StudentAttendance {
   schedule       ClassSchedule?   @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
   studentId      String
   student        StudentProfile   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  date           String           // format: "YYYY-MM-DD" e.g. "2026-09-01"
-  periodNumber   Int?             // زنگ کلاسی (null = روزانه کل)
+  date           String // format: "YYYY-MM-DD" e.g. "2026-09-01"
+  periodNumber   Int? // زنگ کلاسی (null = روزانه کل)
   status         AttendanceStatus @default(PRESENT)
   delayMinutes   Int              @default(0)
-  reason         String?          // دلیل غیبت یا تاخیر
+  reason         String? // دلیل غیبت یا تاخیر
   recordedById   String
   recordedBy     User             @relation("RecordedStudentAttendance", fields: [recordedById], references: [id], onDelete: Cascade)
   createdAt      DateTime         @default(now())
@@ -1142,9 +1154,9 @@ model TeacherAttendance {
   tenant       Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   teacherId    String
   teacher      TeacherProfile          @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  date         String                  // format: "YYYY-MM-DD"
-  entryTime    String?                 // "07:45"
-  exitTime     String?                 // "14:30"
+  date         String // format: "YYYY-MM-DD"
+  entryTime    String? // "07:45"
+  exitTime     String? // "14:30"
   status       TeacherAttendanceStatus @default(PRESENT)
   notes        String?
   recordedById String?
@@ -1157,24 +1169,24 @@ model TeacherAttendance {
 }
 
 model Homework {
-  id                   String     @id @default(uuid())
+  id                   String         @id @default(uuid())
   tenantId             String
-  tenant               Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant               Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   classroomId          String
-  classroom            Classroom  @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  classroom            Classroom      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   lessonId             String
-  lesson               Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  lesson               Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   teacherId            String
   teacher              TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   title                String
   description          String
-  attachmentUrls       String[]   @default([])
+  attachmentUrls       String[]       @default([])
   dueDate              DateTime
-  maxScore             Float      @default(20)
-  isGraded             Boolean    @default(true)
-  allowLateSubmissions Boolean    @default(false)
-  createdAt            DateTime   @default(now())
-  updatedAt            DateTime   @updatedAt
+  maxScore             Float          @default(20)
+  isGraded             Boolean        @default(true)
+  allowLateSubmissions Boolean        @default(false)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
 
   submissions HomeworkSubmission[]
 
@@ -1190,12 +1202,12 @@ model HomeworkSubmission {
   homework       Homework         @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
   studentId      String
   student        StudentProfile   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  content        String?          // یادداشت یا توضیحات دانش‌آموز
+  content        String? // یادداشت یا توضیحات دانش‌آموز
   attachmentUrls String[]         @default([])
   submittedAt    DateTime         @default(now())
   status         SubmissionStatus @default(SUBMITTED)
   score          Float?
-  feedback       String?          // بازخورد دبیر
+  feedback       String? // بازخورد دبیر
   gradedAt       DateTime?
   gradedById     String?
   gradedBy       User?            @relation("GradedSubmission", fields: [gradedById], references: [id], onDelete: SetNull)
@@ -1277,12 +1289,12 @@ model Poll {
 }
 
 model PollOption {
-  id         String   @id @default(uuid())
+  id         String @id @default(uuid())
   pollId     String
-  poll       Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  poll       Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
   text       String
-  orderIndex Int      @default(1)
-  voteCount  Int      @default(0)
+  orderIndex Int    @default(1)
+  voteCount  Int    @default(0)
 
   @@index([pollId])
 }
@@ -1305,22 +1317,22 @@ model PollVote {
 }
 
 model ParentVisitSlot {
-  id              String         @id @default(uuid())
-  tenantId        String
-  tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  teacherId       String
-  teacher         TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  date            String         // "YYYY-MM-DD"
-  startTime       String         // "10:00"
-  endTime         String         // "10:20"
-  durationMinutes Int            @default(15)
-  capacityPerSlot Int            @default(1)
-  roomLocation    String?
-  isVirtual       Boolean        @default(false)
+  id                String         @id @default(uuid())
+  tenantId          String
+  tenant            Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  teacherId         String
+  teacher           TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  date              String // "YYYY-MM-DD"
+  startTime         String // "10:00"
+  endTime           String // "10:20"
+  durationMinutes   Int            @default(15)
+  capacityPerSlot   Int            @default(1)
+  roomLocation      String?
+  isVirtual         Boolean        @default(false)
   virtualMeetingUrl String?
-  isCancelled     Boolean        @default(false)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  isCancelled       Boolean        @default(false)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
   bookings ParentVisitBooking[]
 
@@ -1337,7 +1349,7 @@ model ParentVisitBooking {
   parent       ParentProfile   @relation(fields: [parentId], references: [id], onDelete: Cascade)
   studentId    String
   student      StudentProfile  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  subject      String          // موضوع جلسه
+  subject      String // موضوع جلسه
   status       BookingStatus   @default(CONFIRMED)
   teacherNotes String?
   createdAt    DateTime        @default(now())
@@ -1377,22 +1389,22 @@ model DisciplinaryMatter {
 // ==========================================
 
 model LessonPlan {
-  id               String         @id @default(uuid())
-  tenantId         String
-  tenant           Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  academicYearId   String
-  academicYear     AcademicYear   @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  termId           String?
-  term             Term?          @relation(fields: [termId], references: [id], onDelete: SetNull)
-  lessonId         String
-  lesson           Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  teacherId        String
-  teacher          TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  title            String         // e.g. "طرح درس جامع سالانه حسابان ۱"
-  description      String?
-  totalHoursPlanned Int           @default(30)
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  id                String         @id @default(uuid())
+  tenantId          String
+  tenant            Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  academicYearId    String
+  academicYear      AcademicYear   @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  termId            String?
+  term              Term?          @relation(fields: [termId], references: [id], onDelete: SetNull)
+  lessonId          String
+  lesson            Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  teacherId         String
+  teacher           TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  title             String // e.g. "طرح درس جامع سالانه حسابان ۱"
+  description       String?
+  totalHoursPlanned Int            @default(30)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
   sessions LessonPlanSession[]
 
@@ -1401,34 +1413,34 @@ model LessonPlan {
 }
 
 model LessonPlanSession {
-  id           String                  @id @default(uuid())
-  lessonPlanId String
-  lessonPlan   LessonPlan              @relation(fields: [lessonPlanId], references: [id], onDelete: Cascade)
-  sessionNumber Int                    // جلسه ۱، ۲، ۳...
-  topic        String                  // مبحث درس (e.g. "تعریف مشتق و تعبیر هندسی")
-  objectives   String?                 // اهداف آموزشی
-  activities   String?                 // فعالیت‌های کلاسی و تمرینات
-  plannedDate  DateTime?               // تاریخ برنامه‌ریزی‌شده
-  actualDate   DateTime?               // تاریخ تدریس واقعی
-  status       LessonPlanSessionStatus @default(PLANNED)
-  notes        String?
-  createdAt    DateTime                @default(now())
-  updatedAt    DateTime                @updatedAt
+  id            String                  @id @default(uuid())
+  lessonPlanId  String
+  lessonPlan    LessonPlan              @relation(fields: [lessonPlanId], references: [id], onDelete: Cascade)
+  sessionNumber Int // جلسه ۱، ۲، ۳...
+  topic         String // مبحث درس (e.g. "تعریف مشتق و تعبیر هندسی")
+  objectives    String? // اهداف آموزشی
+  activities    String? // فعالیت‌های کلاسی و تمرینات
+  plannedDate   DateTime? // تاریخ برنامه‌ریزی‌شده
+  actualDate    DateTime? // تاریخ تدریس واقعی
+  status        LessonPlanSessionStatus @default(PLANNED)
+  notes         String?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
 
   @@unique([lessonPlanId, sessionNumber])
   @@index([lessonPlanId, status])
 }
 
 model QuestionCategory {
-  id         String     @id @default(uuid())
+  id         String   @id @default(uuid())
   tenantId   String
-  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   lessonId   String
-  lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  name       String     // e.g. "فصل ۱: توابع و نمودارها"
-  orderIndex Int        @default(1)
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  lesson     Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  name       String // e.g. "فصل ۱: توابع و نمودارها"
+  orderIndex Int      @default(1)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   questions Question[]
 
@@ -1436,26 +1448,26 @@ model QuestionCategory {
 }
 
 model Question {
-  id                  String          @id @default(uuid())
-  tenantId            String
-  tenant              Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  lessonId            String
-  lesson              Lesson          @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  categoryId          String?
-  category            QuestionCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  createdById         String
-  createdBy           User            @relation("CreatedQuestion", fields: [createdById], references: [id], onDelete: Cascade)
-  type                QuestionType    @default(MULTIPLE_CHOICE)
-  difficulty          DifficultyLevel @default(MEDIUM)
-  text                String          // متن سوال
-  formulaHtml         String?
-  imageUrls           String[]        @default([])
-  defaultScore        Float           @default(1.0)
-  suggestedTimeSeconds Int            @default(60)
-  solutionExplanation String?         // پاسخ تشریحی و راهنمای تصحیح
-  isPublic            Boolean         @default(false)
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  id                   String            @id @default(uuid())
+  tenantId             String
+  tenant               Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lessonId             String
+  lesson               Lesson            @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  categoryId           String?
+  category             QuestionCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdById          String
+  createdBy            User              @relation("CreatedQuestion", fields: [createdById], references: [id], onDelete: Cascade)
+  type                 QuestionType      @default(MULTIPLE_CHOICE)
+  difficulty           DifficultyLevel   @default(MEDIUM)
+  text                 String // متن سوال
+  formulaHtml          String?
+  imageUrls            String[]          @default([])
+  defaultScore         Float             @default(1.0)
+  suggestedTimeSeconds Int               @default(60)
+  solutionExplanation  String? // پاسخ تشریحی و راهنمای تصحیح
+  isPublic             Boolean           @default(false)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
 
   options       QuestionOption[]
   examQuestions ExamQuestion[]
@@ -1479,34 +1491,34 @@ model QuestionOption {
 }
 
 model Exam {
-  id                     String     @id @default(uuid())
+  id                     String         @id @default(uuid())
   tenantId               String
-  tenant                 Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant                 Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   academicYearId         String
-  academicYear           AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  academicYear           AcademicYear   @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
   termId                 String?
-  term                   Term?      @relation(fields: [termId], references: [id], onDelete: SetNull)
+  term                   Term?          @relation(fields: [termId], references: [id], onDelete: SetNull)
   lessonId               String
-  lesson                 Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  lesson                 Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   teacherId              String
   teacher                TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  title                  String     // e.g. "آزمون میان‌ترم حسابان ۱"
+  title                  String // e.g. "آزمون میان‌ترم حسابان ۱"
   description            String?
-  examType               ExamType   @default(ONLINE)
-  durationMinutes        Int        @default(60)
+  examType               ExamType       @default(ONLINE)
+  durationMinutes        Int            @default(60)
   startTime              DateTime
   endTime                DateTime
-  totalScore             Float      @default(20)
-  shuffleQuestions       Boolean    @default(true)
-  shuffleOptions         Boolean    @default(true)
-  allowReview            Boolean    @default(true)
-  showResultsImmediately Boolean    @default(false)
-  isPublished            Boolean    @default(false)
-  isResultsPublished     Boolean    @default(false)
+  totalScore             Float          @default(20)
+  shuffleQuestions       Boolean        @default(true)
+  shuffleOptions         Boolean        @default(true)
+  allowReview            Boolean        @default(true)
+  showResultsImmediately Boolean        @default(false)
+  isPublished            Boolean        @default(false)
+  isResultsPublished     Boolean        @default(false)
   resultsPublishedAt     DateTime?
-  status                 ExamStatus @default(DRAFT)
-  createdAt              DateTime   @default(now())
-  updatedAt              DateTime   @updatedAt
+  status                 ExamStatus     @default(DRAFT)
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
 
   classrooms     ExamClassroom[]
   questions      ExamQuestion[]
@@ -1553,16 +1565,16 @@ model ExamParticipation {
   student          StudentProfile      @relation(fields: [studentId], references: [id], onDelete: Cascade)
   startedAt        DateTime            @default(now())
   submittedAt      DateTime?
-  serverDeadline   DateTime            // زمان پایان قطعی سمت سرور
+  serverDeadline   DateTime // زمان پایان قطعی سمت سرور
   totalScore       Float?
   isGraded         Boolean             @default(false)
   tabSwitchCount   Int                 @default(0) // شمارنده تعویض تب
   flaggedForReview Boolean             @default(false) // پرچم برای بازبینی معلم
   graceScore       Float               @default(0) // نمره ارفاقی دبیر
-  graceReason      String?             // علت یا توضیحات نمره ارفاقی
+  graceReason      String? // علت یا توضیحات نمره ارفاقی
   status           ParticipationStatus @default(IN_PROGRESS)
   questionOrder    String[]            @default([]) // ذخیره قطعی ترتیب سوالات برای این دانش‌آموز
-  optionOrders     Json?               // ذخیره قطعی ترتیب گزینه‌های شافل‌شده
+  optionOrders     Json? // ذخیره قطعی ترتیب گزینه‌های شافل‌شده
   teacherFeedback  String?
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
@@ -1580,8 +1592,8 @@ model ExamAnswer {
   participation     ExamParticipation @relation(fields: [participationId], references: [id], onDelete: Cascade)
   questionId        String
   question          Question          @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  selectedOptionId  String?           // گزینه انتخاب‌شده برای تستی
-  descriptiveAnswer String?           // متن پاسخ برای تشریحی
+  selectedOptionId  String? // گزینه انتخاب‌شده برای تستی
+  descriptiveAnswer String? // متن پاسخ برای تشریحی
   scoreAwarded      Float?
   isAutoGraded      Boolean           @default(false)
   teacherComment    String?
@@ -1612,8 +1624,8 @@ model GradeEntry {
   examId         String?
   exam           Exam?          @relation(fields: [examId], references: [id], onDelete: SetNull)
   gradeType      GradeType      @default(CLASS_ACTIVITY)
-  title          String         // e.g. "مستمر آبان‌ماه"
-  score          Float          // نمره کسب‌شده
+  title          String // e.g. "مستمر آبان‌ماه"
+  score          Float // نمره کسب‌شده
   maxScore       Float          @default(20) // سقف نمره
   weight         Float          @default(1.0)
   date           DateTime       @default(now())
@@ -1630,18 +1642,18 @@ model GradeEntry {
 
 // ساختار پودمان‌های درسی شاخه فنی و حرفه‌ای و کاردانش
 model Podman {
-  id          String        @id @default(uuid())
+  id          String   @id @default(uuid())
   tenantId    String
-  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   lessonId    String
-  lesson      Lesson        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  number      Int           // پودمان ۱، ۲، ۳، ۴، ۵
-  title       String        // عنوان مهارت/پودمان (e.g. "پودمان ۱: پایگاه داده")
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  number      Int // پودمان ۱، ۲، ۳، ۴، ۵
+  title       String // عنوان مهارت/پودمان (e.g. "پودمان ۱: پایگاه داده")
   description String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  grades      PodmanGrade[]
+  grades PodmanGrade[]
 
   @@unique([lessonId, number])
   @@index([tenantId, lessonId])
@@ -1664,10 +1676,10 @@ model PodmanGrade {
   student         StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
   teacherId       String
   teacher         TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  continuousScore Float          // نمره مستمر پودمان از ۵
-  competencyScore Int            // سطح شایستگی: ۱ (عدم احراز)، ۲ (در حد انتظار)، ۳ (بالاتر از حد انتظار)
-  finalScore      Float          // نمره نهایی پودمان از ۲۰: مستمر + شایستگی × ۵
-  isPassed        Boolean        // آیا نمره نهایی >= ۱۲ است؟
+  continuousScore Float // نمره مستمر پودمان از ۵
+  competencyScore Int // سطح شایستگی: ۱ (عدم احراز)، ۲ (در حد انتظار)، ۳ (بالاتر از حد انتظار)
+  finalScore      Float // نمره نهایی پودمان از ۲۰: مستمر + شایستگی × ۵
+  isPassed        Boolean // آیا نمره نهایی >= ۱۲ است؟
   attemptType     String         @default("REGULAR") // REGULAR, RETAKE_1, RETAKE_2
   date            DateTime       @default(now())
   notes           String?
@@ -1721,11 +1733,11 @@ model CourseMaterial {
   lesson         Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   teacherId      String
   teacher        TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  title          String         // e.g. "جزوه دست‌نویس فصل مشتق و مثال‌های تکمیلی"
+  title          String // e.g. "جزوه دست‌نویس فصل مشتق و مثال‌های تکمیلی"
   description    String?
   materialType   MaterialType   @default(DOCUMENT)
-  fileKey        String         // MinIO Object Storage Key
-  fileUrl        String         // Public / Presigned Access URL
+  fileKey        String // MinIO Object Storage Key
+  fileUrl        String // Public / Presigned Access URL
   fileSizeMb     Float?
   mimeType       String?
   isDownloadable Boolean        @default(true)
@@ -1740,13 +1752,13 @@ model CourseMaterial {
 }
 
 model MaterialClassroom {
-  id         String         @id @default(uuid())
-  tenantId   String
-  tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  materialId String
-  material   CourseMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  id          String         @id @default(uuid())
+  tenantId    String
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  materialId  String
+  material    CourseMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
   classroomId String
-  classroom  Classroom      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  classroom   Classroom      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
 
   @@unique([materialId, classroomId])
   @@index([tenantId, classroomId])
@@ -1757,7 +1769,7 @@ model ChatChannel {
   tenantId    String
   tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   type        ChannelType @default(DIRECT)
-  name        String?     // e.g. "گفتگوی کلاس دهم ریاضی ۱"
+  name        String? // e.g. "گفتگوی کلاس دهم ریاضی ۱"
   description String?
   classroomId String?
   classroom   Classroom?  @relation(fields: [classroomId], references: [id], onDelete: SetNull)
@@ -1796,9 +1808,9 @@ model ChatMessage {
   channel        ChatChannel           @relation(fields: [channelId], references: [id], onDelete: Cascade)
   senderId       String
   sender         User                  @relation("SentChatMessage", fields: [senderId], references: [id], onDelete: Cascade)
-  content        String                // متن پیام
-  attachmentKey  String?               // MinIO storage key
-  attachmentUrl  String?               // MinIO URL
+  content        String // متن پیام
+  attachmentKey  String? // MinIO storage key
+  attachmentUrl  String? // MinIO URL
   attachmentType MessageAttachmentType @default(NONE)
   replyToId      String?
   replyTo        ChatMessage?          @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
@@ -1911,7 +1923,7 @@ model FeePlan {
   tenant             Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   academicYearId     String
   academicYear       AcademicYear      @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  title              String            // e.g. "شهریه سالانه پایه دهم ۱۴۰۴-۱۴۰۵"
+  title              String // e.g. "شهریه سالانه پایه دهم ۱۴۰۴-۱۴۰۵"
   amount             Decimal           @db.Decimal(15, 2)
   appliesTo          FeePlanScope      @default(ALL_SCHOOL)
   educationalLevelId String?
@@ -1920,43 +1932,43 @@ model FeePlan {
   classroom          Classroom?        @relation(fields: [classroomId], references: [id], onDelete: SetNull)
   description        String?
   installmentCount   Int               @default(1)
-  installmentConfig  Json?             // [{ number: 1, title: "پیش‌پرداخت", percentOrAmount: 30, dueMonthOffset: 0 }]
+  installmentConfig  Json? // [{ number: 1, title: "پیش‌پرداخت", percentOrAmount: 30, dueMonthOffset: 0 }]
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 
-  contracts          StudentFeeContract[]
+  contracts StudentFeeContract[]
 
   @@index([tenantId, academicYearId])
 }
 
 model StudentFeeContract {
-  id                  String             @id @default(uuid())
+  id                  String            @id @default(uuid())
   tenantId            String
-  tenant              Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant              Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   academicYearId      String
-  academicYear        AcademicYear       @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  academicYear        AcademicYear      @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
   studentId           String
-  student             StudentProfile     @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  contractNumber      String             // e.g. "FEE-1404-001"
-  totalAmount         Decimal            @db.Decimal(15, 2) // کل مبلغ مصوب شهریه
-  discountAmount      Decimal            @default(0) @db.Decimal(15, 2) // مبلغ تخفیف / بورسیه
-  finalPayableAmount  Decimal            @db.Decimal(15, 2) // مبلغ نهایی پس از کسر تخفیف
-  balanceRemaining    Decimal            @default(0) @db.Decimal(15, 2) // مانده بدهی تاییدشده
+  student             StudentProfile    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  contractNumber      String // e.g. "FEE-1404-001"
+  totalAmount         Decimal           @db.Decimal(15, 2) // کل مبلغ مصوب شهریه
+  discountAmount      Decimal           @default(0) @db.Decimal(15, 2) // مبلغ تخفیف / بورسیه
+  finalPayableAmount  Decimal           @db.Decimal(15, 2) // مبلغ نهایی پس از کسر تخفیف
+  balanceRemaining    Decimal           @default(0) @db.Decimal(15, 2) // مانده بدهی تاییدشده
   discountReason      String?
-  status              FeeContractStatus  @default(ACTIVE)
+  status              FeeContractStatus @default(ACTIVE)
   notes               String?
   feePlanId           String?
-  feePlan             FeePlan?           @relation(fields: [feePlanId], references: [id], onDelete: SetNull)
-  isIndividual        Boolean            @default(false)
-  hasFinancialHold    Boolean            @default(false) // برچسب چک برگشتی یا اخطار مالی
+  feePlan             FeePlan?          @relation(fields: [feePlanId], references: [id], onDelete: SetNull)
+  isIndividual        Boolean           @default(false)
+  hasFinancialHold    Boolean           @default(false) // برچسب چک برگشتی یا اخطار مالی
   financialHoldReason String?
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
 
-  installments        FeeInstallment[]
-  transactions        PaymentTransaction[]
-  payments            FeePayment[]
-  receipts            FeeReceipt[]
+  installments FeeInstallment[]
+  transactions PaymentTransaction[]
+  payments     FeePayment[]
+  receipts     FeeReceipt[]
 
   @@unique([tenantId, contractNumber])
   @@unique([tenantId, academicYearId, studentId])
@@ -1970,9 +1982,9 @@ model FeeInstallment {
   tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   contractId        String
   contract          StudentFeeContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  installmentNumber Int                // قسط ۱، ۲، ۳...
-  title             String             // e.g. "پیش‌پرداخت ثبت‌نام", "قسط آبان‌ماه"
-  dueDate           DateTime           // تاریخ سررسید قسط
+  installmentNumber Int // قسط ۱، ۲، ۳...
+  title             String // e.g. "پیش‌پرداخت ثبت‌نام", "قسط آبان‌ماه"
+  dueDate           DateTime // تاریخ سررسید قسط
   amount            Decimal            @db.Decimal(15, 2) // مبلغ مصوب قسط
   paidAmount        Decimal            @default(0) @db.Decimal(15, 2) // مبلغ واریزشده
   status            InstallmentStatus  @default(UNPAID)
@@ -1980,8 +1992,8 @@ model FeeInstallment {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
-  transactions      PaymentTransaction[]
-  payments          FeePayment[]
+  transactions PaymentTransaction[]
+  payments     FeePayment[]
 
   @@unique([contractId, installmentNumber])
   @@index([tenantId, status, dueDate])
@@ -2001,10 +2013,10 @@ model PaymentTransaction {
   method                 PaymentMethod       @default(ONLINE_GATEWAY)
   amount                 Decimal             @db.Decimal(15, 2) // مبلغ پرداختی
   status                 PaymentStatus       @default(PENDING)
-  authority              String?             // کد پیگیری درگاه پرداخت زرین‌پال
-  refId                  String?             // شماره مرجع / تراکنش بانکی زرین‌پال
-  trackingCode           String              // کد پیگیری یکتای داخلی رُکاد
-  cardPan                String?             // شماره کارت ماسک‌شده پرداخت‌کننده
+  authority              String? // کد پیگیری درگاه پرداخت زرین‌پال
+  refId                  String? // شماره مرجع / تراکنش بانکی زرین‌پال
+  trackingCode           String // کد پیگیری یکتای داخلی رُکاد
+  cardPan                String? // شماره کارت ماسک‌شده پرداخت‌کننده
   ipAddress              String?
   gatewayRequestPayload  Json?
   gatewayResponsePayload Json?
@@ -2013,8 +2025,8 @@ model PaymentTransaction {
   idempotencyKey         String?
   createdAt              DateTime            @default(now())
 
-  receipt                FeeReceipt?
-  feePayment             FeePayment?
+  receipt    FeeReceipt?
+  feePayment FeePayment?
 
   @@unique([tenantId, trackingCode])
   @@index([tenantId, authority])
@@ -2023,48 +2035,48 @@ model PaymentTransaction {
 }
 
 model FeePayment {
-  id                     String              @id @default(uuid())
-  tenantId               String
-  tenant                 Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  feeContractId          String
-  feeContract            StudentFeeContract  @relation(fields: [feeContractId], references: [id], onDelete: Cascade)
-  installmentId          String?
-  installment            FeeInstallment?     @relation(fields: [installmentId], references: [id], onDelete: SetNull)
-  method                 PaymentMethod       @default(CASH)
-  amount                 Decimal             @db.Decimal(15, 2)
-  recordedById           String
-  recordedBy             User                @relation("RecordedPayments", fields: [recordedById], references: [id], onDelete: Cascade)
-  recordedAt             DateTime            @default(now())
-  note                   String?
+  id            String             @id @default(uuid())
+  tenantId      String
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  feeContractId String
+  feeContract   StudentFeeContract @relation(fields: [feeContractId], references: [id], onDelete: Cascade)
+  installmentId String?
+  installment   FeeInstallment?    @relation(fields: [installmentId], references: [id], onDelete: SetNull)
+  method        PaymentMethod      @default(CASH)
+  amount        Decimal            @db.Decimal(15, 2)
+  recordedById  String
+  recordedBy    User               @relation("RecordedPayments", fields: [recordedById], references: [id], onDelete: Cascade)
+  recordedAt    DateTime           @default(now())
+  note          String?
 
   // پرداخت نقدی
-  cashReceivedAt         DateTime?
+  cashReceivedAt DateTime?
 
   // اختصاصی چک (استاندارد صیادی ایران)
   checkNumber            String?
-  checkSayadId           String?             // کد صیادی ۱۶ رقمی
+  checkSayadId           String? // کد صیادی ۱۶ رقمی
   bankName               String?
   branchName             String?
   checkOwnerName         String?
   checkDueDate           DateTime?
-  checkStatus            CheckStatus?        @default(PENDING)
+  checkStatus            CheckStatus? @default(PENDING)
   checkStatusChangedAt   DateTime?
   checkStatusChangedById String?
-  checkStatusChangedBy   User?               @relation("CheckStatusChangers", fields: [checkStatusChangedById], references: [id], onDelete: SetNull)
+  checkStatusChangedBy   User?        @relation("CheckStatusChangers", fields: [checkStatusChangedById], references: [id], onDelete: SetNull)
 
   // زنجیره جایگزینی چک برگشتی (Self-relation)
-  replacedByPaymentId    String?             @unique
-  replacedByPayment      FeePayment?         @relation("PaymentReplacement", fields: [replacedByPaymentId], references: [id], onDelete: SetNull)
-  previousPayment        FeePayment?         @relation("PaymentReplacement")
+  replacedByPaymentId String?     @unique
+  replacedByPayment   FeePayment? @relation("PaymentReplacement", fields: [replacedByPaymentId], references: [id], onDelete: SetNull)
+  previousPayment     FeePayment? @relation("PaymentReplacement")
 
   // ارجاع به تراکنش درگاه آنلاین (در صورت ONLINE_GATEWAY)
-  gatewayTransactionId   String?             @unique
-  gatewayTransaction     PaymentTransaction? @relation(fields: [gatewayTransactionId], references: [id], onDelete: SetNull)
+  gatewayTransactionId String?             @unique
+  gatewayTransaction   PaymentTransaction? @relation(fields: [gatewayTransactionId], references: [id], onDelete: SetNull)
 
-  receipt                FeeReceipt?
+  receipt FeeReceipt?
 
-  createdAt              DateTime            @default(now())
-  updatedAt              DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([tenantId, feeContractId])
   @@index([tenantId, checkDueDate, checkStatus])
@@ -2080,7 +2092,7 @@ model FeeReceipt {
   payment       FeePayment?         @relation(fields: [paymentId], references: [id], onDelete: SetNull)
   contractId    String
   contract      StudentFeeContract  @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  receiptNumber String              // e.g. "REC-1404-0012"
+  receiptNumber String // e.g. "REC-1404-0012"
   amount        Decimal             @db.Decimal(15, 2)
   payerName     String
   paymentMethod PaymentMethod       @default(ONLINE_GATEWAY)
@@ -2094,118 +2106,118 @@ model FeeReceipt {
 }
 
 model StaffPayrollProfile {
-  id                 String       @id @default(uuid())
-  tenantId           String
-  tenant             Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  userId             String       @unique
-  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  contractType       ContractType @default(FULL_TIME_SALARY)
-  baseMonthlySalary  Decimal      @default(0) @db.Decimal(15, 0) // حقوق ثابت ماهیانه (تومان)
-  hourlyRate         Decimal      @default(0) @db.Decimal(15, 0) // نرخ تدریس هر ساعت برای دبیران حق‌التدریس (تومان)
-  bankAccountNumber  String?      // شماره حساب بانکی
-  bankShebaNumber    String?      // شماره شبا
-  bankName           String?      // نام بانک (ملی، ملت، پاسارگاد...)
-  insuranceNumber    String?      // شماره بیمه تأمین اجتماعی
-  isActive           Boolean      @default(true)
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  id                String       @id @default(uuid())
+  tenantId          String
+  tenant            Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId            String       @unique
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contractType      ContractType @default(FULL_TIME_SALARY)
+  baseMonthlySalary Decimal      @default(0) @db.Decimal(15, 0) // حقوق ثابت ماهیانه (تومان)
+  hourlyRate        Decimal      @default(0) @db.Decimal(15, 0) // نرخ تدریس هر ساعت برای دبیران حق‌التدریس (تومان)
+  bankAccountNumber String? // شماره حساب بانکی
+  bankShebaNumber   String? // شماره شبا
+  bankName          String? // نام بانک (ملی، ملت، پاسارگاد...)
+  insuranceNumber   String? // شماره بیمه تأمین اجتماعی
+  isActive          Boolean      @default(true)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
   @@index([tenantId, isActive])
 }
 
 model TeacherContract {
-  id                String          @id @default(uuid())
-  tenantId          String
-  tenant            Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  teacherId         String
-  teacher           User            @relation("TeacherContracts", fields: [teacherId], references: [id], onDelete: Cascade)
-  academicYearId    String
-  academicYear      AcademicYear    @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  rateType          PayRateType     @default(HOURLY)
-  rateAmount        Decimal         @db.Decimal(15, 0) // نرخ به تومان (صحیح)
-  monthlyHourCap    Int?            // سقف ساعت تدریس ماهانه جهت هشدار
-  baseSalary        Decimal?        @db.Decimal(15, 0) // حقوق ثابت پایه ماهانه (اختیاری)
-  effectiveFrom     DateTime
-  effectiveTo       DateTime?
-  createdById       String
-  createdBy         User            @relation("CreatedContracts", fields: [createdById], references: [id], onDelete: Restrict)
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  id             String       @id @default(uuid())
+  tenantId       String
+  tenant         Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  teacherId      String
+  teacher        User         @relation("TeacherContracts", fields: [teacherId], references: [id], onDelete: Cascade)
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  rateType       PayRateType  @default(HOURLY)
+  rateAmount     Decimal      @db.Decimal(15, 0) // نرخ به تومان (صحیح)
+  monthlyHourCap Int? // سقف ساعت تدریس ماهانه جهت هشدار
+  baseSalary     Decimal?     @db.Decimal(15, 0) // حقوق ثابت پایه ماهانه (اختیاری)
+  effectiveFrom  DateTime
+  effectiveTo    DateTime?
+  createdById    String
+  createdBy      User         @relation("CreatedContracts", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@index([tenantId, teacherId, academicYearId])
   @@index([tenantId, effectiveFrom, effectiveTo])
 }
 
 model PayrollAdjustment {
-  id                String            @id @default(uuid())
-  tenantId          String
-  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  teacherId         String
-  teacher           User              @relation("TeacherAdjustments", fields: [teacherId], references: [id], onDelete: Cascade)
-  originalSlipId    String?
-  originalSlip      PayrollSlip?      @relation("SlipAdjustments", fields: [originalSlipId], references: [id], onDelete: SetNull)
-  amount            Decimal           @db.Decimal(15, 0) // مثبت برای بستانکاری، منفی برای کسورات (تومان)
-  reason            String            // شرح دلیل اصلاحیه
-  status            AdjustmentStatus  @default(PENDING)
-  appliedToSlipId   String?           // فیشی که این تعدیل در آن لحاظ شد
-  appliedToSlip     PayrollSlip?      @relation("AppliedSlipAdjustments", fields: [appliedToSlipId], references: [id], onDelete: SetNull)
-  createdById       String
-  createdBy         User              @relation("CreatedAdjustments", fields: [createdById], references: [id], onDelete: Restrict)
-  createdAt         DateTime          @default(now())
-  appliedAt         DateTime?
+  id              String           @id @default(uuid())
+  tenantId        String
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  teacherId       String
+  teacher         User             @relation("TeacherAdjustments", fields: [teacherId], references: [id], onDelete: Cascade)
+  originalSlipId  String?
+  originalSlip    PayrollSlip?     @relation("SlipAdjustments", fields: [originalSlipId], references: [id], onDelete: SetNull)
+  amount          Decimal          @db.Decimal(15, 0) // مثبت برای بستانکاری، منفی برای کسورات (تومان)
+  reason          String // شرح دلیل اصلاحیه
+  status          AdjustmentStatus @default(PENDING)
+  appliedToSlipId String? // فیشی که این تعدیل در آن لحاظ شد
+  appliedToSlip   PayrollSlip?     @relation("AppliedSlipAdjustments", fields: [appliedToSlipId], references: [id], onDelete: SetNull)
+  createdById     String
+  createdBy       User             @relation("CreatedAdjustments", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt       DateTime         @default(now())
+  appliedAt       DateTime?
 
   @@index([tenantId, teacherId, status])
 }
 
 model PayrollSlip {
-  id                  String        @id @default(uuid())
-  tenantId            String
-  tenant              Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  userId              String
-  user                User          @relation("EmployeePayrollSlips", fields: [userId], references: [id], onDelete: Cascade)
-  year                Int           // سال e.g. 1404
-  month               Int           // ماه e.g. 1..12
-  slipNumber          String        // e.g. "PAY-1404-08-01"
+  id         String @id @default(uuid())
+  tenantId   String
+  tenant     Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User   @relation("EmployeePayrollSlips", fields: [userId], references: [id], onDelete: Cascade)
+  year       Int // سال e.g. 1404
+  month      Int // ماه e.g. 1..12
+  slipNumber String // e.g. "PAY-1404-08-01"
 
   // محاسبات کارکرد و مبالغ سیستمی و نهایی (تومان بدون اعشار)
-  calculatedAmount    Decimal       @default(0) @db.Decimal(15, 0) // عدد خام محاسبه‌شده توسط سیستم (تغییرناپذیر برای ممیزی)
-  finalAmount         Decimal       @default(0) @db.Decimal(15, 0) // عددی که واقعاً پرداخت می‌شود (تایید/ویرایش‌شده توسط مدیر)
-  grossPay            Decimal       @default(0) @db.Decimal(15, 0) // جمع ناخالص حقوق و مزایا
-  totalDeductions     Decimal       @default(0) @db.Decimal(15, 0) // جمع کسورات (بیمه، مالیات، مساعده)
-  netPay              Decimal       @default(0) @db.Decimal(15, 0) // خالص پرداختی
+  calculatedAmount Decimal @default(0) @db.Decimal(15, 0) // عدد خام محاسبه‌شده توسط سیستم (تغییرناپذیر برای ممیزی)
+  finalAmount      Decimal @default(0) @db.Decimal(15, 0) // عددی که واقعاً پرداخت می‌شود (تایید/ویرایش‌شده توسط مدیر)
+  grossPay         Decimal @default(0) @db.Decimal(15, 0) // جمع ناخالص حقوق و مزایا
+  totalDeductions  Decimal @default(0) @db.Decimal(15, 0) // جمع کسورات (بیمه، مالیات، مساعده)
+  netPay           Decimal @default(0) @db.Decimal(15, 0) // خالص پرداختی
 
-  status              PayrollStatus @default(DRAFT)
+  status PayrollStatus @default(DRAFT)
 
   // اطلاعات ممیزی ویرایش دستی مدیر
-  editReason          String?
-  editedById          String?
-  editedBy            User?         @relation("EditedPayrollSlips", fields: [editedById], references: [id], onDelete: SetNull)
-  editedAt            DateTime?
+  editReason String?
+  editedById String?
+  editedBy   User?     @relation("EditedPayrollSlips", fields: [editedById], references: [id], onDelete: SetNull)
+  editedAt   DateTime?
 
   // اطلاعات ابطال فیش
-  cancelReason        String?
-  cancelledById       String?
-  cancelledBy         User?         @relation("CancelledPayrollSlips", fields: [cancelledById], references: [id], onDelete: SetNull)
-  cancelledAt         DateTime?
+  cancelReason  String?
+  cancelledById String?
+  cancelledBy   User?     @relation("CancelledPayrollSlips", fields: [cancelledById], references: [id], onDelete: SetNull)
+  cancelledAt   DateTime?
 
   // شفافیت آماری جلسات و ساعات
-  sourceSessionCount  Int           @default(0)
-  sourceHours         Decimal?      @db.Decimal(6, 2)
-  hasCapWarning       Boolean       @default(false)
-  capWarningDetails   String?
+  sourceSessionCount Int      @default(0)
+  sourceHours        Decimal? @db.Decimal(6, 2)
+  hasCapWarning      Boolean  @default(false)
+  capWarningDetails  String?
 
   // پرداخت بانکی (از فاز ۶)
-  paidAt              DateTime?
-  paidById            String?
-  paidBy              User?         @relation("ApprovedPayrollSlips", fields: [paidById], references: [id], onDelete: SetNull)
-  paymentRefNumber    String?       // شماره پیگیری انتقال وجه بانکی / پایا
+  paidAt           DateTime?
+  paidById         String?
+  paidBy           User?     @relation("ApprovedPayrollSlips", fields: [paidById], references: [id], onDelete: SetNull)
+  paymentRefNumber String? // شماره پیگیری انتقال وجه بانکی / پایا
 
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  items               PayrollItem[]
-  adjustmentsOrigin   PayrollAdjustment[] @relation("SlipAdjustments")
-  adjustmentsApplied  PayrollAdjustment[] @relation("AppliedSlipAdjustments")
+  items              PayrollItem[]
+  adjustmentsOrigin  PayrollAdjustment[] @relation("SlipAdjustments")
+  adjustmentsApplied PayrollAdjustment[] @relation("AppliedSlipAdjustments")
 
   @@unique([tenantId, userId, year, month])
   @@unique([tenantId, slipNumber])
@@ -2220,9 +2232,9 @@ model PayrollItem {
   payrollSlipId     String
   payrollSlip       PayrollSlip     @relation(fields: [payrollSlipId], references: [id], onDelete: Cascade)
   type              PayrollItemType @default(BASE_SALARY)
-  title             String          // e.g. "حقوق پایه ماهیانه", "حق‌التدریس ۳۰ ساعت حسابان", "کسر بیمه سهم کارمند"
+  title             String // e.g. "حقوق پایه ماهیانه", "حق‌التدریس ۳۰ ساعت حسابان", "کسر بیمه سهم کارمند"
   amount            Decimal         @db.Decimal(15, 0) // مبلغ مثبت برای مزایا و منفی برای کسورات (تومان)
-  multiplierOrHours Float?          // ضریب یا تعداد ساعت
+  multiplierOrHours Float? // ضریب یا تعداد ساعت
   notes             String?
 
   @@index([tenantId, payrollSlipId])
@@ -2247,20 +2259,20 @@ enum BillingCycle {
 }
 
 model SubscriptionPlan {
-  id                 String       @id @default(uuid())
-  code               String       @unique // e.g. "FREE_TRIAL", "STANDARD_SCHOOL", "PRO_CAMPUS", "ENTERPRISE"
-  name               String       // e.g. "پلن استاندارد مدارس"
-  description        String?
-  monthlyPrice       Float        @default(0) // قیمت ماهیانه (تومان)
-  annualPrice        Float        @default(0) // قیمت سالیانه با تخفیف (تومان)
-  maxStudents        Int          @default(100) // سقف تعداد دانش‌آموز مجاز
-  maxTeachers        Int          @default(20)  // سقف تعداد دبیر و پرسنل مجاز
-  maxStorageMb       Int          @default(5120) // سقف فضای ابری به مگابایت (۵ گیگ)
-  bundledFeatureFlags String[]    @default([]) // کلید فیچرفلگ‌های فعال در این پلن (e.g. ["LMS_EXAMS", "LIVE_CHAT", "FINANCE_PAYROLL"])
-  isPublic           Boolean      @default(true)
-  isActive           Boolean      @default(true)
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  id                  String   @id @default(uuid())
+  code                String   @unique // e.g. "FREE_TRIAL", "STANDARD_SCHOOL", "PRO_CAMPUS", "ENTERPRISE"
+  name                String // e.g. "پلن استاندارد مدارس"
+  description         String?
+  monthlyPrice        Float    @default(0) // قیمت ماهیانه (تومان)
+  annualPrice         Float    @default(0) // قیمت سالیانه با تخفیف (تومان)
+  maxStudents         Int      @default(100) // سقف تعداد دانش‌آموز مجاز
+  maxTeachers         Int      @default(20) // سقف تعداد دبیر و پرسنل مجاز
+  maxStorageMb        Int      @default(5120) // سقف فضای ابری به مگابایت (۵ گیگ)
+  bundledFeatureFlags String[] @default([]) // کلید فیچرفلگ‌های فعال در این پلن (e.g. ["LMS_EXAMS", "LIVE_CHAT", "FINANCE_PAYROLL"])
+  isPublic            Boolean  @default(true)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   subscriptions TenantSubscription[]
 
@@ -2276,7 +2288,7 @@ model TenantSubscription {
   billingCycle   BillingCycle       @default(ANNUAL)
   status         SubscriptionStatus @default(ACTIVE)
   startDate      DateTime           @default(now())
-  endDate        DateTime           // تاریخ پایان دوره اشتراک
+  endDate        DateTime // تاریخ پایان دوره اشتراک
   autoRenew      Boolean            @default(true)
   customDiscount Float              @default(0)
   paidAmount     Float              @default(0)
@@ -2289,14 +2301,14 @@ model TenantSubscription {
 }
 
 model GlobalRoleTemplate {
-  id               String      @id @default(uuid())
-  code             String      @unique // e.g. "ACADEMIC_VICE_PRINCIPAL", "CHIEF_ACCOUNTANT", "STUDENT_COUNSELOR", "SPORTS_COACH"
-  name             String      // e.g. "معاون آموزشی استاندارد"
+  id               String     @id @default(uuid())
+  code             String     @unique // e.g. "ACADEMIC_VICE_PRINCIPAL", "CHIEF_ACCOUNTANT", "STUDENT_COUNSELOR", "SPORTS_COACH"
+  name             String // e.g. "معاون آموزشی استاندارد"
   description      String?
-  targetTenantType TenantType  @default(SCHOOL)
-  isSystem         Boolean     @default(true)
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  targetTenantType TenantType @default(SCHOOL)
+  isSystem         Boolean    @default(true)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 
   permissions GlobalRoleTemplatePermission[]
 
@@ -2307,7 +2319,7 @@ model GlobalRoleTemplatePermission {
   id             String             @id @default(uuid())
   templateId     String
   template       GlobalRoleTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  permissionCode String             // e.g. "attendance.write", "exam.write", "finance.fee.read"
+  permissionCode String // e.g. "attendance.write", "exam.write", "finance.fee.read"
   createdAt      DateTime           @default(now())
 
   @@unique([templateId, permissionCode])
@@ -2317,7 +2329,7 @@ model GlobalRoleTemplatePermission {
 model PlatformSetting {
   id          String   @id @default(uuid())
   key         String   @unique // e.g. "PLATFORM_MAINTENANCE_MODE", "GLOBAL_ANNOUNCEMENT_BANNER", "MAX_TENANT_STORAGE_LIMIT"
-  value       Json     // ارزش تنظیمات به فرمت JSON انعطاف‌پذیر
+  value       Json // ارزش تنظیمات به فرمت JSON انعطاف‌پذیر
   description String?
   updatedById String?
   createdAt   DateTime @default(now())
@@ -2334,7 +2346,7 @@ model PushSubscription {
   p256dh    String
   auth      String
   userAgent String?
-  deviceOS  String?  // 'iOS' | 'Android' | 'Desktop' | 'Other'
+  deviceOS  String? // 'iOS' | 'Android' | 'Desktop' | 'Other'
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -2352,43 +2364,43 @@ enum CoachLinkStatus {
 }
 
 enum CoachingSessionType {
-  REGULAR     // جلسه دوره‌ای ثابت دو هفته یک‌بار
-  EXTRA       // جلسه فوق‌العاده درخواستی
+  REGULAR // جلسه دوره‌ای ثابت دو هفته یک‌بار
+  EXTRA // جلسه فوق‌العاده درخواستی
 }
 
 enum CoachingAttendance {
-  PENDING     // در انتظار برگزاری
-  PRESENT     // حاضر
-  ABSENT      // غایب
-  EXCUSED     // غایب موجه
+  PENDING // در انتظار برگزاری
+  PRESENT // حاضر
+  ABSENT // غایب
+  EXCUSED // غایب موجه
 }
 
 enum CoachingRequestStatus {
-  PENDING     // در انتظار بررسی کوچ
-  APPROVED    // تایید و زمان‌بندی شد
-  REJECTED    // رد شد
+  PENDING // در انتظار بررسی کوچ
+  APPROVED // تایید و زمان‌بندی شد
+  REJECTED // رد شد
 }
 
 model StudentCoachLink {
-  id                  String           @id @default(uuid())
+  id                  String          @id @default(uuid())
   tenantId            String
-  tenant              Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant              Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   studentId           String
-  student             User             @relation("StudentCoachingLinks", fields: [studentId], references: [id], onDelete: Cascade)
+  student             User            @relation("StudentCoachingLinks", fields: [studentId], references: [id], onDelete: Cascade)
   coachId             String
-  coach               User             @relation("CoachCoachingLinks", fields: [coachId], references: [id], onDelete: Cascade)
-  status              CoachLinkStatus  @default(ACTIVE)
-  slotDayOfWeek       Int?             // 0=شنبه, 1=یکشنبه, ..., 5=پنج‌شنبه
-  slotStartTime       String?          // e.g. "10:20"
-  slotEndTime         String?          // e.g. "10:40"
-  slotDurationMinutes Int              @default(20)
-  recurrenceCycle     String           @default("BIWEEKLY") // دو هفته یک‌بار
+  coach               User            @relation("CoachCoachingLinks", fields: [coachId], references: [id], onDelete: Cascade)
+  status              CoachLinkStatus @default(ACTIVE)
+  slotDayOfWeek       Int? // 0=شنبه, 1=یکشنبه, ..., 5=پنج‌شنبه
+  slotStartTime       String? // e.g. "10:20"
+  slotEndTime         String? // e.g. "10:40"
+  slotDurationMinutes Int             @default(20)
+  recurrenceCycle     String          @default("BIWEEKLY") // دو هفته یک‌بار
   startDate           DateTime?
   notes               String?
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
 
-  sessions            CoachingSession[]
+  sessions CoachingSession[]
 
   @@unique([tenantId, studentId, status])
   @@index([tenantId, coachId])
@@ -2396,44 +2408,44 @@ model StudentCoachLink {
 }
 
 model CoachingSession {
-  id                 String              @id @default(uuid())
-  tenantId           String
-  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  linkId             String?
-  link               StudentCoachLink?   @relation(fields: [linkId], references: [id], onDelete: SetNull)
-  studentId          String
-  student            User                @relation("StudentCoachingSessions", fields: [studentId], references: [id], onDelete: Cascade)
-  coachId            String
-  coach              User                @relation("CoachCoachingSessions", fields: [coachId], references: [id], onDelete: Cascade)
-  sessionType        CoachingSessionType @default(REGULAR)
-  scheduledDate      DateTime            // تاریخ و زمان برگزاری
-  durationMinutes    Int                 @default(20)
-  attendanceStatus   CoachingAttendance  @default(PENDING)
-  coachNotes         String?             // یادداشت‌ها و نکات ثبت‌شده توسط کوچ
-  actionItems        String?             // اهداف و برنامه‌های تعیین‌شده برای جلسه بعد
-  conductedAt        DateTime?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  id               String              @id @default(uuid())
+  tenantId         String
+  tenant           Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  linkId           String?
+  link             StudentCoachLink?   @relation(fields: [linkId], references: [id], onDelete: SetNull)
+  studentId        String
+  student          User                @relation("StudentCoachingSessions", fields: [studentId], references: [id], onDelete: Cascade)
+  coachId          String
+  coach            User                @relation("CoachCoachingSessions", fields: [coachId], references: [id], onDelete: Cascade)
+  sessionType      CoachingSessionType @default(REGULAR)
+  scheduledDate    DateTime // تاریخ و زمان برگزاری
+  durationMinutes  Int                 @default(20)
+  attendanceStatus CoachingAttendance  @default(PENDING)
+  coachNotes       String? // یادداشت‌ها و نکات ثبت‌شده توسط کوچ
+  actionItems      String? // اهداف و برنامه‌های تعیین‌شده برای جلسه بعد
+  conductedAt      DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
 
   @@index([tenantId, coachId, scheduledDate])
   @@index([tenantId, studentId, scheduledDate])
 }
 
 model CoachingExtraRequest {
-  id                 String                @id @default(uuid())
-  tenantId           String
-  tenant             Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  studentId          String
-  student            User                  @relation("StudentExtraRequests", fields: [studentId], references: [id], onDelete: Cascade)
-  coachId            String
-  coach              User                  @relation("CoachExtraRequests", fields: [coachId], references: [id], onDelete: Cascade)
-  reason             String                // دلیل درخواست جلسه فوق‌العاده
-  preferredDate      String?               // زمان یا تاریخ پیشنهادی دانش‌آموز
-  status             CoachingRequestStatus @default(PENDING)
-  coachResponse      String?               // توضیح یا پیام کوچ
-  scheduledDate      DateTime?             // زمان تعیین‌شده در صورت تایید
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
+  id            String                @id @default(uuid())
+  tenantId      String
+  tenant        Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  studentId     String
+  student       User                  @relation("StudentExtraRequests", fields: [studentId], references: [id], onDelete: Cascade)
+  coachId       String
+  coach         User                  @relation("CoachExtraRequests", fields: [coachId], references: [id], onDelete: Cascade)
+  reason        String // دلیل درخواست جلسه فوق‌العاده
+  preferredDate String? // زمان یا تاریخ پیشنهادی دانش‌آموز
+  status        CoachingRequestStatus @default(PENDING)
+  coachResponse String? // توضیح یا پیام کوچ
+  scheduledDate DateTime? // زمان تعیین‌شده در صورت تایید
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
 
   @@index([tenantId, coachId, status])
   @@index([tenantId, studentId])
@@ -2465,23 +2477,23 @@ enum MessageTargetAudience {
 }
 
 model AcademicMessage {
-  id                String                 @id @default(uuid())
+  id                String                @id @default(uuid())
   tenantId          String
-  tenant            Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant            Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   senderId          String
-  sender            User                   @relation("SentAcademicMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  title             String                 // عنوان / موضوع پیام
-  body              String                 // متن کامل پیام
-  priority          MessagePriority        @default(NORMAL)
-  targetType        MessageTargetType      @default(INDIVIDUAL)
-  targetAudience    MessageTargetAudience  @default(ALL)
+  sender            User                  @relation("SentAcademicMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  title             String // عنوان / موضوع پیام
+  body              String // متن کامل پیام
+  priority          MessagePriority       @default(NORMAL)
+  targetType        MessageTargetType     @default(INDIVIDUAL)
+  targetAudience    MessageTargetAudience @default(ALL)
   targetClassroomId String?
-  targetClassroom   Classroom?             @relation(fields: [targetClassroomId], references: [id], onDelete: SetNull)
-  attachments       Json?                  // [{ name, url, type, size }]
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
+  targetClassroom   Classroom?            @relation(fields: [targetClassroomId], references: [id], onDelete: SetNull)
+  attachments       Json? // [{ name, url, type, size }]
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
 
-  recipients        AcademicMessageRecipient[]
+  recipients AcademicMessageRecipient[]
 
   @@index([tenantId, senderId, createdAt])
   @@index([tenantId, createdAt])
@@ -2489,21 +2501,21 @@ model AcademicMessage {
 }
 
 model AcademicMessageRecipient {
-  id          String           @id @default(uuid())
+  id          String          @id @default(uuid())
   tenantId    String
-  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant      Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   messageId   String
-  message     AcademicMessage  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  message     AcademicMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
   recipientId String
-  recipient   User             @relation("ReceivedAcademicMessages", fields: [recipientId], references: [id], onDelete: Cascade)
-  isRead      Boolean          @default(false)
+  recipient   User            @relation("ReceivedAcademicMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  isRead      Boolean         @default(false)
   readAt      DateTime?
-  isStarred   Boolean          @default(false)
-  isArchived  Boolean          @default(false)
-  deletedAt   DateTime?        // حذف نرم از صندوق دریافت‌کننده
+  isStarred   Boolean         @default(false)
+  isArchived  Boolean         @default(false)
+  deletedAt   DateTime? // حذف نرم از صندوق دریافت‌کننده
 
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([messageId, recipientId])
   @@index([tenantId, recipientId, isRead])
@@ -2511,4 +2523,92 @@ model AcademicMessageRecipient {
   @@index([tenantId, recipientId, createdAt])
 }
 
+// ==========================================
+// KA PLATFORM (GAMIFICATION)
+// ==========================================
 
+model KaActivity {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parent          String? // e.g. "فعالیت‌های آموزشی"
+  name            String
+  description     String?
+  valueInput      Json? // کانفیگ ورودی فرم
+  scoreDefinition Json? // فرمول و ضرایب محاسبه
+  order           Int      @default(0)
+  hide            Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  studentActivities KaStudentActivity[]
+
+  @@index([tenantId, hide])
+}
+
+enum KaActivityStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model KaStudentActivity {
+  id           String           @id @default(uuid())
+  tenantId     String
+  tenant       Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  studentId    String
+  student      StudentProfile   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  activityId   String
+  activity     KaActivity       @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  details      String?
+  scoreAwarded Float?
+  status       KaActivityStatus @default(PENDING)
+  adminComment String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([tenantId, studentId])
+  @@index([tenantId, status])
+}
+
+model KaReward {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parent    String?
+  name      String
+  minToken  Float
+  maxToken  Float?
+  icon      String?
+  color     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  studentRewards KaStudentReward[]
+
+  @@index([tenantId])
+}
+
+enum KaRewardStatus {
+  PENDING
+  APPROVED
+  DELIVERED
+  REJECTED
+}
+
+model KaStudentReward {
+  id        String         @id @default(uuid())
+  tenantId  String
+  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  studentId String
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  rewardId  String
+  reward    KaReward       @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  tokenCost Float
+  status    KaRewardStatus @default(PENDING)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([tenantId, studentId])
+  @@index([tenantId, status])
+}
