@@ -35,33 +35,44 @@ export class KaRewardsService {
     const student = await this.prisma.studentProfile.findUnique({
       where: { userId },
     });
-    if (!student) throw new NotFoundException('Student profile not found');
+    if (!student) throw new NotFoundException('پروفایل دانش‌آموزی یافت نشد');
 
     const reward = await this.prisma.kaReward.findUnique({
       where: { id: dto.rewardId },
     });
     if (!reward || reward.tenantId !== tenantId) {
-      throw new NotFoundException('Reward not found');
+      throw new NotFoundException('پاداش مورد نظر یافت نشد');
     }
 
-    if (student.kaToken < reward.minToken) {
-      throw new BadRequestException('Not enough tokens');
+    // Determine actual token cost (supports custom amounts for charity or token ranges)
+    let tokenCost = reward.minToken;
+    if (dto.customTokens && dto.customTokens > 0) {
+      tokenCost = Math.max(dto.customTokens, reward.minToken);
+      if (reward.maxToken && reward.maxToken > 0) {
+        tokenCost = Math.min(tokenCost, reward.maxToken);
+      }
     }
 
-    // Deduct token
-    await this.prisma.studentProfile.update({
-      where: { id: student.id },
-      data: {
-        kaToken: { decrement: reward.minToken }
-      },
-    });
+    if (student.kaToken < tokenCost) {
+      throw new BadRequestException('موجودی توکن شما برای این پاداش کافی نیست');
+    }
+
+    // Deduct token if cost > 0
+    if (tokenCost > 0) {
+      await this.prisma.studentProfile.update({
+        where: { id: student.id },
+        data: {
+          kaToken: { decrement: tokenCost },
+        },
+      });
+    }
 
     return this.prisma.kaStudentReward.create({
       data: {
         tenantId,
         studentId: student.id,
         rewardId: reward.id,
-        tokenCost: reward.minToken,
+        tokenCost,
         status: KaRewardStatus.PENDING,
       },
     });

@@ -62,6 +62,10 @@ export class CreateKaRewardDto {
 export class ClaimKaRewardDto {
   @IsString()
   rewardId: string;
+
+  @IsOptional()
+  @IsNumber()
+  customTokens?: number;
 }
 
 export class ReviewKaActivityDto {
