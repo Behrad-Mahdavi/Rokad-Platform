@@ -44,11 +44,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
       >
         {({ isActive }) => (
           <>
-            <div className="h-7 w-7 flex items-center justify-center transition-all mb-0.5 shrink-0">
+            <div className="h-7 w-7 flex items-center justify-center transition-all mb-0.5 shrink-0 overflow-visible">
               <CoinStackIcon
                 solid={isActive}
                 className={clsx(
-                  'h-6 w-6 shrink-0 transition-all',
+                  'h-[22px] w-[22px] shrink-0 transition-all',
                   isActive
                     ? 'text-emerald-600 dark:text-teal-400'
                     : 'text-gray-400 dark:text-gray-400',
