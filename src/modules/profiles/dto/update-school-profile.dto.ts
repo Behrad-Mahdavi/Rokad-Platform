@@ -43,7 +43,7 @@ export class UpdateSchoolProfileDto {
 }
 
 export class CreateBlogPostDto {
-  @ApiProperty({ description: 'عنوان مقاله، خبر یا پست رسانه', example: 'برگزاری کارگاه تخصصی هوش مصنوعی در هنرستان رُکاد' })
+  @ApiProperty({ description: 'عنوان مقاله، خبر یا پست رسانه', example: 'برگزاری کارگاه تخصصی هوش مصنوعی در هنرستان رکاد' })
   @IsString()
   @IsNotEmpty()
   title: string;

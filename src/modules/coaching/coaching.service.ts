@@ -307,7 +307,7 @@ export class CoachingService {
 
     return {
       tenant: {
-        name: tenant?.name || 'هنرستان هوشمند رُکاد',
+        name: tenant?.name || 'هنرستان هوشمند رکاد',
         slug: tenant?.slug || 'rokad-school',
         phone: tenant?.phone || '',
         address: tenant?.address || '',

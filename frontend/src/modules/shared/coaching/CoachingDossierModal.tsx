@@ -317,7 +317,7 @@ export const CoachingDossierModal: React.FC<CoachingDossierModalProps> = ({
     // 1. Info Sheet Data
     const sheetData: any[][] = [
       ['جمهوری اسلامی ایران - وزارت آموزش و پرورش'],
-      [`مجتمع آموزشی / هنرستان: ${data.tenant?.name || 'هنرستان هوشمند رُکاد'}`],
+      [`مجتمع آموزشی / هنرستان: ${data.tenant?.name || 'هنرستان هوشمند رکاد'}`],
       ['کارنامه و خلاصه پرونده مربی‌گری و هدایت تحصیلی (کوچینگ)'],
       [],
       ['نام و نام خانوادگی دانش‌آموز:', studentFullName, '', 'کد دانش‌آموزی:', data.student?.studentCode || '---'],
@@ -473,7 +473,7 @@ export const CoachingDossierModal: React.FC<CoachingDossierModalProps> = ({
                     <div className="text-[10px] text-zinc-600">اداره کل آموزش و پرورش استان</div>
                     <div className="text-xs font-extrabold text-indigo-950 flex items-center gap-1 mt-0.5">
                       <Building2 className="w-3.5 h-3.5 inline text-indigo-700" />
-                      <span>{data.tenant?.name || 'هنرستان تخصصی هوشمند رُکاد'}</span>
+                      <span>{data.tenant?.name || 'هنرستان تخصصی هوشمند رکاد'}</span>
                     </div>
                   </div>
 
@@ -773,13 +773,13 @@ export const CoachingDossierModal: React.FC<CoachingDossierModalProps> = ({
                 {/* 7. Footer Note & Digital Verification Stamp */}
                 <div className="footer-note flex items-center justify-between mt-4 pt-2 border-t border-zinc-200 text-[9px] text-zinc-500 font-medium">
                   <div>
-                    <span>نشانی: {data.tenant?.address || 'تهران، مجتمع آموزشی رُکاد'}</span>
+                    <span>نشانی: {data.tenant?.address || 'تهران، مجتمع آموزشی رکاد'}</span>
                     {data.tenant?.phone && (
                       <span className="mr-3">تلفن: {toPersianDigits(data.tenant.phone)}</span>
                     )}
                   </div>
                   <div>
-                    <span>شناسه دیجیتال یکپارچه رُکاد — صادر شده به صورت سیستمی</span>
+                    <span>شناسه دیجیتال یکپارچه رکاد — صادر شده به صورت سیستمی</span>
                   </div>
                 </div>
               </div>

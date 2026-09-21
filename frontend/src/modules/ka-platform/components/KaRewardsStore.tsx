@@ -98,7 +98,7 @@ export const KaRewardsStore: React.FC<KaRewardsStoreProps> = ({
             باشگاه و بازارچه پاداش‌های کا
           </h2>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-            توکن‌های کسب‌شده از فعالیت‌های خود را برای جوایز ارزشمند، بن‌های تخفیف و یادبودهای رُکاد خرج کنید
+            توکن‌های کسب‌شده از فعالیت‌های خود را برای جوایز ارزشمند، بن‌های تخفیف و یادبودهای رکاد خرج کنید
           </p>
         </div>
 
@@ -197,7 +197,7 @@ export const KaRewardsStore: React.FC<KaRewardsStoreProps> = ({
                         </div>
                       )}
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 leading-relaxed line-clamp-2">
-                        {reward.description || 'پاداش ویژه هنرستان رُکاد برای هنرجویان پرتلاش و برتر'}
+                        {reward.description || 'پاداش ویژه هنرستان رکاد برای هنرجویان پرتلاش و برتر'}
                       </p>
                     </div>
                   </div>

@@ -577,7 +577,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* کارت برند رُکاد */
+/* کارت برند رکاد */
 .rokad-card {
   background: #FFFFFF;
   border: 1.5px solid #EAEAEA;

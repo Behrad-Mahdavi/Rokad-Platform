@@ -263,8 +263,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   const renderFooterBanner = () => (
     <div className="rounded-xl bg-gray-50 dark:bg-[#161D2A] p-2.5 border border-gray-200 dark:border-gray-800 text-center">
       <div className="flex items-center justify-center space-x-1.5 space-x-reverse text-gray-600 dark:text-gray-300 font-bold text-xs">
-        <img src="/logo.svg" alt="رُکاد" className="h-4 w-4 rounded-md object-cover inline-block shrink-0" />
-        <span>سامانه یکپارچه رُکاد</span>
+        <img src="/logo.svg" alt="رکاد" className="h-4 w-4 rounded-md object-cover inline-block shrink-0" />
+        <span>سامانه یکپارچه رکاد</span>
       </div>
     </div>
   );
@@ -304,12 +304,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
           <div className="flex items-center gap-2.5">
             <img
               src="/logo.svg"
-              alt="رُکاد"
+              alt="رکاد"
               className="h-8 w-8 rounded-xl object-cover border border-primary/30 shadow-[1.5px_1.5px_0_#59BBAF] shrink-0"
             />
             <div>
               <span className="font-black text-sm text-sec dark:text-white block leading-tight">
-                منوی رُکاد
+                منوی رکاد
               </span>
             </div>
           </div>

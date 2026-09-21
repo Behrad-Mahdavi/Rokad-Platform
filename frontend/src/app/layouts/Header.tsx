@@ -69,13 +69,13 @@ export const Header: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate('/app')}
-            title="صفحه اصلی رُکاد"
-            aria-label="صفحه اصلی رُکاد"
+            title="صفحه اصلی رکاد"
+            aria-label="صفحه اصلی رکاد"
             className="flex items-center justify-center min-h-[44px] min-w-[44px] p-1 cursor-pointer transition-transform duration-150 hover:scale-105 active:scale-95"
           >
             <img
               src={rokadLogoWhite}
-              alt="لوگوی رُکاد"
+              alt="لوگوی رکاد"
               className="h-10 sm:h-11 max-h-[44px] w-auto object-contain shrink-0"
             />
           </button>

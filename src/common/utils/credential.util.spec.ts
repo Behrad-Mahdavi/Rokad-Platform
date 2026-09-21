@@ -10,20 +10,20 @@ describe('Unified Credential Generation System (سامانه ورود یکپار
     it('returns "b" for boys school via slug, theme, or name', () => {
       expect(getTenantPasswordPrefix({ slug: 'rokad-boys' })).toBe('b');
       expect(getTenantPasswordPrefix({ theme: 'MALE' })).toBe('b');
-      expect(getTenantPasswordPrefix({ name: 'هنرستان پسرانه رُکاد' })).toBe('b');
+      expect(getTenantPasswordPrefix({ name: 'هنرستان پسرانه رکاد' })).toBe('b');
     });
 
     it('returns "g" for girls school via slug, theme, or name', () => {
       expect(getTenantPasswordPrefix({ slug: 'rokad-girls' })).toBe('g');
       expect(getTenantPasswordPrefix({ theme: 'FEMALE' })).toBe('g');
-      expect(getTenantPasswordPrefix({ name: 'هنرستان فنی دخترانه رُکاد' })).toBe('g');
+      expect(getTenantPasswordPrefix({ name: 'هنرستان فنی دخترانه رکاد' })).toBe('g');
     });
 
     it('returns "c" for college via slug, theme, or type', () => {
       expect(getTenantPasswordPrefix({ slug: 'rokad-college' })).toBe('c');
       expect(getTenantPasswordPrefix({ theme: 'COLLEGE' })).toBe('c');
       expect(getTenantPasswordPrefix({ type: 'COLLEGE' })).toBe('c');
-      expect(getTenantPasswordPrefix({ name: 'کالج فناوری رُکاد' })).toBe('c');
+      expect(getTenantPasswordPrefix({ name: 'کالج فناوری رکاد' })).toBe('c');
     });
 
     it('falls back to "b" if tenant context is missing or unspecified', () => {

@@ -46,7 +46,7 @@ export const KaOverviewDashboard: React.FC<KaOverviewDashboardProps> = ({
 
   return (
     <div className="space-y-8">
-      {/* ردیف ۴ کارت آماری استاندارد بر اساس ۵ پرسونای رُکاد */}
+      {/* ردیف ۴ کارت آماری استاندارد بر اساس ۵ پرسونای رکاد */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         <StatCard
           title="امتیاز کل مهارتی"

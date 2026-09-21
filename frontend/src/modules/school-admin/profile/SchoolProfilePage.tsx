@@ -472,7 +472,7 @@ export const SchoolProfilePage: React.FC = () => {
 
           <Input
             label="عنوان مقاله یا خبر *"
-            placeholder="مثال: برگزاری کارگاه تخصصی هوش مصنوعی و مهندسی داده در هنرستان رُکاد"
+            placeholder="مثال: برگزاری کارگاه تخصصی هوش مصنوعی و مهندسی داده در هنرستان رکاد"
             value={blogForm.title}
             onChange={(e) => setBlogForm({ ...blogForm, title: e.target.value })}
             required
@@ -495,7 +495,7 @@ export const SchoolProfilePage: React.FC = () => {
 
           <Input
             label="برچسب‌ها (با کاما جدا کنید)"
-            placeholder="مثال: کارگاه, آموزش, کامپیوتر, رُکاد"
+            placeholder="مثال: کارگاه, آموزش, کامپیوتر, رکاد"
             value={blogForm.tags}
             onChange={(e) => setBlogForm({ ...blogForm, tags: e.target.value })}
           />

@@ -12,12 +12,26 @@ import {
 export class KavenegarSmsProvider implements ISmsProvider {
   readonly name = 'KAVENEGAR';
   private readonly logger = new Logger('SMS_KAVENEGAR');
-  private readonly apiKey: string;
-  private readonly senderLine: string;
+  private apiKey: string;
+  private senderLine: string;
 
   constructor(private readonly configService: ConfigService) {
     this.apiKey = this.configService.get<string>('KAVENEGAR_API_KEY') || '';
     this.senderLine = this.configService.get<string>('KAVENEGAR_SENDER_LINE') || '10008000';
+  }
+
+  updateCredentials(apiKey: string, senderLine?: string) {
+    this.apiKey = apiKey;
+    if (senderLine !== undefined) {
+      this.senderLine = senderLine;
+    }
+  }
+
+  getCredentials() {
+    return {
+      apiKey: this.apiKey,
+      senderLine: this.senderLine,
+    };
   }
 
   async sendSingle(options: SmsSendSingleOptions): Promise<SmsSendResult> {

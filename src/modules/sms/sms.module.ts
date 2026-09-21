@@ -6,6 +6,7 @@ import { SmsController } from './sms.controller';
 import { SmsSchedulerService } from './sms-scheduler.service';
 import { SandboxSmsProvider } from './providers/sandbox-sms.provider';
 import { KavenegarSmsProvider } from './providers/kavenegar-sms.provider';
+import { AmootSmsProvider } from './providers/amoot-sms.provider';
 
 @Module({
   imports: [PrismaModule, ConfigModule],
@@ -15,6 +16,7 @@ import { KavenegarSmsProvider } from './providers/kavenegar-sms.provider';
     SmsSchedulerService,
     SandboxSmsProvider,
     KavenegarSmsProvider,
+    AmootSmsProvider,
   ],
   exports: [SmsService],
 })

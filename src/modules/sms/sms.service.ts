@@ -11,18 +11,21 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { ISmsProvider, SmsSendResult } from './interfaces/sms-provider.interface';
 import { SandboxSmsProvider } from './providers/sandbox-sms.provider';
 import { KavenegarSmsProvider } from './providers/kavenegar-sms.provider';
+import { AmootSmsProvider } from './providers/amoot-sms.provider';
 import {
   SendManualSmsDto,
   ManualSmsTargetType,
   TargetRoleAudience,
   ClassAudienceType,
   UpsertSmsTemplateDto,
+  CreateSmsQuickTemplateDto,
+  UpdateSmsQuickTemplateDto,
 } from './dto/send-manual-sms.dto';
 
 @Injectable()
 export class SmsService {
   private readonly logger = new Logger(SmsService.name);
-  private readonly primaryProvider: ISmsProvider;
+  private primaryProvider: ISmsProvider;
   private readonly fallbackProvider: ISmsProvider;
 
   constructor(
@@ -30,31 +33,200 @@ export class SmsService {
     private readonly configService: ConfigService,
     private readonly sandboxProvider: SandboxSmsProvider,
     private readonly kavenegarProvider: KavenegarSmsProvider,
+    private readonly amootProvider: AmootSmsProvider,
   ) {
-    const activeProviderName = this.configService.get<string>('SMS_PROVIDER') || 'SANDBOX';
-    if (activeProviderName.toUpperCase() === 'KAVENEGAR') {
+    const activeProviderName = (this.configService.get<string>('SMS_PROVIDER') || 'SANDBOX').toUpperCase();
+    if (activeProviderName === 'AMOOT') {
+      this.primaryProvider = this.amootProvider;
+    } else if (activeProviderName === 'KAVENEGAR') {
       this.primaryProvider = this.kavenegarProvider;
-      this.fallbackProvider = this.sandboxProvider;
     } else {
       this.primaryProvider = this.sandboxProvider;
-      this.fallbackProvider = this.sandboxProvider;
     }
+    this.fallbackProvider = this.sandboxProvider;
+  }
+
+  /**
+   * Helper to normalize Iranian Sender Lines with +98 format
+   * Examples:
+   *   "09121234567" -> "+989121234567"
+   *   "9121234567"  -> "+989121234567"
+   *   "50001234"    -> "+9850001234"
+   *   "02188889999" -> "+982188889999"
+   *   "+9850001234" -> "+9850001234"
+   */
+  private normalizeIranianSenderLine(rawLine?: string): string {
+    if (!rawLine) return '';
+    let cleaned = rawLine.trim().replace(/[\s\-\(\)]/g, '');
+    
+    // Convert Persian / Arabic digits to English
+    cleaned = cleaned.replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 1776));
+    cleaned = cleaned.replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 1632));
+
+    if (cleaned === '98' || cleaned === '+98' || cleaned === 'Public' || cleaned === 'Service') {
+      return '98';
+    }
+
+    if (cleaned.startsWith('+98')) {
+      return cleaned;
+    }
+    if (cleaned.startsWith('0098')) {
+      return '+98' + cleaned.substring(4);
+    }
+    if (cleaned.startsWith('98') && cleaned.length > 8) {
+      return '+' + cleaned;
+    }
+    if (cleaned.startsWith('0')) {
+      return '+98' + cleaned.substring(1);
+    }
+    return '+98' + cleaned;
+  }
+
+  async getGatewayConfig(tenantId?: string) {
+    let providerName = this.primaryProvider.name;
+    let amootCreds = this.amootProvider.getCredentials();
+    let kavenegarCreds = this.kavenegarProvider.getCredentials();
+
+    if (tenantId) {
+      const dbConfig = await this.prisma.smsGatewayConfig.findUnique({
+        where: { tenantId },
+      });
+      if (dbConfig) {
+        providerName = dbConfig.provider;
+        amootCreds = {
+          apiKey: dbConfig.amootApiKey || '',
+          senderLine: dbConfig.amootSenderLine || '',
+        };
+        kavenegarCreds = {
+          apiKey: dbConfig.kavenegarApiKey || '',
+          senderLine: dbConfig.kavenegarSenderLine || '',
+        };
+      }
+    }
+
+    // Attempt to query live balance from Amoot if token is present
+    let liveAccount: any = null;
+    if (amootCreds.apiKey) {
+      try {
+        const liveStatus = await this.amootProvider.getAccountStatus();
+        if (liveStatus.success) {
+          liveAccount = liveStatus;
+        }
+      } catch (err: any) {
+        this.logger.warn(`Failed to fetch Amoot account status: ${err.message}`);
+      }
+    }
+
+    return {
+      provider: providerName,
+      amoot: amootCreds,
+      kavenegar: kavenegarCreds,
+      liveAccount,
+    };
+  }
+
+  async updateGatewayConfig(
+    dto: {
+      provider: 'AMOOT' | 'KAVENEGAR' | 'SANDBOX';
+      amootApiKey?: string;
+      amootSenderLine?: string;
+      kavenegarApiKey?: string;
+      kavenegarSenderLine?: string;
+    },
+    tenantId?: string,
+  ) {
+    const formattedAmootLine = dto.amootSenderLine !== undefined ? this.normalizeIranianSenderLine(dto.amootSenderLine) : undefined;
+    const formattedKavenegarLine = dto.kavenegarSenderLine !== undefined ? this.normalizeIranianSenderLine(dto.kavenegarSenderLine) : undefined;
+
+    if (dto.amootApiKey !== undefined) {
+      this.amootProvider.updateCredentials(dto.amootApiKey, formattedAmootLine);
+    }
+    if (dto.kavenegarApiKey !== undefined) {
+      this.kavenegarProvider.updateCredentials(dto.kavenegarApiKey, formattedKavenegarLine);
+    }
+
+    if (dto.provider === 'AMOOT') {
+      this.primaryProvider = this.amootProvider;
+    } else if (dto.provider === 'KAVENEGAR') {
+      this.primaryProvider = this.kavenegarProvider;
+    } else {
+      this.primaryProvider = this.sandboxProvider;
+    }
+
+    // Persist permanently in Database with normalized +98 line
+    if (tenantId) {
+      await this.prisma.smsGatewayConfig.upsert({
+        where: { tenantId },
+        update: {
+          provider: dto.provider,
+          amootApiKey: dto.amootApiKey,
+          amootSenderLine: formattedAmootLine,
+          kavenegarApiKey: dto.kavenegarApiKey,
+          kavenegarSenderLine: formattedKavenegarLine,
+        },
+        create: {
+          tenantId,
+          provider: dto.provider,
+          amootApiKey: dto.amootApiKey,
+          amootSenderLine: formattedAmootLine,
+          kavenegarApiKey: dto.kavenegarApiKey,
+          kavenegarSenderLine: formattedKavenegarLine,
+        },
+      });
+    }
+
+    this.logger.log(`Active SMS Provider updated & saved permanently: ${this.primaryProvider.name} (SenderLine: ${formattedAmootLine || 'N/A'})`);
+    return {
+      message: 'کلید وب‌سرویس و شماره خط فرستنده با پیش‌شماره ایران (۹۸+) با موفقیت در پایگاه‌داده ذخیره شد',
+      activeProvider: this.primaryProvider.name,
+      formattedSenderLine: formattedAmootLine,
+    };
   }
 
   // ==========================================
-  // Core Dispatcher with Failover
+  // Core Dispatcher
   // ==========================================
   async dispatchSms(to: string, message: string, tenantId?: string): Promise<SmsSendResult> {
     try {
-      const res = await this.primaryProvider.sendSingle({ to, message, tenantId });
-      if (res.success) {
-        return res;
+      let activeProvider: ISmsProvider = this.primaryProvider;
+
+      // If tenantId provided, check DB for tenant specific config & active provider
+      if (tenantId) {
+        const tenantConfig = await this.prisma.smsGatewayConfig.findUnique({
+          where: { tenantId },
+        });
+
+        if (tenantConfig) {
+          if (tenantConfig.provider === 'AMOOT') {
+            if (tenantConfig.amootApiKey) {
+              this.amootProvider.updateCredentials(
+                tenantConfig.amootApiKey,
+                tenantConfig.amootSenderLine || undefined,
+              );
+            }
+            activeProvider = this.amootProvider;
+          } else if (tenantConfig.provider === 'KAVENEGAR') {
+            if (tenantConfig.kavenegarApiKey) {
+              this.kavenegarProvider.updateCredentials(
+                tenantConfig.kavenegarApiKey,
+                tenantConfig.kavenegarSenderLine || undefined,
+              );
+            }
+            activeProvider = this.kavenegarProvider;
+          } else {
+            activeProvider = this.sandboxProvider;
+          }
+        }
       }
-      this.logger.warn(`Primary provider ${this.primaryProvider.name} failed. Attempting fallback...`);
-      return await this.fallbackProvider.sendSingle({ to, message, tenantId });
+
+      return await activeProvider.sendSingle({ to, message, tenantId });
     } catch (err: any) {
-      this.logger.error(`Error in dispatchSms: ${err.message}. Triggering fallback.`);
-      return await this.fallbackProvider.sendSingle({ to, message, tenantId });
+      this.logger.error(`Error in dispatchSms (${this.primaryProvider.name}): ${err.message}`);
+      return {
+        success: false,
+        provider: this.primaryProvider.name,
+        errorMessage: err.message || 'خطای غیرمنتظره در ارسال پیامک',
+      };
     }
   }
 
@@ -73,6 +245,17 @@ export class SmsService {
     senderId?: string;
   }) {
     try {
+      let validSenderId: string | undefined = undefined;
+      if (data.senderId) {
+        const userExists = await this.prisma.user.findUnique({
+          where: { id: data.senderId },
+          select: { id: true },
+        });
+        if (userExists) {
+          validSenderId = data.senderId;
+        }
+      }
+
       return await this.prisma.smsLog.create({
         data: {
           tenantId: data.tenantId,
@@ -85,7 +268,7 @@ export class SmsService {
           status: data.status,
           errorMessage: data.errorMessage,
           metadata: data.metadata || {},
-          senderId: data.senderId,
+          senderId: validSenderId,
         },
       });
     } catch (e: any) {
@@ -147,7 +330,7 @@ export class SmsService {
 
     let messageText =
       template?.body ||
-      `ولی محترم؛ به اطلاع می‌رساند {نام_دانش‌آموز} در تاریخ {تاریخ} در {زنگ}، وضعیت «{وضعیت}» برای ایشان ثبت گردیده است.\nمدرسه رُکاد`;
+      `ولی محترم؛ به اطلاع می‌رساند {نام_دانش‌آموز} در تاریخ {تاریخ} در {زنگ}، وضعیت «{وضعیت}» برای ایشان ثبت گردیده است.\nمدرسه رکاد`;
 
     messageText = messageText
       .replace(/{نام_دانش‌آموز}/g, studentName)
@@ -279,7 +462,7 @@ export class SmsService {
       const bankTitle = `${cheque.bankName || 'بانک'} ${cheque.branchName || ''}`.trim();
       const amountFormatted = Number(cheque.amount).toLocaleString('fa-IR');
 
-      let messageText = `صادرکننده محترم (${ownerName})؛\nیادآوری سررسید چک صیادی:\nچک شماره: ${cheque.checkSayadId || cheque.checkNumber || '-'}\nمبلغ: ${amountFormatted} تومان\nبانک: ${bankTitle}\nموعد سررسید: ${timingTitle} (${jalaliDateStr})\nلطفاً جهت پاس شدن چک، نسبت به تأمین موجودی اقدام فرمایید.\nمدرسه رُکاد`;
+      let messageText = `صادرکننده محترم (${ownerName})؛\nیادآوری سررسید چک صیادی:\nچک شماره: ${cheque.checkSayadId || cheque.checkNumber || '-'}\nمبلغ: ${amountFormatted} تومان\nبانک: ${bankTitle}\nموعد سررسید: ${timingTitle} (${jalaliDateStr})\nلطفاً جهت پاس شدن چک، نسبت به تأمین موجودی اقدام فرمایید.\nمدرسه رکاد`;
 
       // Find recipient phone
       let targetPhone = '';
@@ -371,7 +554,7 @@ export class SmsService {
         const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'عزیز';
         const phone = user.phone;
 
-        const messageText = `${fullName} عزیز؛\nشکفتن گل وجودت و زادروز زیبایت را صمیمانه شادباش می‌گوییم. 🎉🎂\nامیدواریم در پناه ایزد یکتا سالی سرشار از نشاط، تندرستی و سربلندی داشته باشی.\nخانواده بزرگ رُکاد`;
+        const messageText = `${fullName} عزیز؛\nشکفتن گل وجودت و زادروز زیبایت را صمیمانه شادباش می‌گوییم. 🎉🎂\nامیدواریم در پناه ایزد یکتا سالی سرشار از نشاط، تندرستی و سربلندی داشته باشی.\nخانواده بزرگ رکاد`;
 
         if (phone) {
           const res = await this.dispatchSms(phone, messageText, user.tenantId);
@@ -410,35 +593,71 @@ export class SmsService {
 
     // Mode A: DIRECT_PHONE / DIRECT_PHONES
     if (dto.targetType === ManualSmsTargetType.DIRECT_PHONE) {
-      if (dto.directPhone) {
-        recipientsToDispatch.push({ phone: dto.directPhone.trim() });
-      }
+      const extractedPhones = new Set<string>();
+
+      const addPhone = (p?: string) => {
+        if (!p) return;
+        // Split by newline, comma, semicolon, space
+        const lines = p.split(/[\r\n,;\s]+/);
+        for (const line of lines) {
+          const cleaned = line.trim();
+          if (cleaned.length >= 8) {
+            extractedPhones.add(cleaned);
+          }
+        }
+      };
+
+      addPhone(dto.directPhone);
       if (dto.directPhones?.length) {
-        dto.directPhones.forEach((p) => {
-          if (p.trim()) recipientsToDispatch.push({ phone: p.trim() });
-        });
+        dto.directPhones.forEach(addPhone);
       }
+
+      extractedPhones.forEach((phone) => {
+        recipientsToDispatch.push({ phone });
+      });
+
       if (recipientsToDispatch.length === 0) {
         throw new BadRequestException('حداقل یک شماره تلفن مستقیم معتبر الزامی است');
       }
     }
 
-    // Mode B: INDIVIDUAL (User by ID)
+    // Mode B: INDIVIDUAL (User by ID or Multiple Users by IDs)
     else if (dto.targetType === ManualSmsTargetType.INDIVIDUAL) {
-      if (!dto.targetUserId) {
-        throw new BadRequestException('شناسه کاربر گیرنده الزامی است');
+      const userIds: string[] = [];
+      if (dto.targetUserIds && Array.isArray(dto.targetUserIds) && dto.targetUserIds.length > 0) {
+        userIds.push(...dto.targetUserIds.filter(Boolean));
+      } else if (dto.targetUserId) {
+        userIds.push(dto.targetUserId);
       }
-      const user = await this.prisma.user.findFirst({
-        where: { id: dto.targetUserId, tenantId },
-      });
-      if (!user || !user.phone) {
-        throw new NotFoundException('کاربر موردنظر یافت نشد یا فاقد شماره موبایل ثبت‌شده است');
+
+      if (userIds.length === 0) {
+        throw new BadRequestException('حداقل یک کاربر گیرنده باید انتخاب شود');
       }
-      recipientsToDispatch.push({
-        phone: user.phone,
-        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-        userId: user.id,
+
+      const users = await this.prisma.user.findMany({
+        where: { id: { in: userIds }, tenantId },
+        select: { id: true, firstName: true, lastName: true, phone: true },
       });
+
+      if (users.length === 0) {
+        throw new NotFoundException('هیچ کاربری با شناسه‌های ارسالی یافت نشد');
+      }
+
+      let validPhoneCount = 0;
+      users.forEach((u) => {
+        if (u.phone && u.phone.trim()) {
+          validPhoneCount++;
+          recipientsToDispatch.push({
+            phone: u.phone.trim(),
+            name: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+            userId: u.id,
+          });
+        }
+      });
+
+      if (validPhoneCount === 0) {
+        throw new BadRequestException('کاربران انتخاب‌شده فاقد شماره موبایل ثبت‌شده هستند');
+      }
     }
 
     // Mode C: ROLE / GROUP
@@ -666,19 +885,19 @@ export class SmsService {
       {
         type: 'AUTO_ABSENCE',
         title: 'اعلان غیبت و تأخیر به والدین',
-        body: 'ولی محترم؛ به اطلاع می‌رساند {نام_دانش‌آموز} در تاریخ {تاریخ} در {زنگ}، وضعیت «{وضعیت}» برای ایشان ثبت گردیده است.\nمدرسه رُکاد',
+        body: 'ولی محترم؛ به اطلاع می‌رساند {نام_دانش‌آموز} در تاریخ {تاریخ} در {زنگ}، وضعیت «{وضعیت}» برای ایشان ثبت گردیده است.\nمدرسه رکاد',
         isEnabled: true,
       },
       {
         type: 'AUTO_CHEQUE_DUE',
         title: 'یادآوری سررسید چک‌های صیادی',
-        body: 'صادرکننده محترم ({نام})؛ یادآوری سررسید چک صیادی به مبلغ {مبلغ} ریال موعد {تاریخ_سررسید}. لطفاً نسبت به تأمین موجودی اقدام فرمایید.\nمدرسه رُکاد',
+        body: 'صادرکننده محترم ({نام})؛ یادآوری سررسید چک صیادی به مبلغ {مبلغ} ریال موعد {تاریخ_سررسید}. لطفاً نسبت به تأمین موجودی اقدام فرمایید.\nمدرسه رکاد',
         isEnabled: true,
       },
       {
         type: 'AUTO_BIRTHDAY',
         title: 'تبریک زادروز',
-        body: '{نام} عزیز؛ شکفتن گل وجودت و زادروز زیبایت را صمیمانه شادباش می‌گوییم. 🎉🎂\nخانواده بزرگ رُکاد',
+        body: '{نام} عزیز؛ شکفتن گل وجودت و زادروز زیبایت را صمیمانه شادباش می‌گوییم. 🎉🎂\nخانواده بزرگ رکاد',
         isEnabled: true,
       },
     ];
@@ -719,4 +938,95 @@ export class SmsService {
       },
     });
   }
+
+  // ==========================================
+  // Quick Templates Management (الگوهای سریع)
+  // ==========================================
+  async getQuickTemplates(tenantId: string) {
+    const list = await this.prisma.smsQuickTemplate.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (list.length === 0) {
+      // Return predefined default quick templates if none created yet
+      return [
+        {
+          id: 'def-1',
+          title: 'کلاس‌های آنلاین',
+          content: 'با سلام و احترام؛ پیرو تصمیم شورای مدرسه، کلیه کلاس‌های آموزشی فردا به صورت آنلاین برگزار خواهد شد.\nمدرسه رکاد',
+          category: 'ANNOUNCEMENT',
+          isDefault: true,
+        },
+        {
+          id: 'def-2',
+          title: 'انتشار کارنامه',
+          content: 'ولی محترم؛ کارنامه نیم‌سال تحصیلی فرزند شما در سامانه هوشمند رکاد بارگذاری و قابل مشاهده است.\nمدرسه رکاد',
+          category: 'ACADEMIC',
+          isDefault: true,
+        },
+        {
+          id: 'def-3',
+          title: 'دعوت به جلسه اولیاء',
+          content: 'با سلام؛ جلسه عمومی اولیاء و مربیان روز چهارشنبه ساعت ۱۵ در سالن همایش‌های مدرسه برگزار می‌گردد.\nحضور شما مایه افتخار است.',
+          category: 'GENERAL',
+          isDefault: true,
+        },
+        {
+          id: 'def-4',
+          title: 'تعطیلی اضطراری / آلودگی',
+          content: 'با سلام؛ با توجه به اعلام مدیریت بحران، فعالیت حضوری مدرسه فردا تعطیل بوده و آموزش از طریق سامانه دنبال خواهد شد.\nمدیریت مدرسه رکاد',
+          category: 'EMERGENCY',
+          isDefault: true,
+        },
+      ];
+    }
+
+    return list;
+  }
+
+  async createQuickTemplate(tenantId: string, dto: CreateSmsQuickTemplateDto) {
+    return this.prisma.smsQuickTemplate.create({
+      data: {
+        tenantId,
+        title: dto.title.trim(),
+        content: dto.content.trim(),
+        category: dto.category || 'GENERAL',
+      },
+    });
+  }
+
+  async updateQuickTemplate(tenantId: string, id: string, dto: UpdateSmsQuickTemplateDto) {
+    const existing = await this.prisma.smsQuickTemplate.findFirst({
+      where: { id, tenantId },
+    });
+    if (!existing) {
+      throw new NotFoundException('الگوی پیامک مورد نظر یافت نشد');
+    }
+
+    return this.prisma.smsQuickTemplate.update({
+      where: { id },
+      data: {
+        ...(dto.title ? { title: dto.title.trim() } : {}),
+        ...(dto.content ? { content: dto.content.trim() } : {}),
+        ...(dto.category ? { category: dto.category } : {}),
+      },
+    });
+  }
+
+  async deleteQuickTemplate(tenantId: string, id: string) {
+    const existing = await this.prisma.smsQuickTemplate.findFirst({
+      where: { id, tenantId },
+    });
+    if (!existing) {
+      throw new NotFoundException('الگوی پیامک مورد نظر یافت نشد');
+    }
+
+    await this.prisma.smsQuickTemplate.delete({
+      where: { id },
+    });
+
+    return { success: true, message: 'الگوی پیامک با موفقیت حذف گردید' };
+  }
 }
+

@@ -97,7 +97,7 @@ export const SuperAdminDashboard: React.FC = () => {
           </div>
           <div>
             <h1 className="text-base sm:text-lg font-black text-ink-darker dark:text-white">
-              داشبورد مدیریت کلان رُکاد
+              داشبورد مدیریت کلان رکاد
             </h1>
             <Badge variant="default" className="text-[11px] mt-1">SuperAdmin Root</Badge>
           </div>

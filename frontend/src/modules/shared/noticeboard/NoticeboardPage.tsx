@@ -249,7 +249,7 @@ export const NoticeboardPage: React.FC = () => {
                 <span>
                   صادرکننده: {notice.author ? `${notice.author.firstName} ${notice.author.lastName}` : 'دفتر مدیریت'}
                 </span>
-                <span className="text-primary font-bold">پلتفرم مدارس رُکاد</span>
+                <span className="text-primary font-bold">پلتفرم مدارس رکاد</span>
               </div>
             </Card>
           ))

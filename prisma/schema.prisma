@@ -344,6 +344,8 @@ model Tenant {
   // SMS Engine Relations
   smsLogs             SmsLog[]
   smsTemplates        SmsTemplate[]
+  smsQuickTemplates   SmsQuickTemplate[]
+  smsGatewayConfig    SmsGatewayConfig?
 
   @@index([status])
   @@index([parentTenantId])
@@ -2683,3 +2685,31 @@ model SmsTemplate {
   @@unique([tenantId, type])
   @@index([tenantId])
 }
+
+model SmsGatewayConfig {
+  id                  String    @id @default(uuid())
+  tenantId            String    @unique
+  tenant              Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  provider            String    @default("AMOOT")
+  amootApiKey         String?
+  amootSenderLine     String?
+  kavenegarApiKey     String?
+  kavenegarSenderLine String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+model SmsQuickTemplate {
+  id        String    @id @default(uuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title     String
+  content   String
+  category  String?   @default("GENERAL") // GENERAL, ANNOUNCEMENT, ACADEMIC, FINANCIAL, EMERGENCY
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([tenantId])
+}
+
+

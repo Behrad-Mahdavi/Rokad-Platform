@@ -33,11 +33,17 @@ export class SendManualSmsDto {
   @IsNotEmpty()
   message: string;
 
-  // For INDIVIDUAL
-  @ApiPropertyOptional({ description: 'شناسه کاربر هدف (در صورت ارسال فردی)' })
+  // For INDIVIDUAL (Single or Multiple)
+  @ApiPropertyOptional({ description: 'شناسه کاربر هدف (در صورت ارسال به یک فرد)' })
   @IsString()
   @IsOptional()
   targetUserId?: string;
+
+  @ApiPropertyOptional({ description: 'لیست شناسه‌های کاربران هدف (در صورت انتخاب چند فرد)', type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  targetUserIds?: string[];
 
   // For DIRECT_PHONE
   @ApiPropertyOptional({ description: 'شماره تلفن مستقیم گیرنده' })
@@ -90,3 +96,66 @@ export class UpsertSmsTemplateDto {
   @IsOptional()
   isEnabled?: boolean;
 }
+
+export class UpdateSmsConfigDto {
+  @ApiProperty({ description: 'درگاه پیش‌فرض ارسال پیامک', enum: ['AMOOT', 'KAVENEGAR', 'SANDBOX'] })
+  @IsString()
+  @IsNotEmpty()
+  provider: 'AMOOT' | 'KAVENEGAR' | 'SANDBOX';
+
+  @ApiPropertyOptional({ description: 'توکن یا کلید API آموت پیامک' })
+  @IsString()
+  @IsOptional()
+  amootApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'شماره خط فرستنده آموت' })
+  @IsString()
+  @IsOptional()
+  amootSenderLine?: string;
+
+  @ApiPropertyOptional({ description: 'کلید وب‌سرویس کاوه نگار' })
+  @IsString()
+  @IsOptional()
+  kavenegarApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'شماره خط فرستنده کاوه نگار' })
+  @IsString()
+  @IsOptional()
+  kavenegarSenderLine?: string;
+}
+
+export class CreateSmsQuickTemplateDto {
+  @ApiProperty({ description: 'عنوان الگو (مثلا: لغو کلاس، تبریک عید)' })
+  @IsString()
+  @IsNotEmpty()
+  title: string;
+
+  @ApiProperty({ description: 'متن پیامک الگو' })
+  @IsString()
+  @IsNotEmpty()
+  content: string;
+
+  @ApiPropertyOptional({ description: 'دسته‌بندی الگو (GENERAL, ACADEMIC, ANNOUNCEMENT, FINANCIAL, EMERGENCY)' })
+  @IsString()
+  @IsOptional()
+  category?: string;
+}
+
+export class UpdateSmsQuickTemplateDto {
+  @ApiPropertyOptional({ description: 'عنوان الگو' })
+  @IsString()
+  @IsOptional()
+  title?: string;
+
+  @ApiPropertyOptional({ description: 'متن پیامک الگو' })
+  @IsString()
+  @IsOptional()
+  content?: string;
+
+  @ApiPropertyOptional({ description: 'دسته‌بندی الگو' })
+  @IsString()
+  @IsOptional()
+  category?: string;
+}
+
+

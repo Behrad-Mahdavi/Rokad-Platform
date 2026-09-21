@@ -10,7 +10,7 @@ import {
 import { BrandTheme } from '../../../common/constants';
 
 export class RegisterSchoolDto {
-  @ApiProperty({ description: 'نام مدرسه / مرکز آموزشی', example: 'مدرسه هوشمند رُکاد پسرانه' })
+  @ApiProperty({ description: 'نام مدرسه / مرکز آموزشی', example: 'مدرسه هوشمند رکاد پسرانه' })
   @IsString()
   @IsNotEmpty()
   schoolName: string;

@@ -1074,7 +1074,7 @@ export const PayrollPage: React.FC = () => {
       >
         <div className="space-y-4 text-xs">
           <p className="text-muted-foreground leading-relaxed">
-            موتور هوشمند رُکاد با بررسی جلسات حضور و غیاب ثبت‌شده مدرسین در ماه{' '}
+            موتور هوشمند رکاد با بررسی جلسات حضور و غیاب ثبت‌شده مدرسین در ماه{' '}
             <strong className="text-foreground">{PERSIAN_MONTHS.find((m) => m.id === selectedMonth)?.name} {selectedYear}</strong>،
             مبالغ تدریس ساعتی و جلسه‌ای را طبق قراردادهای معتبر هر مدرس محاسبه و فیش‌های پیش‌نویس را آماده بازبینی خواهد کرد.
           </p>

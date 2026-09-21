@@ -2,6 +2,9 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
+  Delete,
+  Param,
   Body,
   Query,
   UseGuards,
@@ -10,7 +13,13 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { SmsService } from './sms.service';
-import { SendManualSmsDto, UpsertSmsTemplateDto } from './dto/send-manual-sms.dto';
+import {
+  SendManualSmsDto,
+  UpsertSmsTemplateDto,
+  UpdateSmsConfigDto,
+  CreateSmsQuickTemplateDto,
+  UpdateSmsQuickTemplateDto,
+} from './dto/send-manual-sms.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -24,6 +33,29 @@ import { CurrentTenant } from '../../common/decorators/current-tenant.decorator'
 @Controller('sms')
 export class SmsController {
   constructor(private readonly smsService: SmsService) {}
+
+  @Get('config')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @ApiOperation({ summary: 'دریافت تنظیمات وب‌سرویس و درگاه‌های پیامک' })
+  async getGatewayConfig(
+    @CurrentTenant('id') tenantId: string,
+    @CurrentUser('tenantId') userTenantId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.smsService.getGatewayConfig(effectiveTenantId);
+  }
+
+  @Post('config')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @ApiOperation({ summary: 'به‌روزرسانی تنظیمات درگاه پیامک و سوییچ به آموت یا کاوه نگار' })
+  async updateGatewayConfig(
+    @CurrentTenant('id') tenantId: string,
+    @CurrentUser('tenantId') userTenantId: string,
+    @Body() dto: UpdateSmsConfigDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.smsService.updateGatewayConfig(dto, effectiveTenantId);
+  }
 
   @Post('manual-send')
   @HttpCode(HttpStatus.OK)
@@ -115,4 +147,57 @@ export class SmsController {
     const effectiveTenantId = tenantId || userTenantId;
     return this.smsService.processBirthdayGreetings(effectiveTenantId);
   }
+
+  // ==========================================
+  // Quick Templates Endpoints
+  // ==========================================
+  @Get('quick-templates')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @ApiOperation({ summary: 'دریافت لیست الگوهای سریع پیامک' })
+  async getQuickTemplates(
+    @CurrentTenant('id') tenantId: string,
+    @CurrentUser('tenantId') userTenantId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.smsService.getQuickTemplates(effectiveTenantId);
+  }
+
+  @Post('quick-templates')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @ApiOperation({ summary: 'افزودن یک الگوی سریع جدید به درگاه' })
+  async createQuickTemplate(
+    @CurrentTenant('id') tenantId: string,
+    @CurrentUser('tenantId') userTenantId: string,
+    @Body() dto: CreateSmsQuickTemplateDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.smsService.createQuickTemplate(effectiveTenantId, dto);
+  }
+
+  @Patch('quick-templates/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @ApiOperation({ summary: 'ویرایش الگوی سریع پیامک' })
+  async updateQuickTemplate(
+    @CurrentTenant('id') tenantId: string,
+    @CurrentUser('tenantId') userTenantId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateSmsQuickTemplateDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.smsService.updateQuickTemplate(effectiveTenantId, id, dto);
+  }
+
+  @Delete('quick-templates/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @ApiOperation({ summary: 'حذف یک الگوی سریع' })
+  async deleteQuickTemplate(
+    @CurrentTenant('id') tenantId: string,
+    @CurrentUser('tenantId') userTenantId: string,
+    @Param('id') id: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.smsService.deleteQuickTemplate(effectiveTenantId, id);
+  }
 }
+
+

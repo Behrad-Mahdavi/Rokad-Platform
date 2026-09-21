@@ -8,12 +8,12 @@ import { Public } from './common/decorators/public.decorator';
 export class AppController {
   @Public()
   @Get()
-  @ApiOperation({ summary: 'اطلاعات و وضعیت ریشه پلتفرم رُکاد' })
+  @ApiOperation({ summary: 'اطلاعات و وضعیت ریشه پلتفرم رکاد' })
   getRoot() {
     return {
       name: 'Rokad Multi-Tenant Platform API',
       version: '1.0.0',
-      description: 'سامانه چندمستأجری مدیریت مدارس رُکاد (School ERP & LMS)',
+      description: 'سامانه چندمستأجری مدیریت مدارس رکاد (School ERP & LMS)',
       docs: '/api/docs',
       health: '/api/v1/health',
       endpoints: {

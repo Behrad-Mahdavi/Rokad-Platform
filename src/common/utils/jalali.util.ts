@@ -112,7 +112,7 @@ export function jalaliToGregorianDate(
 }
 
 /**
- * تبدیل شیء Date یا رشته ISO میلادی به خروجی سه‌گانه استاندارد رُکاد
+ * تبدیل شیء Date یا رشته ISO میلادی به خروجی سه‌گانه استاندارد رکاد
  */
 export function gregorianToJalali(dateInput: Date | string | null | undefined): StandardJalaliDateResponse | null {
   if (!dateInput) return null;

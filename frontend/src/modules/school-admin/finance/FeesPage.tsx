@@ -1004,7 +1004,7 @@ export const FeesPage: React.FC = () => {
             <div>
               <h4 className="font-bold text-xs text-indigo-950">فایل نمونه استاندارد اکسل</h4>
               <p className="text-[11px] text-indigo-700 mt-0.5">
-                برای جلوگیری از خطای اعتبارسنجی، اطلاعات را در قالب استاندارد رُکاد وارد کنید.
+                برای جلوگیری از خطای اعتبارسنجی، اطلاعات را در قالب استاندارد رکاد وارد کنید.
               </p>
             </div>
             <Button

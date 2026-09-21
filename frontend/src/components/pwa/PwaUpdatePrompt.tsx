@@ -35,7 +35,7 @@ export const PwaUpdatePrompt: React.FC = () => {
 
   return (
     <aside
-      aria-label="به‌روزرسانی نرم‌افزار رُکاد"
+      aria-label="به‌روزرسانی نرم‌افزار رکاد"
       className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-6 md:right-auto md:w-96 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300"
     >
       <div className="bg-ink-darker/95 backdrop-blur-md text-white rounded-2xl p-4 shadow-2xl border border-gray-700/60 ring-1 ring-white/10 flex flex-col gap-3">
@@ -43,11 +43,11 @@ export const PwaUpdatePrompt: React.FC = () => {
           <div className="flex items-center gap-3">
             <img
               src="/logo.svg"
-              alt="رُکاد"
+              alt="رکاد"
               className="w-10 h-10 rounded-xl object-cover shrink-0 border border-white/20 shadow-sm"
             />
             <div>
-              <h4 className="text-sm font-bold text-white">نسخه جدید رُکاد آماده است</h4>
+              <h4 className="text-sm font-bold text-white">نسخه جدید رکاد آماده است</h4>
               <p className="text-[11px] text-gray-300 mt-0.5">
                 به‌روزرسانی‌ها و قابلیت‌های جدید بارگیری شد.
               </p>

@@ -86,7 +86,7 @@ export const PwaInstallPrompt: React.FC = () => {
 
   return (
     <aside
-      aria-label="نصب برنامه رُکاد"
+      aria-label="نصب برنامه رکاد"
       className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:w-96 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300"
     >
       <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-primary/20 ring-1 ring-black/5 flex flex-col gap-3">
@@ -95,11 +95,11 @@ export const PwaInstallPrompt: React.FC = () => {
           <div className="flex items-center gap-3">
             <img
               src="/logo.svg"
-              alt="نرم‌افزار رُکاد"
+              alt="نرم‌افزار رکاد"
               className="w-11 h-11 rounded-xl object-cover shadow-sm shrink-0 border border-gray-200/80"
             />
             <div>
-              <h4 className="text-sm font-bold text-ink-darker">نصب نرم‌افزار رُکاد</h4>
+              <h4 className="text-sm font-bold text-ink-darker">نصب نرم‌افزار رکاد</h4>
               <p className="text-[11px] text-gray-500 mt-0.5">
                 دسترسی سریع‌تر، بارگذاری لحظه‌ای و آفلاین
               </p>

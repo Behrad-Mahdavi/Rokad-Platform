@@ -37,7 +37,7 @@ export const ClubPage: React.FC = () => {
         </button>
         <div>
           <h1 className="font-black text-lg sm:text-xl text-ink-darker dark:text-white">
-            باشگاه دانش‌آموزان رُکاد
+            باشگاه دانش‌آموزان رکاد
           </h1>
         </div>
       </div>
@@ -55,7 +55,7 @@ export const ClubPage: React.FC = () => {
               <span>فصل جدید به‌زودی</span>
             </div>
             <h2 className="text-base sm:text-lg font-black text-ink-darker dark:text-white">
-              باشگاه افتخارات و رقابت‌های رُکاد
+              باشگاه افتخارات و رقابت‌های رکاد
             </h2>
           </div>
         </CardContent>
