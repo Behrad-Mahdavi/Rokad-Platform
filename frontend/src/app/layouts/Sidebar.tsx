@@ -64,6 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
     const commsSection = {
       section: 'ارتباطات و اکوسیستم',
       items: [
+        { title: 'سامانه پیامک هوشمند', href: '/app/sms', icon: MessageSquare },
         { title: 'رسانه هنرستان', href: '/app/media', icon: Sparkles },
         { title: 'پیام‌ها و مکاتبات', href: '/app/messages', icon: MessageSquare },
         { title: 'تقویم آموزشی', href: '/app/calendar', icon: CalendarDays },

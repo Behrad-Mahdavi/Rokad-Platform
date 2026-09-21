@@ -341,6 +341,10 @@ model Tenant {
   kaRewards           KaReward[]
   kaStudentRewards    KaStudentReward[]
 
+  // SMS Engine Relations
+  smsLogs             SmsLog[]
+  smsTemplates        SmsTemplate[]
+
   @@index([status])
   @@index([parentTenantId])
   @@index([createdAt])
@@ -438,6 +442,10 @@ model User {
   // Academic Messaging System Relations
   sentAcademicMessages     AcademicMessage[]          @relation("SentAcademicMessages")
   receivedAcademicMessages AcademicMessageRecipient[] @relation("ReceivedAcademicMessages")
+
+  // SMS Engine Relations
+  receivedSmsLogs          SmsLog[]                   @relation("RecipientSmsLogs")
+  sentSmsLogs              SmsLog[]                   @relation("SenderSmsLogs")
 
   @@unique([tenantId, email])
   @@unique([tenantId, phone])
@@ -2611,4 +2619,67 @@ model KaStudentReward {
 
   @@index([tenantId, studentId])
   @@index([tenantId, status])
+}
+
+// ==========================================
+// SMS ENGINE & AUTOMATION MODELS
+// ==========================================
+
+enum SmsType {
+  AUTO_ABSENCE
+  AUTO_CHEQUE_DUE
+  AUTO_BIRTHDAY
+  MANUAL_INDIVIDUAL
+  MANUAL_ROLE
+  MANUAL_CLASS
+  MANUAL_BULK
+}
+
+enum SmsStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  FAILED
+}
+
+model SmsLog {
+  id              String      @id @default(uuid())
+  tenantId        String
+  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  recipientPhone  String
+  recipientName   String?
+  recipientUserId String?
+  recipientUser   User?       @relation("RecipientSmsLogs", fields: [recipientUserId], references: [id], onDelete: SetNull)
+  type            SmsType     @default(MANUAL_INDIVIDUAL)
+  message         String
+  provider        String      @default("SANDBOX")
+  status          SmsStatus   @default(SENT)
+  cost            Decimal?    @db.Decimal(10, 2)
+  messageId       String?
+  errorMessage    String?
+  metadata        Json?
+  senderId        String?
+  sender          User?       @relation("SenderSmsLogs", fields: [senderId], references: [id], onDelete: SetNull)
+  sentAt          DateTime    @default(now())
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([tenantId, type, createdAt])
+  @@index([tenantId, recipientPhone])
+  @@index([tenantId, status])
+}
+
+model SmsTemplate {
+  id        String    @id @default(uuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  type      SmsType
+  title     String
+  body      String
+  isEnabled Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([tenantId, type])
+  @@index([tenantId])
 }

@@ -75,6 +75,7 @@ import { ProfileSettingsPage } from '../modules/profile/ProfileSettingsPage';
 import { NotificationsPage } from '../modules/notifications/NotificationsPage';
 import { KaPlatformPage } from '../modules/ka-platform/KaPlatformPage';
 import { ClubPage } from '../modules/club/ClubPage';
+import { SmsCenterPage } from '../modules/sms/SmsCenterPage';
 
 export const router = createBrowserRouter([
   // 1. Guest / Auth Routes
@@ -225,6 +226,7 @@ export const router = createBrowserRouter([
               { path: 'club', element: <ClubPage /> },
               { path: 'chat', element: <Navigate to="/app" replace /> },
               { path: 'messages', element: <MessagesPage /> },
+              { path: 'sms', element: <SmsCenterPage /> },
               { path: 'notices', element: <Navigate to="/app/messages" replace /> },
               { path: 'calendar', element: <CalendarPage /> },
               { path: 'events', element: <EventsRoadmapPage /> },
