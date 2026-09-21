@@ -302,6 +302,10 @@ export const MembersPage: React.FC = () => {
     nationalCode: '',
     personnelCode: '',
     specialization: '',
+    degree: '',
+    studyField: '',
+    landlinePhone: '',
+    homeAddress: '',
     password: '',
     lessonIds: [] as string[],
   });
@@ -467,6 +471,10 @@ export const MembersPage: React.FC = () => {
         personnelCode: teacherForm.personnelCode.trim() || undefined,
         specialization: teacherForm.specialization.trim() || undefined,
         speciality: teacherForm.specialization.trim() || undefined,
+        degree: teacherForm.degree.trim() || undefined,
+        studyField: teacherForm.studyField.trim() || undefined,
+        landlinePhone: teacherForm.landlinePhone.trim() || undefined,
+        homeAddress: teacherForm.homeAddress.trim() || undefined,
         password: teacherForm.password || undefined,
         lessonIds: teacherForm.lessonIds,
       };
@@ -480,6 +488,10 @@ export const MembersPage: React.FC = () => {
         nationalCode: '',
         personnelCode: '',
         specialization: '',
+        degree: '',
+        studyField: '',
+        landlinePhone: '',
+        homeAddress: '',
         password: '',
         lessonIds: [],
       });
@@ -752,7 +764,20 @@ export const MembersPage: React.FC = () => {
               key: 'specialization',
               header: 'تخصص تدریس',
               mobilePriority: 'primary',
-              render: (t) => <span className="text-xs text-gray-700 font-bold">{t.specialization || 'عمومی'}</span>,
+              render: (t) => <span className="text-xs text-gray-700 font-bold">{t.specialization || t.speciality || 'عمومی'}</span>,
+            },
+            {
+              key: 'degreeAndField',
+              header: 'مدرک و رشته',
+              mobilePriority: 'secondary',
+              render: (t) => {
+                const parts = [t.degree, t.studyField].filter(Boolean);
+                return (
+                  <span className="text-xs text-gray-600 font-medium">
+                    {parts.length > 0 ? parts.join(' - ') : '—'}
+                  </span>
+                );
+              },
             },
             {
               key: 'personnelCode',
@@ -792,7 +817,14 @@ export const MembersPage: React.FC = () => {
               key: 'phone',
               header: 'شماره تماس',
               mobilePriority: 'detail',
-              render: (t) => <span className="font-mono text-xs text-gray-600">{t.user?.phone || '—'}</span>,
+              render: (t) => (
+                <div className="text-xs">
+                  <div className="font-mono text-gray-700 dark:text-gray-300 font-bold">{t.user?.phone || '—'}</div>
+                  {t.landlinePhone && (
+                    <div className="font-mono text-[10px] text-gray-500">ثابت: {t.landlinePhone}</div>
+                  )}
+                </div>
+              ),
             },
             {
               key: 'contractStatus',
@@ -1740,11 +1772,41 @@ export const MembersPage: React.FC = () => {
               onChange={(e) => setTeacherForm({ ...teacherForm, nationalCode: e.target.value })}
             />
             <Input
-              label="شماره تماس"
+              label="شماره تماس *"
               placeholder="مثال: 09122222222"
               value={teacherForm.phone}
               onChange={(e) => setTeacherForm({ ...teacherForm, phone: e.target.value })}
               required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <Input
+              label="مدرک تحصیلی"
+              placeholder="مثال: کارشناسی ارشد"
+              value={teacherForm.degree}
+              onChange={(e) => setTeacherForm({ ...teacherForm, degree: e.target.value })}
+            />
+            <Input
+              label="رشته تحصیلی"
+              placeholder="مثال: آموزش ریاضی / مهندسی کامپیوتر"
+              value={teacherForm.studyField}
+              onChange={(e) => setTeacherForm({ ...teacherForm, studyField: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <Input
+              label="شماره تلفن ثابت"
+              placeholder="مثال: 05137654321"
+              value={teacherForm.landlinePhone}
+              onChange={(e) => setTeacherForm({ ...teacherForm, landlinePhone: e.target.value })}
+            />
+            <Input
+              label="آدرس محل سکونت"
+              placeholder="مثال: مشهد، بلوار سجاد، خیابان بهار، پلاک ۱۲"
+              value={teacherForm.homeAddress}
+              onChange={(e) => setTeacherForm({ ...teacherForm, homeAddress: e.target.value })}
             />
           </div>
 

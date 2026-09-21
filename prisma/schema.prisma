@@ -953,8 +953,12 @@ model TeacherProfile {
   tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   userId         String         @unique
   user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  personnelCode  String? // کد پرسنلی
   speciality     String? // تخصص (e.g. "ریاضیات و هندسه")
   degree         String? // مدرک تحصیلی (e.g. "کارشناسی ارشد")
+  studyField     String? // رشته تحصیلی (e.g. "آموزش ریاضی")
+  homeAddress    String? // آدرس منزل
+  landlinePhone  String? // شماره ثابت
   employmentType EmploymentType @default(FULL_TIME)
   bio            String?
   createdAt      DateTime       @default(now())
@@ -1014,10 +1018,15 @@ model StaffProfile {
   tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   userId     String   @unique
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  department String? // e.g. "امور مالی", "امور دفتری"
-  jobTitle   String? // e.g. "مسئول ثبت‌نام"
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  personnelCode String? // کد پرسنلی
+  department    String? // e.g. "امور مالی", "امور دفتری"
+  jobTitle      String? // e.g. "مسئول ثبت‌نام"
+  degree        String? // مدرک تحصیلی
+  studyField    String? // رشته تحصیلی
+  homeAddress   String? // آدرس منزل
+  landlinePhone String? // شماره ثابت
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([tenantId])
 }

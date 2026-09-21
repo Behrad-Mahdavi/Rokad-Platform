@@ -243,10 +243,25 @@ export class CreateTeacherDto {
   @IsOptional()
   specialization?: string;
 
-  @ApiPropertyOptional({ description: 'مدرک تحصیلی', example: 'کارشناسی ارشد فیزیک' })
+  @ApiPropertyOptional({ description: 'مدرک تحصیلی', example: 'کارشناسی ارشد' })
   @IsString()
   @IsOptional()
   degree?: string;
+
+  @ApiPropertyOptional({ description: 'رشته تحصیلی', example: 'آموزش ریاضی' })
+  @IsString()
+  @IsOptional()
+  studyField?: string;
+
+  @ApiPropertyOptional({ description: 'آدرس منزل', example: 'مشهد، بلوار سجاد' })
+  @IsString()
+  @IsOptional()
+  homeAddress?: string;
+
+  @ApiPropertyOptional({ description: 'شماره تلفن ثابت منزل', example: '05137654321' })
+  @IsString()
+  @IsOptional()
+  landlinePhone?: string;
 
   @ApiPropertyOptional({
     description: 'نوع قرارداد (FULL_TIME, PART_TIME, HOURLY, CONTRACT)',
