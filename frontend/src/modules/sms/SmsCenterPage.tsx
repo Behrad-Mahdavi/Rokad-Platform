@@ -36,6 +36,8 @@ import {
   Tag,
   ShieldCheck,
   Lock,
+  Filter,
+  Shield,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '../../lib/api/client';
@@ -51,6 +53,7 @@ export const SmsCenterPage: React.FC = () => {
   const [classAudience, setClassAudience] = useState<'PARENTS' | 'STUDENTS' | 'BOTH'>('PARENTS');
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [userSearchQuery, setUserSearchQuery] = useState<string>('');
+  const [userRoleFilter, setUserRoleFilter] = useState<'ALL' | 'MANAGEMENT' | 'STUDENTS' | 'PARENTS' | 'TEACHERS' | 'STAFF'>('ALL');
   const [directPhone, setDirectPhone] = useState<string>('');
   const [messageText, setMessageText] = useState<string>('');
 
@@ -627,10 +630,11 @@ export const SmsCenterPage: React.FC = () => {
                 )}
 
                 {targetType === 'INDIVIDUAL' && (
-                  <div className="space-y-2.5">
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-ink-normal/80 dark:text-gray-300">
-                        انتخاب کاربران مدرسه:
+                      <label className="text-xs font-bold text-ink-normal/80 dark:text-gray-300 flex items-center gap-1.5">
+                        <Users className="w-4 h-4 text-primary" />
+                        <span>انتخاب افراد گیرنده پیامک (با تفکیک دپارتمان و نقش):</span>
                       </label>
                       <div className="flex items-center gap-2">
                         {selectedUserIds.length > 0 && (
@@ -642,17 +646,69 @@ export const SmsCenterPage: React.FC = () => {
                             پاک کردن همه
                           </button>
                         )}
-                        <span className="text-xs font-extrabold text-primary font-mono">
-                          {selectedUserIds.length > 0 ? `${selectedUserIds.length.toLocaleString('fa-IR')} نفر انتخاب شده` : ''}
+                        <span className="text-xs font-extrabold text-primary font-mono bg-ecosystem-light dark:bg-ecosystem-darker/60 px-2.5 py-0.5 rounded-lg border border-primary/30">
+                          {selectedUserIds.length > 0 ? `${selectedUserIds.length.toLocaleString('fa-IR')} نفر انتخاب شده` : 'هیچ کاربری انتخاب نشده'}
                         </span>
                       </div>
+                    </div>
+
+                    {/* Role Filter Tabs (دپارتمان‌ها و نقش‌ها) */}
+                    <div className="flex flex-wrap gap-1.5 p-1 bg-gray-100/70 dark:bg-[#111722] rounded-xl border border-gray-200 dark:border-gray-700">
+                      {[
+                        { key: 'ALL', label: 'همه افراد', count: usersList.length },
+                        {
+                          key: 'MANAGEMENT',
+                          label: 'مدیریت و کادر اجرایی',
+                          count: usersList.filter((u: any) => ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF'].includes(u.role)).length,
+                        },
+                        {
+                          key: 'STUDENTS',
+                          label: 'دانش‌آموزان',
+                          count: usersList.filter((u: any) => u.role === 'STUDENT').length,
+                        },
+                        {
+                          key: 'PARENTS',
+                          label: 'اولیاء',
+                          count: usersList.filter((u: any) => u.role === 'PARENT').length,
+                        },
+                        {
+                          key: 'TEACHERS',
+                          label: 'دبیران و اساتید',
+                          count: usersList.filter((u: any) => ['TEACHER', 'COACH'].includes(u.role)).length,
+                        },
+                      ].map((tab) => {
+                        const isActive = userRoleFilter === tab.key;
+                        return (
+                          <button
+                            key={tab.key}
+                            type="button"
+                            onClick={() => setUserRoleFilter(tab.key as any)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                              isActive
+                                ? 'bg-white dark:bg-[#1C2536] text-sec dark:text-white shadow-[1.5px_1.5px_0_#59BBAF] border border-gray-200 dark:border-gray-700'
+                                : 'text-ink-normal/60 dark:text-gray-400 hover:text-sec dark:hover:text-white'
+                            }`}
+                          >
+                            <span>{tab.label}</span>
+                            <span
+                              className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                                isActive
+                                  ? 'bg-ecosystem-light dark:bg-ecosystem-darker text-primary font-bold'
+                                  : 'bg-gray-200 dark:bg-gray-800 text-gray-500'
+                              }`}
+                            >
+                              {tab.count.toLocaleString('fa-IR')}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
 
                     <div className="relative">
                       <Search className="w-4 h-4 absolute right-3 top-2.5 text-gray-400" />
                       <input
                         type="text"
-                        placeholder="جستجوی نام، نقش یا شماره موبایل کاربر..."
+                        placeholder="جستجوی نام، کدملی، نقش یا شماره موبایل در دسته انتخابی..."
                         value={userSearchQuery}
                         onChange={(e) => setUserSearchQuery(e.target.value)}
                         className="w-full pr-9 pl-3 py-2 text-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white focus:border-primary focus:outline-none"
@@ -664,12 +720,27 @@ export const SmsCenterPage: React.FC = () => {
                         {selectedUserIds.map((uid) => {
                           const u = usersList.find((usr: any) => usr.id === uid);
                           const name = u ? `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'کاربر' : uid;
+                          const roleLabel =
+                            u?.role === 'SUPER_ADMIN'
+                              ? 'مدیر ارشد'
+                              : u?.role === 'SCHOOL_ADMIN'
+                                ? 'مدیر مدرسه'
+                                : u?.role === 'TEACHER'
+                                  ? 'دبیر'
+                                  : u?.role === 'STUDENT'
+                                    ? 'دانش‌آموز'
+                                    : u?.role === 'PARENT'
+                                      ? 'ولی'
+                                      : u?.role === 'STAFF'
+                                        ? 'کادر اجرایی'
+                                        : u?.role || '';
                           return (
                             <span
                               key={uid}
                               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-[#59BBAF]/15 text-[#1F413D] dark:text-[#59BBAF] border border-[#59BBAF]/40"
                             >
                               <span>{name}</span>
+                              {roleLabel && <span className="text-[10px] opacity-75 font-normal">({roleLabel})</span>}
                               <button
                                 type="button"
                                 onClick={() => setSelectedUserIds((prev) => prev.filter((id) => id !== uid))}
@@ -683,18 +754,58 @@ export const SmsCenterPage: React.FC = () => {
                       </div>
                     )}
 
-                    <div className="max-h-44 overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-800 bg-[#FAFAFA] dark:bg-[#1C2536]">
+                    <div className="max-h-52 overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-800 bg-[#FAFAFA] dark:bg-[#1C2536]">
                       {usersList
                         .filter((u: any) => {
+                          // 1. Role Filter
+                          if (userRoleFilter === 'MANAGEMENT') {
+                            if (!['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF'].includes(u.role)) return false;
+                          } else if (userRoleFilter === 'STUDENTS') {
+                            if (u.role !== 'STUDENT') return false;
+                          } else if (userRoleFilter === 'PARENTS') {
+                            if (u.role !== 'PARENT') return false;
+                          } else if (userRoleFilter === 'TEACHERS') {
+                            if (!['TEACHER', 'COACH'].includes(u.role)) return false;
+                          }
+
+                          // 2. Search Query
                           if (!userSearchQuery) return true;
                           const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
                           const phone = (u.phone || '').toLowerCase();
                           const query = userSearchQuery.toLowerCase();
-                          return fullName.includes(query) || phone.includes(query);
+                          return fullName.includes(query) || phone.includes(query) || (u.nationalCode && u.nationalCode.includes(query));
                         })
                         .map((u: any) => {
                           const isSelected = selectedUserIds.includes(u.id);
                           const hasPhone = Boolean(u.phone);
+                          const roleLabel =
+                            u.role === 'SUPER_ADMIN'
+                              ? 'مدیر ارشد'
+                              : u.role === 'SCHOOL_ADMIN'
+                                ? 'مدیر مدرسه'
+                                : u.role === 'TEACHER'
+                                  ? 'دبیر'
+                                  : u.role === 'STUDENT'
+                                    ? 'دانش‌آموز'
+                                    : u.role === 'PARENT'
+                                      ? 'ولی'
+                                      : u.role === 'STAFF'
+                                        ? 'کادر اجرایی'
+                                        : u.role === 'COACH'
+                                          ? 'مشاور / مربی'
+                                          : u.role;
+
+                          const roleBadgeClass =
+                            u.role === 'SUPER_ADMIN' || u.role === 'SCHOOL_ADMIN'
+                              ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300'
+                              : u.role === 'STUDENT'
+                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300'
+                                : u.role === 'PARENT'
+                                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'
+                                  : u.role === 'TEACHER' || u.role === 'COACH'
+                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
+                                    : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+
                           return (
                             <div
                               key={u.id}
@@ -712,7 +823,7 @@ export const SmsCenterPage: React.FC = () => {
                                   : 'hover:bg-gray-100/70 dark:hover:bg-gray-800/50 text-ink-normal/80 dark:text-gray-300'
                               }`}
                             >
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2.5">
                                 <input
                                   type="checkbox"
                                   checked={isSelected}
@@ -721,20 +832,24 @@ export const SmsCenterPage: React.FC = () => {
                                   className="rounded border-gray-300 text-primary focus:ring-primary h-3.5 w-3.5"
                                 />
                                 <div>
-                                  <span className="font-bold">
-                                    {u.firstName} {u.lastName}
-                                  </span>
-                                  <span className="text-[10px] text-gray-400 mr-1.5">({u.role})</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold">
+                                      {u.firstName} {u.lastName}
+                                    </span>
+                                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${roleBadgeClass}`}>
+                                      {roleLabel}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
-                              <span className="font-mono text-[11px] dir-ltr text-gray-500 dark:text-gray-400">
-                                {u.phone || 'فاقد شماره'}
+                              <span className="font-mono text-[11px] dir-ltr text-gray-500 dark:text-gray-400 font-bold">
+                                {u.phone || 'فاقد شماره تماس'}
                               </span>
                             </div>
                           );
                         })}
                       {usersList.length === 0 && (
-                        <div className="p-3 text-center text-xs text-gray-400">هیچ کاربری یافت نشد</div>
+                        <div className="p-4 text-center text-xs text-gray-400">هیچ کاربری یافت نشد</div>
                       )}
                     </div>
                   </div>
