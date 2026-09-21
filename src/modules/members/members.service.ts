@@ -4,6 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
+import * as jalaali from 'jalaali-js';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateStudentDto,
@@ -19,6 +20,70 @@ import {
   normalizeNationalCode,
   deriveStudentCode,
 } from '../../common/utils/credential.util';
+
+/**
+ * تبدیل تاریخ تولد شمسی یا میلادی به شیء معتبر Date
+ */
+export function parseBirthDate(val: any): Date | undefined {
+  if (!val) return undefined;
+  if (val instanceof Date && !isNaN(val.getTime())) return val;
+  const str = String(val).trim();
+  if (!str) return undefined;
+
+  // الگوی تاریخ شمسی: 1388/05/12 یا 1388-5-12 یا 1388.05.12
+  const jMatch = str.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
+  if (jMatch) {
+    const jy = parseInt(jMatch[1], 10);
+    const jm = parseInt(jMatch[2], 10);
+    const jd = parseInt(jMatch[3], 10);
+    if (jy >= 1300 && jy <= 1450 && jm >= 1 && jm <= 12 && jd >= 1 && jd <= 31) {
+      const g = jalaali.toGregorian(jy, jm, jd);
+      return new Date(Date.UTC(g.gy, g.gm - 1, g.gd));
+    }
+  }
+
+  // تاریخ میلادی استاندارد
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) {
+    return parsed;
+  }
+  return undefined;
+}
+
+/**
+ * استخراج هوشمند مقدار از ستون‌های اکسل بدون حساسیت به دونقطه (:)، فاصله‌های اضافی و نیم‌فاصله
+ */
+export function extractField(row: Record<string, any>, ...keys: string[]): string | undefined {
+  if (!row || typeof row !== 'object') return undefined;
+
+  // 1. جستجوی مستقیم
+  for (const k of keys) {
+    if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') {
+      return String(row[k]).trim();
+    }
+  }
+
+  // 2. جستجوی نرمال‌شده (حذف دونقطه، فاصله‌ها، نیم‌فاصله‌ها و تبدیل به حروف کوچک)
+  const cleanStr = (s: string) =>
+    s
+      .replace(/[:：]/g, '')
+      .replace(/[\u200c\u200b]/g, '')
+      .replace(/\s+/g, '')
+      .trim()
+      .toLowerCase();
+
+  const targetCleanKeys = keys.map(cleanStr);
+
+  for (const [rowKey, rowVal] of Object.entries(row)) {
+    if (rowVal === undefined || rowVal === null || String(rowVal).trim() === '') continue;
+    const cleanRowKey = cleanStr(rowKey);
+    if (targetCleanKeys.includes(cleanRowKey)) {
+      return String(rowVal).trim();
+    }
+  }
+
+  return undefined;
+}
 
 @Injectable()
 export class MembersService {
@@ -41,17 +106,95 @@ export class MembersService {
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       try {
-        const rawNationalCode =
-          item['کد ملی'] ||
-          item['کدملی'] ||
-          item['کد_ملی'] ||
-          item['nationalCode'] ||
-          item['کد ملی دانش آموز'];
+        // --- ۱. استخراج اطلاعات شناسنامه‌ای و هویتی (مطابق ۲۸ ستون SAMPLE.xlsx) ---
+        const firstName =
+          extractField(item, 'نام', 'نام کوچک', 'نام دانش آموز', 'نام دانش‌آموز', 'firstName') ||
+          'دانش‌آموز';
+        const lastName =
+          extractField(item, 'نام خانوادگی', 'نام‌خانوادگی', 'فامیل', 'lastName') ||
+          'بدون فامیل';
+        const fatherName = extractField(item, 'نام پدر', 'fatherName') || undefined;
+        const gradeLevel =
+          extractField(item, 'پایه تحصیلی', 'پایه', 'gradeLevel', 'مقطع') || undefined;
+
+        const rawBirthDate = extractField(item, 'تاریخ تولد', 'تاریخ_تولد', 'birthDate');
+        const birthDate = parseBirthDate(rawBirthDate);
+
+        const birthPlace = extractField(item, 'محل تولد', 'شهر تولد', 'birthPlace') || undefined;
+        const rawNationalCode = extractField(
+          item,
+          'کد ملی',
+          'کدملی',
+          'کد_ملی',
+          'کد ملی دانش آموز',
+          'کد ملی دانش‌آموز',
+          'nationalCode',
+        );
+
+        const certificateNumber =
+          extractField(item, 'سریال شناسنامه', 'شماره شناسنامه', 'certificateNumber') || undefined;
+        const certificateSeriesLetter =
+          extractField(item, 'سری حرفی', 'سری حرفی شناسنامه', 'certificateSeriesLetter') || undefined;
+        const certificateSeriesNumber =
+          extractField(item, 'سری عددی', 'سری عددی شناسنامه', 'certificateSeriesNumber') || undefined;
+        const issuePlace =
+          extractField(item, 'محل صدور', 'محل صدور شناسنامه', 'صادره', 'issuePlace') || undefined;
+        const physicalCondition =
+          extractField(item, 'وضعیت جسمانی', 'وضعیت جسمی', 'سلامت', 'physicalCondition') || undefined;
+
+        // --- ۲. مشخصات پدر ---
+        const fatherFullName =
+          extractField(item, 'نام و نام‌خانوادگی پدر', 'نام و نام خانوادگی پدر', 'fatherFullName') ||
+          undefined;
+        const fatherNationalId =
+          extractField(item, 'کد ملی پدر', 'کدملی پدر', 'fatherNationalId') || undefined;
+        const fatherEducation =
+          extractField(item, 'تحصیلات پدر', 'مدرک پدر', 'fatherEducation') || undefined;
+        const fatherOccupation =
+          extractField(item, 'شغل پدر', 'fatherOccupation') || undefined;
+        const fatherPhone =
+          extractField(item, 'شماره همراه پدر', 'موبایل پدر', 'تلفن پدر', 'fatherPhone') || undefined;
+        const fatherWorkAddress =
+          extractField(item, 'آدرس محل کار پدر', 'محل کار پدر', 'fatherWorkAddress') || undefined;
+
+        // --- ۳. مشخصات مادر ---
+        const motherFullName =
+          extractField(item, 'نام و نام‌خانوادگی مادر', 'نام و نام خانوادگی مادر', 'motherFullName') ||
+          undefined;
+        const motherNationalId =
+          extractField(item, 'کد ملی مادر', 'کدملی مادر', 'motherNationalId') || undefined;
+        const motherEducation =
+          extractField(item, 'تحصیلات مادر', 'مدرک مادر', 'motherEducation') || undefined;
+        const motherOccupation =
+          extractField(item, 'شغل مادر', 'motherOccupation') || undefined;
+        const motherPhone =
+          extractField(item, 'شماره همراه مادر', 'موبایل مادر', 'تلفن مادر', 'motherPhone') || undefined;
+        const motherWorkAddress =
+          extractField(item, 'آدرس محل کار مادر', 'محل کار مادر', 'motherWorkAddress') || undefined;
+
+        // --- ۴. سکونت و ارتباطات ---
+        const homeAddress =
+          extractField(item, 'آدرس منزل', 'آدرس', 'نشانی', 'homeAddress', 'address') || undefined;
+        const landlinePhone =
+          extractField(item, 'شماره ثابت', 'تلفن ثابت', 'تلفن منزل', 'landlinePhone') || undefined;
+        const studentMobile =
+          extractField(
+            item,
+            'شماره همراه دانش‌آموز',
+            'شماره همراه دانش آموز',
+            'موبایل دانش آموز',
+            'موبایل دانش‌آموز',
+            'شماره همراه',
+            'studentMobile',
+          ) || undefined;
+        const avatarUrl =
+          extractField(item, 'عکس پرسنلی', 'عکس', 'تصویر', 'avatarUrl') || undefined;
+
+        // تلفن لاگین کاربر: اولویت با شماره همراه دانش‌آموز، سپس پدر یا مادر
         const phone =
-          item['موبایل دانش آموز']?.toString() ||
-          item['موبایل پدر']?.toString() ||
-          item['موبایل مادر']?.toString() ||
-          item['شماره همراه']?.toString() ||
+          studentMobile ||
+          fatherPhone ||
+          motherPhone ||
           `09${Math.floor(Math.random() * 1000000000).toString().padStart(9, '0')}`;
 
         const creds = generateUnifiedCredentials({
@@ -61,17 +204,23 @@ export class MembersService {
         });
 
         const studentCode =
-          item['شماره دانش آموزی']?.toString()?.trim() ||
+          extractField(item, 'شماره دانش آموزی', 'شماره دانش‌آموزی', 'studentCode') ||
           deriveStudentCode(rawNationalCode || creds.nationalId, phone);
 
         const nationalCode = creds.nationalId || undefined;
-        const firstName = item['نام']?.toString() || 'دانش‌آموز';
-        const lastName = item['نام خانوادگی']?.toString() || 'بدون فامیل';
-        const fatherName = item['نام پدر']?.toString() || undefined;
-        const className = item['شماره کلاس']?.toString() || item['کلاس']?.toString() || undefined;
-        const gender = item['جنسیت']?.toString() === 'دختر' ? 'FEMALE' : 'MALE';
+        const className =
+          extractField(item, 'شماره کلاس', 'کلاس', 'className') || gradeLevel || undefined;
+        const rawGender = extractField(item, 'جنسیت', 'gender');
+        const gender =
+          rawGender === 'دختر' || rawGender === 'FEMALE'
+            ? 'FEMALE'
+            : rawGender === 'پسر' || rawGender === 'MALE'
+              ? 'MALE'
+              : tenant?.theme === 'FEMALE'
+                ? 'FEMALE'
+                : 'MALE';
 
-        // Find classroom if provided
+        // جستجوی کلاس متناظر در صورت وجود
         let classroomId: string | undefined = undefined;
         if (className) {
           const classroom = await this.prisma.classroom.findFirst({
@@ -83,7 +232,7 @@ export class MembersService {
         const passwordHash = await argon2.hash(creds.finalPassword);
 
         await this.prisma.$transaction(async (tx) => {
-          // Check if code, nationalId, username or phone already exists
+          // بررسی عدم تکراری بودن کاربر
           const existingUser = await tx.user.findFirst({
             where: {
               tenantId,
@@ -122,6 +271,7 @@ export class MembersService {
               username: creds.username,
               gender,
               nationalId: creds.nationalId || undefined,
+              avatarUrl: avatarUrl || undefined,
               passwordHash,
               role: Role.STUDENT as any,
               status: 'ACTIVE',
@@ -134,7 +284,32 @@ export class MembersService {
               userId: user.id,
               studentCode,
               nationalCode,
-              fatherName,
+              fatherName: fatherName || (fatherFullName ? fatherFullName.split(' ')[0] : undefined),
+              birthDate,
+              address: homeAddress,
+              medicalNotes: physicalCondition,
+              gradeLevel,
+              birthPlace,
+              certificateNumber,
+              certificateSeriesLetter,
+              certificateSeriesNumber,
+              issuePlace,
+              physicalCondition,
+              fatherFullName,
+              fatherNationalId,
+              fatherEducation,
+              fatherOccupation,
+              fatherPhone,
+              fatherWorkAddress,
+              motherFullName,
+              motherNationalId,
+              motherEducation,
+              motherOccupation,
+              motherPhone,
+              motherWorkAddress,
+              homeAddress,
+              landlinePhone,
+              studentMobile,
             },
           });
 
@@ -156,7 +331,7 @@ export class MembersService {
         results.success++;
       } catch (err: any) {
         results.failed++;
-        results.errors.push(`ردیف ${i + 1} (${item['نام'] || ''} ${item['نام خانوادگی'] || ''}): ${err.message}`);
+        results.errors.push(`ردیف ${i + 1} (${item['نام'] || item['نام:'] || ''} ${item['نام خانوادگی'] || item['نام خانوادگی:'] || ''}): ${err.message}`);
       }
     }
 
@@ -269,10 +444,11 @@ export class MembersService {
           tenantId,
           firstName: dto.firstName,
           lastName: dto.lastName,
-          phone: dto.phone,
+          phone: dto.studentMobile || dto.phone,
           username: creds.username,
           gender: dto.gender,
           nationalId: creds.nationalId,
+          avatarUrl: dto.avatarUrl || undefined,
           passwordHash,
           role: Role.STUDENT as any,
           status: 'ACTIVE',
@@ -286,10 +462,32 @@ export class MembersService {
           userId: user.id,
           studentCode,
           nationalCode: dto.nationalCode,
-          fatherName: dto.fatherName,
-          birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
-          address: dto.address,
-          medicalNotes: dto.medicalNotes,
+          fatherName: dto.fatherName || (dto.fatherFullName ? dto.fatherFullName.split(' ')[0] : undefined),
+          birthDate: parseBirthDate(dto.birthDate),
+          address: dto.homeAddress || dto.address,
+          medicalNotes: dto.physicalCondition || dto.medicalNotes,
+          gradeLevel: dto.gradeLevel,
+          birthPlace: dto.birthPlace,
+          certificateNumber: dto.certificateNumber,
+          certificateSeriesLetter: dto.certificateSeriesLetter,
+          certificateSeriesNumber: dto.certificateSeriesNumber,
+          issuePlace: dto.issuePlace,
+          physicalCondition: dto.physicalCondition,
+          fatherFullName: dto.fatherFullName,
+          fatherNationalId: dto.fatherNationalId,
+          fatherEducation: dto.fatherEducation,
+          fatherOccupation: dto.fatherOccupation,
+          fatherPhone: dto.fatherPhone,
+          fatherWorkAddress: dto.fatherWorkAddress,
+          motherFullName: dto.motherFullName,
+          motherNationalId: dto.motherNationalId,
+          motherEducation: dto.motherEducation,
+          motherOccupation: dto.motherOccupation,
+          motherPhone: dto.motherPhone,
+          motherWorkAddress: dto.motherWorkAddress,
+          homeAddress: dto.homeAddress || dto.address,
+          landlinePhone: dto.landlinePhone,
+          studentMobile: dto.studentMobile || dto.phone,
         },
         include: {
           user: true,
@@ -314,6 +512,102 @@ export class MembersService {
       }
 
       return profile;
+    });
+  }
+
+  async updateStudent(tenantId: string, id: string, dto: Partial<CreateStudentDto>): Promise<any> {
+    const profile = await this.prisma.studentProfile.findFirst({
+      where: { id, tenantId },
+      include: { user: true },
+    });
+    if (!profile) {
+      throw new NotFoundException('پروفایل دانش‌آموز یافت نشد');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Update user fields
+      const userUpdate: any = {};
+      if (dto.firstName) userUpdate.firstName = dto.firstName;
+      if (dto.lastName) userUpdate.lastName = dto.lastName;
+      if (dto.studentMobile || dto.phone) userUpdate.phone = dto.studentMobile || dto.phone;
+      if (dto.avatarUrl !== undefined) userUpdate.avatarUrl = dto.avatarUrl;
+      if (dto.gender) userUpdate.gender = dto.gender;
+      if (dto.nationalCode) userUpdate.nationalId = dto.nationalCode;
+
+      if (Object.keys(userUpdate).length > 0) {
+        await tx.user.update({
+          where: { id: profile.userId },
+          data: userUpdate,
+        });
+      }
+
+      // 2. Update studentProfile fields
+      const profileUpdate: any = {};
+      if (dto.studentCode) profileUpdate.studentCode = dto.studentCode;
+      if (dto.nationalCode !== undefined) profileUpdate.nationalCode = dto.nationalCode;
+      if (dto.fatherName !== undefined) profileUpdate.fatherName = dto.fatherName;
+      if (dto.birthDate !== undefined) profileUpdate.birthDate = parseBirthDate(dto.birthDate);
+      if (dto.address !== undefined) profileUpdate.address = dto.address;
+      if (dto.homeAddress !== undefined) {
+        profileUpdate.homeAddress = dto.homeAddress;
+        profileUpdate.address = dto.homeAddress;
+      }
+      if (dto.medicalNotes !== undefined) profileUpdate.medicalNotes = dto.medicalNotes;
+      if (dto.gradeLevel !== undefined) profileUpdate.gradeLevel = dto.gradeLevel;
+      if (dto.birthPlace !== undefined) profileUpdate.birthPlace = dto.birthPlace;
+      if (dto.certificateNumber !== undefined) profileUpdate.certificateNumber = dto.certificateNumber;
+      if (dto.certificateSeriesLetter !== undefined) profileUpdate.certificateSeriesLetter = dto.certificateSeriesLetter;
+      if (dto.certificateSeriesNumber !== undefined) profileUpdate.certificateSeriesNumber = dto.certificateSeriesNumber;
+      if (dto.issuePlace !== undefined) profileUpdate.issuePlace = dto.issuePlace;
+      if (dto.physicalCondition !== undefined) {
+        profileUpdate.physicalCondition = dto.physicalCondition;
+        profileUpdate.medicalNotes = dto.physicalCondition;
+      }
+      if (dto.fatherFullName !== undefined) profileUpdate.fatherFullName = dto.fatherFullName;
+      if (dto.fatherNationalId !== undefined) profileUpdate.fatherNationalId = dto.fatherNationalId;
+      if (dto.fatherEducation !== undefined) profileUpdate.fatherEducation = dto.fatherEducation;
+      if (dto.fatherOccupation !== undefined) profileUpdate.fatherOccupation = dto.fatherOccupation;
+      if (dto.fatherPhone !== undefined) profileUpdate.fatherPhone = dto.fatherPhone;
+      if (dto.fatherWorkAddress !== undefined) profileUpdate.fatherWorkAddress = dto.fatherWorkAddress;
+      if (dto.motherFullName !== undefined) profileUpdate.motherFullName = dto.motherFullName;
+      if (dto.motherNationalId !== undefined) profileUpdate.motherNationalId = dto.motherNationalId;
+      if (dto.motherEducation !== undefined) profileUpdate.motherEducation = dto.motherEducation;
+      if (dto.motherOccupation !== undefined) profileUpdate.motherOccupation = dto.motherOccupation;
+      if (dto.motherPhone !== undefined) profileUpdate.motherPhone = dto.motherPhone;
+      if (dto.motherWorkAddress !== undefined) profileUpdate.motherWorkAddress = dto.motherWorkAddress;
+      if (dto.landlinePhone !== undefined) profileUpdate.landlinePhone = dto.landlinePhone;
+      if (dto.studentMobile !== undefined) profileUpdate.studentMobile = dto.studentMobile;
+
+      const updated = await tx.studentProfile.update({
+        where: { id: profile.id },
+        data: profileUpdate,
+        include: {
+          user: true,
+          enrollments: { include: { classroom: true } },
+        },
+      });
+
+      // 3. Update classroom enrollment if classroomId provided
+      if (dto.classroomId) {
+        const classroom = await tx.classroom.findFirst({
+          where: { id: dto.classroomId, tenantId },
+        });
+        if (classroom) {
+          await tx.classEnrollment.deleteMany({
+            where: { studentId: profile.id, tenantId },
+          });
+          await tx.classEnrollment.create({
+            data: {
+              tenantId,
+              studentId: profile.id,
+              classroomId: classroom.id,
+              academicYearId: classroom.academicYearId,
+            },
+          });
+        }
+      }
+
+      return updated;
     });
   }
 

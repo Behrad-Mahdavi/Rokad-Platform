@@ -75,6 +75,20 @@ export class MembersController {
     return this.membersService.createStudent(effectiveTenantId, dto);
   }
 
+  @Put('students/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.STUDENT_WRITE)
+  @ApiOperation({ summary: 'ویرایش اطلاعات و پرونده دانش‌آموز' })
+  async updateStudent(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') id: string,
+    @Body() dto: Partial<CreateStudentDto>,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.membersService.updateStudent(effectiveTenantId, id, dto);
+  }
+
   // 2. Teachers
   @Get('teachers')
   @ApiOperation({ summary: 'لیست اساتید و معلمان مدرسه' })

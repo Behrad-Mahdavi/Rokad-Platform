@@ -31,10 +31,20 @@ import {
   Download,
   CheckCircle2,
   UserCheck,
+  Eye,
+  Phone,
+  MapPin,
+  Home,
+  HeartPulse,
+  CreditCard,
+  FileText,
+  Calendar,
+  Edit3,
+  Save,
 } from 'lucide-react';
 import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import { useTenantStore } from '../../../lib/auth/tenant-store';
-import { toPersianDigits } from '../../../lib/utils';
+import { toPersianDigits, formatToJalali } from '../../../lib/utils';
 
 import { read, utils, writeFile } from 'xlsx';
 
@@ -76,12 +86,16 @@ export const MembersPage: React.FC = () => {
       const studentNumber = (s.studentNumber || s.studentCode || '').toLowerCase();
       const classroom = (s.classroom?.name || '').toLowerCase();
       const phone = (s.user?.phone || '').toLowerCase();
+      const father = (s.fatherName || s.fatherFullName || '').toLowerCase();
+      const mother = (s.motherFullName || '').toLowerCase();
       return (
         fullName.includes(query) ||
         nationalCode.includes(query) ||
         studentNumber.includes(query) ||
         classroom.includes(query) ||
-        phone.includes(query)
+        phone.includes(query) ||
+        father.includes(query) ||
+        mother.includes(query)
       );
     });
   }, [students, search]);
@@ -107,6 +121,14 @@ export const MembersPage: React.FC = () => {
 
   // Modals
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
+  const [studentModalTab, setStudentModalTab] = useState<'IDENTITY' | 'FATHER' | 'MOTHER' | 'CONTACT'>('IDENTITY');
+
+  // Dossier Modal
+  const [selectedStudentDossier, setSelectedStudentDossier] = useState<any | null>(null);
+  const [dossierTab, setDossierTab] = useState<'IDENTITY' | 'FATHER' | 'MOTHER' | 'CONTACT'>('IDENTITY');
+  const [isEditingDossier, setIsEditingDossier] = useState(false);
+  const [dossierEditForm, setDossierEditForm] = useState<any>({});
+
   const [isTeacherModalOpen, setIsTeacherModalOpen] = useState(false);
   const [isEditLessonsModalOpen, setIsEditLessonsModalOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<any | null>(null);
@@ -124,34 +146,73 @@ export const MembersPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const handleDownloadExcelSample = () => {
+    // نمونه فایل ۲۸ ستونی استاندارد منطبق بر SAMPLE.xlsx با ۲ سطر نمونه
     const sampleData = [
       {
-        'کد ملی': '0012345678',
-        'نام': 'امیرعلی',
-        'نام خانوادگی': 'صادقی',
-        'شماره دانش آموزی': '12345678',
-        'شماره کلاس': '۱۰۱',
-        'موبایل دانش آموز': '09121112233',
-        'نام پدر': 'رضا',
-        'موبایل پدر': '09124445566',
-        'جنسیت': 'پسر',
+        'نام:': 'امیرعلی',
+        'نام خانوادگی:': 'صادقی',
+        'نام پدر:': 'رضا',
+        'پایه تحصیلی:': 'دهم',
+        'تاریخ تولد:': '1388/05/12',
+        'محل تولد:': 'مشهد',
+        'کد ملی:': '0921234567',
+        'سریال شناسنامه:': '123456',
+        'سری حرفی:': 'الف',
+        'سری عددی:': '12',
+        'محل صدور:': 'مشهد',
+        'وضعیت جسمانی:': 'سالم',
+        'نام و نام‌خانوادگی پدر:': 'رضا صادقی',
+        'کد ملی پدر:': '0931234567',
+        'تحصیلات پدر:': 'کارشناسی ارشد',
+        'شغل پدر:': 'مهندس برق',
+        'نام و نام‌خانوادگی مادر:': 'فاطمه حسینی',
+        'کد ملی مادر:': '0941234567',
+        'تحصیلات مادر:': 'کارشناسی',
+        'شغل مادر:': 'معلم',
+        'آدرس منزل:': 'مشهد، بلوار سجاد، خیابان بهار، پلاک ۱۲',
+        'شماره ثابت:': '05137654321',
+        'شماره همراه پدر:': '09151112233',
+        'شماره همراه مادر:': '09154445566',
+        'آدرس محل کار پدر:': 'مشهد، شهرک صنعتی طوس، فاز ۲',
+        'آدرس محل کار مادر:': 'مشهد، دبستان اندیشه',
+        'شماره همراه دانش‌آموز:': '09351234567',
+        'عکس پرسنلی:': '',
       },
       {
-        'کد ملی': '0012345679',
-        'نام': 'سارا',
-        'نام خانوادگی': 'محمدی',
-        'شماره دانش آموزی': '12345679',
-        'شماره کلاس': '۱۰۱',
-        'موبایل دانش آموز': '09122223344',
-        'نام پدر': 'علی',
-        'موبایل پدر': '09125556677',
-        'جنسیت': 'دختر',
+        'نام:': 'سارا',
+        'نام خانوادگی:': 'محمدی',
+        'نام پدر:': 'علی',
+        'پایه تحصیلی:': 'یازدهم',
+        'تاریخ تولد:': '1387/08/25',
+        'محل تولد:': 'تهران',
+        'کد ملی:': '0012345678',
+        'سریال شناسنامه:': '654321',
+        'سری حرفی:': 'ب',
+        'سری عددی:': '34',
+        'محل صدور:': 'تهران',
+        'وضعیت جسمانی:': 'سالم',
+        'نام و نام‌خانوادگی پدر:': 'علی محمدی',
+        'کد ملی پدر:': '0023456789',
+        'تحصیلات پدر:': 'دکتری',
+        'شغل پدر:': 'استاد دانشگاه',
+        'نام و نام‌خانوادگی مادر:': 'مریم کریمی',
+        'کد ملی مادر:': '0034567890',
+        'تحصیلات مادر:': 'کارشناسی ارشد',
+        'شغل مادر:': 'پزشک',
+        'آدرس منزل:': 'تهران، سعادت‌آباد، خیابان سرو غربی، پلاک ۲۴',
+        'شماره ثابت:': '02122334455',
+        'شماره همراه پدر:': '09121112233',
+        'شماره همراه مادر:': '09124445566',
+        'آدرس محل کار پدر:': 'تهران، دانشگاه علم و صنعت',
+        'آدرس محل کار مادر:': 'تهران، بیمارستان میلاد',
+        'شماره همراه دانش‌آموز:': '09191234567',
+        'عکس پرسنلی:': '',
       },
     ];
     const ws = utils.json_to_sheet(sampleData);
     const wb = utils.book_new();
     utils.book_append_sheet(wb, ws, 'دانش‌آموزان');
-    writeFile(wb, 'نمونه_ورود_گروهی_دانش‌آموزان_رکاد.xlsx');
+    writeFile(wb, 'نمونه_استاندارد_ورود_دانش‌آموزان_رکاد.xlsx');
   };
 
   const handleExcelFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -193,7 +254,7 @@ export const MembersPage: React.FC = () => {
     }
   };
 
-  const [studentForm, setStudentForm] = useState({
+  const initialStudentFormState = {
     firstName: '',
     lastName: '',
     phone: '',
@@ -201,7 +262,38 @@ export const MembersPage: React.FC = () => {
     studentNumber: '',
     classroomId: '',
     password: '',
-  });
+    // 28 Fields from SAMPLE.xlsx
+    fatherName: '',
+    gradeLevel: 'دهم',
+    birthDate: '',
+    birthPlace: '',
+    certificateNumber: '',
+    certificateSeriesLetter: 'الف',
+    certificateSeriesNumber: '',
+    issuePlace: '',
+    physicalCondition: 'سالم',
+    // Father
+    fatherFullName: '',
+    fatherNationalId: '',
+    fatherEducation: '',
+    fatherOccupation: '',
+    fatherPhone: '',
+    fatherWorkAddress: '',
+    // Mother
+    motherFullName: '',
+    motherNationalId: '',
+    motherEducation: '',
+    motherOccupation: '',
+    motherPhone: '',
+    motherWorkAddress: '',
+    // Contact & Residence
+    homeAddress: '',
+    landlinePhone: '',
+    studentMobile: '',
+    avatarUrl: '',
+  };
+
+  const [studentForm, setStudentForm] = useState(initialStudentFormState);
 
   const [teacherForm, setTeacherForm] = useState({
     firstName: '',
@@ -254,31 +346,109 @@ export const MembersPage: React.FC = () => {
       const payload = {
         firstName: studentForm.firstName.trim(),
         lastName: studentForm.lastName.trim(),
-        phone: studentForm.phone.trim(),
+        phone: studentForm.studentMobile.trim() || studentForm.phone.trim() || studentForm.fatherPhone.trim() || studentForm.motherPhone.trim(),
         nationalCode: studentForm.nationalCode.trim() || undefined,
         studentCode: derivedCode,
         studentNumber: derivedCode,
         classroomId: studentForm.classroomId || undefined,
         password: studentForm.password || undefined,
+        // 28 Fields from SAMPLE.xlsx
+        fatherName: studentForm.fatherName.trim() || undefined,
+        gradeLevel: studentForm.gradeLevel.trim() || undefined,
+        birthDate: studentForm.birthDate.trim() || undefined,
+        birthPlace: studentForm.birthPlace.trim() || undefined,
+        certificateNumber: studentForm.certificateNumber.trim() || undefined,
+        certificateSeriesLetter: studentForm.certificateSeriesLetter.trim() || undefined,
+        certificateSeriesNumber: studentForm.certificateSeriesNumber.trim() || undefined,
+        issuePlace: studentForm.issuePlace.trim() || undefined,
+        physicalCondition: studentForm.physicalCondition.trim() || undefined,
+        fatherFullName: studentForm.fatherFullName.trim() || undefined,
+        fatherNationalId: studentForm.fatherNationalId.trim() || undefined,
+        fatherEducation: studentForm.fatherEducation.trim() || undefined,
+        fatherOccupation: studentForm.fatherOccupation.trim() || undefined,
+        fatherPhone: studentForm.fatherPhone.trim() || undefined,
+        fatherWorkAddress: studentForm.fatherWorkAddress.trim() || undefined,
+        motherFullName: studentForm.motherFullName.trim() || undefined,
+        motherNationalId: studentForm.motherNationalId.trim() || undefined,
+        motherEducation: studentForm.motherEducation.trim() || undefined,
+        motherOccupation: studentForm.motherOccupation.trim() || undefined,
+        motherPhone: studentForm.motherPhone.trim() || undefined,
+        motherWorkAddress: studentForm.motherWorkAddress.trim() || undefined,
+        homeAddress: studentForm.homeAddress.trim() || undefined,
+        landlinePhone: studentForm.landlinePhone.trim() || undefined,
+        studentMobile: studentForm.studentMobile.trim() || undefined,
+        avatarUrl: studentForm.avatarUrl.trim() || undefined,
       };
 
       await apiClient.post('/members/students', payload);
       setIsStudentModalOpen(false);
-      setStudentForm({
-        firstName: '',
-        lastName: '',
-        phone: '',
-        nationalCode: '',
-        studentNumber: '',
-        classroomId: classrooms[0]?.id || '',
-        password: 'StudentPass2026!',
-      });
+      setStudentForm(initialStudentFormState);
       fetchData();
     } catch (err: any) {
       setError(
         err.message ||
           (Array.isArray(err.message) ? err.message.join('، ') : 'خطا در ثبت‌نام دانش‌آموز.'),
       );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenDossier = (student: any) => {
+    setSelectedStudentDossier(student);
+    setDossierTab('IDENTITY');
+    setIsEditingDossier(false);
+    setDossierEditForm({
+      firstName: student.user?.firstName || '',
+      lastName: student.user?.lastName || '',
+      phone: student.user?.phone || '',
+      nationalCode: student.nationalCode || '',
+      studentCode: student.studentCode || '',
+      fatherName: student.fatherName || '',
+      gradeLevel: student.gradeLevel || 'دهم',
+      birthDate: student.birthDate ? formatToJalali(student.birthDate) : '',
+      birthPlace: student.birthPlace || '',
+      certificateNumber: student.certificateNumber || '',
+      certificateSeriesLetter: student.certificateSeriesLetter || 'الف',
+      certificateSeriesNumber: student.certificateSeriesNumber || '',
+      issuePlace: student.issuePlace || '',
+      physicalCondition: student.physicalCondition || student.medicalNotes || 'سالم',
+      fatherFullName: student.fatherFullName || '',
+      fatherNationalId: student.fatherNationalId || '',
+      fatherEducation: student.fatherEducation || '',
+      fatherOccupation: student.fatherOccupation || '',
+      fatherPhone: student.fatherPhone || '',
+      fatherWorkAddress: student.fatherWorkAddress || '',
+      motherFullName: student.motherFullName || '',
+      motherNationalId: student.motherNationalId || '',
+      motherEducation: student.motherEducation || '',
+      motherOccupation: student.motherOccupation || '',
+      motherPhone: student.motherPhone || '',
+      motherWorkAddress: student.motherWorkAddress || '',
+      homeAddress: student.homeAddress || student.address || '',
+      landlinePhone: student.landlinePhone || '',
+      studentMobile: student.studentMobile || '',
+      avatarUrl: student.user?.avatarUrl || '',
+    });
+  };
+
+  const handleSaveDossier = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedStudentDossier) return;
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const payload = {
+        ...dossierEditForm,
+      };
+      await apiClient.put(`/members/students/${selectedStudentDossier.id}`, payload);
+      setIsEditingDossier(false);
+      await fetchData();
+      const updatedRes = await apiClient.get('/members/students');
+      const found = (updatedRes.data || []).find((s: any) => s.id === selectedStudentDossier.id);
+      if (found) setSelectedStudentDossier(found);
+    } catch (err: any) {
+      setError(err.message || 'خطا در به‌روزرسانی پرونده دانش‌آموز.');
     } finally {
       setIsSubmitting(false);
     }
@@ -479,8 +649,29 @@ export const MembersPage: React.FC = () => {
               header: 'نام و نام خانوادگی',
               mobilePriority: 'primary',
               render: (s) => (
-                <div className="font-bold text-ink-darker text-sm">
-                  {s.user?.firstName} {s.user?.lastName}
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold text-xs text-ink-dark">
+                    {s.user?.avatarUrl ? (
+                      <img src={s.user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      s.user?.firstName?.[0] || 'د'
+                    )}
+                  </div>
+                  <div>
+                    <div className="font-bold text-ink-darker dark:text-white text-sm">
+                      {s.user?.firstName} {s.user?.lastName}
+                    </div>
+                    <div className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                      <span>پایه:</span>
+                      <span className="font-bold text-primary">{s.gradeLevel || 'دهم'}</span>
+                      {s.fatherName && (
+                        <>
+                          <span className="text-gray-300 dark:text-gray-600">•</span>
+                          <span>فرزند: {s.fatherName}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
               ),
             },
@@ -489,8 +680,8 @@ export const MembersPage: React.FC = () => {
               header: 'کلاس درس',
               mobilePriority: 'primary',
               render: (s) => (
-                <span className="text-xs bg-primary/10 text-primary-dark px-2.5 py-0.5 rounded-full font-bold">
-                  {s.classroom?.name || 'کلاس ۱۰۱'}
+                <span className="text-xs bg-primary/10 text-primary-dark dark:text-primary-light px-2.5 py-0.5 rounded-full font-bold">
+                  {s.enrollments?.[0]?.classroom?.name || s.classroom?.name || 'کلاس عمومی'}
                 </span>
               ),
             },
@@ -498,25 +689,42 @@ export const MembersPage: React.FC = () => {
               key: 'studentNumber',
               header: 'شماره دانش‌آموزی',
               mobilePriority: 'secondary',
-              render: (s) => <span className="font-mono text-xs font-bold">{s.studentNumber}</span>,
-            },
-            {
-              key: 'status',
-              header: 'وضعیت پرونده',
-              mobilePriority: 'secondary',
-              render: () => <Badge variant="success">ثبت‌نام قطعی</Badge>,
+              render: (s) => (
+                <span className="font-mono text-xs font-bold text-ink-dark dark:text-gray-200">
+                  {s.studentCode || s.studentNumber || '—'}
+                </span>
+              ),
             },
             {
               key: 'nationalCode',
               header: 'کد ملی',
               mobilePriority: 'detail',
-              render: (s) => <span className="font-mono text-xs text-gray-600">{s.nationalCode || '—'}</span>,
+              render: (s) => <span className="font-mono text-xs text-gray-600 dark:text-gray-400">{s.nationalCode || '—'}</span>,
             },
             {
               key: 'phone',
-              header: 'شماره تماس',
+              header: 'شماره همراه',
               mobilePriority: 'detail',
-              render: (s) => <span className="font-mono text-xs text-gray-600">{s.user?.phone || '—'}</span>,
+              render: (s) => (
+                <span className="font-mono text-xs text-gray-600 dark:text-gray-400">
+                  {s.studentMobile || s.user?.phone || s.fatherPhone || '—'}
+                </span>
+              ),
+            },
+            {
+              key: 'actions',
+              header: 'پرونده الکترونیکی',
+              mobilePriority: 'primary',
+              render: (s) => (
+                <button
+                  type="button"
+                  onClick={() => handleOpenDossier(s)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-2xs border border-primary/20 cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>مشاهده پرونده</span>
+                </button>
+              ),
             },
           ]}
           keyExtractor={(s) => s.id}
@@ -629,103 +837,847 @@ export const MembersPage: React.FC = () => {
         )}
 
         <form onSubmit={handleEnrollStudent} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <Input
-              label="نام دانش‌آموز"
-              placeholder="مثال: رضا"
-              value={studentForm.firstName}
-              onChange={(e) => setStudentForm({ ...studentForm, firstName: e.target.value })}
-              required
-            />
-            <Input
-              label="نام خانوادگی"
-              placeholder="مثال: حسینی"
-              value={studentForm.lastName}
-              onChange={(e) => setStudentForm({ ...studentForm, lastName: e.target.value })}
-              required
-            />
-          </div>
+        {/* Tab switcher inside Student Modal */}
+        <div className="flex items-center gap-1.5 p-1 mb-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold">
+          <button
+            type="button"
+            onClick={() => setStudentModalTab('IDENTITY')}
+            className={`flex-1 py-1.5 px-2 rounded-lg transition-all ${
+              studentModalTab === 'IDENTITY'
+                ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs'
+                : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
+            }`}
+          >
+            هویتی و تحصیلی
+          </button>
+          <button
+            type="button"
+            onClick={() => setStudentModalTab('FATHER')}
+            className={`flex-1 py-1.5 px-2 rounded-lg transition-all ${
+              studentModalTab === 'FATHER'
+                ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs'
+                : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
+            }`}
+          >
+            مشخصات پدر
+          </button>
+          <button
+            type="button"
+            onClick={() => setStudentModalTab('MOTHER')}
+            className={`flex-1 py-1.5 px-2 rounded-lg transition-all ${
+              studentModalTab === 'MOTHER'
+                ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs'
+                : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
+            }`}
+          >
+            مشخصات مادر
+          </button>
+          <button
+            type="button"
+            onClick={() => setStudentModalTab('CONTACT')}
+            className={`flex-1 py-1.5 px-2 rounded-lg transition-all ${
+              studentModalTab === 'CONTACT'
+                ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs'
+                : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
+            }`}
+          >
+            سکونت و تماس
+          </button>
+        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <Input
-              label="کد ملی (نام کاربری سامانه ورود یکپارچه)"
-              placeholder="مثال: 0012345678"
-              value={studentForm.nationalCode}
-              onChange={(e) => {
-                const nat = e.target.value;
-                const derived = nat.replace(/\D/g, '').replace(/^0+/, '');
-                setStudentForm((prev) => ({
-                  ...prev,
-                  nationalCode: nat,
-                  studentNumber: derived,
-                }));
-              }}
-              required
-            />
-            <Input
-              label="شماره دانش‌آموزی (کد ملی بدون صفر)"
-              placeholder="مثال: 12345678 (محاسبه خودکار)"
-              value={studentForm.studentNumber}
-              onChange={(e) => setStudentForm({ ...studentForm, studentNumber: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <Input
-              label="شماره همراه (جهت اطلاع‌رسانی و پیامک خانواده)"
-              placeholder="مثال: 09123333333"
-              value={studentForm.phone}
-              onChange={(e) => setStudentForm({ ...studentForm, phone: e.target.value })}
-              required
-            />
-            <Select
-              label="کلاس درس"
-              value={studentForm.classroomId}
-              onChange={(e) => setStudentForm({ ...studentForm, classroomId: e.target.value })}
-            >
-              {classrooms.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} ({c.code})
-                </option>
-              ))}
-            </Select>
-          </div>
-
-          {/* Unified Credentials Card Preview */}
-          <div className="p-3 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 space-y-1 text-xs">
-            <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
-              <UserCheck className="h-4 w-4 text-primary" />
-              <span>سامانه ورود یکپارچه (تولید خودکار اطلاعات ورود):</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-              <div className="bg-white dark:bg-[#1E293B] p-2 rounded border border-gray-200 dark:border-gray-700">
-                <span className="text-[10px] text-gray-500 dark:text-gray-400 block">نام کاربری سامانه:</span>
-                <span className="font-mono font-bold text-ink-dark dark:text-white">
-                  {studentForm.nationalCode ? studentForm.nationalCode : 'کد ملی هنرجو'}
-                </span>
+          {studentModalTab === 'IDENTITY' && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="نام دانش‌آموز *"
+                  placeholder="مثال: رضا"
+                  value={studentForm.firstName}
+                  onChange={(e) => setStudentForm({ ...studentForm, firstName: e.target.value })}
+                  required
+                />
+                <Input
+                  label="نام خانوادگی *"
+                  placeholder="مثال: حسینی"
+                  value={studentForm.lastName}
+                  onChange={(e) => setStudentForm({ ...studentForm, lastName: e.target.value })}
+                  required
+                />
               </div>
-              <div className="bg-white dark:bg-[#1E293B] p-2 rounded border border-gray-200 dark:border-gray-700">
-                <span className="text-[10px] text-gray-500 dark:text-gray-400 block">رمز عبور خودکار:</span>
-                <span className="font-mono font-bold text-primary">
-                  {studentForm.nationalCode
-                    ? `${branchPrefix}${studentForm.nationalCode}`
-                    : `${branchPrefix} + کد ملی`}
-                </span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Input
+                  label="نام پدر"
+                  placeholder="مثال: علی"
+                  value={studentForm.fatherName}
+                  onChange={(e) => setStudentForm({ ...studentForm, fatherName: e.target.value })}
+                />
+                <Select
+                  label="پایه تحصیلی"
+                  value={studentForm.gradeLevel}
+                  onChange={(e) => setStudentForm({ ...studentForm, gradeLevel: e.target.value })}
+                >
+                  <option value="دهم">دهم</option>
+                  <option value="یازدهم">یازدهم</option>
+                  <option value="دوازدهم">دوازدهم</option>
+                </Select>
+                <Select
+                  label="کلاس درس"
+                  value={studentForm.classroomId}
+                  onChange={(e) => setStudentForm({ ...studentForm, classroomId: e.target.value })}
+                >
+                  {classrooms.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.code})
+                    </option>
+                  ))}
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="کد ملی (نام کاربری سامانه ورود یکپارچه) *"
+                  placeholder="مثال: 0012345678"
+                  value={studentForm.nationalCode}
+                  onChange={(e) => {
+                    const nat = e.target.value;
+                    const derived = nat.replace(/\D/g, '').replace(/^0+/, '');
+                    setStudentForm((prev) => ({
+                      ...prev,
+                      nationalCode: nat,
+                      studentNumber: derived,
+                    }));
+                  }}
+                  required
+                />
+                <Input
+                  label="شماره دانش‌آموزی (کد ملی بدون صفر)"
+                  placeholder="مثال: 12345678"
+                  value={studentForm.studentNumber}
+                  onChange={(e) => setStudentForm({ ...studentForm, studentNumber: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="تاریخ تولد (شمسی)"
+                  placeholder="مثال: 1388/05/12"
+                  value={studentForm.birthDate}
+                  onChange={(e) => setStudentForm({ ...studentForm, birthDate: e.target.value })}
+                />
+                <Input
+                  label="محل تولد"
+                  placeholder="مثال: مشهد"
+                  value={studentForm.birthPlace}
+                  onChange={(e) => setStudentForm({ ...studentForm, birthPlace: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <Input
+                  label="سریال شناسنامه"
+                  placeholder="مثال: 123456"
+                  value={studentForm.certificateNumber}
+                  onChange={(e) => setStudentForm({ ...studentForm, certificateNumber: e.target.value })}
+                />
+                <Input
+                  label="سری حرفی"
+                  placeholder="مثال: الف"
+                  value={studentForm.certificateSeriesLetter}
+                  onChange={(e) => setStudentForm({ ...studentForm, certificateSeriesLetter: e.target.value })}
+                />
+                <Input
+                  label="سری عددی"
+                  placeholder="مثال: 12"
+                  value={studentForm.certificateSeriesNumber}
+                  onChange={(e) => setStudentForm({ ...studentForm, certificateSeriesNumber: e.target.value })}
+                />
+                <Input
+                  label="محل صدور"
+                  placeholder="مثال: مشهد"
+                  value={studentForm.issuePlace}
+                  onChange={(e) => setStudentForm({ ...studentForm, issuePlace: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="وضعیت جسمانی و سلامت"
+                  placeholder="مثال: سالم، دارای آلرژی، ..."
+                  value={studentForm.physicalCondition}
+                  onChange={(e) => setStudentForm({ ...studentForm, physicalCondition: e.target.value })}
+                />
+                <Input
+                  label="شماره همراه اولیه (پیش‌فرض) *"
+                  placeholder="مثال: 09123333333"
+                  value={studentForm.phone}
+                  onChange={(e) => setStudentForm({ ...studentForm, phone: e.target.value })}
+                  required
+                />
+              </div>
+
+              {/* Unified Credentials Card Preview */}
+              <div className="p-3 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 space-y-1 text-xs">
+                <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
+                  <UserCheck className="h-4 w-4 text-primary" />
+                  <span>سامانه ورود یکپارچه (تولید خودکار اطلاعات ورود):</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                  <div className="bg-white dark:bg-[#1E293B] p-2 rounded border border-gray-200 dark:border-gray-700">
+                    <span className="text-[10px] text-gray-500 dark:text-gray-400 block">نام کاربری سامانه:</span>
+                    <span className="font-mono font-bold text-ink-dark dark:text-white">
+                      {studentForm.nationalCode ? studentForm.nationalCode : 'کد ملی هنرجو'}
+                    </span>
+                  </div>
+                  <div className="bg-white dark:bg-[#1E293B] p-2 rounded border border-gray-200 dark:border-gray-700">
+                    <span className="text-[10px] text-gray-500 dark:text-gray-400 block">رمز عبور خودکار:</span>
+                    <span className="font-mono font-bold text-primary">
+                      {studentForm.nationalCode
+                        ? `${branchPrefix}${studentForm.nationalCode}`
+                        : `${branchPrefix} + کد ملی`}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          <div className="flex justify-end space-x-2 space-x-reverse pt-2">
-            <Button type="button" variant="ghost" onClick={() => setIsStudentModalOpen(false)}>
-              انصراف
-            </Button>
-            <Button type="submit" variant="primary" isLoading={isSubmitting}>
-              تکمیل ثبت‌نام
-            </Button>
+          {studentModalTab === 'FATHER' && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="نام و نام‌خانوادگی پدر"
+                  placeholder="مثال: رضا حسینی"
+                  value={studentForm.fatherFullName}
+                  onChange={(e) => setStudentForm({ ...studentForm, fatherFullName: e.target.value })}
+                />
+                <Input
+                  label="کد ملی پدر"
+                  placeholder="مثال: 0041234567"
+                  value={studentForm.fatherNationalId}
+                  onChange={(e) => setStudentForm({ ...studentForm, fatherNationalId: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="تحصیلات پدر"
+                  placeholder="مثال: کارشناسی ارشد"
+                  value={studentForm.fatherEducation}
+                  onChange={(e) => setStudentForm({ ...studentForm, fatherEducation: e.target.value })}
+                />
+                <Input
+                  label="شغل پدر"
+                  placeholder="مثال: مهندس مکانیک"
+                  value={studentForm.fatherOccupation}
+                  onChange={(e) => setStudentForm({ ...studentForm, fatherOccupation: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="شماره همراه پدر"
+                  placeholder="مثال: 09151112233"
+                  value={studentForm.fatherPhone}
+                  onChange={(e) => setStudentForm({ ...studentForm, fatherPhone: e.target.value })}
+                />
+                <Input
+                  label="آدرس محل کار پدر"
+                  placeholder="مثال: مشهد، شهرک صنعتی طوس"
+                  value={studentForm.fatherWorkAddress}
+                  onChange={(e) => setStudentForm({ ...studentForm, fatherWorkAddress: e.target.value })}
+                />
+              </div>
+            </div>
+          )}
+
+          {studentModalTab === 'MOTHER' && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="نام و نام‌خانوادگی مادر"
+                  placeholder="مثال: زهرا رضایی"
+                  value={studentForm.motherFullName}
+                  onChange={(e) => setStudentForm({ ...studentForm, motherFullName: e.target.value })}
+                />
+                <Input
+                  label="کد ملی مادر"
+                  placeholder="مثال: 0051234567"
+                  value={studentForm.motherNationalId}
+                  onChange={(e) => setStudentForm({ ...studentForm, motherNationalId: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="تحصیلات مادر"
+                  placeholder="مثال: کارشناسی"
+                  value={studentForm.motherEducation}
+                  onChange={(e) => setStudentForm({ ...studentForm, motherEducation: e.target.value })}
+                />
+                <Input
+                  label="شغل مادر"
+                  placeholder="مثال: دبیر"
+                  value={studentForm.motherOccupation}
+                  onChange={(e) => setStudentForm({ ...studentForm, motherOccupation: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="شماره همراه مادر"
+                  placeholder="مثال: 09154445566"
+                  value={studentForm.motherPhone}
+                  onChange={(e) => setStudentForm({ ...studentForm, motherPhone: e.target.value })}
+                />
+                <Input
+                  label="آدرس محل کار مادر"
+                  placeholder="مثال: مشهد، خیابان راهنمایی"
+                  value={studentForm.motherWorkAddress}
+                  onChange={(e) => setStudentForm({ ...studentForm, motherWorkAddress: e.target.value })}
+                />
+              </div>
+            </div>
+          )}
+
+          {studentModalTab === 'CONTACT' && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="شماره همراه خود دانش‌آموز"
+                  placeholder="مثال: 09351234567"
+                  value={studentForm.studentMobile}
+                  onChange={(e) => setStudentForm({ ...studentForm, studentMobile: e.target.value })}
+                />
+                <Input
+                  label="شماره تلفن ثابت منزل"
+                  placeholder="مثال: 05137654321"
+                  value={studentForm.landlinePhone}
+                  onChange={(e) => setStudentForm({ ...studentForm, landlinePhone: e.target.value })}
+                />
+              </div>
+              <Input
+                label="آدرس محل سکونت"
+                placeholder="مثال: مشهد، بلوار سجاد، خیابان بهار، پلاک ۱۲"
+                value={studentForm.homeAddress}
+                onChange={(e) => setStudentForm({ ...studentForm, homeAddress: e.target.value })}
+              />
+              <Input
+                label="آدرس لینک یا مسیر عکس پرسنلی"
+                placeholder="مثال: https://... یا نام فایل تصویر"
+                value={studentForm.avatarUrl}
+                onChange={(e) => setStudentForm({ ...studentForm, avatarUrl: e.target.value })}
+              />
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex gap-1.5">
+              {studentModalTab !== 'IDENTITY' && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (studentModalTab === 'CONTACT') setStudentModalTab('MOTHER');
+                    else if (studentModalTab === 'MOTHER') setStudentModalTab('FATHER');
+                    else if (studentModalTab === 'FATHER') setStudentModalTab('IDENTITY');
+                  }}
+                >
+                  مرحله قبل
+                </Button>
+              )}
+              {studentModalTab !== 'CONTACT' && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (studentModalTab === 'IDENTITY') setStudentModalTab('FATHER');
+                    else if (studentModalTab === 'FATHER') setStudentModalTab('MOTHER');
+                    else if (studentModalTab === 'MOTHER') setStudentModalTab('CONTACT');
+                  }}
+                >
+                  مرحله بعد
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="ghost" onClick={() => setIsStudentModalOpen(false)}>
+                انصراف
+              </Button>
+              <Button type="submit" variant="primary" isLoading={isSubmitting}>
+                ثبت نهایی پرونده دانش‌آموز
+              </Button>
+            </div>
           </div>
         </form>
       </Modal>
+
+      {/* Dossier Modal: شناسنامه و پرونده کامل الکترونیکی دانش‌آموز */}
+      {selectedStudentDossier && (
+        <Modal
+          isOpen={!!selectedStudentDossier}
+          onClose={() => {
+            setSelectedStudentDossier(null);
+            setIsEditingDossier(false);
+          }}
+          title={`شناسنامه و پرونده تحصیلی: ${selectedStudentDossier.user?.firstName || ''} ${selectedStudentDossier.user?.lastName || ''}`}
+          description={`شماره دانش‌آموزی: ${selectedStudentDossier.studentCode || selectedStudentDossier.studentNumber || '—'} | کد ملی: ${selectedStudentDossier.nationalCode || '—'}`}
+          maxWidth="2xl"
+        >
+          {error && (
+            <div className="mb-4 flex items-center space-x-2 space-x-reverse rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Dossier Header Summary Card */}
+          <div className="p-4 rounded-2xl bg-gradient-to-l from-primary/10 via-primary/5 to-transparent border border-primary/20 mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-primary/30 bg-white dark:bg-[#151C28] flex items-center justify-center font-black text-xl text-primary shrink-0 shadow-sm">
+                {selectedStudentDossier.user?.avatarUrl ? (
+                  <img src={selectedStudentDossier.user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  selectedStudentDossier.user?.firstName?.[0] || 'د'
+                )}
+              </div>
+              <div>
+                <h3 className="font-black text-base text-ink-darker dark:text-white flex items-center gap-2">
+                  <span>{selectedStudentDossier.user?.firstName} {selectedStudentDossier.user?.lastName}</span>
+                  <Badge variant="success" className="text-[10px]">ثبت‌نام رسمی</Badge>
+                </h3>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex flex-wrap items-center gap-2 font-mono">
+                  <span>کد ملی: <strong className="text-ink-dark dark:text-white">{selectedStudentDossier.nationalCode || '—'}</strong></span>
+                  <span>•</span>
+                  <span>کلاس: <strong className="text-primary">{selectedStudentDossier.enrollments?.[0]?.classroom?.name || 'کلاس عمومی'}</strong></span>
+                  <span>•</span>
+                  <span>پایه: <strong className="text-primary">{selectedStudentDossier.gradeLevel || 'دهم'}</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <Button
+              variant={isEditingDossier ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setIsEditingDossier(!isEditingDossier)}
+              className="text-xs shrink-0 self-end sm:self-center"
+            >
+              <Edit3 className="w-3.5 h-3.5 ml-1" />
+              <span>{isEditingDossier ? 'مشاهده شناسنامه' : 'ویرایش اطلاعات'}</span>
+            </Button>
+          </div>
+
+          {/* Dossier Tabs */}
+          <div className="flex items-center gap-1.5 p-1 mb-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => setDossierTab('IDENTITY')}
+              className={`flex-1 py-1.5 px-2 rounded-lg transition-all ${
+                dossierTab === 'IDENTITY'
+                  ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs'
+                  : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
+              }`}
+            >
+              هویتی و شناسنامه‌ای
+            </button>
+            <button
+              type="button"
+              onClick={() => setDossierTab('FATHER')}
+              className={`flex-1 py-1.5 px-2 rounded-lg transition-all ${
+                dossierTab === 'FATHER'
+                  ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs'
+                  : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
+              }`}
+            >
+              مشخصات پدر
+            </button>
+            <button
+              type="button"
+              onClick={() => setDossierTab('MOTHER')}
+              className={`flex-1 py-1.5 px-2 rounded-lg transition-all ${
+                dossierTab === 'MOTHER'
+                  ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs'
+                  : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
+              }`}
+            >
+              مشخصات مادر
+            </button>
+            <button
+              type="button"
+              onClick={() => setDossierTab('CONTACT')}
+              className={`flex-1 py-1.5 px-2 rounded-lg transition-all ${
+                dossierTab === 'CONTACT'
+                  ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs'
+                  : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
+              }`}
+            >
+              سکونت و تماس
+            </button>
+          </div>
+
+          {isEditingDossier ? (
+            <form onSubmit={handleSaveDossier} className="space-y-4">
+              {dossierTab === 'IDENTITY' && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Input
+                      label="نام دانش‌آموز"
+                      value={dossierEditForm.firstName}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, firstName: e.target.value })}
+                      required
+                    />
+                    <Input
+                      label="نام خانوادگی"
+                      value={dossierEditForm.lastName}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, lastName: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <Input
+                      label="نام پدر"
+                      value={dossierEditForm.fatherName}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, fatherName: e.target.value })}
+                    />
+                    <Select
+                      label="پایه تحصیلی"
+                      value={dossierEditForm.gradeLevel}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, gradeLevel: e.target.value })}
+                    >
+                      <option value="دهم">دهم</option>
+                      <option value="یازدهم">یازدهم</option>
+                      <option value="دوازدهم">دوازدهم</option>
+                    </Select>
+                    <Input
+                      label="وضعیت جسمانی"
+                      value={dossierEditForm.physicalCondition}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, physicalCondition: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Input
+                      label="تاریخ تولد (شمسی)"
+                      value={dossierEditForm.birthDate}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, birthDate: e.target.value })}
+                    />
+                    <Input
+                      label="محل تولد"
+                      value={dossierEditForm.birthPlace}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, birthPlace: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <Input
+                      label="سریال شناسنامه"
+                      value={dossierEditForm.certificateNumber}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, certificateNumber: e.target.value })}
+                    />
+                    <Input
+                      label="سری حرفی"
+                      value={dossierEditForm.certificateSeriesLetter}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, certificateSeriesLetter: e.target.value })}
+                    />
+                    <Input
+                      label="سری عددی"
+                      value={dossierEditForm.certificateSeriesNumber}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, certificateSeriesNumber: e.target.value })}
+                    />
+                    <Input
+                      label="محل صدور"
+                      value={dossierEditForm.issuePlace}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, issuePlace: e.target.value })}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {dossierTab === 'FATHER' && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Input
+                      label="نام و نام‌خانوادگی پدر"
+                      value={dossierEditForm.fatherFullName}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, fatherFullName: e.target.value })}
+                    />
+                    <Input
+                      label="کد ملی پدر"
+                      value={dossierEditForm.fatherNationalId}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, fatherNationalId: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Input
+                      label="تحصیلات پدر"
+                      value={dossierEditForm.fatherEducation}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, fatherEducation: e.target.value })}
+                    />
+                    <Input
+                      label="شغل پدر"
+                      value={dossierEditForm.fatherOccupation}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, fatherOccupation: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Input
+                      label="شماره همراه پدر"
+                      value={dossierEditForm.fatherPhone}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, fatherPhone: e.target.value })}
+                    />
+                    <Input
+                      label="آدرس محل کار پدر"
+                      value={dossierEditForm.fatherWorkAddress}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, fatherWorkAddress: e.target.value })}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {dossierTab === 'MOTHER' && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Input
+                      label="نام و نام‌خانوادگی مادر"
+                      value={dossierEditForm.motherFullName}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, motherFullName: e.target.value })}
+                    />
+                    <Input
+                      label="کد ملی مادر"
+                      value={dossierEditForm.motherNationalId}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, motherNationalId: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Input
+                      label="تحصیلات مادر"
+                      value={dossierEditForm.motherEducation}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, motherEducation: e.target.value })}
+                    />
+                    <Input
+                      label="شغل مادر"
+                      value={dossierEditForm.motherOccupation}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, motherOccupation: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Input
+                      label="شماره همراه مادر"
+                      value={dossierEditForm.motherPhone}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, motherPhone: e.target.value })}
+                    />
+                    <Input
+                      label="آدرس محل کار مادر"
+                      value={dossierEditForm.motherWorkAddress}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, motherWorkAddress: e.target.value })}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {dossierTab === 'CONTACT' && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Input
+                      label="شماره همراه خود دانش‌آموز"
+                      value={dossierEditForm.studentMobile}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, studentMobile: e.target.value })}
+                    />
+                    <Input
+                      label="شماره ثابت منزل"
+                      value={dossierEditForm.landlinePhone}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, landlinePhone: e.target.value })}
+                    />
+                  </div>
+                  <Input
+                    label="آدرس منزل"
+                    value={dossierEditForm.homeAddress}
+                    onChange={(e) => setDossierEditForm({ ...dossierEditForm, homeAddress: e.target.value })}
+                  />
+                  <Input
+                    label="لینک عکس پرسنلی"
+                    value={dossierEditForm.avatarUrl}
+                    onChange={(e) => setDossierEditForm({ ...dossierEditForm, avatarUrl: e.target.value })}
+                  />
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+                <Button type="button" variant="ghost" onClick={() => setIsEditingDossier(false)}>
+                  انصراف
+                </Button>
+                <Button type="submit" variant="primary" isLoading={isSubmitting}>
+                  <Save className="w-3.5 h-3.5 ml-1" />
+                  <span>ذخیره تغییرات پرونده</span>
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              {dossierTab === 'IDENTITY' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">نام پدر:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white">
+                      {selectedStudentDossier.fatherName || selectedStudentDossier.fatherFullName || '—'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">پایه تحصیلی:</span>
+                    <strong className="text-sm text-primary">
+                      {selectedStudentDossier.gradeLevel || 'دهم'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">تاریخ تولد:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white">
+                      {selectedStudentDossier.birthDate ? formatToJalali(selectedStudentDossier.birthDate) : '—'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">محل تولد:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white">
+                      {selectedStudentDossier.birthPlace || '—'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">سریال و سری شناسنامه:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white font-mono">
+                      {selectedStudentDossier.certificateNumber || '—'} {selectedStudentDossier.certificateSeriesLetter ? `(سری ${selectedStudentDossier.certificateSeriesLetter} / ${selectedStudentDossier.certificateSeriesNumber || ''})` : ''}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">محل صدور شناسنامه:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white">
+                      {selectedStudentDossier.issuePlace || '—'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60 sm:col-span-2">
+                    <span className="text-gray-500 block mb-1">وضعیت جسمانی و سلامت:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white">
+                      {selectedStudentDossier.physicalCondition || selectedStudentDossier.medicalNotes || 'سالم'}
+                    </strong>
+                  </div>
+                </div>
+              )}
+
+              {dossierTab === 'FATHER' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">نام و نام‌خانوادگی پدر:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white">
+                      {selectedStudentDossier.fatherFullName || selectedStudentDossier.fatherName || '—'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">کد ملی پدر:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white font-mono">
+                      {selectedStudentDossier.fatherNationalId || '—'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">تحصیلات پدر:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white">
+                      {selectedStudentDossier.fatherEducation || '—'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">شغل پدر:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white">
+                      {selectedStudentDossier.fatherOccupation || '—'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">شماره همراه پدر:</span>
+                    <strong className="text-sm text-primary font-mono" dir="ltr">
+                      {selectedStudentDossier.fatherPhone || '—'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">آدرس محل کار پدر:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white">
+                      {selectedStudentDossier.fatherWorkAddress || '—'}
+                    </strong>
+                  </div>
+                </div>
+              )}
+
+              {dossierTab === 'MOTHER' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">نام و نام‌خانوادگی مادر:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white">
+                      {selectedStudentDossier.motherFullName || '—'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">کد ملی مادر:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white font-mono">
+                      {selectedStudentDossier.motherNationalId || '—'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">تحصیلات مادر:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white">
+                      {selectedStudentDossier.motherEducation || '—'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">شغل مادر:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white">
+                      {selectedStudentDossier.motherOccupation || '—'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">شماره همراه مادر:</span>
+                    <strong className="text-sm text-primary font-mono" dir="ltr">
+                      {selectedStudentDossier.motherPhone || '—'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">آدرس محل کار مادر:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white">
+                      {selectedStudentDossier.motherWorkAddress || '—'}
+                    </strong>
+                  </div>
+                </div>
+              )}
+
+              {dossierTab === 'CONTACT' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">شماره همراه دانش‌آموز:</span>
+                    <strong className="text-sm text-primary font-mono" dir="ltr">
+                      {selectedStudentDossier.studentMobile || selectedStudentDossier.user?.phone || '—'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">شماره تلفن ثابت:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white font-mono" dir="ltr">
+                      {selectedStudentDossier.landlinePhone || '—'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60 sm:col-span-2">
+                    <span className="text-gray-500 block mb-1">آدرس محل سکونت:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white">
+                      {selectedStudentDossier.homeAddress || selectedStudentDossier.address || '—'}
+                    </strong>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-800">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setSelectedStudentDossier(null);
+                setIsEditingDossier(false);
+              }}
+            >
+              بستن پرونده
+            </Button>
+          </div>
+        </Modal>
+      )}
 
       {/* 2. Modal: Create Teacher */}
       <Modal

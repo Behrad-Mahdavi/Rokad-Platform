@@ -887,6 +887,37 @@ model StudentProfile {
   birthDate              DateTime?
   address                String?
   medicalNotes           String?
+
+  // --- فیلدهای شناسنامه‌ای و هویتی (مطابق SAMPLE.xlsx) ---
+  gradeLevel              String? // پایه تحصیلی (دهم، یازدهم، دوازدهم)
+  birthPlace              String? // محل تولد
+  certificateNumber       String? // سریال شناسنامه
+  certificateSeriesLetter String? // سری حرفی (الف، ب، ...)
+  certificateSeriesNumber String? // سری عددی
+  issuePlace              String? // محل صدور
+  physicalCondition       String? // وضعیت جسمانی
+
+  // --- مشخصات پدر ---
+  fatherFullName          String? // نام و نام‌خانوادگی پدر
+  fatherNationalId        String? // کد ملی پدر
+  fatherEducation         String? // تحصیلات پدر
+  fatherOccupation        String? // شغل پدر
+  fatherPhone             String? // شماره همراه پدر
+  fatherWorkAddress       String? // آدرس محل کار پدر
+
+  // --- مشخصات مادر ---
+  motherFullName          String? // نام و نام‌خانوادگی مادر
+  motherNationalId        String? // کد ملی مادر
+  motherEducation         String? // تحصیلات مادر
+  motherOccupation        String? // شغل مادر
+  motherPhone             String? // شماره همراه مادر
+  motherWorkAddress       String? // آدرس محل کار مادر
+
+  // --- سکونت و ارتباطات ---
+  homeAddress             String? // آدرس منزل
+  landlinePhone           String? // شماره ثابت منزل
+  studentMobile           String? // شماره همراه دانش‌آموز
+
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
 

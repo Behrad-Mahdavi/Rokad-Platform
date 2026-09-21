@@ -77,6 +77,125 @@ export class CreateStudentDto {
   @IsOptional()
   medicalNotes?: string;
 
+  // --- فیلدهای شناسنامه‌ای و هویتی (مطابق SAMPLE.xlsx) ---
+  @ApiPropertyOptional({ description: 'پایه تحصیلی', example: 'دهم' })
+  @IsString()
+  @IsOptional()
+  gradeLevel?: string;
+
+  @ApiPropertyOptional({ description: 'محل تولد', example: 'تهران' })
+  @IsString()
+  @IsOptional()
+  birthPlace?: string;
+
+  @ApiPropertyOptional({ description: 'سریال شناسنامه', example: '123456' })
+  @IsString()
+  @IsOptional()
+  certificateNumber?: string;
+
+  @ApiPropertyOptional({ description: 'سری حرفی شناسنامه', example: 'الف' })
+  @IsString()
+  @IsOptional()
+  certificateSeriesLetter?: string;
+
+  @ApiPropertyOptional({ description: 'سری عددی شناسنامه', example: '12' })
+  @IsString()
+  @IsOptional()
+  certificateSeriesNumber?: string;
+
+  @ApiPropertyOptional({ description: 'محل صدور شناسنامه', example: 'تهران' })
+  @IsString()
+  @IsOptional()
+  issuePlace?: string;
+
+  @ApiPropertyOptional({ description: 'وضعیت جسمانی و سلامت', example: 'سالم' })
+  @IsString()
+  @IsOptional()
+  physicalCondition?: string;
+
+  // --- مشخصات پدر ---
+  @ApiPropertyOptional({ description: 'نام و نام‌خانوادگی پدر', example: 'حسین صادقی' })
+  @IsString()
+  @IsOptional()
+  fatherFullName?: string;
+
+  @ApiPropertyOptional({ description: 'کد ملی پدر', example: '0054321987' })
+  @IsString()
+  @IsOptional()
+  fatherNationalId?: string;
+
+  @ApiPropertyOptional({ description: 'تحصیلات پدر', example: 'کارشناسی ارشد' })
+  @IsString()
+  @IsOptional()
+  fatherEducation?: string;
+
+  @ApiPropertyOptional({ description: 'شغل پدر', example: 'مهندس عمران' })
+  @IsString()
+  @IsOptional()
+  fatherOccupation?: string;
+
+  @ApiPropertyOptional({ description: 'شماره همراه پدر', example: '09121112233' })
+  @IsString()
+  @IsOptional()
+  fatherPhone?: string;
+
+  @ApiPropertyOptional({ description: 'آدرس محل کار پدر' })
+  @IsString()
+  @IsOptional()
+  fatherWorkAddress?: string;
+
+  // --- مشخصات مادر ---
+  @ApiPropertyOptional({ description: 'نام و نام‌خانوادگی مادر', example: 'مریم حسینی' })
+  @IsString()
+  @IsOptional()
+  motherFullName?: string;
+
+  @ApiPropertyOptional({ description: 'کد ملی مادر', example: '0065432198' })
+  @IsString()
+  @IsOptional()
+  motherNationalId?: string;
+
+  @ApiPropertyOptional({ description: 'تحصیلات مادر', example: 'کارشناسی' })
+  @IsString()
+  @IsOptional()
+  motherEducation?: string;
+
+  @ApiPropertyOptional({ description: 'شغل مادر', example: 'معلم' })
+  @IsString()
+  @IsOptional()
+  motherOccupation?: string;
+
+  @ApiPropertyOptional({ description: 'شماره همراه مادر', example: '09124445566' })
+  @IsString()
+  @IsOptional()
+  motherPhone?: string;
+
+  @ApiPropertyOptional({ description: 'آدرس محل کار مادر' })
+  @IsString()
+  @IsOptional()
+  motherWorkAddress?: string;
+
+  // --- سکونت و ارتباطات ---
+  @ApiPropertyOptional({ description: 'آدرس منزل' })
+  @IsString()
+  @IsOptional()
+  homeAddress?: string;
+
+  @ApiPropertyOptional({ description: 'شماره ثابت منزل', example: '02188776655' })
+  @IsString()
+  @IsOptional()
+  landlinePhone?: string;
+
+  @ApiPropertyOptional({ description: 'شماره همراه خود دانش‌آموز', example: '09351234567' })
+  @IsString()
+  @IsOptional()
+  studentMobile?: string;
+
+  @ApiPropertyOptional({ description: 'لینک یا نام عکس پرسنلی' })
+  @IsString()
+  @IsOptional()
+  avatarUrl?: string;
+
   @ApiPropertyOptional({ description: 'رمز عبور (پیش‌فرض: شماره همراه)' })
   @IsString()
   @IsOptional()
