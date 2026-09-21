@@ -198,6 +198,19 @@ export class SmsController {
     const effectiveTenantId = tenantId || userTenantId;
     return this.smsService.deleteQuickTemplate(effectiveTenantId, id);
   }
+
+  @Get('recipients')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @ApiOperation({ summary: 'دریافت مخاطبان دفترچه تلفن مدرسه بر اساس نقش جهت ارسال پیامک' })
+  async getRecipients(
+    @CurrentTenant('id') tenantId: string,
+    @CurrentUser('tenantId') userTenantId: string,
+    @Query('search') search?: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.smsService.getDirectoryRecipients(effectiveTenantId, search);
+  }
 }
+
 
 

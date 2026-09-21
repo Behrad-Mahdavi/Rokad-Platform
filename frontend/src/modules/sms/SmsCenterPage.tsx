@@ -151,12 +151,16 @@ export const SmsCenterPage: React.FC = () => {
     },
   });
 
-  // 5. Fetch Users for Individual selection
+  // 5. Fetch Users for Individual selection (School Directory)
   const { data: usersData } = useQuery({
     queryKey: ['sms-users-search'],
     queryFn: async () => {
-      const res: any = await apiClient.get('/rbac/members');
-      return res?.data?.users || res?.users || res?.data || [];
+      const res: any = await apiClient.get('/sms/recipients');
+      if (Array.isArray(res?.data)) return res.data;
+      if (Array.isArray(res?.data?.users)) return res.data.users;
+      if (Array.isArray(res?.users)) return res.users;
+      if (Array.isArray(res)) return res;
+      return [];
     },
   });
 

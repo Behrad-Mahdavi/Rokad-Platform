@@ -1028,5 +1028,44 @@ export class SmsService {
 
     return { success: true, message: 'الگوی پیامک با موفقیت حذف گردید' };
   }
+
+  // ==========================================
+  // Directory & Recipients for SMS Panel
+  // ==========================================
+  async getDirectoryRecipients(tenantId: string, search?: string) {
+    const where: any = {
+      tenantId,
+      status: 'ACTIVE',
+    };
+
+    if (search && search.trim()) {
+      const s = search.trim();
+      where.OR = [
+        { firstName: { contains: s, mode: 'insensitive' } },
+        { lastName: { contains: s, mode: 'insensitive' } },
+        { phone: { contains: s } },
+        { nationalId: { contains: s } },
+        { username: { contains: s, mode: 'insensitive' } },
+      ];
+    }
+
+    const users = await this.prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        role: true,
+        nationalId: true,
+        username: true,
+        avatarUrl: true,
+      },
+      orderBy: [{ role: 'asc' }, { lastName: 'asc' }, { firstName: 'asc' }],
+    });
+
+    return users;
+  }
 }
+
 
