@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { apiClient } from '../../../lib/api/client';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
@@ -33,6 +34,7 @@ import {
 } from 'lucide-react';
 import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import { useTenantStore } from '../../../lib/auth/tenant-store';
+import { toPersianDigits } from '../../../lib/utils';
 
 import { read, utils, writeFile } from 'xlsx';
 
@@ -46,13 +48,62 @@ export const MembersPage: React.FC = () => {
     return 'b';
   })();
 
-  const [activeTab, setActiveTab] = useState<'STUDENTS' | 'TEACHERS'>('STUDENTS');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const activeTab: 'STUDENTS' | 'TEACHERS' =
+    tabParam === 'staff' || tabParam === 'teachers' || tabParam === 'kader'
+      ? 'TEACHERS'
+      : 'STUDENTS';
+
+  const handleTabChange = (newTab: 'STUDENTS' | 'TEACHERS') => {
+    setSearchParams({ tab: newTab === 'TEACHERS' ? 'staff' : 'students' });
+    setSearch('');
+  };
+
   const [students, setStudents] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
   const [classrooms, setClassrooms] = useState<any[]>([]);
   const [lessons, setLessons] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+
+  const filteredStudents = useMemo(() => {
+    if (!search.trim()) return students;
+    const query = search.trim().toLowerCase();
+    return students.filter((s) => {
+      const fullName = `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.toLowerCase();
+      const nationalCode = (s.nationalCode || '').toLowerCase();
+      const studentNumber = (s.studentNumber || s.studentCode || '').toLowerCase();
+      const classroom = (s.classroom?.name || '').toLowerCase();
+      const phone = (s.user?.phone || '').toLowerCase();
+      return (
+        fullName.includes(query) ||
+        nationalCode.includes(query) ||
+        studentNumber.includes(query) ||
+        classroom.includes(query) ||
+        phone.includes(query)
+      );
+    });
+  }, [students, search]);
+
+  const filteredTeachers = useMemo(() => {
+    if (!search.trim()) return teachers;
+    const query = search.trim().toLowerCase();
+    return teachers.filter((t) => {
+      const fullName = `${t.user?.firstName || ''} ${t.user?.lastName || ''}`.toLowerCase();
+      const specialization = (t.specialization || '').toLowerCase();
+      const personnelCode = (t.personnelCode || '').toLowerCase();
+      const phone = (t.user?.phone || '').toLowerCase();
+      const lessonsStr = (t.teacherLessons?.map((tl: any) => tl.lesson?.name).join(' ') || '').toLowerCase();
+      return (
+        fullName.includes(query) ||
+        specialization.includes(query) ||
+        personnelCode.includes(query) ||
+        phone.includes(query) ||
+        lessonsStr.includes(query)
+      );
+    });
+  }, [teachers, search]);
 
   // Modals
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
@@ -302,12 +353,13 @@ export const MembersPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header & Actions */}
-      <ResponsivePageHeader
-        icon={Users}
-        title="مدیریت اعضا و ثبت‌نام دانش‌آموزان و کادر هنرستان"
-        description="ثبت پرونده تحصیلی، اطلاعات اولیاء، پرونده‌های الکترونیکی و ورود دسته‌جمعی"
-        actions={
-          activeTab === 'STUDENTS' ? (
+      {/* Header & Actions */}
+      {activeTab === 'STUDENTS' ? (
+        <ResponsivePageHeader
+          icon={GraduationCap}
+          title="مدیریت دانش‌آموزان"
+          description="ثبت پرونده تحصیلی، اطلاعات اولیاء، پرونده‌های الکترونیکی و ورود دسته‌جمعی"
+          actions={
             <div className="flex items-center space-x-2 space-x-reverse w-full sm:w-auto">
               <Button
                 variant="outline"
@@ -328,49 +380,99 @@ export const MembersPage: React.FC = () => {
 
               <Button variant="primary" size="sm" onClick={() => setIsStudentModalOpen(true)} className="w-full sm:w-auto">
                 <UserPlus className="h-4 w-4 ml-1" />
-                <span>ثبت‌نام فردی</span>
+                <span>ثبت‌نام فردی دانش‌آموز</span>
               </Button>
             </div>
-          ) : (
+          }
+        />
+      ) : (
+        <ResponsivePageHeader
+          icon={Briefcase}
+          title="مدیریت کادر آموزشی"
+          description="مدیریت دبیران، کادر اجرایی، تخصص تدریس و تخصیص دروس مدرسه"
+          actions={
             <Button variant="primary" size="sm" onClick={() => setIsTeacherModalOpen(true)} className="w-full sm:w-auto">
               <Plus className="h-4 w-4 ml-1" />
-              <span>ثبت مربی یا پرسنل جدید</span>
+              <span>ثبت کادر آموزشی جدید</span>
             </Button>
-          )
-        }
-      />
+          }
+        />
+      )}
 
-      {/* Tabs */}
-      <div className="flex space-x-2 space-x-reverse border-b border-gray-200 overflow-x-auto scrollbar-none pb-0.5 touch-pan-x">
-        <button
-          onClick={() => setActiveTab('STUDENTS')}
-          className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 flex items-center space-x-1.5 space-x-reverse shrink-0 ${
-            activeTab === 'STUDENTS'
-              ? 'border-primary text-primary-dark'
-              : 'border-transparent text-gray-500 hover:text-ink-dark'
-          }`}
-        >
-          <GraduationCap className="h-4 w-4" />
-          <span>دانش‌آموزان ({students.length})</span>
-        </button>
+      {/* Modern Tabs Bar & Live Search */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 dark:border-gray-800 pb-3">
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-gray-100/90 dark:bg-gray-800/80 w-fit">
+          <button
+            type="button"
+            onClick={() => handleTabChange('STUDENTS')}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer select-none ${
+              activeTab === 'STUDENTS'
+                ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs ring-1 ring-black/5 dark:ring-white/10'
+                : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
+            }`}
+          >
+            <GraduationCap className="h-4 w-4 shrink-0" />
+            <span>دانش‌آموزان</span>
+            <span
+              className={`text-[11px] px-2 py-0.5 rounded-lg font-mono font-bold ${
+                activeTab === 'STUDENTS'
+                  ? 'bg-primary/10 text-primary'
+                  : 'bg-gray-200/70 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+              }`}
+            >
+              {toPersianDigits(students.length)}
+            </span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('TEACHERS')}
-          className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 flex items-center space-x-1.5 space-x-reverse shrink-0 ${
-            activeTab === 'TEACHERS'
-              ? 'border-primary text-primary-dark'
-              : 'border-transparent text-gray-500 hover:text-ink-dark'
-          }`}
-        >
-          <Briefcase className="h-4 w-4" />
-          <span>دبیران و کادر آموزشی ({teachers.length})</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => handleTabChange('TEACHERS')}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer select-none ${
+              activeTab === 'TEACHERS'
+                ? 'bg-white dark:bg-[#151C28] text-club-normal dark:text-club-light shadow-xs ring-1 ring-black/5 dark:ring-white/10'
+                : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
+            }`}
+          >
+            <Briefcase className="h-4 w-4 shrink-0" />
+            <span>کادر آموزشی</span>
+            <span
+              className={`text-[11px] px-2 py-0.5 rounded-lg font-mono font-bold ${
+                activeTab === 'TEACHERS'
+                  ? 'bg-club-light dark:bg-club-darker text-club-normal dark:text-club-light'
+                  : 'bg-gray-200/70 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+              }`}
+            >
+              {toPersianDigits(teachers.length)}
+            </span>
+          </button>
+        </div>
+
+        {/* Live Search Input */}
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={activeTab === 'STUDENTS' ? 'جستجو در دانش‌آموزان...' : 'جستجو در کادر آموزشی...'}
+            className="pr-9 pl-8 text-xs h-9"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-white text-xs p-1 cursor-pointer"
+              title="پاک کردن جستجو"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Tab 1: Students */}
       {activeTab === 'STUDENTS' && (
         <MobileDataTable
-          data={students}
+          data={filteredStudents}
           columns={[
             {
               key: 'name',
@@ -426,7 +528,7 @@ export const MembersPage: React.FC = () => {
       {/* Tab 2: Teachers */}
       {activeTab === 'TEACHERS' && (
         <MobileDataTable
-          data={teachers}
+          data={filteredTeachers}
           columns={[
             {
               key: 'name',

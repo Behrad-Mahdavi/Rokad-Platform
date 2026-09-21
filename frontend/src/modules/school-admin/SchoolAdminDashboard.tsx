@@ -217,12 +217,12 @@ export const SchoolAdminDashboard: React.FC = () => {
       {/* Quick Shortcuts */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <Card
-          onClick={() => navigate('/app/admin/members')}
+          onClick={() => navigate('/app/admin/members?tab=students')}
           className="p-4 sm:p-5 cursor-pointer group flex flex-col justify-between min-h-[110px]"
         >
           <div>
             <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
-              <Users className="h-4.5 w-4.5" />
+              <GraduationCap className="h-4.5 w-4.5" />
             </div>
             <h3 className="font-bold text-sm text-ink-darker dark:text-white mb-0.5">ثبت‌نام دانش‌آموز</h3>
             <p className="text-xs text-gray-500 dark:text-gray-400">ایجاد پرونده و صدور دسترسی</p>

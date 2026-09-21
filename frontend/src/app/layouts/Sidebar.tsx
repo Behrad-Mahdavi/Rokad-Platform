@@ -32,6 +32,7 @@ import {
   Compass,
   CalendarRange,
   Scale,
+  Briefcase,
 } from 'lucide-react';
 import { CoinStackIcon } from '../../components/icons/CustomNavIcons';
 import { UserRole } from '../../types/auth';
@@ -99,9 +100,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             items: [
               { title: 'داشبورد مدیریت', href: '/app/admin/dashboard', icon: LayoutDashboard },
               { title: 'پروفایل رسمی مدرسه', href: '/app/admin/profile', icon: School },
-              { title: 'ساختار سال و کلاس‌ها', href: '/app/admin/academic', icon: GraduationCap },
+              { title: 'ساختار سال و کلاس‌ها', href: '/app/admin/academic', icon: BookOpen },
               { title: 'برنامه هفتگی کلاس‌ها', href: '/app/admin/schedule', icon: CalendarDays },
-              { title: 'مدیریت دانش‌آموزان و پرسنل', href: '/app/admin/members', icon: Users },
+              { title: 'دانش‌آموزان', href: '/app/admin/members?tab=students', icon: GraduationCap },
+              { title: 'کادر آموزشی', href: '/app/admin/members?tab=staff', icon: Briefcase },
               { title: 'سازنده نقش‌ها و دسترسی‌ها', href: '/app/admin/roles', icon: ShieldCheck },
               { title: 'انضباطی/تشویقی', href: '/app/admin/matters', icon: Scale },
             ],
@@ -204,6 +206,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
 
   const navSections = getNavItems();
 
+  const isItemActive = (itemHref: string) => {
+    const [hrefPath, hrefQuery] = itemHref.split('?');
+    if (hrefQuery) {
+      if (location.pathname !== hrefPath) return false;
+      const searchParams = new URLSearchParams(location.search);
+      const hrefParams = new URLSearchParams(hrefQuery);
+      const currentTab = searchParams.get('tab') || 'students';
+      const expectedTab = hrefParams.get('tab');
+      return currentTab === expectedTab;
+    }
+    return (
+      location.pathname === itemHref ||
+      (itemHref !== '/app' && location.pathname.startsWith(itemHref) && !location.search)
+    );
+  };
+
   const renderNavSections = () => (
     <div className="space-y-6">
       {navSections.map((section, idx) => (
@@ -212,48 +230,45 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             {section.section}
           </h2>
           <nav className="space-y-1">
-            {section.items.map((item) => (
-              <NavLink
-                key={item.href}
-                to={item.href}
-                className={({ isActive }) =>
-                  twMerge(
+            {section.items.map((item) => {
+              const active = isItemActive(item.href);
+              return (
+                <NavLink
+                  key={item.href}
+                  to={item.href}
+                  className={twMerge(
                     clsx(
                       'flex items-center justify-between px-3.5 py-2.5 min-h-[44px] rounded-xl text-[13px] sm:text-[14px] font-medium transition-all group select-none',
-                      isActive
+                      active
                         ? 'font-bold bg-ecosystem-light dark:bg-ecosystem-darker/60 text-ecosystem-darker dark:text-ecosystem-light border border-primary/40 shadow-[2px_2px_0_#59BBAF]'
                         : 'text-ink-normal dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60 hover:text-ink-darker dark:hover:text-white',
                     ),
-                  )
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <div className="flex items-center gap-3 min-w-0">
-                      <item.icon
-                        solid={isActive}
-                        className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
-                          isActive ? 'text-primary' : 'text-gray-400 dark:text-gray-500'
-                        }`}
-                      />
-                      <span className="truncate">{item.title}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {item.badge && (
-                        <span className="bg-primary text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
-                          {item.badge}
-                        </span>
-                      )}
-                      <ChevronLeft
-                        className={`w-3.5 h-3.5 text-primary transition-opacity ${
-                          isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                        }`}
-                      />
-                    </div>
-                  </>
-                )}
-              </NavLink>
-            ))}
+                  )}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <item.icon
+                      solid={active}
+                      className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
+                        active ? 'text-primary' : 'text-gray-400 dark:text-gray-500'
+                      }`}
+                    />
+                    <span className="truncate">{item.title}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {item.badge && (
+                      <span className="bg-primary text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                        {item.badge}
+                      </span>
+                    )}
+                    <ChevronLeft
+                      className={`w-3.5 h-3.5 text-primary transition-opacity ${
+                        active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      }`}
+                    />
+                  </div>
+                </NavLink>
+              );
+            })}
           </nav>
         </div>
       ))}

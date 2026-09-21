@@ -7,7 +7,7 @@ interface VersionResponse {
   environment?: string;
 }
 
-export const CURRENT_APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.7.12';
+export const CURRENT_APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.7.14';
 export const CURRENT_BUILD_TIME = typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : '';
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000; // هر ۵ دقیقه یک‌بار

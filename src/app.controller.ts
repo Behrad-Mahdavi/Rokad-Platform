@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Public } from './common/decorators/public.decorator';
 
 // Read version safely from package.json
-let appVersion = '0.7.12';
+let appVersion = '0.7.14';
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const pkg = require('../package.json');

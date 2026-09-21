@@ -30,6 +30,7 @@ import {
   Scale,
   Sparkles,
   MessageSquare,
+  Briefcase,
 } from 'lucide-react';
 
 interface SuperAppCard {
@@ -251,18 +252,26 @@ export const SuperAppHomePage: React.FC = () => {
             iconColor: 'text-primary-dark dark:text-primary',
           },
           {
-            id: 'members',
-            title: 'دانش‌آموزان و کادر',
-            href: '/app/admin/members',
-            icon: Users,
+            id: 'students',
+            title: 'دانش‌آموزان',
+            href: '/app/admin/members?tab=students',
+            icon: GraduationCap,
             iconBg: 'bg-male-light dark:bg-[#182346]',
             iconColor: 'text-sec dark:text-[#8194EE]',
+          },
+          {
+            id: 'staff',
+            title: 'کادر آموزشی',
+            href: '/app/admin/members?tab=staff',
+            icon: Briefcase,
+            iconBg: 'bg-club-light dark:bg-[#2A173E]',
+            iconColor: 'text-club dark:text-[#C084FC]',
           },
           {
             id: 'academic',
             title: 'کلاس‌ها و رشته‌ها',
             href: '/app/admin/academic',
-            icon: GraduationCap,
+            icon: BookOpen,
             iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
             iconColor: 'text-primary-dark dark:text-primary',
           },

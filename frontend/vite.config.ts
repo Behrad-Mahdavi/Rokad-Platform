@@ -5,7 +5,7 @@ import path from 'path';
 import fs from 'fs';
 
 // Read version from root package.json for synchronized build-time injection
-let appVersion = '0.7.12';
+let appVersion = '0.7.14';
 try {
   const rootPkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../package.json'), 'utf-8'));
   if (rootPkg.version) {
