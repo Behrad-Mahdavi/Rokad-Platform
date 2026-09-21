@@ -276,6 +276,57 @@ export class SmsService {
     }
   }
 
+  /**
+   * Helper to resolve all parent phone numbers for a student
+   * Checks fatherPhone, motherPhone, and any ParentProfile links
+   */
+  resolveParentPhonesForStudent(studentProfile: any): Array<{ phone: string; name: string; userId?: string }> {
+    const phones: Array<{ phone: string; name: string; userId?: string }> = [];
+    const seen = new Set<string>();
+
+    const addPhone = (rawPhone?: string | null, name?: string, userId?: string) => {
+      if (!rawPhone) return;
+      const cleaned = rawPhone.trim().replace(/[\s\-\(\)]/g, '');
+      if (cleaned.length >= 10 && !seen.has(cleaned)) {
+        seen.add(cleaned);
+        phones.push({ phone: cleaned, name: name || 'ولی محترم', userId });
+      }
+    };
+
+    // 1. Father Phone from StudentProfile
+    if (studentProfile.fatherPhone) {
+      addPhone(
+        studentProfile.fatherPhone,
+        studentProfile.fatherFullName || `پدر ${studentProfile.user?.firstName || ''} ${studentProfile.user?.lastName || ''}`.trim() || 'پدر دانش‌آموز',
+      );
+    }
+
+    // 2. Mother Phone from StudentProfile
+    if (studentProfile.motherPhone) {
+      addPhone(
+        studentProfile.motherPhone,
+        studentProfile.motherFullName || `مادر ${studentProfile.user?.firstName || ''} ${studentProfile.user?.lastName || ''}`.trim() || 'مادر دانش‌آموز',
+      );
+    }
+
+    // 3. ParentLinks (if any parent accounts are linked)
+    if (studentProfile.parentLinks && Array.isArray(studentProfile.parentLinks)) {
+      for (const link of studentProfile.parentLinks) {
+        const pUser = link.parent?.user;
+        const pPhone = pUser?.phone || link.parent?.workPhone;
+        if (pPhone) {
+          addPhone(
+            pPhone,
+            `${pUser?.firstName || ''} ${pUser?.lastName || ''}`.trim() || 'ولی محترم',
+            pUser?.id,
+          );
+        }
+      }
+    }
+
+    return phones;
+  }
+
   // =========================================================================
   // 1. AUTOMATED: Student Absence / Tardy SMS to Parents
   // =========================================================================
@@ -313,7 +364,7 @@ export class SmsService {
       return;
     }
 
-    const studentName = `${studentProfile.user.firstName || ''} ${studentProfile.user.lastName || ''}`.trim() || 'فرزند شما';
+    const studentName = `${studentProfile.user?.firstName || ''} ${studentProfile.user?.lastName || ''}`.trim() || 'فرزند شما';
 
     // Get active template or default
     const template = await this.prisma.smsTemplate.findFirst({
@@ -340,24 +391,11 @@ export class SmsService {
       .replace(/{وضعیت}/g, statusText)
       .replace(/{تاخیر}/g, String(event.delayMinutes || 0));
 
-    // Collect parent phone numbers
-    const parentPhones: Array<{ phone: string; name: string; userId?: string }> = [];
-    if (studentProfile.parentLinks?.length > 0) {
-      for (const link of studentProfile.parentLinks) {
-        const parentUser = link.parent?.user;
-        const phone = parentUser?.phone || link.parent?.workPhone;
-        if (phone) {
-          parentPhones.push({
-            phone,
-            name: `${parentUser?.firstName || ''} ${parentUser?.lastName || ''}`.trim() || 'ولی محترم',
-            userId: parentUser?.id,
-          });
-        }
-      }
-    }
+    // Collect parent phone numbers using comprehensive resolution
+    const parentPhones = this.resolveParentPhonesForStudent(studentProfile);
 
-    // Fallback: If no parent linked, send to student phone if available
-    if (parentPhones.length === 0 && studentProfile.user.phone) {
+    // Fallback: If no parent linked or recorded, send to student phone if available
+    if (parentPhones.length === 0 && studentProfile.user?.phone) {
       parentPhones.push({
         phone: studentProfile.user.phone,
         name: studentName,
@@ -365,8 +403,30 @@ export class SmsService {
       });
     }
 
+    // Deduplication check: Check if SMS for this student, this date, and this period has already been sent today
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
     // Send SMS to all parent phones
     for (const recipient of parentPhones) {
+      const existingLog = await this.prisma.smsLog.findFirst({
+        where: {
+          tenantId: event.tenantId,
+          recipientPhone: recipient.phone,
+          type: 'AUTO_ABSENCE',
+          sentAt: { gte: startOfToday },
+          metadata: {
+            path: ['studentId'],
+            equals: event.studentId,
+          },
+        },
+      });
+
+      if (existingLog) {
+        this.logger.log(`Absence SMS already sent today to ${recipient.phone} for student ${event.studentId}. Skipping duplicate.`);
+        continue;
+      }
+
       const result = await this.dispatchSms(recipient.phone, messageText, event.tenantId);
       await this.recordLog({
         tenantId: event.tenantId,
@@ -464,22 +524,41 @@ export class SmsService {
 
       let messageText = `صادرکننده محترم (${ownerName})؛\nیادآوری سررسید چک صیادی:\nچک شماره: ${cheque.checkSayadId || cheque.checkNumber || '-'}\nمبلغ: ${amountFormatted} تومان\nبانک: ${bankTitle}\nموعد سررسید: ${timingTitle} (${jalaliDateStr})\nلطفاً جهت پاس شدن چک، نسبت به تأمین موجودی اقدام فرمایید.\nمدرسه رکاد`;
 
-      // Find recipient phone
+      // Find recipient phone: Prioritize father/mother phone from student, or parentLinks, or student user phone
       let targetPhone = '';
       let targetUserId: string | undefined;
 
-      if (student?.parentLinks?.length) {
-        const parentUser = student.parentLinks[0]?.parent?.user;
-        targetPhone = parentUser?.phone || student.parentLinks[0]?.parent?.workPhone || '';
-        targetUserId = parentUser?.id;
-      }
-
-      if (!targetPhone && student?.user?.phone) {
-        targetPhone = student.user.phone;
-        targetUserId = student.user.id;
+      if (student) {
+        const parents = this.resolveParentPhonesForStudent(student);
+        if (parents.length > 0) {
+          targetPhone = parents[0].phone;
+          targetUserId = parents[0].userId;
+        } else if (student.user?.phone) {
+          targetPhone = student.user.phone;
+          targetUserId = student.user.id;
+        }
       }
 
       if (targetPhone) {
+        // Deduplication: Has a reminder for this cheque been sent in the last 20 hours?
+        const twentyHoursAgo = new Date(Date.now() - 20 * 60 * 60 * 1000);
+        const existingChequeLog = await this.prisma.smsLog.findFirst({
+          where: {
+            tenantId: cheque.tenantId,
+            type: 'AUTO_CHEQUE_DUE',
+            sentAt: { gte: twentyHoursAgo },
+            metadata: {
+              path: ['chequeId'],
+              equals: cheque.id,
+            },
+          },
+        });
+
+        if (existingChequeLog) {
+          this.logger.log(`Cheque reminder already sent recently for cheque ${cheque.id}. Skipping duplicate.`);
+          continue;
+        }
+
         const res = await this.dispatchSms(targetPhone, messageText, cheque.tenantId);
         await this.recordLog({
           tenantId: cheque.tenantId,
@@ -557,6 +636,24 @@ export class SmsService {
         const messageText = `${fullName} عزیز؛\nشکفتن گل وجودت و زادروز زیبایت را صمیمانه شادباش می‌گوییم. 🎉🎂\nامیدواریم در پناه ایزد یکتا سالی سرشار از نشاط، تندرستی و سربلندی داشته باشی.\nخانواده بزرگ رکاد`;
 
         if (phone) {
+          // Deduplication: Check if birthday SMS was already sent today to this user
+          const startOfToday = new Date();
+          startOfToday.setHours(0, 0, 0, 0);
+
+          const existingBdayLog = await this.prisma.smsLog.findFirst({
+            where: {
+              tenantId: user.tenantId,
+              recipientPhone: phone,
+              type: 'AUTO_BIRTHDAY',
+              sentAt: { gte: startOfToday },
+            },
+          });
+
+          if (existingBdayLog) {
+            this.logger.log(`Birthday SMS already sent today to ${phone}. Skipping duplicate.`);
+            continue;
+          }
+
           const res = await this.dispatchSms(phone, messageText, user.tenantId);
           await this.recordLog({
             tenantId: user.tenantId,
@@ -662,32 +759,90 @@ export class SmsService {
 
     // Mode C: ROLE / GROUP
     else if (dto.targetType === ManualSmsTargetType.ROLE) {
-      const roleFilter: any = { tenantId, status: 'ACTIVE', phone: { not: null } };
+      if (dto.targetRole === TargetRoleAudience.PARENTS) {
+        // 1. Fetch any accounts with PARENT role
+        const parentUsers = await this.prisma.user.findMany({
+          where: { tenantId, role: 'PARENT', status: 'ACTIVE', phone: { not: null } },
+          select: { id: true, firstName: true, lastName: true, phone: true },
+        });
+        parentUsers.forEach((u) => {
+          if (u.phone) {
+            recipientsToDispatch.push({
+              phone: u.phone.trim(),
+              name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'ولی محترم',
+              userId: u.id,
+            });
+          }
+        });
 
-      if (dto.targetRole === TargetRoleAudience.STUDENTS) {
-        roleFilter.role = 'STUDENT';
-      } else if (dto.targetRole === TargetRoleAudience.PARENTS) {
-        roleFilter.role = 'PARENT';
-      } else if (dto.targetRole === TargetRoleAudience.TEACHERS) {
-        roleFilter.role = 'TEACHER';
-      } else if (dto.targetRole === TargetRoleAudience.STAFF) {
-        roleFilter.role = { in: ['STAFF', 'SCHOOL_ADMIN', 'COACH'] };
-      }
+        // 2. Fetch all student profiles and resolve father/mother phone numbers!
+        const studentProfiles = await this.prisma.studentProfile.findMany({
+          where: { tenantId },
+          include: {
+            user: { select: { firstName: true, lastName: true } },
+            parentLinks: {
+              include: {
+                parent: {
+                  include: {
+                    user: { select: { id: true, firstName: true, lastName: true, phone: true } },
+                  },
+                },
+              },
+            },
+          },
+        });
 
-      const users = await this.prisma.user.findMany({
-        where: roleFilter,
-        select: { id: true, firstName: true, lastName: true, phone: true },
-      });
-
-      users.forEach((u) => {
-        if (u.phone) {
-          recipientsToDispatch.push({
-            phone: u.phone,
-            name: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
-            userId: u.id,
-          });
+        for (const sp of studentProfiles) {
+          const resolved = this.resolveParentPhonesForStudent(sp);
+          recipientsToDispatch.push(...resolved);
         }
-      });
+      } else {
+        const roleFilter: any = { tenantId, status: 'ACTIVE', phone: { not: null } };
+
+        if (dto.targetRole === TargetRoleAudience.STUDENTS) {
+          roleFilter.role = 'STUDENT';
+        } else if (dto.targetRole === TargetRoleAudience.TEACHERS) {
+          roleFilter.role = 'TEACHER';
+        } else if (dto.targetRole === TargetRoleAudience.STAFF) {
+          roleFilter.role = { in: ['STAFF', 'SCHOOL_ADMIN', 'COACH'] };
+        } else if (dto.targetRole === TargetRoleAudience.ALL) {
+          // Send to everyone (students, teachers, staff, and parents!)
+          const allStudentProfiles = await this.prisma.studentProfile.findMany({
+            where: { tenantId },
+            include: {
+              user: { select: { firstName: true, lastName: true } },
+              parentLinks: {
+                include: {
+                  parent: {
+                    include: {
+                      user: { select: { id: true, firstName: true, lastName: true, phone: true } },
+                    },
+                  },
+                },
+              },
+            },
+          });
+          for (const sp of allStudentProfiles) {
+            const resolved = this.resolveParentPhonesForStudent(sp);
+            recipientsToDispatch.push(...resolved);
+          }
+        }
+
+        const users = await this.prisma.user.findMany({
+          where: roleFilter,
+          select: { id: true, firstName: true, lastName: true, phone: true },
+        });
+
+        users.forEach((u) => {
+          if (u.phone) {
+            recipientsToDispatch.push({
+              phone: u.phone.trim(),
+              name: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+              userId: u.id,
+            });
+          }
+        });
+      }
     }
 
     // Mode D: CLASS
@@ -729,7 +884,7 @@ export class SmsService {
         if (audience === ClassAudienceType.STUDENTS || audience === ClassAudienceType.BOTH) {
           if (studentUser.phone) {
             recipientsToDispatch.push({
-              phone: studentUser.phone,
+              phone: studentUser.phone.trim(),
               name: `${studentUser.firstName || ''} ${studentUser.lastName || ''}`.trim(),
               userId: studentUser.id,
             });
@@ -738,29 +893,20 @@ export class SmsService {
 
         // Add parents
         if (audience === ClassAudienceType.PARENTS || audience === ClassAudienceType.BOTH) {
-          for (const link of enr.student.parentLinks) {
-            const pUser = link.parent.user;
-            const pPhone = pUser?.phone || link.parent.workPhone;
-            if (pPhone) {
-              recipientsToDispatch.push({
-                phone: pPhone,
-                name: `${pUser?.firstName || ''} ${pUser?.lastName || ''}`.trim() || 'ولی محترم',
-                userId: pUser?.id,
-              });
-            }
-          }
+          const resolvedParents = this.resolveParentPhonesForStudent(enr.student);
+          recipientsToDispatch.push(...resolvedParents);
         }
       }
     }
 
-    // Remove duplicate phones
-    const uniqueRecipients = Array.from(
-      new Map(recipientsToDispatch.map((r) => [r.phone, r])).values(),
-    );
+      // Remove duplicate phones
+      const uniqueRecipients = Array.from(
+        new Map(recipientsToDispatch.map((r) => [r.phone, r])).values(),
+      );
 
-    if (uniqueRecipients.length === 0) {
-      throw new BadRequestException('هیچ گیرنده معتبری با شماره تلفن همراه یافت نشد.');
-    }
+      if (uniqueRecipients.length === 0) {
+        throw new BadRequestException('هیچ گیرنده معتبری با شماره تلفن همراه یافت نشد.');
+      }
 
     // Dispatch & Log
     let sentCount = 0;
@@ -1032,6 +1178,8 @@ export class SmsService {
   // ==========================================
   // Directory & Recipients for SMS Panel
   // ==========================================
+  // Directory & Recipients for SMS Panel
+  // ==========================================
   async getDirectoryRecipients(tenantId: string, search?: string) {
     const where: any = {
       tenantId,
@@ -1064,7 +1212,142 @@ export class SmsService {
       orderBy: [{ role: 'asc' }, { lastName: 'asc' }, { firstName: 'asc' }],
     });
 
-    return users;
+    // Also include student parents from StudentProfile (fatherPhone & motherPhone)
+    const students = await this.prisma.studentProfile.findMany({
+      where: {
+        tenantId,
+        OR: [{ fatherPhone: { not: null } }, { motherPhone: { not: null } }],
+      },
+      include: {
+        user: { select: { firstName: true, lastName: true } },
+      },
+    });
+
+    const parentList: any[] = [];
+    const seenPhones = new Set(users.map((u) => u.phone).filter(Boolean));
+
+    for (const sp of students) {
+      const studentName = `${sp.user?.firstName || ''} ${sp.user?.lastName || ''}`.trim();
+
+      if (sp.fatherPhone && !seenPhones.has(sp.fatherPhone)) {
+        seenPhones.add(sp.fatherPhone);
+        const fatherName = sp.fatherFullName || `پدر ${studentName}`;
+        if (!search || fatherName.includes(search) || sp.fatherPhone.includes(search) || studentName.includes(search)) {
+          parentList.push({
+            id: `parent-father-${sp.id}`,
+            firstName: fatherName,
+            lastName: `(ولی ${studentName})`,
+            phone: sp.fatherPhone,
+            role: 'PARENT',
+            nationalId: sp.fatherNationalId || '—',
+            username: `father-${sp.nationalCode || sp.id}`,
+            avatarUrl: null,
+          });
+        }
+      }
+
+      if (sp.motherPhone && !seenPhones.has(sp.motherPhone)) {
+        seenPhones.add(sp.motherPhone);
+        const motherName = sp.motherFullName || `مادر ${studentName}`;
+        if (!search || motherName.includes(search) || sp.motherPhone.includes(search) || studentName.includes(search)) {
+          parentList.push({
+            id: `parent-mother-${sp.id}`,
+            firstName: motherName,
+            lastName: `(ولی ${studentName})`,
+            phone: sp.motherPhone,
+            role: 'PARENT',
+            nationalId: sp.motherNationalId || '—',
+            username: `mother-${sp.nationalCode || sp.id}`,
+            avatarUrl: null,
+          });
+        }
+      }
+    }
+
+    return [...users, ...parentList];
+  }
+
+  // =========================================================================
+  // 5. AUTOMATED: Login Credentials SMS for New Members
+  // =========================================================================
+  @OnEvent('member.credentials_generated', { async: true })
+  async handleMemberCredentials(event: {
+    tenantId: string;
+    fullName: string;
+    phone: string;
+    username: string;
+    password?: string;
+    role: string;
+  }) {
+    if (!event.phone) return;
+
+    this.logger.log(`Dispatching login credentials SMS to ${event.phone} (${event.fullName})...`);
+
+    const roleTitle =
+      event.role === 'TEACHER'
+        ? 'دبیر گرامی'
+        : event.role === 'STAFF'
+        ? 'همکار گرامی'
+        : event.role === 'PARENT'
+        ? 'ولی محترم'
+        : 'دانش‌آموز گرامی';
+
+    const loginUrl = 'https://rokadschool.ir/login';
+    const messageText = `${roleTitle} (${event.fullName})؛\nبه سامانه هوشمند مدیریت مدارس رکاد خوش آمدید.\nاطلاعات ورود به حساب کاربری:\nنام کاربری: ${event.username}\nرمز عبور: ${event.password || event.phone}\nآدرس سامانه: ${loginUrl}\nلطفاً پس از اولین ورود، رمز عبور خود را تغییر دهید.`;
+
+    const res = await this.dispatchSms(event.phone, messageText, event.tenantId);
+    await this.recordLog({
+      tenantId: event.tenantId,
+      recipientPhone: event.phone,
+      recipientName: event.fullName,
+      type: 'MANUAL_INDIVIDUAL',
+      message: messageText,
+      provider: res.provider,
+      status: res.success ? 'SENT' : 'FAILED',
+      errorMessage: res.errorMessage,
+      metadata: {
+        action: 'CREDENTIALS_DISPATCH',
+        role: event.role,
+        username: event.username,
+      },
+    });
+  }
+
+  // =========================================================================
+  // 6. AUTOMATED: Urgent Message Broadcast SMS
+  // =========================================================================
+  @OnEvent('message.urgent_broadcast', { async: true })
+  async handleUrgentMessageBroadcast(event: {
+    tenantId: string;
+    senderName: string;
+    title: string;
+    body: string;
+    recipientPhones: Array<{ phone: string; name?: string; userId?: string }>;
+  }) {
+    if (!event.recipientPhones || event.recipientPhones.length === 0) return;
+
+    this.logger.log(`Broadcasting urgent SMS to ${event.recipientPhones.length} recipients...`);
+    const preview = event.body.length > 100 ? `${event.body.slice(0, 100)}...` : event.body;
+    const messageText = `اطلاعیه فوری و مهم مدرسه:\n${event.title}\n${preview}\nفرستنده: ${event.senderName}\nسامانه مدارس رکاد`;
+
+    for (const recipient of event.recipientPhones) {
+      const res = await this.dispatchSms(recipient.phone, messageText, event.tenantId);
+      await this.recordLog({
+        tenantId: event.tenantId,
+        recipientPhone: recipient.phone,
+        recipientName: recipient.name,
+        recipientUserId: recipient.userId,
+        type: 'MANUAL_BULK',
+        message: messageText,
+        provider: res.provider,
+        status: res.success ? 'SENT' : 'FAILED',
+        errorMessage: res.errorMessage,
+        metadata: {
+          action: 'URGENT_MESSAGE_BROADCAST',
+          title: event.title,
+        },
+      });
+    }
   }
 }
 

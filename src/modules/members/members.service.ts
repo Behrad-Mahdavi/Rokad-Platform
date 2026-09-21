@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as argon2 from 'argon2';
 import * as jalaali from 'jalaali-js';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -87,7 +88,10 @@ export function extractField(row: Record<string, any>, ...keys: string[]): strin
 
 @Injectable()
 export class MembersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   // 1. Students
   async bulkImportStudents(tenantId: string, items: any[]): Promise<any> {
@@ -328,6 +332,19 @@ export class MembersService {
           }
         });
 
+        // Dispatch credentials SMS event if phone is valid
+        const notificationPhone = fatherPhone || motherPhone || (phone && !phone.startsWith('0900000000') ? phone : undefined);
+        if (notificationPhone && notificationPhone.length >= 10) {
+          this.eventEmitter.emit('member.credentials_generated', {
+            tenantId,
+            name: `${firstName} ${lastName}`,
+            phone: notificationPhone,
+            username: creds.username,
+            password: creds.finalPassword,
+            role: 'دانش‌آموز',
+          });
+        }
+
         results.success++;
       } catch (err: any) {
         results.failed++;
@@ -437,7 +454,7 @@ export class MembersService {
 
     const passwordHash = await argon2.hash(creds.finalPassword);
 
-    return this.prisma.$transaction(async (tx) => {
+    const createdResult = await this.prisma.$transaction(async (tx) => {
       // 1. Create base User
       const user = await tx.user.create({
         data: {
@@ -513,6 +530,21 @@ export class MembersService {
 
       return profile;
     });
+
+    // Dispatch Login Credentials SMS to student or parent
+    const recipientPhone = dto.studentMobile || dto.phone || dto.fatherPhone || dto.motherPhone;
+    if (recipientPhone) {
+      this.eventEmitter.emit('member.credentials_generated', {
+        tenantId,
+        fullName: `${dto.firstName} ${dto.lastName}`.trim(),
+        phone: recipientPhone,
+        username: creds.username || creds.nationalId || recipientPhone,
+        password: creds.finalPassword,
+        role: 'STUDENT',
+      });
+    }
+
+    return createdResult;
   }
 
   async updateStudent(tenantId: string, id: string, dto: Partial<CreateStudentDto>): Promise<any> {
@@ -664,7 +696,7 @@ export class MembersService {
 
     const passwordHash = await argon2.hash(creds.finalPassword);
 
-    return this.prisma.$transaction(async (tx) => {
+    const createdTeacherResult = await this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
           tenantId,
@@ -728,6 +760,20 @@ export class MembersService {
         },
       });
     });
+
+    // Dispatch Login Credentials SMS to teacher
+    if (dto.phone) {
+      this.eventEmitter.emit('member.credentials_generated', {
+        tenantId,
+        fullName: `${dto.firstName} ${dto.lastName}`.trim(),
+        phone: dto.phone,
+        username: creds.username || creds.nationalId || dto.phone,
+        password: creds.finalPassword,
+        role: 'TEACHER',
+      });
+    }
+
+    return createdTeacherResult;
   }
 
   async assignLessonsToTeacher(tenantId: string, teacherId: string, lessonIds: string[]): Promise<any> {

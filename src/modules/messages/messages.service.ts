@@ -13,6 +13,7 @@ import {
   MessageTargetTypeDto,
   MessageTargetAudienceDto,
 } from './dto/create-message.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class MessagesService {
@@ -21,6 +22,7 @@ export class MessagesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   // ==========================================
@@ -313,6 +315,59 @@ export class MessagesService {
         await this.notificationsService.sendPushToUser(recId, pushPayload);
       } catch {
         // non-blocking
+      }
+    }
+
+    // If message is marked as URGENT or IMPORTANT, trigger SMS broadcast
+    if (message.priority === MessagePriorityDto.URGENT || message.priority === 'URGENT' || message.priority === MessagePriorityDto.IMPORTANT || message.priority === 'IMPORTANT') {
+      try {
+        const recipients = await this.prisma.user.findMany({
+          where: { id: { in: recipientUserIds }, tenantId },
+          select: {
+            id: true,
+            phone: true,
+            firstName: true,
+            lastName: true,
+            studentProfile: {
+              select: {
+                fatherPhone: true,
+                motherPhone: true,
+              },
+            },
+          },
+        });
+
+        const phoneMap = new Map<string, { phone: string; name: string; userId?: string }>();
+        for (const r of recipients) {
+          const fullName = `${r.firstName || ''} ${r.lastName || ''}`.trim();
+          if (r.phone && r.phone.length >= 10) {
+            phoneMap.set(r.phone, { phone: r.phone, name: fullName, userId: r.id });
+          }
+          if (r.studentProfile?.fatherPhone && r.studentProfile.fatherPhone.length >= 10) {
+            phoneMap.set(r.studentProfile.fatherPhone, {
+              phone: r.studentProfile.fatherPhone,
+              name: `پدر ${fullName}`,
+            });
+          }
+          if (r.studentProfile?.motherPhone && r.studentProfile.motherPhone.length >= 10) {
+            phoneMap.set(r.studentProfile.motherPhone, {
+              phone: r.studentProfile.motherPhone,
+              name: `مادر ${fullName}`,
+            });
+          }
+        }
+
+        if (phoneMap.size > 0) {
+          this.eventEmitter.emit('message.urgent_broadcast', {
+            tenantId,
+            senderName,
+            title: message.title,
+            body: message.body,
+            recipientPhones: Array.from(phoneMap.values()),
+          });
+        }
+      } catch (err: any) {
+        this.logger.warn(`Failed to dispatch urgent SMS broadcast: ${err.message}`);
       }
     }
   }

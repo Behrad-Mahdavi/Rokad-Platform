@@ -37,11 +37,19 @@ export class SmsSchedulerService implements OnModuleInit, OnModuleDestroy {
   /**
    * Daily scheduler logic (executed hourly to check hour matches)
    */
-  async runDailyAutomationJobs() {
+  async runDailyAutomationJobs(force = false) {
     const now = new Date();
     const currentHour = now.getHours();
 
-    this.logger.log(`Running periodic SMS automation check at hour ${currentHour}...`);
+    // Unless forced, only execute the daily reminder jobs at 09:00 AM
+    if (!force && currentHour !== 9) {
+      this.logger.debug(
+        `Skipping automated SMS scan (current hour is ${currentHour}, scheduled for 09:00 AM).`,
+      );
+      return;
+    }
+
+    this.logger.log(`Running daily scheduled SMS automation at hour ${currentHour}:00...`);
 
     // 1. Cheque Due Reminder Scan
     try {
