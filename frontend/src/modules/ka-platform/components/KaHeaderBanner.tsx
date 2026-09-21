@@ -55,12 +55,17 @@ export const KaHeaderBanner: React.FC<KaHeaderBannerProps> = ({
           </div>
 
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-gray-900 dark:text-white">
-              {isAdmin
-                ? 'مرکز پایش، داوری و ارزشیابی کا'
-                : userName
-                ? `سلام، ${userName} عزیز! 🌟`
-                : 'پلتفرم گیمیفیکیشن و ارزش‌آفرینی کا'}
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
+              {isAdmin ? (
+                'مرکز پایش، داوری و ارزشیابی کا'
+              ) : userName ? (
+                <>
+                  <span>{`سلام، ${userName} عزیز!`}</span>
+                  <Sparkles className="w-6 h-6 text-amber-500 shrink-0 inline-block" />
+                </>
+              ) : (
+                'پلتفرم گیمیفیکیشن و ارزش‌آفرینی کا'
+              )}
             </h1>
             <p className="mt-1 text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
               {isAdmin

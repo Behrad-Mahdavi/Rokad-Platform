@@ -13,7 +13,9 @@ import {
   X, 
   SlidersHorizontal,
   ChevronUp,
-  UserCheck
+  UserCheck,
+  Medal,
+  Award
 } from 'lucide-react';
 import { toPersianDigits } from '../../../lib/utils';
 import { Badge } from '../../../components/ui/Badge';
@@ -135,21 +137,24 @@ export const KaLeaderboard: React.FC = () => {
   const getRankBadge = (rank: number) => {
     if (rank === 1) {
       return (
-        <span className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-400 text-slate-950 font-black shadow-[2px_2px_0_#92400E]">
+        <span className="flex items-center justify-center gap-1 w-9 h-8 rounded-full bg-amber-400 text-slate-950 font-black shadow-[2px_2px_0_#92400E] text-xs">
+          <Trophy className="w-3.5 h-3.5" />
           ۱
         </span>
       );
     }
     if (rank === 2) {
       return (
-        <span className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-300 text-slate-900 font-black shadow-[2px_2px_0_#475569]">
+        <span className="flex items-center justify-center gap-1 w-9 h-8 rounded-full bg-slate-300 text-slate-900 font-black shadow-[2px_2px_0_#475569] text-xs">
+          <Medal className="w-3.5 h-3.5" />
           ۲
         </span>
       );
     }
     if (rank === 3) {
       return (
-        <span className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-700 text-white font-black shadow-[2px_2px_0_#451A03]">
+        <span className="flex items-center justify-center gap-1 w-9 h-8 rounded-full bg-amber-700 text-white font-black shadow-[2px_2px_0_#451A03] text-xs">
+          <Award className="w-3.5 h-3.5" />
           ۳
         </span>
       );
@@ -223,8 +228,19 @@ export const KaLeaderboard: React.FC = () => {
                 title="کلیک برای مشاهده اسلایدرهای ارزیابی"
               >
                 <div className="relative">
-                  <div className="w-14 h-14 sm:w-18 sm:h-18 rounded-2xl border-2 border-slate-300 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-800 dark:text-slate-200 font-bold text-lg shadow-[2px_2px_0_#94A3B8] group-hover:border-primary transition-colors">
-                    {topThree[1].firstName[0]}
+                  <div className="w-14 h-14 sm:w-18 sm:h-18 aspect-square shrink-0 rounded-2xl border-2 border-slate-300 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-800 dark:text-slate-200 font-bold text-lg shadow-[2px_2px_0_#94A3B8] group-hover:border-primary transition-colors overflow-hidden relative">
+                    {topThree[1].avatarUrl ? (
+                      <img
+                        src={topThree[1].avatarUrl}
+                        alt=""
+                        className="w-full h-full object-cover object-center aspect-square block"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      topThree[1].firstName[0]
+                    )}
                   </div>
                   <div className="absolute -bottom-2 -right-1 bg-slate-300 text-slate-900 text-xs font-black w-6 h-6 rounded-full flex items-center justify-center border border-white">
                     ۲
@@ -260,9 +276,19 @@ export const KaLeaderboard: React.FC = () => {
                 title="کلیک برای مشاهده اسلایدرهای ارزیابی"
               >
                 <div className="relative">
-                  <Trophy className="w-6 h-6 text-amber-500 absolute -top-7 left-1/2 -translate-x-1/2 animate-bounce" />
-                  <div className="w-18 h-18 sm:w-22 sm:h-22 rounded-2xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center text-amber-900 dark:text-amber-200 font-black text-2xl shadow-[3px_3px_0_#D97706] ring-4 ring-amber-400/20 group-hover:ring-primary/40 transition-all">
-                    {topThree[0].firstName[0]}
+                  <div className="w-14 h-14 sm:w-18 sm:h-18 aspect-square shrink-0 rounded-2xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center text-amber-900 dark:text-amber-200 font-black text-xl shadow-[3px_3px_0_#D97706] ring-4 ring-amber-400/20 group-hover:ring-primary/40 transition-all overflow-hidden relative">
+                    {topThree[0].avatarUrl ? (
+                      <img
+                        src={topThree[0].avatarUrl}
+                        alt=""
+                        className="w-full h-full object-cover object-center aspect-square block"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      topThree[0].firstName[0]
+                    )}
                   </div>
                   <div className="absolute -bottom-2 -right-1 bg-amber-400 text-slate-950 text-xs font-black w-6 h-6 rounded-full flex items-center justify-center border border-white">
                     ۱
@@ -298,8 +324,19 @@ export const KaLeaderboard: React.FC = () => {
                 title="کلیک برای مشاهده اسلایدرهای ارزیابی"
               >
                 <div className="relative">
-                  <div className="w-14 h-14 sm:w-18 sm:h-18 rounded-2xl border-2 border-amber-700 bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center text-amber-800 dark:text-amber-300 font-bold text-lg shadow-[2px_2px_0_#78350F] group-hover:border-primary transition-colors">
-                    {topThree[2].firstName[0]}
+                  <div className="w-14 h-14 sm:w-18 sm:h-18 aspect-square shrink-0 rounded-2xl border-2 border-amber-700 bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center text-amber-800 dark:text-amber-300 font-bold text-lg shadow-[2px_2px_0_#78350F] group-hover:border-primary transition-colors overflow-hidden relative">
+                    {topThree[2].avatarUrl ? (
+                      <img
+                        src={topThree[2].avatarUrl}
+                        alt=""
+                        className="w-full h-full object-cover object-center aspect-square block"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      topThree[2].firstName[0]
+                    )}
                   </div>
                   <div className="absolute -bottom-2 -right-1 bg-amber-700 text-white text-xs font-black w-6 h-6 rounded-full flex items-center justify-center border border-white">
                     ۳
@@ -389,8 +426,19 @@ export const KaLeaderboard: React.FC = () => {
                       {/* اطلاعات هنرجو */}
                       <td className="p-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-primary/15 text-primary flex items-center justify-center font-bold text-sm border border-primary/20 group-hover:scale-105 transition-transform">
-                            {student.firstName[0]}
+                          <div className="w-9 h-9 aspect-square rounded-xl bg-primary/15 text-primary flex items-center justify-center font-bold text-sm border border-primary/20 group-hover:scale-105 transition-transform shrink-0 overflow-hidden relative">
+                            {student.avatarUrl ? (
+                              <img
+                                src={student.avatarUrl}
+                                alt=""
+                                className="w-full h-full object-cover object-center aspect-square block"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              student.firstName[0]
+                            )}
                           </div>
                           <div>
                             <button
@@ -514,8 +562,19 @@ export const KaLeaderboard: React.FC = () => {
             {/* هدر اطلاعات هنرجوی انتخاب‌شده */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-5 mb-6">
               <div className="flex items-center gap-3.5">
-                <div className="w-14 h-14 rounded-2xl bg-primary/15 text-primary flex items-center justify-center font-black text-xl border-2 border-primary/30 shadow-sm shrink-0">
-                  {selectedStudentForModal.firstName[0]}
+                <div className="w-14 h-14 aspect-square rounded-2xl bg-primary/15 text-primary flex items-center justify-center font-black text-xl border-2 border-primary/30 shadow-sm shrink-0 overflow-hidden relative">
+                  {selectedStudentForModal.avatarUrl ? (
+                    <img
+                      src={selectedStudentForModal.avatarUrl}
+                      alt=""
+                      className="w-full h-full object-cover object-center aspect-square block"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    selectedStudentForModal.firstName[0]
+                  )}
                 </div>
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2">

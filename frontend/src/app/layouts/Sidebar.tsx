@@ -41,7 +41,7 @@ import { useScrollLock } from '../../lib/hooks/useScrollLock';
 export interface NavItem {
   title: string;
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; solid?: boolean }>;
   badge?: string;
 }
 
@@ -231,6 +231,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
                   <>
                     <div className="flex items-center gap-3 min-w-0">
                       <item.icon
+                        solid={isActive}
                         className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
                           isActive ? 'text-primary' : 'text-gray-400 dark:text-gray-500'
                         }`}

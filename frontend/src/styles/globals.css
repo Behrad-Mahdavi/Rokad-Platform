@@ -41,6 +41,14 @@
     --accent-green:  #009966;
     --accent-red:    #C60036;
     --accent-purple: #8A38F5;
+
+    /* Sonner Toast bottom offset (بالای باتم‌نویگیشن ۶۴px + دکمه شناور وسط + ناحیه امن) */
+    --toast-bottom-offset: calc(64px + env(safe-area-inset-bottom, 0px) + 16px);
+  }
+
+  /* موقعیت توست سوانر در پایین صفحه */
+  [data-sonner-toaster][data-y-position='bottom'] {
+    --offset-bottom: var(--toast-bottom-offset, calc(64px + env(safe-area-inset-bottom, 0px) + 16px));
   }
 
   [data-theme='male'] {

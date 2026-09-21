@@ -640,4 +640,30 @@ export class AuthService {
   private hashToken(token: string): string {
     return crypto.createHash('sha256').update(token).digest('hex');
   }
+
+  async updateProfile(
+    userId: string,
+    dto: { avatarUrl?: string; firstName?: string; lastName?: string },
+  ) {
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(dto.avatarUrl !== undefined ? { avatarUrl: dto.avatarUrl } : {}),
+        ...(dto.firstName ? { firstName: dto.firstName } : {}),
+        ...(dto.lastName ? { lastName: dto.lastName } : {}),
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        avatarUrl: true,
+        role: true,
+        email: true,
+        phone: true,
+        username: true,
+        tenantId: true,
+      },
+    });
+    return updated;
+  }
 }

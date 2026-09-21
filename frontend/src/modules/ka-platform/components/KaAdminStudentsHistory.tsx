@@ -186,8 +186,19 @@ export const KaAdminStudentsHistory: React.FC = () => {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-primary/15 text-primary flex items-center justify-center font-bold text-xs">
-                          {st.user?.firstName?.[0] || 'ه'}
+                        <div className="w-8 h-8 aspect-square shrink-0 rounded-xl bg-primary/15 text-primary flex items-center justify-center font-bold text-xs overflow-hidden relative">
+                          {st.user?.avatarUrl ? (
+                            <img
+                              src={st.user.avatarUrl}
+                              alt=""
+                              className="w-full h-full object-cover object-center aspect-square block"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            st.user?.firstName?.[0] || 'ه'
+                          )}
                         </div>
                         <div>
                           <div className="font-bold text-sm text-gray-900 dark:text-white">
@@ -269,14 +280,30 @@ export const KaAdminStudentsHistory: React.FC = () => {
             <div className="space-y-6 pt-2 max-h-[75vh] overflow-y-auto px-1">
               {/* هدر مشخصات هنرجو */}
               <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <h3 className="font-bold text-base text-gray-900 dark:text-white">
-                    {studentDetails.student?.user?.firstName} {studentDetails.student?.user?.lastName}
-                  </h3>
-                  <div className="text-xs text-gray-500 flex items-center gap-3">
-                    <span>شماره دانش‌آموزی: {toPersianDigits(studentDetails.student?.studentCode)}</span>
-                    <span>•</span>
-                    <span>کلاس: {studentDetails.student?.enrollments?.[0]?.classroom?.name || 'نامشخص'}</span>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 aspect-square shrink-0 rounded-2xl bg-primary/15 text-primary flex items-center justify-center font-black text-sm overflow-hidden relative">
+                    {studentDetails.student?.user?.avatarUrl ? (
+                      <img
+                        src={studentDetails.student.user.avatarUrl}
+                        alt=""
+                        className="w-full h-full object-cover object-center aspect-square block"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      studentDetails.student?.user?.firstName?.[0] || 'ه'
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="font-bold text-base text-gray-900 dark:text-white">
+                      {studentDetails.student?.user?.firstName} {studentDetails.student?.user?.lastName}
+                    </h3>
+                    <div className="text-xs text-gray-500 flex items-center gap-3">
+                      <span>شماره دانش‌آموزی: {toPersianDigits(studentDetails.student?.studentCode)}</span>
+                      <span>•</span>
+                      <span>کلاس: {studentDetails.student?.enrollments?.[0]?.classroom?.name || 'نامشخص'}</span>
+                    </div>
                   </div>
                 </div>
 

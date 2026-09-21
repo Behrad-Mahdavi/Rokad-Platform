@@ -52,7 +52,7 @@ export const UndoToast: React.FC<UndoToastProps> = ({
     };
   }, [isPaused, onDismiss]);
 
-  const handleMouseEnter = () => {
+  const pauseTimer = () => {
     // Record remaining time and pause countdown
     const elapsed = Date.now() - startTimeRef.current;
     remainingTimeRef.current = Math.max(0, remainingTimeRef.current - elapsed);
@@ -60,7 +60,7 @@ export const UndoToast: React.FC<UndoToastProps> = ({
     setIsPaused(true);
   };
 
-  const handleMouseLeave = () => {
+  const resumeTimer = () => {
     // Reset start time and resume countdown
     startTimeRef.current = Date.now();
     setIsPaused(false);
@@ -75,8 +75,11 @@ export const UndoToast: React.FC<UndoToastProps> = ({
 
   return (
     <div
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onMouseEnter={pauseTimer}
+      onMouseLeave={resumeTimer}
+      onTouchStart={pauseTimer}
+      onTouchEnd={resumeTimer}
+      onTouchCancel={resumeTimer}
       className="relative overflow-hidden w-[380px] max-w-full rounded-2xl bg-gray-900/95 dark:bg-[#151D2A]/95 text-white shadow-2xl backdrop-blur-md border border-gray-700/60 dark:border-gray-700 p-3.5 transition-all select-none"
       dir="rtl"
     >

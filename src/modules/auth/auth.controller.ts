@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
   Delete,
   Body,
   Param,
@@ -109,6 +110,17 @@ export class AuthController {
       user,
       tenant,
     };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Patch('profile')
+  @ApiOperation({ summary: 'ویرایش اطلاعات نمایه کاربر (تصویر، نام و ...)' })
+  async updateProfile(
+    @CurrentUser('id') userId: string,
+    @Body() dto: { avatarUrl?: string; firstName?: string; lastName?: string },
+  ) {
+    return this.authService.updateProfile(userId, dto);
   }
 
   // ==========================================

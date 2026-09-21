@@ -51,7 +51,7 @@ export class StorageController {
     if (!file) {
       throw new BadRequestException('فایلی برای آپلود انتخاب نشده است');
     }
-    const effectiveTenantId = tenantId || userTenantId;
+    const effectiveTenantId = tenantId || userTenantId || 'common';
     const targetModule = moduleName || 'general';
 
     return this.storageService.uploadFile(effectiveTenantId, targetModule, {

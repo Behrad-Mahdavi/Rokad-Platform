@@ -21,9 +21,11 @@ export const AppProviders: React.FC<{ children: React.ReactNode }> = ({
       <ThemeProvider>
         {children}
         <Toaster
-          position="bottom-left"
+          position="bottom-center"
           dir="rtl"
-          visibleToasts={3}
+          visibleToasts={2}
+          offset={{ bottom: 'calc(64px + env(safe-area-inset-bottom, 0px) + 16px)' }}
+          mobileOffset={{ bottom: 'calc(64px + env(safe-area-inset-bottom, 0px) + 16px)' }}
           closeButton
           toastOptions={{
             duration: 3500,

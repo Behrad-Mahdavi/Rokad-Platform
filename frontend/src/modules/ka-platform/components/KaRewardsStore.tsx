@@ -21,7 +21,21 @@ import {
   Award,
   Calendar,
   Layers,
-  ArrowLeft
+  ArrowLeft,
+  Percent,
+  Compass,
+  GraduationCap,
+  Globe,
+  BookOpen,
+  Gamepad2,
+  Laptop,
+  Lightbulb,
+  UserCheck,
+  Camera,
+  Printer,
+  Trophy,
+  Medal,
+  Crown
 } from 'lucide-react';
 import { toPersianDigits } from '../../../lib/utils';
 import { toast } from '../../../components/ui/toast/toast';
@@ -132,6 +146,40 @@ export const KaRewardsStore: React.FC<KaRewardsStoreProps> = ({
       return `${toPersianDigits(reward.minToken)} - ${toPersianDigits(reward.maxToken)} K`;
     }
     return `${toPersianDigits(reward.minToken)} K`;
+  };
+
+  const getRewardIcon = (reward: any) => {
+    const icon = reward.icon;
+    if (icon === 'Percent') return Percent;
+    if (icon === 'Compass') return Compass;
+    if (icon === 'GraduationCap') return GraduationCap;
+    if (icon === 'Globe') return Globe;
+    if (icon === 'BookOpen') return BookOpen;
+    if (icon === 'Gamepad2') return Gamepad2;
+    if (icon === 'Laptop') return Laptop;
+    if (icon === 'Lightbulb') return Lightbulb;
+    if (icon === 'UserCheck') return UserCheck;
+    if (icon === 'Camera') return Camera;
+    if (icon === 'Printer') return Printer;
+
+    const name = reward.name || '';
+    if (name.includes('شهریه')) return Percent;
+    if (name.includes('اردو') || name.includes('رویداد') || name.includes('استخر')) return Compass;
+    if (name.includes('آموزشی') || name.includes('کتاب') || name.includes('تحریر')) return BookOpen;
+    if (name.includes('بازی')) return Gamepad2;
+    if (name.includes('الکترونیک') || name.includes('تبلت') || name.includes('هوشمند') || name.includes('هدفون')) return Laptop;
+    if (name.includes('ایده') || name.includes('نوآوری')) return Lightbulb;
+    if (name.includes('مشاوره')) return UserCheck;
+    if (name.includes('عکاسی')) return Camera;
+    if (name.includes('چاپ')) return Printer;
+    if (name.includes('نیکوکارانه')) return HeartHandshake;
+    if (name.includes('کاپ') || name.includes('تندیس') || name.includes('برتر')) return Trophy;
+    if (name.includes('سفیر') || name.includes('تقدیر')) return Medal;
+    if (name.includes('اینترنت')) return Globe;
+
+    if (reward.parent?.includes('نیکوکارانه')) return HeartHandshake;
+    if (reward.parent?.includes('اختصاصی')) return Award;
+    return Gift;
   };
 
   return (
@@ -261,27 +309,32 @@ export const KaRewardsStore: React.FC<KaRewardsStoreProps> = ({
 
                 {/* ردیف‌های پاداش‌های عمومی */}
                 <div className="divide-y divide-gray-100 dark:divide-gray-800/80">
-                  {generalRewards.map((reward) => (
-                    <div 
-                      key={reward.id}
-                      onClick={() => handleOpenClaimModal(reward)}
-                      className="grid grid-cols-12 items-center px-4 py-3 text-xs sm:text-sm hover:bg-purple-50/60 dark:hover:bg-purple-900/20 cursor-pointer transition-colors group"
-                    >
-                      <div className="col-span-8 font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#652D90]"></span>
-                        <span className="group-hover:text-[#652D90] dark:group-hover:text-purple-300 transition-colors">
-                          {reward.name}
-                        </span>
+                  {generalRewards.map((reward) => {
+                    const RewardIcon = getRewardIcon(reward);
+                    return (
+                      <div 
+                        key={reward.id}
+                        onClick={() => handleOpenClaimModal(reward)}
+                        className="grid grid-cols-12 items-center px-4 py-3 text-xs sm:text-sm hover:bg-purple-50/60 dark:hover:bg-purple-900/20 cursor-pointer transition-colors group"
+                      >
+                        <div className="col-span-8 font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2.5">
+                          <div className="w-6 h-6 rounded-lg bg-purple-100 dark:bg-purple-900/60 flex items-center justify-center shrink-0 text-[#652D90] dark:text-purple-300">
+                            <RewardIcon className="w-3.5 h-3.5" />
+                          </div>
+                          <span className="group-hover:text-[#652D90] dark:group-hover:text-purple-300 transition-colors">
+                            {reward.name}
+                          </span>
+                        </div>
+                        <div className="col-span-4 text-center">
+                          <span className="inline-block px-2.5 py-1 rounded-lg bg-purple-100 dark:bg-purple-900/50 text-[#652D90] dark:text-purple-300 font-black text-xs">
+                            {reward.maxToken && reward.maxToken > reward.minToken
+                              ? `${toPersianDigits(reward.minToken)} - ${toPersianDigits(reward.maxToken)} K`
+                              : `${toPersianDigits(reward.minToken)} K`}
+                          </span>
+                        </div>
                       </div>
-                      <div className="col-span-4 text-center">
-                        <span className="inline-block px-2.5 py-1 rounded-lg bg-purple-100 dark:bg-purple-900/50 text-[#652D90] dark:text-purple-300 font-black text-xs">
-                          {reward.maxToken && reward.maxToken > reward.minToken
-                            ? `${toPersianDigits(reward.minToken)} - ${toPersianDigits(reward.maxToken)} K`
-                            : `${toPersianDigits(reward.minToken)} K`}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {generalRewards.length === 0 && (
                     <div className="p-8 text-center text-gray-500 text-xs">پاداشی تعریف نشده است</div>
                   )}
@@ -308,25 +361,30 @@ export const KaRewardsStore: React.FC<KaRewardsStoreProps> = ({
 
                 {/* ردیف‌های پاداش‌های اختصاصی */}
                 <div className="divide-y divide-gray-100 dark:divide-gray-800/80">
-                  {exclusiveRewards.map((reward) => (
-                    <div 
-                      key={reward.id}
-                      onClick={() => handleOpenClaimModal(reward)}
-                      className="grid grid-cols-12 items-center px-4 py-3 text-xs sm:text-sm hover:bg-amber-50/60 dark:hover:bg-amber-900/20 cursor-pointer transition-colors group"
-                    >
-                      <div className="col-span-8 font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#F8A41D]"></span>
-                        <span className="group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                          {reward.name}
-                        </span>
+                  {exclusiveRewards.map((reward) => {
+                    const RewardIcon = getRewardIcon(reward);
+                    return (
+                      <div 
+                        key={reward.id}
+                        onClick={() => handleOpenClaimModal(reward)}
+                        className="grid grid-cols-12 items-center px-4 py-3 text-xs sm:text-sm hover:bg-amber-50/60 dark:hover:bg-amber-900/20 cursor-pointer transition-colors group"
+                      >
+                        <div className="col-span-8 font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2.5">
+                          <div className="w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-900/60 flex items-center justify-center shrink-0 text-amber-700 dark:text-amber-300">
+                            <RewardIcon className="w-3.5 h-3.5" />
+                          </div>
+                          <span className="group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                            {reward.name}
+                          </span>
+                        </div>
+                        <div className="col-span-4 text-center">
+                          <span className="inline-block px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 font-black text-xs">
+                            {reward.icon || 'در لحظه'}
+                          </span>
+                        </div>
                       </div>
-                      <div className="col-span-4 text-center">
-                        <span className="inline-block px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 font-black text-xs">
-                          {reward.icon || 'در لحظه'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {exclusiveRewards.length === 0 && (
                     <div className="p-8 text-center text-gray-500 text-xs">پاداشی تعریف نشده است</div>
                   )}
@@ -349,25 +407,30 @@ export const KaRewardsStore: React.FC<KaRewardsStoreProps> = ({
 
                 {/* ردیف‌های پاداش نیکوکارانه */}
                 <div className="divide-y divide-gray-100 dark:divide-gray-800/80">
-                  {charityRewards.map((reward) => (
-                    <div 
-                      key={reward.id}
-                      onClick={() => handleOpenClaimModal(reward)}
-                      className="grid grid-cols-12 items-center px-4 py-3.5 text-xs sm:text-sm hover:bg-rose-50/60 dark:hover:bg-rose-900/20 cursor-pointer transition-colors group"
-                    >
-                      <div className="col-span-8 font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#E0195B]"></span>
-                        <span className="group-hover:text-[#E0195B] dark:group-hover:text-rose-400 transition-colors">
-                          {reward.name}
-                        </span>
+                  {charityRewards.map((reward) => {
+                    const RewardIcon = getRewardIcon(reward);
+                    return (
+                      <div 
+                        key={reward.id}
+                        onClick={() => handleOpenClaimModal(reward)}
+                        className="grid grid-cols-12 items-center px-4 py-3.5 text-xs sm:text-sm hover:bg-rose-50/60 dark:hover:bg-rose-900/20 cursor-pointer transition-colors group"
+                      >
+                        <div className="col-span-8 font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2.5">
+                          <div className="w-6 h-6 rounded-lg bg-rose-100 dark:bg-rose-900/60 flex items-center justify-center shrink-0 text-[#E0195B] dark:text-rose-300">
+                            <RewardIcon className="w-3.5 h-3.5" />
+                          </div>
+                          <span className="group-hover:text-[#E0195B] dark:group-hover:text-rose-400 transition-colors">
+                            {reward.name}
+                          </span>
+                        </div>
+                        <div className="col-span-4 text-center">
+                          <span className="inline-block px-3 py-1 rounded-lg bg-rose-100 dark:bg-rose-900/50 text-[#E0195B] dark:text-rose-300 font-black text-xs">
+                            به میزان دلخواه
+                          </span>
+                        </div>
                       </div>
-                      <div className="col-span-4 text-center">
-                        <span className="inline-block px-3 py-1 rounded-lg bg-rose-100 dark:bg-rose-900/50 text-[#E0195B] dark:text-rose-300 font-black text-xs">
-                          به میزان دلخواه
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {charityRewards.length === 0 && (
                     <div className="p-8 text-center text-gray-500 text-xs">پاداشی تعریف نشده است</div>
                   )}
@@ -388,6 +451,7 @@ export const KaRewardsStore: React.FC<KaRewardsStoreProps> = ({
             const isCharity = reward.parent === 'پاداش نیکوکارانه';
             const cost = isCharity ? 10 : (reward.minToken || 0);
             const canAfford = isExclusive ? true : userTokens >= cost;
+            const RewardIcon = getRewardIcon(reward);
 
             const borderColor = isExclusive 
               ? 'border-[#F8A41D] shadow-[2.75px_2.75px_0_#F8A41D]'
@@ -411,7 +475,7 @@ export const KaRewardsStore: React.FC<KaRewardsStoreProps> = ({
                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-xs ${
                       isExclusive ? 'bg-amber-100 text-[#F8A41D]' : isCharity ? 'bg-rose-100 text-[#E0195B]' : 'bg-purple-100 text-[#652D90]'
                     }`}>
-                      {isExclusive ? <Award className="w-6 h-6" /> : isCharity ? <HeartHandshake className="w-6 h-6" /> : <Gift className="w-6 h-6" />}
+                      <RewardIcon className="w-6 h-6" />
                     </div>
                     <span className={`px-2.5 py-1 rounded-xl text-xs font-black ${badgeBg}`}>
                       {formatTokenDisplay(reward)}

@@ -4,6 +4,10 @@ export default {
   darkMode: ['class'],
   theme: {
     extend: {
+      spacing: {
+        18: '4.5rem', // 72px
+        22: '5.5rem', // 88px
+      },
       colors: {
         // Semantic Brand Aliases
         primary: {

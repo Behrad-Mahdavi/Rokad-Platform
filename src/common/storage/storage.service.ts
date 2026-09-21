@@ -49,6 +49,24 @@ export class StorageService implements OnModuleInit {
       } else {
         this.logger.log(`MinIO storage bucket ready: '${this.bucketName}'`);
       }
+
+      // Apply public read policy so browsers can access images, avatars, and assets
+      const publicReadPolicy = {
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Effect: 'Allow',
+            Principal: { AWS: ['*'] },
+            Action: ['s3:GetObject'],
+            Resource: [`arn:aws:s3:::${this.bucketName}/*`],
+          },
+        ],
+      };
+      await this.minioClient.setBucketPolicy(
+        this.bucketName,
+        JSON.stringify(publicReadPolicy),
+      );
+      this.logger.log(`Public read policy applied to bucket: '${this.bucketName}'`);
     } catch (err: any) {
       this.logger.warn(`MinIO connection check warning: ${err.message}. Operating with fallback mode.`);
     }

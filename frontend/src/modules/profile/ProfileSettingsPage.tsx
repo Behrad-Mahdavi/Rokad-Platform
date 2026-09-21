@@ -66,38 +66,45 @@ export const ProfileSettingsPage: React.FC = () => {
     try {
       setIsUploadingAvatar(true);
 
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64Url = reader.result as string;
-        if (user) {
-          useAuthStore.getState().setUser({
-            ...user,
-            avatarUrl: base64Url,
-          });
-        }
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('moduleName', 'avatars');
 
-        // Upload to storage API if available
-        try {
-          const formData = new FormData();
-          formData.append('file', file);
-          const res: any = await apiClient.post('/storage/upload?module=avatars', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-          });
-          const uploadedUrl = res?.data?.url || res?.url;
-          if (uploadedUrl && user) {
-            useAuthStore.getState().setUser({
-              ...user,
-              avatarUrl: uploadedUrl,
-            });
-          }
-        } catch {
-          // Fallback: base64 preview is already updated and persisted in auth store
-        }
+      let finalAvatarUrl = '';
+      try {
+        const res: any = await apiClient.post('/storage/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        const uploadData = res?.data?.data || res?.data;
+        finalAvatarUrl = uploadData?.fileUrl || uploadData?.url || '';
+      } catch (uploadErr) {
+        console.warn('Storage upload error, attempting fallback:', uploadErr);
+      }
 
-        toast.success('تصویر نمایه با موفقیت به‌روزرسانی شد');
-      };
-      reader.readAsDataURL(file);
-    } catch {
+      if (!finalAvatarUrl) {
+        // Fallback: read as base64 data URL
+        finalAvatarUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      // Persist avatar to PostgreSQL database
+      const profileRes: any = await apiClient.patch('/auth/profile', { avatarUrl: finalAvatarUrl });
+      const updatedUser = profileRes?.data?.data || profileRes?.data;
+
+      if (user) {
+        useAuthStore.getState().setUser({
+          ...user,
+          avatarUrl: updatedUser?.avatarUrl || finalAvatarUrl,
+        });
+      }
+
+      toast.success('تصویر نمایه با موفقیت به‌روزرسانی شد');
+    } catch (err) {
+      console.error('Failed to upload avatar:', err);
       toast.error('خطا در بارگذاری تصویر نمایه');
     } finally {
       setIsUploadingAvatar(false);
@@ -178,7 +185,7 @@ export const ProfileSettingsPage: React.FC = () => {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploadingAvatar}
-                className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-[20px] overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all block cursor-pointer group bg-white dark:bg-[#151C28]"
+                className="relative w-24 h-24 sm:w-28 sm:h-28 aspect-square shrink-0 rounded-[20px] overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all block cursor-pointer group bg-white dark:bg-[#151C28]"
                 title="تغییر عکس نمایه"
                 aria-label="تغییر عکس نمایه"
               >
@@ -186,7 +193,7 @@ export const ProfileSettingsPage: React.FC = () => {
                   <img
                     src={user.avatarUrl}
                     alt={user.firstName}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover object-center aspect-square block group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-primary to-primary-darker text-white flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
@@ -195,10 +202,18 @@ export const ProfileSettingsPage: React.FC = () => {
                 )}
 
                 {/* Hover Camera Overlay */}
-                <div className="absolute inset-0 bg-black/45 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1">
+                <div className="absolute inset-0 bg-black/45 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1 pointer-events-none">
                   <Camera className="w-6 h-6 drop-shadow" />
                   <span className="text-[10px] font-bold">تغییر عکس</span>
                 </div>
+
+                {/* Uploading Overlay */}
+                {isUploadingAvatar && (
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center text-white gap-1.5 z-20 pointer-events-none">
+                    <Loader2 className="w-6 h-6 animate-spin text-teal-300" />
+                    <span className="text-[10px] font-bold">در حال بارگذاری...</span>
+                  </div>
+                )}
               </button>
             </div>
 
