@@ -90,7 +90,7 @@ export class SaasPlatformOpsService {
   ) {
     const settingValue = {
       enabled: dto.enabled,
-      message: dto.message || 'سامانه رُکاد در حال به‌روزرسانی زیرساخت است.',
+      message: dto.message || 'سامانه رکاد در حال به‌روزرسانی زیرساخت است.',
       estimatedEndTime: dto.estimatedEndTime,
       updatedAt: new Date().toISOString(),
     };
@@ -104,7 +104,7 @@ export class SaasPlatformOpsService {
       create: {
         key: 'PLATFORM_MAINTENANCE_MODE',
         value: settingValue,
-        description: 'حالت تعمیرات سراسری پلتفرم رُکاد',
+        description: 'حالت تعمیرات سراسری پلتفرم رکاد',
         updatedById,
       },
     });

@@ -27,7 +27,9 @@ import {
   Banknote,
   FileCheck,
   ShieldAlert,
+  MessageSquare,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const FeesPage: React.FC = () => {
   // Navigation Tabs: 'contracts' | 'plans' | 'cheques' | 'import'
@@ -915,6 +917,23 @@ export const FeesPage: React.FC = () => {
                                   <X className="h-3.5 w-3.5 ms-1" />
                                   <span>برگشت</span>
                                 </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={async () => {
+                                    try {
+                                      await apiClient.post('/sms/trigger/cheques');
+                                      toast.success('پیامک یادآوری سررسید با موفقیت شلیک شد');
+                                    } catch (err: any) {
+                                      toast.error(err?.response?.data?.message || 'خطا در ارسال پیامک');
+                                    }
+                                  }}
+                                  className="text-[11px] h-7 px-2 text-amber-700 border-amber-300 hover:bg-amber-50"
+                                  title="ارسال پیامک یادآوری سررسید به صادرکننده"
+                                >
+                                  <MessageSquare className="h-3.5 w-3.5 ms-1" />
+                                  <span>پیامک</span>
+                                </Button>
                               </div>
                             ) : chq.checkStatus === 'BOUNCED' ? (
                               <Button
@@ -985,7 +1004,7 @@ export const FeesPage: React.FC = () => {
             <div>
               <h4 className="font-bold text-xs text-indigo-950">فایل نمونه استاندارد اکسل</h4>
               <p className="text-[11px] text-indigo-700 mt-0.5">
-                برای جلوگیری از خطای اعتبارسنجی، اطلاعات را در قالب استاندارد رُکاد وارد کنید.
+                برای جلوگیری از خطای اعتبارسنجی، اطلاعات را در قالب استاندارد رکاد وارد کنید.
               </p>
             </div>
             <Button

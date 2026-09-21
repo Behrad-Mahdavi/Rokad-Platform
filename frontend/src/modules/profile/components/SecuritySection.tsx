@@ -255,7 +255,7 @@ export const SecuritySection: React.FC = () => {
 
   const downloadRecoveryCodes = () => {
     if (!recoveryCodes) return;
-    const content = `کدهای بازیابی اضطراری ورود دومرحله‌ای پلتفرم رُکاد\nتاریخ: ${new Date().toLocaleDateString('fa-IR')}\n\nتوجه: هر کد فقط یک‌بار قابل استفاده است.\n\n` +
+    const content = `کدهای بازیابی اضطراری ورود دومرحله‌ای پلتفرم رکاد\nتاریخ: ${new Date().toLocaleDateString('fa-IR')}\n\nتوجه: هر کد فقط یک‌بار قابل استفاده است.\n\n` +
       recoveryCodes.map((c, i) => `${i + 1}. ${c}`).join('\n');
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);

@@ -11,7 +11,7 @@ export interface TenantCredentialContext {
  * تعیین پیش‌وند رمز عبور بر اساس نوع شعبه مرکز آموزشی:
  * - 'b' برای هنرستان پسرانه (Boys)
  * - 'g' برای هنرستان دخترانه (Girls)
- * - 'c' برای کالج رُکاد (College)
+ * - 'c' برای کالج رکاد (College)
  */
 export function getTenantPasswordPrefix(
   tenant?: TenantCredentialContext | null,

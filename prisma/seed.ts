@@ -68,7 +68,7 @@ async function main() {
     {
       key: 'ka_system',
       name: 'سیستم کا و تنظیمات پیشرفته',
-      description: 'ماژول سیستم کا و امتیازدهی اختصاصی رُکاد',
+      description: 'ماژول سیستم کا و امتیازدهی اختصاصی رکاد',
       category: 'FINANCE_KA',
       defaultEnabled: true,
     },
@@ -156,13 +156,13 @@ async function main() {
   const platformTenant = await prisma.tenant.upsert({
     where: { slug: 'platform-root' },
     update: {
-      name: 'مرکز مدیریت پلتفرم رُکاد',
+      name: 'مرکز مدیریت پلتفرم رکاد',
       type: 'PLATFORM',
       theme: 'ECOSYSTEM',
       status: 'ACTIVE',
     },
     create: {
-      name: 'مرکز مدیریت پلتفرم رُکاد',
+      name: 'مرکز مدیریت پلتفرم رکاد',
       slug: 'platform-root',
       subdomain: 'admin',
       type: 'PLATFORM',
@@ -189,7 +189,7 @@ async function main() {
     create: {
       tenantId: platformTenant.id,
       firstName: 'مدیر کل',
-      lastName: 'پلتفرم رُکاد',
+      lastName: 'پلتفرم رکاد',
       phone: '09120000000',
       email: 'admin@rokadschool.ir',
       username: 'superadmin',
@@ -205,14 +205,14 @@ async function main() {
   const boysTenant = await prisma.tenant.upsert({
     where: { slug: 'rokad-boys' },
     update: {
-      name: 'هنرستان فنی و حرفه‌ای پسرانه رُکاد',
+      name: 'هنرستان فنی و حرفه‌ای پسرانه رکاد',
       type: 'SCHOOL',
       theme: 'MALE',
       subdomain: 'boys',
       status: 'ACTIVE',
     },
     create: {
-      name: 'هنرستان فنی و حرفه‌ای پسرانه رُکاد',
+      name: 'هنرستان فنی و حرفه‌ای پسرانه رکاد',
       slug: 'rokad-boys',
       subdomain: 'boys',
       type: 'SCHOOL',
@@ -220,7 +220,7 @@ async function main() {
       status: 'ACTIVE',
       email: 'boys@rokadschool.ir',
       phone: '09121111111',
-      address: 'تهران، مجتمع آموزشی رُکاد پسرانه',
+      address: 'تهران، مجتمع آموزشی رکاد پسرانه',
     },
   });
 
@@ -581,14 +581,14 @@ async function main() {
   const girlsTenant = await prisma.tenant.upsert({
     where: { slug: 'rokad-girls' },
     update: {
-      name: 'هنرستان فنی و حرفه‌ای دخترانه رُکاد',
+      name: 'هنرستان فنی و حرفه‌ای دخترانه رکاد',
       type: 'SCHOOL',
       theme: 'FEMALE',
       subdomain: 'girls',
       status: 'ACTIVE',
     },
     create: {
-      name: 'هنرستان فنی و حرفه‌ای دخترانه رُکاد',
+      name: 'هنرستان فنی و حرفه‌ای دخترانه رکاد',
       slug: 'rokad-girls',
       subdomain: 'girls',
       type: 'SCHOOL',
@@ -596,7 +596,7 @@ async function main() {
       status: 'ACTIVE',
       email: 'girls@rokadschool.ir',
       phone: '09121111112',
-      address: 'تهران، مجتمع آموزشی رُکاد دخترانه',
+      address: 'تهران، مجتمع آموزشی رکاد دخترانه',
     },
   });
 
@@ -1201,8 +1201,8 @@ async function main() {
     update: {},
     create: {
       tenantId: boysTenant.id,
-      motto: 'تربیت نسل پیشرو، خلاق و کارآفرین در اکوسیستم آموزشی رُکاد',
-      aboutHtml: '<h2>درباره مجتمع پسرانه رُکاد</h2><p>مدرسه رُکاد با رویکرد آموزش پروژه‌محور و تلفیق فناوری با مهارت‌های زندگی فعالیت می‌کند.</p>',
+      motto: 'تربیت نسل پیشرو، خلاق و کارآفرین در اکوسیستم آموزشی رکاد',
+      aboutHtml: '<h2>درباره مجتمع پسرانه رکاد</h2><p>مدرسه رکاد با رویکرد آموزش پروژه‌محور و تلفیق فناوری با مهارت‌های زندگی فعالیت می‌کند.</p>',
       managerName: 'علیرضا احمدی',
       managerMessage: 'با همراهی اولیای گرامی و اساتید فرهیخته، آینده‌ای درخشان را رقم می‌زنیم.',
     },
@@ -1221,7 +1221,7 @@ async function main() {
       authorId: boysAdmin.id,
       title: 'گزارش تصویری افتتاح کارگاه تخصصی هوش مصنوعی و برنامه‌نویسی وب هنرستان پسرانه',
       slug: 'ai-robotics-workshop-opening',
-      content: 'به لطف خداوند و تلاش کادر تخصصی، فاز اول کارگاه کامپیوتر و هوش مصنوعی هنرستان پسرانه رُکاد با تجهیز ۲۰ ایستگاه کاری پیشرفته افتتاح گردید. هنرجویان عزیز از روز شنبه می‌توانند بر اساس برنامه زمان‌بندی در کارگاه‌ها حضور یابند.',
+      content: 'به لطف خداوند و تلاش کادر تخصصی، فاز اول کارگاه کامپیوتر و هوش مصنوعی هنرستان پسرانه رکاد با تجهیز ۲۰ ایستگاه کاری پیشرفته افتتاح گردید. هنرجویان عزیز از روز شنبه می‌توانند بر اساس برنامه زمان‌بندی در کارگاه‌ها حضور یابند.',
       postType: 'SLIDESHOW',
       mediaUrls: [
         'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1000&auto=format&fit=crop&q=80',
@@ -1235,7 +1235,7 @@ async function main() {
       audienceType: 'ALL',
       isPinned: true,
       allowComments: true,
-      tags: ['کارگاه تخصصی', 'افتتاحیه', 'هوش مصنوعی', 'رُکاد پسرانه'],
+      tags: ['کارگاه تخصصی', 'افتتاحیه', 'هوش مصنوعی', 'رکاد پسرانه'],
       isPublished: true,
     },
   });
@@ -1310,7 +1310,7 @@ async function main() {
       authorId: girlsAdmin.id,
       title: 'برگزاری نمایشگاه آثار هنرجویان رشته طراحی و گرافیک رایانه‌ای هنرستان دخترانه',
       slug: 'girls-multimedia-exhibition',
-      content: 'نمایشگاه تخصصی دستاوردهای تجسمی و دیجیتال هنرجویان دخترانه رُکاد در آتلیه هنرستان برگزار گردید.',
+      content: 'نمایشگاه تخصصی دستاوردهای تجسمی و دیجیتال هنرجویان دخترانه رکاد در آتلیه هنرستان برگزار گردید.',
       postType: 'SLIDESHOW',
       mediaUrls: [
         'https://images.unsplash.com/photo-1561089489-f13d5e730d72?w=1000&auto=format&fit=crop&q=80',
@@ -1319,7 +1319,7 @@ async function main() {
       audienceType: 'ALL',
       isPinned: true,
       allowComments: true,
-      tags: ['طراحی', 'نمایشگاه', 'رُکاد دخترانه'],
+      tags: ['طراحی', 'نمایشگاه', 'رکاد دخترانه'],
       isPublished: true,
     },
   });
@@ -2041,7 +2041,7 @@ async function main() {
     where: { slug: 'rokad-college' },
     update: {},
     create: {
-      name: 'کالج علمی و مهارتی رُکاد',
+      name: 'کالج علمی و مهارتی رکاد',
       slug: 'rokad-college',
       type: 'COLLEGE',
       theme: 'COLLEGE',
@@ -2160,9 +2160,9 @@ async function main() {
       key: 'PLATFORM_MAINTENANCE_MODE',
       value: {
         enabled: false,
-        message: 'سامانه رُکاد فعال است.',
+        message: 'سامانه رکاد فعال است.',
       },
-      description: 'حالت تعمیرات سراسری پلتفرم رُکاد',
+      description: 'حالت تعمیرات سراسری پلتفرم رکاد',
     },
   });
 

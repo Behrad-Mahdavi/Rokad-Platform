@@ -132,7 +132,7 @@ export class TelegramAnchorService implements OnModuleInit {
 
       if (!latestPerTenant || latestPerTenant.length === 0) {
         await this.sendTelegramMessage(
-          `🔐 *رُکاد — گزارش لنگر زنجیره ممیزی*\n\n` +
+          `🔐 *رکاد — گزارش لنگر زنجیره ممیزی*\n\n` +
           `📅 تاریخ: ${new Date().toISOString()}\n` +
           `⚠️ هیچ لاگ ممیزی‌ای برای ارسال وجود ندارد.`,
         );
@@ -140,7 +140,7 @@ export class TelegramAnchorService implements OnModuleInit {
       }
 
       const lines: string[] = [
-        `🔐 *رُکاد — لنگر شبانه زنجیره ممیزی*`,
+        `🔐 *رکاد — لنگر شبانه زنجیره ممیزی*`,
         ``,
         `📅 \`${new Date().toISOString()}\``,
         `🏫 تعداد مدارس فعال: *${latestPerTenant.length}*`,
@@ -189,7 +189,7 @@ export class TelegramAnchorService implements OnModuleInit {
       // Alert on failure itself — a missing anchor is suspicious
       try {
         await this.sendTelegramMessage(
-          `🚨 *رُکاد — هشدار: ارسال لنگر شبانه ناموفق بود*\n\n` +
+          `🚨 *رکاد — هشدار: ارسال لنگر شبانه ناموفق بود*\n\n` +
           `⏰ \`${new Date().toISOString()}\`\n` +
           `❌ خطا: \`${err.message}\`\n\n` +
           `⚠️ لطفاً وضعیت سرور و اتصال دیتابیس را بررسی فرمایید.`,

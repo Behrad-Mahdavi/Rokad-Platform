@@ -94,7 +94,7 @@ export class PayrollExportService {
       throw new NotFoundException('فیش حقوقی مورد نظر یافت نشد');
     }
 
-    const schoolName = slip.tenant.name || 'مدرسه هوشمند رُکاد';
+    const schoolName = slip.tenant.name || 'مدرسه هوشمند رکاد';
     const monthName = PERSIAN_MONTH_NAMES[slip.month - 1];
     const u = slip.user;
 

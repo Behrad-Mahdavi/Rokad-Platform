@@ -32,7 +32,7 @@ export class SaasPlatformOpsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN)
-  @ApiOperation({ summary: 'داشبورد متریک‌ها و آمارهای کلان SaaS پلتفرم رُکاد' })
+  @ApiOperation({ summary: 'داشبورد متریک‌ها و آمارهای کلان SaaS پلتفرم رکاد' })
   async getMetrics() {
     return this.platformOpsService.getPlatformMetrics();
   }

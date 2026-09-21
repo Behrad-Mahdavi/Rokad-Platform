@@ -12,7 +12,7 @@ interface TenantState {
 export const ROKAD_BRANCHES: Record<'boys' | 'girls', TenantInfo> = {
   boys: {
     id: 'boys-tenant-id',
-    name: 'هنرستان فنی و حرفه‌ای پسرانه رُکاد',
+    name: 'هنرستان فنی و حرفه‌ای پسرانه رکاد',
     slug: 'rokad-boys',
     type: 'SCHOOL',
     theme: 'male',
@@ -20,7 +20,7 @@ export const ROKAD_BRANCHES: Record<'boys' | 'girls', TenantInfo> = {
   },
   girls: {
     id: 'girls-tenant-id',
-    name: 'هنرستان فنی و حرفه‌ای دخترانه رُکاد',
+    name: 'هنرستان فنی و حرفه‌ای دخترانه رکاد',
     slug: 'rokad-girls',
     type: 'SCHOOL',
     theme: 'female',

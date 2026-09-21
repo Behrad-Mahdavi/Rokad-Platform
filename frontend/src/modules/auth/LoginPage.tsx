@@ -52,7 +52,7 @@ export const LoginPage: React.FC = () => {
     const tenant = loginData?.tenant || user?.tenant;
     setCurrentTenant({
       id: user.tenantId,
-      name: tenant?.name || 'مدرسه رُکاد',
+      name: tenant?.name || 'مدرسه رکاد',
       slug: tenant?.slug || tenantSlug || 'rokad-boys',
       type: 'SCHOOL',
       theme: (tenant?.theme || 'ecosystem').toLowerCase() as any,
@@ -98,7 +98,7 @@ export const LoginPage: React.FC = () => {
       const tenant = loginData?.tenant || user?.tenant;
       setCurrentTenant({
         id: user.tenantId,
-        name: tenant?.name || 'مدرسه رُکاد',
+        name: tenant?.name || 'مدرسه رکاد',
         slug: tenant?.slug || tenantSlug || 'rokad-boys',
         type: 'SCHOOL',
         theme: (tenant?.theme || 'ecosystem').toLowerCase() as any,
@@ -132,13 +132,13 @@ export const LoginPage: React.FC = () => {
         <div className="flex items-center space-x-2.5 space-x-reverse">
           <img
             src="/logo.svg"
-            alt="لوگوی رُکاد"
+            alt="لوگوی رکاد"
             className="h-8 w-8 rounded-xl object-cover shadow-2xs shrink-0"
           />
-          <CardTitle className="text-lg sm:text-xl">ورود به سامانه رُکاد</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">ورود به سامانه رکاد</CardTitle>
         </div>
         <CardDescription className="text-xs">
-          سامانه یکپارچه هوشمند هنرستان‌های رُکاد
+          سامانه یکپارچه هوشمند هنرستان‌های رکاد
         </CardDescription>
       </CardHeader>
 

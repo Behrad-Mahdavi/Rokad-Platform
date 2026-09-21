@@ -3,13 +3,13 @@ import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { BrandTheme } from '../../../common/constants';
 
 export class UpdateTenantDto {
-  @ApiPropertyOptional({ description: 'نام مدرسه', example: 'مدرسه هوشمند رُکاد پسرانه' })
+  @ApiPropertyOptional({ description: 'نام مدرسه', example: 'مدرسه هوشمند رکاد پسرانه' })
   @IsString()
   @IsOptional()
   name?: string;
 
   @ApiPropertyOptional({
-    description: 'تم رنگی پرسونای رُکاد (ECOSYSTEM, MALE, FEMALE, COLLEGE, CLUB)',
+    description: 'تم رنگی پرسونای رکاد (ECOSYSTEM, MALE, FEMALE, COLLEGE, CLUB)',
     enum: BrandTheme,
   })
   @IsEnum(BrandTheme)

@@ -41,8 +41,8 @@ export default defineConfig({
       ],
       manifest: {
         id: '/?source=pwa',
-        name: 'سامانه مدیریت هوشمند مدارس و هنرستان‌های رُکاد',
-        short_name: 'رُکاد',
+        name: 'سامانه مدیریت هوشمند مدارس و هنرستان‌های رکاد',
+        short_name: 'رکاد',
         description: 'پلتفرم جامع آموزشی، مدیریت هنرستان‌های فنی و حرفه‌ای، ارزشیابی پودمانی، کارنامه، برنامه‌ریزی کلاسی و ارتباطات اولیاء',
         theme_color: '#2FAA9E',
         background_color: '#FFFFFF',
@@ -108,7 +108,7 @@ export default defineConfig({
           {
             name: 'تقویم و رویدادهای آموزشی',
             short_name: 'تقویم',
-            description: 'تقویم رسمی و مناسبت‌های هنرستان رُکاد',
+            description: 'تقویم رسمی و مناسبت‌های هنرستان رکاد',
             url: '/app/calendar',
             icons: [{ src: '/icons/shortcut-calendar.png', sizes: '96x96', type: 'image/png' }],
           },

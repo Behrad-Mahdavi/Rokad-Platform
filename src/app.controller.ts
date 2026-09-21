@@ -29,7 +29,7 @@ const buildTime = process.env.BUILD_TIME || new Date().toISOString();
 export class AppController {
   @Public()
   @Get()
-  @ApiOperation({ summary: 'اطلاعات و وضعیت ریشه پلتفرم رُکاد' })
+  @ApiOperation({ summary: 'اطلاعات و وضعیت ریشه پلتفرم رکاد' })
   getRoot() {
     return {
       name: 'Rokad Multi-Tenant Platform API',

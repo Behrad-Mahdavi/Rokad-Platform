@@ -92,7 +92,7 @@ export const DEFAULT_HOME_BANNER_SLIDES: HomeBannerSlide[] = [
   {
     id: 'banner-slide-1',
     type: 'EVENT',
-    title: 'همایش ملی نوآوری و فناوری‌های نوین آموزشی رُکاد',
+    title: 'همایش ملی نوآوری و فناوری‌های نوین آموزشی رکاد',
     subtitle: 'نشست تخصصی مربیان، مشاوران و دانش‌آموزان با ابزارهای نسل جدید',
     badgeText: 'رویداد زنده',
     badgeVariant: 'default',

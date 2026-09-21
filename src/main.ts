@@ -70,7 +70,7 @@ async function bootstrap() {
 
   // Swagger Documentation Setup
   const config = new DocumentBuilder()
-    .setTitle('پلتفرم رُکاد — سامانه چندمستأجری مدارس (Rokad Platform API)')
+    .setTitle('پلتفرم رکاد — سامانه چندمستأجری مدارس (Rokad Platform API)')
     .setDescription(
       `مستندات کامل APIهای فاز ۱: پایه و چندمستأجری (Foundation & Multi-Tenancy)\n\n` +
       `این پلتفرم از ساختار Multi-Tenant با احراز هویت JWT و توکن‌های رفرش چرخشی (Token Family Rotation) پشتیبانی می‌کند.\n\n` +
@@ -105,7 +105,7 @@ async function bootstrap() {
   const port = process.env.PORT || 4000;
   await app.listen(port);
 
-  logger.log(`🚀 سرور پلتفرم رُکاد با موفقیت راه‌اندازی شد: http://localhost:${port}/api/v1`);
+  logger.log(`🚀 سرور پلتفرم رکاد با موفقیت راه‌اندازی شد: http://localhost:${port}/api/v1`);
   logger.log(`📚 مستندات Swagger API در دسترس است: http://localhost:${port}/api/docs`);
 }
 

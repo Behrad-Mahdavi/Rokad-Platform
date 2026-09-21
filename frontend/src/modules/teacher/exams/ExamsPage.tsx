@@ -1074,7 +1074,7 @@ export const ExamsPage: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-emerald-900">
-                      فایل نمونه اکسل استاندارد رُکاد (.xlsx)
+                      فایل نمونه اکسل استاندارد رکاد (.xlsx)
                     </h4>
                     <p className="text-[11px] text-emerald-700 mt-0.5">
                       فایل نمونه شامل ستون‌های تعریف‌شده، راهنمای شماره گزینه صحیح و نمونه سوالات تستی و تشریحی است.

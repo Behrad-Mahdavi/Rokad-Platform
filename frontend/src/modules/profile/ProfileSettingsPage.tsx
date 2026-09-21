@@ -249,7 +249,7 @@ export const ProfileSettingsPage: React.FC = () => {
             <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium">
               <School className="w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0" />
               <span className="truncate">
-                {currentTenant?.name || (currentTenant?.slug === 'rokad-girls' ? 'هنرستان دخترانه رُکاد' : 'هنرستان پسرانه رُکاد')}
+                {currentTenant?.name || (currentTenant?.slug === 'rokad-girls' ? 'هنرستان دخترانه رکاد' : 'هنرستان پسرانه رکاد')}
               </span>
             </div>
           </div>

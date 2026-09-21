@@ -2065,7 +2065,7 @@ export const MembersPage: React.FC = () => {
           <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-xs space-y-1.5">
             <div className="font-bold text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
               <UserCheck className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <span>سامانه ورود یکپارچه رُکاد در اکسل:</span>
+              <span>سامانه ورود یکپارچه رکاد در اکسل:</span>
             </div>
             <p className="text-[11px] text-blue-800 dark:text-blue-300 leading-relaxed">
               با بارگذاری فایل اکسل، اطلاعات ورود برای تک‌تک هنرجویان به صورت کاملاً خودکار تولید می‌گردد:

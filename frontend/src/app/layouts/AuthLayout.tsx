@@ -15,11 +15,11 @@ export const AuthLayout: React.FC = () => {
         <div className="flex items-center space-x-3 space-x-reverse relative z-10">
           <img
             src="/logo.svg"
-            alt="لوگوی رسمی رُکاد"
+            alt="لوگوی رسمی رکاد"
             className="h-12 w-12 rounded-2xl object-cover border border-white/30 shadow-lg shrink-0"
           />
           <div>
-            <h1 className="font-bold text-2xl tracking-tight">هنرستان‌های رُکاد</h1>
+            <h1 className="font-bold text-2xl tracking-tight">هنرستان‌های رکاد</h1>
             <p className="text-xs text-white/80">شعبه تخصصی دخترانه و پسرانه</p>
           </div>
         </div>
@@ -36,13 +36,13 @@ export const AuthLayout: React.FC = () => {
           </h2>
 
           <p className="text-sm text-white/80 leading-relaxed">
-            سامانه رُکاد با پشتیبانی از سیستم ارزشیابی شایستگی‌محور، برنامه هفتگی کارگاهی، آزمون‌های آنلاین، حضور و غیاب هوشمند و چت کلاسی، فرآیندهای هنرستان را به سطحی نوین ارتقاء می‌دهد.
+            سامانه رکاد با پشتیبانی از سیستم ارزشیابی شایستگی‌محور، برنامه هفتگی کارگاهی، آزمون‌های آنلاین، حضور و غیاب هوشمند و چت کلاسی، فرآیندهای هنرستان را به سطحی نوین ارتقاء می‌دهد.
           </p>
         </div>
 
         {/* Bottom Metadata */}
         <div className="text-xs text-white/60 relative z-10 flex justify-between items-center border-t border-white/10 pt-6">
-          <span>نسخه تخصصی هنرستان‌های رُکاد</span>
+          <span>نسخه تخصصی هنرستان‌های رکاد</span>
           <span>امنیت و ایزولاسیون اطلاعات شعب</span>
         </div>
       </div>

@@ -215,7 +215,7 @@ export const KaLeaderboard: React.FC = () => {
         <div className="relative rounded-3xl border-2 border-primary/20 bg-gradient-to-b from-white to-gray-50 dark:from-[#151C28] dark:to-[#0F141C] p-6 sm:p-8 shadow-[3px_3px_0_#202A5A] dark:shadow-[3px_3px_0_#59BBAF]">
           <div className="flex items-center justify-center gap-2 mb-6">
             <Sparkles className="w-5 h-5 text-amber-500" />
-            <span className="text-sm font-black text-gray-900 dark:text-white">سکوی افتخار و پیشتازان رُکاد</span>
+            <span className="text-sm font-black text-gray-900 dark:text-white">سکوی افتخار و پیشتازان رکاد</span>
             <span className="text-xs text-gray-400 font-normal hidden sm:inline">(جهت مشاهده اسلایدرها کلیک کنید)</span>
           </div>
 
@@ -250,7 +250,7 @@ export const KaLeaderboard: React.FC = () => {
                   <div className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white line-clamp-1 group-hover:text-primary transition-colors">
                     {topThree[1].firstName} {topThree[1].lastName}
                   </div>
-                  <div className="text-[10px] text-gray-500 line-clamp-1">{topThree[1].className || 'رُکاد'}</div>
+                  <div className="text-[10px] text-gray-500 line-clamp-1">{topThree[1].className || 'رکاد'}</div>
                   <div className="text-xs font-black text-primary">
                     {toPersianDigits(topThree[1].kaScore)} امتیاز
                   </div>
@@ -298,7 +298,7 @@ export const KaLeaderboard: React.FC = () => {
                   <div className="font-black text-xs sm:text-base text-gray-900 dark:text-white line-clamp-1 group-hover:text-amber-500 transition-colors">
                     {topThree[0].firstName} {topThree[0].lastName}
                   </div>
-                  <div className="text-[11px] text-gray-500 line-clamp-1">{topThree[0].className || 'رُکاد'}</div>
+                  <div className="text-[11px] text-gray-500 line-clamp-1">{topThree[0].className || 'رکاد'}</div>
                   <div className="text-sm font-black text-amber-600 dark:text-amber-400">
                     {toPersianDigits(topThree[0].kaScore)} امتیاز
                   </div>
@@ -346,7 +346,7 @@ export const KaLeaderboard: React.FC = () => {
                   <div className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white line-clamp-1 group-hover:text-primary transition-colors">
                     {topThree[2].firstName} {topThree[2].lastName}
                   </div>
-                  <div className="text-[10px] text-gray-500 line-clamp-1">{topThree[2].className || 'رُکاد'}</div>
+                  <div className="text-[10px] text-gray-500 line-clamp-1">{topThree[2].className || 'رکاد'}</div>
                   <div className="text-xs font-black text-primary">
                     {toPersianDigits(topThree[2].kaScore)} امتیاز
                   </div>
@@ -586,7 +586,7 @@ export const KaLeaderboard: React.FC = () => {
                     </Badge>
                   </div>
                   <div className="text-xs text-gray-500 flex flex-wrap items-center gap-2">
-                    <span>کلاس: {selectedStudentForModal.className || 'هنرستان رُکاد'}</span>
+                    <span>کلاس: {selectedStudentForModal.className || 'هنرستان رکاد'}</span>
                     <span>•</span>
                     <span>رتبه در کلاس: #{toPersianDigits(selectedStudentForModal.rankInClass)}</span>
                   </div>

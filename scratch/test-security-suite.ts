@@ -49,7 +49,7 @@ async function runSecurityTests() {
   console.log('--- TEST 2: Two-Factor Authentication (TOTP RFC 6238) ---');
   const totpSecret = generateSecret();
   const testAccount = 'admin@rokadschool.ir';
-  const testIssuer = 'Rokad (هنرستان رُکاد)';
+  const testIssuer = 'Rokad (هنرستان رکاد)';
   const otpauthUrl = `otpauth://totp/${encodeURIComponent(testIssuer)}:${encodeURIComponent(testAccount)}?secret=${totpSecret}&issuer=${encodeURIComponent(testIssuer)}`;
 
   const qrDataUrl = await QRCode.toDataURL(otpauthUrl);

@@ -11,7 +11,7 @@ import {
 import { BrandTheme, TenantType } from '@prisma/client';
 
 export class ProvisionTenantDto {
-  @ApiProperty({ description: 'نام رسمی مدرسه یا مرکز آموزشی', example: 'دبیرستان دخترانه رُکاد' })
+  @ApiProperty({ description: 'نام رسمی مدرسه یا مرکز آموزشی', example: 'دبیرستان دخترانه رکاد' })
   @IsString()
   @IsNotEmpty()
   name: string;

@@ -831,7 +831,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
   async sendTestPush(userId: string) {
     // Run push in background so client gets instant HTTP response without 30s timeout
     this.sendPushToUser(userId, {
-      title: 'سامانه هوشمند رُکاد',
+      title: 'سامانه هوشمند رکاد',
       body: 'این یک پیام آزمایشی است. اعلان‌های برخط در دستگاه شما با موفقیت فعال شد! 🎉',
       url: '/app',
       tag: 'test-notification',
