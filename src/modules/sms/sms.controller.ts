@@ -199,7 +199,7 @@ export class SmsController {
     return this.smsService.deleteQuickTemplate(effectiveTenantId, id);
   }
 
-  @Get('recipients')
+  @Get(['recipients', 'directory'])
   @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @ApiOperation({ summary: 'دریافت مخاطبان دفترچه تلفن مدرسه بر اساس نقش جهت ارسال پیامک' })
   async getRecipients(

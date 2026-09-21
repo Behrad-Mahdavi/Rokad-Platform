@@ -76,8 +76,8 @@ export const SmsCenterPage: React.FC = () => {
   const { data: classroomsData } = useQuery({
     queryKey: ['classes-list'],
     queryFn: async () => {
-      const res: any = await apiClient.get('/classes');
-      return res?.data || res;
+      const res: any = await apiClient.get('/classes/classrooms');
+      return res?.data !== undefined ? res.data : res;
     },
   });
 
@@ -85,8 +85,8 @@ export const SmsCenterPage: React.FC = () => {
   const { data: usersData } = useQuery({
     queryKey: ['sms-directory-users'],
     queryFn: async () => {
-      const res: any = await apiClient.get('/sms/directory');
-      return res?.data || res;
+      const res: any = await apiClient.get('/sms/recipients');
+      return res?.data !== undefined ? res.data : res;
     },
   });
 
@@ -294,8 +294,16 @@ export const SmsCenterPage: React.FC = () => {
     });
   };
 
-  const classrooms = Array.isArray(classroomsData) ? classroomsData : [];
-  const usersList = Array.isArray(usersData) ? usersData : [];
+  const classrooms = Array.isArray(classroomsData)
+    ? classroomsData
+    : Array.isArray(classroomsData?.data)
+    ? classroomsData.data
+    : [];
+  const usersList = Array.isArray(usersData)
+    ? usersData
+    : Array.isArray(usersData?.data)
+    ? usersData.data
+    : [];
   const logsList = Array.isArray(logsData?.logs) ? logsData.logs : [];
   const totalLogs = logsData?.total || 0;
   const templates = Array.isArray(templatesData) ? templatesData : [];
