@@ -2,26 +2,23 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../../../lib/api/client';
 import { useAuthStore } from '../../../lib/auth/auth-store';
-import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
+import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Skeleton } from '../../../components/ui/Skeleton';
-import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
-import { toPersianDigits, formatJalaliDisplay } from '../../../utils/jalali';
+import { toPersianDigits } from '../../../utils/jalali';
+import { generateSchedulePdf } from '../../student-parent/schedule/schedulePdfGenerator';
 import {
   CalendarDays,
   Clock,
   GraduationCap,
   BookOpen,
   CalendarCheck2,
-  CheckCircle2,
   FileCheck,
-  Sparkles,
-  Layers,
   MapPin,
-  ArrowUpRight,
-  ListFilter,
-  Calendar,
+  FileDown,
+  ChevronRight,
+  ChevronLeft,
 } from 'lucide-react';
 
 export type DayOfWeekKey =
@@ -32,14 +29,14 @@ export type DayOfWeekKey =
   | 'WEDNESDAY'
   | 'THURSDAY';
 
-interface DayDef {
+export interface DayDef {
   key: DayOfWeekKey;
   label: string;
   shortLabel: string;
   dayIndex: number; // 6: Sat, 0: Sun, 1: Mon, ...
 }
 
-const DAYS: DayDef[] = [
+export const DAYS: DayDef[] = [
   { key: 'SATURDAY', label: 'شنبه', shortLabel: 'ش', dayIndex: 6 },
   { key: 'SUNDAY', label: 'یکشنبه', shortLabel: 'ی', dayIndex: 0 },
   { key: 'MONDAY', label: 'دوشنبه', shortLabel: 'د', dayIndex: 1 },
@@ -48,7 +45,7 @@ const DAYS: DayDef[] = [
   { key: 'THURSDAY', label: 'پنج‌شنبه', shortLabel: 'پ', dayIndex: 4 },
 ];
 
-const PERIOD_LABELS: Record<number, string> = {
+export const PERIOD_LABELS: Record<number, string> = {
   1: 'زنگ اول',
   2: 'زنگ دوم',
   3: 'زنگ سوم',
@@ -57,7 +54,7 @@ const PERIOD_LABELS: Record<number, string> = {
   6: 'زنگ ششم',
 };
 
-interface ClassScheduleItem {
+export interface ClassScheduleItem {
   id: string;
   classroomId: string;
   lessonId: string;
@@ -103,7 +100,6 @@ export const TeacherSchedulePage: React.FC = () => {
   const currentJsDay = new Date().getDay();
   const todayDayDef = DAYS.find((d) => d.dayIndex === currentJsDay) || DAYS[0];
   const [selectedDay, setSelectedDay] = useState<DayOfWeekKey>(todayDayDef.key);
-  const [viewMode, setViewMode] = useState<'TAB' | 'WEEKLY'>('TAB');
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -131,10 +127,35 @@ export const TeacherSchedulePage: React.FC = () => {
       return a.startTime.localeCompare(b.startTime);
     });
 
-  // Calculate stats
-  const totalWeeklySessions = schedules.length;
-  const uniqueClassrooms = Array.from(new Set(schedules.map((s) => s.classroomId))).length;
-  const todaySessionsCount = schedules.filter((s) => s.dayOfWeek === todayDayDef.key).length;
+  // Check if selected day is today
+  const isSelectedDayToday = selectedDay === todayDayDef.key;
+  const currentDayDef = DAYS.find((d) => d.key === selectedDay) || todayDayDef;
+
+  // Day navigation helpers (Previous / Next)
+  const currentDayIndexInList = DAYS.findIndex((d) => d.key === selectedDay);
+
+  const handlePrevDay = () => {
+    const prevIndex = (currentDayIndexInList - 1 + DAYS.length) % DAYS.length;
+    setSelectedDay(DAYS[prevIndex].key);
+  };
+
+  const handleNextDay = () => {
+    const nextIndex = (currentDayIndexInList + 1) % DAYS.length;
+    setSelectedDay(DAYS[nextIndex].key);
+  };
+
+  // Download PDF schedule
+  const handleDownloadPdf = () => {
+    const teacherFullName = user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'مربی';
+    generateSchedulePdf({
+      title: 'برنامه هفتگی تدریس',
+      teacherName: teacherFullName,
+      isTeacher: true,
+      schedules,
+      days: DAYS,
+      periodLabels: PERIOD_LABELS,
+    });
+  };
 
   // Check if a class slot is currently in progress
   const isSlotActiveNow = (slot: ClassScheduleItem) => {
@@ -152,382 +173,270 @@ export const TeacherSchedulePage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12 animate-in fade-in duration-300">
-      {/* Header Banner */}
-      <ResponsivePageHeader
-        icon={CalendarDays}
-        title="برنامه هفتگی تدریس من"
-        description="مشاهده زنگ‌ها و ساعات کلاسی هفتگی به صورت اسلاتی و بر اساس روزهای هفته"
-        badge={
-          <Badge variant="college" className="text-[11px]">
-            استاد: {user?.firstName} {user?.lastName}
-          </Badge>
-        }
-        actions={
-          <div className="flex items-center gap-1.5">
+    <div className="space-y-3.5 pb-12">
+      {/* 1. Header & Controls Master Panel (Aligned with Student Schedule & Messages Page) */}
+      <div className="bg-white dark:bg-[#151C28] rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-[#242F42] shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] p-4 sm:p-5 print:hidden">
+        {/* Top Row: Title & Action Button side-by-side on all viewports */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black shadow-2xs shrink-0">
+              <CalendarDays className="w-5 h-5" />
+            </div>
+            <div className="flex flex-wrap items-center gap-2 min-w-0">
+              <h1 className="text-lg sm:text-2xl font-black text-ink-darker dark:text-white truncate">
+                برنامه هفتگی تدریس
+              </h1>
+              {user && (
+                <Badge variant="college" className="text-[11px] sm:text-xs font-bold shrink-0">
+                  {user.firstName} {user.lastName}
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Action Button: Top-Left (Left side of header) with Green Accent */}
+          <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => setViewMode('TAB')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                viewMode === 'TAB'
-                  ? 'bg-primary text-white shadow-xs'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              type="button"
+              onClick={handleDownloadPdf}
+              className="h-10 px-3.5 sm:px-4 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs sm:text-sm border-[1.5px] border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] hover:shadow-[2.5px_2.5px_0_#438C83] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer inline-flex items-center gap-1.5 sm:gap-2 shrink-0"
+              title="دریافت نسخه رسمی و چاپ هفتگی تدریس به صورت PDF"
             >
-              نمای روزانه (تبی)
-            </button>
-            <button
-              onClick={() => setViewMode('WEEKLY')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                viewMode === 'WEEKLY'
-                  ? 'bg-primary text-white shadow-xs'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              نمای کل هفته
+              <FileDown className="w-4 h-4 shrink-0" />
+              <span>دانلود (PDF)</span>
             </button>
           </div>
-        }
-      />
-
-      {/* KPI Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="p-4 border border-border/60 bg-surface/30">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">کل جلسات هفتگی</span>
-            <Calendar className="w-4 h-4 text-primary" />
-          </div>
-          <div className="text-2xl font-bold text-foreground mt-2">
-            {toPersianDigits(totalWeeklySessions)} <span className="text-xs font-normal text-muted-foreground">زنگ درس</span>
-          </div>
-        </Card>
-
-        <Card className="p-4 border border-border/60 bg-surface/30">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">کلاس‌های امروز ({todayDayDef.label})</span>
-            <Clock className="w-4 h-4 text-emerald-500" />
-          </div>
-          <div className="text-2xl font-bold text-emerald-600 mt-2">
-            {toPersianDigits(todaySessionsCount)} <span className="text-xs font-normal text-muted-foreground">کلاس تدریس</span>
-          </div>
-        </Card>
-
-        <Card className="p-4 border border-border/60 bg-surface/30">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">کلاس‌ها و کارگاه‌های تحت تدریس</span>
-            <GraduationCap className="w-4 h-4 text-purple-500" />
-          </div>
-          <div className="text-2xl font-bold text-foreground mt-2">
-            {toPersianDigits(uniqueClassrooms)} <span className="text-xs font-normal text-muted-foreground">کلاس مجزا</span>
-          </div>
-        </Card>
+        </div>
       </div>
 
-      {/* View Mode: Day Tabs */}
-      {viewMode === 'TAB' && (
-        <div className="space-y-4">
-          {/* Day of the Week Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-border/60 scrollbar-none">
-            {DAYS.map((day) => {
-              const count = schedules.filter((s) => s.dayOfWeek === day.key).length;
-              const isSelected = selectedDay === day.key;
-              const isToday = todayDayDef.key === day.key;
+      {/* 2. Day Navigation Bar: Arrow buttons flanking the Day Title Box */}
+      <div className="flex items-center justify-between gap-3 p-2 sm:p-2.5 rounded-2xl bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-[#242F42] shadow-xs">
+        {/* Right Arrow: روز قبل (Previous Day in RTL) */}
+        <button
+          type="button"
+          onClick={handlePrevDay}
+          className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold border border-gray-200 dark:border-[#242F42] bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] text-foreground dark:text-slate-200 active:scale-95 shadow-2xs group transition-colors"
+          title="روز قبل"
+          aria-label="روز قبل"
+        >
+          <ChevronRight className="w-4 h-4 text-primary" />
+          <span className="hidden sm:inline">روز قبل</span>
+        </button>
+
+        {/* Center: Day Title Box */}
+        <div className="flex-1 max-w-sm mx-auto flex items-center justify-center gap-2 py-1 px-3.5 rounded-xl bg-gray-50 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] text-center">
+          <CalendarDays className="w-4 h-4 text-primary shrink-0" />
+          <span className="text-base sm:text-lg font-black text-foreground dark:text-white">
+            {currentDayDef.label}
+          </span>
+          {isSelectedDayToday && (
+            <Badge variant="success" className="text-[10px] py-0.5 px-2">
+              امروز
+            </Badge>
+          )}
+        </div>
+
+        {/* Left Arrow: روز بعد (Next Day in RTL) */}
+        <button
+          type="button"
+          onClick={handleNextDay}
+          className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold border border-gray-200 dark:border-[#242F42] bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] text-foreground dark:text-slate-200 active:scale-95 shadow-2xs group transition-colors"
+          title="روز بعد"
+          aria-label="روز بعد"
+        >
+          <span className="hidden sm:inline">روز بعد</span>
+          <ChevronLeft className="w-4 h-4 text-primary" />
+        </button>
+      </div>
+
+      {/* 3. Daily Class Slots Section */}
+      <div className="space-y-2.5">
+        {isLoading ? (
+          <div className="space-y-2.5">
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl" />
+          </div>
+        ) : daySchedules.length === 0 ? (
+          <div className="text-center py-14 bg-gray-50/50 dark:bg-[#151C28]/60 rounded-2xl border border-dashed border-gray-200 dark:border-[#242F42]">
+            <CalendarDays className="w-10 h-10 text-muted-foreground dark:text-slate-500 mx-auto mb-2.5 opacity-60" />
+            <h3 className="text-sm sm:text-base font-semibold text-foreground dark:text-white">
+              در روز {currentDayDef.label} هیچ کلاسی در برنامه تدریس شما ثبت نشده است
+            </h3>
+            <p className="text-xs text-muted-foreground dark:text-slate-400 mt-1">
+              برای مشاهده زنگ‌های سایر ایام هفته، از دکمه‌های روز قبل یا روز بعد استفاده فرمایید.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {daySchedules.map((slot) => {
+              const isNow = isSlotActiveNow(slot);
+              const periodLabel = PERIOD_LABELS[slot.periodNumber] || `زنگ ${slot.periodNumber}`;
+              const formattedStartTime = toPersianDigits(slot.startTime);
+              const formattedEndTime = toPersianDigits(slot.endTime);
 
               return (
-                <button
-                  key={day.key}
-                  type="button"
-                  onClick={() => setSelectedDay(day.key)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap shrink-0 ${
-                    isSelected
-                      ? 'bg-primary text-primary-foreground shadow-sm scale-105'
-                      : 'bg-surface/50 text-muted-foreground hover:bg-surface hover:text-foreground'
+                <Card
+                  key={slot.id}
+                  className={`p-3 sm:p-4 border shadow-xs relative overflow-hidden rounded-2xl transition-colors ${
+                    isNow
+                      ? 'border-emerald-500/70 dark:border-emerald-500/50 bg-gradient-to-r from-emerald-500/10 via-white to-white dark:from-emerald-950/30 dark:via-[#151C28] dark:to-[#151C28] ring-1 ring-emerald-500/40 dark:ring-emerald-500/30'
+                      : 'border-gray-200/80 dark:border-[#242F42] bg-white dark:bg-[#151C28]'
                   }`}
                 >
-                  <span>{day.label}</span>
-                  {count > 0 ? (
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                        isSelected
-                          ? 'bg-white/20 text-white'
-                          : 'bg-surface-hover text-foreground/80'
-                      }`}
-                    >
-                      {toPersianDigits(count)} کلاس
-                    </span>
-                  ) : (
-                    <span
-                      className={`text-[11px] px-1.5 py-0.5 rounded-full ${
-                        isSelected ? 'bg-white/10 text-white/80' : 'text-muted-foreground/60'
-                      }`}
-                    >
-                      خالی
-                    </span>
+                  {isNow && (
+                    <div className="absolute top-0 right-0 left-0 h-1 bg-emerald-500 shadow-sm" />
                   )}
 
-                  {isToday && (
-                    <span
-                      className={`w-2 h-2 rounded-full ${
-                        isSelected ? 'bg-emerald-300' : 'bg-emerald-500'
-                      }`}
-                      title="امروز"
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
+                  <div className="flex flex-col justify-between gap-3">
+                    {/* Slot Information */}
+                    <div className="space-y-2 flex-1 min-w-0">
+                      {/* Period Badge & Time Badge */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="default" className="font-bold text-xs py-0.5">
+                          {periodLabel}
+                        </Badge>
 
-          {/* Slot Cards for the Selected Day */}
-          {isLoading ? (
-            <div className="space-y-4">
-              <Skeleton className="h-32 rounded-2xl" />
-              <Skeleton className="h-32 rounded-2xl" />
-            </div>
-          ) : daySchedules.length === 0 ? (
-            <div className="text-center py-16 bg-surface/20 rounded-2xl border border-dashed border-border/60">
-              <CalendarDays className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-40" />
-              <h3 className="text-base font-semibold text-foreground">
-                برای روز {DAYS.find((d) => d.key === selectedDay)?.label} کلاسی در برنامه شما ثبت نشده است
-              </h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                می‌توانید سایر روزهای هفته را از تب‌های بالا بررسی نمایید.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {daySchedules.map((slot) => {
-                const isNow = isSlotActiveNow(slot);
-                const periodLabel = PERIOD_LABELS[slot.periodNumber] || `زنگ ${slot.periodNumber}`;
-                const formattedStartTime = toPersianDigits(slot.startTime);
-                const formattedEndTime = toPersianDigits(slot.endTime);
-
-                return (
-                  <Card
-                    key={slot.id}
-                    className={`p-6 border transition-all duration-200 shadow-xs relative overflow-hidden ${
-                      isNow
-                        ? 'border-emerald-500/60 bg-gradient-to-r from-emerald-500/10 via-surface/60 to-surface ring-1 ring-emerald-500/30'
-                        : 'border-border/60 hover:border-primary/40 bg-surface/40'
-                    }`}
-                  >
-                    {/* Live Indicator Accent */}
-                    {isNow && (
-                      <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-l from-emerald-500 to-teal-400 animate-pulse" />
-                    )}
-
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      {/* Left/Main Slot Information */}
-                      <div className="space-y-2.5 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge variant="default" className="font-bold">
-                            {periodLabel}
-                          </Badge>
-
-                          <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface/80 border border-border/50 text-xs font-bold text-foreground">
-                            <Clock className="w-3.5 h-3.5 text-primary" />
-                            <span>
-                              {DAYS.find((d) => d.key === slot.dayOfWeek)?.label} - ساعت {formattedStartTime} تا {formattedEndTime}
-                            </span>
-                          </div>
-
-                          {isNow && (
-                            <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 rounded-full animate-pulse">
-                              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                              کلاس در حال برگزاری (اکنون)
-                            </span>
-                          )}
+                        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-gray-50 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] text-xs font-bold text-foreground dark:text-slate-300">
+                          <Clock className="w-3.5 h-3.5 text-primary shrink-0" />
+                          <span>
+                            {formattedStartTime} تا {formattedEndTime}
+                          </span>
                         </div>
 
-                        {/* Lesson Title */}
-                        {slot.isSplitPeriod ? (
-                          <div className="space-y-2 pt-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[11px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-md font-bold">
-                                تک‌زنگ (۲ درس ۴۵ دقیقه‌ای)
-                              </span>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              <div className="p-3 bg-primary-50/20 rounded-xl border border-primary/20 space-y-1">
-                                <span className="text-[11px] font-bold text-primary">۴۵ دقیقه اول</span>
-                                <h3 className="font-extrabold text-base text-foreground flex items-center gap-1.5">
+                        {/* Room Number Badge beside Time Badge */}
+                        {slot.classroom?.roomNumber && (
+                          <span className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#1C2536] px-2.5 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42] text-xs font-semibold text-muted-foreground dark:text-slate-300">
+                            <MapPin className="w-3.5 h-3.5 text-third-dark dark:text-third shrink-0" />
+                            <span>{slot.classroom.roomNumber}</span>
+                          </span>
+                        )}
+
+                        {isNow && (
+                          <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            کلاس در حال برگزاری
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Lesson Details */}
+                      {slot.isSplitPeriod ? (
+                        <div className="space-y-2 pt-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] bg-primary/10 dark:bg-primary-950/40 text-primary dark:text-primary-light border border-primary/20 dark:border-primary/40 px-2 py-0.5 rounded-md font-bold">
+                              تک‌زنگ (۲ درس ۴۵ دقیقه‌ای)
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {/* Part 1 */}
+                            <div className="p-2.5 bg-primary-50/30 dark:bg-primary-950/30 rounded-xl border border-primary/20 dark:border-primary/30 space-y-1">
+                              <span className="text-[10px] font-bold text-primary dark:text-primary-light block">۴۵ دقیقه اول</span>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h3 className="font-extrabold text-base text-foreground dark:text-white flex items-center gap-1.5">
                                   <BookOpen className="w-4 h-4 text-primary shrink-0" />
                                   <span>{slot.lesson?.name}</span>
                                 </h3>
+                                {slot.classroom?.name && (
+                                  <span className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#1C2536] px-2 py-0.5 rounded-md border border-gray-200 dark:border-[#242F42] text-[11px] font-medium text-muted-foreground dark:text-slate-300">
+                                    <GraduationCap className="w-3 h-3 text-purple-500 shrink-0" />
+                                    <span>{slot.classroom.name}</span>
+                                  </span>
+                                )}
                               </div>
-                              <div className="p-3 bg-purple-50/30 rounded-xl border border-purple-200/60 space-y-1">
-                                <span className="text-[11px] font-bold text-purple-700">۴۵ دقیقه دوم</span>
-                                <h3 className="font-extrabold text-base text-foreground flex items-center gap-1.5">
-                                  <BookOpen className="w-4 h-4 text-purple-600 shrink-0" />
+                            </div>
+
+                            {/* Part 2 */}
+                            <div className="p-2.5 bg-purple-50/30 dark:bg-purple-950/30 rounded-xl border border-purple-200/60 dark:border-purple-800/40 space-y-1">
+                              <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 block">۴۵ دقیقه دوم</span>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h3 className="font-extrabold text-base text-foreground dark:text-white flex items-center gap-1.5">
+                                  <BookOpen className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
                                   <span>{slot.secondLesson?.name || '—'}</span>
                                 </h3>
+                                {slot.classroom?.name && (
+                                  <span className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#1C2536] px-2 py-0.5 rounded-md border border-gray-200 dark:border-[#242F42] text-[11px] font-medium text-muted-foreground dark:text-slate-300">
+                                    <GraduationCap className="w-3 h-3 text-purple-500 shrink-0" />
+                                    <span>{slot.classroom.name}</span>
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
-                        ) : (
-                          <div className="pt-1">
-                            <h2 className="text-xl font-extrabold text-foreground flex items-center gap-2">
-                              <BookOpen className="w-5 h-5 text-primary shrink-0" />
-                              <span>{slot.lesson?.name}</span>
-                              {slot.lesson?.code && (
-                                <span className="text-xs font-normal text-muted-foreground">
-                                  (کد درس: {toPersianDigits(slot.lesson.code)})
-                                </span>
-                              )}
-                            </h2>
-                          </div>
-                        )}
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
+                          <h2 className="text-lg sm:text-xl font-black text-foreground dark:text-white flex items-center gap-2">
+                            <BookOpen className="w-5 h-5 text-primary shrink-0" />
+                            <span>{slot.lesson?.name}</span>
+                          </h2>
 
-                        {/* Classroom & Location Badges */}
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground pt-1">
-                          <div className="flex items-center gap-1.5 bg-surface/60 px-2.5 py-1 rounded-md border border-border/40 font-semibold text-foreground">
-                            <GraduationCap className="w-4 h-4 text-purple-500" />
-                            <span>کلاس: {slot.classroom?.name}</span>
-                          </div>
-
-                          {slot.classroom?.roomNumber && (
-                            <div className="flex items-center gap-1.5 bg-surface/60 px-2.5 py-1 rounded-md border border-border/40">
-                              <MapPin className="w-3.5 h-3.5 text-amber-500" />
-                              <span>محل: {slot.classroom.roomNumber}</span>
-                            </div>
+                          {/* Classroom Name beside lesson name (without 'کلاس:') */}
+                          {slot.classroom?.name && (
+                            <span className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#1C2536] px-2.5 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42] text-xs font-semibold text-muted-foreground dark:text-slate-300">
+                              <GraduationCap className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400 shrink-0" />
+                              <span>{slot.classroom.name}</span>
+                            </span>
                           )}
-
-                          <span className="text-xs text-muted-foreground">
-                            روز: {DAYS.find((d) => d.key === slot.dayOfWeek)?.label}
-                          </span>
                         </div>
-                      </div>
-
-                      {/* Quick Actions */}
-                      <div className="flex flex-wrap items-center gap-2 pt-3 md:pt-0 border-t md:border-t-0 border-border/40 shrink-0">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            navigate(`/app/teacher/attendance?classroomId=${slot.classroomId}`)
-                          }
-                          className="text-xs flex items-center gap-1.5 h-9"
-                          title={`ثبت حضور و غیاب ${slot.classroom?.name}`}
-                        >
-                          <CalendarCheck2 className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>ثبت حضور و غیاب</span>
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            navigate(
-                              `/app/teacher/homework?classroomId=${slot.classroomId}&lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}&classroomName=${encodeURIComponent(slot.classroom?.name || '')}`
-                            )
-                          }
-                          className="text-xs flex items-center gap-1.5 h-9"
-                          title={`تکالیف درس ${slot.lesson?.name} برای کلاس ${slot.classroom?.name}`}
-                        >
-                          <FileCheck className="w-3.5 h-3.5 text-blue-600" />
-                          <span>تکالیف کلاس</span>
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            navigate(
-                              `/app/teacher/lessons?tab=PLANS&lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
-                            )
-                          }
-                          className="text-xs flex items-center gap-1.5 h-9"
-                          title={`مشاهده و تدوین طرح درس ${slot.lesson?.name}`}
-                        >
-                          <BookOpen className="w-3.5 h-3.5 text-purple-600" />
-                          <span>دیدن طرح درس</span>
-                        </Button>
-                      </div>
+                      )}
                     </div>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
 
-      {/* View Mode: Weekly Matrix */}
-      {viewMode === 'WEEKLY' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {DAYS.map((day) => {
-            const daySlots = schedules
-              .filter((s) => s.dayOfWeek === day.key)
-              .sort((a, b) => a.periodNumber - b.periodNumber);
+                    {/* Quick Actions for Teacher - Full width 3-column row */}
+                    <div className="grid grid-cols-3 gap-2 pt-2.5 border-t border-gray-100 dark:border-[#242F42] w-full">
+                      {/* 1. Right Box (First in RTL): طرح درس (تم بنفش زنده) */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          navigate(
+                            `/app/teacher/lessons?tab=PLANS&lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                          )
+                        }
+                        className="text-[10px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-purple-400/60 dark:border-purple-500/50 bg-purple-100/85 dark:bg-purple-600/25 text-purple-800 dark:text-purple-200 hover:bg-purple-200/80 dark:hover:bg-purple-600/35 shadow-2xs font-bold transition-colors"
+                        title={`مشاهده و تدوین طرح درس ${slot.lesson?.name}`}
+                      >
+                        <BookOpen className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300 shrink-0" />
+                        <span className="whitespace-nowrap">طرح درس</span>
+                      </Button>
 
-            const isToday = todayDayDef.key === day.key;
+                      {/* 2. Center Box: تکالیف کلاس (تم زرد دیزاین سیستم) */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          navigate(
+                            `/app/teacher/homework?classroomId=${slot.classroomId}&lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}&classroomName=${encodeURIComponent(slot.classroom?.name || '')}`
+                          )
+                        }
+                        className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-third/40 bg-third-light/70 dark:bg-third/15 text-third-dark dark:text-third hover:bg-third-light dark:hover:bg-third/25 dark:border-third/40 shadow-2xs font-bold transition-colors"
+                        title={`تکالیف درس ${slot.lesson?.name} برای کلاس ${slot.classroom?.name}`}
+                      >
+                        <FileCheck className="w-3.5 h-3.5 text-third-dark dark:text-third shrink-0" />
+                        <span className="whitespace-nowrap">تکالیف کلاس</span>
+                      </Button>
 
-            return (
-              <Card
-                key={day.key}
-                className={`p-5 border transition-all flex flex-col justify-between ${
-                  isToday
-                    ? 'border-primary/50 bg-primary/5 shadow-xs'
-                    : 'border-border/60 bg-surface/30'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between border-b border-border/40 pb-3 mb-3">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-foreground text-base">{day.label}</h3>
-                      {isToday && <Badge variant="success">امروز</Badge>}
+                      {/* 3. Left Box: ثبت حضور و غیاب (تم صورتی/قرمز دیزاین سیستم) */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          navigate(`/app/teacher/attendance?classroomId=${slot.classroomId}`)
+                        }
+                        className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-girl/40 bg-girl-light/70 dark:bg-girl/15 text-girl-dark dark:text-girl-light hover:bg-girl-light dark:hover:bg-girl/25 dark:border-girl/40 shadow-2xs font-bold transition-colors"
+                        title={`ثبت حضور و غیاب کلاس ${slot.classroom?.name}`}
+                      >
+                        <CalendarCheck2 className="w-3.5 h-3.5 text-girl dark:text-girl-light shrink-0" />
+                        <span className="whitespace-nowrap">ثبت حضور و غیاب</span>
+                      </Button>
                     </div>
-                    <span className="text-xs font-semibold text-muted-foreground">
-                      {toPersianDigits(daySlots.length)} کلاس
-                    </span>
                   </div>
-
-                  {daySlots.length === 0 ? (
-                    <p className="text-xs text-muted-foreground/70 py-6 text-center">
-                      بدون کلاس در این روز
-                    </p>
-                  ) : (
-                    <div className="space-y-2.5">
-                      {daySlots.map((slot) => (
-                        <div
-                          key={slot.id}
-                          className="p-2.5 rounded-xl border border-border/50 bg-surface/60 text-xs space-y-1"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-foreground">{slot.lesson?.name}</span>
-                            <span className="text-[11px] font-semibold text-muted-foreground">
-                              {toPersianDigits(slot.startTime)} - {toPersianDigits(slot.endTime)}
-                            </span>
-                          </div>
-                          <div className="text-muted-foreground text-[11px] flex items-center justify-between">
-                            <span>کلاس: {slot.classroom?.name}</span>
-                            <span className="text-primary font-medium">
-                              {PERIOD_LABELS[slot.periodNumber] || `زنگ ${slot.periodNumber}`}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-3 mt-3 border-t border-border/30">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedDay(day.key);
-                      setViewMode('TAB');
-                    }}
-                    className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
-                  >
-                    <span>مشاهده جزئیات این روز</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -61,6 +61,11 @@ export class CreateHomeworkDto {
   @IsBoolean()
   @IsOptional()
   allowLateSubmissions?: boolean;
+
+  @ApiPropertyOptional({ description: 'تاریخ و زمان برنامه‌ریزی‌شده برای انتشار تکلیف' })
+  @IsDateString()
+  @IsOptional()
+  publishAt?: string;
 }
 
 export class SubmitHomeworkDto {

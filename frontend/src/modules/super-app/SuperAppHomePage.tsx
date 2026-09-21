@@ -82,7 +82,14 @@ export const SuperAppHomePage: React.FC = () => {
 
         if (hwRes.status === 'fulfilled') {
           const list = Array.isArray(hwRes.value.data) ? hwRes.value.data : [];
-          setHomeworkCount(list.length);
+          const now = Date.now();
+          const pendingCount = list.filter((hw: any) => {
+            const hasSub = hw.submissions && hw.submissions.length > 0;
+            if (hasSub) return false;
+            const isPastDue = hw.dueDate ? new Date(hw.dueDate).getTime() < now : false;
+            return !isPastDue;
+          }).length;
+          setHomeworkCount(pendingCount);
         }
         if (exRes.status === 'fulfilled') {
           const list = Array.isArray(exRes.value.data) ? exRes.value.data : [];

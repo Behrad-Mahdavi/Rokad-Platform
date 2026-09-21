@@ -1,9 +1,10 @@
-import { Injectable, Logger, OnModuleInit, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as webpush from 'web-push';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { Role } from '../../common/constants';
+import { toPersianDigits } from '../../common/utils/jalali.util';
 
 export interface SystemNotification {
   id: string;
@@ -28,11 +29,15 @@ export interface SystemNotification {
 }
 
 @Injectable()
-export class NotificationsService implements OnModuleInit {
+export class NotificationsService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(NotificationsService.name);
 
   // Fallback in-memory read store when Redis is offline
   private readonly inMemoryReadStore = new Map<string, Set<string>>();
+
+  // Background timer for 24-hour homework reminders
+  private reminderTimer: ReturnType<typeof setInterval> | null = null;
+  private readonly remindedHomeworkSet = new Set<string>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -54,6 +59,118 @@ export class NotificationsService implements OnModuleInit {
       }
     } else {
       this.logger.warn('VAPID keys not configured. Web Push will be disabled.');
+    }
+
+    // Start background 24-hour homework reminder runner
+    this.scheduleHomeworkReminders();
+  }
+
+  onModuleDestroy() {
+    if (this.reminderTimer) {
+      clearInterval(this.reminderTimer);
+      this.reminderTimer = null;
+    }
+  }
+
+  /**
+   * Schedule periodic checks for homeworks due within 24 hours
+   */
+  private scheduleHomeworkReminders() {
+    // Initial run after 15 seconds
+    setTimeout(() => {
+      this.checkAndSendHomeworkReminders().catch((err) => {
+        this.logger.error(`Initial homework reminder check failed: ${err.message}`);
+      });
+    }, 15000);
+
+    // Periodic run every 30 minutes
+    this.reminderTimer = setInterval(() => {
+      this.checkAndSendHomeworkReminders().catch((err) => {
+        this.logger.error(`Periodic homework reminder check failed: ${err.message}`);
+      });
+    }, 30 * 60 * 1000);
+  }
+
+  /**
+   * Scan active homeworks due in next 24h and push reminder to students who haven't submitted
+   */
+  async checkAndSendHomeworkReminders() {
+    try {
+      const now = new Date();
+      const in24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+      const upcomingHomeworks = await this.prisma.homework.findMany({
+        where: {
+          dueDate: {
+            gt: now,
+            lte: in24Hours,
+          },
+        },
+        include: {
+          lesson: { select: { id: true, name: true } },
+          classroom: {
+            include: {
+              enrollments: {
+                where: { status: 'ACTIVE' },
+                include: {
+                  student: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          submissions: {
+            select: { studentId: true },
+          },
+        },
+      });
+
+      if (!upcomingHomeworks.length) return;
+
+      const redisClient = this.redis.getClient();
+
+      for (const hw of upcomingHomeworks) {
+        const submittedStudentIds = new Set(hw.submissions.map((s) => s.studentId));
+        const students = hw.classroom?.enrollments?.map((e) => e.student).filter(Boolean) || [];
+
+        for (const st of students) {
+          if (!st || submittedStudentIds.has(st.id)) continue;
+
+          const reminderKey = `hw:reminded:24h:${hw.id}:${st.id}`;
+          let alreadyReminded = false;
+
+          if (redisClient && redisClient.status === 'ready') {
+            const exists = await redisClient.get(reminderKey);
+            alreadyReminded = !!exists;
+          } else {
+            alreadyReminded = this.remindedHomeworkSet.has(reminderKey);
+          }
+
+          if (alreadyReminded) continue;
+
+          if (st.userId) {
+            await this.sendPushToUser(st.userId, {
+              title: `⏰ یادآوری تکلیف: ${hw.title}`,
+              body: `کمتر از ۲۴ ساعت تا پایان مهلت تحویل تکلیف درس «${hw.lesson?.name || ''}» باقی مانده است.`,
+              url: `/app/student/homework?homeworkId=${hw.id}&action=submit`,
+              tag: `hw-reminder-${hw.id}`,
+            }).catch((err) => {
+              this.logger.warn(`Push to student ${st.userId} failed: ${err.message}`);
+            });
+          }
+
+          if (redisClient && redisClient.status === 'ready') {
+            await redisClient.set(reminderKey, '1', 'EX', 48 * 3600);
+          } else {
+            this.remindedHomeworkSet.add(reminderKey);
+          }
+        }
+      }
+    } catch (err: any) {
+      this.logger.error(`Error in checkAndSendHomeworkReminders: ${err.message}`);
     }
   }
 
@@ -347,17 +464,37 @@ export class NotificationsService implements OnModuleInit {
           activeHomeworks.forEach((hw) => {
             const hasSubmitted = hw.submissions.length > 0;
             if (!hasSubmitted) {
-              notifications.push({
-                id: `hw-active-${hw.id}`,
-                title: `تکلیف جدید درس ${hw.lesson?.name || ''}`,
-                desc: `تکلیف «${hw.title}» تعریف شده است. لطفاً پیش از موعد مقرر پاسخ خود را ارسال فرمایید.`,
-                time: 'مهلت تحویل فعال',
-                read: readIds.has(`hw-active-${hw.id}`),
-                type: 'HOMEWORK',
-                badge: 'warning',
-                targetUrl: `/app/student/homework?homeworkId=${hw.id}&action=submit`,
-                createdAt: hw.createdAt.toISOString(),
-              });
+              const nowMs = Date.now();
+              const dueMs = new Date(hw.dueDate).getTime();
+              const diffMs = dueMs - nowMs;
+              const isDueWithin24Hours = diffMs > 0 && diffMs <= 24 * 60 * 60 * 1000;
+
+              if (isDueWithin24Hours) {
+                const hoursLeft = Math.max(1, Math.round(diffMs / (1000 * 60 * 60)));
+                notifications.push({
+                  id: `hw-reminder-24h-${hw.id}`,
+                  title: `⏰ یادآوری مهلت تحویل: ${hw.title}`,
+                  desc: `تنها حدود ${toPersianDigits(hoursLeft)} ساعت تا پایان مهلت تحویل تکلیف درس «${hw.lesson?.name || ''}» باقی مانده است. لطفاً نسبت به ارسال پاسخ اقدام فرمایید.`,
+                  time: 'کمتر از ۲۴ ساعت مانده',
+                  read: readIds.has(`hw-reminder-24h-${hw.id}`),
+                  type: 'HOMEWORK',
+                  badge: 'destructive',
+                  targetUrl: `/app/student/homework?homeworkId=${hw.id}&action=submit`,
+                  createdAt: new Date().toISOString(),
+                });
+              } else {
+                notifications.push({
+                  id: `hw-active-${hw.id}`,
+                  title: `تکلیف جدید درس ${hw.lesson?.name || ''}`,
+                  desc: `تکلیف «${hw.title}» تعریف شده است. لطفاً پیش از موعد مقرر پاسخ خود را ارسال فرمایید.`,
+                  time: 'مهلت تحویل فعال',
+                  read: readIds.has(`hw-active-${hw.id}`),
+                  type: 'HOMEWORK',
+                  badge: 'warning',
+                  targetUrl: `/app/student/homework?homeworkId=${hw.id}&action=submit`,
+                  createdAt: hw.createdAt.toISOString(),
+                });
+              }
             }
           });
         }

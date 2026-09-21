@@ -268,39 +268,15 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   return (
     <div className={`space-y-1.5 ${className}`}>
-      {/* Header with Title and Mode Switcher */}
-      <div className="flex items-center justify-between">
-        <label className="text-xs font-black text-ink-darker dark:text-white flex items-center gap-1.5">
-          <span>{label}</span>
-          {required && <span className="text-rose-500">*</span>}
-        </label>
-
-        {/* View Mode Tabs: ویرایش / پیش‌نمایش */}
-        <div className="flex items-center p-1 rounded-xl bg-gray-100 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700">
-          <button
-            type="button"
-            onClick={() => setActiveTab('edit')}
-            className={`h-7 sm:h-6 px-3 sm:px-2.5 rounded-lg text-xs sm:text-[11px] font-bold flex items-center gap-1.5 transition-all touch-manipulation cursor-pointer active:scale-95 ${activeTab === 'edit'
-                ? 'bg-white dark:bg-[#151C28] text-primary shadow-2xs font-black'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
-              }`}
-          >
-            <PenLine className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
-            <span>ویرایش</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('preview')}
-            className={`h-7 sm:h-6 px-3 sm:px-2.5 rounded-lg text-xs sm:text-[11px] font-bold flex items-center gap-1.5 transition-all touch-manipulation cursor-pointer active:scale-95 ${activeTab === 'preview'
-                ? 'bg-white dark:bg-[#151C28] text-primary shadow-2xs font-black'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
-              }`}
-          >
-            <Eye className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
-            <span>پیش‌نمایش</span>
-          </button>
+      {/* Header with Title */}
+      {label && (
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-black text-ink-darker dark:text-white flex items-center gap-1.5">
+            <span>{label}</span>
+            {required && <span className="text-rose-500">*</span>}
+          </label>
         </div>
-      </div>
+      )}
 
       {/* Editor Frame */}
       <div

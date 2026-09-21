@@ -14,6 +14,7 @@ import {
   formatJalaliDisplay,
   toPersianDigits,
 } from '../../../utils/jalali';
+import { useNavigate } from 'react-router-dom';
 import {
   Calendar as CalendarIcon,
   Plus,
@@ -38,6 +39,7 @@ import {
   Edit3,
   Trash2,
   SlidersHorizontal,
+  ExternalLink,
 } from 'lucide-react';
 import { toast } from '../../../components/ui/toast/toast';
 
@@ -52,6 +54,7 @@ export interface EventTypeItem {
 const DEFAULT_EVENT_TYPES: EventTypeItem[] = [
   { code: 'ACADEMIC', titleFa: 'رویداد عمومی / آموزشی', color: 'emerald', baseType: 'ACADEMIC', isDefault: true },
   { code: 'EXAM', titleFa: 'آزمون و امتحان هماهنگ', color: 'amber', baseType: 'EXAM', isDefault: true },
+  { code: 'HOMEWORK', titleFa: 'مهلت تحویل تکالیف', color: 'orange', baseType: 'HOMEWORK', isDefault: true },
   { code: 'MEETING', titleFa: 'جلسه اولیاء و مربیان', color: 'purple', baseType: 'MEETING', isDefault: true },
   { code: 'CULTURAL', titleFa: 'جشن و مراسم مدرسه', color: 'rose', baseType: 'CULTURAL', isDefault: true },
   { code: 'SPORTS', titleFa: 'مسابقات و رویداد ورزشی', color: 'blue', baseType: 'SPORTS', isDefault: true },
@@ -68,6 +71,7 @@ import {
 } from './data/persian-calendar-1405';
 
 export const CalendarPage: React.FC = () => {
+  const navigate = useNavigate();
   const currentUser = useAuthStore((s) => s.user);
   const canManageCalendar = ['SCHOOL_ADMIN', 'SUPER_ADMIN'].includes(currentUser?.role || '');
 
@@ -288,6 +292,8 @@ export const CalendarPage: React.FC = () => {
     const found = eventTypes.find((t) => t.code === typeCode || t.baseType === typeCode);
     if (!found) return 'bg-primary';
     switch (found.color) {
+      case 'orange':
+        return 'bg-orange-500';
       case 'amber':
         return 'bg-amber-500';
       case 'purple':
@@ -822,13 +828,15 @@ export const CalendarPage: React.FC = () => {
                   (day.isOfficialHoliday && day.holidayReason !== 'تعطیل هفتگی (جمعه)') ||
                   Boolean(tenantHoliday);
 
+                const isSelected = selectedDay?.jalaliStr === day.jalaliStr;
+
                 return (
                   <div
                     key={day.jalaliStr}
                     onClick={() => setSelectedDay(day)}
                     className={`bg-white dark:bg-[#151C28] rounded-2xl border p-3 sm:p-4 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs cursor-pointer ${
-                      day.isToday
-                        ? 'border-primary dark:border-primary-light ring-2 ring-primary/20 dark:ring-primary-light/25 bg-primary/[0.02] dark:bg-primary/[0.08]'
+                      isSelected
+                        ? 'border-primary dark:border-primary-light ring-2 ring-primary/20 dark:ring-primary-light/25 bg-primary/[0.04] dark:bg-primary/[0.12]'
                         : isHoliday
                         ? 'border-rose-200/80 dark:border-rose-800/60 bg-rose-50/20 dark:bg-rose-950/40 hover:border-rose-300 dark:hover:border-rose-700'
                         : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700'
@@ -894,58 +902,90 @@ export const CalendarPage: React.FC = () => {
                         </div>
                       )}
 
-                      {/* School Events */}
-                      {daySchoolEvents.map((ev) => (
-                        <div
-                          key={ev.id}
-                          className="p-2.5 rounded-xl bg-gray-50 dark:bg-[#1C2536]/80 border border-gray-200/80 dark:border-gray-700/60 text-xs flex items-center justify-between gap-2"
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span
-                              className={`w-2 h-2 rounded-full shrink-0 ${getTypeDotColor(ev.type || ev.eventType)}`}
-                            />
-                            <div className="min-w-0">
-                              <span className="font-bold text-ink-darker dark:text-gray-100 truncate block">{ev.title}</span>
-                              {ev.location && (
-                                <span className="text-[10px] text-gray-400 dark:text-gray-400 truncate block">
-                                  {ev.location}
-                                </span>
+                      {/* School Events & Homeworks */}
+                      {daySchoolEvents.map((ev) => {
+                        const isHomework = ev.type === 'HOMEWORK' || ev.eventType === 'HOMEWORK';
+                        return (
+                          <div
+                            key={ev.id}
+                            className={`p-2.5 rounded-xl border text-xs flex items-center justify-between gap-2 ${
+                              isHomework
+                                ? 'bg-orange-50/70 dark:bg-orange-950/30 border-orange-200/80 dark:border-orange-900/50'
+                                : 'bg-gray-50 dark:bg-[#1C2536]/80 border-gray-200/80 dark:border-gray-700/60'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span
+                                className={`w-2 h-2 rounded-full shrink-0 ${getTypeDotColor(ev.type || ev.eventType)}`}
+                              />
+                              <div className="min-w-0">
+                                <span className="font-bold text-ink-darker dark:text-gray-100 truncate block">{ev.title}</span>
+                                {ev.location && (
+                                  <span className="text-[10px] text-gray-400 dark:text-gray-400 truncate block">
+                                    {ev.location}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Badge
+                                variant="neutral"
+                                className={`text-[10px] ${
+                                  isHomework
+                                    ? 'bg-orange-100 text-orange-800 dark:bg-orange-950/80 dark:text-orange-300 border border-orange-300 dark:border-orange-800'
+                                    : ''
+                                }`}
+                              >
+                                {isHomework ? 'مهلت تحویل تکلیف' : getTypeLabel(ev.type || ev.eventType)}
+                              </Badge>
+                              {isHomework ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const hwId = ev.homeworkId || ev.id.replace('hw-', '');
+                                    const targetUrl =
+                                      currentUser?.role === 'TEACHER'
+                                        ? `/app/teacher/homework?homeworkId=${hwId}`
+                                        : `/app/student/homework?homeworkId=${hwId}`;
+                                    navigate(targetUrl);
+                                  }}
+                                  className="text-[11px] h-7 px-2.5 rounded-lg border-orange-200 dark:border-orange-800/80 text-orange-700 dark:text-orange-300 hover:bg-orange-100/50 dark:hover:bg-orange-900/30 flex items-center gap-1 font-bold"
+                                >
+                                  <span>مشاهده تکلیف</span>
+                                  <ExternalLink className="w-3 h-3" />
+                                </Button>
+                              ) : canManageCalendar && (
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenEdit(ev);
+                                    }}
+                                    className="p-1.5 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                    title="ویرایش رویداد"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteEvent(ev.id, ev.title);
+                                    }}
+                                    className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
+                                    title="حذف رویداد"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <Badge variant="neutral" className="text-[10px]">
-                              {getTypeLabel(ev.type || ev.eventType)}
-                            </Badge>
-                            {canManageCalendar && (
-                              <div className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenEdit(ev);
-                                  }}
-                                  className="p-1.5 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                                  title="ویرایش رویداد"
-                                >
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteEvent(ev.id, ev.title);
-                                  }}
-                                  className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
-                                  title="حذف رویداد"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
 
                       {/* Occasions List */}
                       {day.occasions.filter((occ) => occ !== day.holidayReason && occ !== 'تعطیل هفتگی (جمعه)').length > 0 && (
@@ -1008,7 +1048,7 @@ export const CalendarPage: React.FC = () => {
 
               {/* Month Days */}
               {monthDays.map((day) => {
-                const isSelected = selectedDay?.day === day.day;
+                const isSelected = selectedDay?.jalaliStr === day.jalaliStr;
                 const daySchoolEvents = getDaySchoolEvents(day.jalaliStr);
                 const tenantHoliday = getDayTenantHoliday(day.jalaliStr);
                 const isHoliday = day.isOfficialHoliday || Boolean(tenantHoliday);
@@ -1019,9 +1059,7 @@ export const CalendarPage: React.FC = () => {
                     key={day.day}
                     onClick={() => setSelectedDay(day)}
                     className={`min-h-[48px] sm:min-h-[62px] md:min-h-[72px] p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border transition-all duration-150 cursor-pointer flex flex-col justify-between select-none relative group ${
-                      day.isToday
-                        ? 'border-primary dark:border-primary-light ring-2 ring-primary/30 dark:ring-primary-light/40 bg-primary/[0.04] dark:bg-primary/[0.12] shadow-xs'
-                        : isSelected
+                      isSelected
                         ? 'ring-2 ring-primary dark:ring-primary-light border-primary dark:border-primary-light bg-primary/5 dark:bg-primary/20 shadow-xs'
                         : isHoliday
                         ? 'bg-rose-50/40 dark:bg-rose-950/40 border-rose-200/80 dark:border-rose-800/60 hover:border-rose-300 dark:hover:border-rose-700'
@@ -1065,7 +1103,9 @@ export const CalendarPage: React.FC = () => {
                         <div
                           key={ev.id}
                           className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold truncate ${
-                            ev.type === 'EXAM'
+                            ev.type === 'HOMEWORK' || ev.eventType === 'HOMEWORK'
+                              ? 'bg-orange-100/90 text-orange-800 dark:bg-orange-950/70 dark:text-orange-300 border border-orange-200/70 dark:border-orange-800/60'
+                              : ev.type === 'EXAM'
                               ? 'bg-amber-100/80 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60'
                               : ev.type === 'MEETING'
                               ? 'bg-purple-100/80 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60'
@@ -1105,7 +1145,9 @@ export const CalendarPage: React.FC = () => {
                           <span
                             key={ev.id}
                             className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shrink-0 shadow-2xs ${
-                              ev.type === 'EXAM'
+                              ev.type === 'HOMEWORK' || ev.eventType === 'HOMEWORK'
+                                ? 'bg-orange-500'
+                                : ev.type === 'EXAM'
                                 ? 'bg-amber-500'
                                 : ev.type === 'MEETING'
                                 ? 'bg-purple-500'
@@ -1125,9 +1167,9 @@ export const CalendarPage: React.FC = () => {
           {/* Google Calendar Split Day Details (Immediately visible under month grid) */}
           {selectedDay && (
             <Card className="p-3.5 sm:p-5 bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-gray-800 shadow-xs rounded-2xl animate-in fade-in duration-150">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800 gap-2">
-                <div>
-                  <div className="flex items-center gap-2">
+              <div className="flex items-start justify-between pb-3 border-b border-gray-100 dark:border-gray-800 gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base sm:text-lg font-black text-ink-darker dark:text-white">
                       {selectedDay.dayOfWeekName} {toPersianDigits(selectedDay.day)}{' '}
                       {currentMonthMeta.name} {toPersianDigits(selectedYear)}
@@ -1143,12 +1185,12 @@ export const CalendarPage: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <Badge
                     variant={selectedDay.isOfficialHoliday ? 'destructive' : 'neutral'}
-                    className="text-xs"
+                    className="text-xs shrink-0"
                   >
-                    {selectedDay.isOfficialHoliday ? 'تعطیل رسمی' : 'روزِ آموزشی'}
+                    {selectedDay.isOfficialHoliday ? 'تعطیل' : 'روزِ آموزشی'}
                   </Badge>
 
                   {canManageCalendar && (
@@ -1156,7 +1198,7 @@ export const CalendarPage: React.FC = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleOpenCreate(selectedDay.jalaliStr)}
-                      className="text-xs min-h-[38px] px-3 border-gray-300 dark:border-gray-700"
+                      className="text-xs min-h-[36px] px-3 border-gray-300 dark:border-gray-700 shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5 ml-1 text-primary" />
                       <span>ثبت رویداد</span>
@@ -1167,15 +1209,6 @@ export const CalendarPage: React.FC = () => {
 
               {/* Day Contents */}
               <div className="pt-3 space-y-2">
-                {selectedDay.holidayReason && (
-                  <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/60 text-rose-800 dark:text-rose-200 text-xs flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-bold">مناسبت تعطیلی رسمی: </span>
-                      <span>{selectedDay.holidayReason}</span>
-                    </div>
-                  </div>
-                )}
 
                 {/* Occasions List */}
                 {selectedDay.occasions.length > 0 && (
@@ -1195,59 +1228,101 @@ export const CalendarPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* School Events */}
+                {/* School Events & Homeworks */}
                 {getDaySchoolEvents(selectedDay.jalaliStr).length > 0 && (
                   <div className="space-y-1.5 pt-1">
-                    <span className="text-xs font-bold text-gray-700 dark:text-gray-300 block">برنامه‌ها و آزمون‌های مدرسه:</span>
-                    {getDaySchoolEvents(selectedDay.jalaliStr).map((ev) => (
-                      <div
-                        key={ev.id}
-                        className="p-2.5 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 dark:border-primary/30 text-xs flex items-center justify-between gap-2"
-                      >
-                        <div className="min-w-0">
-                          <p className="font-bold text-ink-darker dark:text-gray-100 truncate">{ev.title}</p>
-                          {ev.description && (
-                            <p className="text-gray-500 dark:text-gray-400 text-[11px] mt-0.5 line-clamp-2">{ev.description}</p>
-                          )}
-                          {ev.location && (
-                            <p className="text-gray-400 dark:text-gray-400 text-[10px] mt-0.5 flex items-center gap-1">
-                              <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
-                              <span className="truncate">{ev.location}</span>
+                    <span className="text-xs font-bold text-gray-700 dark:text-gray-300 block">برنامه‌ها، آزمون‌ها و تکالیف:</span>
+                    {getDaySchoolEvents(selectedDay.jalaliStr).map((ev) => {
+                      const isHomework = ev.type === 'HOMEWORK' || ev.eventType === 'HOMEWORK';
+                      return (
+                        <div
+                          key={ev.id}
+                          className={`p-3 rounded-xl border text-xs flex flex-col justify-between gap-1.5 ${
+                            isHomework
+                              ? 'bg-orange-50/70 dark:bg-orange-950/30 border-orange-200/80 dark:border-orange-900/50'
+                              : 'bg-primary/5 dark:bg-primary/10 border border-primary/20 dark:border-primary/30'
+                          }`}
+                        >
+                          {/* Title (Full text, no truncate) */}
+                          <div className="flex items-start gap-2 min-w-0">
+                            {isHomework ? (
+                              <Clock className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
+                            ) : (
+                              <span className={`w-2.5 h-2.5 rounded-full shrink-0 mt-1 ${getTypeDotColor(ev.type || ev.eventType)}`} />
+                            )}
+                            <p className="font-bold text-ink-darker dark:text-gray-100 text-xs sm:text-[13px] leading-relaxed break-words">
+                              {ev.title}
                             </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Badge variant="neutral" className="text-[10px]">
-                            {getTypeLabel(ev.type || ev.eventType)}
-                          </Badge>
-                          {canManageCalendar && (
-                            <div className="flex items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => handleOpenEdit(ev)}
-                                className="p-1.5 text-gray-500 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                                title="ویرایش رویداد"
+                          </div>
+
+                          {/* Bottom Row: Location (Right) & Label/Actions (Left) */}
+                          <div className="flex items-center justify-between gap-2 mt-1 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06]">
+                            {ev.location ? (
+                              <p className="text-gray-400 dark:text-gray-400 text-[10px] flex items-center gap-1 min-w-0">
+                                <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
+                                <span className="truncate">{ev.location}</span>
+                              </p>
+                            ) : (
+                              <span />
+                            )}
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Badge
+                                variant="neutral"
+                                className={`text-[10px] ${
+                                  isHomework
+                                    ? 'bg-orange-100 text-orange-800 dark:bg-orange-950/80 dark:text-orange-300 border border-orange-300 dark:border-orange-800'
+                                    : ''
+                                }`}
                               >
-                                <Edit3 className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteEvent(ev.id, ev.title)}
-                                className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
-                                title="حذف رویداد"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                                {isHomework ? 'مهلت تحویل تکلیف' : getTypeLabel(ev.type || ev.eventType)}
+                              </Badge>
+                              {isHomework ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const hwId = ev.homeworkId || ev.id.replace('hw-', '');
+                                    const targetUrl =
+                                      currentUser?.role === 'TEACHER'
+                                        ? `/app/teacher/homework?homeworkId=${hwId}`
+                                        : `/app/student/homework?homeworkId=${hwId}`;
+                                    navigate(targetUrl);
+                                  }}
+                                  className="text-[11px] h-7 px-2.5 rounded-lg border-orange-200 dark:border-orange-800/80 text-orange-700 dark:text-orange-300 hover:bg-orange-100/50 dark:hover:bg-orange-900/30 flex items-center gap-1 font-bold"
+                                >
+                                  <span>مشاهده تکلیف</span>
+                                  <ExternalLink className="w-3 h-3" />
+                                </Button>
+                              ) : canManageCalendar && (
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEdit(ev)}
+                                    className="p-1.5 text-gray-500 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                    title="ویرایش رویداد"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteEvent(ev.id, ev.title)}
+                                    className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
+                                    title="حذف رویداد"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
 
-                {!selectedDay.holidayReason &&
-                  selectedDay.occasions.length === 0 &&
+                {selectedDay.occasions.length === 0 &&
                   getDaySchoolEvents(selectedDay.jalaliStr).length === 0 && (
                     <p className="text-xs text-gray-400 dark:text-gray-400 py-2 text-center">
                       هیچ رویداد یا مناسبت رسمی برای این روز ثبت نشده است.

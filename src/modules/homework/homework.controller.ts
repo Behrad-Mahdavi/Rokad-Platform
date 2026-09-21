@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   UseGuards,
@@ -99,12 +100,27 @@ export class HomeworkController {
   @RequirePermissions(AppPermission.HOMEWORK_READ)
   @ApiOperation({ summary: 'مشاهده جزئیات تکلیف و لیست پاسخ‌های ارسالی' })
   async getHomeworkDetails(
+    @CurrentUser() user: any,
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentTenant('id') tenantId: string,
     @Param('id') homeworkId: string,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
-    return this.homeworkService.getHomeworkDetails(effectiveTenantId, homeworkId);
+    return this.homeworkService.getHomeworkDetails(effectiveTenantId, homeworkId, user);
+  }
+
+  @Delete(':id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
+  @RequirePermissions(AppPermission.HOMEWORK_WRITE)
+  @ApiOperation({ summary: 'حذف تکلیف درسی' })
+  async deleteHomework(
+    @CurrentUser() user: any,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') homeworkId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.homeworkService.deleteHomework(effectiveTenantId, homeworkId, user);
   }
 
   @Get(':id/submissions')

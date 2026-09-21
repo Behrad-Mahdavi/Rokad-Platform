@@ -60,7 +60,7 @@ export class CalendarService {
       ];
     }
 
-    return this.prisma.schoolEvent.findMany({
+    const schoolEvents = await this.prisma.schoolEvent.findMany({
       where,
       include: {
         createdBy: {
@@ -69,6 +69,59 @@ export class CalendarService {
       },
       orderBy: { startDate: 'asc' },
     });
+
+    let homeworkEvents: any[] = [];
+    try {
+      const hwWhere: any = { tenantId };
+      if (startDate && endDate) {
+        hwWhere.dueDate = {
+          gte: new Date(startDate),
+          lte: new Date(endDate),
+        };
+      }
+      const homeworks = await this.prisma.homework.findMany({
+        where: hwWhere,
+        include: {
+          lesson: { select: { id: true, name: true } },
+          classroom: { select: { id: true, name: true } },
+          teacher: { include: { user: { select: { firstName: true, lastName: true } } } },
+        },
+        orderBy: { dueDate: 'asc' },
+      });
+
+      homeworkEvents = homeworks.map((hw) => ({
+        id: `hw-${hw.id}`,
+        tenantId: hw.tenantId,
+        title: `مهلت تکلیف: ${hw.title}`,
+        description: hw.description || '',
+        eventType: 'HOMEWORK',
+        type: 'HOMEWORK',
+        startDate: hw.dueDate,
+        endDate: hw.dueDate,
+        isAllDay: false,
+        targetAudience: 'SPECIFIC_CLASSES',
+        targetClassIds: [hw.classroomId],
+        location: hw.classroom?.name ? `کلاس ${hw.classroom.name}` : undefined,
+        tags: ['HOMEWORK', `lesson:${hw.lessonId}`],
+        homeworkId: hw.id,
+        lessonName: hw.lesson?.name,
+        classroomName: hw.classroom?.name,
+        createdBy: hw.teacher?.user
+          ? {
+              firstName: hw.teacher.user.firstName,
+              lastName: hw.teacher.user.lastName,
+              role: 'TEACHER',
+            }
+          : undefined,
+        createdAt: hw.createdAt,
+      }));
+    } catch {
+      // Non-blocking fallback
+    }
+
+    const allEvents = [...schoolEvents, ...homeworkEvents];
+    allEvents.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    return allEvents;
   }
 
   async listAnnouncements(
@@ -192,15 +245,73 @@ export class CalendarService {
       ];
     }
 
-    return this.prisma.schoolEvent.findMany({
-      where,
-      include: {
-        createdBy: {
-          select: { firstName: true, lastName: true, role: true, avatarUrl: true },
+    let schoolEvents: any[] = [];
+    if (!eventType || eventType === 'ALL' || eventType !== 'HOMEWORK') {
+      schoolEvents = await this.prisma.schoolEvent.findMany({
+        where,
+        include: {
+          createdBy: {
+            select: { firstName: true, lastName: true, role: true, avatarUrl: true },
+          },
         },
-      },
-      orderBy: { startDate: 'asc' },
-    });
+        orderBy: { startDate: 'asc' },
+      });
+    }
+
+    let homeworkEvents: any[] = [];
+    if (!eventType || eventType === 'ALL' || eventType === 'HOMEWORK') {
+      try {
+        const hwWhere: any = { tenantId };
+        if (search) {
+          hwWhere.OR = [
+            { title: { contains: search, mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } },
+          ];
+        }
+        const homeworks = await this.prisma.homework.findMany({
+          where: hwWhere,
+          include: {
+            lesson: { select: { id: true, name: true } },
+            classroom: { select: { id: true, name: true } },
+            teacher: { include: { user: { select: { firstName: true, lastName: true } } } },
+          },
+          orderBy: { dueDate: 'asc' },
+        });
+
+        homeworkEvents = homeworks.map((hw) => ({
+          id: `hw-${hw.id}`,
+          tenantId: hw.tenantId,
+          title: `مهلت تکلیف: ${hw.title}`,
+          description: hw.description || '',
+          eventType: 'HOMEWORK',
+          type: 'HOMEWORK',
+          startDate: hw.dueDate,
+          endDate: hw.dueDate,
+          isAllDay: false,
+          targetAudience: 'SPECIFIC_CLASSES',
+          targetClassIds: [hw.classroomId],
+          location: hw.classroom?.name ? `کلاس ${hw.classroom.name}` : undefined,
+          tags: ['HOMEWORK', `lesson:${hw.lessonId}`],
+          homeworkId: hw.id,
+          lessonName: hw.lesson?.name,
+          classroomName: hw.classroom?.name,
+          createdBy: hw.teacher?.user
+            ? {
+                firstName: hw.teacher.user.firstName,
+                lastName: hw.teacher.user.lastName,
+                role: 'TEACHER',
+              }
+            : undefined,
+          createdAt: hw.createdAt,
+        }));
+      } catch {
+        // Non-blocking fallback
+      }
+    }
+
+    const allEvents = [...schoolEvents, ...homeworkEvents];
+    allEvents.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    return allEvents;
   }
 
   async deleteEvent(tenantId: string, eventId: string): Promise<any> {
@@ -237,6 +348,7 @@ export class CalendarService {
     const defaultTypes = [
       { code: 'ACADEMIC', titleFa: 'رویداد عمومی / آموزشی', color: 'emerald', baseType: 'ACADEMIC', isDefault: true },
       { code: 'EXAM', titleFa: 'آزمون و امتحان هماهنگ', color: 'amber', baseType: 'EXAM', isDefault: true },
+      { code: 'HOMEWORK', titleFa: 'مهلت تحویل تکالیف', color: 'orange', baseType: 'HOMEWORK', isDefault: true },
       { code: 'MEETING', titleFa: 'جلسه اولیاء و مربیان', color: 'purple', baseType: 'MEETING', isDefault: true },
       { code: 'CULTURAL', titleFa: 'جشن و مراسم مدرسه', color: 'rose', baseType: 'CULTURAL', isDefault: true },
       { code: 'SPORTS', titleFa: 'مسابقات و رویداد ورزشی', color: 'blue', baseType: 'SPORTS', isDefault: true },

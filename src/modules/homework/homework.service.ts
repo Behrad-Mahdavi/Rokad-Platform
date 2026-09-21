@@ -99,6 +99,11 @@ export class HomeworkService {
       throw new BadRequestException('پروفایل دبیر مربوطه برای این تکلیف مشخص نشده است');
     }
 
+    let finalDescription = dto.description || '';
+    if (dto.publishAt) {
+      finalDescription = `<!--SCHEDULED_PUBLISH:${new Date(dto.publishAt).toISOString()}-->\n` + finalDescription;
+    }
+
     const homework = await this.prisma.homework.create({
       data: {
         tenantId,
@@ -106,7 +111,7 @@ export class HomeworkService {
         lessonId: dto.lessonId,
         teacherId,
         title: dto.title,
-        description: dto.description,
+        description: finalDescription,
         attachmentUrls: dto.attachmentUrls || [],
         dueDate: new Date(dto.dueDate),
         maxScore: dto.maxScore || 20,
@@ -127,7 +132,44 @@ export class HomeworkService {
       title: dto.title,
     });
 
-    return homework;
+    return this.parseHomeworkMeta(homework);
+  }
+
+  /**
+   * Helper to parse scheduled publish metadata stored in description
+   */
+  private parseHomeworkMeta(hw: any) {
+    if (!hw) return hw;
+    let publishAt: string | null = null;
+    let cleanDescription = hw.description || '';
+    const match = cleanDescription.match(/^<!--SCHEDULED_PUBLISH:(.*?)-->\n?/);
+    if (match) {
+      publishAt = match[1];
+      cleanDescription = cleanDescription.replace(match[0], '');
+    }
+    const isScheduled = !!publishAt && new Date(publishAt).getTime() > Date.now();
+
+    let submissionStats: { total: number; graded: number; pending: number } | undefined;
+    if (hw.submissions && Array.isArray(hw.submissions)) {
+      const total = hw.submissions.length;
+      const graded = hw.submissions.filter((s: any) => s.status === 'GRADED').length;
+      const pending = hw.submissions.filter((s: any) => s.status !== 'GRADED').length;
+      submissionStats = { total, graded, pending };
+    } else if (hw._count?.submissions !== undefined) {
+      submissionStats = {
+        total: hw._count.submissions,
+        graded: 0,
+        pending: hw._count.submissions,
+      };
+    }
+
+    return {
+      ...hw,
+      description: cleanDescription,
+      publishAt,
+      isScheduled,
+      submissionStats,
+    };
   }
 
   /**
@@ -225,13 +267,27 @@ export class HomeworkService {
           },
         },
       };
+    } else {
+      // For teacher / admin: include submission status summary
+      includeClause.submissions = {
+        select: { id: true, status: true, score: true },
+      };
     }
 
-    return this.prisma.homework.findMany({
+    const homeworks = await this.prisma.homework.findMany({
       where: whereClause,
       include: includeClause,
       orderBy: { createdAt: 'desc' },
     });
+
+    const parsed = homeworks.map((hw) => this.parseHomeworkMeta(hw));
+
+    // If student or parent, do not expose homework that is scheduled for future
+    if (user?.role === 'STUDENT' || user?.role === 'PARENT') {
+      return parsed.filter((hw) => !hw.isScheduled);
+    }
+
+    return parsed;
   }
 
   /**
@@ -258,7 +314,7 @@ export class HomeworkService {
   /**
    * Get homework details with submission summary
    */
-  async getHomeworkDetails(tenantId: string, homeworkId: string) {
+  async getHomeworkDetails(tenantId: string, homeworkId: string, user?: any) {
     const homework = await this.prisma.homework.findFirst({
       where: { id: homeworkId, tenantId },
       include: {
@@ -282,7 +338,42 @@ export class HomeworkService {
     if (!homework) {
       throw new NotFoundException('تکلیف مورد نظر یافت نشد');
     }
-    return homework;
+
+    const parsed = this.parseHomeworkMeta(homework);
+    if ((user?.role === 'STUDENT' || user?.role === 'PARENT') && parsed.isScheduled) {
+      throw new NotFoundException('تکلیف مورد نظر یافت نشد یا هنوز منتشر نشده است');
+    }
+
+    return parsed;
+  }
+
+  /**
+   * Delete a homework assignment
+   */
+  async deleteHomework(tenantId: string, homeworkId: string, user?: any) {
+    const homework = await this.prisma.homework.findFirst({
+      where: { id: homeworkId, tenantId },
+    });
+    if (!homework) {
+      throw new NotFoundException('تکلیف مورد نظر یافت نشد');
+    }
+
+    if (user?.role === 'TEACHER') {
+      const teacher = await this.prisma.teacherProfile.findFirst({
+        where: { userId: user.id, tenantId },
+      });
+      if (!teacher || teacher.id !== homework.teacherId) {
+        throw new ForbiddenException('شما فقط مجاز به حذف تکالیف مربوط به خودتان هستید');
+      }
+    }
+
+    await this.prisma.homeworkSubmission.deleteMany({
+      where: { homeworkId, tenantId },
+    });
+
+    return this.prisma.homework.delete({
+      where: { id: homeworkId },
+    });
   }
 
   /**

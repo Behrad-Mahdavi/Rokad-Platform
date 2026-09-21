@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
@@ -26,7 +26,41 @@ import {
   Archive,
   X,
   ChevronDown,
+  Check,
 } from 'lucide-react';
+
+interface PriorityOption {
+  value: string;
+  label: string;
+  dotColor: string;
+}
+
+const PRIORITY_OPTIONS: PriorityOption[] = [
+  {
+    value: 'ALL',
+    label: 'همه اولویت‌ها',
+    dotColor:
+      'bg-slate-400 dark:bg-slate-300 ring-2 ring-slate-400/25 dark:ring-slate-300/30 shadow-[0_0_6px_rgba(148,163,184,0.4)]',
+  },
+  {
+    value: 'URGENT',
+    label: 'فقط فوری',
+    dotColor:
+      'bg-rose-500 dark:bg-rose-400 ring-2 ring-rose-500/25 dark:ring-rose-400/40 shadow-[0_0_8px_rgba(251,113,133,0.6)]',
+  },
+  {
+    value: 'IMPORTANT',
+    label: 'فقط مهم',
+    dotColor:
+      'bg-amber-500 dark:bg-amber-300 ring-2 ring-amber-500/25 dark:ring-amber-300/40 shadow-[0_0_8px_rgba(252,211,77,0.6)]',
+  },
+  {
+    value: 'NORMAL',
+    label: 'عادی',
+    dotColor:
+      'bg-sky-500 dark:bg-sky-400 ring-2 ring-sky-500/25 dark:ring-sky-400/40 shadow-[0_0_8px_rgba(56,189,248,0.6)]',
+  },
+];
 
 export const MessagesPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'inbox' | 'sent'>('inbox');
@@ -41,6 +75,37 @@ export const MessagesPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<string>('ALL');
   const [unreadOnly, setUnreadOnly] = useState(false);
+  const [isPriorityDropdownOpen, setIsPriorityDropdownOpen] = useState(false);
+  const priorityDropdownRef = useRef<HTMLDivElement>(null);
+
+  const selectedPriorityOpt = useMemo(
+    () => PRIORITY_OPTIONS.find((opt) => opt.value === priorityFilter) || PRIORITY_OPTIONS[0],
+    [priorityFilter]
+  );
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        priorityDropdownRef.current &&
+        !priorityDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsPriorityDropdownOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsPriorityDropdownOpen(false);
+      }
+    };
+    if (isPriorityDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isPriorityDropdownOpen]);
 
   // Modals
   const [isComposeOpen, setIsComposeOpen] = useState(false);
@@ -234,8 +299,8 @@ export const MessagesPage: React.FC = () => {
               type="button"
               onClick={() => setActiveTab('inbox')}
               className={`flex-1 sm:flex-initial px-3.5 sm:px-4 py-2 rounded-lg text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${activeTab === 'inbox'
-                  ? 'bg-white dark:bg-[#151C28] text-primary-dark dark:text-primary border border-primary/25 dark:border-gray-700 shadow-[1.5px_1.5px_0_#59BBAF] dark:shadow-[1.5px_1.5px_0_#0B0F17]'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-ink-darker dark:hover:text-white font-bold'
+                ? 'bg-white dark:bg-[#151C28] text-primary-dark dark:text-primary border border-primary/25 dark:border-gray-700 shadow-[1.5px_1.5px_0_#59BBAF] dark:shadow-[1.5px_1.5px_0_#0B0F17]'
+                : 'text-gray-600 dark:text-gray-400 hover:text-ink-darker dark:hover:text-white font-bold'
                 }`}
             >
               <Inbox className="w-3.5 h-3.5" />
@@ -255,11 +320,10 @@ export const MessagesPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveTab('sent')}
-              className={`flex-1 sm:flex-initial px-3.5 sm:px-4 py-2 rounded-lg text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
-                activeTab === 'sent'
+              className={`flex-1 sm:flex-initial px-3.5 sm:px-4 py-2 rounded-lg text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${activeTab === 'sent'
                   ? 'bg-white dark:bg-[#151C28] text-primary-dark dark:text-primary border border-primary/25 dark:border-gray-700 shadow-[1.5px_1.5px_0_#59BBAF] dark:shadow-[1.5px_1.5px_0_#0B0F17]'
                   : 'text-gray-600 dark:text-gray-400 hover:text-ink-darker dark:hover:text-white font-bold'
-              }`}
+                }`}
             >
               <Send className="w-3.5 h-3.5" />
               <span>پیام‌های ارسالی</span>
@@ -290,27 +354,57 @@ export const MessagesPage: React.FC = () => {
               )}
             </div>
 
-            {/* Priority Filter Dropdown with Custom Chevron */}
-            <div className="relative shrink-0">
-              <select
-                value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value)}
-                className="h-10 appearance-none text-xs pr-3 pl-8 rounded-xl border-[1.5px] border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-ink-normal dark:text-gray-200 outline-none focus:border-primary shadow-2xs cursor-pointer font-bold transition-all hover:border-gray-300 dark:hover:border-gray-600"
+            {/* Priority Filter Custom Dropdown */}
+            <div className="relative shrink-0" ref={priorityDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsPriorityDropdownOpen((prev) => !prev)}
+                className={`h-10 px-3.5 rounded-xl text-xs font-bold border-[1.5px] transition-all duration-150 cursor-pointer select-none flex items-center justify-between gap-2.5 shadow-2xs min-w-[130px] ${isPriorityDropdownOpen
+                    ? 'border-primary ring-2 ring-primary/20 dark:ring-primary/30 bg-white dark:bg-[#1C2536] text-ink-darker dark:text-white'
+                    : priorityFilter !== 'ALL'
+                      ? 'border-primary/60 bg-primary/10 text-primary dark:text-primary'
+                      : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-ink-normal dark:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
+                aria-expanded={isPriorityDropdownOpen}
+                aria-haspopup="listbox"
               >
-                <option value="ALL" className="bg-white dark:bg-[#151C28]">
-                  همه اولویت‌ها
-                </option>
-                <option value="URGENT" className="bg-white dark:bg-[#151C28]">
-                  فقط فوری
-                </option>
-                <option value="IMPORTANT" className="bg-white dark:bg-[#151C28]">
-                  فقط مهم
-                </option>
-                <option value="NORMAL" className="bg-white dark:bg-[#151C28]">
-                  عادی
-                </option>
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
+                <div className="flex items-center gap-2.5 truncate min-w-0">
+                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 transition-all ${selectedPriorityOpt.dotColor}`} />
+                  <span className="truncate">{selectedPriorityOpt.label}</span>
+                </div>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-gray-400 shrink-0 transition-transform duration-200 ${isPriorityDropdownOpen ? 'rotate-180 text-primary' : ''
+                    }`}
+                />
+              </button>
+
+              {isPriorityDropdownOpen && (
+                <div className="absolute top-full left-0 mt-1.5 z-50 w-44 bg-white dark:bg-[#151C28] rounded-xl border border-gray-200 dark:border-[#242F42] shadow-xl p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
+                  {PRIORITY_OPTIONS.map((opt) => {
+                    const isSelected = opt.value === priorityFilter;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          setPriorityFilter(opt.value);
+                          setIsPriorityDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer text-right ${isSelected
+                            ? 'bg-primary/10 text-primary dark:text-primary font-black'
+                            : 'text-ink-darker dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1C2536]'
+                          }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className={`w-2.5 h-2.5 rounded-full shrink-0 transition-all ${opt.dotColor}`} />
+                          <span>{opt.label}</span>
+                        </div>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Unread Only Toggle */}
@@ -318,16 +412,14 @@ export const MessagesPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setUnreadOnly(!unreadOnly)}
-                className={`h-10 px-3 rounded-xl text-xs font-black border-[1.5px] transition-all cursor-pointer shrink-0 active:translate-x-[1px] active:translate-y-[1px] flex items-center gap-1.5 ${
-                  unreadOnly
+                className={`h-10 px-3 rounded-xl text-xs font-black border-[1.5px] transition-all cursor-pointer shrink-0 active:translate-x-[1px] active:translate-y-[1px] flex items-center gap-1.5 ${unreadOnly
                     ? 'bg-primary/10 border-primary text-primary-dark dark:text-primary shadow-2xs'
                     : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-primary/40'
-                }`}
+                  }`}
               >
                 <div
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    unreadOnly ? 'bg-primary ring-2 ring-primary/30' : 'bg-gray-300 dark:bg-gray-600'
-                  }`}
+                  className={`w-2 h-2 rounded-full transition-colors ${unreadOnly ? 'bg-primary ring-2 ring-primary/30' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
                 />
                 <span>خوانده‌نشده</span>
               </button>
@@ -379,8 +471,8 @@ export const MessagesPage: React.FC = () => {
                   key={item.recipientRecordId}
                   onClick={() => setSelectedMessageId(item.message.id)}
                   className={`group relative p-3.5 sm:p-4 rounded-2xl border-[1.5px] transition-all duration-150 cursor-pointer flex items-center justify-between gap-3 active:translate-x-[1px] active:translate-y-[1px] ${isUnread
-                      ? 'bg-primary/5 dark:bg-primary/10 border-primary-dark/40 dark:border-primary/40 shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] hover:shadow-[2.5px_2.5px_0_#59BBAF]'
-                      : 'bg-white dark:bg-[#151C28] border-gray-200/80 dark:border-gray-800 shadow-[2px_2px_0_rgba(0,0,0,0.03)] dark:shadow-[2px_2px_0_#0B0F17] hover:border-primary dark:hover:border-primary hover:shadow-[2px_2px_0_#59BBAF]'
+                    ? 'bg-primary/5 dark:bg-primary/10 border-primary-dark/40 dark:border-primary/40 shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] hover:shadow-[2.5px_2.5px_0_#59BBAF]'
+                    : 'bg-white dark:bg-[#151C28] border-gray-200/80 dark:border-gray-800 shadow-[2px_2px_0_rgba(0,0,0,0.03)] dark:shadow-[2px_2px_0_#0B0F17] hover:border-primary dark:hover:border-primary hover:shadow-[2px_2px_0_#59BBAF]'
                     }`}
                 >
                   <div className="flex items-center gap-3 sm:gap-3.5 min-w-0 flex-1">
@@ -444,8 +536,8 @@ export const MessagesPage: React.FC = () => {
                       type="button"
                       onClick={(e) => handleToggleStar(e, item.message.id)}
                       className={`p-1.5 rounded-lg transition-colors cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-950/40 ${item.isStarred
-                          ? 'text-amber-500 hover:text-amber-600'
-                          : 'text-gray-300 dark:text-gray-600 hover:text-amber-500'
+                        ? 'text-amber-500 hover:text-amber-600'
+                        : 'text-gray-300 dark:text-gray-600 hover:text-amber-500'
                         }`}
                       title={item.isStarred ? 'حذف از ستاره‌دارها' : 'ستاره‌دار کردن'}
                     >
