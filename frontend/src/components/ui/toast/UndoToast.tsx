@@ -80,16 +80,16 @@ export const UndoToast: React.FC<UndoToastProps> = ({
       onTouchStart={pauseTimer}
       onTouchEnd={resumeTimer}
       onTouchCancel={resumeTimer}
-      className="relative overflow-hidden w-[380px] max-w-full rounded-2xl bg-gray-900/95 dark:bg-[#151D2A]/95 text-white shadow-2xl backdrop-blur-md border border-gray-700/60 dark:border-gray-700 p-3.5 transition-all select-none"
+      className="relative overflow-hidden w-[380px] max-w-full rounded-2xl bg-white dark:bg-zinc-900 text-foreground shadow-[4px_4px_0px_#000] dark:shadow-[4px_4px_0px_#000] border-2.5 border-black dark:border-zinc-700 p-3.5 transition-all select-none"
       dir="rtl"
     >
       {/* Toast Content */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="p-2 rounded-xl bg-gray-800 text-gray-300 dark:bg-gray-800/80 shrink-0">
-            <Icon className="h-4 w-4 text-amber-400" />
+          <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/70 border-2 border-amber-500/50 flex items-center justify-center shrink-0">
+            <Icon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           </div>
-          <span className="text-xs font-bold truncate leading-tight text-gray-100">
+          <span className="text-xs font-black truncate leading-tight text-foreground">
             {message}
           </span>
         </div>
@@ -98,14 +98,14 @@ export const UndoToast: React.FC<UndoToastProps> = ({
         <div className="flex items-center gap-2 shrink-0">
           {/* Numerical Countdown Timer */}
           <div
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold border transition-colors ${
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold border-2 transition-colors ${
               isPaused
-                ? 'bg-amber-950/40 border-amber-700/50 text-amber-300'
-                : 'bg-gray-800/90 border-gray-700 text-amber-400'
+                ? 'bg-amber-100 dark:bg-amber-950/60 border-amber-600 dark:border-amber-500 text-amber-900 dark:text-amber-300'
+                : 'bg-neutral-100 dark:bg-zinc-800 border-black/30 dark:border-zinc-700 text-amber-700 dark:text-amber-400'
             }`}
             title={isPaused ? 'تایمر متوقف شد (با خروج نشانگر ماوس ادامه می‌یابد)' : 'زمان باقی‌مانده برای بازگردانی'}
           >
-            <Clock className={`h-3.5 w-3.5 ${isPaused ? '' : 'animate-pulse text-amber-400'}`} />
+            <Clock className={`h-3.5 w-3.5 ${isPaused ? '' : 'animate-pulse text-amber-500'}`} />
             <span>{toPersianDigits(secondsLeft)} ثانیه</span>
           </div>
 
@@ -113,7 +113,7 @@ export const UndoToast: React.FC<UndoToastProps> = ({
           <button
             type="button"
             onClick={handleUndoClick}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-dark text-white text-xs font-black shadow-sm transition-transform active:scale-95 shrink-0"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-black border-2 border-black text-xs font-black shadow-[2px_2px_0px_#000] transition-transform active:translate-y-0.5 shrink-0"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             <span>بازگردانی</span>
