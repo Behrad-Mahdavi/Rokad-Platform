@@ -4,6 +4,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   ROKAD DESIGN TOKENS
+   ========================================================================== */
 @layer base {
   :root {
     /* Brand semantic aliases */
@@ -42,13 +45,30 @@
     --accent-red:    #C60036;
     --accent-purple: #8A38F5;
 
-    /* Sonner Toast bottom offset (بالای باتم‌نویگیشن ۶۴px + دکمه شناور وسط + ناحیه امن) */
+    /* --------------------------------------------------------------------
+       Semantic surface tokens (new) — a first step toward not hard-coding
+       bg-white / text-gray-900 everywhere. New components should reach for
+       these instead of raw Tailwind gray/white utilities; existing
+       components keep working via the class-hunting dark-mode overrides
+       below until they're migrated.
+       -------------------------------------------------------------------- */
+    --surface:          #FFFFFF;
+    --surface-sunken:   #F8F9FA;
+    --surface-raised:   #FFFFFF;
+    --border-subtle:    #E5E7EB;
+    --border-default:   #D1D5DB;
+
+    /* Toast system tokens — deliberately separate from --theme-shadow.
+       Toasts are transient; they should announce themselves calmly and
+       leave, not carry the same permanent structural weight as a button
+       or card. See the dedicated Toast section below for the reasoning. */
+    --toast-shadow: 0 10px 30px -8px rgba(15, 23, 42, 0.18), 0 2px 8px rgba(15, 23, 42, 0.06);
+    --toast-radius: 14px;
     --toast-bottom-offset: calc(64px + env(safe-area-inset-bottom, 0px) + 16px);
   }
 
-  /* موقعیت توست سوانر در پایین صفحه */
   [data-sonner-toaster][data-y-position='bottom'] {
-    --offset-bottom: var(--toast-bottom-offset, calc(64px + env(safe-area-inset-bottom, 0px) + 16px));
+    --offset-bottom: var(--toast-bottom-offset);
   }
 
   [data-theme='male'] {
@@ -119,7 +139,7 @@
 
   html, body {
     font-family: 'IRANSansXFaNum', 'IRANSansX', sans-serif !important;
-    background-color: #F8F9FA;
+    background-color: var(--surface-sunken);
     color: var(--text-normal);
     direction: rtl;
     text-align: right;
@@ -185,541 +205,546 @@
   }
 
 
-/* ==========================================================================
-   ROKAD MODERN REFINED NEO-BRUTALISM CORE COMPONENTS
-   ========================================================================== */
+  /* ==========================================================================
+     ROKAD MODERN REFINED NEO-BRUTALISM — PERMANENT UI (buttons, cards)
+     This bold treatment belongs to elements the user looks at and decides
+     to act on. Toasts are handled separately below with a calmer language,
+     on purpose — see the Toast section for why.
+     ========================================================================== */
 
-/* ۱. کارت برند رُکاد */
-.rokad-card {
-  background: #FFFFFF;
-  border: 1.5px solid #EAEAEA;
-  border-radius: 16px;
-  box-shadow: 2.75px 2.75px 0 #202A5A;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.rokad-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 3.5px 3.5px 0 #202A5A;
-}
-
-/* ۲. دکمه اصلی سبز (Primary) */
-.rokad-btn-primary {
-  background-color: #59BBAF;
-  color: #FFFFFF;
-  font-weight: 700;
-  border: 1.5px solid #438C83;
-  border-radius: 12px;
-  box-shadow: 2.5px 2.5px 0 #1F413D;
-  transition: all 0.15s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-.rokad-btn-primary:hover {
-  background-color: #50A89E;
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 #1F413D;
-}
-.rokad-btn-primary:active {
-  transform: translate(1.5px, 1.5px);
-  box-shadow: 1px 1px 0 #1F413D;
-}
-
-/* ۳. دکمه ثانویه سرمه‌ای (Secondary) */
-.rokad-btn-sec {
-  background-color: #202A5A;
-  color: #FFFFFF;
-  font-weight: 700;
-  border: 1.5px solid #182044;
-  border-radius: 12px;
-  box-shadow: 2.5px 2.5px 0 #0B0F1F;
-  transition: all 0.15s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-.rokad-btn-sec:hover {
-  background-color: #1D2651;
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 #0B0F1F;
-}
-.rokad-btn-sec:active {
-  transform: translate(1.5px, 1.5px);
-  box-shadow: 1px 1px 0 #0B0F1F;
-}
-
-/* ۴. دکمه اوت‌لاین (Outline) */
-.rokad-btn-outline {
-  background-color: #FFFFFF;
-  color: #292827;
-  font-weight: 600;
-  border: 1.5px solid #DFDFDF;
-  border-radius: 12px;
-  box-shadow: 2px 2px 0 #BDBCBC;
-  transition: all 0.15s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-.rokad-btn-outline:hover {
-  background-color: #F8F9FA;
-  border-color: #292827;
-  box-shadow: 2.5px 2.5px 0 #292827;
-}
-.rokad-btn-outline:active {
-  transform: translate(1.5px, 1.5px);
-  box-shadow: 1px 1px 0 #292827;
-}
-
-/* ۵. دارک‌مود جامع و استاندارد */
-.dark {
-  color-scheme: dark;
-  --text-light:        #64748B;
-  --text-light-hover:  #94A3B8;
-  --text-light-active: #CBD5E1;
-  --text-normal:       #CBD5E1;
-  --text-normal-hover: #E2E8F0;
-  --text-normal-active:#F8FAFC;
-  --text-dark:         #F1F5F9;
-  --text-darker:       #FFFFFF;
-}
-
-.dark html,
-.dark body {
-  background-color: #0B0F17 !important;
-  color: #F1F5F9 !important;
-}
-
-/* کارت‌ها و کانتینرهای با بک‌گراند روشن */
-.dark [class*="bg-white"]:not([class*="dark:bg-"]),
-.dark [class*="bg-zinc-900"]:not([class*="dark:bg-"]) {
-  background-color: #151C28 !important;
-}
-.dark [class*="bg-gray-50"]:not([class*="dark:bg-"]),
-.dark [class*="bg-zinc-50"]:not([class*="dark:bg-"]) {
-  background-color: #111722 !important;
-}
-.dark [class*="bg-gray-100"]:not([class*="dark:bg-"]),
-.dark [class*="bg-zinc-100"]:not([class*="dark:bg-"]) {
-  background-color: #1A2232 !important;
-}
-.dark [class*="bg-zinc-800"]:not([class*="dark:bg-"]) {
-  background-color: #1C2536 !important;
-}
-
-/* حاشیه‌ها و تقسیم‌کننده‌ها در تم شب */
-.dark [class*="border-gray-100"]:not([class*="dark:border-"]),
-.dark [class*="border-gray-150"]:not([class*="dark:border-"]),
-.dark [class*="border-gray-200"]:not([class*="dark:border-"]),
-.dark [class*="border-gray-250"]:not([class*="dark:border-"]),
-.dark [class*="border-gray-300"]:not([class*="dark:border-"]),
-.dark [class*="border-zinc-100"]:not([class*="dark:border-"]),
-.dark [class*="border-zinc-200"]:not([class*="dark:border-"]),
-.dark [class*="border-zinc-300"]:not([class*="dark:border-"]),
-.dark [class*="border-zinc-700"]:not([class*="dark:border-"]),
-.dark [class*="border-zinc-800"]:not([class*="dark:border-"]) {
-  border-color: #242F42 !important;
-}
-.dark [class*="divide-gray-100"] > :not([hidden]) ~ :not([hidden]),
-.dark [class*="divide-gray-200"] > :not([hidden]) ~ :not([hidden]) {
-  border-color: #242F42 !important;
-}
-
-/* اصلاح منوهای کشویی و آپشن‌ها در دارک‌مود */
-.dark select {
-  background-color: #1C2536 !important;
-  border-color: #2D3748 !important;
-  color: #F8FAFC !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2.2' stroke='%2394A3B8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
-}
-
-.dark select:focus {
-  border-color: #59BBAF !important;
-  box-shadow: 0 0 0 2px rgba(89, 187, 175, 0.3) !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2.2' stroke='%2359BBAF'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
-}
-
-.dark select option {
-  background-color: #1C2536 !important;
-  color: #F8FAFC !important;
-}
-
-.dark select option:disabled {
-  color: #64748B !important;
-}
-
-/* اصلاح کنتراست متون تیره و جوهری در دارک‌مود */
-.dark h1:not([class*="dark:text-"]),
-.dark h2:not([class*="dark:text-"]),
-.dark h3:not([class*="dark:text-"]),
-.dark h4:not([class*="dark:text-"]),
-.dark h5:not([class*="dark:text-"]),
-.dark h6:not([class*="dark:text-"]) {
-  color: #FFFFFF;
-}
-
-.dark .text-ink-darker,
-.dark [class*="text-ink-darker"]:not([class*="dark:text-"]),
-.dark .text-ink-dark,
-.dark [class*="text-ink-dark"]:not([class*="dark:text-"]),
-.dark [class*="text-black"]:not([class*="dark:text-"]),
-.dark [class*="text-gray-900"]:not([class*="dark:text-"]),
-.dark [class*="text-gray-800"]:not([class*="dark:text-"]) {
-  color: #FFFFFF !important;
-}
-
-.dark .text-ink-normal,
-.dark [class*="text-ink-normal"]:not([class*="dark:text-"]),
-.dark [class*="text-gray-700"]:not([class*="dark:text-"]) {
-  color: #F1F5F9 !important;
-}
-
-.dark [class*="text-gray-600"]:not([class*="dark:text-"]) {
-  color: #CBD5E1 !important;
-}
-
-.dark .text-ink-light,
-.dark [class*="text-ink-light"]:not([class*="dark:text-"]),
-.dark [class*="text-gray-500"]:not([class*="dark:text-"]) {
-  color: #94A3B8 !important;
-}
-
-.dark .text-sec,
-.dark [class*="text-sec"]:not([class*="dark:text-"]),
-.dark [class*="text-sec-dark"]:not([class*="dark:text-"]),
-.dark [class*="text-sec-darker"]:not([class*="dark:text-"]),
-.dark [class*="text-male-normal"]:not([class*="dark:text-"]),
-.dark [class*="text-male-dark"]:not([class*="dark:text-"]),
-.dark [class*="text-male-darker"]:not([class*="dark:text-"]) {
-  color: #F1F5F9 !important;
-}
-
-/* وضعیت‌های رنگی در تم شب (Status Alerts & Badges) */
-.dark [class*="bg-emerald-50"]:not([class*="dark:bg-"]) {
-  background-color: rgba(6, 78, 59, 0.45) !important;
-  border-color: rgba(16, 185, 129, 0.35) !important;
-  color: #6EE7B7 !important;
-}
-.dark [class*="bg-rose-50"]:not([class*="dark:bg-"]) {
-  background-color: rgba(136, 19, 55, 0.45) !important;
-  border-color: rgba(244, 63, 94, 0.35) !important;
-  color: #FDA4AF !important;
-}
-.dark [class*="bg-amber-50"]:not([class*="dark:bg-"]) {
-  background-color: rgba(120, 53, 15, 0.45) !important;
-  border-color: rgba(245, 158, 11, 0.35) !important;
-  color: #FCD34D !important;
-}
-.dark [class*="bg-blue-50"]:not([class*="dark:bg-"]) {
-  background-color: rgba(30, 58, 138, 0.45) !important;
-  border-color: rgba(59, 130, 246, 0.35) !important;
-  color: #93C5FD !important;
-}
-.dark [class*="bg-purple-50"]:not([class*="dark:bg-"]),
-.dark [class*="bg-purple-100"]:not([class*="dark:bg-"]) {
-  background-color: rgba(88, 28, 135, 0.45) !important;
-  border-color: rgba(168, 85, 247, 0.35) !important;
-  color: #D8B4FE !important;
-}
-
-.dark [class*="text-emerald-800"]:not([class*="dark:text-"]),
-.dark [class*="text-emerald-700"]:not([class*="dark:text-"]) {
-  color: #6EE7B7 !important;
-}
-.dark [class*="text-rose-800"]:not([class*="dark:text-"]),
-.dark [class*="text-rose-700"]:not([class*="dark:text-"]) {
-  color: #FDA4AF !important;
-}
-.dark [class*="text-amber-800"]:not([class*="dark:text-"]),
-.dark [class*="text-amber-700"]:not([class*="dark:text-"]) {
-  color: #FCD34D !important;
-}
-.dark [class*="text-blue-800"]:not([class*="dark:text-"]),
-.dark [class*="text-blue-700"]:not([class*="dark:text-"]) {
-  color: #93C5FD !important;
-}
-.dark [class*="text-purple-800"]:not([class*="dark:text-"]),
-.dark [class*="text-purple-700"]:not([class*="dark:text-"]),
-.dark [class*="text-purple-900"]:not([class*="dark:text-"]) {
-  color: #D8B4FE !important;
-}
-
-/* کارت برند نئوبروتالیسم رُکاد */
-.dark .rokad-card {
-  background: #151C28 !important;
-  border-color: #242F42 !important;
-  color: #F1F5F9 !important;
-  box-shadow: 2.75px 2.75px 0 #59BBAF;
-}
-.dark .rokad-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 3.5px 3.5px 0 #59BBAF;
-}
-
-.dark .rokad-btn-sec {
-  background-color: #2B3875;
-  border-color: #3F50A0;
-  box-shadow: 2.5px 2.5px 0 #59BBAF;
-}
-.dark .rokad-btn-outline {
-  background-color: #161D2A;
-  color: #F1F5F9;
-  border-color: #2D3A50;
-  box-shadow: 2px 2px 0 #0F172A;
-}
-
-/* سیستم جداول در دارک‌مود (Data Tables) */
-.dark table {
-  background-color: #151C28;
-  color: #E2E8F0;
-}
-.dark thead,
-.dark th {
-  background-color: #1C2536 !important;
-  color: #F1F5F9 !important;
-  border-color: #242F42 !important;
-}
-.dark tbody tr {
-  border-color: #242F42 !important;
-}
-.dark tbody tr:hover {
-  background-color: rgba(28, 37, 54, 0.6) !important;
-}
-.dark td {
-  border-color: #242F42 !important;
-  color: #CBD5E1;
-}
-
-/* فیلدهای ورودی فرم‌ها در دارک‌مود */
-.dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="color"]),
-.dark select,
-.dark textarea {
-  background-color: #1C2536 !important;
-  color: #FFFFFF !important;
-  border-color: #2D3A50 !important;
-}
-.dark input:focus,
-.dark select:focus,
-.dark textarea:focus {
-  border-color: #59BBAF !important;
-  background-color: #1F2A3D !important;
-}
-.dark input::placeholder,
-.dark textarea::placeholder {
-  color: #64748B !important;
-}
-
-/* ==========================================================================
-   ۶. سیستم چاپ رسمی و خروجی PDF اداری (Print Stylesheet)
-   ========================================================================== */
-@media print {
-  @page {
-    size: A4 portrait;
-    margin: 10mm 12mm 12mm 12mm;
+  .rokad-card {
+    background: var(--surface-raised);
+    border: 1.5px solid #EAEAEA;
+    border-radius: 16px;
+    box-shadow: 2.75px 2.75px 0 #202A5A;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .rokad-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 3.5px 3.5px 0 #202A5A;
   }
 
-  /* حذف کامل تم شب و اجبار به تم سفید اداری و شفاف */
-  :root, html, body, .dark, .dark body {
-    color-scheme: light !important;
-    background: #ffffff !important;
-    color: #0F172A !important;
-    font-size: 10.5pt !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+  .rokad-btn-primary {
+    background-color: #59BBAF;
+    color: #FFFFFF;
+    font-weight: 700;
+    border: 1.5px solid #438C83;
+    border-radius: 12px;
+    box-shadow: 2.5px 2.5px 0 #1F413D;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .rokad-btn-primary:hover {
+    background-color: #50A89E;
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 #1F413D;
+  }
+  .rokad-btn-primary:active {
+    transform: translate(1.5px, 1.5px);
+    box-shadow: 1px 1px 0 #1F413D;
   }
 
-  /* مخفی کردن منوها، دکمه‌های عملیاتی و فیلترها */
-  aside, header, nav, .screen-only, .no-print {
-    display: none !important;
+  .rokad-btn-sec {
+    background-color: #202A5A;
+    color: #FFFFFF;
+    font-weight: 700;
+    border: 1.5px solid #182044;
+    border-radius: 12px;
+    box-shadow: 2.5px 2.5px 0 #0B0F1F;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .rokad-btn-sec:hover {
+    background-color: #1D2651;
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 #0B0F1F;
+  }
+  .rokad-btn-sec:active {
+    transform: translate(1.5px, 1.5px);
+    box-shadow: 1px 1px 0 #0B0F1F;
   }
 
-  /* آشکارسازی کانتینر مخصوص چاپ */
-  .print-only {
-    display: block !important;
+  .rokad-btn-outline {
+    background-color: #FFFFFF;
+    color: #292827;
+    font-weight: 600;
+    border: 1.5px solid #DFDFDF;
+    border-radius: 12px;
+    box-shadow: 2px 2px 0 #BDBCBC;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .rokad-btn-outline:hover {
+    background-color: #F8F9FA;
+    border-color: #292827;
+    box-shadow: 2.5px 2.5px 0 #292827;
+  }
+  .rokad-btn-outline:active {
+    transform: translate(1.5px, 1.5px);
+    box-shadow: 1px 1px 0 #292827;
   }
 
-  /* جدول رسمی چاپ (بدون شکستگی ردیف در انتهای صفحه) */
-  .executive-table {
-    width: 100% !important;
-    border-collapse: collapse !important;
-    font-size: 9pt !important;
-  }
-  .executive-table tr {
-    page-break-inside: avoid !important;
-  }
-  .executive-table th {
-    background-color: #F1F5F9 !important;
-    color: #1E293B !important;
-    font-weight: 800 !important;
-    border: 1px solid #E2E8F0 !important;
-    border-bottom: 2px solid #CBD5E1 !important;
-    padding: 8px 10px !important;
-    text-align: right !important;
-  }
-  .executive-table td {
-    border: 1px solid #E2E8F0 !important;
-    padding: 7px 10px !important;
+  /* ==========================================================================
+     DARK MODE
+     ========================================================================== */
+  .dark {
+    color-scheme: dark;
+    --surface:        #151C28;
+    --surface-sunken: #0B0F17;
+    --surface-raised: #151C28;
+    --border-subtle:  #242F42;
+    --border-default: #2D3A50;
+
+    --text-light:        #64748B;
+    --text-light-hover:  #94A3B8;
+    --text-light-active: #CBD5E1;
+    --text-normal:       #CBD5E1;
+    --text-normal-hover: #E2E8F0;
+    --text-normal-active:#F8FAFC;
+    --text-dark:         #F1F5F9;
+    --text-darker:       #FFFFFF;
   }
 
-  /* حذف سایه‌ها برای شفافیت حداکثری پرینتر */
+  .dark html,
+  .dark body {
+    background-color: var(--surface-sunken) !important;
+    color: #F1F5F9 !important;
+  }
+
+  /* Cards & containers on light backgrounds */
+  .dark [class*="bg-white"]:not([class*="dark:bg-"]),
+  .dark [class*="bg-zinc-900"]:not([class*="dark:bg-"]) {
+    background-color: #151C28 !important;
+  }
+  .dark [class*="bg-gray-50"]:not([class*="dark:bg-"]),
+  .dark [class*="bg-zinc-50"]:not([class*="dark:bg-"]) {
+    background-color: #111722 !important;
+  }
+  .dark [class*="bg-gray-100"]:not([class*="dark:bg-"]),
+  .dark [class*="bg-zinc-100"]:not([class*="dark:bg-"]) {
+    background-color: #1A2232 !important;
+  }
+  .dark [class*="bg-zinc-800"]:not([class*="dark:bg-"]) {
+    background-color: #1C2536 !important;
+  }
+
+  /* Borders & dividers */
+  .dark [class*="border-gray-100"]:not([class*="dark:border-"]),
+  .dark [class*="border-gray-150"]:not([class*="dark:border-"]),
+  .dark [class*="border-gray-200"]:not([class*="dark:border-"]),
+  .dark [class*="border-gray-250"]:not([class*="dark:border-"]),
+  .dark [class*="border-gray-300"]:not([class*="dark:border-"]),
+  .dark [class*="border-zinc-100"]:not([class*="dark:border-"]),
+  .dark [class*="border-zinc-200"]:not([class*="dark:border-"]),
+  .dark [class*="border-zinc-300"]:not([class*="dark:border-"]),
+  .dark [class*="border-zinc-700"]:not([class*="dark:border-"]),
+  .dark [class*="border-zinc-800"]:not([class*="dark:border-"]) {
+    border-color: #242F42 !important;
+  }
+  .dark [class*="divide-gray-100"] > :not([hidden]) ~ :not([hidden]),
+  .dark [class*="divide-gray-200"] > :not([hidden]) ~ :not([hidden]) {
+    border-color: #242F42 !important;
+  }
+
+  /* Selects */
+  .dark select {
+    background-color: #1C2536 !important;
+    border-color: #2D3748 !important;
+    color: #F8FAFC !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2.2' stroke='%2394A3B8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
+  }
+  .dark select:focus {
+    border-color: #59BBAF !important;
+    box-shadow: 0 0 0 2px rgba(89, 187, 175, 0.3) !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2.2' stroke='%2359BBAF'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
+  }
+  .dark select option {
+    background-color: #1C2536 !important;
+    color: #F8FAFC !important;
+  }
+  .dark select option:disabled {
+    color: #64748B !important;
+  }
+
+  /* Text contrast */
+  .dark h1:not([class*="dark:text-"]),
+  .dark h2:not([class*="dark:text-"]),
+  .dark h3:not([class*="dark:text-"]),
+  .dark h4:not([class*="dark:text-"]),
+  .dark h5:not([class*="dark:text-"]),
+  .dark h6:not([class*="dark:text-"]) {
+    color: #FFFFFF;
+  }
+
+  .dark .text-ink-darker,
+  .dark [class*="text-ink-darker"]:not([class*="dark:text-"]),
+  .dark .text-ink-dark,
+  .dark [class*="text-ink-dark"]:not([class*="dark:text-"]),
+  .dark [class*="text-black"]:not([class*="dark:text-"]),
+  .dark [class*="text-gray-900"]:not([class*="dark:text-"]),
+  .dark [class*="text-gray-800"]:not([class*="dark:text-"]) {
+    color: #FFFFFF !important;
+  }
+
+  .dark .text-ink-normal,
+  .dark [class*="text-ink-normal"]:not([class*="dark:text-"]),
+  .dark [class*="text-gray-700"]:not([class*="dark:text-"]) {
+    color: #F1F5F9 !important;
+  }
+
+  .dark [class*="text-gray-600"]:not([class*="dark:text-"]) {
+    color: #CBD5E1 !important;
+  }
+
+  .dark .text-ink-light,
+  .dark [class*="text-ink-light"]:not([class*="dark:text-"]),
+  .dark [class*="text-gray-500"]:not([class*="dark:text-"]) {
+    color: #94A3B8 !important;
+  }
+
+  .dark .text-sec,
+  .dark [class*="text-sec"]:not([class*="dark:text-"]),
+  .dark [class*="text-sec-dark"]:not([class*="dark:text-"]),
+  .dark [class*="text-sec-darker"]:not([class*="dark:text-"]),
+  .dark [class*="text-male-normal"]:not([class*="dark:text-"]),
+  .dark [class*="text-male-dark"]:not([class*="dark:text-"]),
+  .dark [class*="text-male-darker"]:not([class*="dark:text-"]) {
+    color: #F1F5F9 !important;
+  }
+
+  /* Status alerts & badges */
+  .dark [class*="bg-emerald-50"]:not([class*="dark:bg-"]) {
+    background-color: rgba(6, 78, 59, 0.45) !important;
+    border-color: rgba(16, 185, 129, 0.35) !important;
+    color: #6EE7B7 !important;
+  }
+  .dark [class*="bg-rose-50"]:not([class*="dark:bg-"]) {
+    background-color: rgba(136, 19, 55, 0.45) !important;
+    border-color: rgba(244, 63, 94, 0.35) !important;
+    color: #FDA4AF !important;
+  }
+  .dark [class*="bg-amber-50"]:not([class*="dark:bg-"]) {
+    background-color: rgba(120, 53, 15, 0.45) !important;
+    border-color: rgba(245, 158, 11, 0.35) !important;
+    color: #FCD34D !important;
+  }
+  .dark [class*="bg-blue-50"]:not([class*="dark:bg-"]) {
+    background-color: rgba(30, 58, 138, 0.45) !important;
+    border-color: rgba(59, 130, 246, 0.35) !important;
+    color: #93C5FD !important;
+  }
+  .dark [class*="bg-purple-50"]:not([class*="dark:bg-"]),
+  .dark [class*="bg-purple-100"]:not([class*="dark:bg-"]) {
+    background-color: rgba(88, 28, 135, 0.45) !important;
+    border-color: rgba(168, 85, 247, 0.35) !important;
+    color: #D8B4FE !important;
+  }
+
+  .dark [class*="text-emerald-800"]:not([class*="dark:text-"]),
+  .dark [class*="text-emerald-700"]:not([class*="dark:text-"]) {
+    color: #6EE7B7 !important;
+  }
+  .dark [class*="text-rose-800"]:not([class*="dark:text-"]),
+  .dark [class*="text-rose-700"]:not([class*="dark:text-"]) {
+    color: #FDA4AF !important;
+  }
+  .dark [class*="text-amber-800"]:not([class*="dark:text-"]),
+  .dark [class*="text-amber-700"]:not([class*="dark:text-"]) {
+    color: #FCD34D !important;
+  }
+  .dark [class*="text-blue-800"]:not([class*="dark:text-"]),
+  .dark [class*="text-blue-700"]:not([class*="dark:text-"]) {
+    color: #93C5FD !important;
+  }
+  .dark [class*="text-purple-800"]:not([class*="dark:text-"]),
+  .dark [class*="text-purple-700"]:not([class*="dark:text-"]),
+  .dark [class*="text-purple-900"]:not([class*="dark:text-"]) {
+    color: #D8B4FE !important;
+  }
+
+  .dark .rokad-card {
+    background: #151C28 !important;
+    border-color: #242F42 !important;
+    color: #F1F5F9 !important;
+    box-shadow: 2.75px 2.75px 0 #59BBAF;
+  }
+  .dark .rokad-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 3.5px 3.5px 0 #59BBAF;
+  }
+
+  .dark .rokad-btn-sec {
+    background-color: #2B3875;
+    border-color: #3F50A0;
+    box-shadow: 2.5px 2.5px 0 #59BBAF;
+  }
+  .dark .rokad-btn-outline {
+    background-color: #161D2A;
+    color: #F1F5F9;
+    border-color: #2D3A50;
+    box-shadow: 2px 2px 0 #0F172A;
+  }
+
+  .dark table {
+    background-color: #151C28;
+    color: #E2E8F0;
+  }
+  .dark thead,
+  .dark th {
+    background-color: #1C2536 !important;
+    color: #F1F5F9 !important;
+    border-color: #242F42 !important;
+  }
+  .dark tbody tr {
+    border-color: #242F42 !important;
+  }
+  .dark tbody tr:hover {
+    background-color: rgba(28, 37, 54, 0.6) !important;
+  }
+  .dark td {
+    border-color: #242F42 !important;
+    color: #CBD5E1;
+  }
+
+  .dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="color"]),
+  .dark select,
+  .dark textarea {
+    background-color: #1C2536 !important;
+    color: #FFFFFF !important;
+    border-color: #2D3A50 !important;
+  }
+  .dark input:focus,
+  .dark select:focus,
+  .dark textarea:focus {
+    border-color: #59BBAF !important;
+    background-color: #1F2A3D !important;
+  }
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: #64748B !important;
+  }
+
+  /* ==========================================================================
+     PRINT — official documents / payslips / receipts
+     ========================================================================== */
+  @media print {
+    @page {
+      size: A4 portrait;
+      margin: 10mm 12mm 12mm 12mm;
+    }
+
+    :root, html, body, .dark, .dark body {
+      color-scheme: light !important;
+      background: #ffffff !important;
+      color: #0F172A !important;
+      font-size: 10.5pt !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    aside, header, nav, .screen-only, .no-print {
+      display: none !important;
+    }
+
+    .print-only {
+      display: block !important;
+    }
+
+    .executive-table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+      font-size: 9pt !important;
+    }
+    .executive-table tr {
+      page-break-inside: avoid !important;
+    }
+    .executive-table th {
+      background-color: #F1F5F9 !important;
+      color: #1E293B !important;
+      font-weight: 800 !important;
+      border: 1px solid #E2E8F0 !important;
+      border-bottom: 2px solid #CBD5E1 !important;
+      padding: 8px 10px !important;
+      text-align: right !important;
+    }
+    .executive-table td {
+      border: 1px solid #E2E8F0 !important;
+      padding: 7px 10px !important;
+    }
+
+    * {
+      box-shadow: none !important;
+      text-shadow: none !important;
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+
+  /* ==========================================================================
+     SCROLLBARS
+     ========================================================================== */
   * {
-    box-shadow: none !important;
-    text-shadow: none !important;
-    transition: none !important;
-    animation: none !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
   }
-}
 
-/* ==========================================================================
-   ULTRA-MODERN FLOATING SCROLLBAR DESIGN SYSTEM (LIGHT & DARK MODES)
-   ========================================================================== */
+  .dark * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(161, 161, 170, 0.35) transparent;
+  }
 
-/* Standard CSS scrollbar properties for modern browsers & Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
-}
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
 
-.dark * {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(161, 161, 170, 0.35) transparent;
-}
+  ::-webkit-scrollbar-track {
+    background: transparent !important;
+    margin: 2px;
+  }
 
-/* WebKit-based engines (Chrome, Safari, Edge, Android/iOS WebViews) */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(148, 163, 184, 0.4);
+    border-radius: 9999px;
+    border: 1.5px solid transparent;
+    background-clip: padding-box;
+    transition: background-color 0.2s ease;
+  }
 
-::-webkit-scrollbar-track {
-  background: transparent !important;
-  margin: 2px;
-}
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(100, 116, 139, 0.7);
+    border: 1px solid transparent;
+  }
 
-::-webkit-scrollbar-thumb {
-  background-color: rgba(148, 163, 184, 0.4);
-  border-radius: 9999px;
-  border: 1.5px solid transparent;
-  background-clip: padding-box;
-  transition: background-color 0.2s ease;
-}
+  ::-webkit-scrollbar-thumb:active {
+    background-color: #59BBAF;
+    border: 1px solid transparent;
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(100, 116, 139, 0.7);
-  border: 1px solid transparent;
-}
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 
-::-webkit-scrollbar-thumb:active {
-  background-color: #59BBAF; /* Brand Primary Glow on dragging */
-  border: 1px solid transparent;
-}
+  .dark ::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 1.5px solid transparent;
+    background-clip: padding-box;
+  }
 
-::-webkit-scrollbar-corner {
-  background: transparent;
-}
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+  }
 
-/* Dark Mode Scrollbars */
-.dark ::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
-  border: 1.5px solid transparent;
-  background-clip: padding-box;
-}
+  .dark ::-webkit-scrollbar-thumb:active {
+    background-color: #59BBAF;
+  }
 
-.dark ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.4);
-}
+  [role="dialog"] ::-webkit-scrollbar,
+  .modal-content ::-webkit-scrollbar,
+  .drawer-content ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
 
-.dark ::-webkit-scrollbar-thumb:active {
-  background-color: #59BBAF; /* Brand Primary Glow on dragging */
-}
+  [role="dialog"] ::-webkit-scrollbar-thumb,
+  .modal-content ::-webkit-scrollbar-thumb,
+  .drawer-content ::-webkit-scrollbar-thumb {
+    background-color: rgba(148, 163, 184, 0.4);
+    border-radius: 9999px;
+  }
 
-/* Specific Modals, Drawers & Popovers: floating ultra-thin sleek scrollbar */
-[role="dialog"] ::-webkit-scrollbar,
-.modal-content ::-webkit-scrollbar,
-.drawer-content ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
+  .dark [role="dialog"] ::-webkit-scrollbar-thumb,
+  .dark .modal-content ::-webkit-scrollbar-thumb,
+  .dark .drawer-content ::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.25);
+  }
 
-[role="dialog"] ::-webkit-scrollbar-thumb,
-.modal-content ::-webkit-scrollbar-thumb,
-.drawer-content ::-webkit-scrollbar-thumb {
-  background-color: rgba(148, 163, 184, 0.4);
-  border-radius: 9999px;
-}
+  .no-scrollbar::-webkit-scrollbar,
+  .scrollbar-none::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+  }
 
-.dark [role="dialog"] ::-webkit-scrollbar-thumb,
-.dark .modal-content ::-webkit-scrollbar-thumb,
-.dark .drawer-content ::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.25);
-}
+  .no-scrollbar,
+  .scrollbar-none {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
 
-/* Utilities for hiding scrollbars while maintaining scroll functionality */
-.no-scrollbar::-webkit-scrollbar,
-.scrollbar-none::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
-  background: transparent !important;
-}
+  html {
+    scroll-behavior: smooth;
+  }
 
-.no-scrollbar,
-.scrollbar-none {
-  -ms-overflow-style: none !important;
-  scrollbar-width: none !important;
-}
-
-/* Smooth scrolling on root */
-html {
-  scroll-behavior: smooth;
-}
-
-/* حداقل استاندارد ارگونومیک تاچ‌تارگت موبایل (WCAG AA 2.5.5 / 2.5.8) */
-.touch-target-min {
-  min-height: 44px;
-  min-width: 44px;
-}
-
-@media (max-width: 640px) {
-  .mobile-touch-target {
+  .touch-target-min {
     min-height: 44px;
+    min-width: 44px;
   }
-}
 
-/* قفل قطعی اسکرول پس‌زمینه هنگام باز بودن مودال‌ها، دیالوگ‌ها و دراورها */
-html.modal-scroll-locked,
-body.modal-scroll-locked {
-  overflow: hidden !important;
-  overscroll-behavior: contain !important;
-}
-
-body.modal-scroll-locked main,
-body.modal-scroll-locked #root,
-body.modal-scroll-locked [data-scroll-container] {
-  overflow: hidden !important;
-}
-
-@keyframes sheetSlideUp {
-  0% {
-    transform: translateY(100%);
-    opacity: 0.6;
+  @media (max-width: 640px) {
+    .mobile-touch-target {
+      min-height: 44px;
+    }
   }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
 
-.animate-sheet-slide-up {
-  animation: sheetSlideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
+  html.modal-scroll-locked,
+  body.modal-scroll-locked {
+    overflow: hidden !important;
+    overscroll-behavior: contain !important;
+  }
+
+  body.modal-scroll-locked main,
+  body.modal-scroll-locked #root,
+  body.modal-scroll-locked [data-scroll-container] {
+    overflow: hidden !important;
+  }
+
+  @keyframes sheetSlideUp {
+    0% {
+      transform: translateY(100%);
+      opacity: 0.6;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-sheet-slide-up {
+    animation: sheetSlideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
 }
 
 /* ==========================================================================
-   NEO-BRUTALIST TOAST SYSTEM (SONNER) - RTL, LIGHT & DARK MODES
+   TOAST SYSTEM (SONNER) — REDESIGNED
+   ==========================================================================
+   Why this looks different from buttons/cards:
+   Buttons and cards are permanent — the user decides to interact with them,
+   so a bold, high-contrast neo-brutalist treatment (thick border + hard
+   offset shadow) suits them. A toast is the opposite kind of object: it
+   appears without being asked for, sits for a few seconds, and should
+   leave the person calm, not confronted. So instead of a colored
+   background + thick border + hard shadow (which reads as an alert box),
+   this version uses:
+     - a neutral, quiet surface (not tinted per status)
+     - one 4px colored accent bar (physical left edge — becomes the right
+       edge automatically under RTL, no override needed) that carries the
+       status color
+     - a soft, diffused elevation shadow instead of a hard offset one
+     - the icon carries the status color; the text stays neutral ink
+   This keeps instant status recognition (color + icon + accent bar) while
+   removing the visual noise of a fully colored, hard-shadowed alert box
+   stacking on top of a busy mobile screen.
    ========================================================================== */
 
 [data-sonner-toaster] {
@@ -734,42 +759,57 @@ body.modal-scroll-locked [data-scroll-container] {
   display: flex !important;
   align-items: center !important;
   gap: 12px !important;
-  /* پدینگ سمت چپ به اندازه ۴۸ پیکسل برای تضمین عدم همپوشانی متن با دکمه ضربدر بستن */
-  padding: 12px 16px 12px 48px !important;
-  border-radius: 16px !important;
-  border: 2.5px solid #18181b !important;
-  box-shadow: 4px 4px 0px #18181b !important;
-  background-color: #ffffff !important;
-  color: #18181b !important;
+  /* left padding reserved for the close button; the accent bar sits on
+     the physical left edge, which is the *trailing* edge in RTL — the
+     correct place for a secondary marker, not the leading edge where the
+     eye lands first */
+  padding: 13px 16px 13px 44px !important;
+  border-radius: var(--toast-radius) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-left: none !important;
+  box-shadow: var(--toast-shadow) !important;
+  background-color: var(--surface) !important;
+  color: var(--text-normal) !important;
   min-height: 56px !important;
   width: 100% !important;
-  max-width: 440px !important;
+  max-width: 420px !important;
   box-sizing: border-box !important;
+  overflow: hidden !important;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease !important;
 }
 
-/* دکمه بستن توست - کاملاً تراز و در مرکز عمودی باکس (Vertically Centered) */
+/* status accent bar */
+[data-sonner-toast]::before {
+  content: '' !important;
+  position: absolute !important;
+  inset-inline-start: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 4px !important;
+  background-color: #94A3B8 !important; /* neutral default */
+}
+
 [data-sonner-toast] [data-close-button="true"],
 [data-sonner-toast] [data-close-button] {
   position: absolute !important;
-  left: 12px !important;
+  left: 10px !important;
   right: auto !important;
   top: 50% !important;
   bottom: auto !important;
   transform: translateY(-50%) !important;
-  width: 26px !important;
-  height: 26px !important;
+  width: 24px !important;
+  height: 24px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   padding: 0 !important;
   margin: 0 !important;
   border-radius: 8px !important;
-  border: 1.5px solid currentColor !important;
-  background-color: rgba(0, 0, 0, 0.06) !important;
-  color: inherit !important;
+  border: none !important;
+  background-color: transparent !important;
+  color: var(--text-light) !important;
   cursor: pointer !important;
-  opacity: 0.75 !important;
+  opacity: 0.7 !important;
   transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
   z-index: 20 !important;
   flex-shrink: 0 !important;
@@ -778,8 +818,7 @@ body.modal-scroll-locked [data-scroll-container] {
 
 [data-sonner-toast] [data-close-button]:hover {
   opacity: 1 !important;
-  transform: translateY(-50%) scale(1.08) !important;
-  background-color: rgba(0, 0, 0, 0.12) !important;
+  background-color: rgba(0, 0, 0, 0.06) !important;
 }
 
 [data-sonner-toast] [data-close-button]:active {
@@ -787,33 +826,32 @@ body.modal-scroll-locked [data-scroll-container] {
 }
 
 [data-sonner-toast] [data-close-button] svg {
-  width: 14px !important;
-  height: 14px !important;
-  min-width: 14px !important;
-  min-height: 14px !important;
+  width: 13px !important;
+  height: 13px !important;
+  min-width: 13px !important;
+  min-height: 13px !important;
   display: block !important;
   margin: auto !important;
-  stroke-width: 2.5 !important;
+  stroke-width: 2.25 !important;
 }
 
-/* آیکون وضعیت توست */
 [data-sonner-toast] [data-icon] {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   flex-shrink: 0 !important;
   margin: 0 !important;
+  color: #64748B !important; /* neutral default, overridden per status below */
 }
 
 [data-sonner-toast] [data-icon] svg {
-  width: 22px !important;
-  height: 22px !important;
-  min-width: 22px !important;
-  min-height: 22px !important;
+  width: 21px !important;
+  height: 21px !important;
+  min-width: 21px !important;
+  min-height: 21px !important;
   display: block !important;
 }
 
-/* محتوا (عنوان و توضیحات) */
 [data-sonner-toast] [data-content] {
   display: flex !important;
   flex-direction: column !important;
@@ -830,7 +868,7 @@ body.modal-scroll-locked [data-scroll-container] {
   line-height: 1.45 !important;
   margin: 0 !important;
   word-break: break-word !important;
-  color: inherit !important;
+  color: var(--text-normal) !important;
 }
 
 [data-sonner-toast] [data-description] {
@@ -838,28 +876,32 @@ body.modal-scroll-locked [data-scroll-container] {
   font-size: 0.8125rem !important;
   font-weight: 500 !important;
   line-height: 1.4 !important;
-  opacity: 0.88 !important;
   margin: 0 !important;
   word-break: break-word !important;
-  color: inherit !important;
+  color: var(--text-light-active) !important;
 }
 
-/* دکمه‌های اکشن داخل توست */
+/* action / cancel buttons — quiet by default, not competing with the
+   accent bar + icon for attention */
 [data-sonner-toast] [data-button] {
   font-family: inherit !important;
   font-size: 0.8125rem !important;
   font-weight: 700 !important;
-  padding: 6px 12px !important;
+  padding: 6px 14px !important;
   border-radius: 8px !important;
-  border: 2px solid currentColor !important;
-  background-color: currentColor !important;
+  border: none !important;
+  background-color: var(--text-normal) !important;
+  color: #FFFFFF !important;
   cursor: pointer !important;
   transition: transform 0.15s ease, opacity 0.15s ease !important;
 }
 
 [data-sonner-toast] [data-button]:hover {
-  transform: scale(1.04) !important;
-  opacity: 0.95 !important;
+  opacity: 0.88 !important;
+}
+
+[data-sonner-toast] [data-button]:active {
+  transform: scale(0.97) !important;
 }
 
 [data-sonner-toast] [data-cancel] {
@@ -868,192 +910,99 @@ body.modal-scroll-locked [data-scroll-container] {
   font-weight: 600 !important;
   padding: 6px 12px !important;
   border-radius: 8px !important;
-  border: 1.5px solid currentColor !important;
+  border: none !important;
   background-color: transparent !important;
-  color: inherit !important;
+  color: var(--text-light) !important;
   cursor: pointer !important;
 }
 
 /* --------------------------------------------------------------------------
-   انواع حالت‌های Toast (Success, Error, Warning, Info, Loading)
+   Status variants — color lives in the accent bar + icon only. The card
+   surface itself stays neutral, which is what keeps this calm.
    -------------------------------------------------------------------------- */
 
-/* Success */
-[data-sonner-toast][data-type='success'] {
-  background-color: #f0fdf4 !important;
-  color: #14532d !important;
-  border-color: #166534 !important;
-  box-shadow: 4px 4px 0px #166534 !important;
-}
-[data-sonner-toast][data-type='success'] [data-icon] {
-  color: #15803d !important;
-}
-[data-sonner-toast][data-type='success'] [data-close-button] {
-  background-color: rgba(22, 101, 52, 0.08) !important;
-  border-color: rgba(22, 101, 52, 0.25) !important;
+[data-sonner-toast][data-type='success']::before { background-color: #16A34A !important; }
+[data-sonner-toast][data-type='success'] [data-icon] { color: #16A34A !important; }
+
+[data-sonner-toast][data-type='error']::before { background-color: #DC2626 !important; }
+[data-sonner-toast][data-type='error'] [data-icon] { color: #DC2626 !important; }
+
+[data-sonner-toast][data-type='warning']::before { background-color: #D97706 !important; }
+[data-sonner-toast][data-type='warning'] [data-icon] { color: #D97706 !important; }
+
+[data-sonner-toast][data-type='info']::before { background-color: #2563EB !important; }
+[data-sonner-toast][data-type='info'] [data-icon] { color: #2563EB !important; }
+
+[data-sonner-toast][data-type='loading']::before { background-color: #64748B !important; }
+[data-sonner-toast][data-type='loading'] [data-icon] { color: #64748B !important; }
+
+/* Undoable (Telegram-style) toast — the countdown progress rail replaces
+   the static accent bar for this one case, so the two never fight for
+   the same 4px strip. See UndoToast.tsx for the timer logic. */
+[data-sonner-toast][data-undoable='true']::before {
+  display: none !important;
 }
 
-/* Error */
-[data-sonner-toast][data-type='error'] {
-  background-color: #fef2f2 !important;
-  color: #7f1d1d !important;
-  border-color: #991b1b !important;
-  box-shadow: 4px 4px 0px #991b1b !important;
+.rokad-undo-toast__rail {
+  position: absolute;
+  inset-inline-start: 0;
+  bottom: 0;
+  height: 3px;
+  background-color: var(--color-primary);
+  border-radius: 0 0 0 var(--toast-radius);
 }
-[data-sonner-toast][data-type='error'] [data-icon] {
-  color: #dc2626 !important;
-}
-[data-sonner-toast][data-type='error'] [data-close-button] {
-  background-color: rgba(153, 27, 27, 0.08) !important;
-  border-color: rgba(153, 27, 27, 0.25) !important;
-}
-
-/* Warning */
-[data-sonner-toast][data-type='warning'] {
-  background-color: #fffbeb !important;
-  color: #78350f !important;
-  border-color: #92400e !important;
-  box-shadow: 4px 4px 0px #92400e !important;
-}
-[data-sonner-toast][data-type='warning'] [data-icon] {
-  color: #b45309 !important;
-}
-[data-sonner-toast][data-type='warning'] [data-close-button] {
-  background-color: rgba(146, 64, 14, 0.08) !important;
-  border-color: rgba(146, 64, 14, 0.25) !important;
+[data-sonner-toaster] {
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
 }
 
-/* Info */
-[data-sonner-toast][data-type='info'] {
-  background-color: #eff6ff !important;
-  color: #1e3a8a !important;
-  border-color: #1e40af !important;
-  box-shadow: 4px 4px 0px #1e40af !important;
-}
-[data-sonner-toast][data-type='info'] [data-icon] {
-  color: #2563eb !important;
-}
-[data-sonner-toast][data-type='info'] [data-close-button] {
-  background-color: rgba(30, 64, 175, 0.08) !important;
-  border-color: rgba(30, 64, 175, 0.25) !important;
-}
-
-/* Loading */
-[data-sonner-toast][data-type='loading'] {
-  background-color: #f8fafc !important;
-  color: #0f172a !important;
-  border-color: #334155 !important;
-  box-shadow: 4px 4px 0px #334155 !important;
-}
-[data-sonner-toast][data-type='loading'] [data-icon] {
-  color: #475569 !important;
+@media (max-width: 640px) {
+  [data-sonner-toaster] {
+    width: calc(100% - 32px) !important;
+    max-width: 420px !important;
+  }
 }
 
 /* --------------------------------------------------------------------------
-   حالت تاریک (DARK MODE)
+   Dark mode
    -------------------------------------------------------------------------- */
 
 .dark [data-sonner-toast],
 [data-theme='dark'] [data-sonner-toast] {
-  background-color: #18181b !important;
-  color: #f4f4f5 !important;
-  border: 2.5px solid #3f3f46 !important;
-  box-shadow: 4px 4px 0px #09090b !important;
+  background-color: var(--surface) !important;
+  color: #F1F5F9 !important;
+  border-color: var(--border-subtle) !important;
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35) !important;
 }
+
+.dark [data-sonner-toast] [data-title] { color: #F8FAFC !important; }
+.dark [data-sonner-toast] [data-description] { color: #94A3B8 !important; }
 
 .dark [data-sonner-toast] [data-close-button],
 [data-theme='dark'] [data-sonner-toast] [data-close-button] {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
-  color: #f4f4f5 !important;
+  color: #94A3B8 !important;
 }
-
 .dark [data-sonner-toast] [data-close-button]:hover,
 [data-theme='dark'] [data-sonner-toast] [data-close-button]:hover {
-  background-color: rgba(255, 255, 255, 0.18) !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-/* Dark: Success */
-.dark [data-sonner-toast][data-type='success'],
-[data-theme='dark'] [data-sonner-toast][data-type='success'] {
-  background-color: #052e16 !important;
-  color: #dcfce7 !important;
-  border-color: #22c55e !important;
-  box-shadow: 4px 4px 0px #000000 !important;
-}
-.dark [data-sonner-toast][data-type='success'] [data-icon],
-[data-theme='dark'] [data-sonner-toast][data-type='success'] [data-icon] {
-  color: #4ade80 !important;
-}
-.dark [data-sonner-toast][data-type='success'] [data-close-button],
-[data-theme='dark'] [data-sonner-toast][data-type='success'] [data-close-button] {
-  background-color: rgba(34, 197, 94, 0.15) !important;
-  border-color: rgba(34, 197, 94, 0.35) !important;
+.dark [data-sonner-toast] [data-button] {
+  background-color: #E2E8F0 !important;
+  color: #0F172A !important;
 }
 
-/* Dark: Error */
-.dark [data-sonner-toast][data-type='error'],
-[data-theme='dark'] [data-sonner-toast][data-type='error'] {
-  background-color: #450a0a !important;
-  color: #fee2e2 !important;
-  border-color: #ef4444 !important;
-  box-shadow: 4px 4px 0px #000000 !important;
-}
-.dark [data-sonner-toast][data-type='error'] [data-icon],
-[data-theme='dark'] [data-sonner-toast][data-type='error'] [data-icon] {
-  color: #f87171 !important;
-}
-.dark [data-sonner-toast][data-type='error'] [data-close-button],
-[data-theme='dark'] [data-sonner-toast][data-type='error'] [data-close-button] {
-  background-color: rgba(239, 68, 68, 0.15) !important;
-  border-color: rgba(239, 68, 68, 0.35) !important;
-}
+/* status icon colors stay legible on dark surfaces — slightly lighter
+   than the light-mode values so they don't look muddy on a near-black
+   background */
+.dark [data-sonner-toast][data-type='success'] [data-icon] { color: #4ADE80 !important; }
+.dark [data-sonner-toast][data-type='error'] [data-icon]   { color: #F87171 !important; }
+.dark [data-sonner-toast][data-type='warning'] [data-icon] { color: #FBBF24 !important; }
+.dark [data-sonner-toast][data-type='info'] [data-icon]    { color: #60A5FA !important; }
+.dark [data-sonner-toast][data-type='loading'] [data-icon] { color: #94A3B8 !important; }
 
-/* Dark: Warning */
-.dark [data-sonner-toast][data-type='warning'],
-[data-theme='dark'] [data-sonner-toast][data-type='warning'] {
-  background-color: #451a03 !important;
-  color: #fef3c7 !important;
-  border-color: #f59e0b !important;
-  box-shadow: 4px 4px 0px #000000 !important;
-}
-.dark [data-sonner-toast][data-type='warning'] [data-icon],
-[data-theme='dark'] [data-sonner-toast][data-type='warning'] [data-icon] {
-  color: #fbbf24 !important;
-}
-.dark [data-sonner-toast][data-type='warning'] [data-close-button],
-[data-theme='dark'] [data-sonner-toast][data-type='warning'] [data-close-button] {
-  background-color: rgba(245, 158, 11, 0.15) !important;
-  border-color: rgba(245, 158, 11, 0.35) !important;
-}
-
-/* Dark: Info */
-.dark [data-sonner-toast][data-type='info'],
-[data-theme='dark'] [data-sonner-toast][data-type='info'] {
-  background-color: #172554 !important;
-  color: #dbeafe !important;
-  border-color: #3b82f6 !important;
-  box-shadow: 4px 4px 0px #000000 !important;
-}
-.dark [data-sonner-toast][data-type='info'] [data-icon],
-[data-theme='dark'] [data-sonner-toast][data-type='info'] [data-icon] {
-  color: #60a5fa !important;
-}
-.dark [data-sonner-toast][data-type='info'] [data-close-button],
-[data-theme='dark'] [data-sonner-toast][data-type='info'] [data-close-button] {
-  background-color: rgba(59, 130, 246, 0.15) !important;
-  border-color: rgba(59, 130, 246, 0.35) !important;
-}
-
-/* Dark: Loading */
-.dark [data-sonner-toast][data-type='loading'],
-[data-theme='dark'] [data-sonner-toast][data-type='loading'] {
-  background-color: #1e293b !important;
-  color: #f1f5f9 !important;
-  border-color: #64748b !important;
-  box-shadow: 4px 4px 0px #000000 !important;
-}
-.dark [data-sonner-toast][data-type='loading'] [data-icon],
-[data-theme='dark'] [data-sonner-toast][data-type='loading'] [data-icon] {
-  color: #94a3b8 !important;
-}
+.dark [data-sonner-toast][data-type='success']::before { background-color: #22C55E !important; }
+.dark [data-sonner-toast][data-type='error']::before    { background-color: #EF4444 !important; }
+.dark [data-sonner-toast][data-type='warning']::before  { background-color: #F59E0B !important; }
+.dark [data-sonner-toast][data-type='info']::before     { background-color: #3B82F6 !important; }
