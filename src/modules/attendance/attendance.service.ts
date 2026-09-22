@@ -369,17 +369,24 @@ export class AttendanceService {
       throw new NotFoundException('دانش‌آموز یافت نشد');
     }
 
-    const whereClause: any = {
-      tenantId,
-      studentId,
-      classroomId,
-    };
-    if (lessonId) {
-      whereClause.lessonId = lessonId;
+    const whereConditions: any[] = [
+      { tenantId },
+      { studentId },
+    ];
+    if (classroomId) {
+      whereConditions.push({ classroomId });
+    }
+    if (lessonId && lessonId !== 'undefined' && lessonId !== 'null') {
+      whereConditions.push({
+        OR: [
+          { lessonId: lessonId },
+          { lessonId: null },
+        ],
+      });
     }
 
     const records = await this.prisma.studentAttendance.findMany({
-      where: whereClause,
+      where: { AND: whereConditions },
       include: {
         lesson: true,
         recordedBy: {

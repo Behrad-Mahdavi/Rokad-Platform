@@ -85,6 +85,7 @@ export class AttendanceController {
   }
 
   @Get('student-history')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @RequirePermissions(AppPermission.ATTENDANCE_READ)
   @ApiOperation({ summary: 'پرونده و سابقه جلسات دانش‌آموز در یک درس و کلاس (نمرات پرسش، غیبت‌ها، انضباطی و یادداشت‌ها)' })
   async getStudentSubjectHistory(

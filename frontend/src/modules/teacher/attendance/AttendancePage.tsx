@@ -172,6 +172,7 @@ export const AttendancePage: React.FC = () => {
   const [modalSessionNote, setModalSessionNote] = useState<string>('');
   const [modalDelayMinutes, setModalDelayMinutes] = useState<number>(0);
   const [modalReason, setModalReason] = useState<string>('');
+  const [isSavingEvaluation, setIsSavingEvaluation] = useState<boolean>(false);
 
   // 3. Date Navigation Helpers
   const isSelectedDateToday = selectedDate === todayJalali;
@@ -365,8 +366,9 @@ export const AttendancePage: React.FC = () => {
   const {
     data: studentHistoryData,
     isLoading: isLoadingStudentHistory,
+    refetch: refetchStudentHistory,
   } = useQuery({
-    enabled: !!evaluationModalStudent && modalTab === 'HISTORY',
+    enabled: !!evaluationModalStudent && !!activeSession?.classroomId,
     queryKey: [
       'student-subject-history',
       evaluationModalStudent?.studentId,
@@ -374,15 +376,128 @@ export const AttendancePage: React.FC = () => {
       activeSession?.lessonId,
     ],
     queryFn: async () => {
-      if (!evaluationModalStudent || !activeSession) return null;
+      if (!evaluationModalStudent || !activeSession?.classroomId) return null;
       let url = `/attendance/student-history?studentId=${evaluationModalStudent.studentId}&classroomId=${activeSession.classroomId}`;
       if (activeSession.lessonId) {
         url += `&lessonId=${activeSession.lessonId}`;
       }
       const res: any = await apiClient.get(url);
-      return res?.data || res;
+      const raw = res?.data || res;
+      return raw?.data || raw;
     },
   });
+
+  // Combined History (Merged live session state + past DB records)
+  const combinedHistory = useMemo(() => {
+    const rawSessions: any[] = studentHistoryData?.sessions || [];
+    if (!evaluationModalStudent || !activeSession) {
+      return {
+        sessions: rawSessions,
+        summary: studentHistoryData?.summary || {
+          totalSessions: 0,
+          presentCount: 0,
+          absentCount: 0,
+          tardyCount: 0,
+          excusedCount: 0,
+          oralGradesCount: 0,
+          oralAverage: null,
+          positiveRewardsCount: 0,
+          negativeDisciplineCount: 0,
+        },
+      };
+    }
+
+    const currentGrade =
+      modalOralGrade.trim() !== ''
+        ? parseFloat(modalOralGrade)
+        : evaluationModalStudent.oralGrade !== null && evaluationModalStudent.oralGrade !== undefined
+        ? Number(evaluationModalStudent.oralGrade)
+        : null;
+
+    const currentReward =
+      modalDisciplineType !== 'NONE'
+        ? modalDisciplineType
+        : evaluationModalStudent.rewardDisciplineType !== 'NONE'
+        ? evaluationModalStudent.rewardDisciplineType
+        : null;
+
+    const currentRewardNote =
+      modalDisciplineNote.trim() || evaluationModalStudent.rewardDisciplineNote || '';
+
+    const currentSessionNote =
+      modalSessionNote.trim() || evaluationModalStudent.sessionNote || '';
+
+    const currentSessionItem = {
+      id: 'current-session-live',
+      date: selectedDate,
+      periodNumber: activeSession.periodNumber,
+      status: evaluationModalStudent.status,
+      delayMinutes: evaluationModalStudent.delayMinutes || 0,
+      reason: evaluationModalStudent.reason || '',
+      oralGrade: currentGrade,
+      rewardDisciplineType: currentReward,
+      rewardDisciplineNote: currentRewardNote,
+      sessionNote: currentSessionNote,
+      isCurrent: true,
+    };
+
+    // Filter out duplicate if already in rawSessions for the same date & periodNumber
+    const filteredPast = rawSessions.filter(
+      (s: any) => !(s.date === selectedDate && s.periodNumber === activeSession.periodNumber),
+    );
+
+    const mergedSessions = [currentSessionItem, ...filteredPast];
+
+    // Compute updated KPIs
+    const totalSessions = mergedSessions.length;
+    const presentCount = mergedSessions.filter((s) => s.status === 'PRESENT').length;
+    const absentCount = mergedSessions.filter((s) => s.status === 'ABSENT').length;
+    const tardyCount = mergedSessions.filter((s) => s.status === 'TARDY').length;
+    const excusedCount = mergedSessions.filter((s) => s.status === 'EXCUSED_ABSENT').length;
+
+    const grades = mergedSessions
+      .map((s) => s.oralGrade)
+      .filter((g): g is number => typeof g === 'number' && !isNaN(g));
+    const oralAverage =
+      grades.length > 0
+        ? Number((grades.reduce((a, b) => a + b, 0) / grades.length).toFixed(2))
+        : null;
+
+    const positiveRewardsCount = mergedSessions.filter(
+      (s) => s.rewardDisciplineType === 'POSITIVE' || s.rewardDisciplineType === 'EXCELLENT',
+    ).length;
+
+    const negativeDisciplineCount = mergedSessions.filter(
+      (s) =>
+        s.rewardDisciplineType === 'NEGATIVE' ||
+        s.rewardDisciplineType === 'WARNING' ||
+        s.rewardDisciplineType === 'HOMEWORK_INCOMPLETE',
+    ).length;
+
+    return {
+      sessions: mergedSessions,
+      summary: {
+        totalSessions,
+        presentCount,
+        absentCount,
+        tardyCount,
+        excusedCount,
+        oralGradesCount: grades.length,
+        oralAverage,
+        positiveRewardsCount,
+        negativeDisciplineCount,
+      },
+    };
+  }, [
+    studentHistoryData,
+    evaluationModalStudent,
+    activeSession,
+    selectedDate,
+    modalOralGrade,
+    modalDisciplineType,
+    modalDisciplineNote,
+    modalSessionNote,
+  ]);
 
   // 10. Bulk Save Attendance & Gradebook Session Mutation
   const saveAttendanceMutation = useMutation({
@@ -470,7 +585,7 @@ export const AttendancePage: React.FC = () => {
   };
 
   // Save Modal Details
-  const handleSaveModalEvaluation = () => {
+  const handleSaveModalEvaluation = async () => {
     if (!evaluationModalStudent) return;
     const parsedGrade = modalOralGrade.trim() !== '' ? parseFloat(modalOralGrade) : null;
     if (parsedGrade !== null && (isNaN(parsedGrade) || parsedGrade < 0 || parsedGrade > 20)) {
@@ -478,25 +593,59 @@ export const AttendancePage: React.FC = () => {
       return;
     }
 
-    setStudentsList((prev) =>
-      prev.map((s) => {
-        if (s.studentId === evaluationModalStudent.studentId) {
-          return {
-            ...s,
-            oralGrade: parsedGrade,
-            rewardDisciplineType: modalDisciplineType,
-            rewardDisciplineNote: modalDisciplineNote.trim(),
-            sessionNote: modalSessionNote.trim(),
-            delayMinutes: modalDelayMinutes,
-            reason: modalReason.trim(),
-          };
-        }
-        return s;
-      }),
+    const updatedStudent: LocalStudentAttendance = {
+      ...evaluationModalStudent,
+      oralGrade: parsedGrade,
+      rewardDisciplineType: modalDisciplineType,
+      rewardDisciplineNote: modalDisciplineNote.trim(),
+      sessionNote: modalSessionNote.trim(),
+      delayMinutes: modalDelayMinutes,
+      reason: modalReason.trim(),
+    };
+
+    const nextList = studentsList.map((s) =>
+      s.studentId === evaluationModalStudent.studentId ? updatedStudent : s,
     );
-    setHasUnsavedChanges(true);
-    setEvaluationModalStudent(null);
-    toast.success('ارزیابی و اطلاعات جلسه دانش‌آموز ثبت شد');
+    setStudentsList(nextList);
+
+    if (activeSession) {
+      try {
+        setIsSavingEvaluation(true);
+        await apiClient.post('/attendance/students/bulk', {
+          classroomId: activeSession.classroomId,
+          lessonId: activeSession.lessonId,
+          date: selectedDate,
+          periodNumber: activeSession.periodNumber,
+          attendances: nextList.map((s) => ({
+            studentId: s.studentId,
+            status: s.status,
+            delayMinutes: s.status === 'TARDY' ? s.delayMinutes : 0,
+            reason: s.reason || '',
+            oralGrade: s.oralGrade !== null && s.oralGrade !== undefined ? Number(s.oralGrade) : undefined,
+            rewardDisciplineType: s.rewardDisciplineType || undefined,
+            rewardDisciplineNote: s.rewardDisciplineNote || undefined,
+            sessionNote: s.sessionNote || undefined,
+          })),
+        });
+
+        queryClient.invalidateQueries({ queryKey: ['classroom-attendance'] });
+        queryClient.invalidateQueries({ queryKey: ['student-subject-history'] });
+        setHasUnsavedChanges(false);
+        toast.success('ارزیابی و سابقه دانش‌آموز با موفقیت در سیستم ثبت شد');
+        setEvaluationModalStudent(null);
+      } catch (err: any) {
+        console.error('Error saving session evaluation:', err);
+        setHasUnsavedChanges(true);
+        setEvaluationModalStudent(null);
+        toast.success('ارزیابی در لیست کلاس ثبت شد (برای ذخیره نهایی دکمه پایین را بزنید)');
+      } finally {
+        setIsSavingEvaluation(false);
+      }
+    } else {
+      setHasUnsavedChanges(true);
+      setEvaluationModalStudent(null);
+      toast.success('ارزیابی دانش‌آموز ثبت شد');
+    }
   };
 
   // Quick Oral Grade Setter buttons
@@ -1542,11 +1691,11 @@ export const AttendancePage: React.FC = () => {
 
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
                     {[
-                      { key: 'POSITIVE', label: '🌟 مثبت', bg: 'bg-emerald-100 text-emerald-950 border-emerald-600' },
-                      { key: 'EXCELLENT', label: '🏆 عالی', bg: 'bg-amber-100 text-amber-950 border-amber-600' },
-                      { key: 'NEGATIVE', label: '⚠️ منفی', bg: 'bg-rose-100 text-rose-950 border-rose-600' },
-                      { key: 'WARNING', label: '⚡ تذکر', bg: 'bg-orange-100 text-orange-950 border-orange-600' },
-                      { key: 'HOMEWORK_INCOMPLETE', label: '📝 بدون تکلیف', bg: 'bg-purple-100 text-purple-950 border-purple-600' },
+                      { key: 'POSITIVE', label: ' مثبت', bg: 'bg-emerald-100 text-emerald-950 border-emerald-600' },
+                      { key: 'EXCELLENT', label: ' عالی', bg: 'bg-amber-100 text-amber-950 border-amber-600' },
+                      { key: 'NEGATIVE', label: ' منفی', bg: 'bg-rose-100 text-rose-950 border-rose-600' },
+                      { key: 'WARNING', label: ' تذکر', bg: 'bg-orange-100 text-orange-950 border-orange-600' },
+                      { key: 'HOMEWORK_INCOMPLETE', label: ' بدون تکلیف', bg: 'bg-purple-100 text-purple-950 border-purple-600' },
                       { key: 'NONE', label: 'عادی', bg: 'bg-neutral-200 text-foreground border-black/40' },
                     ].map((item) => (
                       <button
@@ -1590,35 +1739,44 @@ export const AttendancePage: React.FC = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-200 dark:border-neutral-800">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEvaluationModalStudent(null)}
-                    className="border-2 border-black font-bold text-xs h-9"
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-200 dark:border-neutral-800 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setModalTab('HISTORY')}
+                    className="text-xs font-black text-sky-600 hover:text-sky-700 underline flex items-center gap-1"
                   >
-                    انصراف
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleSaveModalEvaluation}
-                    className="bg-primary text-primary-foreground border-2 border-black font-black text-xs h-9 shadow-[2px_2px_0px_#000]"
-                  >
-                    تایید و ثبت در لیست جلسه
-                  </Button>
+                    <History className="w-3.5 h-3.5" />
+                    مشاهده پرونده و سابقه کامل
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEvaluationModalStudent(null)}
+                      className="border-2 border-black font-bold text-xs h-9"
+                    >
+                      انصراف
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={isSavingEvaluation}
+                      onClick={handleSaveModalEvaluation}
+                      className="bg-primary text-primary-foreground border-2 border-black font-black text-xs h-9 shadow-[2px_2px_0px_#000] flex items-center gap-1.5"
+                    >
+                      {isSavingEvaluation && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                      تایید و ثبت در پرونده
+                    </Button>
+                  </div>
                 </div>
               </div>
             ) : (
               /* Tab 2: Track Record / Subject History */
               <div className="space-y-3.5 pt-1">
-                {isLoadingStudentHistory ? (
+                {isLoadingStudentHistory && !studentHistoryData ? (
                   <div className="py-12 text-center space-y-2">
                     <RefreshCw className="w-7 h-7 text-primary animate-spin mx-auto" />
                     <p className="font-black text-xs text-foreground">در حال بارگذاری سوابق دانش‌آموز در این درس...</p>
-                  </div>
-                ) : !studentHistoryData ? (
-                  <div className="py-8 text-center text-xs font-bold text-muted-foreground">
-                    اطلاعاتی یافت نشد.
                   </div>
                 ) : (
                   <>
@@ -1627,8 +1785,8 @@ export const AttendancePage: React.FC = () => {
                       <div className="bg-white dark:bg-card p-2 rounded-xl border border-black/10">
                         <div className="text-[10px] font-bold text-muted-foreground">میانگین نمرات</div>
                         <div className="text-sm font-black text-amber-600">
-                          {studentHistoryData.summary?.oralAverage !== null
-                            ? `${toPersianDigits(studentHistoryData.summary.oralAverage)} از ۲۰`
+                          {combinedHistory.summary?.oralAverage !== null
+                            ? `${toPersianDigits(combinedHistory.summary.oralAverage)} از ۲۰`
                             : 'ـ'}
                         </div>
                       </div>
@@ -1636,42 +1794,46 @@ export const AttendancePage: React.FC = () => {
                       <div className="bg-white dark:bg-card p-2 rounded-xl border border-black/10">
                         <div className="text-[10px] font-bold text-muted-foreground">حضور / غیبت</div>
                         <div className="text-sm font-black text-foreground">
-                          {toPersianDigits(studentHistoryData.summary?.presentCount)} / {toPersianDigits(studentHistoryData.summary?.absentCount)}
+                          {toPersianDigits(combinedHistory.summary?.presentCount)} / {toPersianDigits(combinedHistory.summary?.absentCount)}
                         </div>
                       </div>
 
                       <div className="bg-white dark:bg-card p-2 rounded-xl border border-black/10">
                         <div className="text-[10px] font-bold text-emerald-600">تشویقی‌ها</div>
                         <div className="text-sm font-black text-emerald-700">
-                          {toPersianDigits(studentHistoryData.summary?.positiveRewardsCount || 0)} مورد
+                          {toPersianDigits(combinedHistory.summary?.positiveRewardsCount || 0)} مورد
                         </div>
                       </div>
 
                       <div className="bg-white dark:bg-card p-2 rounded-xl border border-black/10">
                         <div className="text-[10px] font-bold text-rose-600">تذکرات</div>
                         <div className="text-sm font-black text-rose-700">
-                          {toPersianDigits(studentHistoryData.summary?.negativeDisciplineCount || 0)} مورد
+                          {toPersianDigits(combinedHistory.summary?.negativeDisciplineCount || 0)} مورد
                         </div>
                       </div>
                     </div>
 
-                    {/* Timeline of Previous Sessions */}
+                    {/* Timeline of Previous & Live Sessions */}
                     <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                       <span className="text-xs font-black text-foreground block">
-                        جلسات ثبت‌شده پیشین ({toPersianDigits(studentHistoryData.sessions?.length || 0)} جلسه):
+                        جلسات ثبت‌شده و در حال بررسی ({toPersianDigits(combinedHistory.sessions?.length || 0)} جلسه):
                       </span>
 
-                      {studentHistoryData.sessions?.length === 0 ? (
+                      {combinedHistory.sessions?.length === 0 ? (
                         <div className="py-6 text-center text-xs text-muted-foreground font-bold">
-                          هنوز جلسه‌ای برای این دانش‌آموز در این درس ثبت نشده است.
+                          هنوز جلسه‌ای برای این دانش‌آموز در این درس ثبت نشده است. با ثبت نمره در تب ارزیابی، جلسه به این لیست افزوده می‌شود.
                         </div>
                       ) : (
-                        studentHistoryData.sessions.map((sess: any) => (
+                        combinedHistory.sessions.map((sess: any) => (
                           <div
                             key={sess.id}
-                            className="bg-neutral-50 dark:bg-neutral-900 border-2 border-black/20 p-2.5 rounded-xl space-y-1 text-xs"
+                            className={`border-2 p-2.5 rounded-xl space-y-1 text-xs transition-all ${
+                              sess.isCurrent
+                                ? 'bg-amber-50/90 dark:bg-amber-950/40 border-amber-500 shadow-[2px_2px_0px_#d97706]'
+                                : 'bg-neutral-50 dark:bg-neutral-900 border-black/20'
+                            }`}
                           >
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between flex-wrap gap-1">
                               <div className="flex items-center gap-2">
                                 <span className="font-black text-foreground">
                                   {formatJalaliDisplay(sess.date, false)}
@@ -1679,6 +1841,11 @@ export const AttendancePage: React.FC = () => {
                                 {sess.periodNumber && (
                                   <span className="text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 py-0.5 rounded font-mono">
                                     زنگ {toPersianDigits(sess.periodNumber)}
+                                  </span>
+                                )}
+                                {sess.isCurrent && (
+                                  <span className="text-[10px] font-black bg-amber-400 text-black px-1.5 py-0.5 rounded border border-black shadow-[1px_1px_0px_#000]">
+                                    جلسه جاری
                                   </span>
                                 )}
                               </div>
@@ -1701,16 +1868,16 @@ export const AttendancePage: React.FC = () => {
                             </div>
 
                             {/* Details row */}
-                            <div className="flex items-center gap-3 pt-1 flex-wrap text-[11px]">
+                            <div className="flex items-center gap-2 pt-1 flex-wrap text-[11px]">
                               {sess.oralGrade !== null && sess.oralGrade !== undefined && (
-                                <span className="font-bold text-amber-700 bg-amber-100 dark:bg-amber-950 px-2 py-0.5 rounded">
-                                  نمره پرسش: {toPersianDigits(sess.oralGrade)}
+                                <span className="font-black text-amber-900 dark:text-amber-200 bg-amber-200 dark:bg-amber-900/80 px-2 py-0.5 rounded border border-amber-500/40">
+                                  نمره پرسش: {toPersianDigits(sess.oralGrade)} از ۲۰
                                 </span>
                               )}
 
                               {sess.rewardDisciplineType && sess.rewardDisciplineType !== 'NONE' && (
-                                <span className="font-bold text-primary">
-                                  مورد: {sess.rewardDisciplineType} {sess.rewardDisciplineNote && `(${sess.rewardDisciplineNote})`}
+                                <span className="font-bold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
+                                  مورد: {sess.rewardDisciplineType === 'POSITIVE' ? '🌟 مثبت' : sess.rewardDisciplineType === 'EXCELLENT' ? '🏆 عالی' : sess.rewardDisciplineType === 'NEGATIVE' ? '⚠️ منفی' : sess.rewardDisciplineType === 'WARNING' ? '⚡ تذکر' : sess.rewardDisciplineType === 'HOMEWORK_INCOMPLETE' ? '📝 بدون تکلیف' : sess.rewardDisciplineType} {sess.rewardDisciplineNote && `(${sess.rewardDisciplineNote})`}
                                 </span>
                               )}
                             </div>
