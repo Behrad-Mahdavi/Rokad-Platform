@@ -226,7 +226,12 @@ export const router = createBrowserRouter([
               { path: 'club', element: <ClubPage /> },
               { path: 'chat', element: <Navigate to="/app" replace /> },
               { path: 'messages', element: <MessagesPage /> },
-              { path: 'sms', element: <SmsCenterPage /> },
+              {
+                element: <RoleGuard allowedRoles={['SUPER_ADMIN', 'SCHOOL_ADMIN']} />,
+                children: [
+                  { path: 'sms', element: <SmsCenterPage /> },
+                ],
+              },
               { path: 'notices', element: <Navigate to="/app/messages" replace /> },
               { path: 'calendar', element: <CalendarPage /> },
               { path: 'events', element: <EventsRoadmapPage /> },

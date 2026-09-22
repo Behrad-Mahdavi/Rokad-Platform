@@ -30,6 +30,7 @@ import { CurrentTenant } from '../../common/decorators/current-tenant.decorator'
 @ApiTags('SMS Management')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
 @Controller('sms')
 export class SmsController {
   constructor(private readonly smsService: SmsService) {}
@@ -59,7 +60,7 @@ export class SmsController {
 
   @Post('manual-send')
   @HttpCode(HttpStatus.OK)
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'ارسال دستی پیامک (فردی، نقشی/گروهی، کلاسی یا شماره مستقیم)' })
   async sendManualSms(
     @CurrentTenant('id') tenantId: string,
@@ -72,7 +73,7 @@ export class SmsController {
   }
 
   @Get('logs')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'دریافت تاریخچه و لاگ پیامک‌های ارسالی' })
   async getSmsLogs(
     @CurrentTenant('id') tenantId: string,
@@ -93,7 +94,7 @@ export class SmsController {
   }
 
   @Get('stats')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'آمار و وضعیت تجمیعی پیامک‌های ارسالی' })
   async getSmsStats(
     @CurrentTenant('id') tenantId: string,
@@ -104,7 +105,7 @@ export class SmsController {
   }
 
   @Get('templates')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'دریافت لیست الگوها و وضعیت اتوماسیون‌های پیامکی' })
   async getTemplates(
     @CurrentTenant('id') tenantId: string,
@@ -152,7 +153,7 @@ export class SmsController {
   // Quick Templates Endpoints
   // ==========================================
   @Get('quick-templates')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'دریافت لیست الگوهای سریع پیامک' })
   async getQuickTemplates(
     @CurrentTenant('id') tenantId: string,
@@ -200,7 +201,7 @@ export class SmsController {
   }
 
   @Get(['recipients', 'directory'])
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
   @ApiOperation({ summary: 'دریافت مخاطبان دفترچه تلفن مدرسه بر اساس نقش جهت ارسال پیامک' })
   async getRecipients(
     @CurrentTenant('id') tenantId: string,

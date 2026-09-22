@@ -62,10 +62,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   }, [location.pathname, close]);
 
   const getNavItems = (): { section: string; items: NavItem[] }[] => {
+    const isManagerOrAdmin = role === 'SUPER_ADMIN' || role === 'SCHOOL_ADMIN';
+
     const commsSection = {
       section: 'ارتباطات و اکوسیستم',
       items: [
-        { title: 'سامانه پیامک هوشمند', href: '/app/sms', icon: MessageSquare },
+        ...(isManagerOrAdmin ? [{ title: 'سامانه پیامک هوشمند', href: '/app/sms', icon: MessageSquare }] : []),
         { title: 'رسانه هنرستان', href: '/app/media', icon: Sparkles },
         { title: 'پیام‌ها و مکاتبات', href: '/app/messages', icon: MessageSquare },
         { title: 'تقویم آموزشی', href: '/app/calendar', icon: CalendarDays },
