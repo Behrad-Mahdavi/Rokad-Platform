@@ -84,6 +84,23 @@ export class AttendanceController {
     );
   }
 
+  @Get('my-attendance')
+  @Roles(Role.STUDENT, Role.PARENT)
+  @ApiOperation({ summary: 'مشاهده سوابق و تاریخچه حضور و غیاب دانش‌آموز یا فرزند والد لاگین‌شده' })
+  async getMyAttendance(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') role: string,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.attendanceService.getMyAttendanceHistory(
+      effectiveTenantId,
+      userId,
+      role,
+    );
+  }
+
   @Get('daily-stats')
   @RequirePermissions(AppPermission.ATTENDANCE_READ)
   @ApiOperation({ summary: 'دریافت آمار کلی تردد روزانه مدرسه (حاضرین، غایبین، تاخیرها با کش ردیس)' })
