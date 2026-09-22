@@ -6,6 +6,7 @@ import { useAuthStore } from '../../../../lib/auth/auth-store';
 import { apiClient } from '../../../../lib/api/client';
 import { toPersianDigits } from '../../../../utils/jalali';
 import { EventIdea } from './EventIdeaSubmissionStep';
+import { porscadClient } from '../../../../lib/porscad/porscad-client';
 import {
   Users,
   User,
@@ -83,6 +84,29 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
   // DB Students list state
   const [dbStudents, setDbStudents] = useState<Array<{ id: string; name: string; classGroup?: string }>>(FALLBACK_DB_STUDENTS);
   const [searchStudentQuery, setSearchStudentQuery] = useState('');
+
+  // Filter ideas to show ONLY the top winning ideas specified from Porscad Poll (Step 3)
+  const winningIdeas = useMemo(() => {
+    const poll = porscadClient.getLocalPollData(eventId);
+    if (!poll || !poll.isClosed) {
+      return []; // empty until poll is finished and top winning ideas are selected!
+    }
+
+    const winningIds = poll.winningOptionIds || (poll.winningOptionId ? [poll.winningOptionId] : []);
+
+    if (winningIds.length > 0) {
+      return ideas.filter((idea) => winningIds.includes(idea.id));
+    }
+
+    // Fallback: If topWinnersCount is set, pick top N options sorted by voteCount
+    const topCount = poll.topWinnersCount || 1;
+    const sortedOptionIdeaIds = [...poll.options]
+      .sort((a, b) => b.voteCount - a.voteCount)
+      .slice(0, topCount)
+      .map((opt) => opt.ideaId || opt.id);
+
+    return ideas.filter((idea) => sortedOptionIdeaIds.includes(idea.id));
+  }, [eventId, ideas]);
 
   // Teams state per idea
   const teamsStorageKey = `rokad_event_teams_${eventId}`;
@@ -362,18 +386,20 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
         </div>
       </div>
 
-      {/* Ideas Teams List Grid */}
-      {ideas.length === 0 ? (
-        <div className="rounded-2xl border-3 border-dashed border-zinc-400 bg-white p-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
-          <AlertCircle className="w-12 h-12 mx-auto text-amber-500 mb-3" />
-          <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">ایده‌ای برای تشکیل تیم ثبت نشده است</h3>
-          <p className="text-xs font-bold text-zinc-500 mt-1">
-            ابتدا باید ایده‌ها در مرحله اول ثبت و در مرحله رای‌گیری انتخاب شوند.
+      {/* Ideas Teams List Grid (ONLY FOR WINNING IDEAS FROM STEP 3) */}
+      {winningIdeas.length === 0 ? (
+        <div className="rounded-2xl border-3 border-dashed border-zinc-400 bg-white p-12 text-center dark:border-zinc-700 dark:bg-zinc-900 space-y-3">
+          <AlertCircle className="w-12 h-12 mx-auto text-amber-500 mb-2" />
+          <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
+            در انتظار مشخص‌سازی ایده‌های برگزیده رویداد (گام سوم)
+          </h3>
+          <p className="text-xs md:text-sm font-bold text-zinc-500 max-w-md mx-auto leading-relaxed">
+            بخش تشکیل تیم صرفاً برای ایده‌های منتخب پس از پایان نظرسنجی فعال می‌شود. پس از اتمام رای‌گیری و تعیین ایده‌های برتر توسط مدیر، ایده‌های برگزیده جهت تیم‌سازی در این بخش قرار خواهند گرفت.
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {ideas.map((idea) => {
+          {winningIdeas.map((idea) => {
             const team = getIdeaTeam(idea);
             const isLeader =
               currentUser &&
