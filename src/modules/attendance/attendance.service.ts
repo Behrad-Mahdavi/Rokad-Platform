@@ -131,9 +131,13 @@ export class AttendanceService {
               status: item.status,
               delayMinutes: item.delayMinutes || 0,
               reason: item.reason,
+              oralGrade: item.oralGrade !== undefined ? item.oralGrade : existing.oralGrade,
+              rewardDisciplineType: item.rewardDisciplineType !== undefined ? item.rewardDisciplineType : existing.rewardDisciplineType,
+              rewardDisciplineNote: item.rewardDisciplineNote !== undefined ? item.rewardDisciplineNote : existing.rewardDisciplineNote,
+              sessionNote: item.sessionNote !== undefined ? item.sessionNote : existing.sessionNote,
               recordedById,
-              lessonId: dto.lessonId,
-              scheduleId: dto.scheduleId,
+              lessonId: dto.lessonId || existing.lessonId,
+              scheduleId: dto.scheduleId || existing.scheduleId,
             },
           });
         } else {
@@ -150,6 +154,10 @@ export class AttendanceService {
               status: item.status,
               delayMinutes: item.delayMinutes || 0,
               reason: item.reason,
+              oralGrade: item.oralGrade !== undefined ? item.oralGrade : null,
+              rewardDisciplineType: item.rewardDisciplineType !== undefined ? item.rewardDisciplineType : null,
+              rewardDisciplineNote: item.rewardDisciplineNote || null,
+              sessionNote: item.sessionNote || null,
               recordedById,
             },
           });
@@ -279,6 +287,10 @@ export class AttendanceService {
         status: rec ? rec.status : 'PRESENT',
         delayMinutes: rec ? rec.delayMinutes : 0,
         reason: rec ? rec.reason : '',
+        oralGrade: rec?.oralGrade !== undefined ? rec.oralGrade : null,
+        rewardDisciplineType: rec?.rewardDisciplineType || 'NONE',
+        rewardDisciplineNote: rec?.rewardDisciplineNote || '',
+        sessionNote: rec?.sessionNote || '',
         isRecorded: !!rec,
         recordedAt: rec?.updatedAt || rec?.createdAt || null,
         recordedBy: rec?.recordedBy || null,
@@ -326,6 +338,125 @@ export class AttendanceService {
       },
       orderBy: { date: 'desc' },
     });
+  }
+
+  /**
+   * Get student track record / session history in a specific classroom & lesson
+   * Returns summary stats (average oral grade, presence, absences, rewards) + timeline
+   */
+  async getStudentSubjectHistory(
+    tenantId: string,
+    studentId: string,
+    classroomId: string,
+    lessonId?: string,
+  ) {
+    const student = await this.prisma.studentProfile.findFirst({
+      where: { id: studentId, tenantId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+            phone: true,
+          },
+        },
+      },
+    });
+
+    if (!student) {
+      throw new NotFoundException('دانش‌آموز یافت نشد');
+    }
+
+    const whereClause: any = {
+      tenantId,
+      studentId,
+      classroomId,
+    };
+    if (lessonId) {
+      whereClause.lessonId = lessonId;
+    }
+
+    const records = await this.prisma.studentAttendance.findMany({
+      where: whereClause,
+      include: {
+        lesson: true,
+        recordedBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+      orderBy: [{ date: 'desc' }, { periodNumber: 'desc' }],
+    });
+
+    const totalSessions = records.length;
+    const presentCount = records.filter((r) => r.status === 'PRESENT').length;
+    const absentCount = records.filter((r) => r.status === 'ABSENT').length;
+    const tardyCount = records.filter((r) => r.status === 'TARDY').length;
+    const excusedCount = records.filter((r) => r.status === 'EXCUSED_ABSENT').length;
+
+    const grades = records
+      .map((r) => r.oralGrade)
+      .filter((g): g is number => typeof g === 'number' && !isNaN(g));
+    const oralAverage =
+      grades.length > 0
+        ? Number((grades.reduce((a, b) => a + b, 0) / grades.length).toFixed(2))
+        : null;
+
+    const positiveRewardsCount = records.filter(
+      (r) =>
+        r.rewardDisciplineType === 'POSITIVE' ||
+        r.rewardDisciplineType === 'EXCELLENT',
+    ).length;
+
+    const negativeDisciplineCount = records.filter(
+      (r) =>
+        r.rewardDisciplineType === 'NEGATIVE' ||
+        r.rewardDisciplineType === 'WARNING' ||
+        r.rewardDisciplineType === 'HOMEWORK_INCOMPLETE',
+    ).length;
+
+    return {
+      student: {
+        id: student.id,
+        studentCode: student.studentCode,
+        nationalCode: student.nationalCode,
+        name: `${student.user.firstName} ${student.user.lastName}`,
+        avatarUrl: student.user.avatarUrl,
+      },
+      summary: {
+        totalSessions,
+        presentCount,
+        absentCount,
+        tardyCount,
+        excusedCount,
+        oralGradesCount: grades.length,
+        oralAverage,
+        positiveRewardsCount,
+        negativeDisciplineCount,
+      },
+      sessions: records.map((r) => ({
+        id: r.id,
+        date: r.date,
+        periodNumber: r.periodNumber,
+        status: r.status,
+        delayMinutes: r.delayMinutes,
+        reason: r.reason,
+        oralGrade: r.oralGrade,
+        rewardDisciplineType: r.rewardDisciplineType,
+        rewardDisciplineNote: r.rewardDisciplineNote,
+        sessionNote: r.sessionNote,
+        lessonName: r.lesson?.name || null,
+        recordedBy: r.recordedBy
+          ? `${r.recordedBy.firstName} ${r.recordedBy.lastName}`
+          : null,
+        createdAt: r.createdAt,
+      })),
+    };
   }
 
   /**

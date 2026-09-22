@@ -122,6 +122,15 @@ enum TeacherAttendanceStatus {
   LEAVE_UNAUTHORIZED
 }
 
+enum DisciplinaryRewardType {
+  POSITIVE
+  NEGATIVE
+  WARNING
+  HOMEWORK_INCOMPLETE
+  EXCELLENT
+  NONE
+}
+
 enum SubmissionStatus {
   PENDING
   SUBMITTED
@@ -1187,6 +1196,13 @@ model StudentAttendance {
   status         AttendanceStatus @default(PRESENT)
   delayMinutes   Int              @default(0)
   reason         String? // دلیل غیبت یا تاخیر
+
+  // دفتر کلاسی هوشمند: نمره پرسش کلاسی (از ۲۰)، موارد انضباطی/تشویقی و یادداشت جلسه
+  oralGrade            Float?                  // نمره پرسش کلاسی (از ۲۰)
+  rewardDisciplineType DisciplinaryRewardType? // نوع مورد انضباطی یا تشویقی
+  rewardDisciplineNote String?                 // شرح مورد تشویقی یا انضباطی
+  sessionNote          String?                 // یادداشت جلسه دبیر برای این دانش‌آموز
+
   recordedById   String
   recordedBy     User             @relation("RecordedStudentAttendance", fields: [recordedById], references: [id], onDelete: Cascade)
   createdAt      DateTime         @default(now())

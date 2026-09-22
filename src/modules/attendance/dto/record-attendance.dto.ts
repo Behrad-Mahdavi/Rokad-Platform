@@ -4,13 +4,15 @@ import {
   IsEnum,
   IsInt,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
+  Max,
   Min,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { AttendanceStatus, TeacherAttendanceStatus } from '@prisma/client';
+import { AttendanceStatus, TeacherAttendanceStatus, DisciplinaryRewardType } from '@prisma/client';
 
 export class SingleStudentAttendanceItemDto {
   @ApiProperty({ description: 'شناسه پروفایل دانش‌آموز' })
@@ -36,6 +38,31 @@ export class SingleStudentAttendanceItemDto {
   @IsString()
   @IsOptional()
   reason?: string;
+
+  @ApiPropertyOptional({ description: 'نمره پرسش کلاسی از ۲۰ (اختیاری)', example: 18.5 })
+  @IsNumber()
+  @Min(0)
+  @Max(20)
+  @IsOptional()
+  oralGrade?: number;
+
+  @ApiPropertyOptional({
+    description: 'نوع مورد انضباطی یا تشویقی جلسه',
+    enum: DisciplinaryRewardType,
+  })
+  @IsEnum(DisciplinaryRewardType)
+  @IsOptional()
+  rewardDisciplineType?: DisciplinaryRewardType;
+
+  @ApiPropertyOptional({ description: 'شرح مورد تشویقی یا انضباطی' })
+  @IsString()
+  @IsOptional()
+  rewardDisciplineNote?: string;
+
+  @ApiPropertyOptional({ description: 'یادداشت اختصاصی جلسه دبیر برای این دانش‌آموز' })
+  @IsString()
+  @IsOptional()
+  sessionNote?: string;
 }
 
 export class BulkRecordStudentAttendanceDto {

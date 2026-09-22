@@ -27,6 +27,14 @@ import {
   SlidersHorizontal,
   X,
   ChevronDown,
+  Award,
+  Star,
+  FileText,
+  History,
+  TrendingUp,
+  AlertTriangle,
+  GraduationCap,
+  MessageSquare,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '../../../lib/api/client';
@@ -45,6 +53,14 @@ import {
 
 export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'TARDY' | 'EXCUSED_ABSENT' | 'EXPELLED';
 
+export type DisciplinaryRewardType =
+  | 'POSITIVE'
+  | 'NEGATIVE'
+  | 'WARNING'
+  | 'HOMEWORK_INCOMPLETE'
+  | 'EXCELLENT'
+  | 'NONE';
+
 interface LocalStudentAttendance {
   studentId: string;
   studentCode: string;
@@ -62,6 +78,10 @@ interface LocalStudentAttendance {
   delayMinutes: number;
   reason: string;
   isRecorded: boolean;
+  oralGrade?: number | null;
+  rewardDisciplineType?: DisciplinaryRewardType | null;
+  rewardDisciplineNote?: string | null;
+  sessionNote?: string | null;
 }
 
 interface ScheduleSlot {
@@ -126,6 +146,7 @@ export const AttendancePage: React.FC = () => {
   const [activeSession, setActiveSession] = useState<{
     classroomId: string;
     classroomName: string;
+    lessonId?: string;
     lessonName?: string;
     periodNumber: number;
     startTime?: string;
@@ -138,8 +159,17 @@ export const AttendancePage: React.FC = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [studentsList, setStudentsList] = useState<LocalStudentAttendance[]>([]);
 
-  // Modal for setting excuse reason or delay minutes
-  const [detailModalStudent, setDetailModalStudent] = useState<LocalStudentAttendance | null>(null);
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Modal / Bottom Sheet State for Student Evaluation & Track Record History
+  // ─────────────────────────────────────────────────────────────────────────────
+  const [evaluationModalStudent, setEvaluationModalStudent] = useState<LocalStudentAttendance | null>(null);
+  const [modalTab, setModalTab] = useState<'EVALUATE' | 'HISTORY'>('EVALUATE');
+
+  // Evaluation Form State
+  const [modalOralGrade, setModalOralGrade] = useState<string>('');
+  const [modalDisciplineType, setModalDisciplineType] = useState<DisciplinaryRewardType>('NONE');
+  const [modalDisciplineNote, setModalDisciplineNote] = useState<string>('');
+  const [modalSessionNote, setModalSessionNote] = useState<string>('');
   const [modalDelayMinutes, setModalDelayMinutes] = useState<number>(0);
   const [modalReason, setModalReason] = useState<string>('');
 
@@ -229,7 +259,6 @@ export const AttendancePage: React.FC = () => {
   const {
     data: dailyScheduleData,
     isLoading: isLoadingSchedule,
-    refetch: refetchSchedule,
   } = useQuery({
     queryKey: ['teacher-daily-schedule', selectedDate],
     queryFn: async () => {
@@ -263,7 +292,6 @@ export const AttendancePage: React.FC = () => {
   const {
     data: sessionAttendanceData,
     isLoading: isLoadingRoster,
-    isFetching: isFetchingRoster,
     refetch: refetchRoster,
   } = useQuery({
     enabled: !!activeSession?.classroomId,
@@ -295,6 +323,10 @@ export const AttendancePage: React.FC = () => {
         delayMinutes: st.delayMinutes || 0,
         reason: st.reason || '',
         isRecorded: !!st.isRecorded,
+        oralGrade: st.oralGrade !== undefined ? st.oralGrade : null,
+        rewardDisciplineType: st.rewardDisciplineType || 'NONE',
+        rewardDisciplineNote: st.rewardDisciplineNote || '',
+        sessionNote: st.sessionNote || '',
       }));
       setStudentsList(mapped);
       setHasUnsavedChanges(false);
@@ -310,8 +342,10 @@ export const AttendancePage: React.FC = () => {
     const absent = studentsList.filter((s) => s.status === 'ABSENT').length;
     const tardy = studentsList.filter((s) => s.status === 'TARDY').length;
     const excused = studentsList.filter((s) => s.status === 'EXCUSED_ABSENT').length;
+    const graded = studentsList.filter((s) => s.oralGrade !== null && s.oralGrade !== undefined).length;
+    const positiveMatters = studentsList.filter((s) => s.rewardDisciplineType === 'POSITIVE' || s.rewardDisciplineType === 'EXCELLENT').length;
     const recorded = studentsList.filter((s) => s.isRecorded).length;
-    return { total, present, absent, tardy, excused, recorded };
+    return { total, present, absent, tardy, excused, graded, positiveMatters, recorded };
   }, [studentsList]);
 
   // Filtered Students
@@ -327,12 +361,36 @@ export const AttendancePage: React.FC = () => {
     });
   }, [studentsList, searchQuery, statusFilter]);
 
-  // 9. Bulk Save Attendance Mutation
+  // 9. Query: Student Track Record / History in Subject
+  const {
+    data: studentHistoryData,
+    isLoading: isLoadingStudentHistory,
+  } = useQuery({
+    enabled: !!evaluationModalStudent && modalTab === 'HISTORY',
+    queryKey: [
+      'student-subject-history',
+      evaluationModalStudent?.studentId,
+      activeSession?.classroomId,
+      activeSession?.lessonId,
+    ],
+    queryFn: async () => {
+      if (!evaluationModalStudent || !activeSession) return null;
+      let url = `/attendance/student-history?studentId=${evaluationModalStudent.studentId}&classroomId=${activeSession.classroomId}`;
+      if (activeSession.lessonId) {
+        url += `&lessonId=${activeSession.lessonId}`;
+      }
+      const res: any = await apiClient.get(url);
+      return res?.data || res;
+    },
+  });
+
+  // 10. Bulk Save Attendance & Gradebook Session Mutation
   const saveAttendanceMutation = useMutation({
     mutationFn: async () => {
       if (!activeSession) return;
       const payload = {
         classroomId: activeSession.classroomId,
+        lessonId: activeSession.lessonId,
         date: selectedDate,
         periodNumber: activeSession.periodNumber,
         attendances: studentsList.map((s) => ({
@@ -340,13 +398,17 @@ export const AttendancePage: React.FC = () => {
           status: s.status,
           delayMinutes: s.status === 'TARDY' ? s.delayMinutes : 0,
           reason: s.reason || '',
+          oralGrade: s.oralGrade !== null && s.oralGrade !== undefined ? Number(s.oralGrade) : undefined,
+          rewardDisciplineType: s.rewardDisciplineType || undefined,
+          rewardDisciplineNote: s.rewardDisciplineNote || undefined,
+          sessionNote: s.sessionNote || undefined,
         })),
       };
       const res: any = await apiClient.post('/attendance/students/bulk', payload);
       return res?.data || res;
     },
     onSuccess: (data) => {
-      toast.success(data?.message || 'حضور و غیاب با موفقیت ثبت شد', {
+      toast.success(data?.message || 'دفتر کلاسی با موفقیت ثبت و ذخیره شد', {
         description: `کلاس ${activeSession?.classroomName} - زنگ ${toPersianDigits(activeSession?.periodNumber)}`,
       });
       setHasUnsavedChanges(false);
@@ -355,7 +417,7 @@ export const AttendancePage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
     },
     onError: (err: any) => {
-      toast.error('خطا در ثبت اطلاعات حضور و غیاب', {
+      toast.error('خطا در ثبت اطلاعات دفتر کلاسی', {
         description: err?.response?.data?.message || 'لطفاً اتصال اینترنت را بررسی فرمایید',
       });
     },
@@ -367,7 +429,6 @@ export const AttendancePage: React.FC = () => {
         ...s,
         status: 'PRESENT',
         delayMinutes: 0,
-        reason: '',
       })),
     );
     setHasUnsavedChanges(true);
@@ -396,26 +457,52 @@ export const AttendancePage: React.FC = () => {
     setHasUnsavedChanges(true);
   };
 
-  const handleSaveModalDetails = () => {
-    if (!detailModalStudent) return;
+  // Open Evaluation Modal for Student
+  const handleOpenEvaluationModal = (st: LocalStudentAttendance) => {
+    setEvaluationModalStudent(st);
+    setModalTab('EVALUATE');
+    setModalOralGrade(st.oralGrade !== null && st.oralGrade !== undefined ? String(st.oralGrade) : '');
+    setModalDisciplineType(st.rewardDisciplineType || 'NONE');
+    setModalDisciplineNote(st.rewardDisciplineNote || '');
+    setModalSessionNote(st.sessionNote || '');
+    setModalDelayMinutes(st.delayMinutes || 0);
+    setModalReason(st.reason || '');
+  };
+
+  // Save Modal Details
+  const handleSaveModalEvaluation = () => {
+    if (!evaluationModalStudent) return;
+    const parsedGrade = modalOralGrade.trim() !== '' ? parseFloat(modalOralGrade) : null;
+    if (parsedGrade !== null && (isNaN(parsedGrade) || parsedGrade < 0 || parsedGrade > 20)) {
+      toast.error('نمره پرسش کلاسی باید عددی بین ۰ تا ۲۰ باشد');
+      return;
+    }
+
     setStudentsList((prev) =>
       prev.map((s) => {
-        if (s.studentId === detailModalStudent.studentId) {
+        if (s.studentId === evaluationModalStudent.studentId) {
           return {
             ...s,
+            oralGrade: parsedGrade,
+            rewardDisciplineType: modalDisciplineType,
+            rewardDisciplineNote: modalDisciplineNote.trim(),
+            sessionNote: modalSessionNote.trim(),
             delayMinutes: modalDelayMinutes,
-            reason: modalReason,
+            reason: modalReason.trim(),
           };
         }
         return s;
       }),
     );
     setHasUnsavedChanges(true);
-    setDetailModalStudent(null);
-    toast.success('اطلاعات تکمیلی ثبت شد');
+    setEvaluationModalStudent(null);
+    toast.success('ارزیابی و اطلاعات جلسه دانش‌آموز ثبت شد');
   };
 
-  // 10. Query: Staff Attendance
+  // Quick Oral Grade Setter buttons
+  const QUICK_GRADES = [20, 19.5, 19, 18.5, 18, 17, 16, 15, 14, 12, 10, 0];
+
+  // 11. Query: Staff Attendance
   const { data: staffAttendanceData, isLoading: isLoadingStaffAttendance } = useQuery({
     enabled: isManagerOrAdmin && activeTab === 'staff_attendance',
     queryKey: ['teachers-attendance', selectedDate],
@@ -437,19 +524,19 @@ export const AttendancePage: React.FC = () => {
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
             <div className="w-10 h-10 sm:w-13 sm:h-13 rounded-xl sm:rounded-2xl bg-amber-400 border-2 border-black flex items-center justify-center shadow-[2px_2px_0px_#000] shrink-0 text-black">
-              <CalendarCheck className="w-5 h-5 sm:w-7 sm:h-7" />
+              <BookOpen className="w-5 h-5 sm:w-7 sm:h-7" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <h1 className="text-base sm:text-2xl font-black text-foreground truncate">
-                  حضور و غیاب
+                  دفتر کلاسی هوشمند
                 </h1>
                 <Badge variant="college" className="text-[10px] sm:text-xs font-bold border border-black px-1.5 py-0 sm:px-2">
                   رُکاد
                 </Badge>
               </div>
               <p className="text-[11px] sm:text-xs font-bold text-muted-foreground truncate hidden xs:block">
-                ثبت الکترونیک تردد و غیبت کلاس‌ها
+                حضور و غیاب، پرسش کلاسی، انضباطی و سوابق دانش‌آموزان
               </p>
             </div>
           </div>
@@ -504,7 +591,7 @@ export const AttendancePage: React.FC = () => {
             </button>
           </div>
 
-          {/* Quick Buttons on Tablet/Desktop */}
+          {/* Quick Buttons */}
           <div className="flex items-center gap-2">
             {!isSelectedDateToday && (
               <Button
@@ -578,7 +665,7 @@ export const AttendancePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Row 4: Top Navigation Tabs (Responsive Segmented Control) */}
+        {/* Row 4: Top Navigation Tabs */}
         <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 bg-neutral-100 dark:bg-neutral-900 p-1 rounded-xl border border-black/20 dark:border-white/20">
           <button
             type="button"
@@ -592,7 +679,7 @@ export const AttendancePage: React.FC = () => {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            برنامه و زنگ‌ها
+            برنامه زنگ‌های امروز
           </button>
           <button
             type="button"
@@ -606,7 +693,7 @@ export const AttendancePage: React.FC = () => {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            تمامی کلاس‌های من
+            تمام کلاس‌های تحت تدریس
           </button>
           {isManagerOrAdmin && (
             <button
@@ -658,6 +745,7 @@ export const AttendancePage: React.FC = () => {
                 setActiveSession({
                   classroomId: activeNowSlot.classroomId,
                   classroomName: activeNowSlot.classroomName,
+                  lessonId: activeNowSlot.lessonId,
                   lessonName: activeNowSlot.lessonName,
                   periodNumber: activeNowSlot.periodNumber,
                   startTime: activeNowSlot.startTime,
@@ -666,7 +754,7 @@ export const AttendancePage: React.FC = () => {
               }
               className="w-full sm:w-auto bg-black text-white hover:bg-neutral-900 border-2 border-black shadow-[2px_2px_0px_#fff] font-black text-xs sm:text-sm py-2 sm:py-2.5 rounded-xl sm:rounded-2xl shrink-0"
             >
-              ثبت سریع حضور همین زنگ
+              ورود به دفتر کلاسی این زنگ
               <ArrowRight className="w-4 h-4 mr-1.5" />
             </Button>
           </div>
@@ -674,7 +762,7 @@ export const AttendancePage: React.FC = () => {
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          3. ACTIVE ATTENDANCE RECORDING SESSION (ROSTER VIEW)
+          3. ACTIVE CLASSROOM COCKPIT SESSION (ROSTER + EVALUATION)
       ───────────────────────────────────────────────────────────── */}
       {activeSession ? (
         <div className="space-y-4">
@@ -686,7 +774,7 @@ export const AttendancePage: React.FC = () => {
                   type="button"
                   onClick={() => setActiveSession(null)}
                   className="p-2 sm:p-2.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 border-2 border-black rounded-xl sm:rounded-2xl shadow-[2px_2px_0px_#000] transition-all shrink-0"
-                  title="بازگشت به برنامه کلاس‌ها"
+                  title="بازگشت به برنامه زنگ‌ها"
                 >
                   <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-foreground" />
                 </button>
@@ -706,7 +794,7 @@ export const AttendancePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Top Quick Actions (Visible on Tablet/Desktop, sticky bottom on mobile) */}
+              {/* Action Buttons (Desktop) */}
               <div className="hidden sm:flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -741,12 +829,12 @@ export const AttendancePage: React.FC = () => {
                   ) : (
                     <Send className="w-4 h-4 ml-1.5" />
                   )}
-                  ثبت نهایی حضور و غیاب
+                  ثبت نهایی دفتر کلاسی
                 </Button>
               </div>
             </div>
 
-            {/* Mobile Horizontal Quick Action Buttons */}
+            {/* Mobile Actions */}
             <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-neutral-200 dark:border-neutral-800 sm:hidden">
               <Button
                 variant="outline"
@@ -896,17 +984,25 @@ export const AttendancePage: React.FC = () => {
               <div className="space-y-2.5 sm:space-y-2 divide-y sm:divide-y-0 divide-neutral-100 dark:divide-neutral-800">
                 {filteredStudents.map((st, idx) => {
                   const fullName = `${st.user?.firstName || ''} ${st.user?.lastName || ''}`;
+                  const hasOralGrade = st.oralGrade !== null && st.oralGrade !== undefined;
+                  const hasDiscipline = st.rewardDisciplineType && st.rewardDisciplineType !== 'NONE';
+                  const hasSessionNote = !!st.sessionNote;
+
                   return (
                     <div
                       key={st.studentId}
                       className="pt-2.5 sm:pt-0 sm:py-2.5 flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-4 sm:hover:bg-neutral-50/80 sm:dark:hover:bg-neutral-900/40 sm:px-3 sm:rounded-2xl transition-all"
                     >
-                      {/* Student Info: Avatar + Name + Code */}
-                      <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+                      {/* Student Info: Avatar + Name + Evaluation Chips (Clickable to open Bottom Sheet) */}
+                      <div
+                        onClick={() => handleOpenEvaluationModal(st)}
+                        className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 cursor-pointer group"
+                        title="برای ثبت نمره پرسش، انضباطی یا یادداشت کلیک کنید"
+                      >
                         <div className="w-6 text-center font-mono font-black text-xs text-muted-foreground shrink-0">
                           {toPersianDigits(idx + 1)}
                         </div>
-                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl border-2 border-black bg-neutral-100 dark:bg-neutral-800 overflow-hidden shrink-0 shadow-[1.5px_1.5px_0px_#000]">
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl border-2 border-black bg-neutral-100 dark:bg-neutral-800 overflow-hidden shrink-0 shadow-[1.5px_1.5px_0px_#000] group-hover:scale-105 transition-all">
                           {st.user?.avatarUrl ? (
                             <img
                               src={st.user.avatarUrl}
@@ -919,11 +1015,47 @@ export const AttendancePage: React.FC = () => {
                             </div>
                           )}
                         </div>
-                        <div className="min-w-0">
-                          <div className="font-black text-xs sm:text-sm text-foreground truncate">
-                            {fullName}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-black text-xs sm:text-sm text-foreground group-hover:text-primary transition-colors truncate">
+                              {fullName}
+                            </span>
+                            
+                            {/* Oral Grade Chip */}
+                            {hasOralGrade && (
+                              <span className="bg-amber-100 dark:bg-amber-950/70 border border-amber-500 text-amber-900 dark:text-amber-200 text-[10px] font-black px-1.5 py-0.5 rounded-lg flex items-center gap-0.5">
+                                <Award className="w-3 h-3 text-amber-600" />
+                                نمره: {toPersianDigits(st.oralGrade!)}
+                              </span>
+                            )}
+
+                            {/* Disciplinary/Reward Chip */}
+                            {hasDiscipline && (
+                              <span
+                                className={`text-[10px] font-black px-1.5 py-0.5 rounded-lg border flex items-center gap-0.5 ${
+                                  st.rewardDisciplineType === 'POSITIVE' || st.rewardDisciplineType === 'EXCELLENT'
+                                    ? 'bg-emerald-100 text-emerald-900 border-emerald-500'
+                                    : 'bg-rose-100 text-rose-900 border-rose-500'
+                                }`}
+                              >
+                                {st.rewardDisciplineType === 'POSITIVE' && '🌟 مثبت'}
+                                {st.rewardDisciplineType === 'EXCELLENT' && '🏆 عالی'}
+                                {st.rewardDisciplineType === 'NEGATIVE' && '⚠️ منفی'}
+                                {st.rewardDisciplineType === 'WARNING' && '⚡ تذکر'}
+                                {st.rewardDisciplineType === 'HOMEWORK_INCOMPLETE' && '📝 بدون تکلیف'}
+                              </span>
+                            )}
+
+                            {/* Note Chip */}
+                            {hasSessionNote && (
+                              <span className="bg-neutral-100 dark:bg-neutral-800 border border-black/30 text-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-lg flex items-center gap-0.5">
+                                <MessageSquare className="w-2.5 h-2.5 text-blue-500" />
+                                یادداشت
+                              </span>
+                            )}
                           </div>
-                          <div className="text-[10px] sm:text-xs text-muted-foreground font-mono truncate">
+
+                          <div className="text-[10px] sm:text-xs text-muted-foreground font-mono truncate mt-0.5">
                             کد: {toPersianDigits(st.studentCode)}
                             {st.reason && (
                               <span className="text-amber-600 dark:text-amber-400 font-bold mr-1">
@@ -969,9 +1101,8 @@ export const AttendancePage: React.FC = () => {
                           type="button"
                           onClick={() => {
                             handleUpdateStudentStatus(st.studentId, 'TARDY');
-                            setDetailModalStudent(st);
+                            handleOpenEvaluationModal(st);
                             setModalDelayMinutes(st.delayMinutes || 15);
-                            setModalReason(st.reason || '');
                           }}
                           className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-lg sm:rounded-xl font-black text-[11px] sm:text-xs border-2 text-center transition-all ${
                             st.status === 'TARDY'
@@ -988,9 +1119,7 @@ export const AttendancePage: React.FC = () => {
                           type="button"
                           onClick={() => {
                             handleUpdateStudentStatus(st.studentId, 'EXCUSED_ABSENT');
-                            setDetailModalStudent(st);
-                            setModalDelayMinutes(0);
-                            setModalReason(st.reason || '');
+                            handleOpenEvaluationModal(st);
                           }}
                           className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-lg sm:rounded-xl font-black text-[11px] sm:text-xs border-2 text-center transition-all ${
                             st.status === 'EXCUSED_ABSENT'
@@ -1015,6 +1144,12 @@ export const AttendancePage: React.FC = () => {
               <span className="text-emerald-600">{toPersianDigits(rosterStats.present)} حاضر</span>
               <span className="mx-1.5 text-muted-foreground">•</span>
               <span className="text-rose-600">{toPersianDigits(rosterStats.absent)} غایب</span>
+              {rosterStats.graded > 0 && (
+                <>
+                  <span className="mx-1.5 text-muted-foreground">•</span>
+                  <span className="text-amber-600">{toPersianDigits(rosterStats.graded)} نمره</span>
+                </>
+              )}
             </div>
 
             <Button
@@ -1028,7 +1163,7 @@ export const AttendancePage: React.FC = () => {
               ) : (
                 <Send className="w-3.5 h-3.5 ml-1" />
               )}
-              ثبت نهایی حضور و غیاب
+              ثبت دفتر کلاسی
             </Button>
           </div>
         </div>
@@ -1043,7 +1178,7 @@ export const AttendancePage: React.FC = () => {
                 برنامه درسی {currentDayOfWeekInfo.name} ({formatJalaliDisplay(selectedDate, false)})
               </h2>
               <p className="text-[11px] sm:text-xs font-bold text-muted-foreground mt-0.5">
-                زنگ جاری با رنگ کهربایی متمایز شده است. برای ورود و ثبت حضور، روی کارت کلاس کلیک کنید.
+                برای ثبت حضور و نمرات، روی هر زنگ یا کلاس کلیک کنید.
               </p>
             </div>
           </div>
@@ -1061,7 +1196,7 @@ export const AttendancePage: React.FC = () => {
                   در روز {currentDayOfWeekInfo.name} زنگ درسی برای شما ثبت نشده است
                 </h3>
                 <p className="text-[11px] sm:text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-                  از تب «تمامی کلاس‌های من» می‌توانید هر کلاسی را انتخاب و ثبت حضور کنید، یا روزهای دیگر را انتخاب فرمایید.
+                  از تب «تمام کلاس‌های تحت تدریس» می‌توانید هر کلاسی را انتخاب و ثبت دفتر کلاسی کنید.
                 </p>
               </div>
               <Button
@@ -1070,7 +1205,7 @@ export const AttendancePage: React.FC = () => {
                 onClick={() => setActiveTab('all_classes')}
                 className="border-2 border-black font-black text-xs shadow-[2px_2px_0px_#000]"
               >
-                مشاهده تمامی کلاس‌های من
+                مشاهده تمامی کلاس‌ها
               </Button>
             </div>
           ) : (
@@ -1088,6 +1223,7 @@ export const AttendancePage: React.FC = () => {
                       setActiveSession({
                         classroomId: slot.classroomId,
                         classroomName: slot.classroomName,
+                        lessonId: slot.lessonId,
                         lessonName: slot.lessonName,
                         periodNumber: slot.periodNumber,
                         startTime: slot.startTime,
@@ -1180,9 +1316,9 @@ export const AttendancePage: React.FC = () => {
         ───────────────────────────────────────────────────────────── */
         <div className="space-y-4 sm:space-y-6">
           <div>
-            <h2 className="text-base sm:text-xl font-black text-foreground">تمامی کلاس‌های تحت تدریس</h2>
+            <h2 className="text-base sm:text-xl font-black text-foreground">تمام کلاس‌های تحت تدریس</h2>
             <p className="text-[11px] sm:text-xs font-bold text-muted-foreground mt-0.5">
-              جهت ثبت حضور و غیاب برای هر کلاس و زنگ دلخواه:
+              جهت ورود به دفتر کلاسی هر کلاس و زنگ دلخواه:
             </p>
           </div>
 
@@ -1281,65 +1417,317 @@ export const AttendancePage: React.FC = () => {
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          7. DETAIL / EXCUSE MODAL
+          7. STUDENT EVALUATION & TRACK RECORD BOTTOM SHEET / MODAL
       ───────────────────────────────────────────────────────────── */}
-      {detailModalStudent && (
+      {evaluationModalStudent && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-white dark:bg-card border-t-3 sm:border-3 border-black dark:border-white/20 rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-[8px_8px_0px_#000] space-y-4 animate-in slide-in-from-bottom duration-200">
-            <div className="flex items-center justify-between">
-              <h3 className="font-black text-sm sm:text-base text-foreground truncate">
-                ثبت وضعیت: {detailModalStudent.user?.firstName} {detailModalStudent.user?.lastName}
-              </h3>
+          <div className="bg-white dark:bg-card border-t-3 sm:border-3 border-black dark:border-white/20 rounded-t-3xl sm:rounded-3xl p-4 sm:p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-[8px_8px_0px_#000] space-y-4 animate-in slide-in-from-bottom duration-200">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b-2 border-black/10 dark:border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl border-2 border-black bg-amber-400 text-black flex items-center justify-center font-black text-base shadow-[1.5px_1.5px_0px_#000]">
+                  {evaluationModalStudent.user?.firstName?.[0] || 'د'}
+                </div>
+                <div>
+                  <h3 className="font-black text-sm sm:text-base text-foreground">
+                    {evaluationModalStudent.user?.firstName} {evaluationModalStudent.user?.lastName}
+                  </h3>
+                  <div className="text-[11px] text-muted-foreground font-mono">
+                    کد دانش‌آموزی: {toPersianDigits(evaluationModalStudent.studentCode)}
+                  </div>
+                </div>
+              </div>
               <button
                 type="button"
-                onClick={() => setDetailModalStudent(null)}
-                className="p-1 hover:bg-neutral-100 rounded-lg text-muted-foreground"
+                onClick={() => setEvaluationModalStudent(null)}
+                className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl text-muted-foreground"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {detailModalStudent.status === 'TARDY' && (
-              <div className="space-y-1">
-                <label className="text-xs font-black text-foreground">میزان تاخیر ورود (دقیقه):</label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={90}
-                  value={modalDelayMinutes}
-                  onChange={(e) => setModalDelayMinutes(parseInt(e.target.value, 10) || 0)}
-                  className="border-2 border-black font-bold h-10"
-                />
+            {/* Modal Tabs: Evaluation vs History */}
+            <div className="grid grid-cols-2 gap-1.5 bg-neutral-100 dark:bg-neutral-900 p-1 rounded-xl border border-black/20">
+              <button
+                type="button"
+                onClick={() => setModalTab('EVALUATE')}
+                className={`py-2 px-3 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+                  modalTab === 'EVALUATE'
+                    ? 'bg-white dark:bg-card text-foreground border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Award className="w-4 h-4 text-amber-500" />
+                ارزیابی جلسه امروز
+              </button>
+              <button
+                type="button"
+                onClick={() => setModalTab('HISTORY')}
+                className={`py-2 px-3 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+                  modalTab === 'HISTORY'
+                    ? 'bg-white dark:bg-card text-foreground border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <History className="w-4 h-4 text-sky-500" />
+                سابقه دانش‌آموز در این درس
+              </button>
+            </div>
+
+            {/* Tab 1: Evaluate Current Session */}
+            {modalTab === 'EVALUATE' ? (
+              <div className="space-y-4 pt-1">
+                
+                {/* 1. Oral Grade (out of 20) */}
+                <div className="space-y-2 bg-neutral-50 dark:bg-neutral-900/60 p-3.5 rounded-2xl border-2 border-black/20">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black text-foreground flex items-center gap-1.5">
+                      <Award className="w-4 h-4 text-amber-500" />
+                      نمره پرسش کلاسی (از ۲۰):
+                    </label>
+                    {modalOralGrade && (
+                      <span className="font-mono text-sm font-black text-amber-600 bg-amber-100 dark:bg-amber-950 px-2 py-0.5 rounded-lg border border-amber-400">
+                        {toPersianDigits(modalOralGrade)} از ۲۰
+                      </span>
+                    )}
+                  </div>
+
+                  <Input
+                    type="number"
+                    step="0.25"
+                    min="0"
+                    max="20"
+                    value={modalOralGrade}
+                    onChange={(e) => setModalOralGrade(e.target.value)}
+                    placeholder="نمره مورد نظر را وارد کنید (مثلاً ۱۹.۵)"
+                    className="border-2 border-black font-bold h-10 text-center text-sm"
+                  />
+
+                  {/* Quick Grade Pills */}
+                  <div className="flex items-center gap-1 flex-wrap pt-1">
+                    <span className="text-[10px] font-bold text-muted-foreground ml-1">نمرات سریع:</span>
+                    {QUICK_GRADES.map((g) => (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => setModalOralGrade(String(g))}
+                        className={`px-2 py-0.5 rounded-lg text-xs font-black border transition-all ${
+                          modalOralGrade === String(g)
+                            ? 'bg-amber-400 text-black border-black shadow-[1px_1px_0px_#000]'
+                            : 'bg-white dark:bg-neutral-800 text-foreground border-neutral-300 hover:border-black'
+                        }`}
+                      >
+                        {toPersianDigits(g)}
+                      </button>
+                    ))}
+                    {modalOralGrade && (
+                      <button
+                        type="button"
+                        onClick={() => setModalOralGrade('')}
+                        className="px-2 py-0.5 rounded-lg text-xs font-bold text-rose-500 hover:underline"
+                      >
+                        پاک کردن
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. Disciplinary / Encouragement Selector */}
+                <div className="space-y-2 bg-neutral-50 dark:bg-neutral-900/60 p-3.5 rounded-2xl border-2 border-black/20">
+                  <label className="text-xs font-black text-foreground flex items-center gap-1.5">
+                    <Star className="w-4 h-4 text-emerald-500" />
+                    موارد انضباطی و تشویقی جلسه:
+                  </label>
+
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                    {[
+                      { key: 'POSITIVE', label: '🌟 مثبت', bg: 'bg-emerald-100 text-emerald-950 border-emerald-600' },
+                      { key: 'EXCELLENT', label: '🏆 عالی', bg: 'bg-amber-100 text-amber-950 border-amber-600' },
+                      { key: 'NEGATIVE', label: '⚠️ منفی', bg: 'bg-rose-100 text-rose-950 border-rose-600' },
+                      { key: 'WARNING', label: '⚡ تذکر', bg: 'bg-orange-100 text-orange-950 border-orange-600' },
+                      { key: 'HOMEWORK_INCOMPLETE', label: '📝 بدون تکلیف', bg: 'bg-purple-100 text-purple-950 border-purple-600' },
+                      { key: 'NONE', label: 'عادی', bg: 'bg-neutral-200 text-foreground border-black/40' },
+                    ].map((item) => (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => setModalDisciplineType(item.key as DisciplinaryRewardType)}
+                        className={`py-1.5 px-1 rounded-xl text-[11px] font-black border-2 transition-all text-center ${
+                          modalDisciplineType === item.key
+                            ? `${item.bg} shadow-[2px_2px_0px_#000] scale-105`
+                            : 'bg-white dark:bg-neutral-800 text-muted-foreground border-transparent hover:border-black/30'
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {modalDisciplineType !== 'NONE' && (
+                    <Input
+                      value={modalDisciplineNote}
+                      onChange={(e) => setModalDisciplineNote(e.target.value)}
+                      placeholder="شرح یا علت تشویق/تذکر..."
+                      className="border-2 border-black font-bold h-9 text-xs mt-2"
+                    />
+                  )}
+                </div>
+
+                {/* 3. Session Teacher Note */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-foreground flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-blue-500" />
+                    یادداشت جلسه دبیر (خصوصی):
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={modalSessionNote}
+                    onChange={(e) => setModalSessionNote(e.target.value)}
+                    placeholder="یادداشت مشاهدات، عملکرد تحصیلی یا اخلاقی دانش‌آموز در این جلسه..."
+                    className="w-full rounded-2xl border-2 border-black p-3 font-bold text-xs bg-white dark:bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-[2px_2px_0px_#000]"
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-200 dark:border-neutral-800">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEvaluationModalStudent(null)}
+                    className="border-2 border-black font-bold text-xs h-9"
+                  >
+                    انصراف
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSaveModalEvaluation}
+                    className="bg-primary text-primary-foreground border-2 border-black font-black text-xs h-9 shadow-[2px_2px_0px_#000]"
+                  >
+                    تایید و ثبت در لیست جلسه
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              /* Tab 2: Track Record / Subject History */
+              <div className="space-y-3.5 pt-1">
+                {isLoadingStudentHistory ? (
+                  <div className="py-12 text-center space-y-2">
+                    <RefreshCw className="w-7 h-7 text-primary animate-spin mx-auto" />
+                    <p className="font-black text-xs text-foreground">در حال بارگذاری سوابق دانش‌آموز در این درس...</p>
+                  </div>
+                ) : !studentHistoryData ? (
+                  <div className="py-8 text-center text-xs font-bold text-muted-foreground">
+                    اطلاعاتی یافت نشد.
+                  </div>
+                ) : (
+                  <>
+                    {/* Summary KPI Strip */}
+                    <div className="grid grid-cols-4 gap-2 bg-neutral-100 dark:bg-neutral-900 p-2.5 rounded-2xl border-2 border-black/20 text-center">
+                      <div className="bg-white dark:bg-card p-2 rounded-xl border border-black/10">
+                        <div className="text-[10px] font-bold text-muted-foreground">میانگین نمرات</div>
+                        <div className="text-sm font-black text-amber-600">
+                          {studentHistoryData.summary?.oralAverage !== null
+                            ? `${toPersianDigits(studentHistoryData.summary.oralAverage)} از ۲۰`
+                            : 'ـ'}
+                        </div>
+                      </div>
+
+                      <div className="bg-white dark:bg-card p-2 rounded-xl border border-black/10">
+                        <div className="text-[10px] font-bold text-muted-foreground">حضور / غیبت</div>
+                        <div className="text-sm font-black text-foreground">
+                          {toPersianDigits(studentHistoryData.summary?.presentCount)} / {toPersianDigits(studentHistoryData.summary?.absentCount)}
+                        </div>
+                      </div>
+
+                      <div className="bg-white dark:bg-card p-2 rounded-xl border border-black/10">
+                        <div className="text-[10px] font-bold text-emerald-600">تشویقی‌ها</div>
+                        <div className="text-sm font-black text-emerald-700">
+                          {toPersianDigits(studentHistoryData.summary?.positiveRewardsCount || 0)} مورد
+                        </div>
+                      </div>
+
+                      <div className="bg-white dark:bg-card p-2 rounded-xl border border-black/10">
+                        <div className="text-[10px] font-bold text-rose-600">تذکرات</div>
+                        <div className="text-sm font-black text-rose-700">
+                          {toPersianDigits(studentHistoryData.summary?.negativeDisciplineCount || 0)} مورد
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Timeline of Previous Sessions */}
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                      <span className="text-xs font-black text-foreground block">
+                        جلسات ثبت‌شده پیشین ({toPersianDigits(studentHistoryData.sessions?.length || 0)} جلسه):
+                      </span>
+
+                      {studentHistoryData.sessions?.length === 0 ? (
+                        <div className="py-6 text-center text-xs text-muted-foreground font-bold">
+                          هنوز جلسه‌ای برای این دانش‌آموز در این درس ثبت نشده است.
+                        </div>
+                      ) : (
+                        studentHistoryData.sessions.map((sess: any) => (
+                          <div
+                            key={sess.id}
+                            className="bg-neutral-50 dark:bg-neutral-900 border-2 border-black/20 p-2.5 rounded-xl space-y-1 text-xs"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="font-black text-foreground">
+                                  {formatJalaliDisplay(sess.date, false)}
+                                </span>
+                                {sess.periodNumber && (
+                                  <span className="text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 py-0.5 rounded font-mono">
+                                    زنگ {toPersianDigits(sess.periodNumber)}
+                                  </span>
+                                )}
+                              </div>
+
+                              <Badge
+                                variant={
+                                  sess.status === 'PRESENT'
+                                    ? 'ecosystem'
+                                    : sess.status === 'ABSENT'
+                                    ? 'female'
+                                    : 'college'
+                                }
+                                className="text-[10px] px-1.5 py-0"
+                              >
+                                {sess.status === 'PRESENT' && 'حاضر'}
+                                {sess.status === 'ABSENT' && 'غایب'}
+                                {sess.status === 'TARDY' && `تاخیر (${toPersianDigits(sess.delayMinutes)}د)`}
+                                {sess.status === 'EXCUSED_ABSENT' && 'موجه'}
+                              </Badge>
+                            </div>
+
+                            {/* Details row */}
+                            <div className="flex items-center gap-3 pt-1 flex-wrap text-[11px]">
+                              {sess.oralGrade !== null && sess.oralGrade !== undefined && (
+                                <span className="font-bold text-amber-700 bg-amber-100 dark:bg-amber-950 px-2 py-0.5 rounded">
+                                  نمره پرسش: {toPersianDigits(sess.oralGrade)}
+                                </span>
+                              )}
+
+                              {sess.rewardDisciplineType && sess.rewardDisciplineType !== 'NONE' && (
+                                <span className="font-bold text-primary">
+                                  مورد: {sess.rewardDisciplineType} {sess.rewardDisciplineNote && `(${sess.rewardDisciplineNote})`}
+                                </span>
+                              )}
+                            </div>
+
+                            {sess.sessionNote && (
+                              <p className="text-[11px] text-muted-foreground pt-1 italic bg-white dark:bg-card p-1.5 rounded border border-black/10">
+                                «{sess.sessionNote}»
+                              </p>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             )}
-
-            <div className="space-y-1">
-              <label className="text-xs font-black text-foreground">توضیح یا دلیل غیبت/تاخیر:</label>
-              <Input
-                value={modalReason}
-                onChange={(e) => setModalReason(e.target.value)}
-                placeholder="مثال: کسالت و مراجعه به پزشک..."
-                className="border-2 border-black font-bold h-10 text-xs"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setDetailModalStudent(null)}
-                className="border-2 border-black font-bold text-xs h-9"
-              >
-                انصراف
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSaveModalDetails}
-                className="bg-primary text-primary-foreground border-2 border-black font-black text-xs h-9 shadow-[2px_2px_0px_#000]"
-              >
-                تایید و اعمال
-              </Button>
-            </div>
           </div>
         </div>
       )}

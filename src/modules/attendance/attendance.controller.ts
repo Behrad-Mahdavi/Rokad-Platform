@@ -84,6 +84,25 @@ export class AttendanceController {
     );
   }
 
+  @Get('student-history')
+  @RequirePermissions(AppPermission.ATTENDANCE_READ)
+  @ApiOperation({ summary: 'پرونده و سابقه جلسات دانش‌آموز در یک درس و کلاس (نمرات پرسش، غیبت‌ها، انضباطی و یادداشت‌ها)' })
+  async getStudentSubjectHistory(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Query('studentId') studentId: string,
+    @Query('classroomId') classroomId: string,
+    @Query('lessonId') lessonId?: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.attendanceService.getStudentSubjectHistory(
+      effectiveTenantId,
+      studentId,
+      classroomId,
+      lessonId,
+    );
+  }
+
   @Get('my-attendance')
   @Roles(Role.STUDENT, Role.PARENT)
   @ApiOperation({ summary: 'مشاهده سوابق و تاریخچه حضور و غیاب دانش‌آموز یا فرزند والد لاگین‌شده' })
