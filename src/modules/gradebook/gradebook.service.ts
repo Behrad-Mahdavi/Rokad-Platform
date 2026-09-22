@@ -73,6 +73,26 @@ export class GradebookService {
     const createdEntries = await this.prisma.$transaction(async (tx) => {
       const records: any[] = [];
       for (const item of dto.grades) {
+        let resolvedStudentId = item.studentId;
+        const profile = await tx.studentProfile.findUnique({
+          where: { id: resolvedStudentId },
+        });
+        if (!profile) {
+          const enrollment = await tx.classEnrollment.findUnique({
+            where: { id: resolvedStudentId },
+          });
+          if (enrollment) {
+            resolvedStudentId = enrollment.studentId;
+          } else {
+            const byUser = await tx.studentProfile.findFirst({
+              where: { userId: resolvedStudentId, tenantId },
+            });
+            if (byUser) {
+              resolvedStudentId = byUser.id;
+            }
+          }
+        }
+
         const startOfDay = new Date(entryDate);
         startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date(entryDate);
@@ -83,7 +103,7 @@ export class GradebookService {
             tenantId,
             classroomId: dto.classroomId,
             lessonId: dto.lessonId,
-            studentId: item.studentId,
+            studentId: resolvedStudentId,
             gradeType: dto.gradeType,
             date: {
               gte: startOfDay,
@@ -113,7 +133,7 @@ export class GradebookService {
               termId: dto.termId,
               classroomId: dto.classroomId,
               lessonId: dto.lessonId,
-              studentId: item.studentId,
+              studentId: resolvedStudentId,
               teacherId,
               examId: dto.examId,
               gradeType: dto.gradeType,
@@ -498,6 +518,26 @@ export class GradebookService {
     const savedRecords = await this.prisma.$transaction(async (tx) => {
       const records: any[] = [];
       for (const item of dto.grades) {
+        let resolvedStudentId = item.studentId;
+        const profile = await tx.studentProfile.findUnique({
+          where: { id: resolvedStudentId },
+        });
+        if (!profile) {
+          const enrollment = await tx.classEnrollment.findUnique({
+            where: { id: resolvedStudentId },
+          });
+          if (enrollment) {
+            resolvedStudentId = enrollment.studentId;
+          } else {
+            const byUser = await tx.studentProfile.findFirst({
+              where: { userId: resolvedStudentId, tenantId },
+            });
+            if (byUser) {
+              resolvedStudentId = byUser.id;
+            }
+          }
+        }
+
         const continuous = Number(item.continuousScore);
         const competency = Number(item.competencyScore);
         // Formula: continuous (0-5) + competency (1-3) * 5 = total out of 20
@@ -509,7 +549,7 @@ export class GradebookService {
           where: {
             tenantId,
             podmanId: podman!.id,
-            studentId: item.studentId,
+            studentId: resolvedStudentId,
             attemptType,
           },
         });
@@ -536,7 +576,7 @@ export class GradebookService {
               classroomId: dto.classroomId,
               lessonId: dto.lessonId,
               podmanId: podman!.id,
-              studentId: item.studentId,
+              studentId: resolvedStudentId,
               teacherId,
               continuousScore: continuous,
               competencyScore: competency,
@@ -729,8 +769,9 @@ export class GradebookService {
     classroomId: string,
     lessonId?: string,
   ) {
-    const student = await this.prisma.studentProfile.findFirst({
-      where: { id: studentId, tenantId },
+    let resolvedStudentId = studentId;
+    let student = await this.prisma.studentProfile.findFirst({
+      where: { id: resolvedStudentId, tenantId },
       include: {
         user: {
           select: {
@@ -743,6 +784,48 @@ export class GradebookService {
         },
       },
     });
+
+    if (!student) {
+      const enrollment = await this.prisma.classEnrollment.findFirst({
+        where: { id: studentId, tenantId },
+      });
+      if (enrollment) {
+        resolvedStudentId = enrollment.studentId;
+        student = await this.prisma.studentProfile.findFirst({
+          where: { id: resolvedStudentId, tenantId },
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+                phone: true,
+              },
+            },
+          },
+        });
+      } else {
+        const byUser = await this.prisma.studentProfile.findFirst({
+          where: { userId: studentId, tenantId },
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+                phone: true,
+              },
+            },
+          },
+        });
+        if (byUser) {
+          student = byUser;
+          resolvedStudentId = byUser.id;
+        }
+      }
+    }
 
     if (!student) {
       throw new NotFoundException('دانش‌آموز یافت نشد');
@@ -764,7 +847,7 @@ export class GradebookService {
     // 1. Attendance & Oral Question Sessions
     const attendanceWhere: any = {
       tenantId,
-      studentId,
+      studentId: resolvedStudentId,
       classroomId,
     };
     if (lessonId && lessonId !== 'undefined' && lessonId !== 'null') {

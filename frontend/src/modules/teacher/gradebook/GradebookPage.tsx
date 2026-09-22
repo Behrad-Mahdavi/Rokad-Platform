@@ -216,15 +216,29 @@ export const GradebookPage: React.FC = () => {
         ]);
 
         const rawStudents = studentsRes?.data || studentsRes || [];
-        const normalizedStudents: StudentItem[] = (Array.isArray(rawStudents) ? rawStudents : []).map((s: any) => ({
-          id: s.id || s.studentId,
-          studentId: s.id || s.studentId,
-          studentCode: s.studentCode || s.code,
-          nationalCode: s.nationalCode || s.user?.nationalId,
-          firstName: s.user?.firstName || s.firstName || '',
-          lastName: s.user?.lastName || s.lastName || '',
-          avatarUrl: s.user?.avatarUrl || s.avatarUrl,
-        }));
+        const studentsArr = Array.isArray(rawStudents)
+          ? rawStudents
+          : Array.isArray(rawStudents?.students)
+          ? rawStudents.students
+          : Array.isArray(rawStudents?.enrollments)
+          ? rawStudents.enrollments
+          : [];
+
+        const normalizedStudents: StudentItem[] = studentsArr.map((s: any) => {
+          const profile = s.student || (s.user ? s : s);
+          const userObj = profile.user || s.user || {};
+          const realStudentId = s.studentId || profile.id || s.id;
+
+          return {
+            id: realStudentId,
+            studentId: realStudentId,
+            studentCode: profile.studentCode || s.studentCode || s.code || '',
+            nationalCode: userObj.nationalId || s.nationalCode || '',
+            firstName: userObj.firstName || s.firstName || 'دانش‌آموز',
+            lastName: userObj.lastName || s.lastName || '',
+            avatarUrl: userObj.avatarUrl || s.avatarUrl || null,
+          };
+        });
 
         setStudentsList(normalizedStudents);
 
@@ -932,7 +946,7 @@ export const GradebookPage: React.FC = () => {
                                 className="text-right group/st flex items-center gap-2 hover:underline focus:outline-none"
                               >
                                 <span className="w-7 h-7 rounded-lg bg-neutral-200 dark:bg-neutral-800 border border-black/30 flex items-center justify-center font-bold text-[11px] shrink-0">
-                                  {st.firstName[0]}
+                                  {st.firstName?.[0] || 'د'}
                                 </span>
                                 <div>
                                   <div className="font-black text-foreground group-hover/st:text-primary transition-colors">
@@ -1086,7 +1100,7 @@ export const GradebookPage: React.FC = () => {
                               className="text-right group/st flex items-center gap-2 hover:underline focus:outline-none"
                             >
                               <span className="w-7 h-7 rounded-lg bg-neutral-200 dark:bg-neutral-800 border border-black/30 flex items-center justify-center font-bold text-[11px] shrink-0">
-                                {st.firstName[0]}
+                                {st.firstName?.[0] || 'د'}
                               </span>
                               <div>
                                 <div className="font-black text-foreground group-hover/st:text-primary transition-colors">
