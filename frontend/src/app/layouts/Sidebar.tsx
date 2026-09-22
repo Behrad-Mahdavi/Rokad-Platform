@@ -114,8 +114,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
           {
             section: 'آموزش و پایش کلاس‌ها',
             items: [
-              { title: 'دفتر کلاسی و نمرات', href: '/app/admin/gradebook', icon: BookOpen },
-              { title: 'حضور و غیاب دانش‌آموزان', href: '/app/admin/attendance', icon: UserCheck },
+              { title: 'ارزشیابی و ثبت نمرات', href: '/app/admin/gradebook', icon: BookOpen },
+              { title: 'دفتر کلاسی و حضور غیاب', href: '/app/admin/attendance', icon: UserCheck },
               { title: 'تکالیف و بازخورد', href: '/app/admin/homework', icon: FileCheck },
               { title: 'آزمون‌های آنلاین و کارنامه', href: '/app/admin/exams', icon: HelpCircle },
               { title: 'بانک سوالات متمرکز', href: '/app/admin/question-bank', icon: FileQuestion },
@@ -140,7 +140,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             items: [
               { title: 'داشبورد کلاس‌ها', href: '/app/teacher/dashboard', icon: LayoutDashboard },
               { title: 'برنامه هفتگی کلاس‌ها', href: '/app/teacher/schedule', icon: CalendarDays },
-              { title: 'دفتر کلاسی (حضور و ارزیابی)', href: '/app/teacher/gradebook', icon: BookOpen },
+              { title: 'دفتر کلاسی و حضور غیاب', href: '/app/teacher/attendance', icon: UserCheck },
+              { title: 'ارزشیابی و ثبت نمرات', href: '/app/teacher/gradebook', icon: BookOpen },
               { title: 'تکالیف و بازخورد', href: '/app/teacher/homework', icon: FileCheck },
               { title: 'بانک سوالات متمرکز', href: '/app/teacher/question-bank', icon: FileQuestion },
               { title: 'آزمون‌های آنلاین', href: '/app/teacher/exams', icon: HelpCircle },

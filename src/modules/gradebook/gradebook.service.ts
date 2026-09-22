@@ -719,4 +719,280 @@ export class GradebookService {
       students: studentsResult,
     };
   }
+
+  /**
+   * پرونده ۳۶۰ درجه عملکرد تحصیلی، انضباطی، تکالیف و حضور و غیاب دانش‌آموز در یک درس مشخص
+   */
+  async getStudentSubjectDossier(
+    tenantId: string,
+    studentId: string,
+    classroomId: string,
+    lessonId?: string,
+  ) {
+    const student = await this.prisma.studentProfile.findFirst({
+      where: { id: studentId, tenantId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+            phone: true,
+          },
+        },
+      },
+    });
+
+    if (!student) {
+      throw new NotFoundException('دانش‌آموز یافت نشد');
+    }
+
+    const classroom = await this.prisma.classroom.findFirst({
+      where: { id: classroomId, tenantId },
+      include: { level: true, field: true },
+    });
+
+    let lesson: any = null;
+    if (lessonId && lessonId !== 'undefined' && lessonId !== 'null') {
+      lesson = await this.prisma.lesson.findFirst({
+        where: { id: lessonId, tenantId },
+        include: { podmans: { orderBy: { number: 'asc' } } },
+      });
+    }
+
+    // 1. Attendance & Oral Question Sessions
+    const attendanceWhere: any = {
+      tenantId,
+      studentId,
+      classroomId,
+    };
+    if (lessonId && lessonId !== 'undefined' && lessonId !== 'null') {
+      attendanceWhere.OR = [{ lessonId }, { lessonId: null }];
+    }
+
+    const attendanceRecords = await this.prisma.studentAttendance.findMany({
+      where: attendanceWhere,
+      orderBy: [{ date: 'desc' }, { periodNumber: 'desc' }],
+    });
+
+    const totalSessions = attendanceRecords.length;
+    const presentCount = attendanceRecords.filter((r) => r.status === 'PRESENT').length;
+    const absentCount = attendanceRecords.filter((r) => r.status === 'ABSENT').length;
+    const tardyCount = attendanceRecords.filter((r) => r.status === 'TARDY').length;
+    const excusedCount = attendanceRecords.filter((r) => r.status === 'EXCUSED_ABSENT').length;
+    const attendanceRate =
+      totalSessions > 0
+        ? Math.round(((presentCount + tardyCount * 0.5) / totalSessions) * 100)
+        : 100;
+
+    // Oral Grades
+    const oralGrades = attendanceRecords
+      .map((r) => r.oralGrade)
+      .filter((g): g is number => typeof g === 'number' && !isNaN(g));
+    const oralAverage =
+      oralGrades.length > 0
+        ? Number((oralGrades.reduce((a, b) => a + b, 0) / oralGrades.length).toFixed(2))
+        : null;
+
+    // Disciplinary & Reward Events from Sessions
+    const positiveRewardsCount = attendanceRecords.filter(
+      (r) => r.rewardDisciplineType === 'POSITIVE' || r.rewardDisciplineType === 'EXCELLENT',
+    ).length;
+    const negativeDisciplineCount = attendanceRecords.filter(
+      (r) =>
+        r.rewardDisciplineType === 'NEGATIVE' ||
+        r.rewardDisciplineType === 'WARNING' ||
+        r.rewardDisciplineType === 'HOMEWORK_INCOMPLETE',
+    ).length;
+
+    // 2. Homework Stats
+    const homeworkWhere: any = {
+      tenantId,
+      classroomId,
+    };
+    if (lessonId && lessonId !== 'undefined' && lessonId !== 'null') {
+      homeworkWhere.lessonId = lessonId;
+    }
+
+    const homeworkList = await this.prisma.homework.findMany({
+      where: homeworkWhere,
+      include: {
+        submissions: {
+          where: { studentId },
+        },
+      },
+      orderBy: { dueDate: 'desc' },
+      take: 20,
+    });
+
+    const totalHomeworks = homeworkList.length;
+    const submittedHomeworks = homeworkList.filter(
+      (h) => h.submissions.length > 0 && h.submissions[0].status !== 'PENDING',
+    ).length;
+    const gradedHomeworks = homeworkList.filter(
+      (h) => h.submissions.length > 0 && h.submissions[0].score !== null,
+    );
+    const homeworkScores = gradedHomeworks.map((h) => {
+      const sub = h.submissions[0];
+      const max = h.maxScore || 20;
+      return (Number(sub.score) / max) * 20;
+    });
+    const homeworkAverage =
+      homeworkScores.length > 0
+        ? Number((homeworkScores.reduce((a, b) => a + b, 0) / homeworkScores.length).toFixed(2))
+        : null;
+
+    // 3. Official Grades (GradeEntry)
+    const gradeEntries = await this.prisma.gradeEntry.findMany({
+      where: {
+        tenantId,
+        studentId,
+        classroomId,
+        ...(lessonId && lessonId !== 'undefined' && lessonId !== 'null' ? { lessonId } : {}),
+      },
+      orderBy: { date: 'desc' },
+    });
+
+    // 4. Podman Grades (if vocational)
+    const podmanGrades = await this.prisma.podmanGrade.findMany({
+      where: {
+        tenantId,
+        studentId,
+        classroomId,
+        ...(lessonId && lessonId !== 'undefined' && lessonId !== 'null' ? { lessonId } : {}),
+      },
+      include: { podman: true },
+      orderBy: { podman: { number: 'asc' } },
+    });
+
+    // 5. Overall Holistic Performance Score Calculation (out of 20)
+    let scoreSum = 0;
+    let weightSum = 0;
+
+    // Attendance weight: 15%
+    if (totalSessions > 0) {
+      scoreSum += (attendanceRate / 100) * 20 * 0.15;
+      weightSum += 0.15;
+    }
+
+    // Oral questions weight: 25%
+    if (oralAverage !== null) {
+      scoreSum += oralAverage * 0.25;
+      weightSum += 0.25;
+    }
+
+    // Homework weight: 20%
+    if (homeworkAverage !== null) {
+      scoreSum += homeworkAverage * 0.2;
+      weightSum += 0.2;
+    }
+
+    // Exam / Formal Grades weight: 40%
+    if (gradeEntries.length > 0) {
+      const examAvg =
+        gradeEntries.reduce((a, b) => a + b.score, 0) / gradeEntries.length;
+      scoreSum += examAvg * 0.4;
+      weightSum += 0.4;
+    } else if (podmanGrades.length > 0) {
+      const podAvg =
+        podmanGrades.reduce((a, b) => a + b.finalScore, 0) / podmanGrades.length;
+      scoreSum += podAvg * 0.4;
+      weightSum += 0.4;
+    }
+
+    const overallScore =
+      weightSum > 0 ? Number((scoreSum / weightSum).toFixed(2)) : null;
+
+    return {
+      student: {
+        id: student.id,
+        firstName: student.user.firstName,
+        lastName: student.user.lastName,
+        name: `${student.user.firstName} ${student.user.lastName}`,
+        nationalCode: student.nationalCode,
+        studentCode: student.studentCode,
+        avatarUrl: student.user.avatarUrl,
+        phone: student.user.phone,
+      },
+      classroom: classroom
+        ? {
+            id: classroom.id,
+            name: classroom.name,
+            level: classroom.level?.name,
+            field: classroom.field?.name,
+          }
+        : null,
+      lesson: lesson
+        ? {
+            id: lesson.id,
+            name: lesson.name,
+            code: lesson.code,
+            isModular: lesson.isModular,
+            podmanCount: lesson.podmanCount,
+            podmans: lesson.podmans,
+          }
+        : null,
+      kpis: {
+        attendanceRate,
+        totalSessions,
+        presentCount,
+        absentCount,
+        tardyCount,
+        excusedCount,
+        oralAverage,
+        oralGradesCount: oralGrades.length,
+        positiveRewardsCount,
+        negativeDisciplineCount,
+        totalHomeworks,
+        submittedHomeworks,
+        homeworkAverage,
+        overallScore,
+      },
+      sessions: attendanceRecords.map((r) => ({
+        id: r.id,
+        date: r.date,
+        periodNumber: r.periodNumber,
+        status: r.status,
+        delayMinutes: r.delayMinutes,
+        reason: r.reason,
+        oralGrade: r.oralGrade,
+        rewardDisciplineType: r.rewardDisciplineType,
+        rewardDisciplineNote: r.rewardDisciplineNote,
+        sessionNote: r.sessionNote,
+      })),
+      homeworks: homeworkList.map((h) => {
+        const sub = h.submissions[0];
+        return {
+          id: h.id,
+          title: h.title,
+          dueDate: h.dueDate,
+          maxScore: h.maxScore,
+          isSubmitted: !!sub && sub.status !== 'PENDING',
+          submissionStatus: sub?.status || 'PENDING',
+          score: sub?.score ?? null,
+          feedback: sub?.feedback ?? null,
+          submittedAt: sub?.submittedAt ?? null,
+        };
+      }),
+      gradeEntries: gradeEntries.map((g) => ({
+        id: g.id,
+        title: g.title,
+        gradeType: g.gradeType,
+        score: g.score,
+        maxScore: g.maxScore,
+        date: g.date,
+      })),
+      podmanGrades: podmanGrades.map((p) => ({
+        id: p.id,
+        podmanNumber: p.podman.number,
+        podmanTitle: p.podman.title,
+        continuousScore: p.continuousScore,
+        competencyScore: p.competencyScore,
+        finalScore: p.finalScore,
+        isPassed: p.isPassed,
+      })),
+    };
+  }
 }
+

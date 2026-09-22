@@ -109,4 +109,23 @@ export class GradebookController {
       academicYearId,
     );
   }
+
+  @Get('student/:studentId/dossier')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
+  @ApiOperation({ summary: 'پرونده جامع ۳۶۰ درجه عملکرد دانش‌آموز در یک درس مشخص (حضور، تکالیف، پرسش‌ها و نمرات)' })
+  async getStudentSubjectDossier(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('studentId') studentId: string,
+    @Query('classroomId') classroomId: string,
+    @Query('lessonId') lessonId?: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.gradebookService.getStudentSubjectDossier(
+      effectiveTenantId,
+      studentId,
+      classroomId,
+      lessonId,
+    );
+  }
 }

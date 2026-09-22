@@ -157,7 +157,7 @@ export const router = createBrowserRouter([
               { index: true, element: <Navigate to="dashboard" replace /> },
               { path: 'dashboard', element: <TeacherDashboard /> },
               { path: 'attendance', element: <AttendancePage /> },
-              { path: 'gradebook', element: <AttendancePage /> },
+              { path: 'gradebook', element: <GradebookPage /> },
               { path: 'homework', element: <HomeworkPage /> },
               { path: 'exams', element: <ExamsPage /> },
               { path: 'lessons', element: <LessonPlansPage /> },
