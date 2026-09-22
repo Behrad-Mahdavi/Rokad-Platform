@@ -2,14 +2,13 @@ import React, { useState, useMemo } from 'react';
 import { Button } from '../../../../components/ui/Button';
 import { Modal } from '../../../../components/ui/Modal';
 import { EventIdea } from './EventIdeaSubmissionStep';
-import { toPersianDigits, formatJalaliDisplay } from '../../../../utils/jalali';
+import { toPersianDigits } from '../../../../utils/jalali';
 import { useAuthStore } from '../../../../lib/auth/auth-store';
 import {
   Sparkles,
   Search,
   User,
   Lightbulb,
-  Clock,
   ArrowLeft,
   PlusCircle,
   Edit3,
@@ -198,11 +197,6 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
                       <User className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                       <span className="truncate">{idea.authorName}</span>
                     </div>
-
-                    <span className="flex items-center gap-1 text-[10px]">
-                      <Clock className="w-3 h-3" />
-                      {formatJalaliDisplay(idea.createdAt, false)}
-                    </span>
                   </div>
 
                   {/* Action Button: View Details Only for Students */}

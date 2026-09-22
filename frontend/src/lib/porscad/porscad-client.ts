@@ -21,6 +21,8 @@ export interface PorscadQuestionSettings {
   allowChangeVote: boolean;
 }
 
+export type PorscadDisplayOrder = 'RANK' | 'RANK_VOTES' | 'RANDOM' | 'IGNORE_RANK';
+
 export interface PorscadPollData {
   formId: string;
   formPublicId?: string;
@@ -36,6 +38,8 @@ export interface PorscadPollData {
   isPublished: boolean;
   isClosed: boolean;
   isResultsPublic?: boolean;
+  showVoteCounts?: boolean;
+  displayOrder?: PorscadDisplayOrder;
   topWinnersCount?: number;
   closedAt?: string;
   winningOptionId?: string;
@@ -291,6 +295,8 @@ export class PorscadService {
       isPublished: true,
       isClosed: false,
       syncStatus: 'PORSCAD_CLOUD_SYNCED',
+      showVoteCounts: false,
+      displayOrder: 'RANK',
       createdAt: new Date().toISOString(),
     };
 
@@ -415,10 +421,7 @@ export class PorscadService {
       totalRespondents: (poll.totalRespondents || 0) + (prevVoted.length === 0 ? 1 : 0),
     };
 
-    this.saveLocalPollData(eventId, updatedPoll);
-    localStorage.setItem(`rokad_porscad_voted_${eventId}`, JSON.stringify(selectedOptionIds));
-
-    // Submit directly to Porscad Cloud RPC submit_public_response
+    // Submit to Porscad Cloud first — only persist locally after success
     let responseId: string | undefined;
     try {
       const selectedLabels = updatedOptions
@@ -445,13 +448,32 @@ export class PorscadService {
         }),
       });
 
-      if (rpcRes.ok) {
-        const data = await rpcRes.json();
-        responseId = data?.responseId || data?.response_id;
+      if (!rpcRes.ok) {
+        let errMsg = 'ثبت رای در پرس‌کاد ناموفق بود';
+        try {
+          const errJson = await rpcRes.json();
+          errMsg = errJson.message || errJson.msg || errMsg;
+        } catch {
+          errMsg = `HTTP ${rpcRes.status}`;
+        }
+        return {
+          success: false,
+          message: `خطا در ارسال رای به پرس‌کاد: ${errMsg}`,
+        };
       }
-    } catch (e) {
-      console.warn('Porscad submission note:', e);
+
+      const data = await rpcRes.json().catch(() => ({}));
+      responseId = data?.responseId || data?.response_id;
+    } catch (e: any) {
+      console.error('Porscad submission failed:', e);
+      return {
+        success: false,
+        message: `خطا در ارسال رای به پرس‌کاد: ${e?.message || 'ارتباط برقرار نشد'}`,
+      };
     }
+
+    this.saveLocalPollData(eventId, updatedPoll);
+    localStorage.setItem(`rokad_porscad_voted_${eventId}`, JSON.stringify(selectedOptionIds));
 
     return {
       success: true,
@@ -462,9 +484,17 @@ export class PorscadService {
   }
 
   /**
-   * Finish Assessment & Determine Top N Winners
+   * Finish Assessment & Determine Top N Winners with display order options
    */
-  public finishAssessmentAndDetermineWinner(eventId: string, topCount: number = 3): PorscadPollData | null {
+  public finishAssessmentAndDetermineWinner(
+    eventId: string,
+    topCount: number = 3,
+    options?: {
+      showVoteCounts?: boolean;
+      displayOrder?: PorscadDisplayOrder;
+      isResultsPublic?: boolean;
+    }
+  ): PorscadPollData | null {
     const poll = this.getLocalPollData(eventId);
     if (!poll) return null;
 
@@ -472,18 +502,170 @@ export class PorscadService {
     const topWinners = sorted.slice(0, Math.min(topCount, sorted.length));
     const winningOptionIds = topWinners.map((o) => o.id);
 
+    const displayOrder = options?.displayOrder || 'RANK';
+    let ordered = [...sorted];
+    if (displayOrder === 'RANDOM') {
+      for (let i = ordered.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
+      }
+    } else if (displayOrder === 'IGNORE_RANK') {
+      ordered = [...poll.options];
+    }
+
     const updatedPoll: PorscadPollData = {
       ...poll,
+      options: ordered,
       isClosed: true,
       closedAt: new Date().toISOString(),
       topWinnersCount: topCount,
-      isResultsPublic: true, // Publicly visible to all students upon ending poll
+      showVoteCounts: options?.showVoteCounts ?? poll.showVoteCounts ?? false,
+      displayOrder,
+      isResultsPublic: options?.isResultsPublic ?? false,
       winningOptionId: topWinners[0]?.id,
       winningOptionIds,
     };
 
     this.saveLocalPollData(eventId, updatedPoll);
     return updatedPoll;
+  }
+
+  /**
+   * Toggle vote count/percentage visibility for the audience (admin checkbox)
+   */
+  public setShowVoteCounts(eventId: string, show: boolean): PorscadPollData | null {
+    const poll = this.getLocalPollData(eventId);
+    if (!poll) return null;
+    const updatedPoll: PorscadPollData = { ...poll, showVoteCounts: show };
+    this.saveLocalPollData(eventId, updatedPoll);
+    return updatedPoll;
+  }
+
+  /**
+   * Edit existing Porscad form/question (do NOT create a new form)
+   */
+  public async updateExistingPorscadForm(params: {
+    eventId: string;
+    eventTitle: string;
+    formTitle: string;
+    formDescription: string;
+    questionTitle: string;
+    questionType: PorscadQuestionSettings['questionType'];
+    selectedIdeas: Array<{ id: string; title: string; authorName: string; description?: string }>;
+    maxSelections: number;
+  }): Promise<PorscadPollData> {
+    const existing = this.getLocalPollData(params.eventId);
+    if (!existing || !existing.formId) {
+      throw new Error('فرم موجودی برای ویرایش یافت نشد. ابتدا فرم را یک‌بار بسازید.');
+    }
+
+    const token = this.getToken();
+    if (!token) {
+      throw new Error('توکن احراز هویت پرس‌کاد موجود نیست.');
+    }
+
+    const optionLabels = params.selectedIdeas.map((i) => `ایده: ${i.title} (${i.authorName})`);
+
+    const patchForm = await fetch(`${SUPABASE_URL}/forms?id=eq.${existing.formId}`, {
+      method: 'PATCH',
+      headers: this.getHeaders(token),
+      body: JSON.stringify({
+        title: params.formTitle,
+        description: params.formDescription,
+        published: true,
+        settings: {
+          max_selections: params.maxSelections,
+          prevent_duplicate: false,
+        },
+      }),
+    });
+    if (!patchForm.ok) {
+      const err = await patchForm.json().catch(() => ({}));
+      throw new Error(`خطای ویرایش فرم در پرس‌کاد: ${err.message || err.details || patchForm.status}`);
+    }
+
+    if (existing.questionId && !existing.questionId.startsWith('porscad_q_')) {
+      const patchQ = await fetch(`${SUPABASE_URL}/questions?id=eq.${existing.questionId}`, {
+        method: 'PATCH',
+        headers: this.getHeaders(token),
+        body: JSON.stringify({
+          type: params.questionType,
+          title: params.questionTitle,
+          options: optionLabels,
+          max_selections: params.maxSelections,
+          display_mode: 'buttons',
+          required: true,
+        }),
+      });
+      if (!patchQ.ok) {
+        const err = await patchQ.json().catch(() => ({}));
+        throw new Error(`خطای ویرایش سوال در پرس‌کاد: ${err.message || err.details || patchQ.status}`);
+      }
+    }
+
+    const options: PorscadOption[] = params.selectedIdeas.map((idea, index) => {
+      const prev = existing.options.find((o) => o.ideaId === idea.id || o.id === idea.id);
+      return {
+        id: prev?.id || idea.id || `opt_${index + 1}`,
+        ideaId: idea.id,
+        text: `ایده: ${idea.title} (${idea.authorName})`,
+        authorName: idea.authorName,
+        voteCount: prev?.voteCount || 0,
+        percentage: prev?.percentage || 0,
+      };
+    });
+
+    const totalVotes = options.reduce((s, o) => s + o.voteCount, 0);
+    const withPct = options.map((o) => ({
+      ...o,
+      percentage: totalVotes > 0 ? Math.round((o.voteCount / totalVotes) * 100) : 0,
+    }));
+
+    const updated: PorscadPollData = {
+      ...existing,
+      title: `نظرسنجی ایده‌های رویداد: ${params.eventTitle}`,
+      questionTitle: params.questionTitle,
+      description: `هر شرکت‌کننده می‌تواند حداکثر ${params.maxSelections === 1 ? '۱ ایده' : `${params.maxSelections} ایده`} را انتخاب نماید.`,
+      selectedIdeaIds: params.selectedIdeas.map((i) => i.id),
+      options: withPct,
+      totalVotes,
+      settings: {
+        ...existing.settings,
+        questionType: params.questionType,
+        maxSelections: params.maxSelections,
+      },
+      isPublished: true,
+      syncStatus: 'PORSCAD_CLOUD_SYNCED',
+    };
+
+    this.saveLocalPollData(params.eventId, updated);
+    return updated;
+  }
+
+  /**
+   * List all local Porscad polls (admin panel)
+   */
+  public listLocalPolls(): Array<{ eventId: string; poll: PorscadPollData }> {
+    const out: Array<{ eventId: string; poll: PorscadPollData }> = [];
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith('rokad_porscad_poll_')) continue;
+        const raw = localStorage.getItem(key);
+        if (!raw) continue;
+        try {
+          const poll = JSON.parse(raw) as PorscadPollData;
+          if (poll && poll.formId) {
+            out.push({ eventId: key.replace('rokad_porscad_poll_', ''), poll });
+          }
+        } catch {
+          // skip invalid
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return out.sort((a, b) => (b.poll.createdAt || '').localeCompare(a.poll.createdAt || ''));
   }
 
   /**

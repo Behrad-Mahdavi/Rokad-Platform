@@ -45,11 +45,17 @@ import {
   Compass as CompassIcon,
   Rocket,
 } from 'lucide-react';
-import { SchoolEventItem, INITIAL_SAMPLE_EVENTS } from './constants/sample-events';
-export type { SchoolEventItem };
+import { SchoolEventItem, INITIAL_SAMPLE_EVENTS, EventCategoryItem, hydrateEvent } from './constants/sample-events';
+import {
+  EVENT_MODULE_LIST,
+  DEFAULT_WORKFLOW_MODULES,
+  normalizeWorkflowModules,
+  EventModuleKey,
+  WorkflowModuleEntry,
+} from './constants/event-modules';
+export type { SchoolEventItem, EventCategoryItem };
 
-const EVENT_CATEGORIES = [
-  { key: 'ALL', label: 'همه رویدادها', icon: Layers, color: 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200' },
+const FALLBACK_CATEGORIES = [
   { key: 'STARTUP_WEEKEND', label: 'استارت‌آپ ویکند', icon: Rocket, color: 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 font-black' },
   { key: 'ACADEMIC', label: 'آموزشی و مهارت', icon: BookOpen, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' },
   { key: 'CULTURAL', label: 'فرهنگی و جشن‌ها', icon: PartyPopper, color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300' },
@@ -100,6 +106,37 @@ export const EventsRoadmapPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'roadmap' | 'grid'>('roadmap');
 
+  // Custom Event Categories (backend CRUD via Tenant.settings)
+  const [customCategories, setCustomCategories] = useState<EventCategoryItem[]>([]);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
+  const [editingCategoryKey, setEditingCategoryKey] = useState<string | null>(null);
+  const [categoryForm, setCategoryForm] = useState({ key: '', label: '', icon: 'Tag', color: '' });
+
+  const allCategoryTabs = useMemo(() => {
+    const custom = customCategories.map((c) => ({
+      key: c.key,
+      label: c.label,
+      icon: Layers,
+      color: c.color || 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200',
+      isCustom: true,
+    }));
+    return [
+      { key: 'ALL', label: 'همه رویدادها', icon: Layers, color: 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200', isCustom: false },
+      ...FALLBACK_CATEGORIES,
+      ...custom,
+    ];
+  }, [customCategories]);
+
+  const categoryLabelMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    allCategoryTabs.forEach((c) => {
+      map[c.key] = c.label;
+    });
+    return map;
+  }, [allCategoryTabs]);
+
   // Modal State for Create / Edit
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -113,6 +150,7 @@ export const EventsRoadmapPage: React.FC = () => {
     title: '',
     description: '',
     eventType: 'ACADEMIC' as SchoolEventItem['eventType'],
+    categoryKey: '',
     startDate: todayJalaliStr,
     startTime: '08:30',
     endDate: todayJalaliStr,
@@ -124,12 +162,15 @@ export const EventsRoadmapPage: React.FC = () => {
     tags: '',
   });
 
+  const [workflowModules, setWorkflowModules] = useState<WorkflowModuleEntry[]>([]);
+
   const fetchEvents = async () => {
     try {
       const res = await apiClient.get('/calendar/events');
       if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
-        setEvents(res.data);
-        localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(res.data));
+        const hydrated = res.data.map(hydrateEvent);
+        setEvents(hydrated);
+        localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(hydrated));
       }
     } catch (err) {
       // Fallback gracefully to local storage / sample events
@@ -138,21 +179,34 @@ export const EventsRoadmapPage: React.FC = () => {
         if (cached) {
           const parsed = JSON.parse(cached);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setEvents(parsed);
+            setEvents(parsed.map(hydrateEvent));
           }
         }
       } catch {}
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const res = await apiClient.get('/calendar/event-categories');
+      if (Array.isArray(res?.data)) {
+        setCustomCategories(res.data);
+      }
+    } catch {
+      // Backend offline / no categories yet — keep empty custom list
+    }
+  };
+
   useEffect(() => {
     fetchEvents();
+    fetchCategories();
   }, []);
 
   // Filtered events
   const filteredEvents = useMemo(() => {
     return events.filter((ev) => {
-      const matchCat = selectedCategory === 'ALL' || ev.eventType === selectedCategory;
+      const eventCatKey = ev.categoryKey || ev.eventType;
+      const matchCat = selectedCategory === 'ALL' || eventCatKey === selectedCategory || ev.eventType === selectedCategory;
       const matchSearch =
         !searchQuery ||
         ev.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -213,6 +267,7 @@ export const EventsRoadmapPage: React.FC = () => {
       title: '',
       description: '',
       eventType: 'ACADEMIC',
+      categoryKey: '',
       startDate: todayJalaliStr,
       startTime: '08:30',
       endDate: todayJalaliStr,
@@ -224,10 +279,10 @@ export const EventsRoadmapPage: React.FC = () => {
       tags: '',
     });
     setFormError(null);
+    setWorkflowModules([]);
     setIsModalOpen(true);
   };
 
-  // Open Edit Modal
   const handleOpenEdit = (ev: SchoolEventItem, e: React.MouseEvent) => {
     e.stopPropagation();
     setIsEditing(true);
@@ -245,6 +300,7 @@ export const EventsRoadmapPage: React.FC = () => {
       title: ev.title,
       description: ev.description || '',
       eventType: ev.eventType,
+      categoryKey: ev.categoryKey || '',
       startDate: sJalali,
       startTime: sTime,
       endDate: eJalali || sJalali,
@@ -255,8 +311,133 @@ export const EventsRoadmapPage: React.FC = () => {
       coverUrl: ev.coverUrl || '',
       tags: (ev.tags || []).join('، '),
     });
+    setWorkflowModules(
+      ev.eventType === 'STARTUP_WEEKEND'
+        ? [...DEFAULT_WORKFLOW_MODULES]
+        : normalizeWorkflowModules(ev.workflowModules)
+    );
     setFormError(null);
     setIsModalOpen(true);
+  };
+
+  // Category CRUD handlers (backend)
+  const openCategoryCreate = () => {
+    setEditingCategoryKey(null);
+    setCategoryForm({ key: '', label: '', icon: 'Tag', color: '' });
+    setCategoryError(null);
+    setIsCategoryModalOpen(true);
+  };
+
+  const openCategoryEdit = (cat: EventCategoryItem) => {
+    setEditingCategoryKey(cat.key);
+    setCategoryForm({
+      key: cat.key,
+      label: cat.label,
+      icon: cat.icon || 'Tag',
+      color: cat.color || '',
+    });
+    setCategoryError(null);
+    setIsCategoryModalOpen(true);
+  };
+
+  const resetCategoryForm = () => {
+    setEditingCategoryKey(null);
+    setCategoryForm({ key: '', label: '', icon: 'Tag', color: '' });
+    setCategoryError(null);
+  };
+
+  const allCategoriesForManage = useMemo(() => {
+    const fallback = FALLBACK_CATEGORIES.map((c) => ({
+      key: c.key,
+      label: c.label,
+      icon: 'Tag',
+      color: '',
+      removable: false,
+      isBuiltIn: true,
+    }));
+    const custom = customCategories.map((c) => ({
+      key: c.key,
+      label: c.label,
+      icon: c.icon || 'Tag',
+      color: c.color || '',
+      removable: c.removable !== false,
+      isBuiltIn: false,
+    }));
+    return [...fallback, ...custom];
+  }, [customCategories]);
+
+  const handleCategorySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCategoryError(null);
+
+    const key = categoryForm.key.trim().toUpperCase().replace(/\s+/g, '_');
+    const label = categoryForm.label.trim();
+    if (!key || !label) {
+      setCategoryError('کلید و عنوان دسته‌بندی الزامی است');
+      return;
+    }
+
+    setIsSubmittingCategory(true);
+    try {
+      if (editingCategoryKey) {
+        await apiClient.patch(`/calendar/event-categories/${editingCategoryKey}`, {
+          label,
+          icon: categoryForm.icon || undefined,
+          color: categoryForm.color || undefined,
+        });
+        setCustomCategories((prev) =>
+          prev.map((c) =>
+            c.key === editingCategoryKey
+              ? { ...c, label, icon: categoryForm.icon, color: categoryForm.color }
+              : c
+          )
+        );
+        toast.success('دسته‌بندی با موفقیت ویرایش شد');
+        resetCategoryForm();
+      } else {
+        await apiClient.post('/calendar/event-categories', {
+          category: {
+            key,
+            label,
+            icon: categoryForm.icon || undefined,
+            color: categoryForm.color || undefined,
+            removable: true,
+          },
+        });
+        setCustomCategories((prev) => [
+          ...prev,
+          { key, label, icon: categoryForm.icon, color: categoryForm.color, removable: true },
+        ]);
+        toast.success('دسته‌بندی جدید ایجاد شد');
+        resetCategoryForm();
+      }
+    } catch (err: any) {
+      const msg =
+        err?.message ||
+        err?.response?.data?.message ||
+        'خطا در ذخیره‌سازی دسته‌بندی';
+      setCategoryError(msg);
+      toast.error(msg);
+    } finally {
+      setIsSubmittingCategory(false);
+    }
+  };
+
+  const handleCategoryDelete = async (cat: EventCategoryItem) => {
+    if (cat.removable === false || FALLBACK_CATEGORIES.some((f) => f.key === cat.key)) {
+      toast.error('دسته‌بندی پیش‌فرض قابل حذف نیست');
+      return;
+    }
+    try {
+      await apiClient.delete(`/calendar/event-categories/${cat.key}`);
+      setCustomCategories((prev) => prev.filter((c) => c.key !== cat.key));
+      if (selectedCategory === cat.key) setSelectedCategory('ALL');
+      if (editingCategoryKey === cat.key) resetCategoryForm();
+      toast.success('دسته‌بندی حذف شد');
+    } catch (err: any) {
+      const msg = err?.message || err?.response?.data?.message || 'خطا در حذف دسته‌بندی';
+      toast.error(msg);
+    }
   };
 
   // Undoable Delete Mutation with 5-second countdown & revert on undo
@@ -335,6 +516,7 @@ export const EventsRoadmapPage: React.FC = () => {
         title: form.title.trim(),
         description: form.description.trim(),
         eventType: form.eventType,
+        categoryKey: form.categoryKey || undefined,
         startDate: sDateObj.toISOString(),
         endDate: eDateObj.toISOString(),
         isAllDay: form.isAllDay,
@@ -342,6 +524,9 @@ export const EventsRoadmapPage: React.FC = () => {
         location: form.location.trim() || undefined,
         coverUrl: form.coverUrl.trim() || undefined,
         tags: tagsArray,
+        workflowModules: workflowModules
+          .filter((m) => m.enabled !== false)
+          .map((m) => ({ key: m.key, step: m.step, enabled: true })),
       };
 
       if (isEditing && editingId) {
@@ -357,6 +542,7 @@ export const EventsRoadmapPage: React.FC = () => {
               ? {
                   ...item,
                   ...payload,
+                  categoryKey: form.categoryKey || undefined,
                   tags: tagsArray,
                   description: payload.description,
                   location: payload.location,
@@ -376,6 +562,7 @@ export const EventsRoadmapPage: React.FC = () => {
           title: payload.title,
           description: payload.description,
           eventType: payload.eventType,
+          categoryKey: payload.categoryKey,
           startDate: payload.startDate,
           endDate: payload.endDate,
           isAllDay: payload.isAllDay,
@@ -383,6 +570,7 @@ export const EventsRoadmapPage: React.FC = () => {
           location: payload.location,
           coverUrl: payload.coverUrl,
           tags: tagsArray,
+          workflowModules: payload.workflowModules,
           createdAt: new Date().toISOString(),
           createdBy: {
             firstName: currentUser?.firstName || 'شما',
@@ -471,14 +659,24 @@ export const EventsRoadmapPage: React.FC = () => {
           {/* Action Button for Admins */}
           <div className="flex flex-wrap items-center gap-3">
             {isManager && (
-              <Button
-                onClick={handleOpenCreate}
-                variant="primary"
-                className="gap-2 px-5 py-3 text-base font-black border-3 border-zinc-900 shadow-[4px_4px_0px_0px_#18181b] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
-              >
-                <Plus className="w-5 h-5" />
-                تعریف رویداد جدید
-              </Button>
+              <>
+                <Button
+                  onClick={openCategoryCreate}
+                  variant="outline"
+                  className="gap-2 px-4 py-3 font-bold border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#f4f4f5]"
+                >
+                  <Tag className="w-4 h-4" />
+                  مدیریت دسته‌بندی‌ها
+                </Button>
+                <Button
+                  onClick={handleOpenCreate}
+                  variant="primary"
+                  className="gap-2 px-5 py-3 text-base font-black border-3 border-zinc-900 shadow-[4px_4px_0px_0px_#18181b] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
+                >
+                  <Plus className="w-5 h-5" />
+                  تعریف رویداد جدید
+                </Button>
+              </>
             )}
             <Link to="/app/calendar">
               <Button
@@ -538,24 +736,49 @@ export const EventsRoadmapPage: React.FC = () => {
 
       {/* Category Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-        {EVENT_CATEGORIES.map((cat) => {
+        {allCategoryTabs.map((cat) => {
           const Icon = cat.icon;
           const isSelected = selectedCategory === cat.key;
+          const rawCustomCat = customCategories.find((c) => c.key === cat.key);
           return (
-            <button
-              key={cat.key}
-              onClick={() => setSelectedCategory(cat.key)}
-              className={`flex items-center gap-2 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-black border-2 transition-all cursor-pointer ${
-                isSelected
-                  ? 'border-zinc-900 bg-zinc-900 text-white shadow-[3px_3px_0px_0px_#000] dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 dark:shadow-[3px_3px_0px_0px_#fff]'
-                  : 'border-zinc-900/40 bg-white text-zinc-700 hover:border-zinc-900 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-200 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#f4f4f5]'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {cat.label}
-            </button>
+            <div key={cat.key} className="relative shrink-0 group/tab">
+              <button
+                onClick={() => setSelectedCategory(cat.key)}
+                className={`flex items-center gap-2 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs font-black border-2 transition-all duration-150 cursor-pointer touch-manipulation active:scale-95 active:shadow-none select-none ${
+                  isSelected
+                    ? 'border-zinc-900 bg-zinc-900 text-white shadow-[3px_3px_0px_0px_#000] dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 dark:shadow-[3px_3px_0px_0px_#fff]'
+                    : 'border-zinc-900/40 bg-white text-zinc-700 hover:border-zinc-900 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-200 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#f4f4f5]'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5 transition-transform duration-150 group-hover/tab:scale-125 group-hover/tab:rotate-6 group-active/tab:scale-90" />
+                {cat.label}
+              </button>
+              {isManager && rawCustomCat && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openCategoryEdit(rawCustomCat);
+                  }}
+                  title="ویرایش دسته‌بندی"
+                  className="absolute -top-1.5 -left-1.5 z-10 rounded-lg border border-zinc-900 bg-white p-1 text-zinc-700 shadow-sm opacity-100 transition-all duration-150 hover:bg-indigo-50 hover:text-indigo-700 md:opacity-0 md:group-hover/tab:opacity-100 md:focus-visible:opacity-100 dark:border-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-indigo-950 dark:hover:text-indigo-300"
+                >
+                  <Edit3 className="w-3 h-3" />
+                </button>
+              )}
+            </div>
           );
         })}
+        {isManager && (
+          <button
+            onClick={openCategoryCreate}
+            title="افزودن دسته‌بندی جدید"
+            className="flex items-center gap-1 whitespace-nowrap px-3 py-2.5 rounded-xl text-xs font-black border-2 border-dashed border-zinc-400 text-zinc-500 hover:border-zinc-900 hover:text-zinc-900 transition-all touch-manipulation active:scale-95 shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            دسته جدید
+          </button>
+        )}
       </div>
 
       {/* Content Display */}
@@ -639,7 +862,7 @@ export const EventsRoadmapPage: React.FC = () => {
                                     {status.label}
                                   </span>
                                   <span className="px-2.5 py-0.5 rounded-full text-xs font-bold border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
-                                    {EVENT_CATEGORIES.find((c) => c.key === ev.eventType)?.label || ev.eventType}
+                                    {categoryLabelMap[ev.categoryKey || ev.eventType] || categoryLabelMap[ev.eventType] || ev.eventType}
                                   </span>
                                   <span className="text-xs font-bold text-zinc-500">
                                     {AUDIENCE_MAP[ev.targetAudience] || ev.targetAudience}
@@ -752,7 +975,7 @@ export const EventsRoadmapPage: React.FC = () => {
                         {status.label}
                       </span>
                       <span className="text-xs font-bold text-zinc-500">
-                        {EVENT_CATEGORIES.find((c) => c.key === ev.eventType)?.label}
+                        {categoryLabelMap[ev.categoryKey || ev.eventType] || categoryLabelMap[ev.eventType] || ev.eventType}
                       </span>
                     </div>
 
@@ -838,20 +1061,65 @@ export const EventsRoadmapPage: React.FC = () => {
               <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
                 دسته‌بندی رویداد
               </label>
-              <select
-                value={form.eventType}
-                onChange={(e) => setForm({ ...form, eventType: e.target.value as any })}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
-              >
-                <option value="STARTUP_WEEKEND">استارت‌آپ ویکند</option>
-                <option value="ACADEMIC">آموزشی و مهارت</option>
-                <option value="CULTURAL">فرهنگی و آیین‌ها</option>
-                <option value="SPORTS">مسابقات و ورزش</option>
-                <option value="EXAM">آزمون و ارزشیابی</option>
-                <option value="EXCURSION">اردو و بازدید علمی</option>
-                <option value="MEETING">جلسه و نشست</option>
-                <option value="HOLIDAY">تعطیلی و مناسبت</option>
-              </select>
+              <div className="flex items-stretch gap-2">
+                <select
+                  value={form.categoryKey || form.eventType}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    const isCustom = customCategories.some((c) => c.key === v);
+                    if (isCustom) {
+                      setForm({ ...form, categoryKey: v, eventType: 'ACADEMIC' as any });
+                    } else {
+                      setForm({ ...form, categoryKey: '', eventType: v as any });
+                    }
+                  }}
+                  className="flex-1 min-w-0 rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                >
+                  <optgroup label="دسته‌های پیش‌فرض">
+                    <option value="STARTUP_WEEKEND">استارت‌آپ ویکند</option>
+                    <option value="ACADEMIC">آموزشی و مهارت</option>
+                    <option value="CULTURAL">فرهنگی و آیین‌ها</option>
+                    <option value="SPORTS">مسابقات و ورزش</option>
+                    <option value="EXAM">آزمون و ارزشیابی</option>
+                    <option value="EXCURSION">اردو و بازدید علمی</option>
+                    <option value="MEETING">جلسه و نشست</option>
+                    <option value="HOLIDAY">تعطیلی و مناسبت</option>
+                  </optgroup>
+                  {customCategories.length > 0 && (
+                    <optgroup label="دسته‌بندی‌های سفارشی مدرسه">
+                      {customCategories.map((c) => (
+                        <option key={c.key} value={c.key}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+                {isManager &&
+                  (() => {
+                    const selectedCustom = customCategories.find((c) => c.key === form.categoryKey);
+                    if (!selectedCustom) return null;
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => openCategoryEdit(selectedCustom)}
+                        title="ویرایش این دسته‌بندی"
+                        className="flex-shrink-0 flex items-center justify-center w-11 rounded-xl border-2 border-zinc-900 bg-zinc-50 text-zinc-700 shadow-[2px_2px_0px_0px_#18181b] transition-all hover:bg-indigo-50 hover:text-indigo-700 active:scale-95 active:shadow-none touch-manipulation dark:border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-indigo-950 dark:hover:text-indigo-300"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                    );
+                  })()}
+              </div>
+              {isManager && (
+                <button
+                  type="button"
+                  onClick={openCategoryCreate}
+                  className="mt-1.5 text-[11px] font-black text-indigo-600 hover:underline"
+                >
+                  + مدیریت دسته‌بندی‌ها
+                </button>
+              )}
             </div>
 
             <div>
@@ -975,6 +1243,102 @@ export const EventsRoadmapPage: React.FC = () => {
             />
           </div>
 
+          {/* Workflow Modules Selection */}
+          <div className="rounded-2xl border-2 border-zinc-900 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/50">
+            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+              ماژول‌های گردش کار رویداد (اختیاری)
+            </label>
+            <p className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 mb-3">
+              ماژول‌های مورد نیاز را انتخاب و شماره مرحله هر کدام را مشخص کنید. در صورت عدم انتخاب، رویداد بدون چرخه گام‌به‌گام ساخته می‌شود.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 gap-3">
+              {EVENT_MODULE_LIST.map((mod) => {
+                const entry = workflowModules.find((m) => m.key === mod.key);
+                const checked = !!entry && entry.enabled !== false;
+                const Icon = mod.icon;
+                return (
+                  <div
+                    key={mod.key}
+                    className={`flex items-center gap-3 rounded-xl border-2 p-3 transition-all ${
+                      checked
+                        ? 'border-zinc-900 bg-white shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[2px_2px_0px_0px_#f4f4f5]'
+                        : 'border-zinc-300 bg-white/60 dark:border-zinc-700 dark:bg-zinc-900/40'
+                    }`}
+                  >
+                    <label className="flex items-center gap-2.5 flex-1 cursor-pointer min-w-0">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          setWorkflowModules((prev) => {
+                            if (e.target.checked) {
+                              const existing = prev.find((m) => m.key === mod.key);
+                              if (existing) {
+                                return prev.map((m) =>
+                                  m.key === mod.key ? { ...m, enabled: true } : m
+                                );
+                              }
+                              const maxStep = prev.length
+                                ? Math.max(...prev.map((m) => m.step))
+                                : 0;
+                              return [...prev, { key: mod.key, step: maxStep + 1, enabled: true }];
+                            }
+                            return prev.filter((m) => m.key !== mod.key);
+                          });
+                        }}
+                        className="w-4 h-4 accent-indigo-600 flex-shrink-0"
+                      />
+                      <Icon className={`w-4 h-4 flex-shrink-0 ${checked ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-400'}`} />
+                      <div className="min-w-0">
+                        <div className="text-xs font-black text-zinc-900 dark:text-zinc-100 truncate">{mod.title}</div>
+                        <div className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 truncate">{mod.subtitle}</div>
+                      </div>
+                    </label>
+                    {checked && (
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400">مرحله:</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={20}
+                          value={entry?.step || 1}
+                          onChange={(e) => {
+                            const newStep = Math.max(1, parseInt(e.target.value, 10) || 1);
+                            setWorkflowModules((prev) =>
+                              prev.map((m) =>
+                                m.key === mod.key ? { ...m, step: newStep } : m
+                              )
+                            );
+                          }}
+                          className="w-14 rounded-lg border-2 border-zinc-900 bg-white px-2 py-1 text-xs font-black text-center dark:border-zinc-700 dark:bg-zinc-900"
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {workflowModules.length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400">ترتیب مراحل:</span>
+                {[...workflowModules]
+                  .filter((m) => m.enabled !== false)
+                  .sort((a, b) => a.step - b.step)
+                  .map((m) => {
+                    const def = EVENT_MODULE_LIST.find((d) => d.key === m.key);
+                    return (
+                      <span
+                        key={m.key}
+                        className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 text-[10px] font-black border border-indigo-300 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-700"
+                      >
+                        {m.step}. {def?.title || m.key}
+                      </span>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+
           {/* Submit Actions */}
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
             <Button
@@ -995,6 +1359,187 @@ export const EventsRoadmapPage: React.FC = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* ================= CATEGORY MANAGEMENT MODAL ================= */}
+      <Modal
+        isOpen={isCategoryModalOpen}
+        onClose={() => {
+          resetCategoryForm();
+          setIsCategoryModalOpen(false);
+        }}
+        title="مدیریت دسته‌بندی‌های رویداد"
+        maxWidth="lg"
+      >
+        <div className="space-y-5">
+          {categoryError && (
+            <div className="flex items-center gap-2 rounded-xl border-2 border-red-500 bg-red-50 p-3 text-xs font-bold text-red-700 dark:bg-red-950/50 dark:text-red-300">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{categoryError}</span>
+            </div>
+          )}
+
+          {/* Full scrollable list of ALL categories (built-in + custom) */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-black text-zinc-700 dark:text-zinc-300">
+                همه دسته‌بندی‌ها ({allCategoriesForManage.length})
+              </span>
+              <span className="text-[10px] font-bold text-zinc-500">
+                پیش‌فرض‌ها غیرقابل حذف‌اند
+              </span>
+            </div>
+            <div className="rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 divide-y divide-zinc-100 dark:divide-zinc-800 max-h-72 min-h-[8rem] overflow-y-auto overscroll-contain bg-zinc-50/50 dark:bg-zinc-900/30">
+              {allCategoriesForManage.length === 0 ? (
+                <div className="px-4 py-6 text-center text-xs font-bold text-zinc-500">
+                  دسته‌بندی‌ای وجود ندارد
+                </div>
+              ) : (
+                allCategoriesForManage.map((cat) => {
+                  const isEditingThis = editingCategoryKey === cat.key;
+                  return (
+                    <div
+                      key={cat.key}
+                      className={`flex items-center justify-between gap-2 px-3 py-2.5 transition-colors ${
+                        isEditingThis
+                          ? 'bg-indigo-50 dark:bg-indigo-950/40 border-r-4 border-indigo-500'
+                          : 'hover:bg-white dark:hover:bg-zinc-800/60'
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-zinc-900 dark:text-zinc-100 truncate">
+                            {cat.label}
+                          </span>
+                          {cat.isBuiltIn && (
+                            <span className="shrink-0 rounded-md bg-zinc-200 px-1.5 py-0.5 text-[9px] font-black text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
+                              پیش‌فرض
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] font-bold text-zinc-500 font-mono truncate">
+                          {cat.key}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {!cat.isBuiltIn && (
+                          <button
+                            type="button"
+                            onClick={() => openCategoryEdit(cat)}
+                            className={`rounded-lg p-1.5 transition-colors ${
+                              isEditingThis
+                                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300'
+                                : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800'
+                            }`}
+                            title="ویرایش"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {!cat.isBuiltIn && cat.removable !== false && (
+                          <button
+                            type="button"
+                            onClick={() => handleCategoryDelete(cat)}
+                            className="rounded-lg p-1.5 text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/50"
+                            title="حذف"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Create / Edit form — always visible below the list */}
+          <form onSubmit={handleCategorySubmit} className="space-y-4 border-t-2 border-dashed border-zinc-200 dark:border-zinc-700 pt-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-zinc-700 dark:text-zinc-300">
+                {editingCategoryKey ? `ویرایش «${categoryForm.label}»` : 'افزودن دسته‌بندی جدید'}
+              </span>
+              {editingCategoryKey && (
+                <button
+                  type="button"
+                  onClick={resetCategoryForm}
+                  className="text-[11px] font-black text-indigo-600 hover:underline"
+                >
+                  انصراف از ویرایش
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+                  کلید انگلیسی (برای فیلتر) *
+                </label>
+                <input
+                  type="text"
+                  required
+                  disabled={!!editingCategoryKey}
+                  value={categoryForm.key}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, key: e.target.value })}
+                  placeholder="MY_CUSTOM_EVENT"
+                  className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-mono font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 disabled:opacity-60"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+                  عنوان فارسی *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={categoryForm.label}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, label: e.target.value })}
+                  placeholder="عنوان دسته‌بندی"
+                  className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              {editingCategoryKey && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={resetCategoryForm}
+                  className="border-2 border-zinc-900 font-bold"
+                >
+                  انصراف
+                </Button>
+              )}
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={isSubmittingCategory}
+                className="border-2 border-zinc-900 font-black px-6 shadow-[3px_3px_0px_0px_#18181b]"
+              >
+                {isSubmittingCategory
+                  ? 'در حال ذخیره...'
+                  : editingCategoryKey
+                  ? 'ذخیره ویرایش'
+                  : 'افزودن دسته‌بندی'}
+              </Button>
+            </div>
+          </form>
+
+          <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800 flex justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                resetCategoryForm();
+                setIsCategoryModalOpen(false);
+              }}
+              className="border-2 border-zinc-900 font-bold"
+            >
+              بستن
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

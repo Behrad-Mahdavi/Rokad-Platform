@@ -39,7 +39,8 @@ import {
   Compass,
   Rocket,
 } from 'lucide-react';
-import { SchoolEventItem, INITIAL_SAMPLE_EVENTS } from './constants/sample-events';
+import { SchoolEventItem, INITIAL_SAMPLE_EVENTS, EventCategoryItem, hydrateEvent, displayTags } from './constants/sample-events';
+import { normalizeWorkflowModules } from './constants/event-modules';
 import { EventStepWizard } from './components/EventStepWizard';
 import {
   Workflow,
@@ -79,15 +80,18 @@ export const EventSinglePage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState<'WORKFLOW' | 'OVERVIEW'>('WORKFLOW');
+  const [customCategories, setCustomCategories] = useState<EventCategoryItem[]>([]);
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [workflowModulesState, setWorkflowModulesState] = useState<{ key: string; step: number; enabled?: boolean }[]>([]);
   const [form, setForm] = useState({
     title: '',
     description: '',
     eventType: 'ACADEMIC' as SchoolEventItem['eventType'],
+    categoryKey: '',
     startDate: '',
     startTime: '08:30',
     endDate: '',
@@ -114,7 +118,8 @@ export const EventSinglePage: React.FC = () => {
     try {
       const res = await apiClient.get(`/calendar/events/${id}`);
       if (res && res.data) {
-        setEvent(res.data);
+        setEvent(hydrateEvent(res.data));
+        setIsLoading(false);
         return;
       }
     } catch (err) {
@@ -131,7 +136,7 @@ export const EventSinglePage: React.FC = () => {
         }
       }
       const found = allEvents.find((e) => e.id === id) || allEvents[0];
-      setEvent(found || null);
+      setEvent(found ? hydrateEvent(found) : null);
     } catch (e) {
       console.error('Failed to load fallback event', e);
     } finally {
@@ -139,8 +144,16 @@ export const EventSinglePage: React.FC = () => {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const res = await apiClient.get('/calendar/event-categories');
+      if (Array.isArray(res?.data)) setCustomCategories(res.data);
+    } catch {}
+  };
+
   useEffect(() => {
     fetchEvent();
+    fetchCategories();
   }, [id]);
 
   // Live countdown timer ticking
@@ -244,6 +257,7 @@ export const EventSinglePage: React.FC = () => {
       title: event.title,
       description: event.description || '',
       eventType: event.eventType,
+      categoryKey: event.categoryKey || '',
       startDate: sJalali,
       startTime: sTime,
       endDate: eJalali || sJalali,
@@ -252,8 +266,9 @@ export const EventSinglePage: React.FC = () => {
       targetAudience: event.targetAudience,
       location: event.location || '',
       coverUrl: event.coverUrl || '',
-      tags: (event.tags || []).join('، '),
+      tags: displayTags(event.tags).join('، '),
     });
+    setWorkflowModulesState(normalizeWorkflowModules(event.workflowModules));
     setFormError(null);
     setIsEditModalOpen(true);
   };
@@ -286,6 +301,7 @@ export const EventSinglePage: React.FC = () => {
         title: form.title.trim(),
         description: form.description.trim(),
         eventType: form.eventType,
+        categoryKey: form.categoryKey || undefined,
         startDate: sDateObj.toISOString(),
         endDate: eDateObj.toISOString(),
         isAllDay: form.isAllDay,
@@ -293,6 +309,9 @@ export const EventSinglePage: React.FC = () => {
         location: form.location.trim() || undefined,
         coverUrl: form.coverUrl.trim() || undefined,
         tags: tagsArray,
+        workflowModules: workflowModulesState
+          .filter((m) => m.enabled !== false)
+          .map((m) => ({ key: m.key, step: m.step, enabled: true })),
       };
 
       try {
@@ -323,6 +342,7 @@ export const EventSinglePage: React.FC = () => {
           location: patchPayload.location,
           coverUrl: patchPayload.coverUrl,
           tags: tagsArray,
+          workflowModules: patchPayload.workflowModules,
         });
       }
 
@@ -360,12 +380,23 @@ export const EventSinglePage: React.FC = () => {
     );
   }
 
-  const categoryMeta = EVENT_CATEGORIES[event.eventType] || EVENT_CATEGORIES.ACADEMIC;
+  const categoryKey = event.categoryKey || event.eventType;
+  const customCat = customCategories.find((c) => c.key === categoryKey);
+  const categoryMeta = customCat
+    ? {
+        label: customCat.label,
+        icon: Layers,
+        color: customCat.color || 'bg-zinc-100 text-zinc-800 border-zinc-400 dark:bg-zinc-800 dark:text-zinc-200',
+      }
+    : EVENT_CATEGORIES[event.eventType] || EVENT_CATEGORIES.ACADEMIC;
   const CategoryIcon = categoryMeta.icon;
   const jalaliStart = formatJalaliDisplay(event.startDate, true);
   const jalaliEnd = formatJalaliDisplay(event.endDate, true);
   const startTimeStr = new Date(event.startDate).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
   const endTimeStr = new Date(event.endDate).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+
+  const workflowModules = normalizeWorkflowModules(event.workflowModules);
+  const hasWorkflow = workflowModules.length > 0 || event.eventType === 'STARTUP_WEEKEND';
 
   return (
     <div className="space-y-8 pb-16">
@@ -490,8 +521,8 @@ export const EventSinglePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Tabs Navigation (Shown only for STARTUP_WEEKEND events) */}
-      {event.eventType === 'STARTUP_WEEKEND' && (
+      {/* Main Tabs Navigation (shown when event has workflow modules) */}
+      {hasWorkflow && (
         <div className="flex flex-wrap items-center gap-3 p-2 rounded-2xl border-3 border-zinc-900 bg-white shadow-[4px_4px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[4px_4px_0px_0px_#f4f4f5]">
           <button
             onClick={() => setActiveMainTab('WORKFLOW')}
@@ -502,7 +533,7 @@ export const EventSinglePage: React.FC = () => {
             }`}
           >
             <Workflow className="w-4 h-4" />
-            <span>چرخه گام‌به‌گام رویداد (ایده ➔ رای‌گیری ➔ تشکیل تیم ➔ بوم)</span>
+            <span>{hasWorkflow ? 'چرخه گام‌به‌گام رویداد' : 'شناسنامه و زمان‌بندی کامل رویداد'}</span>
           </button>
 
           <button
@@ -520,7 +551,7 @@ export const EventSinglePage: React.FC = () => {
       )}
 
       {/* Render Active Tab Content */}
-      {event.eventType === 'STARTUP_WEEKEND' && activeMainTab === 'WORKFLOW' ? (
+      {hasWorkflow && activeMainTab === 'WORKFLOW' ? (
         <EventStepWizard eventId={event.id} eventTitle={event.title} />
       ) : (
         <div className="space-y-8">
@@ -593,7 +624,7 @@ export const EventSinglePage: React.FC = () => {
                   <span>کلیدواژه‌ها و برچسب‌های مرتبط:</span>
                 </h4>
                 <div className="flex flex-wrap items-center gap-2">
-                  {event.tags.map((tag, idx) => (
+                  {displayTags(event.tags).map((tag, idx) => (
                     <span
                       key={idx}
                       className="px-3 py-1 rounded-xl text-xs font-bold border-2 border-zinc-900 bg-zinc-100 text-zinc-800 dark:border-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#f4f4f5]"
@@ -641,18 +672,37 @@ export const EventSinglePage: React.FC = () => {
                 دسته‌بندی
               </label>
               <select
-                value={form.eventType}
-                onChange={(e) => setForm({ ...form, eventType: e.target.value as any })}
+                value={form.categoryKey || form.eventType}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  const isCustom = customCategories.some((c) => c.key === v);
+                  if (isCustom) {
+                    setForm({ ...form, categoryKey: v, eventType: 'ACADEMIC' as any });
+                  } else {
+                    setForm({ ...form, categoryKey: '', eventType: v as any });
+                  }
+                }}
                 className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
               >
-                <option value="STARTUP_WEEKEND">استارت‌آپ ویکند</option>
-                <option value="ACADEMIC">آموزشی و مهارت</option>
-                <option value="CULTURAL">فرهنگی و آیین‌ها</option>
-                <option value="SPORTS">مسابقات و ورزش</option>
-                <option value="EXAM">آزمون و ارزشیابی</option>
-                <option value="EXCURSION">اردو و بازدید علمی</option>
-                <option value="MEETING">جلسه و نشست</option>
-                <option value="HOLIDAY">تعطیلی و مناسبت</option>
+                <optgroup label="دسته‌های پیش‌فرض">
+                  <option value="STARTUP_WEEKEND">استارت‌آپ ویکند</option>
+                  <option value="ACADEMIC">آموزشی و مهارت</option>
+                  <option value="CULTURAL">فرهنگی و آیین‌ها</option>
+                  <option value="SPORTS">مسابقات و ورزش</option>
+                  <option value="EXAM">آزمون و ارزشیابی</option>
+                  <option value="EXCURSION">اردو و بازدید علمی</option>
+                  <option value="MEETING">جلسه و نشست</option>
+                  <option value="HOLIDAY">تعطیلی و مناسبت</option>
+                </optgroup>
+                {customCategories.length > 0 && (
+                  <optgroup label="دسته‌بندی‌های سفارشی مدرسه">
+                    {customCategories.map((c) => (
+                      <option key={c.key} value={c.key}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             </div>
 

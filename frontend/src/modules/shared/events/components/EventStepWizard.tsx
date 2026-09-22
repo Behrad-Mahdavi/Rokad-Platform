@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { EventIdea, EventIdeaSubmissionStep } from './EventIdeaSubmissionStep';
 import { EventIdeasListStep } from './EventIdeasListStep';
 import { EventVotingPorscadStep } from './EventVotingPorscadStep';
@@ -7,12 +7,8 @@ import { EventCanvasMaterialsStep } from './EventCanvasMaterialsStep';
 import { useAuthStore } from '../../../../lib/auth/auth-store';
 import { toast } from '../../../../components/ui/toast/toast';
 import { toPersianDigits } from '../../../../utils/jalali';
+import { EVENT_MODULE_REGISTRY, WorkflowModuleEntry } from '../constants/event-modules';
 import {
-  Lightbulb,
-  Sparkles,
-  Star,
-  Users,
-  Layers,
   CheckCircle2,
   Workflow,
   Lock,
@@ -23,8 +19,17 @@ import {
 interface EventStepWizardProps {
   eventId: string;
   eventTitle: string;
+  workflowModules?: WorkflowModuleEntry[];
   initialStep?: number;
 }
+
+const DEFAULT_WORKFLOW: WorkflowModuleEntry[] = [
+  { key: 'IDEA_SUBMISSION', step: 1, enabled: true },
+  { key: 'IDEA_HALL', step: 2, enabled: true },
+  { key: 'VOTING', step: 3, enabled: true },
+  { key: 'TEAM_FORMATION', step: 4, enabled: true },
+  { key: 'EVENT_CANVAS', step: 5, enabled: true },
+];
 
 const DEFAULT_EVENT_IDEAS: EventIdea[] = [
   {
@@ -76,6 +81,7 @@ const DEFAULT_EVENT_IDEAS: EventIdea[] = [
 export const EventStepWizard: React.FC<EventStepWizardProps> = ({
   eventId,
   eventTitle,
+  workflowModules,
   initialStep = 1,
 }) => {
   const currentUser = useAuthStore((s) => s.user);
@@ -83,14 +89,35 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
 
   const [selectedIdeaForVote, setSelectedIdeaForVote] = useState<string | null>(null);
 
+  // Dynamic steps config derived from workflowModules
+  const STEPS_CONFIG = useMemo(() => {
+    const entries = (workflowModules && workflowModules.length > 0 ? workflowModules : DEFAULT_WORKFLOW)
+      .filter((m) => m.enabled !== false)
+      .sort((a, b) => a.step - b.step);
+
+    return entries.map((entry) => {
+      const def = EVENT_MODULE_REGISTRY[entry.key as keyof typeof EVENT_MODULE_REGISTRY];
+      return {
+        step: entry.step,
+        key: entry.key,
+        title: `${toPersianDigits(entry.step)}. ${def.title}`,
+        subtitle: def.subtitle,
+        icon: def.icon,
+        activeColor: def.activeColor,
+      };
+    });
+  }, [workflowModules]);
+
+  const stepKeys = useMemo(() => new Set(STEPS_CONFIG.map((s) => s.key)), [STEPS_CONFIG]);
+
   // Step Unlocking state for students
   const unlockedStepsKey = `rokad_event_unlocked_steps_${eventId}`;
   const [unlockedSteps, setUnlockedSteps] = useState<number[]>(() => {
     try {
       const saved = localStorage.getItem(unlockedStepsKey);
-      return saved ? JSON.parse(saved) : [1];
+      return saved ? JSON.parse(saved) : STEPS_CONFIG.length > 0 ? [STEPS_CONFIG[0].step] : [1];
     } catch {
-      return [1];
+      return STEPS_CONFIG.length > 0 ? [STEPS_CONFIG[0].step] : [1];
     }
   });
 
@@ -117,14 +144,16 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
     return localStorage.getItem(lockKey) === 'true';
   });
 
-  const isStep1Locked = isIdeaSubmissionLocked || (!isManager && !unlockedSteps.includes(1));
+  const isStep1Locked = isIdeaSubmissionLocked || (!isManager && !unlockedSteps.includes(STEPS_CONFIG[0]?.step ?? 1));
+
+  const firstStep = STEPS_CONFIG[0]?.step ?? 1;
 
   const handleToggleIdeaLock = () => {
     setIsIdeaSubmissionLocked((prev) => {
       const next = !prev;
       localStorage.setItem(lockKey, String(next));
       if (next) {
-        toast.info('ثبت ایده قفل شد. اکنون می‌توانید فرم نظرسنجی را در مرحله سوم طراحی نمایید.');
+        toast.info('ثبت ایده قفل شد.');
       } else {
         toast.info('ثبت ایده مجدداً بازگشایی شد.');
       }
@@ -177,6 +206,11 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
     }
   }, [ideas, storageKey]);
 
+  const goToStepByKey = (key: string) => {
+    const target = STEPS_CONFIG.find((s) => s.key === key);
+    if (target) handleStepClick(target.step);
+  };
+
   const handleIdeaSubmitted = (newIdea: EventIdea) => {
     const updatedIdeas = [newIdea, ...ideas];
     setIdeas(updatedIdeas);
@@ -186,46 +220,6 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
     setIdeas((prev) => prev.map((item) => (item.id === updatedIdea.id ? updatedIdea : item)));
   };
 
-
-
-  const STEPS_CONFIG = [
-    {
-      step: 1,
-      title: '۱. ثبت ایده',
-      subtitle: 'ارسال طرح و پیشنهاد',
-      icon: Lightbulb,
-      activeColor: 'bg-amber-400 text-zinc-950 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]',
-    },
-    {
-      step: 2,
-      title: '۲. تالار ایده‌ها',
-      subtitle: 'بانک و ویترین ایده‌ها',
-      icon: Sparkles,
-      activeColor: 'bg-indigo-600 text-white border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]',
-    },
-    {
-      step: 3,
-      title: '۳. رای‌گیری و پرس‌کاد',
-      subtitle: 'ستاره‌دهی و نظرسنجی',
-      icon: Star,
-      activeColor: 'bg-purple-600 text-white border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]',
-    },
-    {
-      step: 4,
-      title: '۴. تشکیل تیم و اعضاء',
-      subtitle: 'ترکیب اعضای ایده‌ها',
-      icon: Users,
-      activeColor: 'bg-blue-600 text-white border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]',
-    },
-    {
-      step: 5,
-      title: '۵. بوم و ورک‌شیت',
-      subtitle: 'بوم رویداد و متریال‌ها',
-      icon: Layers,
-      activeColor: 'bg-emerald-600 text-white border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]',
-    },
-  ];
-
   return (
     <div className="space-y-6">
       {/* Stepper Navigation Bar */}
@@ -234,7 +228,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
           <div className="flex items-center gap-2">
             <Workflow className="w-5 h-5 text-primary" />
             <h3 className="text-sm md:text-base font-black text-zinc-900 dark:text-zinc-100">
-              چرخه گام‌به‌گام و تعاملی رویداد (ایده ➔ رای‌گیری ➔ تشکیل تیم ➔ بوم)
+              چرخه گام‌به‌گام و تعاملی رویداد
             </h3>
           </div>
 
@@ -246,7 +240,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-zinc-100 dark:bg-zinc-800 text-xs font-black">
-                <span>مراحل باز: {toPersianDigits(unlockedSteps.length)} از ۵</span>
+                <span>مراحل باز: {toPersianDigits(unlockedSteps.length)} از {toPersianDigits(STEPS_CONFIG.length)}</span>
               </span>
             )}
             <span className="text-xs font-black text-zinc-500 dark:text-zinc-400">
@@ -256,7 +250,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
         </div>
 
         {/* Steps Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
           {STEPS_CONFIG.map((s) => {
             const IconComp = s.icon;
             const isCurrent = currentStep === s.step;
@@ -334,60 +328,77 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
 
       {/* Render Current Step Component */}
       <div>
-        {currentStep === 1 && (
-          <EventIdeaSubmissionStep
-            eventId={eventId}
-            eventTitle={eventTitle}
-            ideas={ideas}
-            isLocked={isStep1Locked}
-            onToggleLock={handleToggleIdeaLock}
-            onIdeaSubmitted={handleIdeaSubmitted}
-            onUpdateIdea={handleUpdateIdea}
-            onGoToNextStep={() => handleStepClick(2)}
-            onGoToVotingStep={() => handleStepClick(3)}
-          />
-        )}
+        {STEPS_CONFIG.map((cfg) => {
+          if (currentStep !== cfg.step) return null;
+          const def = EVENT_MODULE_REGISTRY[cfg.key as keyof typeof EVENT_MODULE_REGISTRY];
+          if (!def) return null;
 
-        {currentStep === 2 && (
-          <EventIdeasListStep
-            ideas={ideas}
-            onUpdateIdea={handleUpdateIdea}
-            onSelectIdeaForVote={(id) => setSelectedIdeaForVote(id)}
-            onGoToSubmitStep={() => handleStepClick(1)}
-            onGoToVotingStep={() => handleStepClick(3)}
-            onGoToCanvasStep={() => handleStepClick(5)}
-          />
-        )}
-
-        {currentStep === 3 && (
-          <EventVotingPorscadStep
-            eventId={eventId}
-            eventTitle={eventTitle}
-            ideas={ideas}
-            selectedIdeaId={selectedIdeaForVote}
-            onGoToIdeasList={() => handleStepClick(2)}
-            onGoToCanvasStep={() => handleStepClick(4)}
-          />
-        )}
-
-        {currentStep === 4 && (
-          <EventTeamFormationStep
-            eventId={eventId}
-            eventTitle={eventTitle}
-            ideas={ideas}
-            onGoToVotingStep={() => handleStepClick(3)}
-            onGoToCanvasStep={() => handleStepClick(5)}
-          />
-        )}
-
-        {currentStep === 5 && (
-          <EventCanvasMaterialsStep
-            eventId={eventId}
-            eventTitle={eventTitle}
-            onGoToVotingStep={() => handleStepClick(4)}
-            onGoToIdeasList={() => handleStepClick(2)}
-          />
-        )}
+          switch (cfg.key) {
+            case 'IDEA_SUBMISSION':
+              return (
+                <EventIdeaSubmissionStep
+                  key={cfg.key}
+                  eventId={eventId}
+                  eventTitle={eventTitle}
+                  ideas={ideas}
+                  isLocked={isStep1Locked}
+                  onToggleLock={handleToggleIdeaLock}
+                  onIdeaSubmitted={handleIdeaSubmitted}
+                  onUpdateIdea={handleUpdateIdea}
+                  onGoToNextStep={() => goToStepByKey('IDEA_HALL')}
+                  onGoToVotingStep={() => goToStepByKey('VOTING')}
+                />
+              );
+            case 'IDEA_HALL':
+              return (
+                <EventIdeasListStep
+                  key={cfg.key}
+                  ideas={ideas}
+                  onUpdateIdea={handleUpdateIdea}
+                  onSelectIdeaForVote={(id) => setSelectedIdeaForVote(id)}
+                  onGoToSubmitStep={() => goToStepByKey('IDEA_SUBMISSION')}
+                  onGoToVotingStep={() => goToStepByKey('VOTING')}
+                  onGoToCanvasStep={() => goToStepByKey('EVENT_CANVAS')}
+                />
+              );
+            case 'VOTING':
+              return (
+                <EventVotingPorscadStep
+                  key={cfg.key}
+                  eventId={eventId}
+                  eventTitle={eventTitle}
+                  ideas={ideas}
+                  selectedIdeaId={selectedIdeaForVote}
+                  onGoToIdeasList={() => goToStepByKey('IDEA_HALL')}
+                  onGoToCanvasStep={() => goToStepByKey('EVENT_CANVAS')}
+                  onGoToTeamFormation={() => goToStepByKey('TEAM_FORMATION')}
+                />
+              );
+            case 'TEAM_FORMATION':
+              return (
+                <EventTeamFormationStep
+                  key={cfg.key}
+                  eventId={eventId}
+                  eventTitle={eventTitle}
+                  ideas={ideas}
+                  onGoToVotingStep={() => goToStepByKey('VOTING')}
+                  onGoToCanvasStep={() => goToStepByKey('EVENT_CANVAS')}
+                />
+              );
+            case 'EVENT_CANVAS':
+              return (
+                <EventCanvasMaterialsStep
+                  key={cfg.key}
+                  eventId={eventId}
+                  eventTitle={eventTitle}
+                  onGoToVotingStep={() => goToStepByKey('VOTING')}
+                  onGoToIdeasList={() => goToStepByKey('IDEA_HALL')}
+                />
+              );
+            default:
+              return null;
+          }
+        })}
       </div>
     </div>
   );

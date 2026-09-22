@@ -8,6 +8,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
+import { porscadClient, PorscadPollData } from '../../../lib/porscad/porscad-client';
 import {
   Vote,
   Plus,
@@ -88,6 +89,30 @@ const DEFAULT_SAMPLE_POLLS: Poll[] = [
 ];
 
 const POLLS_STORAGE_KEY = 'rokad_porscad_polls';
+const PORSCAD_PREFIX = 'porscad_';
+
+function porscadToPoll(eventId: string, poll: PorscadPollData): Poll {
+  const options: PollOption[] = (poll.options || []).map((opt, idx) => ({
+    id: opt.id || `opt_${idx}`,
+    text: opt.text,
+    voteCount: opt.voteCount || 0,
+    orderIndex: idx + 1,
+  }));
+  return {
+    id: `${PORSCAD_PREFIX}${eventId}`,
+    title: poll.questionTitle || poll.title || 'نظرسنجی پرس‌کاد',
+    description: poll.description,
+    pollType: 'SINGLE_CHOICE',
+    targetAudience: 'ALL',
+    startDate: poll.createdAt || new Date().toISOString(),
+    endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    isAnonymous: false,
+    isClosed: !!poll.isClosed,
+    createdAt: poll.createdAt || new Date().toISOString(),
+    options,
+    _count: { votes: poll.totalVotes || options.reduce((s, o) => s + o.voteCount, 0) },
+  };
+}
 
 export const PollsPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -102,8 +127,11 @@ export const PollsPage: React.FC = () => {
     return DEFAULT_SAMPLE_POLLS;
   });
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<'ACTIVE' | 'ARCHIVED'>('ACTIVE');
+  const isAdmin = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF', 'TEACHER'].includes(
+    user?.role || ''
+  );
 
   // Voting state: pollId -> selected option ids or rating
   const [votingState, setVotingState] = useState<Record<string, {
@@ -139,15 +167,31 @@ export const PollsPage: React.FC = () => {
 
   const canCreatePoll = true;
 
+  const fetchPorscadPolls = async (): Promise<Poll[]> => {
+    const local = porscadClient.listLocalPolls();
+    const out: Poll[] = [];
+    for (const { eventId, poll } of local) {
+      try {
+        const live = await porscadClient.fetchLiveAnalytics(eventId);
+        out.push(porscadToPoll(eventId, live || poll));
+      } catch {
+        out.push(porscadToPoll(eventId, poll));
+      }
+    }
+    return out;
+  };
+
   const fetchPolls = async () => {
+    setIsLoading(true);
+    const merged: Poll[] = [];
+    const detailsMap: Record<string, { hasVoted: boolean; poll: Poll }> = {};
+
+    // 1) Native backend polls
     try {
       const res = await apiClient.get<Poll[]>('/polls');
       const data = res.data || [];
       if (data.length > 0) {
-        setPolls(data);
-        localStorage.setItem(POLLS_STORAGE_KEY, JSON.stringify(data));
-
-        const detailsMap: Record<string, { hasVoted: boolean; poll: Poll }> = {};
+        merged.push(...data);
         for (const p of data) {
           try {
             const detailRes = await apiClient.get<{ poll: Poll; hasVoted: boolean }>(`/polls/${p.id}`);
@@ -156,7 +200,6 @@ export const PollsPage: React.FC = () => {
             }
           } catch {}
         }
-        setPollDetails(detailsMap);
       }
     } catch (err: any) {
       // Graceful fallback to cached polls
@@ -164,10 +207,30 @@ export const PollsPage: React.FC = () => {
         const cached = localStorage.getItem(POLLS_STORAGE_KEY);
         if (cached) {
           const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) setPolls(parsed);
+          if (Array.isArray(parsed) && parsed.length > 0) merged.push(...parsed);
         }
       } catch {}
     }
+
+    // 2) Porscad cloud polls (admin results via GET / fetchLiveAnalytics)
+    try {
+      const porscadPolls = await fetchPorscadPolls();
+      for (const pp of porscadPolls) {
+        detailsMap[pp.id] = { hasVoted: false, poll: pp };
+      }
+      merged.push(...porscadPolls);
+    } catch {
+      // Porscad offline — ignore
+    }
+
+    if (merged.length > 0) {
+      setPolls(merged);
+      try {
+        localStorage.setItem(POLLS_STORAGE_KEY, JSON.stringify(merged));
+      } catch {}
+      setPollDetails(detailsMap);
+    }
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -236,6 +299,38 @@ export const PollsPage: React.FC = () => {
     }));
 
     try {
+      // Porscad poll → submit via porscadClient (RPC + local)
+      if (pollId.startsWith(PORSCAD_PREFIX)) {
+        const eventId = pollId.slice(PORSCAD_PREFIX.length);
+        const voterName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'دانش‌آموز' : 'دانش‌آموز';
+        const result = await porscadClient.submitVote(eventId, state.selectedOptionIds, voterName);
+        if (!result.success) {
+          setVotingState((prev) => ({
+            ...prev,
+            [pollId]: {
+              ...prev[pollId],
+              submitting: false,
+              error: result.message || 'خطا در ثبت رأی',
+            },
+          }));
+          return;
+        }
+        if (result.updatedPoll) {
+          const updatedP = porscadToPoll(eventId, result.updatedPoll);
+          setPolls((prev) => prev.map((p) => (p.id === pollId ? updatedP : p)));
+          setPollDetails((prev) => ({ ...prev, [pollId]: { hasVoted: true, poll: updatedP } }));
+        }
+        setVotingState((prev) => ({
+          ...prev,
+          [pollId]: {
+            ...prev[pollId],
+            submitting: false,
+            success: result.message || 'رأی شما در سامانه پرس‌کاد با موفقیت ثبت شد',
+          },
+        }));
+        return;
+      }
+
       try {
         await apiClient.post(`/polls/${pollId}/vote`, {
           selectedOptionIds: state.selectedOptionIds,
@@ -534,11 +629,11 @@ export const PollsPage: React.FC = () => {
                     </div>
 
                     {/* Voting Area OR Results */}
-                    {hasVoted || isClosed ? (
+                    {hasVoted || isClosed || currentPoll.id.startsWith(PORSCAD_PREFIX) ? (
                       /* Show Results */
                       <div className="space-y-3 pt-2">
                         <div className="flex items-center justify-between text-xs text-muted-foreground font-medium mb-1">
-                          <span>نتایج آراء</span>
+                          <span>نتایج آراء {isAdmin && currentPoll.id.startsWith(PORSCAD_PREFIX) ? '(از پرس‌کاد)' : ''}</span>
                           {hasVoted && (
                             <span className="text-emerald-500 font-bold flex items-center gap-1">
                               <CheckCircle2 className="w-3.5 h-3.5" />

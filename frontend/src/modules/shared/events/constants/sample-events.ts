@@ -3,6 +3,7 @@ export interface SchoolEventItem {
   title: string;
   description: string;
   eventType: 'ACADEMIC' | 'HOLIDAY' | 'EXAM' | 'MEETING' | 'CULTURAL' | 'SPORTS' | 'EXCURSION' | 'STARTUP_WEEKEND';
+  categoryKey?: string;
   startDate: string;
   endDate: string;
   isAllDay: boolean;
@@ -10,6 +11,7 @@ export interface SchoolEventItem {
   location?: string;
   coverUrl?: string;
   tags: string[];
+  workflowModules?: { key: string; step: number; enabled?: boolean }[];
   createdAt: string;
   createdBy?: {
     firstName: string;
@@ -17,6 +19,30 @@ export interface SchoolEventItem {
     role: string;
     avatarUrl?: string;
   };
+}
+
+export interface EventCategoryItem {
+  key: string;
+  label: string;
+  icon?: string;
+  color?: string;
+  removable?: boolean;
+}
+
+export function extractCategoryKey(tags?: string[] | null): string | undefined {
+  if (!Array.isArray(tags)) return undefined;
+  const marker = tags.find((t) => typeof t === 'string' && t.startsWith('categoryKey:'));
+  return marker ? marker.slice('categoryKey:'.length) : undefined;
+}
+
+export function displayTags(tags?: string[] | null): string[] {
+  if (!Array.isArray(tags)) return [];
+  return tags.filter((t) => typeof t === 'string' && !t.startsWith('categoryKey:'));
+}
+
+export function hydrateEvent(ev: SchoolEventItem): SchoolEventItem {
+  const categoryKey = ev.categoryKey || extractCategoryKey(ev.tags);
+  return { ...ev, categoryKey, tags: displayTags(ev.tags) };
 }
 
 export const INITIAL_SAMPLE_EVENTS: SchoolEventItem[] = [
@@ -31,6 +57,13 @@ export const INITIAL_SAMPLE_EVENTS: SchoolEventItem[] = [
     targetAudience: 'STUDENTS',
     location: 'سالن همایش و آمفی‌تئاتر هنرستان',
     tags: ['استارت‌آپ ویکند', 'ایده‌پردازی', 'تیم‌سازی', 'نوآوری'],
+    workflowModules: [
+      { key: 'IDEA_SUBMISSION', step: 1, enabled: true },
+      { key: 'IDEA_HALL', step: 2, enabled: true },
+      { key: 'VOTING', step: 3, enabled: true },
+      { key: 'TEAM_FORMATION', step: 4, enabled: true },
+      { key: 'EVENT_CANVAS', step: 5, enabled: true },
+    ],
     createdAt: new Date().toISOString(),
     createdBy: {
       firstName: 'مدیر',

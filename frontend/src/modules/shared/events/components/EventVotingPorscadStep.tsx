@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../../../../components/ui/Button';
 import { toast } from '../../../../components/ui/toast/toast';
 import { EventIdea } from './EventIdeaSubmissionStep';
-import { toPersianDigits, formatJalaliDisplay } from '../../../../utils/jalali';
+import { toPersianDigits } from '../../../../utils/jalali';
 import { porscadClient, PorscadPollData, PorscadQuestionSettings } from '../../../../lib/porscad/porscad-client';
 import { useAuthStore } from '../../../../lib/auth/auth-store';
 import {
@@ -46,6 +46,7 @@ interface EventVotingPorscadStepProps {
   selectedIdeaId?: string | null;
   onGoToIdeasList: () => void;
   onGoToCanvasStep: () => void;
+  onGoToTeamFormation?: () => void;
 }
 
 export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
@@ -55,6 +56,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
   selectedIdeaId,
   onGoToIdeasList,
   onGoToCanvasStep,
+  onGoToTeamFormation,
 }) => {
   const currentUser = useAuthStore((s) => s.user);
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(currentUser?.role || '');
@@ -171,7 +173,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
     }
   };
 
-  // Admin handles publishing custom form to Porscad
+  // Admin handles publishing or updating form on Porscad (edit existing — never create duplicate)
   const handleCreateAndPublishForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (builderSelectedIdeaIds.length === 0) {
@@ -183,7 +185,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
 
     setIsCreatingForm(true);
     try {
-      const createdPoll = await porscadClient.createCustomPorscadForm({
+      const payload = {
         eventId,
         eventTitle,
         formTitle: builderFormTitle.trim(),
@@ -192,13 +194,21 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
         questionType: builderQuestionType,
         selectedIdeas: selectedIdeasObjects,
         maxSelections: builderMaxSelections,
-      });
+      };
 
-      setPorscadPoll(createdPoll);
+      let resultPoll: PorscadPollData;
+      if (porscadPoll?.formId) {
+        resultPoll = await porscadClient.updateExistingPorscadForm(payload);
+        toast.success('فرم موجود با موفقیت ویرایش و روی پرس‌کاد اعمال شد!');
+      } else {
+        resultPoll = await porscadClient.createCustomPorscadForm(payload);
+        toast.success('فرم نظرسنجی رویداد با موفقیت در پرس‌کاد ایجاد و برای دانش‌آموزان فعال شد! 🎉');
+      }
+
+      setPorscadPoll(resultPoll);
       setIsBuildingMode(false);
-      toast.success('فرم نظرسنجی رویداد با موفقیت در پرس‌کاد ایجاد و برای دانش‌آموزان فعال شد! 🎉');
     } catch (err: any) {
-      const errMsg = err?.message || 'خطا در ایجاد فرم در پرس‌کاد';
+      const errMsg = err?.message || 'خطا در اعمال فرم در پرس‌کاد';
       toast.error(errMsg);
       if (errMsg.includes('توکن') || errMsg.includes('JWT') || errMsg.includes('منقضی')) {
         setIsTokenModalOpen(true);
@@ -286,6 +296,8 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
   // Finish Poll Modal State & Top Winners Count
   const [isFinishModalOpen, setIsFinishModalOpen] = useState(false);
   const [finishTopWinnersCount, setFinishTopWinnersCount] = useState<number>(3);
+  const [finishDisplayOrder, setFinishDisplayOrder] = useState<'RANK' | 'RANK_VOTES' | 'RANDOM' | 'IGNORE_RANK'>('RANK');
+  const [finishShowVoteCounts, setFinishShowVoteCounts] = useState(false);
 
   // End Assessment & Choose Top N Winners
   const handleOpenFinishModal = () => {
@@ -294,13 +306,32 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
 
   const handleConfirmFinishAssessment = (e: React.FormEvent) => {
     e.preventDefault();
-    const updated = porscadClient.finishAssessmentAndDetermineWinner(eventId, finishTopWinnersCount);
+    const updated = porscadClient.finishAssessmentAndDetermineWinner(
+      eventId,
+      finishTopWinnersCount,
+      {
+        showVoteCounts: finishShowVoteCounts,
+        displayOrder: finishDisplayOrder,
+        isResultsPublic: false,
+      }
+    );
     if (updated) {
       setPorscadPoll(updated);
       setIsFinishModalOpen(false);
       toast.success(
         `فرم نظرسنجی بسته شد و ${toPersianDigits(finishTopWinnersCount)} ایده برتر مشخص شدند. نتایج در حال حاضر به صورت خصوصی برای مدیر قابل مشاهده است.`
       );
+    }
+  };
+
+  // Admin checkbox: show vote counts/percentages to audience
+  const handleToggleShowVoteCounts = () => {
+    if (!porscadPoll) return;
+    const next = !porscadPoll.showVoteCounts;
+    const updated = porscadClient.setShowVoteCounts(eventId, next);
+    if (updated) {
+      setPorscadPoll(updated);
+      toast.info(next ? 'نمایش تعداد و درصد رای برای مخاطب فعال شد.' : 'نمایش تعداد و درصد رای برای مخاطب غیرفعال شد.');
     }
   };
 
@@ -328,12 +359,25 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
     }
   };
 
-  // Top Ranked Options
-  const rankedOptions = porscadPoll?.options
-    ? [...porscadPoll.options].sort((a, b) => b.voteCount - a.voteCount)
-    : [];
+  // Ranked options with display order applied (RANK / RANK_VOTES / RANDOM / IGNORE_RANK)
+  const rankedOptions = React.useMemo(() => {
+    if (!porscadPoll?.options) return [];
+    const byVotes = [...porscadPoll.options].sort((a, b) => b.voteCount - a.voteCount);
+    const order = porscadPoll.displayOrder || 'RANK';
+    if (order === 'IGNORE_RANK') return [...porscadPoll.options];
+    if (order === 'RANDOM') {
+      const arr = [...byVotes];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+    return byVotes;
+  }, [porscadPoll?.options, porscadPoll?.displayOrder]);
   const topWinnersLimit = porscadPoll?.topWinnersCount || 3;
   const winningOptions = rankedOptions.slice(0, Math.min(topWinnersLimit, rankedOptions.length));
+  const showVoteStats = isManager || !!porscadPoll?.showVoteCounts;
 
   const currentIdea = ideas.find((i) => i.id === activeIdeaId) || ideas[0];
 
@@ -378,13 +422,29 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                 className="gap-2 text-xs font-bold border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200"
               >
                 <Sliders className="w-4 h-4 text-primary" />
-                <span>{isBuildingMode ? 'مشاهده نظرسنجی فعال' : 'طراحی و ساخت فرم جدید'}</span>
+                <span>{isBuildingMode ? 'مشاهده نظرسنجی فعال' : 'ویرایش فرم پرس‌کاد'}</span>
+              </Button>
+            )}
+            {isManager && (
+              <Button
+                variant="outline"
+                onClick={handleToggleShowVoteCounts}
+                className={`gap-2 text-xs font-bold border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] ${
+                  porscadPoll?.showVoteCounts ? 'bg-emerald-100 text-emerald-950' : 'bg-zinc-50 dark:bg-zinc-800'
+                }`}
+              >
+                {porscadPoll?.showVoteCounts ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                <span>
+                  {porscadPoll?.showVoteCounts
+                    ? 'نمایش آرا برای مخاطب: روشن'
+                    : 'نمایش آرا برای مخاطب: خاموش'}
+                </span>
               </Button>
             )}
             <Button
               variant="outline"
               onClick={onGoToIdeasList}
-              className="gap-2 text-xs font-bold border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200"
+              className="gap-2 text-xs font-bold border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b]"
             >
               <ArrowRight className="w-4 h-4" />
               <span>مشاهده تمام ایده‌ها</span>
@@ -453,7 +513,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                 </h4>
                 <p className="text-xs font-bold text-zinc-800 mt-0.5">
                   {isManager
-                    ? `رتبه‌بندی ${toPersianDigits(winningOptions.length)} ایده برتر بر اساس مجموع آرای ثبت‌شده در پرس‌کاد (${toPersianDigits(porscadPoll.totalVotes)} رای)`
+                    ? `رتبه‌بندی ${toPersianDigits(winningOptions.length)} ایده برتر بر اساس مجموع آرای ثبت‌شده در پرس‌کاد`
                     : `تعداد ${toPersianDigits(winningOptions.length)} ایده برگزیده رویداد مشخص شده‌اند.`}
                 </p>
               </div>
@@ -527,9 +587,13 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                       <span className={`px-3 py-1 rounded-xl border-2 font-black text-xs ${
                         isManager ? rankBadgeBg : 'bg-amber-400 text-zinc-950 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b]'
                       }`}>
-                        {isManager ? rankTitle : '✨ ایده برگزیده رویداد'}
+                        {porscadPoll.displayOrder === 'IGNORE_RANK' || porscadPoll.displayOrder === 'RANDOM'
+                          ? '✨ ایده برگزیده رویداد'
+                          : isManager
+                          ? rankTitle
+                          : '✨ ایده برگزیده رویداد'}
                       </span>
-                      {isManager && (
+                      {showVoteStats && (
                         <div className="text-left">
                           <span className="text-lg font-black text-zinc-900 dark:text-zinc-100">
                             ٪{toPersianDigits(opt.percentage || 0)}
@@ -558,7 +622,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                     )}
 
                     {/* Manager Progress Bar */}
-                    {isManager && (
+                    {showVoteStats && (
                       <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-2.5 rounded-full overflow-hidden border border-zinc-300 dark:border-zinc-700">
                         <div
                           className={`h-full rounded-full transition-all duration-700 ${
@@ -570,16 +634,27 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                     )}
                   </div>
 
-                  <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-                    <Button
-                      variant="primary"
-                      onClick={onGoToCanvasStep}
-                      className="w-full text-xs font-black border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]"
-                    >
-                      <span>ورود به تشکیل تیم (طرح برگزیده)</span>
-                      <ArrowLeft className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  {(() => {
+                    const matchingOwner = ideas.find((i) => i.id === opt.ideaId || i.id === opt.id);
+                    const isOwner =
+                      !!matchingOwner &&
+                      !!currentUser &&
+                      (matchingOwner.authorName.includes(currentUser.lastName || '') ||
+                        matchingOwner.authorName.includes(currentUser.firstName || ''));
+                    if (!isOwner) return null;
+                    return (
+                      <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                        <Button
+                          variant="primary"
+                          onClick={onGoToTeamFormation || onGoToCanvasStep}
+                          className="w-full text-xs font-black border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]"
+                        >
+                          <span>ورود به تشکیل تیم (طرح برگزیده)</span>
+                          <ArrowLeft className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}
@@ -596,14 +671,19 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                   <span>پنل مدیریت: طراحی دستی و انتشار فرم در پرس‌کاد</span>
                 </div>
                 <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-100">
-                  سازنده فرم و نظرسنجی پرس‌کاد برای ایده‌های رویداد
+                  ویرایش فرم موجود و اعمال روی پرس‌کاد
                 </h3>
                 <p className="text-xs md:text-sm font-medium text-zinc-600 dark:text-zinc-400 mt-1">
-                  پس از ثبت تمامی ایده‌ها توسط دانش‌آموزان، نوع سوال، تعداد انتخاب مجاز و ایده‌های منتخب را تعیین کرده و فرم را در پرس‌کاد منتشر نمایید.
+                  نوع سوال، تعداد انتخاب مجاز و ایده‌های منتخب را تعیین کنید. اگر فرم قبلاً ساخته شده باشد همان فرم ویرایش می‌شود.
                 </p>
               </div>
 
               <form onSubmit={handleCreateAndPublishForm} className="space-y-6">
+              <div className="p-3 rounded-xl border-2 border-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-300 text-xs font-bold">
+                {porscadPoll?.formId
+                  ? 'فرم موجود ویرایش و دوباره روی پرس‌کاد اعمال می‌شود (فرم جدید ساخته نمی‌شود).'
+                  : 'پس از ثبت ایده‌ها، فرم را یک‌بار در پرس‌کاد منتشر کنید؛ در بازدیدهای بعدی فقط ویرایش می‌شود.'}
+              </div>
                 {/* Form Title & Description */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
@@ -765,7 +845,13 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                     className="border-2 border-zinc-900 font-black text-xs gap-2 px-8 py-3 shadow-[4px_4px_0px_0px_#18181b]"
                   >
                     <Send className="w-4 h-4" />
-                    <span>{isCreatingForm ? 'در حال انتشار در پرس‌کاد...' : 'ساخت و انتشار رسمی فرم در پرس‌کاد'}</span>
+                    <span>
+                      {isCreatingForm
+                        ? 'در حال اعمال روی پرس‌کاد...'
+                        : porscadPoll?.formId
+                        ? 'ویرایش و اعمال فرم موجود در پرس‌کاد'
+                        : 'ساخت و انتشار رسمی فرم در پرس‌کاد'}
+                    </span>
                   </Button>
                 </div>
               </form>
@@ -788,7 +874,9 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                     {isManager && (
                       <div className="flex items-center gap-1.5 text-xs font-black text-zinc-700 dark:text-zinc-300">
                         <Users className="w-4 h-4 text-primary" />
-                        <span>مجموع کل آرا: {toPersianDigits(porscadPoll.totalVotes)}</span>
+                        <span className="text-xs font-black text-zinc-700 dark:text-zinc-300">
+                          مجموع کل آرا: {toPersianDigits(porscadPoll.totalVotes)}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -856,8 +944,8 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                               : 'cursor-pointer border-zinc-900 bg-white hover:bg-zinc-50 dark:border-zinc-200 dark:bg-zinc-900 shadow-[3px_3px_0px_0px_#18181b]'
                           } p-4 md:p-5`}
                         >
-                          {/* Fill Progress Bar (Admin Only) */}
-                          {isManager && (hasVoted || porscadPoll.isClosed) && (
+                          {/* Fill Progress Bar (only if vote counts shown) */}
+                          {showVoteStats && (hasVoted || porscadPoll.isClosed) && (
                             <div
                               className={`absolute inset-y-0 right-0 transition-all duration-700 ${
                                 isWinner
@@ -925,7 +1013,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                               طراح: <strong className="text-zinc-800 dark:text-zinc-200">{matchingIdea?.authorName || option.authorName || 'دانش‌آموز'}</strong>
                             </span>
 
-                            {isManager && (hasVoted || porscadPoll.isClosed) && (
+                            {showVoteStats && (hasVoted || porscadPoll.isClosed) && (
                               <div className="flex items-center gap-2 font-black text-zinc-900 dark:text-zinc-100">
                                 <span>{toPersianDigits(option.voteCount)} رای</span>
                                 <span className="text-primary font-black">٪{toPersianDigits(option.percentage || 0)}</span>
@@ -998,18 +1086,22 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                                     {matching ? matching.title : opt.text}
                                   </span>
                                 </div>
-                                <span className="text-primary font-black">
-                                  ٪{toPersianDigits(opt.percentage || 0)}
-                                </span>
+                          {showVoteStats && (
+                            <span className="text-primary font-black">
+                              ٪{toPersianDigits(opt.percentage || 0)}
+                            </span>
+                          )}
                               </div>
 
                               <div className="w-full bg-zinc-200 dark:bg-zinc-700 h-2 rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-all duration-500 ${
-                                    rank === 0 ? 'bg-amber-400' : 'bg-primary'
-                                  }`}
-                                  style={{ width: `${opt.percentage || 0}%` }}
-                                />
+                                {showVoteStats && (
+                                  <div
+                                    className={`h-full rounded-full transition-all duration-500 ${
+                                      rank === 0 ? 'bg-amber-400' : 'bg-primary'
+                                    }`}
+                                    style={{ width: `${opt.percentage || 0}%` }}
+                                  />
+                                )}
                               </div>
                             </div>
                           );
@@ -1019,6 +1111,9 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                     <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs font-bold text-zinc-600 dark:text-zinc-400">
                       <span>تعداد کل ایده‌های فرم:</span>
                       <span className="font-black text-zinc-900 dark:text-zinc-100">{toPersianDigits(porscadPoll.options.length)} ایده</span>
+                      {showVoteStats && (
+                        <span className="font-black text-primary">مجموع آرا: {toPersianDigits(porscadPoll.totalVotes)}</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1066,9 +1161,6 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                           <div className="flex items-center justify-between">
                             <span className="w-6 h-6 rounded-lg border-2 border-zinc-900 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 flex items-center justify-center font-black text-xs">
                               {toPersianDigits(idx + 1)}
-                            </span>
-                            <span className="text-[10px] font-black text-zinc-500">
-                              {formatJalaliDisplay(idea.createdAt, false)}
                             </span>
                           </div>
 
@@ -1196,9 +1288,53 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                   <span>توقف رای‌گیری و بررسی اختصاصی مدیر</span>
                 </div>
                 <p>
-                  با تایید این فرم، رای‌گیری در پرس‌کاد متوقف شده و فرم قفل می‌شود. نتایج ابتدا فقط برای شما نمایش داده خواهد شد و در صورت تایید نهایی می‌توانید دکمه <strong>«انتشار نتایج برای همه دانش‌آموزان»</strong> را بزنید.
+                  با تایید این فرم، رای‌گیری در پرس‌کاد متوقف شده و فرم قفل می‌شود. تعداد ایده‌های برتر و ترتیب نمایش را مشخص کنید.
                 </p>
               </div>
+
+              {/* Display Order Selection */}
+              <div>
+                <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-2">
+                  ترتیب نمایش تیم‌ها / ایده‌های برتر:
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { key: 'RANK', label: 'بر اساس رتبه' },
+                    { key: 'RANK_VOTES', label: 'رتبه و تعداد رای' },
+                    { key: 'RANDOM', label: 'تصادفی (رندم)' },
+                    { key: 'IGNORE_RANK', label: 'بدون توجه به رتبه' },
+                  ].map((opt) => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setFinishDisplayOrder(opt.key as typeof finishDisplayOrder)}
+                      className={`py-2 px-2 rounded-xl text-xs font-black border-2 transition-all ${
+                        finishDisplayOrder === opt.key
+                          ? 'border-zinc-900 bg-indigo-400 text-zinc-950 shadow-[2px_2px_0px_0px_#18181b]'
+                          : 'border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-zinc-500'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Show vote counts to audience checkbox */}
+              <label className="flex items-start gap-2.5 p-3 rounded-xl border-2 border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={finishShowVoteCounts}
+                  onChange={(e) => setFinishShowVoteCounts(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-zinc-900 text-primary focus:ring-primary"
+                />
+                <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                  نمایش تعداد و درصد رای‌ها به مخاطب (دانش‌آموزان)
+                  <span className="block text-[11px] font-bold text-zinc-500 mt-0.5">
+                    به‌صورت پیش‌فرض خاموش است؛ فقط با تیک شما برای مخاطب نمایش داده می‌شود.
+                  </span>
+                </span>
+              </label>
 
               {/* Number of Top Ideas Selection */}
               <div>
@@ -1247,7 +1383,9 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               <div className="rounded-xl border-2 border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 p-3.5 space-y-2">
                 <div className="flex items-center justify-between text-xs font-black text-zinc-700 dark:text-zinc-300">
                   <span>پیش‌نمایش رتبه‌بندی فعلی ({toPersianDigits(finishTopWinnersCount)} ایده برتر):</span>
-                  <span className="text-[11px] text-zinc-500">مجموع آرا: {toPersianDigits(porscadPoll.totalVotes)}</span>
+                  {finishShowVoteCounts && (
+                    <span className="text-[11px] text-zinc-500">مجموع آرا: {toPersianDigits(porscadPoll.totalVotes)}</span>
+                  )}
                 </div>
 
                 <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
@@ -1284,8 +1422,12 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                           </div>
 
                           <div className="flex items-center gap-2 font-black">
-                            <span className="text-zinc-700 dark:text-zinc-300">{toPersianDigits(opt.voteCount)} رای</span>
-                            <span className="text-amber-600 dark:text-amber-400">٪{toPersianDigits(opt.percentage || 0)}</span>
+                            {finishShowVoteCounts && (
+                              <>
+                                <span className="text-zinc-700 dark:text-zinc-300">{toPersianDigits(opt.voteCount)} رای</span>
+                                <span className="text-amber-600 dark:text-amber-400">٪{toPersianDigits(opt.percentage || 0)}</span>
+                              </>
+                            )}
                           </div>
                         </div>
                       );

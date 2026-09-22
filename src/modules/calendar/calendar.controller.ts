@@ -15,6 +15,10 @@ import { CalendarService } from './calendar.service';
 import { SchoolCalendarService } from './school-calendar.service';
 import { CreateEventDto, UpdateEventDto } from './dto/create-event.dto';
 import {
+  CreateEventCategoryDto,
+  UpdateEventCategoryDto,
+} from './dto/create-category.dto';
+import {
   CreateTenantHolidayDto,
   CreateOfficialHolidayDto,
 } from './dto/create-holiday.dto';
@@ -89,6 +93,60 @@ export class CalendarController {
   ) {
     const effectiveTenantId = tenantId || userTenantId;
     return this.calendarService.getEventById(effectiveTenantId, eventId);
+  }
+
+  // ==========================================
+  // دسته‌بندی‌های رویداد (Event Categories)
+  // ==========================================
+
+  @Get('event-categories')
+  @ApiOperation({ summary: 'دریافت لیست دسته‌بندی‌های رویداد مدرسه' })
+  async listEventCategories(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.calendarService.listEventCategories(effectiveTenantId);
+  }
+
+  @Post('event-categories')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.CALENDAR_WRITE)
+  @ApiOperation({ summary: 'ایجاد دسته‌بندی جدید رویداد' })
+  async createEventCategory(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Body() dto: CreateEventCategoryDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.calendarService.createEventCategory(effectiveTenantId, dto.category);
+  }
+
+  @Patch('event-categories/:key')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.CALENDAR_WRITE)
+  @ApiOperation({ summary: 'ویرایش دسته‌بندی رویداد' })
+  async updateEventCategory(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('key') key: string,
+    @Body() dto: UpdateEventCategoryDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.calendarService.updateEventCategory(effectiveTenantId, key, dto);
+  }
+
+  @Delete('event-categories/:key')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.CALENDAR_WRITE)
+  @ApiOperation({ summary: 'حذف دسته‌بندی رویداد' })
+  async deleteEventCategory(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('key') key: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.calendarService.deleteEventCategory(effectiveTenantId, key);
   }
 
   @Patch('events/:id')

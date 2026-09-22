@@ -33,7 +33,6 @@ export interface TeamMember {
   id: string;
   name: string;
   roleInTeam: string;
-  classGroup?: string;
   addedBy: string;
   addedAt: string;
 }
@@ -56,18 +55,18 @@ interface EventTeamFormationStepProps {
   onGoToCanvasStep: () => void;
 }
 
-// Default Fallback Database Students List
+// Default Fallback Database Students List (names only — no class labels)
 const FALLBACK_DB_STUDENTS = [
-  { id: 'std_101', name: 'امیرحسین رضایی', classGroup: 'شبکه ۱۰۱ (دوازدهم)' },
-  { id: 'std_102', name: 'محمدحسین علیزاده', classGroup: 'نرم‌افزار ۱۰۲ (یازدهم)' },
-  { id: 'std_103', name: 'علیرضا حسینی', classGroup: 'شبکه ۱۰۱ (دوازدهم)' },
-  { id: 'std_104', name: 'مهدی محمودی', classGroup: 'الکترونیک ۱۰۳ (دهم)' },
-  { id: 'std_105', name: 'رضا صبوری', classGroup: 'نرم‌افزار ۱۰۲ (یازدهم)' },
-  { id: 'std_106', name: 'سینا کاظمی', classGroup: 'شبکه ۱۰۱ (دوازدهم)' },
-  { id: 'std_107', name: 'پارس اوسطی', classGroup: 'نرم‌افزار ۱۰۲ (یازدهم)' },
-  { id: 'std_108', name: 'حسین اکبری', classGroup: 'الکترونیک ۱۰۳ (دهم)' },
-  { id: 'std_109', name: 'دانیال مهدوی', classGroup: 'شبکه ۱۰۱ (دوازدهم)' },
-  { id: 'std_110', name: 'کیان سلطانی', classGroup: 'نرم‌افزار ۱۰۲ (یازدهم)' },
+  { id: 'std_101', name: 'امیرحسین رضایی' },
+  { id: 'std_102', name: 'محمدحسین علیزاده' },
+  { id: 'std_103', name: 'علیرضا حسینی' },
+  { id: 'std_104', name: 'مهدی محمودی' },
+  { id: 'std_105', name: 'رضا صبوری' },
+  { id: 'std_106', name: 'سینا کاظمی' },
+  { id: 'std_107', name: 'پارس اوسطی' },
+  { id: 'std_108', name: 'حسین اکبری' },
+  { id: 'std_109', name: 'دانیال مهدوی' },
+  { id: 'std_110', name: 'کیان سلطانی' },
 ];
 
 export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
@@ -82,7 +81,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
   const currentUserName = currentUser ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() : 'دانش‌آموز';
 
   // DB Students list state
-  const [dbStudents, setDbStudents] = useState<Array<{ id: string; name: string; classGroup?: string }>>(FALLBACK_DB_STUDENTS);
+  const [dbStudents, setDbStudents] = useState<Array<{ id: string; name: string }>>(FALLBACK_DB_STUDENTS);
   const [searchStudentQuery, setSearchStudentQuery] = useState('');
 
   // Filter ideas to show ONLY the top winning ideas specified from Porscad Poll (Step 3)
@@ -129,7 +128,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
     }
   }, [teamsMap, teamsStorageKey]);
 
-  // Fetch DB students from API
+  // Fetch DB students from API (name only)
   useEffect(() => {
     const fetchStudents = async () => {
       try {
@@ -138,7 +137,6 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
           const mapped = res.data.map((u: any) => ({
             id: u.id,
             name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.username,
-            classGroup: u.className || u.grade ? `کلاس ${u.className || u.grade}` : 'هنرستان',
           }));
           setDbStudents(mapped);
         }
@@ -214,7 +212,6 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
       id: candidateId,
       name: candidateName,
       roleInTeam: memberRole || 'عضو تیم',
-      classGroup: targetStudent?.classGroup || 'هنرستان',
       addedBy: currentUserName,
       addedAt: new Date().toISOString(),
     };
@@ -235,7 +232,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
   };
 
   // Add Member directly from list without closing modal
-  const handleAddMemberDirectly = (idea: EventIdea, student: { id: string; name: string; classGroup?: string }) => {
+  const handleAddMemberDirectly = (idea: EventIdea, student: { id: string; name: string }) => {
     const candidateName = student.name;
     const candidateId = student.id;
 
@@ -260,7 +257,6 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
       id: candidateId,
       name: candidateName,
       roleInTeam: memberRole || 'عضو تیم',
-      classGroup: student.classGroup || 'هنرستان',
       addedBy: currentUserName,
       addedAt: new Date().toISOString(),
     };
@@ -344,29 +340,12 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
 
         </div>
 
-        {/* Search Student Database Banner */}
-        <div className="p-4 rounded-xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800/80 flex flex-wrap items-center justify-between gap-4 shadow-[2px_2px_0px_0px_#18181b]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl border-2 border-zinc-900 bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center font-black text-indigo-900 dark:text-indigo-200 flex-shrink-0">
-              <Users className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-black text-zinc-900 dark:text-zinc-100">
-                بانک اطلاعاتی دانش‌آموزان هنرستان ({toPersianDigits(dbStudents.length)} نفر متصل به سیستم)
-              </h4>
-              <p className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400">
-                هر دانش‌آموز اختصاصاً فقط می‌تواند عضو یک تیم ایده شود.
-              </p>
-            </div>
+        {isManager && (
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-indigo-600 bg-indigo-50 text-indigo-900 dark:bg-indigo-950 dark:text-indigo-200 text-xs font-black">
+            <ShieldCheck className="w-4 h-4 text-indigo-600" />
+            <span>پنل مدیر: امکان ویرایش اعضا و تایید نهایی برای شما فعال است</span>
           </div>
-
-          {isManager && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border-2 border-indigo-600 bg-indigo-50 text-indigo-900 dark:bg-indigo-950 dark:text-indigo-200 text-xs font-black">
-              <ShieldCheck className="w-4 h-4 text-indigo-600" />
-              <span>پنل مدیر: امکان ویرایش اعضا و تایید نهایی برای شما فعال است</span>
-            </span>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Ideas Teams List Grid (ONLY FOR WINNING IDEAS FROM STEP 3) */}
@@ -489,9 +468,8 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                                 <div className="text-xs font-black text-zinc-900 dark:text-zinc-100">
                                   {member.name}
                                 </div>
-                                <div className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+                                <div className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400">
                                   <span>نقش: {member.roleInTeam}</span>
-                                  {member.classGroup && <span>• {member.classGroup}</span>}
                                 </div>
                               </div>
                             </div>
@@ -556,7 +534,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
         const filteredStudents = dbStudents.filter((std) => {
           const q = searchStudentQuery.trim().toLowerCase();
           if (!q) return true;
-          return std.name.toLowerCase().includes(q) || (std.classGroup && std.classGroup.toLowerCase().includes(q));
+          return std.name.toLowerCase().includes(q);
         });
 
         return (
@@ -596,7 +574,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                     <input
                       type="text"
-                      placeholder="نام دانش‌آموز یا کلاس..."
+                      placeholder="نام دانش‌آموز..."
                       value={searchStudentQuery}
                       onChange={(e) => setSearchStudentQuery(e.target.value)}
                       className="w-full rounded-xl border-2 border-zinc-900 bg-white pr-9 pl-3 py-2 text-xs font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 focus:outline-none"
@@ -650,9 +628,6 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                             <div>
                               <h5 className="text-xs font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                                 <span>{std.name}</span>
-                                {std.classGroup && (
-                                  <span className="text-[10px] font-bold text-zinc-500">({std.classGroup})</span>
-                                )}
                               </h5>
                               {isMemberOfThisTeam && (
                                 <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">

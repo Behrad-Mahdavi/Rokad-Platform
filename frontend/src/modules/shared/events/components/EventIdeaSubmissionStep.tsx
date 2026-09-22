@@ -345,9 +345,6 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
                   </label>
                   <div className="w-full rounded-xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/40 p-3 text-xs md:text-sm font-black text-amber-900 dark:text-amber-200 flex items-center justify-between">
                     <span>کد شماره: #{toPersianDigits(userSubmittedIdea.ideaNumber)}</span>
-                    <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300">
-                      ثبت قانونی به اسم شما
-                    </span>
                   </div>
                 </div>
               </div>
