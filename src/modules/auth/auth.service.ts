@@ -276,6 +276,7 @@ export class AuthService {
         role: user.role,
         isPlatformAdmin: user.isPlatformAdmin,
         twoFactorEnabled: user.twoFactorEnabled,
+        avatarUrl: user.avatarUrl,
       },
       ...tokens,
     };
@@ -383,6 +384,7 @@ export class AuthService {
         role: user.role,
         isPlatformAdmin: user.isPlatformAdmin,
         twoFactorEnabled: true,
+        avatarUrl: user.avatarUrl,
       },
       ...tokens,
     };

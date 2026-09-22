@@ -35,6 +35,21 @@ export const Header: React.FC = () => {
     if (user) {
       fetchUnreadCount();
       const timer = setInterval(fetchUnreadCount, 30000);
+
+      // Sync fresh profile from server (including avatarUrl)
+      apiClient
+        .get('/auth/me')
+        .then((res: any) => {
+          const freshUser = res?.data?.user || res?.user;
+          if (freshUser && freshUser.avatarUrl !== user.avatarUrl) {
+            useAuthStore.getState().setUser({
+              ...user,
+              ...freshUser,
+            });
+          }
+        })
+        .catch(() => {});
+
       return () => clearInterval(timer);
     }
   }, [user?.id]);

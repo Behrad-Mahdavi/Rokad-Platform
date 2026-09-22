@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../lib/auth/auth-store';
 import { useTenantStore } from '../../lib/auth/tenant-store';
@@ -25,6 +25,25 @@ export const ProfileSettingsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const { currentTenant } = useTenantStore();
+
+  // Sync fresh profile from database on mount to display avatar
+  useEffect(() => {
+    apiClient
+      .get('/auth/me')
+      .then((res: any) => {
+        const freshUser = res?.data?.user || res?.user;
+        if (freshUser) {
+          const currentUser = useAuthStore.getState().user;
+          useAuthStore.getState().setUser({
+            ...currentUser,
+            ...freshUser,
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to sync profile on mount:', err);
+      });
+  }, []);
 
   // Dark mode state
   const [isDark, setIsDark] = useState<boolean>(() => {
