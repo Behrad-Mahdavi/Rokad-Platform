@@ -110,24 +110,7 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={onGoToSubmitStep}
-              className="gap-2 text-xs font-bold border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200"
-            >
-              <PlusCircle className="w-4 h-4 text-emerald-600" />
-              <span>ثبت ایده جدید</span>
-            </Button>
-            <Button
-              variant="primary"
-              onClick={onGoToVotingStep}
-              className="gap-2 text-xs font-black border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]"
-            >
-              <span>مرحله رای‌گیری</span>
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-          </div>
+
         </div>
 
         {/* Search Bar */}
@@ -148,17 +131,9 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
         <div className="rounded-2xl border-3 border-dashed border-zinc-400 bg-white p-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
           <Lightbulb className="w-12 h-12 mx-auto text-amber-500 mb-3" />
           <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">ایده‌ای یافت نشد</h3>
-          <p className="text-xs font-bold text-zinc-500 mt-1 mb-6">
-            اولین فردی باشید که برای این رویداد ایده ثبت می‌کند!
+          <p className="text-xs font-bold text-zinc-500 mt-1">
+            هنوز ایده‌ای ثبت نشده است.
           </p>
-          <Button
-            variant="primary"
-            onClick={onGoToSubmitStep}
-            className="border-2 border-zinc-900 font-bold gap-2"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>ثبت ایده جدید</span>
-          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
