@@ -96,7 +96,7 @@ export const KaAdminReviewDesk: React.FC = () => {
             میز کار داوری و مدیریت معاونت
           </h2>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-            بررسی فعالیت‌های ارسالی هنرجویان، اعطای امتیاز، و تایید تحویل پاداش‌های درخواستی
+            بررسی فعالیت‌های ارسالی دانش‌آموزان، اعطای امتیاز، و تایید تحویل پاداش‌های درخواستی
           </p>
         </div>
 
@@ -104,7 +104,7 @@ export const KaAdminReviewDesk: React.FC = () => {
         <div className="relative w-full sm:w-64">
           <Search className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
           <Input
-            placeholder="جستجوی هنرجو یا فعالیت..."
+            placeholder="جستجوی دانش‌آموز یا فعالیت..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="pr-9 text-xs rounded-xl"
@@ -171,7 +171,7 @@ export const KaAdminReviewDesk: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-3 text-xs text-primary font-bold">
-                      <span>هنرجو: {sub.student?.user?.firstName} {sub.student?.user?.lastName}</span>
+                      <span>دانش‌آموز: {sub.student?.user?.firstName} {sub.student?.user?.lastName}</span>
                     </div>
 
                     <div className="text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-100 dark:border-gray-800">
@@ -245,7 +245,7 @@ export const KaAdminReviewDesk: React.FC = () => {
                       {claim.reward?.name}
                     </div>
                     <div className="text-xs text-primary font-bold">
-                      هنرجو: {claim.student?.user?.firstName} {claim.student?.user?.lastName}
+                      دانش‌آموز: {claim.student?.user?.firstName} {claim.student?.user?.lastName}
                     </div>
                     <div className="text-xs text-college-normal font-semibold">
                       هزینه توکن: {toPersianDigits(claim.tokenCost || claim.token || 0)} توکن

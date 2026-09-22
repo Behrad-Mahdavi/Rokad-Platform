@@ -458,7 +458,7 @@ export const CreateMediaPostModal: React.FC<CreateMediaPostModalProps> = ({
           onChange={setContent}
           rows={6}
           required
-          placeholder="شرح کامل رویداد، اهداف، دستاوردهای هنرجویان و نکات کلیدی را در اینجا بنویسید..."
+          placeholder="شرح کامل رویداد، اهداف، دستاوردهای دانش‌آموزان و نکات کلیدی را در اینجا بنویسید..."
         />
 
         {/* 4. Media Images Section */}

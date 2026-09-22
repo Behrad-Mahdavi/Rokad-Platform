@@ -62,7 +62,7 @@ export const KaAdminStudentsHistory: React.FC = () => {
       const res = await kaApi.getStudentHistory(studentId);
       setStudentDetails(res.data);
     } catch (e) {
-      toast.error('خطا در دریافت پرونده هنرجو');
+      toast.error('خطا در دریافت پرونده دانش‌آموز');
       setSelectedStudentId(null);
     } finally {
       setLoadingDetails(false);
@@ -104,7 +104,7 @@ export const KaAdminStudentsHistory: React.FC = () => {
       'ردیف': idx + 1,
       'رتبه در مدرسه': st.rankInSchool,
       'رتبه در کلاس': st.rankInClass,
-      'نام هنرجو': st.user?.firstName || '',
+      'نام دانش‌آموز': st.user?.firstName || '',
       'نام خانوادگی': st.user?.lastName || '',
       'شماره دانش‌آموزی': st.studentCode || '',
       'کلاس / رشته': st.enrollments?.[0]?.classroom?.name || 'تعیین نشده',
@@ -128,7 +128,7 @@ export const KaAdminStudentsHistory: React.FC = () => {
         <div>
           <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2">
             <User className="w-6 h-6 text-primary" />
-            پرونده و ریز سوابق کا هنرجویان
+            پرونده و ریز سوابق کا دانش‌آموزان
           </h2>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
             مشاهده ریز فعالیت‌ها، امتیازات کسب‌شده، جوایز تحویل‌گرفته و استخراج کارنامه اکسل
@@ -158,11 +158,11 @@ export const KaAdminStudentsHistory: React.FC = () => {
         </div>
 
         <div className="text-xs text-gray-500 font-semibold self-end sm:self-center">
-          تعداد پرونده‌ها: {toPersianDigits(filteredStudents.length)} هنرجو
+          تعداد پرونده‌ها: {toPersianDigits(filteredStudents.length)} دانش‌آموز
         </div>
       </div>
 
-      {/* جدول هنرجویان و پرونده‌ها */}
+      {/* جدول دانش‌آموزان و پرونده‌ها */}
       <Card className="shadow-[2.75px_2.75px_0_#202A5A] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -170,7 +170,7 @@ export const KaAdminStudentsHistory: React.FC = () => {
               <thead className="bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 font-bold text-xs">
                 <tr>
                   <th className="p-4 w-16 text-center">رتبه</th>
-                  <th className="p-4">هنرجو</th>
+                  <th className="p-4">دانش‌آموز</th>
                   <th className="p-4 hidden sm:table-cell">کد دانش‌آموزی</th>
                   <th className="p-4 hidden md:table-cell">کلاس / رشته</th>
                   <th className="p-4 text-center">امتیاز کل</th>
@@ -252,7 +252,7 @@ export const KaAdminStudentsHistory: React.FC = () => {
                 {filteredStudents.length === 0 && !loading && (
                   <tr>
                     <td colSpan={7} className="p-12 text-center text-gray-400">
-                      هنرجویی یافت نشد
+                      دانش‌آموزی یافت نشد
                     </td>
                   </tr>
                 )}
@@ -262,7 +262,7 @@ export const KaAdminStudentsHistory: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* مودال ریز سوابق و پرونده گیمیفیکیشن هنرجو */}
+      {/* مودال ریز سوابق و پرونده گیمیفیکیشن دانش‌آموز */}
       {selectedStudentId && (
         <Modal
           isOpen={!!selectedStudentId}
@@ -274,11 +274,11 @@ export const KaAdminStudentsHistory: React.FC = () => {
         >
           {loadingDetails ? (
             <div className="p-8 text-center text-xs text-gray-500">
-              در حال دریافت سوابق هنرجو...
+              در حال دریافت سوابق دانش‌آموز...
             </div>
           ) : studentDetails ? (
             <div className="space-y-6 pt-2 max-h-[75vh] overflow-y-auto px-1">
-              {/* هدر مشخصات هنرجو */}
+              {/* هدر مشخصات دانش‌آموز */}
               <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 aspect-square shrink-0 rounded-2xl bg-primary/15 text-primary flex items-center justify-center font-black text-sm overflow-hidden relative">

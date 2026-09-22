@@ -2540,6 +2540,9 @@ model AcademicMessage {
   targetClassroomId String?
   targetClassroom   Classroom?            @relation(fields: [targetClassroomId], references: [id], onDelete: SetNull)
   attachments       Json? // [{ name, url, type, size }]
+  replyToId         String?
+  replyTo           AcademicMessage?      @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies           AcademicMessage[]     @relation("MessageReplies")
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
 
@@ -2548,6 +2551,7 @@ model AcademicMessage {
   @@index([tenantId, senderId, createdAt])
   @@index([tenantId, createdAt])
   @@index([tenantId, targetClassroomId])
+  @@index([tenantId, replyToId])
 }
 
 model AcademicMessageRecipient {

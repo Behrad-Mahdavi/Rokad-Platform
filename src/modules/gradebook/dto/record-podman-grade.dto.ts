@@ -15,7 +15,7 @@ import {
 import { Type } from 'class-transformer';
 
 export class BulkRecordPodmanGradeItemDto {
-  @ApiProperty({ description: 'شناسه هنرجو' })
+  @ApiProperty({ description: 'شناسه دانش‌آموز' })
   @IsString()
   @IsNotEmpty()
   studentId: string;
@@ -34,7 +34,7 @@ export class BulkRecordPodmanGradeItemDto {
   @IsIn([1, 2, 3])
   competencyScore: number;
 
-  @ApiPropertyOptional({ description: 'یادداشت یا توضیحات برای ارزشیابی هنرجو' })
+  @ApiPropertyOptional({ description: 'یادداشت یا توضیحات برای ارزشیابی دانش‌آموز' })
   @IsString()
   @IsOptional()
   notes?: string;
@@ -83,7 +83,7 @@ export class BulkRecordPodmanGradeDto {
   date?: string;
 
   @ApiProperty({
-    description: 'لیست نمرات مستمر و شایستگی هنرجویان کلاس برای این پودمان',
+    description: 'لیست نمرات مستمر و شایستگی دانش‌آموزان کلاس برای این پودمان',
     type: [BulkRecordPodmanGradeItemDto],
   })
   @IsArray()

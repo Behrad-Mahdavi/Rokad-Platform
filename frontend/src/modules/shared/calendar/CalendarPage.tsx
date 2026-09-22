@@ -20,6 +20,7 @@ import {
   Plus,
   Clock,
   MapPin,
+  BookOpen,
   CalendarCheck,
   CalendarDays,
   ChevronRight,
@@ -920,24 +921,29 @@ export const CalendarPage: React.FC = () => {
                               />
                               <div className="min-w-0">
                                 <span className="font-bold text-ink-darker dark:text-gray-100 truncate block">{ev.title}</span>
-                                {ev.location && (
+                                {isHomework ? (
+                                  (ev.lessonName || ev.location) && (
+                                    <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate flex items-center gap-1 font-medium mt-0.5">
+                                      <BookOpen className="w-2.5 h-2.5 text-orange-500 shrink-0" />
+                                      <span className="truncate">{ev.lessonName || ev.location}</span>
+                                    </span>
+                                  )
+                                ) : ev.location ? (
                                   <span className="text-[10px] text-gray-400 dark:text-gray-400 truncate block">
                                     {ev.location}
                                   </span>
-                                )}
+                                ) : null}
                               </div>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
-                              <Badge
-                                variant="neutral"
-                                className={`text-[10px] ${
-                                  isHomework
-                                    ? 'bg-orange-100 text-orange-800 dark:bg-orange-950/80 dark:text-orange-300 border border-orange-300 dark:border-orange-800'
-                                    : ''
-                                }`}
-                              >
-                                {isHomework ? 'مهلت تحویل تکلیف' : getTypeLabel(ev.type || ev.eventType)}
-                              </Badge>
+                              {!isHomework && (
+                                <Badge
+                                  variant="neutral"
+                                  className="text-[10px]"
+                                >
+                                  {getTypeLabel(ev.type || ev.eventType)}
+                                </Badge>
+                              )}
                               {isHomework ? (
                                 <Button
                                   variant="outline"
@@ -1255,9 +1261,18 @@ export const CalendarPage: React.FC = () => {
                             </p>
                           </div>
 
-                          {/* Bottom Row: Location (Right) & Label/Actions (Left) */}
+                          {/* Bottom Row: Location / Lesson (Right) & Label/Actions (Left) */}
                           <div className="flex items-center justify-between gap-2 mt-1 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06]">
-                            {ev.location ? (
+                            {isHomework ? (
+                              (ev.lessonName || ev.location) ? (
+                                <p className="text-gray-500 dark:text-gray-400 text-[10px] flex items-center gap-1 min-w-0 font-medium">
+                                  <BookOpen className="w-3 h-3 text-orange-500 shrink-0" />
+                                  <span className="truncate">{ev.lessonName || ev.location}</span>
+                                </p>
+                              ) : (
+                                <span />
+                              )
+                            ) : ev.location ? (
                               <p className="text-gray-400 dark:text-gray-400 text-[10px] flex items-center gap-1 min-w-0">
                                 <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
                                 <span className="truncate">{ev.location}</span>
@@ -1267,16 +1282,14 @@ export const CalendarPage: React.FC = () => {
                             )}
 
                             <div className="flex items-center gap-2 shrink-0">
-                              <Badge
-                                variant="neutral"
-                                className={`text-[10px] ${
-                                  isHomework
-                                    ? 'bg-orange-100 text-orange-800 dark:bg-orange-950/80 dark:text-orange-300 border border-orange-300 dark:border-orange-800'
-                                    : ''
-                                }`}
-                              >
-                                {isHomework ? 'مهلت تحویل تکلیف' : getTypeLabel(ev.type || ev.eventType)}
-                              </Badge>
+                              {!isHomework && (
+                                <Badge
+                                  variant="neutral"
+                                  className="text-[10px]"
+                                >
+                                  {getTypeLabel(ev.type || ev.eventType)}
+                                </Badge>
+                              )}
                               {isHomework ? (
                                 <Button
                                   variant="outline"

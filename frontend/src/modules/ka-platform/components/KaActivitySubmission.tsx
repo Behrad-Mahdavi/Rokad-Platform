@@ -127,8 +127,8 @@ export const KaActivitySubmission: React.FC<KaActivitySubmissionProps> = ({
       <div className="rounded-2xl border-2 border-primary/20 bg-primary/5 dark:bg-primary/10 p-4 flex items-start gap-3">
         <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
         <div className="text-xs leading-relaxed text-gray-700 dark:text-gray-300">
-          <span className="font-bold text-primary block mb-0.5">راهنمای بارگذاری فعالیت‌های هنرجو:</span>
-          هنرجوی عزیز، شما در این بخش مجاز به ثبت و درخواست امتیاز برای <strong>فعالیت‌های شغلی (کارآموزی، پروژه‌های فریلنسری درآمدی و قراردادهای استخدامی)</strong> هستید. امتیازهای مربوط به معدل، مسابقات و داوطلبانه، و همچنین موارد کسر امتیاز، مستقیماً توسط معاونت و اساتید در پرونده شما درج می‌گردد.
+          <span className="font-bold text-primary block mb-0.5">راهنمای بارگذاری فعالیت‌های دانش‌آموز:</span>
+          دانش‌آموز عزیز، شما در این بخش مجاز به ثبت و درخواست امتیاز برای <strong>فعالیت‌های شغلی (کارآموزی، پروژه‌های فریلنسری درآمدی و قراردادهای استخدامی)</strong> هستید. امتیازهای مربوط به معدل، مسابقات و داوطلبانه، و همچنین موارد کسر امتیاز، مستقیماً توسط معاونت و اساتید در پرونده شما درج می‌گردد.
         </div>
       </div>
 

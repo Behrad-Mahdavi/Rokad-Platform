@@ -69,7 +69,7 @@ export const KaHeaderBanner: React.FC<KaHeaderBannerProps> = ({
             </h1>
             <p className="mt-1 text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
               {isAdmin
-                ? 'داوری فعالیت‌های شغلی، ثبت مستقیم تشویقی‌ها و کسورات انضباطی، نظارت بر لیدربورد و تحویل پاداش‌های هنرجویان.'
+                ? 'داوری فعالیت‌های شغلی، ثبت مستقیم تشویقی‌ها و کسورات انضباطی، نظارت بر لیدربورد و تحویل پاداش‌های دانش‌آموزان.'
                 : 'فعالیت‌های شغلی و کارگاهی خود را ثبت کنید تا با کسب امتیاز در جدول رتبه‌بندی هنرستان صعود کرده و با توکن‌هایتان جایزه بگیرید.'}
             </p>
           </div>
@@ -79,13 +79,13 @@ export const KaHeaderBanner: React.FC<KaHeaderBannerProps> = ({
         {isAdmin ? (
           /* کارت‌های خلاصه مدیریت مدرسه */
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 w-full lg:w-auto shrink-0">
-            {/* تعداد هنرجویان عضو کا */}
+            {/* تعداد دانش‌آموزان عضو کا */}
             <div className="flex items-center gap-3 rounded-2xl border-2 border-primary/30 bg-white dark:bg-[#1A2232] p-4 shadow-[2.75px_2.75px_0_#59BBAF]">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <Users className="h-6 w-6" />
               </div>
               <div>
-                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">هنرجویان هنرستان</span>
+                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">دانش‌آموزان هنرستان</span>
                 <div className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">
                   {toPersianDigits(totalStudentsCount)} نفر
                 </div>
@@ -119,7 +119,7 @@ export const KaHeaderBanner: React.FC<KaHeaderBannerProps> = ({
             </div>
           </div>
         ) : (
-          /* کارت‌های آماری اختصاصی هنرجو */
+          /* کارت‌های آماری اختصاصی دانش‌آموز */
           <div className="grid grid-cols-2 sm:grid-cols-2 gap-3.5 w-full lg:w-auto shrink-0">
             {/* امتیاز کل */}
             <div className="flex items-center gap-3 rounded-2xl border-2 border-club-normal/30 bg-white dark:bg-[#1A2232] p-4 shadow-[2.75px_2.75px_0_#652D90] transition-transform hover:-translate-y-0.5">

@@ -114,7 +114,7 @@ export const KaPlatformPage: React.FC = () => {
         pendingClaimsCount={pendingClaimsCount}
       />
 
-      {/* نوار ناوبری تب‌های پلتفرم کا - تفکیک شده برای ادمین و هنرجو */}
+      {/* نوار ناوبری تب‌های پلتفرم کا - تفکیک شده برای ادمین و دانش‌آموز */}
       {isAdmin ? (
         /* نوار تب‌های ویژه کادر مدرسه و معاونت */
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-gray-200 dark:border-gray-800">
@@ -170,7 +170,7 @@ export const KaPlatformPage: React.FC = () => {
           </button>
         </div>
       ) : (
-        /* نوار تب‌های اختصاصی هنرجو */
+        /* نوار تب‌های اختصاصی دانش‌آموز */
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-gray-200 dark:border-gray-800">
           <button
             onClick={() => setStudentTab('overview')}

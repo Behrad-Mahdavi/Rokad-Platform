@@ -67,7 +67,7 @@ export const KaOverviewDashboard: React.FC<KaOverviewDashboardProps> = ({
         <StatCard
           title="رتبه در کل هنرستان"
           value={rankInSchool ? `#${rankInSchool}` : '—'}
-          subtitle="جایگاه میان تمام هنرجویان"
+          subtitle="جایگاه میان تمام دانش‌آموزان"
           icon={Trophy}
           theme="ecosystem"
           onClick={() => onNavigateTab('leaderboard')}

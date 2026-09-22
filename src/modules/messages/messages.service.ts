@@ -138,6 +138,7 @@ export class MessagesService {
           targetAudience: (dto.targetAudience as any) || 'ALL',
           targetClassroomId: dto.targetClassroomId || null,
           attachments: (dto.attachments as any) || [],
+          replyToId: dto.replyToId || null,
         },
       });
 
@@ -555,6 +556,42 @@ export class MessagesService {
           },
         },
         targetClassroom: { select: { id: true, name: true } },
+        replyTo: {
+          select: {
+            id: true,
+            title: true,
+            body: true,
+            createdAt: true,
+            sender: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                role: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+        replies: {
+          orderBy: { createdAt: 'asc' },
+          select: {
+            id: true,
+            title: true,
+            body: true,
+            attachments: true,
+            createdAt: true,
+            sender: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                role: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
         recipients: {
           take: 50,
           include: {

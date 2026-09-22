@@ -150,7 +150,7 @@ export const PERMISSION_CATALOG: PermissionCatalogItem[] = [
   {
     code: 'student.read',
     labelFa: 'مشاهده پرونده دانش‌آموزان',
-    descriptionFa: 'امکان مشاهده اطلاعات هویتی، تماس و وضعیت تحصیلی هنرجویان',
+    descriptionFa: 'امکان مشاهده اطلاعات هویتی، تماس و وضعیت تحصیلی دانش‌آموزان',
     category: 'ERP_ACADEMIC',
     categoryFa: 'آموزشی و ساختار مدرسه (ERP)',
     isSensitive: false,
@@ -240,7 +240,7 @@ export const PERMISSION_CATALOG: PermissionCatalogItem[] = [
   {
     code: 'parent.student.link',
     labelFa: 'اتصال ولی به فرزند',
-    descriptionFa: 'امکان تعیین نسبت خانوادگی و پیوند حساب کاربری والدین به هنرجو',
+    descriptionFa: 'امکان تعیین نسبت خانوادگی و پیوند حساب کاربری والدین به دانش‌آموز',
     category: 'ERP_ACADEMIC',
     categoryFa: 'آموزشی و ساختار مدرسه (ERP)',
     isSensitive: false,
@@ -269,7 +269,7 @@ export const PERMISSION_CATALOG: PermissionCatalogItem[] = [
   {
     code: 'grades.read',
     labelFa: 'مشاهده نمرات و کارنامه‌ها',
-    descriptionFa: 'امکان مشاهده ریزنمرات، معدل‌ها، نمرات پودمانی و کارنامه جامع هنرجویان',
+    descriptionFa: 'امکان مشاهده ریزنمرات، معدل‌ها، نمرات پودمانی و کارنامه جامع دانش‌آموزان',
     category: 'LMS',
     categoryFa: 'سنجش و آزمون (LMS)',
     isSensitive: false,
@@ -298,7 +298,7 @@ export const PERMISSION_CATALOG: PermissionCatalogItem[] = [
   {
     code: 'attendance.write',
     labelFa: 'ثبت حضور و غیاب روزانه',
-    descriptionFa: 'امکان ثبت تاخیر، غیبت موجه/غیرموجه و حضور کلاسی هنرجویان',
+    descriptionFa: 'امکان ثبت تاخیر، غیبت موجه/غیرموجه و حضور کلاسی دانش‌آموزان',
     category: 'OPERATIONS',
     categoryFa: 'عملیات و تعاملات روزانه',
     isSensitive: false,
@@ -399,7 +399,7 @@ export const PERMISSION_CATALOG: PermissionCatalogItem[] = [
   {
     code: 'finance.fee.read',
     labelFa: 'مشاهده صورت‌حساب‌ها و شهریه‌ها',
-    descriptionFa: 'امکان بررسی بدهی، فیش‌های واریزی و اقساط پرداخت‌شده هنرجویان',
+    descriptionFa: 'امکان بررسی بدهی، فیش‌های واریزی و اقساط پرداخت‌شده دانش‌آموزان',
     category: 'FINANCE',
     categoryFa: 'امور مالی و حقوق و دستمزد',
     isSensitive: true,

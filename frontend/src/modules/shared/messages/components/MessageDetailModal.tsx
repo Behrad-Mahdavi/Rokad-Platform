@@ -7,7 +7,6 @@ import { toast } from '../../../../components/ui/toast/toast';
 import { gregorianToJalaliStr, toPersianDigits } from '../../../../utils/jalali';
 import { AcademicMessageItem, MessageAttachment } from '../types';
 import {
-  Star,
   Trash2,
   Reply,
   Download,
@@ -26,7 +25,12 @@ interface Props {
   messageId: string | null;
   onClose: () => void;
   onDeleted?: (messageId: string) => void;
-  onReply?: (recipientId: string, recipientName: string, subject: string) => void;
+  onReply?: (
+    recipientId: string,
+    recipientName: string,
+    subject: string,
+    replyToMessage?: any,
+  ) => void;
 }
 
 export const MessageDetailModal: React.FC<Props> = ({
@@ -38,8 +42,6 @@ export const MessageDetailModal: React.FC<Props> = ({
 }) => {
   const [data, setData] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
-  const [isStarred, setIsStarred] = useState(false);
-  const [togglingStar, setTogglingStar] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -54,7 +56,6 @@ export const MessageDetailModal: React.FC<Props> = ({
         const res = await apiClient.get(`/messages/${messageId}`);
         const msg = res.data?.data || res.data;
         setData(msg);
-        setIsStarred(msg.isStarred || false);
       } catch (err: any) {
         toast.error('خطا در بارگذاری جزئیات پیام');
         onClose();
@@ -66,19 +67,6 @@ export const MessageDetailModal: React.FC<Props> = ({
     fetchDetails();
   }, [isOpen, messageId, onClose]);
 
-  const handleToggleStar = async () => {
-    if (!messageId) return;
-    try {
-      setTogglingStar(true);
-      const res = await apiClient.patch(`/messages/${messageId}/star`);
-      setIsStarred(res.data?.isStarred ?? !isStarred);
-      toast.success(isStarred ? 'پیام از ستاره‌دارها خارج شد' : 'پیام ستاره‌دار شد');
-    } catch {
-      toast.error('خطا در تغییر وضعیت ستاره');
-    } finally {
-      setTogglingStar(false);
-    }
-  };
 
   const handleDelete = async () => {
     if (!messageId || !window.confirm('آیا از حذف این پیام از صندوق خود اطمینان دارید؟')) return;
@@ -124,7 +112,7 @@ export const MessageDetailModal: React.FC<Props> = ({
       case 'TEACHER':
         return 'استاد / دبیر';
       case 'STUDENT':
-        return 'هنرجو';
+        return 'دانش‌آموز';
       case 'PARENT':
         return 'ولی دانش‌آموز';
       default:
@@ -176,19 +164,6 @@ export const MessageDetailModal: React.FC<Props> = ({
                 {getPriorityBadge(data.priority)}
                 <button
                   type="button"
-                  onClick={handleToggleStar}
-                  disabled={togglingStar}
-                  className={`p-2 rounded-xl border transition-colors ${
-                    isStarred
-                      ? 'bg-amber-50 text-amber-500 border-amber-200 dark:bg-amber-950/40 dark:border-amber-800'
-                      : 'border-gray-200 dark:border-gray-700 text-gray-400 hover:text-amber-500'
-                  }`}
-                  title="نشان‌کردن / ستاره‌دار"
-                >
-                  <Star className={`w-4 h-4 ${isStarred ? 'fill-amber-400' : ''}`} />
-                </button>
-                <button
-                  type="button"
                   onClick={handleDelete}
                   className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-rose-600 hover:border-rose-200 transition-colors"
                   title="حذف پیام"
@@ -197,6 +172,27 @@ export const MessageDetailModal: React.FC<Props> = ({
                 </button>
               </div>
             </div>
+
+            {/* Parent Message Quote (If this message is a reply) */}
+            {data.replyTo && (
+              <div className="p-3 sm:p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/80 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400">
+                  <Reply className="w-3.5 h-3.5 text-primary rotate-180 shrink-0" />
+                  <span>
+                    در پاسخ به پیام «{data.replyTo.title}» از{' '}
+                    <strong className="text-ink-darker dark:text-white">
+                      {data.replyTo.sender?.firstName} {data.replyTo.sender?.lastName}
+                    </strong>{' '}
+                    <span className="text-[11px] text-gray-400">
+                      ({gregorianToJalaliStr(data.replyTo.createdAt)})
+                    </span>
+                  </span>
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-300 pr-5 line-clamp-2 italic border-r-2 border-primary/50 mr-1">
+                  <FormattedMessageView content={data.replyTo.body} />
+                </div>
+              </div>
+            )}
 
             {/* Subject Title */}
             <div>
@@ -255,7 +251,7 @@ export const MessageDetailModal: React.FC<Props> = ({
                           <button
                             type="button"
                             onClick={() => setPreviewImage(att.url)}
-                            className="p-1.5 rounded-lg text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-800"
+                            className="p-1.5 rounded-lg text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
                             title="مشاهده تصویر"
                           >
                             <Eye className="w-4 h-4" />
@@ -278,22 +274,93 @@ export const MessageDetailModal: React.FC<Props> = ({
               </div>
             )}
 
+            {/* Replies Thread Section (Visible in continuation of message) */}
+            {data.replies && data.replies.length > 0 && (
+              <div className="space-y-3 pt-3.5 border-t border-gray-100 dark:border-gray-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-primary/15 text-primary flex items-center justify-center font-black text-xs">
+                    <Reply className="w-3.5 h-3.5" />
+                  </div>
+                  <h4 className="text-xs sm:text-sm font-black text-ink-darker dark:text-white">
+                    پاسخ‌های داده‌شده به این پیام ({toPersianDigits(data.replies.length)})
+                  </h4>
+                </div>
+
+                <div className="space-y-2.5 pr-2.5 sm:pr-3.5 border-r-2 border-primary/25 mr-1.5">
+                  {data.replies.map((rep: any) => (
+                    <div
+                      key={rep.id}
+                      className="p-3 sm:p-3.5 rounded-xl bg-gray-50/90 dark:bg-gray-800/60 border border-gray-200/80 dark:border-gray-700/80 shadow-2xs space-y-2"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary font-black text-xs flex items-center justify-center">
+                            {rep.sender?.firstName?.[0] || 'ر'}
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-ink-darker dark:text-white block">
+                              {rep.sender?.firstName} {rep.sender?.lastName}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-gray-400 font-medium">
+                          {gregorianToJalaliStr(rep.createdAt)}
+                        </span>
+                      </div>
+
+                      <div className="text-xs sm:text-[13px] text-gray-700 dark:text-gray-300 leading-relaxed pr-1">
+                        <FormattedMessageView content={rep.body} />
+                      </div>
+
+                      {rep.attachments && rep.attachments.length > 0 && (
+                        <div className="flex items-center gap-2 flex-wrap pt-1.5 border-t border-gray-100 dark:border-gray-700/60">
+                          {rep.attachments.map((att: any, idx: number) => (
+                            <a
+                              key={idx}
+                              href={att.url}
+                              download={att.name}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 text-[11px] font-bold text-primary hover:underline px-2 py-1 rounded-lg bg-primary/5 dark:bg-primary/10 border border-primary/15"
+                            >
+                              <Paperclip className="w-3 h-3" />
+                              <span className="truncate max-w-[150px]">{att.name}</span>
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Footer Actions */}
             <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800">
-              {data.sender && !data.isSender && onReply ? (
+              {data.sender && onReply ? (
                 <Button
                   type="button"
                   variant="primary"
                   size="sm"
                   onClick={() => {
-                    const recipientName = `${data.sender.firstName} ${data.sender.lastName}`;
+                    const recipientName = data.isSender
+                      ? (data.recipients?.[0]?.recipient ? `${data.recipients[0].recipient.firstName} ${data.recipients[0].recipient.lastName}` : 'مخاطب')
+                      : `${data.sender.firstName} ${data.sender.lastName}`;
+                    const targetId = data.isSender
+                      ? (data.recipients?.[0]?.recipient?.id || data.sender.id)
+                      : data.sender.id;
                     const replySubject = data.title.startsWith('پاسخ:') ? data.title : `پاسخ: ${data.title}`;
-                    onReply(data.sender.id, recipientName, replySubject);
+                    onReply(targetId, recipientName, replySubject, {
+                      id: data.id,
+                      title: data.title,
+                      body: data.body,
+                      senderName: `${data.sender.firstName} ${data.sender.lastName}`,
+                    });
                     onClose();
                   }}
-                  className="font-bold text-xs"
+                  className="font-bold text-xs gap-1.5"
                 >
-                  <Reply className="w-4 h-4 ml-1.5" />
+                  <Reply className="w-4 h-4" />
                   <span>پاسخ به این پیام</span>
                 </Button>
               ) : (

@@ -66,4 +66,8 @@ export class CreateMessageDto {
   @IsArray()
   @IsOptional()
   attachments?: MessageAttachmentDto[];
+
+  @IsString()
+  @IsOptional()
+  replyToId?: string;
 }

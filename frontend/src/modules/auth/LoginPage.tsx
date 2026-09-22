@@ -187,7 +187,7 @@ export const LoginPage: React.FC = () => {
             >
               <div className="font-bold text-sec dark:text-indigo-400 flex items-center gap-1.5">
                 <GraduationCap className="h-3.5 w-3.5 shrink-0" />
-                <span>هنرجوی پسرانه</span>
+                <span>دانش‌آموز پسرانه</span>
               </div>
               <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">
                 0012345678
@@ -217,7 +217,7 @@ export const LoginPage: React.FC = () => {
             >
               <div className="font-bold text-pink-700 dark:text-pink-300 flex items-center gap-1.5">
                 <GraduationCap className="h-3.5 w-3.5 shrink-0" />
-                <span>هنرجوی دخترانه</span>
+                <span>دانش‌آموز دخترانه</span>
               </div>
               <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">
                 0023456789

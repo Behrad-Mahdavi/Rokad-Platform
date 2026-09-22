@@ -40,14 +40,49 @@ import {
 } from 'lucide-react';
 import { SchoolEventItem } from './EventsRoadmapPage';
 
-const EVENT_CATEGORIES: Record<string, { label: string; icon: any; color: string }> = {
-  ACADEMIC: { label: 'آموزشی و مهارت', icon: BookOpen, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' },
-  CULTURAL: { label: 'فرهنگی و آیین‌ها', icon: PartyPopper, color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300' },
-  SPORTS: { label: 'مسابقات و ورزش', icon: Trophy, color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' },
-  EXAM: { label: 'آزمون‌ها و سنجش', icon: Flame, color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' },
-  EXCURSION: { label: 'اردو و بازدید علمی', icon: Compass, color: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300' },
-  MEETING: { label: 'جلسات و شورا', icon: Users, color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300' },
-  HOLIDAY: { label: 'تعطیلی و مناسبت', icon: CalendarDays, color: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300' },
+const EVENT_CATEGORIES: Record<string, { label: string; icon: any; color: string; badge: string }> = {
+  ACADEMIC: {
+    label: 'آموزشی و مهارت',
+    icon: BookOpen,
+    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+    badge: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800',
+  },
+  CULTURAL: {
+    label: 'فرهنگی و آیین‌ها',
+    icon: PartyPopper,
+    color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
+    badge: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800',
+  },
+  SPORTS: {
+    label: 'مسابقات و ورزش',
+    icon: Trophy,
+    color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+    badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
+  },
+  EXAM: {
+    label: 'آزمون‌ها و سنجش',
+    icon: Flame,
+    color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+    badge: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800',
+  },
+  EXCURSION: {
+    label: 'اردو و بازدید علمی',
+    icon: Compass,
+    color: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300',
+    badge: 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800',
+  },
+  MEETING: {
+    label: 'جلسات و شورا',
+    icon: Users,
+    color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300',
+    badge: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800',
+  },
+  HOLIDAY: {
+    label: 'تعطیلی و مناسبت',
+    icon: CalendarDays,
+    color: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300',
+    badge: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800',
+  },
 };
 
 const AUDIENCE_MAP: Record<string, string> = {
@@ -271,23 +306,23 @@ export const EventSinglePage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="py-24 text-center">
-        <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-zinc-900 border-t-transparent dark:border-zinc-100" />
-        <p className="mt-4 text-sm font-black text-zinc-600 dark:text-zinc-400">در حال بارگذاری اطلاعات رویداد...</p>
+        <div className="inline-block animate-spin rounded-full h-10 w-10 border-3 border-brand-primary border-t-transparent" />
+        <p className="mt-4 text-sm font-bold text-gray-500 dark:text-gray-400">در حال بارگذاری اطلاعات رویداد...</p>
       </div>
     );
   }
 
   if (!event) {
     return (
-      <div className="rounded-2xl border-3 border-zinc-900 bg-white p-12 text-center shadow-[6px_6px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[6px_6px_0px_0px_#f4f4f5]">
-        <AlertCircle className="mx-auto w-12 h-12 text-red-500 mb-3" />
-        <h2 className="text-xl font-black text-zinc-900 dark:text-zinc-100">رویداد مورد نظر یافت نشد</h2>
-        <p className="mt-2 text-sm text-zinc-500">ممکن است این رویداد حذف شده باشد یا به تننت دیگری تعلق داشته باشد.</p>
+      <div className="rounded-3xl border border-gray-200 bg-white p-12 text-center shadow-sm dark:border-gray-800 dark:bg-[#151C28]">
+        <AlertCircle className="mx-auto w-12 h-12 text-rose-500 mb-3" />
+        <h2 className="text-xl font-black text-gray-900 dark:text-gray-100">رویداد مورد نظر یافت نشد</h2>
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">ممکن است این رویداد حذف شده باشد یا به این مرکز آموزشی تعلق نداشته باشد.</p>
         <Link to="/app/events">
-          <Button variant="primary" className="mt-6 gap-2 font-bold border-2 border-zinc-900">
+          <button className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-brand-primary text-white shadow-md hover:bg-brand-primary/90 transition-all">
             <ArrowRight className="w-4 h-4" />
-            بازگشت به رودمپ سالانه
-          </Button>
+            بازگشت به تقویم رویدادها
+          </button>
         </Link>
       </div>
     );
@@ -301,12 +336,12 @@ export const EventSinglePage: React.FC = () => {
   const endTimeStr = new Date(event.endDate).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-6 pb-16">
       {/* Navigation Breadcrumb */}
       <div className="flex items-center justify-between">
         <Link
           to="/app/events"
-          className="min-h-[44px] inline-flex items-center gap-2 text-sm font-bold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
+          className="min-h-[44px] inline-flex items-center gap-2 text-sm font-bold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
         >
           <ArrowRight className="w-4 h-4" />
           <span>بازگشت به رویدادها</span>
@@ -315,30 +350,28 @@ export const EventSinglePage: React.FC = () => {
         {/* Quick Admin Actions */}
         {isManager && (
           <div className="flex items-center gap-2">
-            <Button
+            <button
               onClick={handleOpenEdit}
-              variant="outline"
-              className="min-h-[44px] gap-2 text-xs font-bold border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:shadow-none"
+              className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/80 transition-all shadow-sm"
             >
               <Edit3 className="w-3.5 h-3.5" />
               ویرایش
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={handleDelete}
-              variant="outline"
-              className="min-h-[44px] gap-2 text-xs font-bold border-2 border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 shadow-[2px_2px_0px_0px_#dc2626] dark:shadow-none"
+              className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100/70 dark:hover:bg-rose-900/40 transition-all"
             >
               <Trash2 className="w-3.5 h-3.5" />
               حذف
-            </Button>
+            </button>
           </div>
         )}
       </div>
 
       {/* Hero Card with Cover Image */}
-      <div className="overflow-hidden rounded-2xl border-2 border-zinc-900 bg-white shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-none">
+      <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-[#151C28]">
         {event.coverUrl ? (
-          <div className="relative h-56 w-full md:h-80 overflow-hidden bg-zinc-900">
+          <div className="relative h-56 w-full md:h-80 overflow-hidden bg-gray-900">
             <img
               src={event.coverUrl}
               alt={event.title}
@@ -347,8 +380,8 @@ export const EventSinglePage: React.FC = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
           </div>
         ) : (
-          <div className="relative h-44 w-full md:h-56 bg-gradient-to-br from-indigo-900 via-zinc-900 to-purple-950 p-6 flex items-center justify-center">
-            <CalendarDays className="w-20 h-20 text-white/20" />
+          <div className="relative h-44 w-full md:h-56 bg-gradient-to-br from-indigo-900 via-gray-900 to-purple-950 p-6 flex items-center justify-center">
+            <CalendarDays className="w-20 h-20 text-white/10" />
           </div>
         )}
 
@@ -357,31 +390,34 @@ export const EventSinglePage: React.FC = () => {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               {/* Category Badge */}
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold border border-zinc-300 dark:border-zinc-700 ${categoryMeta.color}`}>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border ${categoryMeta.badge || categoryMeta.color}`}>
                 <CategoryIcon className="w-3.5 h-3.5" />
                 {categoryMeta.label}
               </span>
 
               {/* Status Badge */}
               {timeLeft.status === 'live' ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold border-2 border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 animate-pulse">
-                  <Flame className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border border-emerald-500/40 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
                   در حال برگزاری
                 </span>
               ) : timeLeft.status === 'upcoming' ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold border-2 border-cyan-500 bg-cyan-50 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300">
-                  <Clock className="w-3.5 h-3.5 text-cyan-600" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border border-sky-500/30 bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+                  <Clock className="w-3.5 h-3.5 text-sky-500" />
                   پیش‌رو
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold border border-zinc-400 bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border border-gray-200 bg-gray-100 text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   برگزار شده
                 </span>
               )}
 
               {/* Target Audience */}
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-300">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 text-gray-600 dark:text-gray-300">
                 <Users className="w-3.5 h-3.5" />
                 {AUDIENCE_MAP[event.targetAudience] || event.targetAudience}
               </span>
@@ -389,57 +425,55 @@ export const EventSinglePage: React.FC = () => {
 
             {/* Share and Add to Calendar Buttons */}
             <div className="flex items-center gap-2">
-              <Button
+              <button
                 onClick={handleCopyLink}
-                variant="outline"
-                className="min-h-[44px] gap-2 text-xs font-bold border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:shadow-none"
+                className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm"
               >
                 <Share2 className="w-3.5 h-3.5" />
                 {copied ? 'کپی شد!' : 'اشتراک‌گذاری'}
-              </Button>
+              </button>
               <a
                 href={getGoogleCalendarUrl()}
                 target="_blank"
                 rel="noreferrer"
               >
-                <Button
-                  variant="primary"
-                  className="min-h-[44px] gap-2 text-xs font-black border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:shadow-none"
+                <button
+                  className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-brand-primary text-white hover:bg-brand-primary/90 transition-all shadow-sm"
                 >
                   <CalendarPlus className="w-3.5 h-3.5" />
                   گوگل کلندر
-                </Button>
+                </button>
               </a>
             </div>
           </div>
 
-          <h1 className="text-xl md:text-3xl font-black text-zinc-900 dark:text-zinc-50 leading-tight">
+          <h1 className="text-xl md:text-3xl font-black text-gray-900 dark:text-gray-50 leading-tight">
             {event.title}
           </h1>
 
           {/* Countdown Widget */}
           {timeLeft.status === 'upcoming' && (
-            <div className="rounded-2xl border-2 border-zinc-900 bg-zinc-50 p-4 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800/80 dark:shadow-none">
-              <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2.5 flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-primary animate-pulse" />
+            <div className="rounded-2xl border border-gray-200 bg-gray-50/80 p-4 dark:border-gray-800 dark:bg-[#0E131F]/70">
+              <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2.5 flex items-center gap-1.5">
+                <Clock className="w-4 h-4 text-brand-primary animate-pulse" />
                 <span>شمارش معکوس تا آغاز رویداد:</span>
               </div>
               <div className="grid grid-cols-4 gap-2.5 text-center max-w-md">
-                <div className="rounded-xl border-2 border-zinc-900 bg-white p-2.5 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-none">
-                  <span className="block text-xl md:text-2xl font-black text-primary">{toPersianDigits(timeLeft.days)}</span>
-                  <span className="text-[11px] font-bold text-zinc-500">روز</span>
+                <div className="rounded-xl border border-gray-200 bg-white p-2.5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                  <span className="block text-xl md:text-2xl font-black text-brand-primary">{toPersianDigits(timeLeft.days)}</span>
+                  <span className="text-[11px] font-bold text-gray-500">روز</span>
                 </div>
-                <div className="rounded-xl border-2 border-zinc-900 bg-white p-2.5 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-none">
-                  <span className="block text-xl md:text-2xl font-black text-zinc-900 dark:text-zinc-100">{toPersianDigits(timeLeft.hours)}</span>
-                  <span className="text-[11px] font-bold text-zinc-500">ساعت</span>
+                <div className="rounded-xl border border-gray-200 bg-white p-2.5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                  <span className="block text-xl md:text-2xl font-black text-gray-900 dark:text-gray-100">{toPersianDigits(timeLeft.hours)}</span>
+                  <span className="text-[11px] font-bold text-gray-500">ساعت</span>
                 </div>
-                <div className="rounded-xl border-2 border-zinc-900 bg-white p-2.5 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-none">
-                  <span className="block text-xl md:text-2xl font-black text-zinc-900 dark:text-zinc-100">{toPersianDigits(timeLeft.minutes)}</span>
-                  <span className="text-[11px] font-bold text-zinc-500">دقیقه</span>
+                <div className="rounded-xl border border-gray-200 bg-white p-2.5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                  <span className="block text-xl md:text-2xl font-black text-gray-900 dark:text-gray-100">{toPersianDigits(timeLeft.minutes)}</span>
+                  <span className="text-[11px] font-bold text-gray-500">دقیقه</span>
                 </div>
-                <div className="rounded-xl border-2 border-zinc-900 bg-white p-2.5 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-none">
-                  <span className="block text-xl md:text-2xl font-black text-rose-600">{toPersianDigits(timeLeft.seconds)}</span>
-                  <span className="text-[11px] font-bold text-zinc-500">ثانیه</span>
+                <div className="rounded-xl border border-gray-200 bg-white p-2.5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                  <span className="block text-xl md:text-2xl font-black text-rose-500">{toPersianDigits(timeLeft.seconds)}</span>
+                  <span className="text-[11px] font-bold text-gray-500">ثانیه</span>
                 </div>
               </div>
             </div>
@@ -450,68 +484,68 @@ export const EventSinglePage: React.FC = () => {
       {/* Information Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
         {/* Start Date */}
-        <div className="rounded-2xl border-2 border-zinc-900 bg-white p-4 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-none">
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-[#151C28]">
           <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-xs mb-1">
             <CalendarDays className="w-4 h-4" />
             <span>زمان آغاز</span>
           </div>
-          <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">{jalaliStart}</p>
-          <p className="text-xs font-bold text-zinc-500 mt-0.5">ساعت {startTimeStr}</p>
+          <p className="text-sm font-black text-gray-900 dark:text-gray-100">{jalaliStart}</p>
+          <p className="text-xs font-bold text-gray-500 mt-0.5">ساعت {startTimeStr}</p>
         </div>
 
         {/* End Date */}
-        <div className="rounded-2xl border-2 border-zinc-900 bg-white p-4 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-none">
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-[#151C28]">
           <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold text-xs mb-1">
             <Clock className="w-4 h-4" />
             <span>زمان پایان</span>
           </div>
-          <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">{jalaliEnd}</p>
-          <p className="text-xs font-bold text-zinc-500 mt-0.5">ساعت {endTimeStr}</p>
+          <p className="text-sm font-black text-gray-900 dark:text-gray-100">{jalaliEnd}</p>
+          <p className="text-xs font-bold text-gray-500 mt-0.5">ساعت {endTimeStr}</p>
         </div>
 
         {/* Location */}
-        <div className="rounded-2xl border-2 border-zinc-900 bg-white p-4 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-none">
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-[#151C28]">
           <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-xs mb-1">
             <MapPin className="w-4 h-4" />
             <span>محل برگزاری</span>
           </div>
-          <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">
+          <p className="text-sm font-black text-gray-900 dark:text-gray-100">
             {event.location || 'سالن هنرستان'}
           </p>
-          <p className="text-xs font-bold text-zinc-500 mt-0.5">حضوری</p>
+          <p className="text-xs font-bold text-gray-500 mt-0.5">حضوری</p>
         </div>
 
         {/* Organizer */}
-        <div className="rounded-2xl border-2 border-zinc-900 bg-white p-4 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-none">
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-[#151C28]">
           <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs mb-1">
             <ShieldCheck className="w-4 h-4" />
             <span>برگزارکننده</span>
           </div>
-          <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">
+          <p className="text-sm font-black text-gray-900 dark:text-gray-100">
             {event.createdBy ? `${event.createdBy.firstName} ${event.createdBy.lastName}` : 'مدیریت هنرستان'}
           </p>
-          <p className="text-xs font-bold text-zinc-500 mt-0.5">
+          <p className="text-xs font-bold text-gray-500 mt-0.5">
             {event.createdBy?.role ? `نقش: ${event.createdBy.role}` : 'واحد اجرایی'}
           </p>
         </div>
       </div>
 
       {/* Description & Full Details */}
-      <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 md:p-6 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-none space-y-5">
+      <div className="rounded-3xl border border-gray-200 bg-white p-5 md:p-6 shadow-sm dark:border-gray-800 dark:bg-[#151C28] space-y-5">
         <div>
-          <h2 className="text-base font-black text-zinc-900 dark:text-zinc-100 mb-2.5 flex items-center gap-2">
+          <h2 className="text-base font-black text-gray-900 dark:text-gray-100 mb-2.5 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-amber-500" />
             توضیحات و دستورالعمل رویداد
           </h2>
-          <div className="prose dark:prose-invert max-w-none text-zinc-700 dark:text-zinc-300 leading-relaxed font-medium whitespace-pre-line text-xs sm:text-sm">
+          <div className="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 leading-relaxed font-medium whitespace-pre-line text-xs sm:text-sm">
             {event.description || 'توضیحات تکمیلی ثبت نشده است.'}
           </div>
         </div>
 
         {/* Tags */}
         {event.tags && event.tags.length > 0 && (
-          <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
-            <h4 className="text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2.5 flex items-center gap-1.5">
+          <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
+            <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2.5 flex items-center gap-1.5">
               <Tag className="w-3.5 h-3.5" />
               <span>کلیدواژه‌ها و برچسب‌ها:</span>
             </h4>
@@ -519,7 +553,7 @@ export const EventSinglePage: React.FC = () => {
               {event.tags.map((tag, idx) => (
                 <span
                   key={idx}
-                  className="px-3 py-1 rounded-xl text-xs font-bold border border-zinc-300 bg-zinc-100 text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                  className="px-3 py-1 rounded-xl text-xs font-bold border border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-300"
                 >
                   #{tag}
                 </span>
@@ -544,7 +578,7 @@ export const EventSinglePage: React.FC = () => {
           )}
 
           <div>
-            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
               عنوان رویداد *
             </label>
             <input
@@ -552,19 +586,19 @@ export const EventSinglePage: React.FC = () => {
               required
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
+              className="w-full min-h-[42px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm font-bold text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
                 دسته‌بندی
               </label>
               <select
                 value={form.eventType}
                 onChange={(e) => setForm({ ...form, eventType: e.target.value as any })}
-                className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
+                className="w-full min-h-[42px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm font-bold text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
               >
                 <option value="ACADEMIC">آموزشی و مهارت</option>
                 <option value="CULTURAL">فرهنگی و آیین‌ها</option>
@@ -577,13 +611,13 @@ export const EventSinglePage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
                 مخاطبین هدف
               </label>
               <select
                 value={form.targetAudience}
                 onChange={(e) => setForm({ ...form, targetAudience: e.target.value as any })}
-                className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
+                className="w-full min-h-[42px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm font-bold text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
               >
                 <option value="ALL">عمومی (کلیه مخاطبین)</option>
                 <option value="STUDENTS">دانش‌آموزان</option>
@@ -596,7 +630,7 @@ export const EventSinglePage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
                 تاریخ شروع (شمسی) *
               </label>
               <PersianDatePicker
@@ -605,21 +639,21 @@ export const EventSinglePage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
                 ساعت شروع
               </label>
               <input
                 type="time"
                 value={form.startTime}
                 onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-                className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
+                className="w-full min-h-[42px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm font-bold text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
                 تاریخ پایان (شمسی)
               </label>
               <PersianDatePicker
@@ -628,83 +662,81 @@ export const EventSinglePage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
                 ساعت پایان
               </label>
               <input
                 type="time"
                 value={form.endTime}
                 onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-                className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
+                className="w-full min-h-[42px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm font-bold text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
               محل برگزاری
             </label>
             <input
               type="text"
               value={form.location}
               onChange={(e) => setForm({ ...form, location: e.target.value })}
-              className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
+              className="w-full min-h-[42px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm font-bold text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
               URL تصویر بنر کاور
             </label>
             <input
               type="url"
               value={form.coverUrl}
               onChange={(e) => setForm({ ...form, coverUrl: e.target.value })}
-              className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
+              className="w-full min-h-[42px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm font-medium text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
               برچسب‌ها (با ویرگول جدا کنید)
             </label>
             <input
               type="text"
               value={form.tags}
               onChange={(e) => setForm({ ...form, tags: e.target.value })}
-              className="w-full min-h-[44px] rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
+              className="w-full min-h-[42px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm font-medium text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
               توضیحات رویداد
             </label>
             <textarea
               rows={3}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:shadow-none"
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 p-3 text-sm font-medium text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
-            <Button
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-200 dark:border-gray-800">
+            <button
               type="button"
-              variant="outline"
               onClick={() => setIsEditModalOpen(false)}
-              className="min-h-[44px] border-2 border-zinc-900 dark:border-zinc-700 font-bold"
+              className="min-h-[42px] px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-bold text-xs hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
             >
               انصراف
-            </Button>
-            <Button
+            </button>
+            <button
               type="submit"
-              variant="primary"
               disabled={isSubmitting}
-              className="min-h-[44px] border-2 border-zinc-900 dark:border-zinc-700 font-black px-6 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-none"
+              className="min-h-[42px] px-6 py-2 rounded-xl font-black text-xs bg-brand-primary text-white hover:bg-brand-primary/90 transition-all shadow-sm disabled:opacity-50"
             >
               {isSubmitting ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
-            </Button>
+            </button>
           </div>
         </form>
       </Modal>

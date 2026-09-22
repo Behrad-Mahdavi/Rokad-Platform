@@ -33,6 +33,7 @@ import {
   Globe,
   CheckCircle2,
   ChevronDown,
+  Reply,
 } from 'lucide-react';
 
 interface Props {
@@ -42,6 +43,12 @@ interface Props {
   defaultRecipientId?: string;
   defaultRecipientName?: string;
   defaultSubject?: string;
+  replyToMessage?: {
+    id: string;
+    title: string;
+    body: string;
+    senderName: string;
+  } | null;
 }
 
 interface CustomDropdownOption {
@@ -159,6 +166,7 @@ export const ComposeMessageModal: React.FC<Props> = ({
   defaultRecipientId,
   defaultRecipientName,
   defaultSubject,
+  replyToMessage,
 }) => {
   const currentUser = useAuthStore((s) => s.user);
   const userRole = currentUser?.role || '';
@@ -191,6 +199,26 @@ export const ComposeMessageModal: React.FC<Props> = ({
   const [userSearch, setUserSearch] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState<string>('ALL');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      if (replyToMessage) {
+        const replySubject = replyToMessage.title.startsWith('پاسخ:')
+          ? replyToMessage.title
+          : `پاسخ: ${replyToMessage.title}`;
+        setTitle(defaultSubject || replySubject);
+      } else {
+        setTitle(defaultSubject || '');
+      }
+      setBody('');
+      setAttachments([]);
+      if (defaultRecipientId) {
+        setRecipientMode('INDIVIDUAL');
+        setSelectedUserIds([defaultRecipientId]);
+      }
+    }
+  }, [isOpen, defaultRecipientId, defaultSubject, replyToMessage]);
 
   // Load allowed recipients when modal opens
   useEffect(() => {
@@ -323,6 +351,7 @@ export const ComposeMessageModal: React.FC<Props> = ({
             : undefined,
         recipientIds: effectiveMode === 'INDIVIDUAL' ? selectedUserIds : undefined,
         attachments,
+        replyToId: replyToMessage?.id || undefined,
       });
 
       toast.success('پیام با موفقیت ارسال گردید');
@@ -348,15 +377,11 @@ export const ComposeMessageModal: React.FC<Props> = ({
 
     if (!userSearch.trim()) return true;
     const q = userSearch.toLowerCase().trim();
-    const fullName = `${u.firstName} ${u.lastName}`.toLowerCase();
-    const roleName = u.role.toLowerCase();
-    const cls = (u.classroomName || '').toLowerCase();
-    const child = (u.childName || '').toLowerCase();
     return (
-      fullName.includes(q) ||
-      roleName.includes(q) ||
-      cls.includes(q) ||
-      child.includes(q)
+      u.firstName.toLowerCase().includes(q) ||
+      u.lastName.toLowerCase().includes(q) ||
+      (u.classroomName && u.classroomName.toLowerCase().includes(q)) ||
+      (u.childName && u.childName.toLowerCase().includes(q))
     );
   });
 
@@ -364,39 +389,34 @@ export const ComposeMessageModal: React.FC<Props> = ({
     switch (role) {
       case 'SUPER_ADMIN':
       case 'SCHOOL_ADMIN':
-        return (
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-club-light dark:bg-[#2A173E] text-club dark:text-[#C084FC] border border-club/30 font-bold">
-            مدیریت
-          </span>
-        );
       case 'STAFF':
         return (
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-club-light dark:bg-[#2A173E] text-club dark:text-[#C084FC] border border-club/30 font-bold">
-            معاونت / کادر
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-club-light dark:bg-[#2A173E] text-club dark:text-[#C084FC] border border-club/30">
+            مدیریت
           </span>
         );
       case 'TEACHER':
         return (
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-male-light dark:bg-[#182346] text-sec dark:text-[#8194EE] border border-sec/30 font-bold">
-            استاد / مربی
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-male-light dark:bg-[#182346] text-sec dark:text-[#8194EE] border border-sec/30">
+            استاد
           </span>
         );
       case 'STUDENT':
         return (
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-ecosystem-light dark:bg-[#163330] text-primary-dark dark:text-primary border border-primary/30 font-bold">
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-ecosystem-light dark:bg-[#163330] text-primary-dark dark:text-primary border border-primary/30">
             دانش‌آموز
           </span>
         );
       case 'PARENT':
         return (
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-college-light dark:bg-[#38260D] text-third dark:text-[#FBBF24] border border-third/30 font-bold">
-            ولی دانش‌آموز
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-college-light dark:bg-[#38260D] text-third dark:text-[#FBBF24] border border-third/30">
+            ولی
           </span>
         );
       default:
         return (
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold">
-            کادر
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+            کاربر
           </span>
         );
     }
@@ -437,10 +457,35 @@ export const ComposeMessageModal: React.FC<Props> = ({
   ];
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="ارسال پیام جدید" maxWidth="xl">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={replyToMessage ? 'پاسخ به پیام' : 'ارسال پیام جدید'}
+      maxWidth="xl"
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* 1. Primary Choice: پیام فردی vs پیام گروهی (برای دانش‌آموز و والدین حذف می‌شود) */}
-        {canSendGroup && !isStudentOrParent && (
+        {/* Quote Card if Replying */}
+        {replyToMessage && (
+          <div className="p-3 sm:p-3.5 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/15 text-primary flex items-center justify-center shrink-0 mt-0.5">
+              <Reply className="w-4 h-4" />
+            </div>
+            <div className="min-w-0 text-xs">
+              <span className="font-bold text-gray-500 dark:text-gray-400 block mb-0.5">
+                در حال ارسال پاسخ به: <strong className="text-primary font-black">{replyToMessage.senderName}</strong>
+              </span>
+              <p className="font-bold text-ink-darker dark:text-white truncate">
+                {replyToMessage.title}
+              </p>
+              <p className="text-gray-500 dark:text-gray-400 line-clamp-1 text-[11px] mt-0.5">
+                {replyToMessage.body.replace(/<[^>]*>/g, '')}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* 1. Primary Choice: پیام فردی vs پیام گروهی (برای پاسخ مخفی می‌شود) */}
+        {!replyToMessage && canSendGroup && !isStudentOrParent && (
           <div className="space-y-2">
             <label className="text-xs font-black text-ink-darker dark:text-white block">
               نوع ارسال پیام:

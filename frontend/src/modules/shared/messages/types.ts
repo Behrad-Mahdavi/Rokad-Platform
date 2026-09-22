@@ -27,13 +27,41 @@ export interface AcademicMessageItem {
     avatarUrl?: string | null;
   };
   recipientsCount?: number;
+  replyToId?: string | null;
+  replyTo?: {
+    id: string;
+    title: string;
+    body: string;
+    createdAt: string;
+    sender?: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      role: string;
+      avatarUrl?: string | null;
+    };
+  } | null;
+  replies?: {
+    id: string;
+    title: string;
+    body: string;
+    attachments?: MessageAttachment[];
+    createdAt: string;
+    sender?: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      role: string;
+      avatarUrl?: string | null;
+    };
+  }[];
 }
 
 export interface InboxItem {
   recipientRecordId: string;
   isRead: boolean;
   readAt?: string | null;
-  isStarred: boolean;
+  isStarred?: boolean;
   isArchived: boolean;
   createdAt: string;
   message: AcademicMessageItem;

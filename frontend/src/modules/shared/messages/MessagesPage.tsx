@@ -12,7 +12,6 @@ import {
   MessageSquare,
   Send,
   Inbox,
-  Star,
   Plus,
   Search,
   Filter,
@@ -114,6 +113,7 @@ export const MessagesPage: React.FC = () => {
     id: string;
     name: string;
     subject: string;
+    message?: any;
   } | null>(null);
 
   // Fetch messages based on active tab
@@ -152,25 +152,19 @@ export const MessagesPage: React.FC = () => {
     fetchMessages();
   }, [fetchMessages]);
 
-  const handleToggleStar = async (e: React.MouseEvent, messageId: string) => {
-    e.stopPropagation();
-    try {
-      const res: any = await apiClient.patch(`/messages/${messageId}/star`);
-      const newStarred = res?.isStarred ?? res?.data?.isStarred ?? false;
 
-      setInboxItems((prev) =>
-        prev.map((item) =>
-          item.message.id === messageId ? { ...item, isStarred: newStarred } : item,
-        ),
-      );
-      toast.success(newStarred ? 'پیام ستاره‌دار شد' : 'پیام از ستاره‌دارها خارج شد');
-    } catch {
-      toast.error('خطا در تغییر وضعیت ستاره');
-    }
-  };
-
-  const handleReply = (recipientId: string, recipientName: string, subject: string) => {
-    setReplyRecipient({ id: recipientId, name: recipientName, subject });
+  const handleReply = (
+    recipientId: string,
+    recipientName: string,
+    subject: string,
+    replyToMessage?: any,
+  ) => {
+    setReplyRecipient({
+      id: recipientId,
+      name: recipientName,
+      subject,
+      message: replyToMessage,
+    });
     setIsComposeOpen(true);
   };
 
@@ -251,8 +245,8 @@ export const MessagesPage: React.FC = () => {
                 پیام‌ها
               </h1>
               {unreadCount > 0 && (
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-girl text-white font-black animate-pulse shadow-xs shrink-0">
-                  {toPersianDigits(unreadCount)} جدید
+                <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-girl text-white font-black text-[11px] sm:text-xs animate-pulse shadow-xs shrink-0 select-none">
+                  {toPersianDigits(unreadCount)}
                 </span>
               )}
             </div>
@@ -532,17 +526,6 @@ export const MessagesPage: React.FC = () => {
                       {gregorianToJalaliStr(item.createdAt)}
                     </span>
 
-                    <button
-                      type="button"
-                      onClick={(e) => handleToggleStar(e, item.message.id)}
-                      className={`p-1.5 rounded-lg transition-colors cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-950/40 ${item.isStarred
-                        ? 'text-amber-500 hover:text-amber-600'
-                        : 'text-gray-300 dark:text-gray-600 hover:text-amber-500'
-                        }`}
-                      title={item.isStarred ? 'حذف از ستاره‌دارها' : 'ستاره‌دار کردن'}
-                    >
-                      <Star className={`w-4 h-4 ${item.isStarred ? 'fill-amber-400' : ''}`} />
-                    </button>
                   </div>
                 </div>
               );
@@ -651,6 +634,7 @@ export const MessagesPage: React.FC = () => {
         defaultRecipientId={replyRecipient?.id}
         defaultRecipientName={replyRecipient?.name}
         defaultSubject={replyRecipient?.subject}
+        replyToMessage={replyRecipient?.message}
       />
 
       <MessageDetailModal

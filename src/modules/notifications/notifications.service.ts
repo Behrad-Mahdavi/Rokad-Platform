@@ -285,7 +285,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
         notifications.push({
           id: `visit-booking-${pv.id}`,
           title: 'رزرو جلسه ملاقات اولیا با دبیر',
-          desc: `جلسه ملاقات برای ولی هنرجو ${pv.student?.user?.firstName || ''} ${pv.student?.user?.lastName || ''} با استاد ${pv.slot?.teacher?.user?.lastName || ''} با موضوع «${pv.subject}» ثبت گردید.`,
+          desc: `جلسه ملاقات برای ولی دانش‌آموز ${pv.student?.user?.firstName || ''} ${pv.student?.user?.lastName || ''} با استاد ${pv.slot?.teacher?.user?.lastName || ''} با موضوع «${pv.subject}» ثبت گردید.`,
           time: 'جدید',
           read: readIds.has(`visit-booking-${pv.id}`),
           type: 'VISIT',
@@ -307,7 +307,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
         notifications.push({
           id: `matter-${m.id}`,
           title: m.type === 'POSITIVE' ? 'تشویق و امتیاز انضباطی' : 'گزارش انضباطی نیازمند بررسی',
-          desc: `موضوع «${m.title}» (${m.points > 0 ? `+${m.points}` : m.points} امتیاز) برای هنرجو ${m.student?.user?.firstName || ''} ${m.student?.user?.lastName || ''} ثبت گردید.`,
+          desc: `موضوع «${m.title}» (${m.points > 0 ? `+${m.points}` : m.points} امتیاز) برای دانش‌آموز ${m.student?.user?.firstName || ''} ${m.student?.user?.lastName || ''} ثبت گردید.`,
           time: 'امروز',
           read: readIds.has(`matter-${m.id}`),
           type: 'MATTER',
@@ -375,7 +375,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
           notifications.push({
             id: `sub-grade-${sub.id}`,
             title: 'پاسخ تکلیف جدید آماده نمره‌دهی',
-            desc: `هنرجو ${sub.student?.user?.firstName || ''} ${sub.student?.user?.lastName || ''} پاسخی برای «${sub.homework?.title}» ارسال نموده است.`,
+            desc: `دانش‌آموز ${sub.student?.user?.firstName || ''} ${sub.student?.user?.lastName || ''} پاسخی برای «${sub.homework?.title}» ارسال نموده است.`,
             time: 'جدید',
             read: readIds.has(`sub-grade-${sub.id}`),
             type: 'HOMEWORK',
@@ -403,7 +403,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
           notifications.push({
             id: `tv-visit-${tv.id}`,
             title: 'جلسه ملاقات اولیا با شما',
-            desc: `ملاقات با ولی هنرجو ${tv.student?.user?.firstName || ''} ${tv.student?.user?.lastName || ''} برای تاریخ ${tv.slot?.date} ثبت شده است.`,
+            desc: `ملاقات با ولی دانش‌آموز ${tv.student?.user?.firstName || ''} ${tv.student?.user?.lastName || ''} برای تاریخ ${tv.slot?.date} ثبت شده است.`,
             time: 'زمان‌بندی شده',
             read: readIds.has(`tv-visit-${tv.id}`),
             type: 'VISIT',
@@ -611,7 +611,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
         notifications.push({
           id: `parent-fee-${parent.id}`,
           title: 'وضعیت شهریه و خدمات تحصیلی',
-          desc: 'رسید پرداخت‌ها و سررسید اقساط شهریه هنرجو در درگاه مالی والدین قابل پیگیری و پرداخت آنلاین است.',
+          desc: 'رسید پرداخت‌ها و سررسید اقساط شهریه دانش‌آموز در درگاه مالی والدین قابل پیگیری و پرداخت آنلاین است.',
           time: 'یادآوری',
           read: readIds.has(`parent-fee-${parent.id}`),
           type: 'FEE',

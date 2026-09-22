@@ -131,11 +131,11 @@ export class ChequeReminderScheduler implements OnModuleInit, OnModuleDestroy {
 
       let message = '';
       if (daysRemaining === 0) {
-        message = `امروز سررسید چک شماره ${cheque.checkNumber || ''} به مبلغ ${amountStr} تومان (هنرجو: ${studentName}) است. لطفاً از کافی بودن موجودی حساب اطمینان حاصل فرمایید.`;
+        message = `امروز سررسید چک شماره ${cheque.checkNumber || ''} به مبلغ ${amountStr} تومان (دانش‌آموز: ${studentName}) است. لطفاً از کافی بودن موجودی حساب اطمینان حاصل فرمایید.`;
       } else if (daysRemaining === 1) {
-        message = `فردا سررسید چک شماره ${cheque.checkNumber || ''} به مبلغ ${amountStr} تومان (هنرجو: ${studentName}) عهده بانک ${cheque.bankName || ''} است.`;
+        message = `فردا سررسید چک شماره ${cheque.checkNumber || ''} به مبلغ ${amountStr} تومان (دانش‌آموز: ${studentName}) عهده بانک ${cheque.bankName || ''} است.`;
       } else if (daysRemaining === 3) {
-        message = `چک شماره ${cheque.checkNumber || ''} به مبلغ ${amountStr} تومان (هنرجو: ${studentName})، ۳ روز دیگر سررسید می‌شود.`;
+        message = `چک شماره ${cheque.checkNumber || ''} به مبلغ ${amountStr} تومان (دانش‌آموز: ${studentName})، ۳ روز دیگر سررسید می‌شود.`;
       }
 
       for (const parent of parents) {

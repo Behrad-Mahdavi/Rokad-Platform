@@ -116,7 +116,7 @@ export const KaAdminDirectEntry: React.FC<KaAdminDirectEntryProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStudentId) {
-      toast.error('لطفاً هنرجوی مورد نظر را انتخاب کنید');
+      toast.error('لطفاً دانش‌آموز مورد نظر را انتخاب کنید');
       return;
     }
     if (!selectedActivityId) {
@@ -145,8 +145,8 @@ export const KaAdminDirectEntry: React.FC<KaAdminDirectEntryProps> = ({
       const isNegative = finalScore < 0;
       toast.success(
         isNegative
-          ? `کسر ${toPersianDigits(Math.abs(finalScore))} امتیاز انضباطی با موفقیت در پرونده هنرجو ثبت شد`
-          : `اعطای ${toPersianDigits(finalScore)} امتیاز با موفقیت در پرونده هنرجو ثبت گردید`
+          ? `کسر ${toPersianDigits(Math.abs(finalScore))} امتیاز انضباطی با موفقیت در پرونده دانش‌آموز ثبت شد`
+          : `اعطای ${toPersianDigits(finalScore)} امتیاز با موفقیت در پرونده دانش‌آموز ثبت گردید`
       );
 
       // پاک کردن فرم
@@ -167,10 +167,10 @@ export const KaAdminDirectEntry: React.FC<KaAdminDirectEntryProps> = ({
       <div>
         <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2">
           <PlusCircle className="w-6 h-6 text-primary" />
-          ثبت مستقیم امتیاز و موارد انضباطی هنرجویان
+          ثبت مستقیم امتیاز و موارد انضباطی دانش‌آموزان
         </h2>
         <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-          کادر معاونت و اساتید می‌توانند به صورت مستقیم امتیازات آموزشی، مسابقات، فعالیت‌های داوطلبانه یا کسورات انضباطی را در پرونده هنرجو درج کنند
+          کادر معاونت و اساتید می‌توانند به صورت مستقیم امتیازات آموزشی، مسابقات، فعالیت‌های داوطلبانه یا کسورات انضباطی را در پرونده دانش‌آموز درج کنند
         </p>
       </div>
 
@@ -332,17 +332,17 @@ export const KaAdminDirectEntry: React.FC<KaAdminDirectEntryProps> = ({
           </Card>
         </div>
 
-        {/* ستون چپ (۱/۳): انتخاب هنرجو با جستجوی سریع */}
+        {/* ستون چپ (۱/۳): انتخاب دانش‌آموز با جستجوی سریع */}
         <div className="space-y-4">
           <Card className="shadow-[2.75px_2.75px_0_#202A5A] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
             <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-3">
               <CardTitle className="text-sm font-bold flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4 text-primary" />
-                  <span>انتخاب هنرجو</span>
+                  <span>انتخاب دانش‌آموز</span>
                 </div>
                 <Badge variant="neutral" className="text-[10px]">
-                  {toPersianDigits(students.length)} هنرجو
+                  {toPersianDigits(students.length)} دانش‌آموز
                 </Badge>
               </CardTitle>
             </CardHeader>
@@ -357,7 +357,7 @@ export const KaAdminDirectEntry: React.FC<KaAdminDirectEntryProps> = ({
                 />
               </div>
 
-              {/* لیست اسکرول‌خور هنرجویان */}
+              {/* لیست اسکرول‌خور دانش‌آموزان */}
               <div className="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800 rounded-xl border border-gray-200 dark:border-gray-800">
                 {filteredStudents.map(st => {
                   const isSelected = selectedStudentId === st.id;
@@ -393,7 +393,7 @@ export const KaAdminDirectEntry: React.FC<KaAdminDirectEntryProps> = ({
 
                 {filteredStudents.length === 0 && !loadingStudents && (
                   <div className="p-6 text-center text-xs text-gray-400">
-                    هنرجویی یافت نشد
+                    دانش‌آموزی یافت نشد
                   </div>
                 )}
               </div>
@@ -402,7 +402,7 @@ export const KaAdminDirectEntry: React.FC<KaAdminDirectEntryProps> = ({
                 <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/30 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
                   <span>
-                    هنرجوی انتخاب‌شده: <strong>{selectedStudent.user?.firstName} {selectedStudent.user?.lastName}</strong>
+                    دانش‌آموز انتخاب‌شده: <strong>{selectedStudent.user?.firstName} {selectedStudent.user?.lastName}</strong>
                   </span>
                 </div>
               )}

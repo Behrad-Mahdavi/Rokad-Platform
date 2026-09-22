@@ -1231,7 +1231,7 @@ async function main() {
       authorId: boysAdmin.id,
       title: 'گزارش تصویری افتتاح کارگاه تخصصی هوش مصنوعی و برنامه‌نویسی وب هنرستان پسرانه',
       slug: 'ai-robotics-workshop-opening',
-      content: 'به لطف خداوند و تلاش کادر تخصصی، فاز اول کارگاه کامپیوتر و هوش مصنوعی هنرستان پسرانه رکاد با تجهیز ۲۰ ایستگاه کاری پیشرفته افتتاح گردید. هنرجویان عزیز از روز شنبه می‌توانند بر اساس برنامه زمان‌بندی در کارگاه‌ها حضور یابند.',
+      content: 'به لطف خداوند و تلاش کادر تخصصی، فاز اول کارگاه کامپیوتر و هوش مصنوعی هنرستان پسرانه رکاد با تجهیز ۲۰ ایستگاه کاری پیشرفته افتتاح گردید. دانش‌آموزان عزیز از روز شنبه می‌توانند بر اساس برنامه زمان‌بندی در کارگاه‌ها حضور یابند.',
       postType: 'SLIDESHOW',
       mediaUrls: [
         'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1000&auto=format&fit=crop&q=80',
@@ -1240,7 +1240,7 @@ async function main() {
       ],
       attachments: [
         { name: 'شیوه‌نامه_اجرایی_کارگاه_کامپیوتر_پاییز۱۴۰۵.pdf', url: 'https://example.com/workshop-guide.pdf', size: 2840000 },
-        { name: 'جدول_گروه‌بندی_هنرجویان.xlsx', url: 'https://example.com/groups.xlsx', size: 450000 },
+        { name: 'جدول_گروه‌بندی_دانش‌آموزان.xlsx', url: 'https://example.com/groups.xlsx', size: 450000 },
       ],
       audienceType: 'ALL',
       isPinned: true,
@@ -1287,9 +1287,9 @@ async function main() {
     create: {
       tenantId: boysTenant.id,
       authorId: teacherUser.id,
-      title: 'دستورالعمل تحویل پروژه‌های کارگاهی پودمان اول (اختصاصی هنرجویان)',
+      title: 'دستورالعمل تحویل پروژه‌های کارگاهی پودمان اول (اختصاصی دانش‌آموزان)',
       slug: 'student-project-submission-guide',
-      content: 'هنرجویان گرامی پایه دهم و یازدهم شبکه و نرم‌افزار، مهلت ارسال فایل مخزن گیت‌هاب و مستندات پروژه تا پایان هفته جاری تمدید شد.',
+      content: 'دانش‌آموزان گرامی پایه دهم و یازدهم شبکه و نرم‌افزار، مهلت ارسال فایل مخزن گیت‌هاب و مستندات پروژه تا پایان هفته جاری تمدید شد.',
       postType: 'DOCUMENT',
       mediaUrls: [
         'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1000&auto=format&fit=crop&q=80',
@@ -1318,9 +1318,9 @@ async function main() {
     create: {
       tenantId: girlsTenant.id,
       authorId: girlsAdmin.id,
-      title: 'برگزاری نمایشگاه آثار هنرجویان رشته طراحی و گرافیک رایانه‌ای هنرستان دخترانه',
+      title: 'برگزاری نمایشگاه آثار دانش‌آموزان رشته طراحی و گرافیک رایانه‌ای هنرستان دخترانه',
       slug: 'girls-multimedia-exhibition',
-      content: 'نمایشگاه تخصصی دستاوردهای تجسمی و دیجیتال هنرجویان دخترانه رکاد در آتلیه هنرستان برگزار گردید.',
+      content: 'نمایشگاه تخصصی دستاوردهای تجسمی و دیجیتال دانش‌آموزان دخترانه رکاد در آتلیه هنرستان برگزار گردید.',
       postType: 'SLIDESHOW',
       mediaUrls: [
         'https://images.unsplash.com/photo-1561089489-f13d5e730d72?w=1000&auto=format&fit=crop&q=80',
@@ -1433,8 +1433,8 @@ async function main() {
 
   const sampleRoadmapEvents = [
     {
-      title: 'جشن آغاز سال تحصیلی و معارفه هنرجویان نوورود',
-      description: 'آیین بازگشایی هنرستان با حضور اساتید، هنرجویان پایه دهم و والدین گرامی به همراه رونمایی از نقشه راه آموزشی سال جدید تحصیلی.',
+      title: 'جشن آغاز سال تحصیلی و معارفه دانش‌آموزان نوورود',
+      description: 'آیین بازگشایی هنرستان با حضور اساتید، دانش‌آموزان پایه دهم و والدین گرامی به همراه رونمایی از نقشه راه آموزشی سال جدید تحصیلی.',
       eventType: 'CULTURAL' as const,
       startDate: new Date('2026-09-23T04:30:00.000Z'),
       endDate: new Date('2026-09-23T08:30:00.000Z'),

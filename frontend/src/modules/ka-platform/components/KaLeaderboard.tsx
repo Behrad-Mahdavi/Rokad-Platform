@@ -89,7 +89,7 @@ export const KaLeaderboard: React.FC = () => {
     }
   };
 
-  // باز کردن باتم‌شیت مودال اسلایدرها با کلیک روی نام هر هنرجو
+  // باز کردن باتم‌شیت مودال اسلایدرها با کلیک روی نام هر دانش‌آموز
   const handleOpenStudentModal = async (student: StudentRank) => {
     setSelectedStudentForModal(student);
     setLoadingModal(true);
@@ -181,7 +181,7 @@ export const KaLeaderboard: React.FC = () => {
             </Badge>
           </div>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-            رتبه‌بندی هنرجویان {isGirlsSchool ? 'هنرستان دخترانه' : 'هنرستان پسرانه'} • با کلیک روی نام هر هنرجو، اسلایدرهای ۴ حوزه ارزیابی او نمایش داده می‌شود
+            رتبه‌بندی دانش‌آموزان {isGirlsSchool ? 'هنرستان دخترانه' : 'هنرستان پسرانه'} • با کلیک روی نام هر دانش‌آموز، اسلایدرهای ۴ حوزه ارزیابی او نمایش داده می‌شود
           </p>
         </div>
 
@@ -372,7 +372,7 @@ export const KaLeaderboard: React.FC = () => {
         <div className="relative w-full sm:w-72">
           <Search className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
           <Input
-            placeholder="جستجوی نام هنرجو یا کلاس..."
+            placeholder="جستجوی نام دانش‌آموز یا کلاس..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="pr-9 text-xs rounded-xl"
@@ -380,7 +380,7 @@ export const KaLeaderboard: React.FC = () => {
         </div>
 
         <div className="text-xs text-gray-500 dark:text-gray-400 font-semibold self-end sm:self-center">
-          تعداد هنرجویان: {toPersianDigits(filteredLeaderboard.length)} نفر
+          تعداد دانش‌آموزان: {toPersianDigits(filteredLeaderboard.length)} نفر
         </div>
       </div>
 
@@ -392,7 +392,7 @@ export const KaLeaderboard: React.FC = () => {
               <thead className="bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 font-bold text-xs">
                 <tr>
                   <th className="p-4 w-16 text-center">رتبه</th>
-                  <th className="p-4">هنرجو (کلیک برای مشاهده کارنامه و اسلایدرها)</th>
+                  <th className="p-4">دانش‌آموز (کلیک برای مشاهده کارنامه و اسلایدرها)</th>
                   <th className="p-4 hidden sm:table-cell">کلاس / رشته</th>
                   <th className="p-4 text-center hidden md:table-cell">رتبه کلاسی</th>
                   <th className="p-4 text-center">امتیاز کل</th>
@@ -423,7 +423,7 @@ export const KaLeaderboard: React.FC = () => {
                         </div>
                       </td>
 
-                      {/* اطلاعات هنرجو */}
+                      {/* اطلاعات دانش‌آموز */}
                       <td className="p-4">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 aspect-square rounded-xl bg-primary/15 text-primary flex items-center justify-center font-bold text-sm border border-primary/20 group-hover:scale-105 transition-transform shrink-0 overflow-hidden relative">
@@ -559,7 +559,7 @@ export const KaLeaderboard: React.FC = () => {
               <X className="w-5 h-5" />
             </button>
 
-            {/* هدر اطلاعات هنرجوی انتخاب‌شده */}
+            {/* هدر اطلاعات دانش‌آموز انتخاب‌شده */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-5 mb-6">
               <div className="flex items-center gap-3.5">
                 <div className="w-14 h-14 aspect-square rounded-2xl bg-primary/15 text-primary flex items-center justify-center font-black text-xl border-2 border-primary/30 shadow-sm shrink-0 overflow-hidden relative">
@@ -620,11 +620,11 @@ export const KaLeaderboard: React.FC = () => {
               </div>
             </div>
 
-            {/* بدنه مودال: اسلایدرهای ۴ حوزه ارزیابی برای این هنرجو */}
+            {/* بدنه مودال: اسلایدرهای ۴ حوزه ارزیابی برای این دانش‌آموز */}
             {loadingModal ? (
               <div className="py-20 text-center text-xs text-gray-500 space-y-3">
                 <SlidersHorizontal className="w-8 h-8 text-primary animate-pulse mx-auto" />
-                <p className="font-bold text-sm text-gray-700 dark:text-gray-300">در حال فراخوانی روند پیشرفت و اسلایدرهای هنرجو...</p>
+                <p className="font-bold text-sm text-gray-700 dark:text-gray-300">در حال فراخوانی روند پیشرفت و اسلایدرهای دانش‌آموز...</p>
                 <p className="text-xs text-gray-400">محاسبه بر اساس فرمول‌های رسمی ۲۲ فعالیت</p>
               </div>
             ) : (

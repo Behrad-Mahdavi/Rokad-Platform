@@ -1058,7 +1058,7 @@ export const MembersPage: React.FC = () => {
                   <div className="bg-white dark:bg-[#1E293B] p-2 rounded border border-gray-200 dark:border-gray-700">
                     <span className="text-[10px] text-gray-500 dark:text-gray-400 block">نام کاربری سامانه:</span>
                     <span className="font-mono font-bold text-ink-dark dark:text-white">
-                      {studentForm.nationalCode ? studentForm.nationalCode : 'کد ملی هنرجو'}
+                      {studentForm.nationalCode ? studentForm.nationalCode : 'کد ملی دانش‌آموز'}
                     </span>
                   </div>
                   <div className="bg-white dark:bg-[#1E293B] p-2 rounded border border-gray-200 dark:border-gray-700">
@@ -2068,9 +2068,9 @@ export const MembersPage: React.FC = () => {
               <span>سامانه ورود یکپارچه رکاد در اکسل:</span>
             </div>
             <p className="text-[11px] text-blue-800 dark:text-blue-300 leading-relaxed">
-              با بارگذاری فایل اکسل، اطلاعات ورود برای تک‌تک هنرجویان به صورت کاملاً خودکار تولید می‌گردد:
+              با بارگذاری فایل اکسل، اطلاعات ورود برای تک‌تک دانش‌آموزان به صورت کاملاً خودکار تولید می‌گردد:
               <br />
-              • <strong>نام کاربری:</strong> کد ملی ۱۰ رقمی هنرجو
+              • <strong>نام کاربری:</strong> کد ملی ۱۰ رقمی دانش‌آموز
               <br />
               • <strong>رمز عبور پیش‌فرض:</strong> پیش‌وند شعبه + کد ملی (<strong>{branchPrefix}</strong> + کد ملی، مثال: <strong>{branchPrefix}0012345678</strong>)
             </p>
