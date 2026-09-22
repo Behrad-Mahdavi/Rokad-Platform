@@ -8,6 +8,7 @@ import { toPersianDigits } from '../../../../utils/jalali';
 import { EventIdea } from './EventIdeaSubmissionStep';
 import {
   Users,
+  User,
   UserPlus,
   UserCheck,
   ShieldCheck,
@@ -207,7 +208,50 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
     toast.success(`«${candidateName}» با نقش «${memberRole}» به تیم اضافه شد 🎉`);
     setSelectedStudentId('');
     setCustomStudentName('');
-    setActiveIdeaIdForModal(null);
+  };
+
+  // Add Member directly from list without closing modal
+  const handleAddMemberDirectly = (idea: EventIdea, student: { id: string; name: string; classGroup?: string }) => {
+    const candidateName = student.name;
+    const candidateId = student.id;
+
+    // Check unique constraint: Has this person already been assigned to another team?
+    const existingAssignment = assignedStudentMap[candidateId] || assignedStudentMap[candidateName.toLowerCase()];
+    if (existingAssignment && existingAssignment.ideaId !== idea.id) {
+      toast.error(
+        `خطا: «${candidateName}» قبلاً عضو تیم ایده #${toPersianDigits(existingAssignment.ideaNumber)} (${existingAssignment.ideaTitle}) شده است و نمی‌تواند همزمان عضو دو تیم باشد!`
+      );
+      return;
+    }
+
+    const currentTeam = getIdeaTeam(idea);
+
+    // Prevent duplicate within same team
+    if (currentTeam.members.some((m) => m.id === candidateId || m.name.toLowerCase() === candidateName.toLowerCase())) {
+      toast.error(`«${candidateName}» قبلاً به این تیم اضافه شده است.`);
+      return;
+    }
+
+    const newMember: TeamMember = {
+      id: candidateId,
+      name: candidateName,
+      roleInTeam: memberRole || 'عضو تیم',
+      classGroup: student.classGroup || 'هنرستان',
+      addedBy: currentUserName,
+      addedAt: new Date().toISOString(),
+    };
+
+    const updatedTeam: IdeaTeam = {
+      ...currentTeam,
+      members: [...currentTeam.members, newMember],
+    };
+
+    setTeamsMap((prev) => ({
+      ...prev,
+      [idea.id]: updatedTeam,
+    }));
+
+    toast.success(`«${candidateName}» به ترکیب تیم اضافه شد 🎉`);
   };
 
   // Remove Member from Idea Team
@@ -494,104 +538,193 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
         </div>
       )}
 
-      {/* MODAL: ADD MEMBER TO TEAM */}
-      {activeIdeaIdForModal && (
-        <Modal
-          isOpen={!!activeIdeaIdForModal}
-          onClose={() => setActiveIdeaIdForModal(null)}
-          title="افزودن عضو جدید به تیم ایده"
-        >
-          <div className="space-y-5">
-            <div>
-              <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1.5 flex items-center gap-1.5">
-                <Search className="w-4 h-4 text-primary" />
-                <span>جستجو و انتخاب دانش‌آموز از بانک اطلاعاتی مدرسه:</span>
-              </label>
-              <select
-                value={selectedStudentId}
-                onChange={(e) => {
-                  setSelectedStudentId(e.target.value);
-                  if (e.target.value) setCustomStudentName('');
-                }}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-xs md:text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
-              >
-                <option value="">-- انتخاب دانش‌آموز از دیتابیس --</option>
-                {dbStudents.map((std) => {
-                  const assignment = assignedStudentMap[std.id] || assignedStudentMap[std.name.toLowerCase()];
-                  const isAssigned = !!assignment;
+      {/* MODAL: ADD MEMBER TO TEAM WITH SEARCH & REAL-TIME STATE */}
+      {activeIdeaIdForModal && (() => {
+        const targetIdea = ideas.find((i) => i.id === activeIdeaIdForModal);
+        if (!targetIdea) return null;
 
-                  return (
-                    <option
-                      key={std.id}
-                      value={std.id}
-                      disabled={isAssigned}
-                    >
-                      {std.name} {std.classGroup ? `(${std.classGroup})` : ''} {isAssigned ? `[عضو در تیم ایده #${toPersianDigits(assignment.ideaNumber)}]` : ''}
-                    </option>
-                  );
-                })}
-              </select>
+        const currentTeam = getIdeaTeam(targetIdea);
+        const filteredStudents = dbStudents.filter((std) => {
+          const q = searchStudentQuery.trim().toLowerCase();
+          if (!q) return true;
+          return std.name.toLowerCase().includes(q) || (std.classGroup && std.classGroup.toLowerCase().includes(q));
+        });
+
+        return (
+          <Modal
+            isOpen={!!activeIdeaIdForModal}
+            onClose={() => setActiveIdeaIdForModal(null)}
+            title={`افزودن عضو جدید به تیم «${targetIdea.title}»`}
+          >
+            <div className="space-y-5">
+              {/* Role & Search Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800/60 shadow-[2px_2px_0px_0px_#18181b]">
+                <div>
+                  <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1.5 flex items-center gap-1.5">
+                    <Briefcase className="w-3.5 h-3.5 text-amber-500" />
+                    <span>نقش عضو انتخابی:</span>
+                  </label>
+                  <select
+                    value={memberRole}
+                    onChange={(e) => setMemberRole(e.target.value)}
+                    className="w-full rounded-xl border-2 border-zinc-900 bg-white p-2.5 text-xs font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                  >
+                    <option value="عضو تیم / توسعه‌دهنده">عضو تیم / توسعه‌دهنده</option>
+                    <option value="برنامه‌نویس و کدنویس">برنامه‌نویس و کدنویس</option>
+                    <option value="طراح UI/UX و گرافیک">طراح UI/UX و گرافیک</option>
+                    <option value="مدیر ارائه‌کننده (Pitcher)">مدیر ارائه‌کننده (Pitcher)</option>
+                    <option value="مستندساز و محتوا">مستندساز و محتوا</option>
+                    <option value="تسهیل‌گر و مشاور">تسهیل‌گر و مشاور</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1.5 flex items-center gap-1.5">
+                    <Search className="w-3.5 h-3.5 text-primary" />
+                    <span>جستجوی دانش‌آموز:</span>
+                  </label>
+                  <div className="relative">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                    <input
+                      type="text"
+                      placeholder="نام دانش‌آموز یا کلاس..."
+                      value={searchStudentQuery}
+                      onChange={(e) => setSearchStudentQuery(e.target.value)}
+                      className="w-full rounded-xl border-2 border-zinc-900 bg-white pr-9 pl-3 py-2 text-xs font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Students Cards List */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-black text-zinc-700 dark:text-zinc-300">
+                  <span>لیست دانش‌آموزان دیتابیس مدرسه ({toPersianDigits(filteredStudents.length)} نفر):</span>
+                  <span className="text-[11px] text-zinc-500 font-bold">
+                    اعضای فعلی تیم: {toPersianDigits(currentTeam.members.length)} نفر
+                  </span>
+                </div>
+
+                <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+                  {filteredStudents.length === 0 ? (
+                    <div className="p-6 text-center text-xs font-bold text-zinc-500 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-xl">
+                      دانش‌آموزی با این مشخصات یافت نشد.
+                    </div>
+                  ) : (
+                    filteredStudents.map((std) => {
+                      const isMemberOfThisTeam = currentTeam.members.some(
+                        (m) => m.id === std.id || m.name.toLowerCase() === std.name.toLowerCase()
+                      );
+                      const assignment = assignedStudentMap[std.id] || assignedStudentMap[std.name.toLowerCase()];
+                      const isAssignedToOtherTeam = !!assignment && assignment.ideaId !== targetIdea.id;
+
+                      return (
+                        <div
+                          key={std.id}
+                          className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
+                            isMemberOfThisTeam
+                              ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/40 opacity-75'
+                              : isAssignedToOtherTeam
+                              ? 'border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800/40 opacity-60'
+                              : 'border-zinc-900 bg-white dark:bg-zinc-900 shadow-[2px_2px_0px_0px_#18181b]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center font-black text-xs ${
+                              isMemberOfThisTeam
+                                ? 'border-emerald-700 bg-emerald-400 text-zinc-950'
+                                : 'border-zinc-900 bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
+                            }`}>
+                              {isMemberOfThisTeam ? <UserCheck className="w-4 h-4" /> : <User className="w-4 h-4" />}
+                            </div>
+
+                            <div>
+                              <h5 className="text-xs font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                                <span>{std.name}</span>
+                                {std.classGroup && (
+                                  <span className="text-[10px] font-bold text-zinc-500">({std.classGroup})</span>
+                                )}
+                              </h5>
+                              {isMemberOfThisTeam && (
+                                <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
+                                  ✓ قبلاً به این تیم اضافه شده است
+                                </p>
+                              )}
+                              {isAssignedToOtherTeam && (
+                                <p className="text-[10px] font-bold text-rose-600 dark:text-rose-400 mt-0.5">
+                                  عضو تیم ایده #{toPersianDigits(assignment.ideaNumber)} ({assignment.ideaTitle})
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div>
+                            {isMemberOfThisTeam ? (
+                              <span className="px-3 py-1 rounded-lg border border-emerald-600 bg-emerald-200 text-emerald-900 text-xs font-black">
+                                افزوده شد ✓
+                              </span>
+                            ) : isAssignedToOtherTeam ? (
+                              <span className="px-3 py-1 rounded-lg border border-zinc-400 bg-zinc-200 text-zinc-600 text-xs font-bold">
+                                غیرقابل انتخاب
+                              </span>
+                            ) : (
+                              <Button
+                                variant="primary"
+                                onClick={() => handleAddMemberDirectly(targetIdea, std)}
+                                className="text-xs font-black border-2 border-zinc-900 bg-emerald-400 text-zinc-950 shadow-[2px_2px_0px_0px_#18181b] px-3 py-1"
+                              >
+                                + افزودن
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Manual Name Entry Section */}
+              <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800">
+                <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1.5">
+                  افزودن دستی نام دانش‌آموز (در صورت عدم وجود در دیتابیس):
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="مثلاً: علی رضایی"
+                    value={customStudentName}
+                    onChange={(e) => setCustomStudentName(e.target.value)}
+                    className="flex-1 rounded-xl border-2 border-zinc-900 bg-white p-2.5 text-xs font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 focus:outline-none"
+                  />
+                  <Button
+                    variant="outline"
+                    disabled={!customStudentName.trim()}
+                    onClick={() => handleAddMember(targetIdea)}
+                    className="text-xs font-black border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] px-4"
+                  >
+                    + افزودن دستی
+                  </Button>
+                </div>
+              </div>
+
+              {/* Modal Action Footer */}
+              <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                <span className="text-xs font-bold text-zinc-500">
+                  پس از انجام افزودن‌ها، دکمه بستن را بزنید.
+                </span>
+                <Button
+                  variant="primary"
+                  onClick={() => setActiveIdeaIdForModal(null)}
+                  className="text-xs font-black border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b] px-6"
+                >
+                  تایید و بستن
+                </Button>
+              </div>
             </div>
-
-            <div className="text-center text-xs font-bold text-zinc-400">یا</div>
-
-            <div>
-              <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1.5">
-                ورود دستی نام دانش‌آموز (در صورت عدم وجود در دیتابیس):
-              </label>
-              <input
-                type="text"
-                placeholder="مثلاً: علی رضایی"
-                value={customStudentName}
-                onChange={(e) => {
-                  setCustomStudentName(e.target.value);
-                  if (e.target.value) setSelectedStudentId('');
-                }}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-xs md:text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1.5 flex items-center gap-1.5">
-                <Briefcase className="w-4 h-4 text-amber-500" />
-                <span>نقش و مسئولیت فرد در تیم:</span>
-              </label>
-              <select
-                value={memberRole}
-                onChange={(e) => setMemberRole(e.target.value)}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-xs md:text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
-              >
-                <option value="عضو تیم / توسعه‌دهنده">عضو تیم / توسعه‌دهنده</option>
-                <option value="برنامه‌نویس و کدنویس">برنامه‌نویس و کدنویس</option>
-                <option value="طراح UI/UX و گرافیک">طراح UI/UX و گرافیک</option>
-                <option value="مدیر ارائه‌کننده (Pitcher)">مدیر ارائه‌کننده (Pitcher)</option>
-                <option value="مستندساز و محتوا">مستندساز و محتوا</option>
-                <option value="تسهیل‌گر و مشاور">تسهیل‌گر و مشاور</option>
-              </select>
-            </div>
-
-            <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setActiveIdeaIdForModal(null)}
-                className="text-xs font-bold border-2 border-zinc-900"
-              >
-                انصراف
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() => {
-                  const targetIdea = ideas.find((i) => i.id === activeIdeaIdForModal);
-                  if (targetIdea) handleAddMember(targetIdea);
-                }}
-                className="text-xs font-black border-2 border-zinc-900 bg-emerald-400 text-zinc-950 shadow-[2px_2px_0px_0px_#18181b]"
-              >
-                ثبت و افزودن به تیم
-              </Button>
-            </div>
-          </div>
-        </Modal>
-      )}
+          </Modal>
+        );
+      })()}
     </div>
   );
 };
