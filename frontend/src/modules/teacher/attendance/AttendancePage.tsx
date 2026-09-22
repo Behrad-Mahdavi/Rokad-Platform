@@ -14,27 +14,23 @@ import {
   CalendarDays,
   ChevronRight,
   ChevronLeft,
-  Briefcase,
   AlertCircle,
   Filter,
   Check,
   Building2,
   Sparkles,
   ArrowRight,
-  GraduationCap,
   BookOpen,
   Calendar,
   Radio,
-  PlayCircle,
   RotateCcw,
-  Timer,
-  Layers,
-  Info,
+  SlidersHorizontal,
+  X,
+  ChevronDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '../../../lib/api/client';
 import { useAuthStore } from '../../../lib/auth/auth-store';
-import { StatCard } from '../../../components/ui/StatCard';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Input } from '../../../components/ui/Input';
@@ -107,12 +103,10 @@ export const AttendancePage: React.FC = () => {
   const isManagerOrAdmin =
     user?.role === 'SUPER_ADMIN' || user?.role === 'SCHOOL_ADMIN' || user?.role === 'STAFF';
 
-  // 1. Live system time state (updates every second for real-time period highlight!)
+  // 1. Live system time (updates every second for real-time period highlight)
   const [liveSystemTime, setLiveSystemTime] = useState<Date>(new Date());
   useEffect(() => {
-    const timer = setInterval(() => {
-      setLiveSystemTime(new Date());
-    }, 1000);
+    const timer = setInterval(() => setLiveSystemTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -123,11 +117,12 @@ export const AttendancePage: React.FC = () => {
   }, []);
 
   const [selectedDate, setSelectedDate] = useState<string>(todayJalali);
+  const [showDatePickerModal, setShowDatePickerModal] = useState<boolean>(false);
 
   // Active top navigation tab: 'today_schedule' | 'all_classes' | 'staff_attendance'
   const [activeTab, setActiveTab] = useState<'today_schedule' | 'all_classes' | 'staff_attendance'>('today_schedule');
 
-  // Active classroom sheet for recording attendance (null when on schedule list)
+  // Active classroom session
   const [activeSession, setActiveSession] = useState<{
     classroomId: string;
     classroomName: string;
@@ -139,6 +134,7 @@ export const AttendancePage: React.FC = () => {
 
   // Search & edit state for attendance roster
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | AttendanceStatus>('ALL');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [studentsList, setStudentsList] = useState<LocalStudentAttendance[]>([]);
 
@@ -154,16 +150,13 @@ export const AttendancePage: React.FC = () => {
     try {
       const gDate = jalaliToGregorianDate(selectedDate);
       gDate.setDate(gDate.getDate() + deltaDays);
-      const newJalali = gregorianToJalaliStr(gDate);
-      setSelectedDate(newJalali);
-      // Clear active session if date changes to avoid mismatch
+      setSelectedDate(gregorianToJalaliStr(gDate));
       setActiveSession(null);
     } catch (e) {
       console.error('Failed to navigate date', e);
     }
   };
 
-  // Convert current selected date to DayOfWeek name in Persian
   const currentDayOfWeekInfo = useMemo(() => {
     try {
       const gDate = jalaliToGregorianDate(selectedDate);
@@ -183,12 +176,10 @@ export const AttendancePage: React.FC = () => {
     }
   }, [selectedDate]);
 
-  // Jump to specific weekday in the current week
   const selectWeekday = (targetDayKey: string) => {
     try {
       const gDate = jalaliToGregorianDate(selectedDate);
-      const currentDay = gDate.getDay(); // 0: Sun, 1: Mon, ... 6: Sat
-      // Sat is start of Persian week (day 6 -> index 0)
+      const currentDay = gDate.getDay();
       const currentPersianIndex = currentDay === 6 ? 0 : currentDay + 1;
       const targetMap: Record<string, number> = {
         SATURDAY: 0,
@@ -208,7 +199,7 @@ export const AttendancePage: React.FC = () => {
     }
   };
 
-  // 4. Live time calculation: check if current system time is within period slot
+  // 4. Live time calculation
   const currentMinutes = useMemo(() => {
     return liveSystemTime.getHours() * 60 + liveSystemTime.getMinutes();
   }, [liveSystemTime]);
@@ -226,7 +217,7 @@ export const AttendancePage: React.FC = () => {
     const end = parseMinutes(endTimeStr);
 
     if (currentMinutes >= start && currentMinutes <= end) {
-      return 'CURRENT'; // Currently active!
+      return 'CURRENT';
     } else if (currentMinutes > end) {
       return 'PASSED';
     } else {
@@ -253,13 +244,12 @@ export const AttendancePage: React.FC = () => {
     return Array.isArray(dailyScheduleData?.schedules) ? dailyScheduleData.schedules : [];
   }, [dailyScheduleData]);
 
-  // Find if there is an active running slot right now
   const activeNowSlot = useMemo(() => {
     if (!isSelectedDateToday) return null;
     return schedulesList.find((s) => checkSlotStatus(s.startTime, s.endTime) === 'CURRENT') || null;
   }, [schedulesList, isSelectedDateToday, currentMinutes]);
 
-  // 6. Query: All Classrooms for fallback or manual selection
+  // 6. Query: All Classrooms
   const { data: allClassroomsData, isLoading: isLoadingAllClassrooms } = useQuery({
     queryKey: ['all-classrooms-attendance'],
     queryFn: async () => {
@@ -292,7 +282,6 @@ export const AttendancePage: React.FC = () => {
     },
   });
 
-  // Sync loaded attendance roster to editable state
   useEffect(() => {
     if (sessionAttendanceData && Array.isArray(sessionAttendanceData.students)) {
       const mapped = sessionAttendanceData.students.map((st: any) => ({
@@ -327,15 +316,16 @@ export const AttendancePage: React.FC = () => {
 
   // Filtered Students
   const filteredStudents = useMemo(() => {
-    if (!searchQuery.trim()) return studentsList;
-    const q = searchQuery.toLowerCase().trim();
     return studentsList.filter((s) => {
+      if (statusFilter !== 'ALL' && s.status !== statusFilter) return false;
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase().trim();
       const fullName = `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.toLowerCase();
       const code = s.studentCode || '';
       const national = s.nationalCode || '';
       return fullName.includes(q) || code.includes(q) || national.includes(q);
     });
-  }, [studentsList, searchQuery]);
+  }, [studentsList, searchQuery, statusFilter]);
 
   // 9. Bulk Save Attendance Mutation
   const saveAttendanceMutation = useMutation({
@@ -371,7 +361,6 @@ export const AttendancePage: React.FC = () => {
     },
   });
 
-  // Action: Mark all present
   const handleMarkAllPresent = () => {
     setStudentsList((prev) =>
       prev.map((s) => ({
@@ -385,14 +374,12 @@ export const AttendancePage: React.FC = () => {
     toast.info('تمامی دانش‌آموزان به عنوان «حاضر» مشخص شدند');
   };
 
-  // Action: Reset changes
   const handleResetToSaved = () => {
     refetchRoster();
     setHasUnsavedChanges(false);
     toast.info('تغییرات به آخرین وضعیت ذخیره‌شده بازگردانی شد');
   };
 
-  // Action: Update single student status
   const handleUpdateStudentStatus = (studentId: string, newStatus: AttendanceStatus) => {
     setStudentsList((prev) =>
       prev.map((s) => {
@@ -409,7 +396,6 @@ export const AttendancePage: React.FC = () => {
     setHasUnsavedChanges(true);
   };
 
-  // Detail Modal Save
   const handleSaveModalDetails = () => {
     if (!detailModalStudent) return;
     setStudentsList((prev) =>
@@ -429,7 +415,7 @@ export const AttendancePage: React.FC = () => {
     toast.success('اطلاعات تکمیلی ثبت شد');
   };
 
-  // 10. Query: Teacher Attendance Monitoring (for Managers/Staff)
+  // 10. Query: Staff Attendance
   const { data: staffAttendanceData, isLoading: isLoadingStaffAttendance } = useQuery({
     enabled: isManagerOrAdmin && activeTab === 'staff_attendance',
     queryKey: ['teachers-attendance', selectedDate],
@@ -441,82 +427,85 @@ export const AttendancePage: React.FC = () => {
   });
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-4 sm:space-y-6 pb-24 md:pb-16 max-w-7xl mx-auto overflow-x-hidden">
       {/* ─────────────────────────────────────────────────────────────
-          TOP CONTROL BAR & JALALI HEADER
+          1. TOP APP BAR & LIVE SYSTEM TIME
       ───────────────────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-card border-3 border-black dark:border-white/20 p-5 rounded-3xl shadow-[6px_6px_0px_#000] dark:shadow-[6px_6px_0px_rgba(255,255,255,0.15)]">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-          {/* Title & Live System Clock */}
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-amber-400 border-2 border-black flex items-center justify-center shadow-[3px_3px_0px_#000] shrink-0 text-black">
-              <CalendarCheck className="w-8 h-8" />
+      <div className="bg-white dark:bg-card border-2 sm:border-3 border-black dark:border-white/20 p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000] space-y-3.5">
+        
+        {/* Row 1: Header & Live System Time */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+            <div className="w-10 h-10 sm:w-13 sm:h-13 rounded-xl sm:rounded-2xl bg-amber-400 border-2 border-black flex items-center justify-center shadow-[2px_2px_0px_#000] shrink-0 text-black">
+              <CalendarCheck className="w-5 h-5 sm:w-7 sm:h-7" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-black text-foreground">
-                  دفتر حضور و غیاب هوشمند
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h1 className="text-base sm:text-2xl font-black text-foreground truncate">
+                  حضور و غیاب
                 </h1>
-                <Badge variant="college" className="text-xs font-bold border-2 border-black">
+                <Badge variant="college" className="text-[10px] sm:text-xs font-bold border border-black px-1.5 py-0 sm:px-2">
                   رُکاد
                 </Badge>
               </div>
-              <div className="flex items-center gap-3 mt-1 text-sm font-bold text-muted-foreground">
-                <div className="flex items-center gap-1.5 bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-xl border border-black/20 dark:border-white/20 text-foreground">
-                  <Clock className="w-4 h-4 text-amber-500 animate-spin" style={{ animationDuration: '6s' }} />
-                  <span>زمان سیستم:</span>
-                  <span className="font-mono text-base font-black text-amber-600 dark:text-amber-400">
-                    {toPersianDigits(
-                      liveSystemTime.toLocaleTimeString('fa-IR', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                      }),
-                    )}
-                  </span>
-                </div>
-                {isSelectedDateToday && (
-                  <span className="inline-flex items-center gap-1 text-xs font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-300 dark:border-emerald-700">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                    تاریخ امروز
-                  </span>
-                )}
-              </div>
+              <p className="text-[11px] sm:text-xs font-bold text-muted-foreground truncate hidden xs:block">
+                ثبت الکترونیک تردد و غیبت کلاس‌ها
+              </p>
             </div>
           </div>
 
-          {/* Jalali Date Controls */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div className="flex items-center bg-neutral-50 dark:bg-neutral-900 border-2 border-black dark:border-white/20 rounded-2xl p-1 shadow-[3px_3px_0px_#000]">
-              <button
-                type="button"
-                onClick={() => navigateDate(1)}
-                title="روز بعد"
-                className="p-2 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl transition-all"
-              >
-                <ChevronRight className="w-5 h-5 text-foreground" />
-              </button>
+          {/* Live System Time Chip */}
+          <div className="flex items-center gap-1.5 bg-neutral-100 dark:bg-neutral-800 px-2 sm:px-3 py-1 rounded-xl border border-black/30 dark:border-white/20 shrink-0">
+            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 shrink-0 animate-spin" style={{ animationDuration: '6s' }} />
+            <span className="font-mono text-xs sm:text-sm font-black text-amber-600 dark:text-amber-400">
+              {toPersianDigits(
+                liveSystemTime.toLocaleTimeString('fa-IR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                }),
+              )}
+            </span>
+          </div>
+        </div>
 
-              <div className="px-3 text-center min-w-[170px]">
-                <div className="text-xs font-bold text-muted-foreground">
-                  {currentDayOfWeekInfo.name}
-                </div>
-                <div className="text-sm font-black text-foreground">
-                  {formatJalaliDisplay(selectedDate, false)}
-                </div>
+        {/* Row 2: Jalali Date Navigator Bar */}
+        <div className="grid grid-cols-1 sm:flex sm:items-center sm:justify-between gap-2 pt-1">
+          {/* Date Navigator Bar */}
+          <div className="flex items-center bg-neutral-50 dark:bg-neutral-900 border-2 border-black dark:border-white/20 rounded-xl sm:rounded-2xl p-1 shadow-[2px_2px_0px_#000] justify-between">
+            <button
+              type="button"
+              onClick={() => navigateDate(1)}
+              title="روز بعد"
+              className="p-1.5 sm:p-2 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-lg sm:rounded-xl transition-all shrink-0"
+            >
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-foreground" />
+            </button>
+
+            <div
+              onClick={() => setShowDatePickerModal(!showDatePickerModal)}
+              className="px-2 py-0.5 text-center cursor-pointer hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50 rounded-lg transition-all flex items-center justify-center gap-1.5 min-w-0"
+            >
+              <CalendarDays className="w-4 h-4 text-amber-500 shrink-0" />
+              <div className="text-xs sm:text-sm font-black text-foreground truncate">
+                <span className="text-amber-600 dark:text-amber-400 ml-1">{currentDayOfWeekInfo.name}</span>
+                {formatJalaliDisplay(selectedDate, false)}
               </div>
-
-              <button
-                type="button"
-                onClick={() => navigateDate(-1)}
-                title="روز قبل"
-                className="p-2 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl transition-all"
-              >
-                <ChevronLeft className="w-5 h-5 text-foreground" />
-              </button>
+              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
             </div>
 
-            {/* Quick Today Button */}
+            <button
+              type="button"
+              onClick={() => navigateDate(-1)}
+              title="روز قبل"
+              className="p-1.5 sm:p-2 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-lg sm:rounded-xl transition-all shrink-0"
+            >
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 text-foreground" />
+            </button>
+          </div>
+
+          {/* Quick Buttons on Tablet/Desktop */}
+          <div className="flex items-center gap-2">
             {!isSelectedDateToday && (
               <Button
                 variant="outline"
@@ -525,31 +514,50 @@ export const AttendancePage: React.FC = () => {
                   setSelectedDate(todayJalali);
                   setActiveSession(null);
                 }}
-                className="border-2 border-black font-black text-xs h-11 shadow-[2px_2px_0px_#000]"
+                className="w-full sm:w-auto border-2 border-black font-black text-xs h-9 sm:h-10 shadow-[2px_2px_0px_#000]"
               >
-                امروز
+                بازگشت به امروز
               </Button>
             )}
 
-            {/* Persian Date Picker */}
-            <div className="w-36">
+            {isSelectedDateToday && (
+              <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-700">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                امروز
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Modal / Popup for Persian Date Picker */}
+        {showDatePickerModal && (
+          <div className="p-3 bg-neutral-100 dark:bg-neutral-900 border-2 border-black rounded-2xl shadow-[3px_3px_0px_#000] flex flex-col sm:flex-row items-center justify-between gap-3 animate-in fade-in duration-150">
+            <div className="w-full sm:w-72">
               <PersianDatePicker
                 value={selectedDate}
                 onChange={(d) => {
                   setSelectedDate(d);
                   setActiveSession(null);
+                  setShowDatePickerModal(false);
                 }}
-                placeholder="انتخاب تاریخ"
-                className="h-11 font-bold text-xs"
+                placeholder="انتخاب مستقیم تاریخ شمسی"
+                className="h-10 text-xs font-bold w-full"
               />
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDatePickerModal(false)}
+              className="w-full sm:w-auto border-2 border-black text-xs font-bold"
+            >
+              بستن
+            </Button>
           </div>
-        </div>
+        )}
 
-        {/* Weekdays Strip */}
-        <div className="mt-5 pt-4 border-t-2 border-dashed border-neutral-200 dark:border-neutral-800 flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs font-black text-muted-foreground ml-2">روزهای هفته:</span>
+        {/* Row 3: Horizontal Scrollable Weekday Pill Strip */}
+        <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar -mx-1 px-1">
             {WEEK_DAYS_INFO.map((day) => {
               const isCurrentDay = currentDayOfWeekInfo.key === day.key;
               return (
@@ -557,9 +565,9 @@ export const AttendancePage: React.FC = () => {
                   key={day.key}
                   type="button"
                   onClick={() => selectWeekday(day.key)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black border-2 transition-all ${
+                  className={`px-3 py-1 rounded-xl text-xs font-black border-2 shrink-0 transition-all ${
                     isCurrentDay
-                      ? 'bg-amber-400 text-black border-black shadow-[2px_2px_0px_#000] scale-105'
+                      ? 'bg-amber-400 text-black border-black shadow-[2px_2px_0px_#000]'
                       : 'bg-neutral-100 dark:bg-neutral-800 text-foreground border-transparent hover:border-black/30'
                   }`}
                 >
@@ -568,78 +576,78 @@ export const AttendancePage: React.FC = () => {
               );
             })}
           </div>
+        </div>
 
-          {/* Tab Navigation */}
-          <div className="flex items-center gap-2">
+        {/* Row 4: Top Navigation Tabs (Responsive Segmented Control) */}
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 bg-neutral-100 dark:bg-neutral-900 p-1 rounded-xl border border-black/20 dark:border-white/20">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('today_schedule');
+              setActiveSession(null);
+            }}
+            className={`py-2 px-3 rounded-lg text-xs font-black transition-all text-center ${
+              activeTab === 'today_schedule'
+                ? 'bg-white dark:bg-card text-foreground border-2 border-black shadow-[2px_2px_0px_#000]'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            برنامه و زنگ‌ها
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('all_classes');
+              setActiveSession(null);
+            }}
+            className={`py-2 px-3 rounded-lg text-xs font-black transition-all text-center ${
+              activeTab === 'all_classes'
+                ? 'bg-white dark:bg-card text-foreground border-2 border-black shadow-[2px_2px_0px_#000]'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            تمامی کلاس‌های من
+          </button>
+          {isManagerOrAdmin && (
             <button
               type="button"
               onClick={() => {
-                setActiveTab('today_schedule');
+                setActiveTab('staff_attendance');
                 setActiveSession(null);
               }}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-black border-2 transition-all ${
-                activeTab === 'today_schedule'
-                  ? 'bg-primary text-primary-foreground border-black shadow-[2px_2px_0px_#000]'
-                  : 'bg-neutral-100 dark:bg-neutral-800 text-foreground border-transparent'
+              className={`col-span-2 sm:col-span-1 py-2 px-3 rounded-lg text-xs font-black transition-all text-center ${
+                activeTab === 'staff_attendance'
+                  ? 'bg-white dark:bg-card text-foreground border-2 border-black shadow-[2px_2px_0px_#000]'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              برنامه و زنگ‌های کلاسی
+              تردد کادر مدرسه
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('all_classes');
-                setActiveSession(null);
-              }}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-black border-2 transition-all ${
-                activeTab === 'all_classes'
-                  ? 'bg-primary text-primary-foreground border-black shadow-[2px_2px_0px_#000]'
-                  : 'bg-neutral-100 dark:bg-neutral-800 text-foreground border-transparent'
-              }`}
-            >
-              تمامی کلاس‌های من
-            </button>
-            {isManagerOrAdmin && (
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('staff_attendance');
-                  setActiveSession(null);
-                }}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-black border-2 transition-all ${
-                  activeTab === 'staff_attendance'
-                    ? 'bg-primary text-primary-foreground border-black shadow-[2px_2px_0px_#000]'
-                    : 'bg-neutral-100 dark:bg-neutral-800 text-foreground border-transparent'
-                }`}
-              >
-                تردد کادر و همکاران
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          ACTIVE CALLOUT IF A PERIOD IS HAPPENING RIGHT NOW
+          2. ACTIVE LIVE PERIOD CALLOUT BANNER
       ───────────────────────────────────────────────────────────── */}
       {activeNowSlot && !activeSession && (
-        <div className="bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 dark:from-amber-600 dark:to-amber-700 border-3 border-black p-5 rounded-3xl shadow-[6px_6px_0px_#000] text-black">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-white border-2 border-black flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]">
-                <Radio className="w-6 h-6 text-amber-600 animate-pulse" />
+        <div className="bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 dark:from-amber-600 dark:to-amber-700 border-2 sm:border-3 border-black p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000] text-black">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white border-2 border-black flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]">
+                <Radio className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600 animate-pulse" />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="bg-black text-amber-400 text-xs font-black px-2.5 py-0.5 rounded-lg flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="bg-black text-amber-400 text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-lg flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
                     هم‌اکنون در حال برگزاری (زنگ جاری)
                   </span>
-                  <span className="text-xs font-bold text-black/80">
-                    ساعت {toPersianDigits(activeNowSlot.startTime)} الی {toPersianDigits(activeNowSlot.endTime)}
+                  <span className="text-[11px] font-bold text-black/80">
+                    {toPersianDigits(activeNowSlot.startTime)} تا {toPersianDigits(activeNowSlot.endTime)}
                   </span>
                 </div>
-                <h3 className="text-lg font-black mt-1">
+                <h3 className="text-sm sm:text-base font-black mt-1 truncate">
                   زنگ {toPersianDigits(activeNowSlot.periodNumber)}: {activeNowSlot.classroomName} — درس {activeNowSlot.lessonName}
                 </h3>
               </div>
@@ -656,56 +664,50 @@ export const AttendancePage: React.FC = () => {
                   endTime: activeNowSlot.endTime,
                 })
               }
-              className="bg-black text-white hover:bg-neutral-900 border-2 border-black shadow-[3px_3px_0px_#fff] font-black text-sm px-5 py-2.5 rounded-2xl shrink-0"
+              className="w-full sm:w-auto bg-black text-white hover:bg-neutral-900 border-2 border-black shadow-[2px_2px_0px_#fff] font-black text-xs sm:text-sm py-2 sm:py-2.5 rounded-xl sm:rounded-2xl shrink-0"
             >
-              ثبت سریع حضور و غیاب همین زنگ
-              <ArrowRight className="w-4 h-4 mr-2" />
+              ثبت سریع حضور همین زنگ
+              <ArrowRight className="w-4 h-4 mr-1.5" />
             </Button>
           </div>
         </div>
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          SECTION A: CLASSROOM ATTENDANCE ACTIVE RECORDING VIEW
+          3. ACTIVE ATTENDANCE RECORDING SESSION (ROSTER VIEW)
       ───────────────────────────────────────────────────────────── */}
       {activeSession ? (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Active Session Header Banner */}
-          <div className="bg-white dark:bg-card border-3 border-black dark:border-white/20 p-5 rounded-3xl shadow-[6px_6px_0px_#000]">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
+          <div className="bg-white dark:bg-card border-2 sm:border-3 border-black dark:border-white/20 p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                 <button
                   type="button"
                   onClick={() => setActiveSession(null)}
-                  className="p-2.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 border-2 border-black rounded-2xl shadow-[2px_2px_0px_#000] transition-all"
-                  title="بازگشت به لیست زنگ‌ها"
+                  className="p-2 sm:p-2.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 border-2 border-black rounded-xl sm:rounded-2xl shadow-[2px_2px_0px_#000] transition-all shrink-0"
+                  title="بازگشت به برنامه کلاس‌ها"
                 >
-                  <ArrowRight className="w-5 h-5 text-foreground" />
+                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-foreground" />
                 </button>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-black text-foreground">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base sm:text-xl font-black text-foreground truncate">
                       {activeSession.classroomName}
                     </h2>
-                    <Badge variant="ecosystem" className="text-xs font-black border-2 border-black">
+                    <Badge variant="ecosystem" className="text-[10px] sm:text-xs font-black border border-black">
                       زنگ {toPersianDigits(activeSession.periodNumber)}
                     </Badge>
-                    {activeSession.startTime && (
-                      <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" />
-                        {toPersianDigits(activeSession.startTime)} الی {toPersianDigits(activeSession.endTime)}
-                      </span>
-                    )}
                   </div>
-                  <p className="text-xs text-muted-foreground font-bold mt-0.5">
+                  <p className="text-[11px] sm:text-xs text-muted-foreground font-bold mt-0.5 truncate">
                     {activeSession.lessonName ? `درس: ${activeSession.lessonName} • ` : ''}
-                    تاریخ: {formatJalaliDisplay(selectedDate, true)}
+                    {currentDayOfWeekInfo.name} {formatJalaliDisplay(selectedDate, false)}
                   </p>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2.5 flex-wrap">
+              {/* Top Quick Actions (Visible on Tablet/Desktop, sticky bottom on mobile) */}
+              <div className="hidden sm:flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -732,7 +734,7 @@ export const AttendancePage: React.FC = () => {
                 <Button
                   onClick={() => saveAttendanceMutation.mutate()}
                   disabled={saveAttendanceMutation.isPending || studentsList.length === 0}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-black border-2 border-black font-black text-xs px-4 py-2 shadow-[3px_3px_0px_#000]"
+                  className="bg-emerald-500 hover:bg-emerald-600 text-black border-2 border-black font-black text-xs px-3 sm:px-4 py-2 shadow-[2px_2px_0px_#000]"
                 >
                   {saveAttendanceMutation.isPending ? (
                     <RefreshCw className="w-4 h-4 animate-spin ml-1.5" />
@@ -743,93 +745,168 @@ export const AttendancePage: React.FC = () => {
                 </Button>
               </div>
             </div>
+
+            {/* Mobile Horizontal Quick Action Buttons */}
+            <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-neutral-200 dark:border-neutral-800 sm:hidden">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleMarkAllPresent}
+                disabled={studentsList.length === 0}
+                className="w-full border-2 border-black font-black text-xs h-9 shadow-[1.5px_1.5px_0px_#000]"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 ml-1 text-emerald-500" />
+                همه حاضرند
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => saveAttendanceMutation.mutate()}
+                disabled={saveAttendanceMutation.isPending || studentsList.length === 0}
+                className="w-full bg-emerald-500 text-black border-2 border-black font-black text-xs h-9 shadow-[1.5px_1.5px_0px_#000]"
+              >
+                {saveAttendanceMutation.isPending ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin ml-1" />
+                ) : (
+                  <Send className="w-3.5 h-3.5 ml-1" />
+                )}
+                ثبت نهایی
+              </Button>
+            </div>
           </div>
 
-          {/* Roster Live Stat Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
-            <StatCard
-              title="کل هنرجویان"
-              value={rosterStats.total}
-              icon={Users}
-              theme="college"
-              subtitle="لیست کلاس"
-            />
-            <StatCard
-              title="حاضرین"
-              value={rosterStats.present}
-              icon={UserCheck}
-              theme="ecosystem"
-              subtitle={`${rosterStats.total > 0 ? Math.round((rosterStats.present / rosterStats.total) * 100) : 0}% کلاس`}
-            />
-            <StatCard
-              title="غایبین"
-              value={rosterStats.absent}
-              icon={UserX}
-              theme="female"
-              subtitle="پیامک خودکار به اولیاء"
-            />
-            <StatCard
-              title="تاخیر ورود"
-              value={rosterStats.tardy}
-              icon={Clock}
-              theme="club"
-              subtitle="با احتساب دقایق"
-            />
-            <StatCard
-              title="غیبت موجه"
-              value={rosterStats.excused}
-              icon={ShieldAlert}
-              theme="male"
-              subtitle="دارای مدرک/دلیل"
-            />
+          {/* Compact Responsive Stats Bar */}
+          <div className="grid grid-cols-5 gap-1.5 sm:gap-3 bg-white dark:bg-card border-2 border-black dark:border-white/20 p-2 sm:p-3 rounded-xl sm:rounded-2xl shadow-[3px_3px_0px_#000]">
+            <div
+              onClick={() => setStatusFilter('ALL')}
+              className={`cursor-pointer text-center p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all ${
+                statusFilter === 'ALL'
+                  ? 'bg-neutral-200 dark:bg-neutral-800 border-2 border-black'
+                  : 'hover:bg-neutral-100 dark:hover:bg-neutral-800'
+              }`}
+            >
+              <div className="text-[10px] sm:text-xs font-bold text-muted-foreground">کل</div>
+              <div className="text-sm sm:text-lg font-black text-foreground">
+                {toPersianDigits(rosterStats.total)}
+              </div>
+            </div>
+
+            <div
+              onClick={() => setStatusFilter(statusFilter === 'PRESENT' ? 'ALL' : 'PRESENT')}
+              className={`cursor-pointer text-center p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all ${
+                statusFilter === 'PRESENT'
+                  ? 'bg-emerald-100 dark:bg-emerald-950/70 border-2 border-emerald-600'
+                  : 'hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
+              }`}
+            >
+              <div className="text-[10px] sm:text-xs font-bold text-emerald-600 dark:text-emerald-400">حاضر</div>
+              <div className="text-sm sm:text-lg font-black text-emerald-700 dark:text-emerald-300">
+                {toPersianDigits(rosterStats.present)}
+              </div>
+            </div>
+
+            <div
+              onClick={() => setStatusFilter(statusFilter === 'ABSENT' ? 'ALL' : 'ABSENT')}
+              className={`cursor-pointer text-center p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all ${
+                statusFilter === 'ABSENT'
+                  ? 'bg-rose-100 dark:bg-rose-950/70 border-2 border-rose-600'
+                  : 'hover:bg-rose-50 dark:hover:bg-rose-950/30'
+              }`}
+            >
+              <div className="text-[10px] sm:text-xs font-bold text-rose-600 dark:text-rose-400">غایب</div>
+              <div className="text-sm sm:text-lg font-black text-rose-700 dark:text-rose-300">
+                {toPersianDigits(rosterStats.absent)}
+              </div>
+            </div>
+
+            <div
+              onClick={() => setStatusFilter(statusFilter === 'TARDY' ? 'ALL' : 'TARDY')}
+              className={`cursor-pointer text-center p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all ${
+                statusFilter === 'TARDY'
+                  ? 'bg-amber-100 dark:bg-amber-950/70 border-2 border-amber-600'
+                  : 'hover:bg-amber-50 dark:hover:bg-amber-950/30'
+              }`}
+            >
+              <div className="text-[10px] sm:text-xs font-bold text-amber-600 dark:text-amber-400">تاخیر</div>
+              <div className="text-sm sm:text-lg font-black text-amber-700 dark:text-amber-300">
+                {toPersianDigits(rosterStats.tardy)}
+              </div>
+            </div>
+
+            <div
+              onClick={() => setStatusFilter(statusFilter === 'EXCUSED_ABSENT' ? 'ALL' : 'EXCUSED_ABSENT')}
+              className={`cursor-pointer text-center p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all ${
+                statusFilter === 'EXCUSED_ABSENT'
+                  ? 'bg-sky-100 dark:bg-sky-950/70 border-2 border-sky-600'
+                  : 'hover:bg-sky-50 dark:hover:bg-sky-950/30'
+              }`}
+            >
+              <div className="text-[10px] sm:text-xs font-bold text-sky-600 dark:text-sky-400">موجه</div>
+              <div className="text-sm sm:text-lg font-black text-sky-700 dark:text-sky-300">
+                {toPersianDigits(rosterStats.excused)}
+              </div>
+            </div>
           </div>
 
-          {/* Student Roster Table Card */}
-          <div className="bg-white dark:bg-card border-3 border-black dark:border-white/20 rounded-3xl p-5 shadow-[6px_6px_0px_#000]">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
-              <div className="relative flex-1 max-w-md">
+          {/* Student Roster Card */}
+          <div className="bg-white dark:bg-card border-2 sm:border-3 border-black dark:border-white/20 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000]">
+            
+            {/* Search Input Bar */}
+            <div className="mb-4">
+              <div className="relative">
                 <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="جستجوی نام، کد دانش‌آموزی یا کد ملی..."
-                  className="pr-10 border-2 border-black font-bold text-xs"
+                  placeholder="جستجوی نام یا کد دانش‌آموزی..."
+                  className="pr-10 border-2 border-black font-bold text-xs h-10 w-full"
                 />
-              </div>
-
-              <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
-                <span>نمایش {toPersianDigits(filteredStudents.length)} از {toPersianDigits(studentsList.length)} دانش‌آموز</span>
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
 
+            {/* Students List */}
             {isLoadingRoster ? (
-              <div className="py-20 text-center space-y-3">
+              <div className="py-16 text-center space-y-2">
                 <RefreshCw className="w-8 h-8 text-primary animate-spin mx-auto" />
-                <p className="font-black text-sm text-foreground">در حال بارگذاری لیست هنرجویان کلاس...</p>
+                <p className="font-black text-xs sm:text-sm text-foreground">در حال بارگذاری لیست دانش‌آموزان...</p>
               </div>
             ) : filteredStudents.length === 0 ? (
-              <div className="py-16 text-center border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-2xl">
-                <Users className="w-10 h-10 text-muted-foreground mx-auto mb-2 opacity-50" />
-                <p className="font-black text-sm text-foreground">دانش‌آموزی برای نمایش یافت نشد</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  در صورت جستجو، عبارت را پاک کنید یا از ثبت‌نام هنرجویان در این کلاس اطمینان حاصل فرمایید.
-                </p>
+              <div className="py-12 text-center border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-2xl p-4">
+                <Users className="w-8 h-8 text-muted-foreground mx-auto mb-1.5 opacity-50" />
+                <p className="font-black text-xs sm:text-sm text-foreground">دانش‌آموزی مطابق فیلتر یافت نشد</p>
+                {statusFilter !== 'ALL' && (
+                  <button
+                    type="button"
+                    onClick={() => setStatusFilter('ALL')}
+                    className="text-xs text-primary underline font-bold mt-1"
+                  >
+                    پاک کردن فیلتر وضعیت
+                  </button>
+                )}
               </div>
             ) : (
-              <div className="divide-y-2 divide-neutral-100 dark:divide-neutral-800">
+              <div className="space-y-2.5 sm:space-y-2 divide-y sm:divide-y-0 divide-neutral-100 dark:divide-neutral-800">
                 {filteredStudents.map((st, idx) => {
                   const fullName = `${st.user?.firstName || ''} ${st.user?.lastName || ''}`;
                   return (
                     <div
                       key={st.studentId}
-                      className="py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-neutral-50/80 dark:hover:bg-neutral-900/40 px-3 rounded-2xl transition-all"
+                      className="pt-2.5 sm:pt-0 sm:py-2.5 flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-4 sm:hover:bg-neutral-50/80 sm:dark:hover:bg-neutral-900/40 sm:px-3 sm:rounded-2xl transition-all"
                     >
-                      {/* Student Info */}
-                      <div className="flex items-center gap-3.5 min-w-[220px]">
-                        <div className="w-8 text-center font-mono font-black text-xs text-muted-foreground">
+                      {/* Student Info: Avatar + Name + Code */}
+                      <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+                        <div className="w-6 text-center font-mono font-black text-xs text-muted-foreground shrink-0">
                           {toPersianDigits(idx + 1)}
                         </div>
-                        <div className="w-12 h-12 rounded-2xl border-2 border-black bg-neutral-100 dark:bg-neutral-800 overflow-hidden shrink-0 shadow-[2px_2px_0px_#000]">
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl border-2 border-black bg-neutral-100 dark:bg-neutral-800 overflow-hidden shrink-0 shadow-[1.5px_1.5px_0px_#000]">
                           {st.user?.avatarUrl ? (
                             <img
                               src={st.user.avatarUrl}
@@ -837,33 +914,39 @@ export const AttendancePage: React.FC = () => {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center font-black text-base text-foreground">
+                            <div className="w-full h-full flex items-center justify-center font-black text-sm text-foreground">
                               {st.user?.firstName?.[0] || 'د'}
                             </div>
                           )}
                         </div>
-                        <div>
-                          <div className="font-black text-sm text-foreground">{fullName}</div>
-                          <div className="text-xs text-muted-foreground font-mono mt-0.5">
-                            کد دانش‌آموزی: {toPersianDigits(st.studentCode)}
-                            {st.nationalCode && ` • کدملی: ${toPersianDigits(st.nationalCode)}`}
+                        <div className="min-w-0">
+                          <div className="font-black text-xs sm:text-sm text-foreground truncate">
+                            {fullName}
+                          </div>
+                          <div className="text-[10px] sm:text-xs text-muted-foreground font-mono truncate">
+                            کد: {toPersianDigits(st.studentCode)}
+                            {st.reason && (
+                              <span className="text-amber-600 dark:text-amber-400 font-bold mr-1">
+                                • {st.reason}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
 
-                      {/* Status Selector - 4 Neobrutalist buttons */}
-                      <div className="flex items-center gap-1.5 flex-wrap">
+                      {/* Status Selector - 4 Neobrutalist buttons (Grid on mobile, flex on desktop) */}
+                      <div className="grid grid-cols-4 sm:flex sm:items-center gap-1 sm:gap-1.5 w-full md:w-auto">
                         {/* PRESENT */}
                         <button
                           type="button"
                           onClick={() => handleUpdateStudentStatus(st.studentId, 'PRESENT')}
-                          className={`px-3 py-1.5 rounded-xl font-black text-xs border-2 transition-all ${
+                          className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-lg sm:rounded-xl font-black text-[11px] sm:text-xs border-2 text-center transition-all ${
                             st.status === 'PRESENT'
-                              ? 'bg-emerald-400 text-black border-black shadow-[2px_2px_0px_#000] scale-105'
+                              ? 'bg-emerald-400 text-black border-black shadow-[1.5px_1.5px_0px_#000] scale-102 sm:scale-105'
                               : 'bg-neutral-100 dark:bg-neutral-800 text-muted-foreground border-transparent hover:border-black/30'
                           }`}
                         >
-                          <Check className="w-3.5 h-3.5 inline ml-1" />
+                          <Check className="w-3 h-3 inline ml-0.5 sm:ml-1" />
                           حاضر
                         </button>
 
@@ -871,13 +954,13 @@ export const AttendancePage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleUpdateStudentStatus(st.studentId, 'ABSENT')}
-                          className={`px-3 py-1.5 rounded-xl font-black text-xs border-2 transition-all ${
+                          className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-lg sm:rounded-xl font-black text-[11px] sm:text-xs border-2 text-center transition-all ${
                             st.status === 'ABSENT'
-                              ? 'bg-rose-500 text-white border-black shadow-[2px_2px_0px_#000] scale-105'
+                              ? 'bg-rose-500 text-white border-black shadow-[1.5px_1.5px_0px_#000] scale-102 sm:scale-105'
                               : 'bg-neutral-100 dark:bg-neutral-800 text-muted-foreground border-transparent hover:border-black/30'
                           }`}
                         >
-                          <UserX className="w-3.5 h-3.5 inline ml-1" />
+                          <UserX className="w-3 h-3 inline ml-0.5 sm:ml-1" />
                           غایب
                         </button>
 
@@ -890,14 +973,14 @@ export const AttendancePage: React.FC = () => {
                             setModalDelayMinutes(st.delayMinutes || 15);
                             setModalReason(st.reason || '');
                           }}
-                          className={`px-3 py-1.5 rounded-xl font-black text-xs border-2 transition-all ${
+                          className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-lg sm:rounded-xl font-black text-[11px] sm:text-xs border-2 text-center transition-all ${
                             st.status === 'TARDY'
-                              ? 'bg-amber-400 text-black border-black shadow-[2px_2px_0px_#000] scale-105'
+                              ? 'bg-amber-400 text-black border-black shadow-[1.5px_1.5px_0px_#000] scale-102 sm:scale-105'
                               : 'bg-neutral-100 dark:bg-neutral-800 text-muted-foreground border-transparent hover:border-black/30'
                           }`}
                         >
-                          <Clock className="w-3.5 h-3.5 inline ml-1" />
-                          تاخیر {st.delayMinutes > 0 ? `(${toPersianDigits(st.delayMinutes)}د)` : ''}
+                          <Clock className="w-3 h-3 inline ml-0.5 sm:ml-1" />
+                          تاخیر
                         </button>
 
                         {/* EXCUSED_ABSENT */}
@@ -909,30 +992,15 @@ export const AttendancePage: React.FC = () => {
                             setModalDelayMinutes(0);
                             setModalReason(st.reason || '');
                           }}
-                          className={`px-3 py-1.5 rounded-xl font-black text-xs border-2 transition-all ${
+                          className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-lg sm:rounded-xl font-black text-[11px] sm:text-xs border-2 text-center transition-all ${
                             st.status === 'EXCUSED_ABSENT'
-                              ? 'bg-sky-400 text-black border-black shadow-[2px_2px_0px_#000] scale-105'
+                              ? 'bg-sky-400 text-black border-black shadow-[1.5px_1.5px_0px_#000] scale-102 sm:scale-105'
                               : 'bg-neutral-100 dark:bg-neutral-800 text-muted-foreground border-transparent hover:border-black/30'
                           }`}
                         >
-                          <ShieldAlert className="w-3.5 h-3.5 inline ml-1" />
+                          <ShieldAlert className="w-3 h-3 inline ml-0.5 sm:ml-1" />
                           موجه
                         </button>
-
-                        {/* Reason / Notes Indicator */}
-                        {st.reason && (
-                          <span
-                            title={st.reason}
-                            onClick={() => {
-                              setDetailModalStudent(st);
-                              setModalDelayMinutes(st.delayMinutes);
-                              setModalReason(st.reason);
-                            }}
-                            className="cursor-pointer text-xs bg-neutral-200 dark:bg-neutral-700 px-2 py-1 rounded-lg text-foreground max-w-[120px] truncate"
-                          >
-                            دلیل: {st.reason}
-                          </span>
-                        )}
                       </div>
                     </div>
                   );
@@ -940,41 +1008,65 @@ export const AttendancePage: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Sticky Mobile Floating Action Footer */}
+          <div className="sm:hidden fixed bottom-0 inset-x-0 bg-white/95 dark:bg-card/95 backdrop-blur-md border-t-2 border-black p-3 z-40 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] flex items-center justify-between gap-3">
+            <div className="text-xs font-black">
+              <span className="text-emerald-600">{toPersianDigits(rosterStats.present)} حاضر</span>
+              <span className="mx-1.5 text-muted-foreground">•</span>
+              <span className="text-rose-600">{toPersianDigits(rosterStats.absent)} غایب</span>
+            </div>
+
+            <Button
+              size="sm"
+              onClick={() => saveAttendanceMutation.mutate()}
+              disabled={saveAttendanceMutation.isPending || studentsList.length === 0}
+              className="bg-emerald-500 hover:bg-emerald-600 text-black border-2 border-black font-black text-xs px-4 h-10 shadow-[2px_2px_0px_#000]"
+            >
+              {saveAttendanceMutation.isPending ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin ml-1" />
+              ) : (
+                <Send className="w-3.5 h-3.5 ml-1" />
+              )}
+              ثبت نهایی حضور و غیاب
+            </Button>
+          </div>
         </div>
       ) : activeTab === 'today_schedule' ? (
         /* ─────────────────────────────────────────────────────────────
-            SECTION B: TEACHER'S PERIODS & DAILY SCHEDULE
+            4. TEACHER'S PERIODS & DAILY SCHEDULE
         ───────────────────────────────────────────────────────────── */
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
+        <div className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h2 className="text-xl font-black text-foreground">
+              <h2 className="text-base sm:text-xl font-black text-foreground">
                 برنامه درسی {currentDayOfWeekInfo.name} ({formatJalaliDisplay(selectedDate, false)})
               </h2>
-              <p className="text-xs font-bold text-muted-foreground mt-0.5">
-                زنگ جاری بر اساس ساعت سیستم به صورت هایلایت رنگی مشخص می‌شود. برای ثبت حضور روی هر کارت کلیک کنید.
+              <p className="text-[11px] sm:text-xs font-bold text-muted-foreground mt-0.5">
+                زنگ جاری با رنگ کهربایی متمایز شده است. برای ورود و ثبت حضور، روی کارت کلاس کلیک کنید.
               </p>
             </div>
           </div>
 
           {isLoadingSchedule ? (
-            <div className="py-20 text-center space-y-3 bg-white dark:bg-card border-3 border-black rounded-3xl">
+            <div className="py-16 text-center space-y-2 bg-white dark:bg-card border-2 sm:border-3 border-black rounded-2xl sm:rounded-3xl">
               <RefreshCw className="w-8 h-8 text-primary animate-spin mx-auto" />
-              <p className="font-black text-sm text-foreground">در حال واکشی برنامه کلاسی دبیر...</p>
+              <p className="font-black text-xs sm:text-sm text-foreground">در حال واکشی برنامه درسی...</p>
             </div>
           ) : schedulesList.length === 0 ? (
-            <div className="py-16 text-center border-3 border-dashed border-neutral-300 dark:border-neutral-700 bg-white dark:bg-card rounded-3xl p-8 space-y-4 shadow-[4px_4px_0px_#000]">
-              <Calendar className="w-12 h-12 text-muted-foreground mx-auto opacity-50" />
+            <div className="py-12 sm:py-16 text-center border-2 sm:border-3 border-dashed border-neutral-300 dark:border-neutral-700 bg-white dark:bg-card rounded-2xl sm:rounded-3xl p-6 sm:p-8 space-y-3 shadow-[3px_3px_0px_#000]">
+              <Calendar className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground mx-auto opacity-50" />
               <div>
-                <h3 className="text-base font-black text-foreground">
-                  در روز {currentDayOfWeekInfo.name} برنامه کلاسی ثبت نشده است
+                <h3 className="text-sm sm:text-base font-black text-foreground">
+                  در روز {currentDayOfWeekInfo.name} زنگ درسی برای شما ثبت نشده است
                 </h3>
-                <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
-                  می‌توانید از تب «تمامی کلاس‌های من» هر کلاسی را انتخاب و حضور و غیاب ثبت کنید، یا با دکمه‌های بالا روزهای دیگر را انتخاب نمایید.
+                <p className="text-[11px] sm:text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                  از تب «تمامی کلاس‌های من» می‌توانید هر کلاسی را انتخاب و ثبت حضور کنید، یا روزهای دیگر را انتخاب فرمایید.
                 </p>
               </div>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setActiveTab('all_classes')}
                 className="border-2 border-black font-black text-xs shadow-[2px_2px_0px_#000]"
               >
@@ -982,7 +1074,7 @@ export const AttendancePage: React.FC = () => {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
               {schedulesList.map((slot) => {
                 const slotTimingStatus = checkSlotStatus(slot.startTime, slot.endTime);
                 const isCurrent = slotTimingStatus === 'CURRENT';
@@ -1002,19 +1094,19 @@ export const AttendancePage: React.FC = () => {
                         endTime: slot.endTime,
                       })
                     }
-                    className={`cursor-pointer group relative rounded-3xl p-5 border-3 transition-all transform hover:-translate-y-1 ${
+                    className={`cursor-pointer group relative rounded-2xl sm:rounded-3xl p-4 sm:p-5 border-2 sm:border-3 transition-all transform sm:hover:-translate-y-1 ${
                       isCurrent
-                        ? 'bg-amber-100 dark:bg-amber-950/70 border-amber-500 dark:border-amber-400 shadow-[6px_6px_0px_#d97706] ring-4 ring-amber-400/40'
+                        ? 'bg-amber-100 dark:bg-amber-950/70 border-amber-500 dark:border-amber-400 shadow-[4px_4px_0px_#d97706] sm:shadow-[6px_6px_0px_#d97706] ring-2 sm:ring-4 ring-amber-400/40'
                         : isRecorded
-                        ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-black dark:border-white/20 shadow-[4px_4px_0px_#000]'
-                        : 'bg-white dark:bg-card border-black dark:border-white/20 shadow-[4px_4px_0px_#000] hover:border-primary'
+                        ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-black dark:border-white/20 shadow-[3px_3px_0px_#000] sm:shadow-[4px_4px_0px_#000]'
+                        : 'bg-white dark:bg-card border-black dark:border-white/20 shadow-[3px_3px_0px_#000] sm:shadow-[4px_4px_0px_#000] hover:border-primary'
                     }`}
                   >
                     {/* Period Header */}
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
                         <span
-                          className={`font-black text-xs px-2.5 py-1 rounded-xl border-2 border-black ${
+                          className={`font-black text-[11px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg sm:rounded-xl border-2 border-black ${
                             isCurrent
                               ? 'bg-amber-400 text-black shadow-[1.5px_1.5px_0px_#000]'
                               : 'bg-neutral-100 dark:bg-neutral-800 text-foreground'
@@ -1022,55 +1114,55 @@ export const AttendancePage: React.FC = () => {
                         >
                           زنگ {toPersianDigits(slot.periodNumber)}
                         </span>
-                        <span className="text-xs font-mono font-bold text-muted-foreground flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5" />
+                        <span className="text-[11px] sm:text-xs font-mono font-bold text-muted-foreground flex items-center gap-1">
+                          <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                           {toPersianDigits(slot.startTime)} - {toPersianDigits(slot.endTime)}
                         </span>
                       </div>
 
-                      {/* Live Badge for Current Period */}
+                      {/* Live Badge */}
                       {isCurrent ? (
-                        <span className="bg-red-500 text-white text-[11px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 animate-pulse border border-black shadow-[1px_1px_0px_#000]">
+                        <span className="bg-red-500 text-white text-[10px] sm:text-[11px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 animate-pulse border border-black shadow-[1px_1px_0px_#000]">
                           <span className="w-1.5 h-1.5 rounded-full bg-white" />
                           زنگ جاری
                         </span>
                       ) : isPassed ? (
-                        <span className="text-[11px] font-bold text-muted-foreground bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-lg">
+                        <span className="text-[10px] font-bold text-muted-foreground bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-lg">
                           سپری شده
                         </span>
                       ) : (
-                        <span className="text-[11px] font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/50 px-2 py-0.5 rounded-lg">
+                        <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/50 px-2 py-0.5 rounded-lg">
                           زنگ آینده
                         </span>
                       )}
                     </div>
 
                     {/* Class & Lesson Title */}
-                    <div className="space-y-1 my-3">
-                      <h3 className="font-black text-base text-foreground group-hover:text-primary transition-colors">
+                    <div className="space-y-0.5 sm:space-y-1 my-2 sm:my-3">
+                      <h3 className="font-black text-sm sm:text-base text-foreground group-hover:text-primary transition-colors truncate">
                         {slot.classroomName}
                       </h3>
-                      <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
-                        <BookOpen className="w-3.5 h-3.5 text-amber-500" />
-                        <span>درس: {slot.lessonName}</span>
+                      <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-muted-foreground truncate">
+                        <BookOpen className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span className="truncate">درس: {slot.lessonName}</span>
                       </div>
                     </div>
 
-                    {/* Stats & Attendance Status Footer */}
-                    <div className="mt-4 pt-3 border-t-2 border-black/10 dark:border-white/10 flex items-center justify-between text-xs font-bold">
+                    {/* Footer */}
+                    <div className="mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t-2 border-black/10 dark:border-white/10 flex items-center justify-between text-[11px] sm:text-xs font-bold">
                       <div className="flex items-center gap-1 text-muted-foreground">
                         <Users className="w-3.5 h-3.5" />
-                        <span>{toPersianDigits(slot.stats?.totalStudents || 0)} هنرجو</span>
+                        <span>{toPersianDigits(slot.stats?.totalStudents || 0)} دانش‌آموز</span>
                       </div>
 
                       <div>
                         {isRecorded ? (
-                          <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2.5 py-1 rounded-xl border border-emerald-400 flex items-center gap-1 font-black">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 sm:py-1 rounded-lg sm:rounded-xl border border-emerald-400 flex items-center gap-1 font-black">
+                            <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                             ثبت شده ({toPersianDigits(slot.stats?.presentCount || 0)} حاضر)
                           </span>
                         ) : (
-                          <span className="text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-950/80 px-2.5 py-1 rounded-xl border border-amber-400 flex items-center gap-1 font-bold">
+                          <span className="text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-950/80 px-2 py-0.5 sm:py-1 rounded-lg sm:rounded-xl border border-amber-400 flex items-center gap-1 font-bold">
                             در انتظار ثبت
                           </span>
                         )}
@@ -1084,45 +1176,45 @@ export const AttendancePage: React.FC = () => {
         </div>
       ) : activeTab === 'all_classes' ? (
         /* ─────────────────────────────────────────────────────────────
-            SECTION C: ALL CLASSROOMS DIRECT ACCESS
+            5. ALL CLASSROOMS DIRECT ACCESS
         ───────────────────────────────────────────────────────────── */
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <div>
-            <h2 className="text-xl font-black text-foreground">تمامی کلاس‌های تحت تدریس</h2>
-            <p className="text-xs font-bold text-muted-foreground mt-0.5">
-              جهت ثبت حضور و غیاب برای هر کلاس و زنگ دلخواه خارج از برنامه روتین امروز:
+            <h2 className="text-base sm:text-xl font-black text-foreground">تمامی کلاس‌های تحت تدریس</h2>
+            <p className="text-[11px] sm:text-xs font-bold text-muted-foreground mt-0.5">
+              جهت ثبت حضور و غیاب برای هر کلاس و زنگ دلخواه:
             </p>
           </div>
 
           {isLoadingAllClassrooms ? (
-            <div className="py-20 text-center space-y-3 bg-white dark:bg-card border-3 border-black rounded-3xl">
+            <div className="py-16 text-center space-y-2 bg-white dark:bg-card border-2 sm:border-3 border-black rounded-2xl sm:rounded-3xl">
               <RefreshCw className="w-8 h-8 text-primary animate-spin mx-auto" />
-              <p className="font-black text-sm text-foreground">در حال بارگذاری لیست کلاس‌ها...</p>
+              <p className="font-black text-xs sm:text-sm text-foreground">در حال بارگذاری لیست کلاس‌ها...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
               {allClassroomsData?.map((cls: any) => (
                 <div
                   key={cls.id}
-                  className="bg-white dark:bg-card border-3 border-black dark:border-white/20 rounded-3xl p-5 shadow-[4px_4px_0px_#000] hover:shadow-[6px_6px_0px_#000] transition-all space-y-4"
+                  className="bg-white dark:bg-card border-2 sm:border-3 border-black dark:border-white/20 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-[3px_3px_0px_#000] sm:shadow-[4px_4px_0px_#000] space-y-3"
                 >
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-black text-base text-foreground">{cls.name}</h3>
-                    <Badge variant="neutral" className="text-xs font-bold border border-black">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-black text-sm sm:text-base text-foreground truncate">{cls.name}</h3>
+                    <Badge variant="neutral" className="text-[10px] sm:text-xs font-bold border border-black shrink-0">
                       کد {toPersianDigits(cls.code || '')}
                     </Badge>
                   </div>
 
-                  <p className="text-xs font-bold text-muted-foreground">
+                  <p className="text-[11px] sm:text-xs font-bold text-muted-foreground truncate">
                     پایه: {cls.level?.name || 'ـ'} • رشته: {cls.field?.name || 'ـ'}
                   </p>
 
-                  {/* Quick Period Buttons */}
-                  <div className="pt-2 border-t-2 border-dashed border-neutral-200 dark:border-neutral-800">
-                    <span className="text-[11px] font-black text-muted-foreground block mb-2">
-                      انتخاب زنگ جهت ثبت حضور:
+                  {/* Responsive Quick Period Buttons */}
+                  <div className="pt-2 border-t border-dashed border-neutral-200 dark:border-neutral-800">
+                    <span className="text-[10px] sm:text-[11px] font-black text-muted-foreground block mb-1.5">
+                      انتخاب زنگ:
                     </span>
-                    <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
                       {[1, 2, 3, 4, 5, 6].map((pNum) => (
                         <button
                           key={pNum}
@@ -1134,7 +1226,7 @@ export const AttendancePage: React.FC = () => {
                               periodNumber: pNum,
                             })
                           }
-                          className="px-2.5 py-1 text-xs font-black bg-neutral-100 dark:bg-neutral-800 hover:bg-amber-400 hover:text-black border-2 border-black rounded-xl shadow-[1.5px_1.5px_0px_#000] transition-all"
+                          className="py-1 text-[11px] font-black bg-neutral-100 dark:bg-neutral-800 hover:bg-amber-400 hover:text-black border-2 border-black rounded-lg shadow-[1px_1px_0px_#000] transition-all text-center"
                         >
                           زنگ {toPersianDigits(pNum)}
                         </button>
@@ -1148,38 +1240,36 @@ export const AttendancePage: React.FC = () => {
         </div>
       ) : (
         /* ─────────────────────────────────────────────────────────────
-            SECTION D: STAFF / TEACHER ATTENDANCE (MANAGEMENT ONLY)
+            6. STAFF ATTENDANCE MONITORING
         ───────────────────────────────────────────────────────────── */
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-card border-3 border-black dark:border-white/20 rounded-3xl p-5 shadow-[6px_6px_0px_#000]">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-black text-foreground">
-                پایش حضور و غیاب همکاران و اساتید ({formatJalaliDisplay(selectedDate, true)})
-              </h2>
-            </div>
+        <div className="space-y-4">
+          <div className="bg-white dark:bg-card border-2 sm:border-3 border-black dark:border-white/20 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-[4px_4px_0px_#000]">
+            <h2 className="text-base sm:text-xl font-black text-foreground mb-3">
+              پایش تردد همکاران ({formatJalaliDisplay(selectedDate, true)})
+            </h2>
 
             {isLoadingStaffAttendance ? (
-              <div className="py-16 text-center">
+              <div className="py-12 text-center">
                 <RefreshCw className="w-8 h-8 text-primary animate-spin mx-auto mb-2" />
-                <p className="text-sm font-bold text-foreground">در حال بارگذاری سوابق تردد همکاران...</p>
+                <p className="text-xs sm:text-sm font-bold text-foreground">در حال بارگذاری سوابق...</p>
               </div>
             ) : staffAttendanceData?.length === 0 ? (
-              <div className="py-12 text-center text-muted-foreground font-bold text-sm">
+              <div className="py-10 text-center text-muted-foreground font-bold text-xs sm:text-sm">
                 هیچ رکوردی برای تردد همکاران در این تاریخ ثبت نشده است.
               </div>
             ) : (
-              <div className="divide-y-2 divide-neutral-100 dark:divide-neutral-800">
+              <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
                 {staffAttendanceData?.map((item: any) => (
-                  <div key={item.id} className="py-3.5 flex items-center justify-between">
-                    <div>
-                      <span className="font-black text-sm text-foreground">
+                  <div key={item.id} className="py-3 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="font-black text-xs sm:text-sm text-foreground block truncate">
                         {item.teacher?.user?.firstName} {item.teacher?.user?.lastName}
                       </span>
-                      <span className="text-xs text-muted-foreground mr-3">
+                      <span className="text-[10px] sm:text-xs text-muted-foreground">
                         ورود: {item.entryTime ? toPersianDigits(item.entryTime) : 'ـ'} | خروج: {item.exitTime ? toPersianDigits(item.exitTime) : 'ـ'}
                       </span>
                     </div>
-                    <Badge variant={item.status === 'PRESENT' ? 'ecosystem' : 'female'}>
+                    <Badge variant={item.status === 'PRESENT' ? 'ecosystem' : 'female'} className="text-[10px]">
                       {item.status}
                     </Badge>
                   </div>
@@ -1191,14 +1281,14 @@ export const AttendancePage: React.FC = () => {
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          DETAIL / EXCUSE MODAL
+          7. DETAIL / EXCUSE MODAL
       ───────────────────────────────────────────────────────────── */}
       {detailModalStudent && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-card border-3 border-black dark:border-white/20 rounded-3xl p-6 max-w-md w-full shadow-[8px_8px_0px_#000] space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white dark:bg-card border-t-3 sm:border-3 border-black dark:border-white/20 rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-[8px_8px_0px_#000] space-y-4 animate-in slide-in-from-bottom duration-200">
             <div className="flex items-center justify-between">
-              <h3 className="font-black text-base text-foreground">
-                ثبت جزییات وضعیت: {detailModalStudent.user?.firstName} {detailModalStudent.user?.lastName}
+              <h3 className="font-black text-sm sm:text-base text-foreground truncate">
+                ثبت وضعیت: {detailModalStudent.user?.firstName} {detailModalStudent.user?.lastName}
               </h3>
               <button
                 type="button"
@@ -1210,44 +1300,44 @@ export const AttendancePage: React.FC = () => {
             </div>
 
             {detailModalStudent.status === 'TARDY' && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-black text-foreground">میزان تاخیر ورود (به دقیقه):</label>
+              <div className="space-y-1">
+                <label className="text-xs font-black text-foreground">میزان تاخیر ورود (دقیقه):</label>
                 <Input
                   type="number"
                   min={1}
                   max={90}
                   value={modalDelayMinutes}
                   onChange={(e) => setModalDelayMinutes(parseInt(e.target.value, 10) || 0)}
-                  className="border-2 border-black font-bold"
+                  className="border-2 border-black font-bold h-10"
                 />
               </div>
             )}
 
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <label className="text-xs font-black text-foreground">توضیح یا دلیل غیبت/تاخیر:</label>
               <Input
                 value={modalReason}
                 onChange={(e) => setModalReason(e.target.value)}
                 placeholder="مثال: کسالت و مراجعه به پزشک..."
-                className="border-2 border-black font-bold"
+                className="border-2 border-black font-bold h-10 text-xs"
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2 pt-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setDetailModalStudent(null)}
-                className="border-2 border-black font-bold"
+                className="border-2 border-black font-bold text-xs h-9"
               >
                 انصراف
               </Button>
               <Button
                 size="sm"
                 onClick={handleSaveModalDetails}
-                className="bg-primary text-primary-foreground border-2 border-black font-black shadow-[2px_2px_0px_#000]"
+                className="bg-primary text-primary-foreground border-2 border-black font-black text-xs h-9 shadow-[2px_2px_0px_#000]"
               >
-                تایید و ذخیره
+                تایید و اعمال
               </Button>
             </div>
           </div>
