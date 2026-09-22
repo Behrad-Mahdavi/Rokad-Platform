@@ -389,14 +389,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               <ArrowRight className="w-4 h-4" />
               <span>مشاهده تمام ایده‌ها</span>
             </Button>
-            <Button
-              variant="primary"
-              onClick={onGoToCanvasStep}
-              className="gap-2 text-xs font-black border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]"
-            >
-              <span>رفتن به تشکیل تیم</span>
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
+
           </div>
         </div>
 
