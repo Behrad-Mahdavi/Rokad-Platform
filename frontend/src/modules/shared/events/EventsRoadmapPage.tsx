@@ -115,7 +115,16 @@ export const EventsRoadmapPage: React.FC = () => {
   const [categoryForm, setCategoryForm] = useState({ key: '', label: '', icon: 'Tag', color: '' });
 
   const allCategoryTabs = useMemo(() => {
-    const custom = customCategories.map((c) => ({
+    // Prefer backend categories (seeded defaults + custom); FALLBACK only as offline fallback
+    const backendKeys = new Set(customCategories.map((c) => c.key));
+    const fallbackOnly = FALLBACK_CATEGORIES.filter((f) => !backendKeys.has(f.key)).map((f) => ({
+      key: f.key,
+      label: f.label,
+      icon: f.icon,
+      color: f.color,
+      isCustom: false,
+    }));
+    const fromBackend = customCategories.map((c) => ({
       key: c.key,
       label: c.label,
       icon: Layers,
@@ -124,8 +133,8 @@ export const EventsRoadmapPage: React.FC = () => {
     }));
     return [
       { key: 'ALL', label: 'همه رویدادها', icon: Layers, color: 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200', isCustom: false },
-      ...FALLBACK_CATEGORIES,
-      ...custom,
+      ...fromBackend,
+      ...fallbackOnly,
     ];
   }, [customCategories]);
 
@@ -347,7 +356,18 @@ export const EventsRoadmapPage: React.FC = () => {
   };
 
   const allCategoriesForManage = useMemo(() => {
-    const fallback = FALLBACK_CATEGORIES.map((c) => ({
+    // Backend list already includes seeded defaults + custom; FALLBACK only if backend empty/offline
+    if (customCategories.length > 0) {
+      return customCategories.map((c) => ({
+        key: c.key,
+        label: c.label,
+        icon: c.icon || 'Tag',
+        color: c.color || '',
+        removable: c.removable !== false,
+        isBuiltIn: false,
+      }));
+    }
+    return FALLBACK_CATEGORIES.map((c) => ({
       key: c.key,
       label: c.label,
       icon: 'Tag',
@@ -355,15 +375,6 @@ export const EventsRoadmapPage: React.FC = () => {
       removable: false,
       isBuiltIn: true,
     }));
-    const custom = customCategories.map((c) => ({
-      key: c.key,
-      label: c.label,
-      icon: c.icon || 'Tag',
-      color: c.color || '',
-      removable: c.removable !== false,
-      isBuiltIn: false,
-    }));
-    return [...fallback, ...custom];
   }, [customCategories]);
 
   const handleCategorySubmit = async (e: React.FormEvent) => {
@@ -424,10 +435,6 @@ export const EventsRoadmapPage: React.FC = () => {
   };
 
   const handleCategoryDelete = async (cat: EventCategoryItem) => {
-    if (cat.removable === false || FALLBACK_CATEGORIES.some((f) => f.key === cat.key)) {
-      toast.error('دسته‌بندی پیش‌فرض قابل حذف نیست');
-      return;
-    }
     try {
       await apiClient.delete(`/calendar/event-categories/${cat.key}`);
       setCustomCategories((prev) => prev.filter((c) => c.key !== cat.key));
@@ -1422,30 +1429,26 @@ export const EventsRoadmapPage: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        {!cat.isBuiltIn && (
-                          <button
-                            type="button"
-                            onClick={() => openCategoryEdit(cat)}
-                            className={`rounded-lg p-1.5 transition-colors ${
-                              isEditingThis
-                                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300'
-                                : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800'
-                            }`}
-                            title="ویرایش"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {!cat.isBuiltIn && cat.removable !== false && (
-                          <button
-                            type="button"
-                            onClick={() => handleCategoryDelete(cat)}
-                            className="rounded-lg p-1.5 text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/50"
-                            title="حذف"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => openCategoryEdit(cat)}
+                          className={`rounded-lg p-1.5 transition-colors ${
+                            isEditingThis
+                              ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300'
+                              : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800'
+                          }`}
+                          title="ویرایش"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCategoryDelete(cat)}
+                          className="rounded-lg p-1.5 text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/50"
+                          title="حذف"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                   );

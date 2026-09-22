@@ -2,7 +2,6 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
-  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateEventDto, UpdateEventDto } from './dto/create-event.dto';
@@ -268,6 +267,17 @@ export class CalendarService {
     return { message: 'رویداد با موفقیت بازگردانده شد', data: restored };
   }
 
+  private static readonly DEFAULT_EVENT_CATEGORIES = [
+    { key: 'STARTUP_WEEKEND', label: 'استارت‌آپ ویکند', icon: 'Rocket', color: '', removable: true },
+    { key: 'ACADEMIC', label: 'آموزشی و مهارت', icon: 'BookOpen', color: '', removable: true },
+    { key: 'CULTURAL', label: 'فرهنگی و جشن‌ها', icon: 'PartyPopper', color: '', removable: true },
+    { key: 'SPORTS', label: 'مسابقات و ورزش', icon: 'Trophy', color: '', removable: true },
+    { key: 'EXAM', label: 'آزمون‌ها و سنجش', icon: 'Flame', color: '', removable: true },
+    { key: 'EXCURSION', label: 'اردو و بازدید علمی', icon: 'Compass', color: '', removable: true },
+    { key: 'MEETING', label: 'جلسات و شورا', icon: 'Users', color: '', removable: true },
+    { key: 'HOLIDAY', label: 'تعطیلی و مناسبت', icon: 'CalendarDays', color: '', removable: true },
+  ];
+
   private getEventCategoriesFromSettings(settings: any): any[] {
     if (settings && typeof settings === 'object' && Array.isArray(settings.eventCategories)) {
       return settings.eventCategories;
@@ -288,7 +298,20 @@ export class CalendarService {
 
   async listEventCategories(tenantId: string) {
     const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
-    return this.getEventCategoriesFromSettings(tenant?.settings);
+    const existing = this.getEventCategoriesFromSettings(tenant?.settings);
+
+    // Seed default categories once so they become editable/deletable via API
+    const existingKeys = new Set(existing.map((c) => c?.key));
+    const missingDefaults = CalendarService.DEFAULT_EVENT_CATEGORIES.filter(
+      (d) => !existingKeys.has(d.key),
+    );
+    if (missingDefaults.length > 0) {
+      const next = [...existing, ...missingDefaults];
+      await this.saveEventCategories(tenantId, next);
+      return next;
+    }
+
+    return existing;
   }
 
   async createEventCategory(tenantId: string, category: any) {
@@ -318,9 +341,6 @@ export class CalendarService {
     const target = existing.find((c) => c.key === key);
     if (!target) {
       throw new NotFoundException('دسته‌بندی مورد نظر یافت نشد');
-    }
-    if (target.removable === false) {
-      throw new BadRequestException('این دسته‌بندی پیش‌فرض قابل حذف نیست');
     }
     const next = existing.filter((c) => c.key !== key);
     await this.saveEventCategories(tenantId, next);
