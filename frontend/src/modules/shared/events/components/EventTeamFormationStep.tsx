@@ -341,24 +341,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={onGoToVotingStep}
-              className="gap-2 text-xs font-bold border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200"
-            >
-              <ArrowRight className="w-4 h-4" />
-              <span>بازگشت به رای‌گیری</span>
-            </Button>
-            <Button
-              variant="primary"
-              onClick={onGoToCanvasStep}
-              className="gap-2 text-xs font-black border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]"
-            >
-              <span>گام بعدی: بوم و ورک‌شیت</span>
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-          </div>
+
         </div>
 
         {/* Search Student Database Banner */}
