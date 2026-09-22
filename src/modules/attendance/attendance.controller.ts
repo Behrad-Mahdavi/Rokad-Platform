@@ -101,6 +101,25 @@ export class AttendanceController {
     );
   }
 
+  @Get('teacher-daily-schedule')
+  @RequirePermissions(AppPermission.ATTENDANCE_READ)
+  @ApiOperation({ summary: 'برنامه درسی روزانه دبیر با آمار و وضعیت ثبت حضور و غیاب هر زنگ' })
+  async getTeacherDailySchedule(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') role: string,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Query('date') date: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.attendanceService.getTeacherDailySchedule(
+      effectiveTenantId,
+      userId,
+      role,
+      date,
+    );
+  }
+
   @Get('daily-stats')
   @RequirePermissions(AppPermission.ATTENDANCE_READ)
   @ApiOperation({ summary: 'دریافت آمار کلی تردد روزانه مدرسه (حاضرین، غایبین، تاخیرها با کش ردیس)' })

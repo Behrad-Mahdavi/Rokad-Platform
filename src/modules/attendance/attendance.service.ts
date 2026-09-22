@@ -4,12 +4,53 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import * as jalaali from 'jalaali-js';
+import { DayOfWeek } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../../common/redis/redis.service';
 import {
   BulkRecordStudentAttendanceDto,
   RecordTeacherAttendanceDto,
 } from './dto/record-attendance.dto';
+
+export function getDateVariants(dateStr: string): string[] {
+  if (!dateStr) return [];
+  const clean = dateStr.trim();
+  const variants = [clean];
+  const parts = clean.split('-').map(Number);
+  if (parts.length === 3 && !parts.some(isNaN)) {
+    if (parts[0] > 1800) {
+      const j = jalaali.toJalaali(parts[0], parts[1], parts[2]);
+      variants.push(`${j.jy}-${String(j.jm).padStart(2, '0')}-${String(j.jd).padStart(2, '0')}`);
+    } else if (parts[0] > 1300 && parts[0] < 1500) {
+      const g = jalaali.toGregorian(parts[0], parts[1], parts[2]);
+      variants.push(`${g.gy}-${String(g.gm).padStart(2, '0')}-${String(g.gd).padStart(2, '0')}`);
+    }
+  }
+  return Array.from(new Set(variants));
+}
+
+export function getDayOfWeekFromDate(dateStr: string): DayOfWeek {
+  let gDate: Date;
+  const parts = dateStr.split('-').map(Number);
+  if (parts.length === 3 && parts[0] > 1300 && parts[0] < 1500) {
+    const g = jalaali.toGregorian(parts[0], parts[1], parts[2]);
+    gDate = new Date(g.gy, g.gm - 1, g.gd);
+  } else {
+    gDate = new Date(dateStr);
+  }
+  const day = gDate.getDay();
+  const map: Record<number, DayOfWeek> = {
+    6: DayOfWeek.SATURDAY,
+    0: DayOfWeek.SUNDAY,
+    1: DayOfWeek.MONDAY,
+    2: DayOfWeek.TUESDAY,
+    3: DayOfWeek.WEDNESDAY,
+    4: DayOfWeek.THURSDAY,
+    5: DayOfWeek.FRIDAY,
+  };
+  return map[day] || DayOfWeek.SATURDAY;
+}
 
 @Injectable()
 export class AttendanceService {
@@ -201,11 +242,12 @@ export class AttendanceService {
 
     // 2. Fetch existing attendance records for this classroom, date, and period
     const effectivePeriod = periodNumber !== undefined ? periodNumber : 1;
+    const dateVariants = getDateVariants(date);
     const recordedAttendances = await this.prisma.studentAttendance.findMany({
       where: {
         tenantId,
         classroomId,
-        date,
+        date: { in: dateVariants },
         periodNumber: effectivePeriod,
       },
       include: {
@@ -333,6 +375,115 @@ export class AttendanceService {
   }
 
   /**
+   * Get teacher's daily class schedule with attendance status for each period
+   */
+  async getTeacherDailySchedule(
+    tenantId: string,
+    userId: string,
+    userRole: string,
+    dateStr: string,
+  ) {
+    const dayOfWeek = getDayOfWeekFromDate(dateStr);
+    const dateVariants = getDateVariants(dateStr);
+
+    let teacherId: string | undefined;
+    if (userRole === 'TEACHER') {
+      const teacher = await this.prisma.teacherProfile.findFirst({
+        where: { tenantId, userId },
+      });
+      if (!teacher) {
+        return {
+          dayOfWeek,
+          date: dateStr,
+          schedules: [],
+        };
+      }
+      teacherId = teacher.id;
+    }
+
+    const whereClause: any = {
+      tenantId,
+      dayOfWeek,
+    };
+    if (teacherId) {
+      whereClause.OR = [{ teacherId }, { secondTeacherId: teacherId }];
+    }
+
+    const schedules = await this.prisma.classSchedule.findMany({
+      where: whereClause,
+      include: {
+        classroom: {
+          include: {
+            level: true,
+            field: true,
+          },
+        },
+        lesson: true,
+        secondLesson: true,
+        teacher: { include: { user: true } },
+      },
+      orderBy: [{ periodNumber: 'asc' }],
+    });
+
+    // Enrich each slot with attendance statistics
+    const enrichedSchedules = await Promise.all(
+      schedules.map(async (slot) => {
+        const totalStudents = await this.prisma.classEnrollment.count({
+          where: {
+            tenantId,
+            classroomId: slot.classroomId,
+            status: 'ACTIVE',
+          },
+        });
+
+        const attendances = await this.prisma.studentAttendance.findMany({
+          where: {
+            tenantId,
+            classroomId: slot.classroomId,
+            periodNumber: slot.periodNumber,
+            date: { in: dateVariants },
+          },
+        });
+
+        const presentCount = attendances.filter((a) => a.status === 'PRESENT').length;
+        const absentCount = attendances.filter((a) => a.status === 'ABSENT').length;
+        const tardyCount = attendances.filter((a) => a.status === 'TARDY').length;
+        const excusedCount = attendances.filter((a) => a.status === 'EXCUSED_ABSENT').length;
+
+        return {
+          id: slot.id,
+          classroomId: slot.classroomId,
+          classroomName: slot.classroom.name,
+          classroomGrade: slot.classroom.level?.name || '',
+          classroomField: slot.classroom.field?.name || '',
+          lessonId: slot.lessonId,
+          lessonName: slot.lesson.name,
+          periodNumber: slot.periodNumber,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          isSplitPeriod: slot.isSplitPeriod,
+          stats: {
+            totalStudents,
+            recordedCount: attendances.length,
+            presentCount,
+            absentCount,
+            tardyCount,
+            excusedCount,
+            isRecorded: attendances.length > 0,
+            isFullyRecorded: totalStudents > 0 && attendances.length >= totalStudents,
+          },
+        };
+      }),
+    );
+
+    return {
+      dayOfWeek,
+      date: dateStr,
+      schedules: enrichedSchedules,
+    };
+  }
+
+  /**
    * Get daily attendance statistics for school dashboard
    */
   async getDailyStats(tenantId: string, date: string) {
@@ -344,8 +495,12 @@ export class AttendanceService {
       } catch (e) {}
     }
 
+    const dateVariants = getDateVariants(date);
     const records = await this.prisma.studentAttendance.findMany({
-      where: { tenantId, date },
+      where: {
+        tenantId,
+        date: { in: dateVariants },
+      },
     });
 
     const totalEnrolled = await this.prisma.classEnrollment.count({
