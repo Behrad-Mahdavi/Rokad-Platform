@@ -487,32 +487,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
             )}
           </div>
 
-          {/* Podium Header */}
-          <div className="relative overflow-hidden rounded-2xl border-3 border-zinc-900 bg-gradient-to-r from-zinc-950 via-slate-900 to-indigo-950 p-6 md:p-8 shadow-[8px_8px_0px_0px_#18181b] text-white">
-            <div className="absolute top-2 left-4 opacity-10">
-              <Trophy className="w-36 h-36" />
-            </div>
 
-            <div className="relative z-10 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border-2 border-amber-400/60 bg-amber-400/20 text-amber-300 font-black text-xs shadow-[2px_2px_0px_0px_#000000]">
-                <Trophy className="w-4 h-4 text-amber-400 fill-amber-400" />
-                <span>
-                  {isManager
-                    ? `سکوی افتخار: رتبه‌بندی ${toPersianDigits(winningOptions.length)} ایده برتر رویداد`
-                    : `ایده‌های برگزیده رویداد (${toPersianDigits(winningOptions.length)} طرح برنده)`}
-                </span>
-              </div>
-
-              <h3 className="text-xl md:text-3xl font-black text-amber-300">
-                نتایج نهایی و ایده‌های برگزیده رویداد «{eventTitle}»
-              </h3>
-              <p className="text-xs md:text-sm font-medium text-slate-300 leading-relaxed max-w-2xl">
-                {isManager
-                  ? 'نظرسنجی به پایان رسید و بر اساس آرای ثبت‌شده در وب‌سرویس پرس‌کاد، طرح‌های منتخب به ترتیب زیر مشخص گردیدند:'
-                  : 'نظرسنجی به پایان رسید و ایده‌های برگزیده رویداد مشخص گردیدند:'}
-              </p>
-            </div>
-          </div>
 
           {/* Top Winners Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

@@ -169,23 +169,7 @@ export const EventSinglePage: React.FC = () => {
     return () => clearInterval(timer);
   }, [event]);
 
-  // Share link handler
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  };
 
-  // Google Calendar URL generator
-  const getGoogleCalendarUrl = () => {
-    if (!event) return '';
-    const title = encodeURIComponent(event.title);
-    const details = encodeURIComponent(event.description || '');
-    const location = encodeURIComponent(event.location || '');
-    const sIso = new Date(event.startDate).toISOString().replace(/-|:|\.\d\d\d/g, '');
-    const eIso = new Date(event.endDate).toISOString().replace(/-|:|\.\d\d\d/g, '');
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${sIso}/${eIso}&details=${details}&location=${location}`;
-  };
 
   // Undoable Delete Mutation with 5-second countdown
   // Deletes on server immediately, then provides 5s window to restore!
@@ -470,30 +454,6 @@ export const EventSinglePage: React.FC = () => {
               </span>
             </div>
 
-            {/* Share and Add to Calendar Buttons */}
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={handleCopyLink}
-                variant="outline"
-                className="gap-2 text-xs font-bold border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:shadow-[2px_2px_0px_0px_#f4f4f5]"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-                {copied ? 'کپی شد!' : 'اشتراک‌گذاری'}
-              </Button>
-              <a
-                href={getGoogleCalendarUrl()}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Button
-                  variant="primary"
-                  className="gap-2 text-xs font-black border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b]"
-                >
-                  <CalendarPlus className="w-3.5 h-3.5" />
-                  افزودن به گوگل کلندر
-                </Button>
-              </a>
-            </div>
           </div>
 
           <h1 className="text-2xl md:text-4xl font-black text-zinc-900 dark:text-zinc-50 leading-tight">
