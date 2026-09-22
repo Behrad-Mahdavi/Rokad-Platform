@@ -50,252 +50,6 @@
   [data-sonner-toaster][data-y-position='bottom'] {
     --offset-bottom: var(--toast-bottom-offset, calc(64px + env(safe-area-inset-bottom, 0px) + 16px));
   }
-}
-
-/* ==========================================================================
-   ROKAD MODERN NEO-BRUTALISM TOAST SYSTEM (SONNER REDESIGN)
-   ========================================================================== */
-
-/* ۱. بدنه و چارچوب اصلی توست سوانر */
-[data-sonner-toaster] {
-  font-family: 'IRANSansXFaNum', 'IRANSansX', sans-serif !important;
-  direction: rtl !important;
-}
-
-[data-sonner-toast] {
-  font-family: 'IRANSansXFaNum', 'IRANSansX', sans-serif !important;
-  direction: rtl !important;
-  text-align: right !important;
-  border-radius: 16px !important;
-  padding: 12px 16px !important;
-  gap: 12px !important;
-  display: flex !important;
-  align-items: center !important;
-  width: auto !important;
-  min-width: 300px !important;
-  max-width: min(440px, 94vw) !important;
-  border-width: 2.5px !important;
-  border-style: solid !important;
-  font-size: 0.8125rem !important;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-}
-
-/* ۲. حالت لایت مد (Light Mode Variants) */
-:root [data-sonner-toast],
-html:not(.dark) [data-sonner-toast] {
-  background: #FFFFFF !important;
-  border-color: #000000 !important;
-  color: #18181B !important;
-  box-shadow: 4px 4px 0px #000000 !important;
-}
-
-/* لایت - موفقیت (Success) */
-:root [data-sonner-toast][data-type='success'],
-html:not(.dark) [data-sonner-toast][data-type='success'] {
-  background: #F0FDF4 !important;
-  border-color: #15803D !important;
-  color: #14532D !important;
-  box-shadow: 4px 4px 0px #15803D !important;
-}
-
-/* لایت - خطا (Error) */
-:root [data-sonner-toast][data-type='error'],
-html:not(.dark) [data-sonner-toast][data-type='error'] {
-  background: #FFF1F2 !important;
-  border-color: #BE123C !important;
-  color: #881337 !important;
-  box-shadow: 4px 4px 0px #BE123C !important;
-}
-
-/* لایت - هشدار (Warning) */
-:root [data-sonner-toast][data-type='warning'],
-html:not(.dark) [data-sonner-toast][data-type='warning'] {
-  background: #FFFBEB !important;
-  border-color: #B45309 !important;
-  color: #78350F !important;
-  box-shadow: 4px 4px 0px #B45309 !important;
-}
-
-/* لایت - اطلاع‌رسانی (Info) */
-:root [data-sonner-toast][data-type='info'],
-html:not(.dark) [data-sonner-toast][data-type='info'] {
-  background: #F0F9FF !important;
-  border-color: #0369A1 !important;
-  color: #0C4A6E !important;
-  box-shadow: 4px 4px 0px #0369A1 !important;
-}
-
-/* لایت - در حال پردازش (Loading) */
-:root [data-sonner-toast][data-type='loading'],
-html:not(.dark) [data-sonner-toast][data-type='loading'] {
-  background: #EEF8F7 !important;
-  border-color: #438C83 !important;
-  color: #1F413D !important;
-  box-shadow: 4px 4px 0px #438C83 !important;
-}
-
-/* ۳. حالت دارک مد (Dark Mode Variants) */
-.dark [data-sonner-toast],
-[data-theme='dark'] [data-sonner-toast] {
-  background: #18181B !important;
-  border-color: #3F3F46 !important;
-  color: #F4F4F5 !important;
-  box-shadow: 4px 4px 0px #000000 !important;
-}
-
-/* دارک - موفقیت (Success) */
-.dark [data-sonner-toast][data-type='success'],
-[data-theme='dark'] [data-sonner-toast][data-type='success'] {
-  background: #052E16 !important;
-  border-color: #10B981 !important;
-  color: #ECFDF5 !important;
-  box-shadow: 4px 4px 0px #047857 !important;
-}
-
-/* دارک - خطا (Error) */
-.dark [data-sonner-toast][data-type='error'],
-[data-theme='dark'] [data-sonner-toast][data-type='error'] {
-  background: #4C0519 !important;
-  border-color: #F43F5E !important;
-  color: #FFF1F2 !important;
-  box-shadow: 4px 4px 0px #BE123C !important;
-}
-
-/* دارک - هشدار (Warning) */
-.dark [data-sonner-toast][data-type='warning'],
-[data-theme='dark'] [data-sonner-toast][data-type='warning'] {
-  background: #451A03 !important;
-  border-color: #F59E0B !important;
-  color: #FEF3C7 !important;
-  box-shadow: 4px 4px 0px #B45309 !important;
-}
-
-/* دارک - اطلاع‌رسانی (Info) */
-.dark [data-sonner-toast][data-type='info'],
-[data-theme='dark'] [data-sonner-toast][data-type='info'] {
-  background: #082F49 !important;
-  border-color: #38BDF8 !important;
-  color: #F0F9FF !important;
-  box-shadow: 4px 4px 0px #0284C7 !important;
-}
-
-/* دارک - در حال پردازش (Loading) */
-.dark [data-sonner-toast][data-type='loading'],
-[data-theme='dark'] [data-sonner-toast][data-type='loading'] {
-  background: #111E1D !important;
-  border-color: #59BBAF !important;
-  color: #EEF8F7 !important;
-  box-shadow: 4px 4px 0px #000000 !important;
-}
-
-/* ۴. آیکون و بج آیکون */
-[data-sonner-toast] [data-icon] {
-  margin-left: 10px !important;
-  margin-right: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  flex-shrink: 0 !important;
-}
-
-/* ۵. متون عنوان و توضیحات */
-[data-sonner-toast] [data-content] {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 2px !important;
-  flex: 1 !important;
-  text-align: right !important;
-}
-
-[data-sonner-toast] [data-title] {
-  font-weight: 900 !important;
-  font-size: 0.825rem !important;
-  line-height: 1.4 !important;
-  letter-spacing: -0.01em !important;
-  color: inherit !important;
-}
-
-[data-sonner-toast] [data-description] {
-  font-weight: 700 !important;
-  font-size: 0.725rem !important;
-  opacity: 0.9 !important;
-  line-height: 1.5 !important;
-  color: inherit !important;
-}
-
-/* ۶. دکمه بستن (Close Button) در موقعیت استاندارد راست‌به‌چپ (بالا چپ) */
-[data-sonner-toast] [data-close-button] {
-  left: 8px !important;
-  right: auto !important;
-  top: 8px !important;
-  width: 22px !important;
-  height: 22px !important;
-  border-radius: 8px !important;
-  border: 1.5px solid currentColor !important;
-  background: rgba(0, 0, 0, 0.05) !important;
-  color: inherit !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  opacity: 0.65 !important;
-  cursor: pointer !important;
-  transition: all 0.15s ease !important;
-}
-
-[data-sonner-toast] [data-close-button]:hover {
-  opacity: 1 !important;
-  background: rgba(0, 0, 0, 0.12) !important;
-  transform: scale(1.08) !important;
-}
-
-.dark [data-sonner-toast] [data-close-button] {
-  background: rgba(255, 255, 255, 0.08) !important;
-}
-
-.dark [data-sonner-toast] [data-close-button]:hover {
-  background: rgba(255, 255, 255, 0.18) !important;
-}
-
-/* ۷. دکمه‌های اقدام و انصراف (Action & Cancel Buttons) */
-[data-sonner-toast] [data-button] {
-  background: #000000 !important;
-  color: #FFFFFF !important;
-  border: 1.5px solid #000000 !important;
-  border-radius: 10px !important;
-  font-weight: 900 !important;
-  font-size: 0.75rem !important;
-  padding: 4px 12px !important;
-  margin-top: 6px !important;
-  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.4) !important;
-  cursor: pointer !important;
-  transition: all 0.15s ease !important;
-}
-
-.dark [data-sonner-toast] [data-button] {
-  background: #FFFFFF !important;
-  color: #000000 !important;
-  border-color: #FFFFFF !important;
-  box-shadow: 2px 2px 0px #000000 !important;
-}
-
-[data-sonner-toast] [data-button]:hover {
-  transform: translateY(-1px) !important;
-}
-
-[data-sonner-toast] [data-cancel] {
-  background: transparent !important;
-  color: inherit !important;
-  border: 1.5px solid currentColor !important;
-  border-radius: 10px !important;
-  font-weight: 800 !important;
-  font-size: 0.75rem !important;
-  padding: 4px 12px !important;
-  margin-top: 6px !important;
-  cursor: pointer !important;
-  transition: all 0.15s ease !important;
-}
 
   [data-theme='male'] {
     --theme-light:        #E9EAEF;
@@ -962,4 +716,344 @@ body.modal-scroll-locked [data-scroll-container] {
 .animate-sheet-slide-up {
   animation: sheetSlideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+}
 
+/* ==========================================================================
+   NEO-BRUTALIST TOAST SYSTEM (SONNER) - RTL, LIGHT & DARK MODES
+   ========================================================================== */
+
+[data-sonner-toaster] {
+  font-family: 'IRANSansXFaNum', 'IRANSansX', sans-serif !important;
+  direction: rtl !important;
+}
+
+[data-sonner-toast] {
+  font-family: 'IRANSansXFaNum', 'IRANSansX', sans-serif !important;
+  direction: rtl !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  /* پدینگ سمت چپ به اندازه ۴۸ پیکسل برای تضمین عدم همپوشانی متن با دکمه ضربدر بستن */
+  padding: 12px 16px 12px 48px !important;
+  border-radius: 16px !important;
+  border: 2.5px solid #18181b !important;
+  box-shadow: 4px 4px 0px #18181b !important;
+  background-color: #ffffff !important;
+  color: #18181b !important;
+  min-height: 56px !important;
+  width: 100% !important;
+  max-width: 440px !important;
+  box-sizing: border-box !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease !important;
+}
+
+/* دکمه بستن توست - کاملاً تراز و در مرکز عمودی باکس (Vertically Centered) */
+[data-sonner-toast] [data-close-button="true"],
+[data-sonner-toast] [data-close-button] {
+  position: absolute !important;
+  left: 12px !important;
+  right: auto !important;
+  top: 50% !important;
+  bottom: auto !important;
+  transform: translateY(-50%) !important;
+  width: 26px !important;
+  height: 26px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 8px !important;
+  border: 1.5px solid currentColor !important;
+  background-color: rgba(0, 0, 0, 0.06) !important;
+  color: inherit !important;
+  cursor: pointer !important;
+  opacity: 0.75 !important;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  z-index: 20 !important;
+  flex-shrink: 0 !important;
+  line-height: 1 !important;
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  opacity: 1 !important;
+  transform: translateY(-50%) scale(1.08) !important;
+  background-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+[data-sonner-toast] [data-close-button]:active {
+  transform: translateY(-50%) scale(0.92) !important;
+}
+
+[data-sonner-toast] [data-close-button] svg {
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  min-height: 14px !important;
+  display: block !important;
+  margin: auto !important;
+  stroke-width: 2.5 !important;
+}
+
+/* آیکون وضعیت توست */
+[data-sonner-toast] [data-icon] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+}
+
+[data-sonner-toast] [data-icon] svg {
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  min-height: 22px !important;
+  display: block !important;
+}
+
+/* محتوا (عنوان و توضیحات) */
+[data-sonner-toast] [data-content] {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  text-align: right !important;
+}
+
+[data-sonner-toast] [data-title] {
+  font-family: inherit !important;
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  line-height: 1.45 !important;
+  margin: 0 !important;
+  word-break: break-word !important;
+  color: inherit !important;
+}
+
+[data-sonner-toast] [data-description] {
+  font-family: inherit !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  opacity: 0.88 !important;
+  margin: 0 !important;
+  word-break: break-word !important;
+  color: inherit !important;
+}
+
+/* دکمه‌های اکشن داخل توست */
+[data-sonner-toast] [data-button] {
+  font-family: inherit !important;
+  font-size: 0.8125rem !important;
+  font-weight: 700 !important;
+  padding: 6px 12px !important;
+  border-radius: 8px !important;
+  border: 2px solid currentColor !important;
+  background-color: currentColor !important;
+  cursor: pointer !important;
+  transition: transform 0.15s ease, opacity 0.15s ease !important;
+}
+
+[data-sonner-toast] [data-button]:hover {
+  transform: scale(1.04) !important;
+  opacity: 0.95 !important;
+}
+
+[data-sonner-toast] [data-cancel] {
+  font-family: inherit !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  padding: 6px 12px !important;
+  border-radius: 8px !important;
+  border: 1.5px solid currentColor !important;
+  background-color: transparent !important;
+  color: inherit !important;
+  cursor: pointer !important;
+}
+
+/* --------------------------------------------------------------------------
+   انواع حالت‌های Toast (Success, Error, Warning, Info, Loading)
+   -------------------------------------------------------------------------- */
+
+/* Success */
+[data-sonner-toast][data-type='success'] {
+  background-color: #f0fdf4 !important;
+  color: #14532d !important;
+  border-color: #166534 !important;
+  box-shadow: 4px 4px 0px #166534 !important;
+}
+[data-sonner-toast][data-type='success'] [data-icon] {
+  color: #15803d !important;
+}
+[data-sonner-toast][data-type='success'] [data-close-button] {
+  background-color: rgba(22, 101, 52, 0.08) !important;
+  border-color: rgba(22, 101, 52, 0.25) !important;
+}
+
+/* Error */
+[data-sonner-toast][data-type='error'] {
+  background-color: #fef2f2 !important;
+  color: #7f1d1d !important;
+  border-color: #991b1b !important;
+  box-shadow: 4px 4px 0px #991b1b !important;
+}
+[data-sonner-toast][data-type='error'] [data-icon] {
+  color: #dc2626 !important;
+}
+[data-sonner-toast][data-type='error'] [data-close-button] {
+  background-color: rgba(153, 27, 27, 0.08) !important;
+  border-color: rgba(153, 27, 27, 0.25) !important;
+}
+
+/* Warning */
+[data-sonner-toast][data-type='warning'] {
+  background-color: #fffbeb !important;
+  color: #78350f !important;
+  border-color: #92400e !important;
+  box-shadow: 4px 4px 0px #92400e !important;
+}
+[data-sonner-toast][data-type='warning'] [data-icon] {
+  color: #b45309 !important;
+}
+[data-sonner-toast][data-type='warning'] [data-close-button] {
+  background-color: rgba(146, 64, 14, 0.08) !important;
+  border-color: rgba(146, 64, 14, 0.25) !important;
+}
+
+/* Info */
+[data-sonner-toast][data-type='info'] {
+  background-color: #eff6ff !important;
+  color: #1e3a8a !important;
+  border-color: #1e40af !important;
+  box-shadow: 4px 4px 0px #1e40af !important;
+}
+[data-sonner-toast][data-type='info'] [data-icon] {
+  color: #2563eb !important;
+}
+[data-sonner-toast][data-type='info'] [data-close-button] {
+  background-color: rgba(30, 64, 175, 0.08) !important;
+  border-color: rgba(30, 64, 175, 0.25) !important;
+}
+
+/* Loading */
+[data-sonner-toast][data-type='loading'] {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #334155 !important;
+  box-shadow: 4px 4px 0px #334155 !important;
+}
+[data-sonner-toast][data-type='loading'] [data-icon] {
+  color: #475569 !important;
+}
+
+/* --------------------------------------------------------------------------
+   حالت تاریک (DARK MODE)
+   -------------------------------------------------------------------------- */
+
+.dark [data-sonner-toast],
+[data-theme='dark'] [data-sonner-toast] {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+  border: 2.5px solid #3f3f46 !important;
+  box-shadow: 4px 4px 0px #09090b !important;
+}
+
+.dark [data-sonner-toast] [data-close-button],
+[data-theme='dark'] [data-sonner-toast] [data-close-button] {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #f4f4f5 !important;
+}
+
+.dark [data-sonner-toast] [data-close-button]:hover,
+[data-theme='dark'] [data-sonner-toast] [data-close-button]:hover {
+  background-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Dark: Success */
+.dark [data-sonner-toast][data-type='success'],
+[data-theme='dark'] [data-sonner-toast][data-type='success'] {
+  background-color: #052e16 !important;
+  color: #dcfce7 !important;
+  border-color: #22c55e !important;
+  box-shadow: 4px 4px 0px #000000 !important;
+}
+.dark [data-sonner-toast][data-type='success'] [data-icon],
+[data-theme='dark'] [data-sonner-toast][data-type='success'] [data-icon] {
+  color: #4ade80 !important;
+}
+.dark [data-sonner-toast][data-type='success'] [data-close-button],
+[data-theme='dark'] [data-sonner-toast][data-type='success'] [data-close-button] {
+  background-color: rgba(34, 197, 94, 0.15) !important;
+  border-color: rgba(34, 197, 94, 0.35) !important;
+}
+
+/* Dark: Error */
+.dark [data-sonner-toast][data-type='error'],
+[data-theme='dark'] [data-sonner-toast][data-type='error'] {
+  background-color: #450a0a !important;
+  color: #fee2e2 !important;
+  border-color: #ef4444 !important;
+  box-shadow: 4px 4px 0px #000000 !important;
+}
+.dark [data-sonner-toast][data-type='error'] [data-icon],
+[data-theme='dark'] [data-sonner-toast][data-type='error'] [data-icon] {
+  color: #f87171 !important;
+}
+.dark [data-sonner-toast][data-type='error'] [data-close-button],
+[data-theme='dark'] [data-sonner-toast][data-type='error'] [data-close-button] {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+}
+
+/* Dark: Warning */
+.dark [data-sonner-toast][data-type='warning'],
+[data-theme='dark'] [data-sonner-toast][data-type='warning'] {
+  background-color: #451a03 !important;
+  color: #fef3c7 !important;
+  border-color: #f59e0b !important;
+  box-shadow: 4px 4px 0px #000000 !important;
+}
+.dark [data-sonner-toast][data-type='warning'] [data-icon],
+[data-theme='dark'] [data-sonner-toast][data-type='warning'] [data-icon] {
+  color: #fbbf24 !important;
+}
+.dark [data-sonner-toast][data-type='warning'] [data-close-button],
+[data-theme='dark'] [data-sonner-toast][data-type='warning'] [data-close-button] {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+/* Dark: Info */
+.dark [data-sonner-toast][data-type='info'],
+[data-theme='dark'] [data-sonner-toast][data-type='info'] {
+  background-color: #172554 !important;
+  color: #dbeafe !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 4px 4px 0px #000000 !important;
+}
+.dark [data-sonner-toast][data-type='info'] [data-icon],
+[data-theme='dark'] [data-sonner-toast][data-type='info'] [data-icon] {
+  color: #60a5fa !important;
+}
+.dark [data-sonner-toast][data-type='info'] [data-close-button],
+[data-theme='dark'] [data-sonner-toast][data-type='info'] [data-close-button] {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+  border-color: rgba(59, 130, 246, 0.35) !important;
+}
+
+/* Dark: Loading */
+.dark [data-sonner-toast][data-type='loading'],
+[data-theme='dark'] [data-sonner-toast][data-type='loading'] {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #64748b !important;
+  box-shadow: 4px 4px 0px #000000 !important;
+}
+.dark [data-sonner-toast][data-type='loading'] [data-icon],
+[data-theme='dark'] [data-sonner-toast][data-type='loading'] [data-icon] {
+  color: #94a3b8 !important;
+}
