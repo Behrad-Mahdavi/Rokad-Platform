@@ -128,3 +128,39 @@ export function deriveStudentCode(
 
   return String(Math.floor(10000000 + Math.random() * 90000000));
 }
+
+/**
+ * تولید خودکار شناسه و رمز عبور یکپارچه برای والد دانش‌آموز:
+ * - نام کاربری سیستمی والد = p + کد ملی فرزند
+ * - رمز عبور والد = پیش‌وند 'p' + کد ملی فرزند (مثال: p0012345678)
+ */
+export function generateParentCredentials(params: {
+  studentNationalCode?: string | number | null;
+  fallbackPhone?: string | number | null;
+  customPassword?: string | null;
+}): {
+  username: string;
+  defaultPassword: string;
+  finalPassword: string;
+} {
+  const cleanNationalCode = normalizeNationalCode(params.studentNationalCode);
+  const cleanPhone = normalizePersianDigits(params.fallbackPhone).replace(/\D/g, '').trim();
+
+  const username = cleanNationalCode
+    ? `p${cleanNationalCode}`
+    : cleanPhone
+      ? `p${cleanPhone}`
+      : `parent_${Date.now()}`;
+  const defaultPassword = cleanNationalCode
+    ? `p${cleanNationalCode}`
+    : cleanPhone
+      ? `p${cleanPhone}`
+      : 'RokadParent2026!';
+  const finalPassword = params.customPassword?.trim() ? params.customPassword.trim() : defaultPassword;
+
+  return {
+    username,
+    defaultPassword,
+    finalPassword,
+  };
+}

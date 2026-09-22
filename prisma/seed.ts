@@ -1145,7 +1145,8 @@ async function main() {
     },
   });
 
-  // Parent
+  // Parent (Boys School: username=p0012345678, password=p0012345678)
+  const boysParentPass = await argon2.hash('p0012345678');
   const parentUser = await prisma.user.upsert({
     where: {
       tenantId_phone: {
@@ -1153,13 +1154,19 @@ async function main() {
         phone: '09125000001',
       },
     },
-    update: {},
+    update: {
+      username: 'p0012345678',
+      passwordHash: boysParentPass,
+      firstName: 'حسین',
+      lastName: 'صادقی (ولی دانش‌آموز)',
+    },
     create: {
       tenantId: boysTenant.id,
       firstName: 'حسین',
-      lastName: 'صادقی (پدر)',
+      lastName: 'صادقی (ولی دانش‌آموز)',
       phone: '09125000001',
-      passwordHash: defaultPass,
+      username: 'p0012345678',
+      passwordHash: boysParentPass,
       role: 'PARENT',
       gender: 'MALE',
       status: 'ACTIVE',
@@ -1185,12 +1192,15 @@ async function main() {
         studentId: studentProfile.id,
       },
     },
-    update: {},
+    update: {
+      relationType: 'LEGAL_GUARDIAN',
+      isPrimaryContact: true,
+    },
     create: {
       tenantId: boysTenant.id,
       parentId: parentProfile.id,
       studentId: studentProfile.id,
-      relationType: 'FATHER',
+      relationType: 'LEGAL_GUARDIAN',
       isPrimaryContact: true,
     },
   });

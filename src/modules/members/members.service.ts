@@ -18,6 +18,7 @@ import {
 import { Role } from '../../common/constants';
 import {
   generateUnifiedCredentials,
+  generateParentCredentials,
   normalizeNationalCode,
   deriveStudentCode,
 } from '../../common/utils/credential.util';
@@ -330,6 +331,20 @@ export class MembersService {
               });
             }
           }
+
+          // Automatically sync unified single parent account for imported student
+          await this.syncParentForStudent(tx, tenantId, profile, {
+            studentNationalCode: nationalCode,
+            fatherFullName,
+            motherFullName,
+            fatherPhone,
+            motherPhone,
+            phone,
+            studentFirstName: firstName,
+            studentLastName: lastName,
+            occupation: fatherOccupation || motherOccupation,
+            education: fatherEducation || motherEducation,
+          });
         });
 
         // Dispatch credentials SMS event if phone is valid
@@ -528,6 +543,20 @@ export class MembersService {
         }
       }
 
+      // 4. Automatically sync unified single parent account for student
+      await this.syncParentForStudent(tx, tenantId, profile, {
+        studentNationalCode: creds.nationalId || dto.nationalCode,
+        fatherFullName: dto.fatherFullName,
+        motherFullName: dto.motherFullName,
+        fatherPhone: dto.fatherPhone,
+        motherPhone: dto.motherPhone,
+        phone: dto.phone,
+        studentFirstName: dto.firstName,
+        studentLastName: dto.lastName,
+        occupation: dto.fatherOccupation || dto.motherOccupation,
+        education: dto.fatherEducation || dto.motherEducation,
+      });
+
       return profile;
     });
 
@@ -638,6 +667,20 @@ export class MembersService {
           });
         }
       }
+
+      // 4. Automatically sync unified parent account if student credentials or info changed
+      await this.syncParentForStudent(tx, tenantId, updated, {
+        studentNationalCode: updated.nationalCode,
+        fatherFullName: updated.fatherFullName,
+        motherFullName: updated.motherFullName,
+        fatherPhone: updated.fatherPhone,
+        motherPhone: updated.motherPhone,
+        phone: updated.user?.phone,
+        studentFirstName: updated.user?.firstName,
+        studentLastName: updated.user?.lastName,
+        occupation: updated.fatherOccupation || updated.motherOccupation,
+        education: updated.fatherEducation || updated.motherEducation,
+      });
 
       return updated;
     });
@@ -1055,5 +1098,152 @@ export class MembersService {
         },
       },
     });
+  }
+
+  /**
+   * همگام‌سازی و ایجاد/به‌روزرسانی خودکار اکانت واحد والد برای یک دانش‌آموز:
+   * طبق استاندارد جدید:
+   * - به ازای هر دانش‌آموز دقیقاً ۱ اکانت والد وجود دارد (حذف تفکیک پدر و مادر).
+   * - نام کاربری سیستمی: p + کد ملی فرزند (ورود با کد ملی فرزند نیز پشتیبانی می‌شود).
+   * - رمز عبور: پیش‌وند 'p' + کد ملی فرزند (مثال: p0012345678).
+   */
+  async syncParentForStudent(
+    tx: any,
+    tenantId: string,
+    studentProfile: any,
+    dto: {
+      studentNationalCode?: string | null;
+      fatherFullName?: string | null;
+      motherFullName?: string | null;
+      fatherPhone?: string | null;
+      motherPhone?: string | null;
+      phone?: string | null;
+      studentFirstName?: string | null;
+      studentLastName?: string | null;
+      occupation?: string | null;
+      education?: string | null;
+    },
+  ) {
+    const nationalCode = dto.studentNationalCode || studentProfile.nationalCode;
+    const parentPhone =
+      dto.fatherPhone ||
+      dto.motherPhone ||
+      studentProfile.fatherPhone ||
+      studentProfile.motherPhone ||
+      dto.phone ||
+      studentProfile.studentMobile ||
+      `09${Math.floor(Math.random() * 1000000000).toString().padStart(9, '0')}`;
+
+    const parentCreds = generateParentCredentials({
+      studentNationalCode: nationalCode,
+      fallbackPhone: parentPhone,
+    });
+
+    const parentPasswordHash = await argon2.hash(parentCreds.finalPassword);
+
+    // نام والد: ترجیحاً نام پدر یا مادر، در غیر این صورت «ولی دانش‌آموز (نام فرزند)»
+    const rawFullName = (dto.fatherFullName || dto.motherFullName || studentProfile.fatherFullName || studentProfile.motherFullName || '').trim();
+    let pFirstName = 'ولی دانش‌آموز';
+    let pLastName = (dto.studentLastName || studentProfile.user?.lastName || '').trim() || 'صادقی';
+    if (rawFullName) {
+      const parts = rawFullName.split(' ');
+      pFirstName = parts[0];
+      pLastName = parts.slice(1).join(' ') || pLastName;
+    }
+
+    // بررسی آیا قبلاً والدی به این دانش‌آموز متصل است
+    const existingLink = await tx.parentStudentLink.findFirst({
+      where: {
+        tenantId,
+        studentId: studentProfile.id,
+      },
+      include: {
+        parent: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    if (existingLink && existingLink.parent) {
+      // به‌روزرسانی اکانت والد موجود
+      await tx.user.update({
+        where: { id: existingLink.parent.userId },
+        data: {
+          username: parentCreds.username,
+          passwordHash: parentPasswordHash,
+          ...(parentPhone ? { phone: parentPhone } : {}),
+          ...(rawFullName ? { firstName: pFirstName, lastName: pLastName } : {}),
+        },
+      });
+
+      return existingLink.parent;
+    }
+
+    // اگر وجود نداشت: بررسی آیا کاربری با این username قبلاً ثبت شده
+    let parentUser = await tx.user.findFirst({
+      where: {
+        tenantId,
+        username: parentCreds.username,
+      },
+      include: { parentProfile: true },
+    });
+
+    if (parentUser) {
+      if (!parentUser.parentProfile) {
+        const pProfile = await tx.parentProfile.create({
+          data: {
+            tenantId,
+            userId: parentUser.id,
+            occupation: dto.occupation || undefined,
+            education: dto.education || undefined,
+          },
+        });
+        parentUser.parentProfile = pProfile;
+      }
+      await tx.user.update({
+        where: { id: parentUser.id },
+        data: {
+          passwordHash: parentPasswordHash,
+        },
+      });
+    } else {
+      parentUser = await tx.user.create({
+        data: {
+          tenantId,
+          firstName: pFirstName,
+          lastName: pLastName,
+          phone: parentPhone,
+          username: parentCreds.username,
+          passwordHash: parentPasswordHash,
+          role: Role.PARENT as any,
+          status: 'ACTIVE',
+        },
+      });
+
+      const pProfile = await tx.parentProfile.create({
+        data: {
+          tenantId,
+          userId: parentUser.id,
+          occupation: dto.occupation || undefined,
+          education: dto.education || undefined,
+        },
+      });
+      parentUser.parentProfile = pProfile;
+    }
+
+    // اتصال والد به دانش‌آموز
+    await tx.parentStudentLink.create({
+      data: {
+        tenantId,
+        parentId: parentUser.parentProfile.id,
+        studentId: studentProfile.id,
+        relationType: 'LEGAL_GUARDIAN',
+        isPrimaryContact: true,
+      },
+    });
+
+    return parentUser.parentProfile;
   }
 }

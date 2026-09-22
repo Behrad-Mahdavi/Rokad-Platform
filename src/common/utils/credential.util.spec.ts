@@ -2,6 +2,7 @@ import {
   getTenantPasswordPrefix,
   normalizeNationalCode,
   generateUnifiedCredentials,
+  generateParentCredentials,
   deriveStudentCode,
 } from './credential.util';
 
@@ -109,4 +110,38 @@ describe('Unified Credential Generation System (سامانه ورود یکپار
       expect(deriveStudentCode(null, '09123456789')).toBe('9123456789');
     });
   });
+
+  describe('Parent Credential Generation (سامانه ورود اولیاء)', () => {
+    it('generates username=p+childNationalCode and password=p+childNationalCode', () => {
+      const creds = generateParentCredentials({
+        studentNationalCode: '0012345678',
+        fallbackPhone: '09125000001',
+      });
+
+      expect(creds.username).toBe('p0012345678');
+      expect(creds.defaultPassword).toBe('p0012345678');
+      expect(creds.finalPassword).toBe('p0012345678');
+    });
+
+    it('handles Persian digits in child national code', () => {
+      const creds = generateParentCredentials({
+        studentNationalCode: '۰۰۱۲۳۴۵۶۷۸',
+      });
+
+      expect(creds.username).toBe('p0012345678');
+      expect(creds.defaultPassword).toBe('p0012345678');
+    });
+
+    it('respects customPassword if provided for parent', () => {
+      const creds = generateParentCredentials({
+        studentNationalCode: '0012345678',
+        customPassword: 'CustomParentPass2026!',
+      });
+
+      expect(creds.username).toBe('p0012345678');
+      expect(creds.defaultPassword).toBe('p0012345678');
+      expect(creds.finalPassword).toBe('CustomParentPass2026!');
+    });
+  });
 });
+

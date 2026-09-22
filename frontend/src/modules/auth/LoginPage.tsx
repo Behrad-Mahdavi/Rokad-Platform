@@ -194,6 +194,21 @@ export const LoginPage: React.FC = () => {
               </div>
             </button>
 
+            {/* Unified Parent (Boys School) */}
+            <button
+              type="button"
+              onClick={() => selectPreset('rokad-boys', '0012345678', 'p0012345678')}
+              className="p-2.5 min-h-[44px] rounded-xl bg-purple-50 dark:bg-purple-950/20 hover:bg-purple-100 dark:hover:bg-purple-950/40 text-right border border-purple-200 dark:border-purple-800 transition-colors flex flex-col justify-center"
+            >
+              <div className="font-bold text-purple-700 dark:text-purple-300 flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5 shrink-0" />
+                <span>ولی دانش‌آموز</span>
+              </div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">
+                0012345678
+              </div>
+            </button>
+
             {/* Unified Girls Student */}
             <button
               type="button"

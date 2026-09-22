@@ -1,6 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../../lib/auth/auth-store';
+import { apiClient } from '../../lib/api/client';
+import { toPersianDigits } from '../../lib/utils';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -11,11 +14,27 @@ import {
   Clock,
   ArrowUpRight,
   Users,
+  GraduationCap,
 } from 'lucide-react';
 
 export const ParentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
+
+  const { data: childrenData } = useQuery({
+    queryKey: ['parent-my-children'],
+    queryFn: async () => {
+      const res: any = await apiClient.get('/members/my-children');
+      return res?.data || res || [];
+    },
+  });
+
+  const primaryLink = Array.isArray(childrenData) ? childrenData[0] : null;
+  const student = primaryLink?.student;
+  const studentUser = student?.user;
+  const childFullName = studentUser ? `${studentUser.firstName} ${studentUser.lastName}`.trim() : 'امیرعلی صادقی';
+  const classroomName = student?.enrollments?.[0]?.classroom?.name;
+  const studentCode = student?.studentCode || student?.nationalCode;
 
   return (
     <div className="space-y-5">
@@ -29,7 +48,22 @@ export const ParentDashboard: React.FC = () => {
             <h1 className="text-base sm:text-lg font-black text-ink-darker dark:text-white">
               پرتال اولیاء: {user?.firstName} {user?.lastName}
             </h1>
-            <Badge variant="female" className="text-[11px] mt-1">فرزند: امیرعلی صادقی</Badge>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <Badge variant="female" className="text-[11px] flex items-center gap-1">
+                <GraduationCap className="h-3 w-3 inline" />
+                <span>فرزند: {childFullName}</span>
+              </Badge>
+              {classroomName && (
+                <Badge variant="neutral" className="text-[10px]">
+                  {classroomName}
+                </Badge>
+              )}
+              {studentCode && (
+                <span className="text-[11px] text-gray-500 dark:text-gray-400 font-mono">
+                  کد: {toPersianDigits(studentCode)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

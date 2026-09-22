@@ -156,20 +156,45 @@ export class AuthService {
 
     // Key Separation: calculate Blind Index for national ID search
     const nationalBlind = this.encryptionService.blindIndex(cleanIdentifier);
+    const strippedPIdentifier = cleanIdentifier.startsWith('p') ? cleanIdentifier.slice(1) : '';
+    const strippedNationalBlind = strippedPIdentifier ? this.encryptionService.blindIndex(strippedPIdentifier) : null;
 
-    // Look for user matching identifier in this tenant (national code, username, phone, or email)
-    const user = await this.prisma.user.findFirst({
+    // Look for candidate users matching identifier in this tenant (supports both direct match & parent matching child's national code)
+    const candidateUsers = await this.prisma.user.findMany({
       where: {
         ...(tenantId ? { tenantId } : {}),
         OR: [
           { username: cleanIdentifier },
+          { username: `p${cleanIdentifier}` },
+          { username: `p_${cleanIdentifier}` },
+          ...(strippedPIdentifier ? [{ username: strippedPIdentifier }] : []),
           { nationalId: cleanIdentifier },
+          ...(strippedPIdentifier ? [{ nationalId: strippedPIdentifier }] : []),
           ...(nationalBlind ? [{ nationalIdBlindIndex: nationalBlind }] : []),
+          ...(strippedNationalBlind ? [{ nationalIdBlindIndex: strippedNationalBlind }] : []),
           { phone: cleanIdentifier },
           { email: rawIdentifier.toLowerCase() },
           { email: cleanIdentifier.toLowerCase() },
           { studentProfile: { nationalCode: cleanIdentifier } },
           ...(nationalBlind ? [{ studentProfile: { nationalCodeBlindIndex: nationalBlind } }] : []),
+          // Match Parent account linked to student with this national code or username
+          {
+            parentProfile: {
+              studentLinks: {
+                some: {
+                  student: {
+                    OR: [
+                      { nationalCode: cleanIdentifier },
+                      ...(nationalBlind ? [{ nationalCodeBlindIndex: nationalBlind }] : []),
+                      { user: { username: cleanIdentifier } },
+                      ...(strippedPIdentifier ? [{ nationalCode: strippedPIdentifier }] : []),
+                      ...(strippedPIdentifier ? [{ user: { username: strippedPIdentifier } }] : []),
+                    ],
+                  },
+                },
+              },
+            },
+          },
         ],
       },
       include: {
@@ -177,10 +202,28 @@ export class AuthService {
       },
     });
 
-    if (!user) {
+    if (!candidateUsers || candidateUsers.length === 0) {
       await this.bruteForceService.recordFailedAttempt(cleanIdentifier || rawIdentifier, ipAddress);
       throw new UnauthorizedException('اطلاعات ورود (نام کاربری یا رمز عبور) اشتباه است');
     }
+
+    // Verify Password across candidate users (e.g. distinguishing Student vs Parent entering the same national ID)
+    let authenticatedUser: any = null;
+    for (const candidate of candidateUsers) {
+      if (candidate.status !== 'ACTIVE') continue;
+      const isValid = await argon2.verify(candidate.passwordHash, dto.password);
+      if (isValid) {
+        authenticatedUser = candidate;
+        break;
+      }
+    }
+
+    if (!authenticatedUser) {
+      await this.bruteForceService.recordFailedAttempt(cleanIdentifier || rawIdentifier, ipAddress);
+      throw new UnauthorizedException('اطلاعات ورود (نام کاربری یا رمز عبور) اشتباه است');
+    }
+
+    const user = authenticatedUser;
 
     if (user.status !== 'ACTIVE') {
       throw new UnauthorizedException('حساب کاربری شما غیرفعال یا معلق شده است');
@@ -188,13 +231,6 @@ export class AuthService {
 
     if (user.tenant && user.tenant.status !== 'ACTIVE' && !user.isPlatformAdmin) {
       throw new UnauthorizedException('مرکز آموزشی مربوطه غیرفعال یا معلق است');
-    }
-
-    // Verify Password with Argon2
-    const isPasswordValid = await argon2.verify(user.passwordHash, dto.password);
-    if (!isPasswordValid) {
-      await this.bruteForceService.recordFailedAttempt(cleanIdentifier || rawIdentifier, ipAddress);
-      throw new UnauthorizedException('اطلاعات ورود (نام کاربری یا رمز عبور) اشتباه است');
     }
 
     // 2. If Two-Factor Authentication is enabled on this account
