@@ -7,6 +7,7 @@ dist/
 build/
 frontend/dist/
 frontend/dev-dist/
+dev-dist/
 
 # TypeScript Cache
 *.tsbuildinfo

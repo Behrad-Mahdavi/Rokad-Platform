@@ -147,6 +147,7 @@ enum EventType {
   CULTURAL
   SPORTS
   EXCURSION
+  STARTUP_WEEKEND
 }
 
 enum TargetAudience {
@@ -1302,25 +1303,26 @@ model HomeworkSubmission {
 }
 
 model SchoolEvent {
-  id             String         @id @default(uuid())
-  tenantId       String
-  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  title          String
-  description    String?
-  eventType      EventType      @default(ACADEMIC)
-  startDate      DateTime
-  endDate        DateTime
-  isAllDay       Boolean        @default(false)
-  targetAudience TargetAudience @default(ALL)
-  targetClassIds String[]       @default([])
-  location       String?
-  coverUrl       String?
-  tags           String[]       @default([])
-  createdById    String
-  createdBy      User           @relation("CreatedEvent", fields: [createdById], references: [id], onDelete: Cascade)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  deletedAt      DateTime?
+  id              String         @id @default(uuid())
+  tenantId        String
+  tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  eventType       EventType      @default(ACADEMIC)
+  startDate       DateTime
+  endDate         DateTime
+  isAllDay        Boolean        @default(false)
+  targetAudience  TargetAudience @default(ALL)
+  targetClassIds  String[]       @default([])
+  location        String?
+  coverUrl        String?
+  tags            String[]       @default([])
+  workflowModules Json?
+  createdById     String
+  createdBy       User           @relation("CreatedEvent", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
 
   @@index([tenantId, startDate, endDate])
   @@index([tenantId, deletedAt])

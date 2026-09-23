@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { apiClient } from '../../../lib/api/client';
 import { useAuthStore } from '../../../lib/auth/auth-store';
@@ -37,52 +37,47 @@ import {
   PartyPopper,
   Trophy,
   Compass,
+  Rocket,
+  Upload,
+  X,
+  Workflow,
+  Lightbulb,
+  Star,
+  Layers,
+  FileSpreadsheet,
 } from 'lucide-react';
-import { SchoolEventItem } from './EventsRoadmapPage';
+import { SchoolEventItem, INITIAL_SAMPLE_EVENTS, EventCategoryItem, hydrateEvent, displayTags } from './constants/sample-events';
+import {
+  EventCoverCropModal,
+  EVENT_COVER_SPEC_LABEL,
+  EVENT_COVER_MAX_BYTES,
+  needsCoverCrop,
+  uploadCoverBlob,
+} from './components/EventCoverCropModal';
+import {
+  canViewEventAudience,
+  isEventManagerRole,
+  isServerRejection,
+  extractApiErrorMessage,
+} from './constants/event-access';
+import {
+  normalizeWorkflowModules,
+  renumberWorkflowModules,
+  WorkflowModuleEntry,
+  EVENT_MODULE_LIST,
+  DEFAULT_WORKFLOW_MODULES,
+} from './constants/event-modules';
+import { EventStepWizard } from './components/EventStepWizard';
 
-const EVENT_CATEGORIES: Record<string, { label: string; icon: any; color: string; badge: string }> = {
-  ACADEMIC: {
-    label: 'آموزشی و مهارت',
-    icon: BookOpen,
-    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-    badge: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800',
-  },
-  CULTURAL: {
-    label: 'فرهنگی و آیین‌ها',
-    icon: PartyPopper,
-    color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
-    badge: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800',
-  },
-  SPORTS: {
-    label: 'مسابقات و ورزش',
-    icon: Trophy,
-    color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
-    badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
-  },
-  EXAM: {
-    label: 'آزمون‌ها و سنجش',
-    icon: Flame,
-    color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
-    badge: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800',
-  },
-  EXCURSION: {
-    label: 'اردو و بازدید علمی',
-    icon: Compass,
-    color: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300',
-    badge: 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800',
-  },
-  MEETING: {
-    label: 'جلسات و شورا',
-    icon: Users,
-    color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300',
-    badge: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800',
-  },
-  HOLIDAY: {
-    label: 'تعطیلی و مناسبت',
-    icon: CalendarDays,
-    color: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300',
-    badge: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800',
-  },
+const EVENT_CATEGORIES: Record<string, { label: string; icon: any; color: string }> = {
+  STARTUP_WEEKEND: { label: 'استارت‌آپ ویکند', icon: Rocket, color: 'bg-amber-100 text-amber-900 border-amber-400 dark:bg-amber-950/60 dark:text-amber-300' },
+  ACADEMIC: { label: 'آموزشی و مهارت', icon: BookOpen, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' },
+  CULTURAL: { label: 'فرهنگی و آیین‌ها', icon: PartyPopper, color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300' },
+  SPORTS: { label: 'مسابقات و ورزش', icon: Trophy, color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' },
+  EXAM: { label: 'آزمون‌ها و سنجش', icon: Flame, color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' },
+  EXCURSION: { label: 'اردو و بازدید علمی', icon: Compass, color: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300' },
+  MEETING: { label: 'جلسات و شورا', icon: Users, color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300' },
+  HOLIDAY: { label: 'تعطیلی و مناسبت', icon: CalendarDays, color: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300' },
 };
 
 const AUDIENCE_MAP: Record<string, string> = {
@@ -98,20 +93,134 @@ export const EventSinglePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const currentUser = useAuthStore((s) => s.user);
-  const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF'].includes(currentUser?.role || '');
+  const canManageEvents = isEventManagerRole(currentUser?.role);
 
-  const [event, setEvent] = useState<SchoolEventItem | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [event, setEvent] = useState<SchoolEventItem | null>(() => {
+    if (!id) return null;
+    try {
+      const cached = localStorage.getItem('rokad_calendar_events');
+      let allEvents: SchoolEventItem[] = INITIAL_SAMPLE_EVENTS;
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          allEvents = parsed;
+        }
+      }
+      const found = allEvents.find((e) => e.id === id);
+      return found ? hydrateEvent(found) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isLoading, setIsLoading] = useState(() => !event);
   const [copied, setCopied] = useState(false);
+  const [activeMainTab, setActiveMainTab] = useState<'WORKFLOW' | 'OVERVIEW'>('WORKFLOW');
+  const [customCategories, setCustomCategories] = useState<EventCategoryItem[]>([]);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [workflowModulesState, setWorkflowModulesState] = useState<WorkflowModuleEntry[]>([]);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const coverFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [cropFileName, setCropFileName] = useState<string | undefined>(undefined);
+
+  const uploadCoverBlobDirect = async (file: File) => {
+    setIsUploadingCover(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('moduleName', 'calendar');
+      let coverUrl = '';
+      try {
+        const uploadRes = await apiClient.post('/storage/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        const uploadData = uploadRes.data?.data || uploadRes.data;
+        coverUrl = uploadData?.fileUrl || uploadData?.url || '';
+      } catch {
+        coverUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+      }
+      if (coverUrl) {
+        setForm((f) => ({ ...f, coverUrl }));
+        toast.success('عکس بنر رویداد آپلود شد');
+      }
+    } catch {
+      toast.error('خطا در آپلود عکس بنر');
+    } finally {
+      setIsUploadingCover(false);
+      if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+    }
+  };
+
+  const handleCoverFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('فقط فایل تصویری انتخاب کنید');
+      if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+      return;
+    }
+    if (file.size > EVENT_COVER_MAX_BYTES) {
+      toast.error('حداکثر حجم عکس ۵ مگابایت است');
+      if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+      return;
+    }
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('read fail'));
+        reader.readAsDataURL(file);
+      });
+      const dims = await new Promise<{ w: number; h: number }>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+        img.onerror = () => reject(new Error('img fail'));
+        img.src = dataUrl;
+      });
+      if (needsCoverCrop(dims.w, dims.h)) {
+        setCropImageSrc(dataUrl);
+        setCropFileName(file.name);
+        return;
+      }
+      await uploadCoverBlobDirect(file);
+    } catch {
+      toast.error('خطا در خواندن فایل تصویری');
+      if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+    }
+  };
+
+  const handleCoverCropConfirm = async (blob: Blob) => {
+    setIsUploadingCover(true);
+    try {
+      const coverUrl = await uploadCoverBlob(blob, cropFileName || 'event-cover.jpg');
+      if (coverUrl) {
+        setForm((f) => ({ ...f, coverUrl }));
+        toast.success('عکس بنر بریده و آپلود شد');
+      }
+    } catch {
+      toast.error('خطا در آپلود عکس بنر');
+    } finally {
+      setIsUploadingCover(false);
+      setCropImageSrc(null);
+      setCropFileName(undefined);
+      if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+    }
+  };
+
   const [form, setForm] = useState({
     title: '',
     description: '',
     eventType: 'ACADEMIC' as SchoolEventItem['eventType'],
+    categoryKey: '',
     startDate: '',
     startTime: '08:30',
     endDate: '',
@@ -134,21 +243,56 @@ export const EventSinglePage: React.FC = () => {
 
   const fetchEvent = async () => {
     if (!id) return;
-    setIsLoading(true);
+    if (!event) setIsLoading(true);
     try {
       const res = await apiClient.get(`/calendar/events/${id}`);
       if (res && res.data) {
-        setEvent(res.data);
+        const loaded = hydrateEvent(res.data);
+        if (!canViewEventAudience(loaded.targetAudience, currentUser?.role)) {
+          setEvent(null);
+        } else {
+          setEvent(loaded);
+        }
       }
     } catch (err) {
-      console.error('Failed to fetch single event', err);
+      // Gracefully load from local storage or default sample events
+    }
+
+    try {
+      const cached = localStorage.getItem('rokad_calendar_events');
+      let allEvents: SchoolEventItem[] = INITIAL_SAMPLE_EVENTS;
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          allEvents = parsed;
+        }
+      }
+      const found = allEvents.find((e) => e.id === id);
+      if (found && !canViewEventAudience(found.targetAudience, currentUser?.role)) {
+        setEvent(null);
+      } else {
+        setEvent(found ? hydrateEvent(found) : null);
+      }
+    } catch (e) {
+      console.error('Failed to load fallback event', e);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const res = await apiClient.get('/calendar/event-categories');
+      if (Array.isArray(res?.data)) {
+        setCustomCategories(res.data);
+        setCategoriesLoaded(true);
+      }
+    } catch {}
+  };
+
   useEffect(() => {
     fetchEvent();
+    fetchCategories();
   }, [id]);
 
   // Live countdown timer ticking
@@ -177,23 +321,7 @@ export const EventSinglePage: React.FC = () => {
     return () => clearInterval(timer);
   }, [event]);
 
-  // Share link handler
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  };
 
-  // Google Calendar URL generator
-  const getGoogleCalendarUrl = () => {
-    if (!event) return '';
-    const title = encodeURIComponent(event.title);
-    const details = encodeURIComponent(event.description || '');
-    const location = encodeURIComponent(event.location || '');
-    const sIso = new Date(event.startDate).toISOString().replace(/-|:|\.\d\d\d/g, '');
-    const eIso = new Date(event.endDate).toISOString().replace(/-|:|\.\d\d\d/g, '');
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${sIso}/${eIso}&details=${details}&location=${location}`;
-  };
 
   // Undoable Delete Mutation with 5-second countdown
   // Deletes on server immediately, then provides 5s window to restore!
@@ -201,24 +329,49 @@ export const EventSinglePage: React.FC = () => {
     undoLabel: TOAST_MESSAGES.operations.calendarEventDeleted(event?.title || ''),
     delayMs: 5000,
     optimisticUpdate: () => {
+      try {
+        const cached = localStorage.getItem('rokad_calendar_events');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) {
+            const next = parsed.filter((e: any) => e.id !== id);
+            localStorage.setItem('rokad_calendar_events', JSON.stringify(next));
+          }
+        }
+      } catch {}
       navigate('/app/events');
     },
     mutationFn: async () => {
       if (id) {
-        await apiClient.delete(`/calendar/events/${id}`);
+        try {
+          await apiClient.delete(`/calendar/events/${id}`);
+        } catch {
+          // Handled offline
+        }
       }
     },
     undoFn: async () => {
-      if (id) {
-        await apiClient.patch(`/calendar/events/${id}/restore`);
+      if (id && event) {
+        try {
+          const cached = localStorage.getItem('rokad_calendar_events');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && !parsed.some((e: any) => e.id === id)) {
+              localStorage.setItem('rokad_calendar_events', JSON.stringify([event, ...parsed]));
+            }
+          }
+        } catch {}
+        try {
+          await apiClient.patch(`/calendar/events/${id}/restore`);
+        } catch {}
         navigate(`/app/events/${id}`);
       }
     },
     revertUpdate: () => {
       toast.info(`رویداد «${event?.title || ''}» بازگردانی شد.`);
     },
-    onError: (err) => {
-      toast.error(err?.response?.data?.message || 'خطا در حذف رویداد');
+    onError: () => {
+      // Offline fallback already updated locally
     },
   });
 
@@ -243,6 +396,7 @@ export const EventSinglePage: React.FC = () => {
       title: event.title,
       description: event.description || '',
       eventType: event.eventType,
+      categoryKey: event.categoryKey || '',
       startDate: sJalali,
       startTime: sTime,
       endDate: eJalali || sJalali,
@@ -251,8 +405,15 @@ export const EventSinglePage: React.FC = () => {
       targetAudience: event.targetAudience,
       location: event.location || '',
       coverUrl: event.coverUrl || '',
-      tags: (event.tags || []).join('، '),
+      tags: displayTags(event.tags).join('، '),
     });
+    setWorkflowModulesState(
+      Array.isArray(event.workflowModules)
+        ? normalizeWorkflowModules(event.workflowModules)
+        : event.eventType === 'STARTUP_WEEKEND'
+        ? [...DEFAULT_WORKFLOW_MODULES]
+        : []
+    );
     setFormError(null);
     setIsEditModalOpen(true);
   };
@@ -281,10 +442,11 @@ export const EventSinglePage: React.FC = () => {
         ? form.tags.split(/[,،]+/).map((t) => t.trim()).filter(Boolean)
         : [];
 
-      await apiClient.patch(`/calendar/events/${id}`, {
+      const patchPayload = {
         title: form.title.trim(),
         description: form.description.trim(),
         eventType: form.eventType,
+        categoryKey: form.categoryKey || undefined,
         startDate: sDateObj.toISOString(),
         endDate: eDateObj.toISOString(),
         isAllDay: form.isAllDay,
@@ -292,43 +454,101 @@ export const EventSinglePage: React.FC = () => {
         location: form.location.trim() || undefined,
         coverUrl: form.coverUrl.trim() || undefined,
         tags: tagsArray,
-      });
+        workflowModules: renumberWorkflowModules(
+          workflowModulesState.filter((m) => m.enabled !== false)
+        ).map((m) => ({ key: m.key, step: m.step, enabled: true })),
+      };
+
+      try {
+        await apiClient.patch(`/calendar/events/${id}`, patchPayload);
+      } catch (err: any) {
+        // Server rejected the update — surface the error instead of silently falling back
+        if (isServerRejection(err)) throw err;
+        // Network/offline — safe local fallback continues below
+      }
+
+      // Update local storage
+      try {
+        const cached = localStorage.getItem('rokad_calendar_events');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) {
+            const next = parsed.map((item: any) =>
+              item.id === id ? { ...item, ...patchPayload } : item
+            );
+            localStorage.setItem('rokad_calendar_events', JSON.stringify(next));
+          }
+        }
+      } catch {}
+
+      if (event) {
+        setEvent({
+          ...event,
+          ...patchPayload,
+          description: patchPayload.description,
+          location: patchPayload.location,
+          coverUrl: patchPayload.coverUrl,
+          tags: tagsArray,
+          workflowModules: patchPayload.workflowModules,
+        });
+      }
 
       setIsEditModalOpen(false);
-      await fetchEvent();
+      toast.success(TOAST_MESSAGES.operations.calendarEventUpdated(form.title));
     } catch (err: any) {
-      setFormError(err?.response?.data?.message || 'خطا در ویرایش رویداد');
+      setFormError(extractApiErrorMessage(err, 'خطا در ویرایش رویداد'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const workflowModules = useMemo(() => {
+    if (!event) return [];
+    if (Array.isArray(event.workflowModules)) {
+      return normalizeWorkflowModules(event.workflowModules);
+    }
+    if (event.eventType === 'STARTUP_WEEKEND') {
+      return [...DEFAULT_WORKFLOW_MODULES];
+    }
+    return [];
+  }, [event]);
+
+  const hasWorkflow = workflowModules.length > 0;
+
   if (isLoading) {
     return (
       <div className="py-24 text-center">
-        <div className="inline-block animate-spin rounded-full h-10 w-10 border-3 border-brand-primary border-t-transparent" />
-        <p className="mt-4 text-sm font-bold text-gray-500 dark:text-gray-400">در حال بارگذاری اطلاعات رویداد...</p>
+        <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-zinc-900 border-t-transparent dark:border-zinc-100" />
+        <p className="mt-4 text-sm font-black text-zinc-600 dark:text-zinc-400">در حال بارگذاری اطلاعات رویداد...</p>
       </div>
     );
   }
 
   if (!event) {
     return (
-      <div className="rounded-3xl border border-gray-200 bg-white p-12 text-center shadow-sm dark:border-gray-800 dark:bg-[#151C28]">
-        <AlertCircle className="mx-auto w-12 h-12 text-rose-500 mb-3" />
-        <h2 className="text-xl font-black text-gray-900 dark:text-gray-100">رویداد مورد نظر یافت نشد</h2>
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">ممکن است این رویداد حذف شده باشد یا به این مرکز آموزشی تعلق نداشته باشد.</p>
+      <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-8 sm:p-12 text-center shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
+        <AlertCircle className="mx-auto w-12 h-12 text-red-500 mb-3" />
+        <h2 className="text-xl font-black text-zinc-900 dark:text-zinc-100">رویداد مورد نظر یافت نشد</h2>
+        <p className="mt-2 text-sm text-zinc-500">ممکن است این رویداد حذف شده باشد، برای شما قابل مشاهده نباشد یا به تننت دیگری تعلق داشته باشد.</p>
         <Link to="/app/events">
-          <button className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-brand-primary text-white shadow-md hover:bg-brand-primary/90 transition-all">
+          <Button variant="primary" className="mt-6 gap-2">
             <ArrowRight className="w-4 h-4" />
-            بازگشت به تقویم رویدادها
-          </button>
+            بازگشت به رودمپ سالانه
+          </Button>
         </Link>
       </div>
     );
   }
 
-  const categoryMeta = EVENT_CATEGORIES[event.eventType] || EVENT_CATEGORIES.ACADEMIC;
+  const categoryKey = event.categoryKey || event.eventType;
+  const customCat = customCategories.find((c) => c.key === categoryKey);
+  const categoryMeta = customCat
+    ? {
+        label: customCat.label,
+        icon: Layers,
+        color: customCat.color || 'bg-zinc-100 text-zinc-800 border-zinc-400 dark:bg-zinc-800 dark:text-zinc-200',
+      }
+    : EVENT_CATEGORIES[event.eventType] || EVENT_CATEGORIES.ACADEMIC;
   const CategoryIcon = categoryMeta.icon;
   const jalaliStart = formatJalaliDisplay(event.startDate, true);
   const jalaliEnd = formatJalaliDisplay(event.endDate, true);
@@ -336,42 +556,44 @@ export const EventSinglePage: React.FC = () => {
   const endTimeStr = new Date(event.endDate).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-8 pb-16">
       {/* Navigation Breadcrumb */}
       <div className="flex items-center justify-between">
         <Link
           to="/app/events"
-          className="min-h-[44px] inline-flex items-center gap-2 text-sm font-bold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
+          className="inline-flex items-center gap-2 text-sm font-black text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
         >
           <ArrowRight className="w-4 h-4" />
-          <span>بازگشت به رویدادها</span>
+          <span>بازگشت به رودمپ و تقویم رویدادها</span>
         </Link>
 
         {/* Quick Admin Actions */}
-        {isManager && (
+        {canManageEvents && (
           <div className="flex items-center gap-2">
-            <button
+            <Button
               onClick={handleOpenEdit}
-              className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/80 transition-all shadow-sm"
+              variant="outline"
+              className="gap-2 text-xs font-bold"
             >
               <Edit3 className="w-3.5 h-3.5" />
-              ویرایش
-            </button>
-            <button
+              ویرایش رویداد
+            </Button>
+            <Button
               onClick={handleDelete}
-              className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100/70 dark:hover:bg-rose-900/40 transition-all"
+              variant="destructive"
+              className="gap-2 text-xs"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              حذف
-            </button>
+              حذف رویداد
+            </Button>
           </div>
         )}
       </div>
 
       {/* Hero Card with Cover Image */}
-      <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-[#151C28]">
+      <div className="overflow-hidden rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
         {event.coverUrl ? (
-          <div className="relative h-56 w-full md:h-80 overflow-hidden bg-gray-900">
+          <div className="relative h-64 w-full md:h-96 overflow-hidden bg-zinc-900">
             <img
               src={event.coverUrl}
               alt={event.title}
@@ -380,100 +602,75 @@ export const EventSinglePage: React.FC = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
           </div>
         ) : (
-          <div className="relative h-44 w-full md:h-56 bg-gradient-to-br from-indigo-900 via-gray-900 to-purple-950 p-6 flex items-center justify-center">
-            <CalendarDays className="w-20 h-20 text-white/10" />
+          <div className="relative h-48 w-full md:h-64 bg-gradient-to-br from-indigo-900 via-zinc-900 to-purple-950 p-8 flex items-center justify-center">
+            <CalendarDays className="w-24 h-24 text-white/20" />
           </div>
         )}
 
-        {/* Hero Content */}
-        <div className="p-5 md:p-7 space-y-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
+        {/* Hero Content Overlap */}
+        <div className="p-6 md:p-8 space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-2.5">
               {/* Category Badge */}
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border ${categoryMeta.badge || categoryMeta.color}`}>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black border border-zinc-300 dark:border-zinc-700 ${categoryMeta.color}`}>
                 <CategoryIcon className="w-3.5 h-3.5" />
                 {categoryMeta.label}
               </span>
 
               {/* Status Badge */}
               {timeLeft.status === 'live' ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border border-emerald-500/40 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                  </span>
-                  در حال برگزاری
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black border-2 border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 animate-pulse">
+                  <Flame className="w-3.5 h-3.5 text-emerald-600" />
+                  هم‌اکنون در حال برگزاری
                 </span>
               ) : timeLeft.status === 'upcoming' ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border border-sky-500/30 bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
-                  <Clock className="w-3.5 h-3.5 text-sky-500" />
-                  پیش‌رو
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black border-2 border-cyan-500 bg-cyan-50 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300">
+                  <Clock className="w-3.5 h-3.5 text-cyan-600" />
+                  رویداد پیش‌رو
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border border-gray-200 bg-gray-100 text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black border border-zinc-400 bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   برگزار شده
                 </span>
               )}
 
               {/* Target Audience */}
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 text-gray-600 dark:text-gray-300">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-300">
                 <Users className="w-3.5 h-3.5" />
                 {AUDIENCE_MAP[event.targetAudience] || event.targetAudience}
               </span>
             </div>
 
-            {/* Share and Add to Calendar Buttons */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleCopyLink}
-                className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-                {copied ? 'کپی شد!' : 'اشتراک‌گذاری'}
-              </button>
-              <a
-                href={getGoogleCalendarUrl()}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <button
-                  className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-brand-primary text-white hover:bg-brand-primary/90 transition-all shadow-sm"
-                >
-                  <CalendarPlus className="w-3.5 h-3.5" />
-                  گوگل کلندر
-                </button>
-              </a>
-            </div>
           </div>
 
-          <h1 className="text-xl md:text-3xl font-black text-gray-900 dark:text-gray-50 leading-tight">
+          <h1 className="text-2xl md:text-4xl font-black text-zinc-900 dark:text-zinc-50 leading-tight">
             {event.title}
           </h1>
 
           {/* Countdown Widget */}
           {timeLeft.status === 'upcoming' && (
-            <div className="rounded-2xl border border-gray-200 bg-gray-50/80 p-4 dark:border-gray-800 dark:bg-[#0E131F]/70">
-              <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2.5 flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-brand-primary animate-pulse" />
+            <div className="rounded-2xl border-2 border-zinc-900 bg-zinc-50 p-4 md:p-6 shadow-[4px_4px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28]/80 dark:shadow-[4px_4px_0px_0px_#59BBAF]">
+              <div className="text-xs font-black text-zinc-500 dark:text-zinc-400 mb-3 flex items-center gap-1.5">
+                <Clock className="w-4 h-4 text-primary animate-pulse" />
                 <span>شمارش معکوس تا آغاز رویداد:</span>
               </div>
-              <div className="grid grid-cols-4 gap-2.5 text-center max-w-md">
-                <div className="rounded-xl border border-gray-200 bg-white p-2.5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                  <span className="block text-xl md:text-2xl font-black text-brand-primary">{toPersianDigits(timeLeft.days)}</span>
-                  <span className="text-[11px] font-bold text-gray-500">روز</span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-center max-w-md">
+                <div className="rounded-xl border-2 border-zinc-900 bg-white p-3 shadow-[2px_2px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28]">
+                  <span className="block text-2xl md:text-3xl font-black text-primary">{toPersianDigits(timeLeft.days)}</span>
+                  <span className="text-[11px] font-bold text-zinc-500">روز</span>
                 </div>
-                <div className="rounded-xl border border-gray-200 bg-white p-2.5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                  <span className="block text-xl md:text-2xl font-black text-gray-900 dark:text-gray-100">{toPersianDigits(timeLeft.hours)}</span>
-                  <span className="text-[11px] font-bold text-gray-500">ساعت</span>
+                <div className="rounded-xl border-2 border-zinc-900 bg-white p-3 shadow-[2px_2px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28]">
+                  <span className="block text-2xl md:text-3xl font-black text-zinc-900 dark:text-zinc-100">{toPersianDigits(timeLeft.hours)}</span>
+                  <span className="text-[11px] font-bold text-zinc-500">ساعت</span>
                 </div>
-                <div className="rounded-xl border border-gray-200 bg-white p-2.5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                  <span className="block text-xl md:text-2xl font-black text-gray-900 dark:text-gray-100">{toPersianDigits(timeLeft.minutes)}</span>
-                  <span className="text-[11px] font-bold text-gray-500">دقیقه</span>
+                <div className="rounded-xl border-2 border-zinc-900 bg-white p-3 shadow-[2px_2px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28]">
+                  <span className="block text-2xl md:text-3xl font-black text-zinc-900 dark:text-zinc-100">{toPersianDigits(timeLeft.minutes)}</span>
+                  <span className="text-[11px] font-bold text-zinc-500">دقیقه</span>
                 </div>
-                <div className="rounded-xl border border-gray-200 bg-white p-2.5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                  <span className="block text-xl md:text-2xl font-black text-rose-500">{toPersianDigits(timeLeft.seconds)}</span>
-                  <span className="text-[11px] font-bold text-gray-500">ثانیه</span>
+                <div className="rounded-xl border-2 border-zinc-900 bg-white p-3 shadow-[2px_2px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28]">
+                  <span className="block text-2xl md:text-3xl font-black text-rose-600">{toPersianDigits(timeLeft.seconds)}</span>
+                  <span className="text-[11px] font-bold text-zinc-500">ثانیه</span>
                 </div>
               </div>
             </div>
@@ -481,87 +678,127 @@ export const EventSinglePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Information Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        {/* Start Date */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-[#151C28]">
-          <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-xs mb-1">
+      {/* Main Tabs Navigation (shown when event has workflow modules) */}
+      {hasWorkflow && (
+        <div className="flex flex-wrap items-center gap-3 p-2 rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white shadow-[4px_4px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[4px_4px_0px_0px_#59BBAF]">
+          <button
+            onClick={() => setActiveMainTab('WORKFLOW')}
+            className={`flex-1 min-w-[200px] flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-sm font-black transition-all ${
+              activeMainTab === 'WORKFLOW'
+                ? 'bg-amber-400 text-zinc-950 border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#202A5A]'
+                : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
+            }`}
+          >
+            <Workflow className="w-4 h-4" />
+            <span>چرخه گام‌به‌گام رویداد</span>
+          </button>
+
+          <button
+            onClick={() => setActiveMainTab('OVERVIEW')}
+            className={`flex-1 min-w-[180px] flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-sm font-black transition-all ${
+              activeMainTab === 'OVERVIEW'
+                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-2 border-zinc-900 dark:border-zinc-100 shadow-[3px_3px_0px_0px_#202A5A] dark:shadow-[3px_3px_0px_0px_#59BBAF]'
+                : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
+            }`}
+          >
             <CalendarDays className="w-4 h-4" />
-            <span>زمان آغاز</span>
-          </div>
-          <p className="text-sm font-black text-gray-900 dark:text-gray-100">{jalaliStart}</p>
-          <p className="text-xs font-bold text-gray-500 mt-0.5">ساعت {startTimeStr}</p>
+            <span>شناسنامه و زمان‌بندی کامل رویداد</span>
+          </button>
         </div>
+      )}
 
-        {/* End Date */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-[#151C28]">
-          <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold text-xs mb-1">
-            <Clock className="w-4 h-4" />
-            <span>زمان پایان</span>
-          </div>
-          <p className="text-sm font-black text-gray-900 dark:text-gray-100">{jalaliEnd}</p>
-          <p className="text-xs font-bold text-gray-500 mt-0.5">ساعت {endTimeStr}</p>
-        </div>
+      {/* Render Active Tab Content */}
+      {hasWorkflow && activeMainTab === 'WORKFLOW' ? (
+        <EventStepWizard
+          eventId={event.id}
+          eventTitle={event.title}
+          workflowModules={workflowModules}
+        />
+      ) : (
+        <div className="space-y-8">
+          {/* Information Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Start Date */}
+            <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[3px_3px_0px_0px_#59BBAF]">
+              <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-xs mb-1">
+                <CalendarDays className="w-4 h-4" />
+                <span>زمان آغاز</span>
+              </div>
+              <p className="text-base font-black text-zinc-900 dark:text-zinc-100">{jalaliStart}</p>
+              <p className="text-xs font-bold text-zinc-500 mt-1">ساعت {startTimeStr}</p>
+            </div>
 
-        {/* Location */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-[#151C28]">
-          <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-xs mb-1">
-            <MapPin className="w-4 h-4" />
-            <span>محل برگزاری</span>
-          </div>
-          <p className="text-sm font-black text-gray-900 dark:text-gray-100">
-            {event.location || 'سالن هنرستان'}
-          </p>
-          <p className="text-xs font-bold text-gray-500 mt-0.5">حضوری</p>
-        </div>
+            {/* End Date */}
+            <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[3px_3px_0px_0px_#59BBAF]">
+              <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold text-xs mb-1">
+                <Clock className="w-4 h-4" />
+                <span>زمان پایان</span>
+              </div>
+              <p className="text-base font-black text-zinc-900 dark:text-zinc-100">{jalaliEnd}</p>
+              <p className="text-xs font-bold text-zinc-500 mt-1">ساعت {endTimeStr}</p>
+            </div>
 
-        {/* Organizer */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-[#151C28]">
-          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs mb-1">
-            <ShieldCheck className="w-4 h-4" />
-            <span>برگزارکننده</span>
-          </div>
-          <p className="text-sm font-black text-gray-900 dark:text-gray-100">
-            {event.createdBy ? `${event.createdBy.firstName} ${event.createdBy.lastName}` : 'مدیریت هنرستان'}
-          </p>
-          <p className="text-xs font-bold text-gray-500 mt-0.5">
-            {event.createdBy?.role ? `نقش: ${event.createdBy.role}` : 'واحد اجرایی'}
-          </p>
-        </div>
-      </div>
+            {/* Location */}
+            <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[3px_3px_0px_0px_#59BBAF]">
+              <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-xs mb-1">
+                <MapPin className="w-4 h-4" />
+                <span>محل برگزاری</span>
+              </div>
+              <p className="text-base font-black text-zinc-900 dark:text-zinc-100">
+                {event.location || 'سالن اصلی هنرستان'}
+              </p>
+              <p className="text-xs font-bold text-zinc-500 mt-1">حضوری / هماهنگ‌شده</p>
+            </div>
 
-      {/* Description & Full Details */}
-      <div className="rounded-3xl border border-gray-200 bg-white p-5 md:p-6 shadow-sm dark:border-gray-800 dark:bg-[#151C28] space-y-5">
-        <div>
-          <h2 className="text-base font-black text-gray-900 dark:text-gray-100 mb-2.5 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-500" />
-            توضیحات و دستورالعمل رویداد
-          </h2>
-          <div className="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 leading-relaxed font-medium whitespace-pre-line text-xs sm:text-sm">
-            {event.description || 'توضیحات تکمیلی ثبت نشده است.'}
-          </div>
-        </div>
-
-        {/* Tags */}
-        {event.tags && event.tags.length > 0 && (
-          <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
-            <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2.5 flex items-center gap-1.5">
-              <Tag className="w-3.5 h-3.5" />
-              <span>کلیدواژه‌ها و برچسب‌ها:</span>
-            </h4>
-            <div className="flex flex-wrap items-center gap-2">
-              {event.tags.map((tag, idx) => (
-                <span
-                  key={idx}
-                  className="px-3 py-1 rounded-xl text-xs font-bold border border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-300"
-                >
-                  #{tag}
-                </span>
-              ))}
+            {/* Organizer */}
+            <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[3px_3px_0px_0px_#59BBAF]">
+              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs mb-1">
+                <ShieldCheck className="w-4 h-4" />
+                <span>برگزارکننده</span>
+              </div>
+              <p className="text-base font-black text-zinc-900 dark:text-zinc-100">
+                {event.createdBy ? `${event.createdBy.firstName} ${event.createdBy.lastName}` : 'مدیریت هنرستان'}
+              </p>
+              <p className="text-xs font-bold text-zinc-500 mt-1">
+                {event.createdBy?.role ? `نقش: ${event.createdBy.role}` : 'واحد امور اجرایی و آموزشی'}
+              </p>
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Description & Full Details */}
+          <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 md:p-8 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF] space-y-6">
+            <div>
+              <h2 className="text-xl font-black text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-500" />
+                توضیحات و دستورالعمل رویداد
+              </h2>
+              <div className="prose dark:prose-invert max-w-none text-zinc-700 dark:text-zinc-300 leading-relaxed font-medium whitespace-pre-line text-sm md:text-base">
+                {event.description || 'توضیحات تکمیلی برای این رویداد ثبت نشده است.'}
+              </div>
+            </div>
+
+            {/* Tags */}
+            {event.tags && event.tags.length > 0 && (
+              <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800">
+                <h4 className="text-xs font-black text-zinc-500 dark:text-zinc-400 mb-3 flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5" />
+                  <span>کلیدواژه‌ها و برچسب‌های مرتبط:</span>
+                </h4>
+                <div className="flex flex-wrap items-center gap-2">
+                  {displayTags(event.tags).map((tag, idx) => (
+                    <span
+                      key={idx}
+                      className="px-3 py-1 rounded-xl text-xs font-bold border-2 border-zinc-900 bg-zinc-100 text-zinc-800 dark:border-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 shadow-[2px_2px_0px_0px_#202A5A] dark:shadow-[2px_2px_0px_0px_#59BBAF]"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ================= EDIT MODAL ================= */}
       <Modal
@@ -569,16 +806,16 @@ export const EventSinglePage: React.FC = () => {
         onClose={() => setIsEditModalOpen(false)}
         title="ویرایش مشخصات رویداد"
       >
-        <form onSubmit={handleEditSubmit} className="space-y-4">
+        <form onSubmit={handleEditSubmit} className="space-y-5">
           {formError && (
-            <div className="flex items-center gap-2 rounded-xl border border-red-500 bg-red-50 p-3 text-xs font-bold text-red-700 dark:bg-red-950/50 dark:text-red-300">
+            <div className="flex items-center gap-2 rounded-xl border-2 border-red-500 bg-red-50 p-3 text-xs font-bold text-red-700 dark:bg-red-950/50 dark:text-red-300">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{formError}</span>
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
               عنوان رویداد *
             </label>
             <input
@@ -586,38 +823,59 @@ export const EventSinglePage: React.FC = () => {
               required
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="w-full min-h-[42px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm font-bold text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
+              className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+              <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
                 دسته‌بندی
               </label>
               <select
-                value={form.eventType}
-                onChange={(e) => setForm({ ...form, eventType: e.target.value as any })}
-                className="w-full min-h-[42px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm font-bold text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
+                value={form.categoryKey || form.eventType}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  const isCustom = customCategories.some((c) => c.key === v);
+                  if (isCustom) {
+                    setForm({ ...form, categoryKey: v, eventType: 'ACADEMIC' as any });
+                  } else {
+                    setForm({ ...form, categoryKey: '', eventType: v as any });
+                  }
+                }}
+                className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
               >
-                <option value="ACADEMIC">آموزشی و مهارت</option>
-                <option value="CULTURAL">فرهنگی و آیین‌ها</option>
-                <option value="SPORTS">مسابقات و ورزش</option>
-                <option value="EXAM">آزمون و ارزشیابی</option>
-                <option value="EXCURSION">اردو و بازدید علمی</option>
-                <option value="MEETING">جلسه و نشست</option>
-                <option value="HOLIDAY">تعطیلی و مناسبت</option>
+                {categoriesLoaded ? (
+                  <optgroup label="دسته‌بندی‌های مدرسه">
+                    {customCategories.map((c) => (
+                      <option key={c.key} value={c.key}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : (
+                  <optgroup label="دسته‌های پیش‌فرض">
+                    <option value="STARTUP_WEEKEND">استارت‌آپ ویکند</option>
+                    <option value="ACADEMIC">آموزشی و مهارت</option>
+                    <option value="CULTURAL">فرهنگی و آیین‌ها</option>
+                    <option value="SPORTS">مسابقات و ورزش</option>
+                    <option value="EXAM">آزمون و ارزشیابی</option>
+                    <option value="EXCURSION">اردو و بازدید علمی</option>
+                    <option value="MEETING">جلسه و نشست</option>
+                    <option value="HOLIDAY">تعطیلی و مناسبت</option>
+                  </optgroup>
+                )}
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+              <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
                 مخاطبین هدف
               </label>
               <select
                 value={form.targetAudience}
                 onChange={(e) => setForm({ ...form, targetAudience: e.target.value as any })}
-                className="w-full min-h-[42px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm font-bold text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
+                className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
               >
                 <option value="ALL">عمومی (کلیه مخاطبین)</option>
                 <option value="STUDENTS">دانش‌آموزان</option>
@@ -628,9 +886,9 @@ export const EventSinglePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+              <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
                 تاریخ شروع (شمسی) *
               </label>
               <PersianDatePicker
@@ -639,21 +897,21 @@ export const EventSinglePage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+              <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
                 ساعت شروع
               </label>
               <input
                 type="time"
                 value={form.startTime}
                 onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-                className="w-full min-h-[42px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm font-bold text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
+                className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+              <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
                 تاریخ پایان (شمسی)
               </label>
               <PersianDatePicker
@@ -662,81 +920,246 @@ export const EventSinglePage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+              <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
                 ساعت پایان
               </label>
               <input
                 type="time"
                 value={form.endTime}
                 onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-                className="w-full min-h-[42px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm font-bold text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
+                className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
               محل برگزاری
             </label>
             <input
               type="text"
               value={form.location}
               onChange={(e) => setForm({ ...form, location: e.target.value })}
-              className="w-full min-h-[42px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm font-bold text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
+              className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
-              URL تصویر بنر کاور
+            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+              عکس یا بنر رویداد
             </label>
-            <input
-              type="url"
-              value={form.coverUrl}
-              onChange={(e) => setForm({ ...form, coverUrl: e.target.value })}
-              className="w-full min-h-[42px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm font-medium text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
+            <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-2 leading-relaxed">
+              {EVENT_COVER_SPEC_LABEL}
+            </p>
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  ref={coverFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleCoverFileSelect}
+                />
+                <Button
+                  type="button"
+                  variant="sec"
+                  size="sm"
+                  disabled={isUploadingCover}
+                  onClick={() => coverFileInputRef.current?.click()}
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  {isUploadingCover ? 'در حال آپلود...' : 'آپلود عکس بنر'}
+                </Button>
+                {form.coverUrl && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setForm({ ...form, coverUrl: '' })}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    حذف عکس
+                  </Button>
+                )}
+              </div>
+
+              {form.coverUrl && (
+                <div className="relative w-full max-w-md rounded-xl border-2 border-zinc-900 overflow-hidden shadow-[3px_3px_0px_0px_#202A5A] dark:border-zinc-200">
+                  <img
+                    src={form.coverUrl}
+                    alt="پیش‌نمایش بنر رویداد"
+                    className="w-full h-36 object-cover"
+                  />
+                </div>
+              )}
+
+              <input
+                type="text"
+                value={form.coverUrl}
+                onChange={(e) => setForm({ ...form, coverUrl: e.target.value })}
+                placeholder="یا آدرس تصویر را وارد کنید: https://..."
+                className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
+              />
+            </div>
+            <EventCoverCropModal
+              isOpen={!!cropImageSrc}
+              onClose={() => {
+                setCropImageSrc(null);
+                setCropFileName(undefined);
+                if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+              }}
+              imageSrc={cropImageSrc || ''}
+              fileName={cropFileName}
+              onConfirm={handleCoverCropConfirm}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
               برچسب‌ها (با ویرگول جدا کنید)
             </label>
             <input
               type="text"
               value={form.tags}
               onChange={(e) => setForm({ ...form, tags: e.target.value })}
-              className="w-full min-h-[42px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 px-3.5 py-2.5 text-sm font-medium text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
+              className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
               توضیحات رویداد
             </label>
             <textarea
-              rows={3}
+              rows={4}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 p-3 text-sm font-medium text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-900 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
+              className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-200 dark:border-gray-800">
-            <button
+          {/* Workflow Modules Selection in Edit Modal */}
+          <div className="rounded-2xl border-2 border-zinc-900 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/50">
+            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+              ماژول‌های گردش کار رویداد (اختیاری)
+            </label>
+            <p className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 mb-3">
+              ماژول‌های مورد نیاز این رویداد را تیک بزنید. ماژول‌های بدون تیک در ویزارد رویداد نمایش داده نمی‌شوند.
+            </p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {EVENT_MODULE_LIST.map((mod) => {
+                const entry = workflowModulesState.find((m) => m.key === mod.key);
+                const checked = !!entry && entry.enabled !== false;
+                const Icon = mod.icon;
+                return (
+                  <div
+                    key={mod.key}
+                    className={`flex items-center gap-3 rounded-xl border-2 p-3 transition-all ${
+                      checked
+                        ? 'border-zinc-900 bg-white shadow-[2px_2px_0px_0px_#202A5A] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[2px_2px_0px_0px_#59BBAF]'
+                        : 'border-zinc-300 bg-white/60 dark:border-zinc-700 dark:bg-zinc-900/40'
+                    }`}
+                  >
+                    <label className="flex items-center gap-2.5 flex-1 cursor-pointer min-w-0">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          setWorkflowModulesState((prev) => {
+                            if (e.target.checked) {
+                              const existing = prev.find((m) => m.key === mod.key);
+                              if (existing) {
+                                return renumberWorkflowModules(
+                                  prev.map((m) =>
+                                    m.key === mod.key ? { ...m, enabled: true } : m
+                                  )
+                                );
+                              }
+                              const maxStep = prev.length
+                                ? Math.max(...prev.map((m) => m.step))
+                                : 0;
+                              return renumberWorkflowModules([
+                                ...prev,
+                                { key: mod.key as any, step: maxStep + 1, enabled: true },
+                              ]);
+                            }
+                            return renumberWorkflowModules(
+                              prev.filter((m) => m.key !== mod.key)
+                            );
+                          });
+                        }}
+                        className="w-4 h-4 accent-indigo-600 flex-shrink-0"
+                      />
+                      <Icon className={`w-4 h-4 flex-shrink-0 ${checked ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-400'}`} />
+                      <div className="min-w-0">
+                        <div className="text-xs font-black text-zinc-900 dark:text-zinc-100 truncate">{mod.title}</div>
+                        <div className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 truncate">{mod.subtitle}</div>
+                      </div>
+                    </label>
+                    {checked && (
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400">مرحله:</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={20}
+                          value={entry?.step || 1}
+                          onChange={(e) => {
+                            const newStep = Math.max(1, parseInt(e.target.value, 10) || 1);
+                            setWorkflowModulesState((prev) =>
+                              renumberWorkflowModules(
+                                prev.map((m) =>
+                                  m.key === mod.key ? { ...m, step: newStep } : m
+                                )
+                              )
+                            );
+                          }}
+                          className="w-14 px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium text-center focus:border-primary focus:outline-none transition-all"
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {workflowModulesState.length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400">ترتیب مراحل فعال:</span>
+                {[...workflowModulesState]
+                  .filter((m) => m.enabled !== false)
+                  .sort((a, b) => a.step - b.step)
+                  .map((m) => {
+                    const def = EVENT_MODULE_LIST.find((d) => d.key === m.key);
+                    return (
+                      <span
+                        key={m.key}
+                        className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 text-[10px] font-black border border-indigo-300 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-700"
+                      >
+                        {m.step}. {def?.title || m.key}
+                      </span>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+            <Button
               type="button"
+              variant="outline"
               onClick={() => setIsEditModalOpen(false)}
-              className="min-h-[42px] px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-bold text-xs hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+              className="font-bold"
             >
               انصراف
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
               disabled={isSubmitting}
-              className="min-h-[42px] px-6 py-2 rounded-xl font-black text-xs bg-brand-primary text-white hover:bg-brand-primary/90 transition-all shadow-sm disabled:opacity-50"
+              className="font-black px-6"
             >
               {isSubmitting ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
-            </button>
+            </Button>
           </div>
         </form>
       </Modal>

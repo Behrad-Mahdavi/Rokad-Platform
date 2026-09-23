@@ -4,6 +4,8 @@ import {
   ConflictException,
   NotFoundException,
   BadRequestException,
+  ServiceUnavailableException,
+  HttpException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -472,22 +474,41 @@ export class AuthService {
    * Refresh Token Rotation with Token Family Reuse Detection
    */
   async refreshToken(dto: RefreshTokenDto, ipAddress?: string, userAgent?: string) {
+    try {
+      return await this.refreshTokenCore(dto, ipAddress, userAgent);
+    } catch (err: any) {
+      if (err instanceof HttpException) throw err;
+      // 503 (not 401): transient DB blip must not wipe the client session.
+      if (this.prisma.isConnectionError(err)) {
+        this.logger.error(`Refresh token failed (DB unavailable): ${err?.message}`);
+        throw new ServiceUnavailableException(
+          'اتصال به سرور برقرار نشد. لطفاً چند لحظه بعد دوباره تلاش کنید',
+        );
+      }
+      throw err;
+    }
+  }
+
+  private async refreshTokenCore(dto: RefreshTokenDto, ipAddress?: string, userAgent?: string) {
     const rawToken = dto.refreshToken;
     const tokenHash = this.hashToken(rawToken);
 
-    // Look up token with its family and user
-    const tokenRecord = await this.prisma.refreshToken.findUnique({
-      where: { tokenHash },
-      include: {
-        family: {
-          include: {
-            user: {
-              include: { tenant: true },
+    // Look up token with its family and user (reconnect-retry only on the read —
+    // never re-run the whole rotation after isUsed was flipped).
+    const tokenRecord = await this.prisma.withReconnectRetry(() =>
+      this.prisma.refreshToken.findUnique({
+        where: { tokenHash },
+        include: {
+          family: {
+            include: {
+              user: {
+                include: { tenant: true },
+              },
             },
           },
         },
-      },
-    });
+      }),
+    );
 
     if (!tokenRecord) {
       throw new UnauthorizedException('توکن رفرش نامعتبر است');
@@ -535,13 +556,7 @@ export class AuthService {
       throw new UnauthorizedException('توکن رفرش منقضی شده است');
     }
 
-    // 4. Valid Rotation: Mark current token as used
-    await this.prisma.refreshToken.update({
-      where: { id: tokenRecord.id },
-      data: { isUsed: true },
-    });
-
-    // 5. Generate new Refresh Token within the SAME family
+    // 4-5. Atomic rotation: mark used + insert successor together (never half-rotate).
     const newRawRefreshToken = this.generateSecureRandomToken();
     const newTokenHash = this.hashToken(newRawRefreshToken);
 
@@ -549,15 +564,21 @@ export class AuthService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + refreshExpiryDays);
 
-    await this.prisma.refreshToken.create({
-      data: {
-        familyId: family.id,
-        tokenHash: newTokenHash,
-        expiresAt,
-        ipAddress,
-        userAgent,
-      },
-    });
+    await this.prisma.$transaction([
+      this.prisma.refreshToken.update({
+        where: { id: tokenRecord.id },
+        data: { isUsed: true },
+      }),
+      this.prisma.refreshToken.create({
+        data: {
+          familyId: family.id,
+          tokenHash: newTokenHash,
+          expiresAt,
+          ipAddress,
+          userAgent,
+        },
+      }),
+    ]);
 
     // 6. Generate new Access Token
     const user = family.user;
