@@ -4,6 +4,7 @@ import { Modal } from '../../../../components/ui/Modal';
 import { toast } from '../../../../components/ui/toast/toast';
 import { useAuthStore } from '../../../../lib/auth/auth-store';
 import { toPersianDigits, formatJalaliDisplay } from '../../../../utils/jalali';
+import { isOwnedByUser } from '../constants/event-access';
 import {
   Lightbulb,
   Send,
@@ -106,15 +107,11 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
   // Find if current student has already submitted an idea for this event
   const userSubmittedIdea = useMemo(() => {
     if (!currentUser) return null;
-    return (
-      ideas.find((item) => {
-        const matchName =
-          item.authorName.trim().toLowerCase() === studentName.trim().toLowerCase() ||
-          (currentUser.lastName && item.authorName.includes(currentUser.lastName)) ||
-          (currentUser.firstName && item.authorName.includes(currentUser.firstName));
-        return matchName;
-      }) || null
+    const exact = ideas.find(
+      (item) => item.authorName.trim().toLowerCase() === studentName.trim().toLowerCase(),
     );
+    if (exact) return exact;
+    return ideas.find((item) => isOwnedByUser(item.authorName, currentUser)) || null;
   }, [ideas, currentUser, studentName]);
 
   const [studentEditTitle, setStudentEditTitle] = useState('');
@@ -129,6 +126,10 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
 
   const handleSaveStudentEdit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLocked) {
+      toast.error('مهلت ویرایش ایده به پایان رسیده و قفل شده است.');
+      return;
+    }
     if (!userSubmittedIdea) return;
     if (!studentEditTitle.trim() || !studentEditDescription.trim()) {
       toast.error('لطفاً اسم و شرح ایده را وارد نمایید.');
@@ -227,11 +228,11 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
   return (
     <div className="space-y-8">
       {/* Container: Submission Form */}
-      <div className="rounded-2xl border-3 border-zinc-900 bg-white p-6 md:p-8 shadow-[6px_6px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[6px_6px_0px_0px_#f4f4f5]">
+      <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 md:p-8 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
         {/* Header & Lock Controller */}
         <div className="border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-5 mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-amber-400 text-zinc-950 text-xs font-black mb-2 shadow-[2px_2px_0px_0px_#18181b]">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-amber-400 text-zinc-950 text-xs font-black mb-2 shadow-[2px_2px_0px_0px_#202A5A]">
               <Lightbulb className="w-4 h-4" />
               <span>گام اول: ثبت ایده دانش‌آموزی</span>
             </div>
@@ -249,7 +250,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
               <button
                 type="button"
                 onClick={onToggleLock}
-                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 border-zinc-900 text-xs font-black transition-all shadow-[2px_2px_0px_0px_#18181b] ${
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 border-zinc-900 text-xs font-black transition-all shadow-[2px_2px_0px_0px_#202A5A] ${
                   isLocked
                     ? 'bg-rose-100 text-rose-950 dark:bg-rose-950 dark:text-rose-200'
                     : 'bg-emerald-100 text-emerald-950 dark:bg-emerald-950 dark:text-emerald-200'
@@ -273,7 +274,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
               <Button
                 variant="primary"
                 onClick={onGoToVotingStep}
-                className="gap-2 text-xs font-black border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]"
+                className="gap-2 text-xs font-black"
               >
                 <Vote className="w-4 h-4" />
                 <span>رفتن به مرحله نظرسنجی</span>
@@ -301,9 +302,9 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
         )}
 
         {/* Locked Notice vs Existing Submitted Idea Edit vs New Submission Form */}
-        {userSubmittedIdea && !isManager ? (
+        {userSubmittedIdea && !isManager && !isLocked ? (
           <div className="space-y-6">
-            <div className="p-4 rounded-xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/40 flex flex-wrap items-center justify-between gap-4 shadow-[2px_2px_0px_0px_#18181b]">
+            <div className="p-4 rounded-xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/40 flex flex-wrap items-center justify-between gap-4 shadow-[2px_2px_0px_0px_#202A5A]">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl border-2 border-zinc-900 bg-amber-400 text-zinc-950 flex items-center justify-center font-black">
                   <CheckCircle2 className="w-5 h-5" />
@@ -323,7 +324,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
             </div>
 
             <form onSubmit={handleSaveStudentEdit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 rounded-xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800/70 shadow-[2px_2px_0px_0px_#18181b]">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 rounded-xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800/70 shadow-[2px_2px_0px_0px_#202A5A]">
                 <div>
                   <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1.5 flex items-center gap-1.5">
                     <User className="w-4 h-4 text-primary" />
@@ -334,7 +335,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
                     readOnly
                     disabled
                     value={userSubmittedIdea.authorName}
-                    className="w-full rounded-xl border-2 border-zinc-400 bg-white dark:bg-zinc-800 p-3 text-xs md:text-sm font-black text-zinc-900 dark:text-zinc-100 cursor-not-allowed shadow-none"
+                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-zinc-100 dark:bg-zinc-800 p-3 text-xs md:text-sm font-medium text-zinc-900 dark:text-zinc-100 cursor-not-allowed"
                   />
                 </div>
 
@@ -360,7 +361,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
                   required
                   value={studentEditTitle}
                   onChange={(e) => setStudentEditTitle(e.target.value)}
-                  className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-xs md:text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-800 focus:outline-none"
+                  className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs md:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                 />
               </div>
 
@@ -375,7 +376,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
                   rows={5}
                   value={studentEditDescription}
                   onChange={(e) => setStudentEditDescription(e.target.value)}
-                  className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-xs md:text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-800 focus:outline-none"
+                  className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs md:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                 />
               </div>
 
@@ -383,7 +384,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
                 <Button
                   type="submit"
                   variant="primary"
-                  className="border-2 border-zinc-900 bg-indigo-500 text-white font-black gap-2 px-8 py-3.5 shadow-[4px_4px_0px_0px_#18181b]"
+                  className="bg-indigo-500 text-white font-black gap-2 px-8 py-3.5"
                 >
                   <Edit3 className="w-4 h-4" />
                   <span>ذخیره ویرایش‌های ایده من</span>
@@ -393,7 +394,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
           </div>
         ) : isLocked ? (
           <div className="p-8 text-center bg-zinc-50 dark:bg-zinc-800/60 rounded-2xl border-2 border-zinc-300 dark:border-zinc-700 space-y-4 my-6">
-            <div className="w-14 h-14 mx-auto rounded-2xl border-2 border-zinc-900 bg-rose-200 flex items-center justify-center shadow-[2px_2px_0px_0px_#18181b]">
+            <div className="w-14 h-14 mx-auto rounded-2xl border-2 border-zinc-900 bg-rose-200 flex items-center justify-center shadow-[2px_2px_0px_0px_#202A5A]">
               <Lock className="w-7 h-7 text-rose-900" />
             </div>
             <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
@@ -406,7 +407,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Row 1: Automatic Fields (Student Name & Sequential Idea Number) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 rounded-xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800/70 shadow-[2px_2px_0px_0px_#18181b]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 rounded-xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800/70 shadow-[2px_2px_0px_0px_#202A5A]">
               <div>
                 <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1.5 flex items-center gap-1.5">
                   <User className="w-4 h-4 text-primary" />
@@ -417,7 +418,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
                   readOnly
                   disabled
                   value={studentName}
-                  className="w-full rounded-xl border-2 border-zinc-400 bg-white dark:bg-zinc-800 p-3 text-xs md:text-sm font-black text-zinc-900 dark:text-zinc-100 cursor-not-allowed shadow-none"
+                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-zinc-100 dark:bg-zinc-800 p-3 text-xs md:text-sm font-medium text-zinc-900 dark:text-zinc-100 cursor-not-allowed"
                 />
               </div>
 
@@ -447,7 +448,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
                 placeholder="عنوان دقیق ایده یا طرح پیشنهادی را وارد کنید..."
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-xs md:text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-800 placeholder:text-zinc-400 focus:outline-none"
+                className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs md:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all placeholder:text-gray-400"
               />
             </div>
 
@@ -463,7 +464,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
                 placeholder="توضیح کامل ایده، نحوه‌ی اجرا و ویژگی‌های طرح خود را شرح دهید..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-xs md:text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-800 placeholder:text-zinc-400 focus:outline-none"
+                className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs md:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all placeholder:text-gray-400"
               />
             </div>
 
@@ -477,7 +478,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
                 type="submit"
                 variant="primary"
                 disabled={isSubmitting}
-                className="border-2 border-zinc-900 font-black gap-2 px-8 py-3.5 shadow-[4px_4px_0px_0px_#18181b]"
+                className="font-black gap-2 px-8 py-3.5"
               >
                 <Send className="w-4 h-4" />
                 <span>{isSubmitting ? 'در حال ثبت ایده...' : 'ثبت نهایی ایده'}</span>
@@ -512,7 +513,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
                   required
                   value={editForm.ideaNumber}
                   onChange={(e) => setEditForm({ ...editForm, ideaNumber: Number(e.target.value) })}
-                  className="w-full rounded-xl border-2 border-zinc-900 bg-white p-2.5 text-xs font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-800"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                 />
               </div>
 
@@ -525,7 +526,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
                   required
                   value={editForm.authorName}
                   onChange={(e) => setEditForm({ ...editForm, authorName: e.target.value })}
-                  className="w-full rounded-xl border-2 border-zinc-900 bg-white p-2.5 text-xs font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-800"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                 />
               </div>
             </div>
@@ -539,7 +540,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
                 required
                 value={editForm.title}
                 onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-2.5 text-xs font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-800"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
               />
             </div>
 
@@ -552,7 +553,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
                 rows={4}
                 value={editForm.description}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-2.5 text-xs font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-800"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
               />
             </div>
 
@@ -561,14 +562,14 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
                 type="button"
                 variant="outline"
                 onClick={() => setEditingIdea(null)}
-                className="border-2 border-zinc-900 font-bold"
+                className="font-bold"
               >
                 انصراف
               </Button>
               <Button
                 type="submit"
                 variant="primary"
-                className="border-2 border-zinc-900 font-black shadow-[2px_2px_0px_0px_#18181b]"
+                className="font-black"
               >
                 ذخیره تغییرات ادمین
               </Button>

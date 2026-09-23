@@ -278,11 +278,11 @@ export class CalendarService {
     { key: 'HOLIDAY', label: 'تعطیلی و مناسبت', icon: 'CalendarDays', color: '', removable: true },
   ];
 
-  private getEventCategoriesFromSettings(settings: any): any[] {
+  private getEventCategoriesFromSettings(settings: any): any[] | null {
     if (settings && typeof settings === 'object' && Array.isArray(settings.eventCategories)) {
       return settings.eventCategories;
     }
-    return [];
+    return null;
   }
 
   private async saveEventCategories(tenantId: string, categories: any[]) {
@@ -300,18 +300,14 @@ export class CalendarService {
     const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
     const existing = this.getEventCategoriesFromSettings(tenant?.settings);
 
-    // Seed default categories once so they become editable/deletable via API
-    const existingKeys = new Set(existing.map((c) => c?.key));
-    const missingDefaults = CalendarService.DEFAULT_EVENT_CATEGORIES.filter(
-      (d) => !existingKeys.has(d.key),
-    );
-    if (missingDefaults.length > 0) {
-      const next = [...existing, ...missingDefaults];
-      await this.saveEventCategories(tenantId, next);
-      return next;
+    // Seed defaults only on first initialization. Never re-add deleted defaults.
+    if (existing !== null) {
+      return existing;
     }
 
-    return existing;
+    const next = CalendarService.DEFAULT_EVENT_CATEGORIES.map((d) => ({ ...d }));
+    await this.saveEventCategories(tenantId, next);
+    return next;
   }
 
   async createEventCategory(tenantId: string, category: any) {

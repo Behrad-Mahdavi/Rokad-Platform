@@ -306,6 +306,7 @@ export class PorscadService {
 
   /**
    * Fetch Live Analytics and Answers from Porscad Cloud
+   * Throws when a real remote question exists but GET fails, so callers can surface the error.
    */
   public async fetchLiveAnalytics(eventId: string): Promise<PorscadPollData | null> {
     const poll = this.getLocalPollData(eventId);
@@ -321,49 +322,52 @@ export class PorscadService {
         { headers: this.getHeaders() }
       );
 
-      if (answersRes.ok) {
-        const answersData = await answersRes.json();
-        const cloudVoteCounts: Record<string, number> = {};
+      if (!answersRes.ok) {
+        throw new Error(`HTTP ${answersRes.status}`);
+      }
 
-        if (Array.isArray(answersData)) {
-          for (const item of answersData) {
-            const val = item.value;
-            if (Array.isArray(val)) {
-              for (const v of val) {
-                cloudVoteCounts[v] = (cloudVoteCounts[v] || 0) + 1;
-              }
-            } else if (typeof val === 'string') {
-              cloudVoteCounts[val] = (cloudVoteCounts[val] || 0) + 1;
-            }
+      const answersData = await answersRes.json();
+      if (!Array.isArray(answersData)) {
+        throw new Error('Invalid answers payload from Porscad');
+      }
+
+      const cloudVoteCounts: Record<string, number> = {};
+      for (const item of answersData) {
+        const val = item.value;
+        if (Array.isArray(val)) {
+          for (const v of val) {
+            cloudVoteCounts[v] = (cloudVoteCounts[v] || 0) + 1;
           }
-
-          const updatedOptions = poll.options.map((opt) => {
-            const votes = cloudVoteCounts[opt.text] ?? opt.voteCount;
-            return { ...opt, voteCount: votes };
-          });
-
-          const newTotal = updatedOptions.reduce((sum, o) => sum + o.voteCount, 0);
-          const optionsWithPct = updatedOptions.map((opt) => ({
-            ...opt,
-            percentage: newTotal > 0 ? Math.round((opt.voteCount / newTotal) * 100) : 0,
-          }));
-
-          const updatedPoll: PorscadPollData = {
-            ...poll,
-            options: optionsWithPct,
-            totalVotes: newTotal,
-            totalRespondents: answersData.length || poll.totalRespondents,
-          };
-
-          this.saveLocalPollData(eventId, updatedPoll);
-          return updatedPoll;
+        } else if (typeof val === 'string') {
+          cloudVoteCounts[val] = (cloudVoteCounts[val] || 0) + 1;
         }
       }
+
+      const updatedOptions = poll.options.map((opt) => {
+        // Remote Porscad/Supabase answers are the source of truth once GET succeeds
+        const votes = cloudVoteCounts[opt.text] ?? 0;
+        return { ...opt, voteCount: votes };
+      });
+
+      const newTotal = updatedOptions.reduce((sum, o) => sum + o.voteCount, 0);
+      const optionsWithPct = updatedOptions.map((opt) => ({
+        ...opt,
+        percentage: newTotal > 0 ? Math.round((opt.voteCount / newTotal) * 100) : 0,
+      }));
+
+      const updatedPoll: PorscadPollData = {
+        ...poll,
+        options: optionsWithPct,
+        totalVotes: newTotal,
+        totalRespondents: answersData.length,
+      };
+
+      this.saveLocalPollData(eventId, updatedPoll);
+      return updatedPoll;
     } catch (e) {
       console.warn('Failed to fetch live analytics from cloud:', e);
+      throw e instanceof Error ? e : new Error('Failed to fetch live analytics from Porscad');
     }
-
-    return poll;
   }
 
   /**
@@ -472,21 +476,36 @@ export class PorscadService {
       };
     }
 
-    this.saveLocalPollData(eventId, updatedPoll);
     localStorage.setItem(`rokad_porscad_voted_${eventId}`, JSON.stringify(selectedOptionIds));
+
+    // After a successful POST, always re-GET live analytics so displayed results
+    // come from Porscad/Supabase (including votes made outside this browser).
+    let finalPoll = updatedPoll;
+    try {
+      const remotePoll = await this.fetchLiveAnalytics(eventId);
+      if (remotePoll) {
+        finalPoll = { ...remotePoll, isClosed: poll.isClosed };
+        this.saveLocalPollData(eventId, finalPoll);
+      } else {
+        this.saveLocalPollData(eventId, updatedPoll);
+      }
+    } catch (e) {
+      console.warn('Live analytics refresh after vote failed, using optimistic counts:', e);
+      this.saveLocalPollData(eventId, updatedPoll);
+    }
 
     return {
       success: true,
       message: `رای شما (${selectedOptionIds.length} انتخاب) با موفقیت در پرس‌کاد ثبت شد!`,
       responseId,
-      updatedPoll,
+      updatedPoll: finalPoll,
     };
   }
 
   /**
    * Finish Assessment & Determine Top N Winners with display order options
    */
-  public finishAssessmentAndDetermineWinner(
+  public async finishAssessmentAndDetermineWinner(
     eventId: string,
     topCount: number = 3,
     options?: {
@@ -494,9 +513,19 @@ export class PorscadService {
       displayOrder?: PorscadDisplayOrder;
       isResultsPublic?: boolean;
     }
-  ): PorscadPollData | null {
-    const poll = this.getLocalPollData(eventId);
+  ): Promise<PorscadPollData | null> {
+    let poll = this.getLocalPollData(eventId);
     if (!poll) return null;
+
+    // GET remote results first so winners are based on Porscad/Supabase, not local cache
+    if (poll.questionId && !poll.questionId.startsWith('porscad_q_')) {
+      try {
+        const remote = await this.fetchLiveAnalytics(eventId);
+        if (remote) poll = { ...remote, isClosed: poll.isClosed };
+      } catch (e) {
+        console.warn('Pre-finish live analytics GET failed, using local counts:', e);
+      }
+    }
 
     const sorted = [...poll.options].sort((a, b) => b.voteCount - a.voteCount);
     const topWinners = sorted.slice(0, Math.min(topCount, sorted.length));

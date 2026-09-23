@@ -4,10 +4,13 @@ import { EventIdeasListStep } from './EventIdeasListStep';
 import { EventVotingPorscadStep } from './EventVotingPorscadStep';
 import { EventTeamFormationStep } from './EventTeamFormationStep';
 import { EventCanvasMaterialsStep } from './EventCanvasMaterialsStep';
+import { EventTaskDefinitionStep } from './EventTaskDefinitionStep';
+import { EventLeaderboardStep } from './EventLeaderboardStep';
 import { useAuthStore } from '../../../../lib/auth/auth-store';
 import { toast } from '../../../../components/ui/toast/toast';
 import { toPersianDigits } from '../../../../utils/jalali';
-import { EVENT_MODULE_REGISTRY, WorkflowModuleEntry } from '../constants/event-modules';
+import { EVENT_MODULE_REGISTRY, WorkflowModuleEntry, renumberWorkflowModules } from '../constants/event-modules';
+import { parseJsonArray } from '../constants/event-access';
 import {
   CheckCircle2,
   Workflow,
@@ -29,54 +32,11 @@ const DEFAULT_WORKFLOW: WorkflowModuleEntry[] = [
   { key: 'VOTING', step: 3, enabled: true },
   { key: 'TEAM_FORMATION', step: 4, enabled: true },
   { key: 'EVENT_CANVAS', step: 5, enabled: true },
+  { key: 'TASK_DEFINITION', step: 6, enabled: true },
+  { key: 'LEADERBOARD', step: 7, enabled: true },
 ];
 
-const DEFAULT_EVENT_IDEAS: EventIdea[] = [
-  {
-    id: 'idea_sample_1',
-    eventId: 'evt_startup_weekend_2026',
-    ideaNumber: 1,
-    title: 'سامانه هوشمند مدیریت کارگاه‌های هنرستان (کارگاه پلاس)',
-    description: 'یک نرم‌افزار جامع تحت وب و موبایل برای رزرو تجهیزات کارگاه، ثبت کارنامه‌ی مهارتی دانش‌آموزان و مدیریت قطعات سخت‌افزاری.',
-    authorName: 'امیرحسین رضایی',
-    authorRole: 'دانش‌آموز',
-    createdAt: new Date(Date.now() - 3600000 * 48).toISOString(),
-    status: 'APPROVED',
-  },
-  {
-    id: 'idea_sample_2',
-    eventId: 'evt_startup_weekend_2026',
-    ideaNumber: 2,
-    title: 'پلتفرم به اشتراک‌گذاری کتاب و جزوات کنکوری (کتاب‌یار)',
-    description: 'شبکه اجتماعی داخلی مدرسه‌ای جهت تبادل و امانت‌دهی کتاب‌های درسی و جزوات آموزشی بین دانش‌آموزان پایه‌های مختلف.',
-    authorName: 'محمدحسین علیزاده',
-    authorRole: 'دانش‌آموز',
-    createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
-    status: 'APPROVED',
-  },
-  {
-    id: 'idea_sample_3',
-    eventId: 'evt_startup_weekend_2026',
-    ideaNumber: 3,
-    title: 'ربات هوشمند پاسخگویی به سوالات مهارتی (هنرآموز AI)',
-    description: 'یک دستیار هوش مصنوعی محلی برای پاسخگویی به سوالات برنامه‌نویسی و شبکه‌های کامپیوتری هنرجویان.',
-    authorName: 'علیرضا حسینی',
-    authorRole: 'دانش‌آموز',
-    createdAt: new Date(Date.now() - 3600000 * 12).toISOString(),
-    status: 'APPROVED',
-  },
-  {
-    id: 'idea_sample_4',
-    eventId: 'evt_startup_weekend_2026',
-    ideaNumber: 4,
-    title: 'سیستم هوشمند سوخت‌رسانی و عیب‌یابی خودرو هنرستان',
-    description: 'طرح مانیتورینگ آنلاین سنسورهای خودرو با اتصال اینترنت اشیاء جهت یادگیری بهتر دروس مکانیک خودرو.',
-    authorName: 'مهدی محمودی',
-    authorRole: 'دانش‌آموز',
-    createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
-    status: 'APPROVED',
-  },
-];
+const DEFAULT_EVENT_IDEAS: EventIdea[] = [];
 
 export const EventStepWizard: React.FC<EventStepWizardProps> = ({
   eventId,
@@ -89,18 +49,21 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
 
   const [selectedIdeaForVote, setSelectedIdeaForVote] = useState<string | null>(null);
 
-  // Dynamic steps config derived from workflowModules
+  // Dynamic steps config derived from workflowModules (always contiguous 1..n)
   const STEPS_CONFIG = useMemo(() => {
-    const entries = (workflowModules && workflowModules.length > 0 ? workflowModules : DEFAULT_WORKFLOW)
-      .filter((m) => m.enabled !== false)
-      .sort((a, b) => a.step - b.step);
+    const entries = renumberWorkflowModules(
+      (workflowModules && workflowModules.length > 0 ? workflowModules : DEFAULT_WORKFLOW).filter(
+        (m) => m.enabled !== false
+      )
+    );
 
-    return entries.map((entry) => {
+    return entries.map((entry, index) => {
       const def = EVENT_MODULE_REGISTRY[entry.key as keyof typeof EVENT_MODULE_REGISTRY];
+      const displayStep = index + 1;
       return {
-        step: entry.step,
+        step: displayStep,
         key: entry.key,
-        title: `${toPersianDigits(entry.step)}. ${def.title}`,
+        title: `${toPersianDigits(displayStep)}. ${def.title}`,
         subtitle: def.subtitle,
         icon: def.icon,
         activeColor: def.activeColor,
@@ -108,24 +71,29 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
     });
   }, [workflowModules]);
 
-  const stepKeys = useMemo(() => new Set(STEPS_CONFIG.map((s) => s.key)), [STEPS_CONFIG]);
+  const stepNumbers = useMemo(() => new Set(STEPS_CONFIG.map((s) => s.step)), [STEPS_CONFIG]);
 
   // Step Unlocking state for students
   const unlockedStepsKey = `rokad_event_unlocked_steps_${eventId}`;
   const [unlockedSteps, setUnlockedSteps] = useState<number[]>(() => {
+    const fallback = STEPS_CONFIG.length > 0 ? [STEPS_CONFIG[0].step] : [1];
     try {
-      const saved = localStorage.getItem(unlockedStepsKey);
-      return saved ? JSON.parse(saved) : STEPS_CONFIG.length > 0 ? [STEPS_CONFIG[0].step] : [1];
+      return parseJsonArray<number>(localStorage.getItem(unlockedStepsKey), fallback);
     } catch {
-      return STEPS_CONFIG.length > 0 ? [STEPS_CONFIG[0].step] : [1];
+      return fallback;
     }
   });
 
   const [currentStep, setCurrentStep] = useState<number>(() => {
+    let preferred = initialStep;
     if (!isManager && unlockedSteps.length > 0 && !unlockedSteps.includes(initialStep)) {
-      return Math.min(...unlockedSteps);
+      preferred = Math.min(...unlockedSteps);
     }
-    return initialStep;
+    // Fallback when preferred step is outside the active step list (avoids blank wizard)
+    if (!stepNumbers.has(preferred)) {
+      return STEPS_CONFIG[0]?.step ?? 1;
+    }
+    return preferred;
   });
 
   // Auto redirect student if current step gets locked
@@ -187,10 +155,11 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
 
   const [ideas, setIdeas] = useState<EventIdea[]>(() => {
     try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        return JSON.parse(saved);
-      }
+      const parsed = parseJsonArray<EventIdea>(
+        localStorage.getItem(storageKey),
+        DEFAULT_EVENT_IDEAS.map((item) => ({ ...item, eventId })),
+      );
+      if (parsed.length > 0 || localStorage.getItem(storageKey) === '[]') return parsed;
     } catch (e) {
       console.error('Failed to parse saved ideas', e);
     }
@@ -223,7 +192,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
   return (
     <div className="space-y-6">
       {/* Stepper Navigation Bar */}
-      <div className="rounded-2xl border-3 border-zinc-900 bg-white p-4 md:p-5 shadow-[5px_5px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[5px_5px_0px_0px_#f4f4f5]">
+      <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-4 md:p-5 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4 px-1">
           <div className="flex items-center gap-2">
             <Workflow className="w-5 h-5 text-primary" />
@@ -250,7 +219,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
         </div>
 
         {/* Steps Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {STEPS_CONFIG.map((s) => {
             const IconComp = s.icon;
             const isCurrent = currentStep === s.step;
@@ -266,7 +235,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                   isLockedForStudent
                     ? 'border-zinc-300 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900/60 opacity-60 cursor-not-allowed text-zinc-400'
                     : isCurrent
-                    ? `border-zinc-900 ${s.activeColor} shadow-[3px_3px_0px_0px_#18181b] cursor-pointer`
+                    ? `border-zinc-900 ${s.activeColor} shadow-[3px_3px_0px_0px_#202A5A] cursor-pointer`
                     : isPassed
                     ? 'border-zinc-900 bg-zinc-100 text-zinc-900 dark:border-zinc-300 dark:bg-zinc-800 dark:text-zinc-100 hover:bg-zinc-200 cursor-pointer'
                     : 'border-zinc-300 bg-zinc-50 text-zinc-700 hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300 cursor-pointer'
@@ -274,7 +243,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
               >
                 <div className="flex items-center gap-2.5 overflow-hidden">
                   <div
-                    className={`w-8 h-8 rounded-lg border-2 border-zinc-900 flex items-center justify-center font-black text-xs shadow-[1px_1px_0px_0px_#18181b] flex-shrink-0 ${
+                    className={`w-8 h-8 rounded-lg border-2 border-zinc-900 flex items-center justify-center font-black text-xs shadow-[1px_1px_0px_0px_#202A5A] flex-shrink-0 ${
                       isLockedForStudent
                         ? 'bg-zinc-300 dark:bg-zinc-700 text-zinc-500'
                         : isCurrent
@@ -305,7 +274,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                     type="button"
                     onClick={(e) => handleToggleStepUnlock(s.step, e)}
                     title={isUnlocked ? 'کلیک کنید تا این مرحله برای دانش‌آموزان قفل شود' : 'کلیک کنید تا این مرحله برای دانش‌آموزان بازگشایی شود'}
-                    className={`p-1.5 rounded-lg border transition-all ${
+                    className={`p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg border transition-all ${
                       isUnlocked
                         ? 'border-emerald-600 bg-emerald-100 text-emerald-950 hover:bg-emerald-200 dark:bg-emerald-900 dark:text-emerald-200'
                         : 'border-rose-600 bg-rose-100 text-rose-950 hover:bg-rose-200 dark:bg-rose-900 dark:text-rose-200'
@@ -393,6 +362,27 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                   eventTitle={eventTitle}
                   onGoToVotingStep={() => goToStepByKey('VOTING')}
                   onGoToIdeasList={() => goToStepByKey('IDEA_HALL')}
+                />
+              );
+            case 'TASK_DEFINITION':
+              return (
+                <EventTaskDefinitionStep
+                  key={cfg.key}
+                  eventId={eventId}
+                  eventTitle={eventTitle}
+                  ideas={ideas}
+                  onGoToLeaderboard={() => goToStepByKey('LEADERBOARD')}
+                  onGoToTeamFormation={() => goToStepByKey('TEAM_FORMATION')}
+                />
+              );
+            case 'LEADERBOARD':
+              return (
+                <EventLeaderboardStep
+                  key={cfg.key}
+                  eventId={eventId}
+                  eventTitle={eventTitle}
+                  ideas={ideas}
+                  onGoToTasks={() => goToStepByKey('TASK_DEFINITION')}
                 />
               );
             default:

@@ -110,7 +110,7 @@ export class CalendarController {
   }
 
   @Post('event-categories')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @RequirePermissions(AppPermission.CALENDAR_WRITE)
   @ApiOperation({ summary: 'ایجاد دسته‌بندی جدید رویداد' })
   async createEventCategory(
@@ -123,7 +123,7 @@ export class CalendarController {
   }
 
   @Patch('event-categories/:key')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @RequirePermissions(AppPermission.CALENDAR_WRITE)
   @ApiOperation({ summary: 'ویرایش دسته‌بندی رویداد' })
   async updateEventCategory(
@@ -137,7 +137,7 @@ export class CalendarController {
   }
 
   @Delete('event-categories/:key')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
   @RequirePermissions(AppPermission.CALENDAR_WRITE)
   @ApiOperation({ summary: 'حذف دسته‌بندی رویداد' })
   async deleteEventCategory(

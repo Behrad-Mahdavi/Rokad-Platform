@@ -54,60 +54,22 @@ export const LoginPage: React.FC = () => {
     navigate('/app');
   };
 
-  const performMockLogin = (slugToUse: string, phoneToUse: string) => {
-    let role: any = 'SCHOOL_ADMIN';
-    let firstName = 'مدیر';
-    let lastName = 'مدرسه رُکاد';
-    let isPlatformAdmin = false;
-    let theme: any = 'ecosystem';
-
-    if (phoneToUse.includes('0012345678') || phoneToUse.includes('0023456789') || phoneToUse.includes('0034567890')) {
-      role = 'STUDENT';
-      firstName = 'محمدرضا';
-      lastName = 'کاظمی';
-    } else if (phoneToUse.includes('09123000001')) {
-      role = 'TEACHER';
-      firstName = 'استاد';
-      lastName = 'حسینی';
-    } else if (phoneToUse.includes('09129990001')) {
-      role = 'COACH';
-      firstName = 'دکتر';
-      lastName = 'مرادی';
-    } else if (phoneToUse.includes('09120000000')) {
-      role = 'SUPER_ADMIN';
-      firstName = 'مدیر کل';
-      lastName = 'پلتفرم رُکاد';
-      isPlatformAdmin = true;
+  const applyLoginSuccess = (res: any) => {
+    const loginData = res?.data || res;
+    const { user, accessToken, refreshToken } = loginData || {};
+    if (!user || !accessToken) {
+      throw new Error('پاسخ نامعتبر از سرویس ورود');
     }
 
-    if (slugToUse === 'rokad-girls') theme = 'female';
-    if (slugToUse === 'rokad-boys') theme = 'male';
-    if (slugToUse === 'rokad-college') theme = 'college';
-
-    const mockUser = {
-      id: 'usr_' + Date.now(),
-      tenantId: 'tenant_' + slugToUse,
-      firstName,
-      lastName,
-      phone: phoneToUse,
-      role,
-      isPlatformAdmin,
-    };
-
     setCurrentTenant({
-      id: mockUser.tenantId,
-      name:
-        slugToUse === 'rokad-girls'
-          ? 'هنرستان دخترانه رُکاد'
-          : slugToUse === 'rokad-college'
-          ? 'کالج مهارت رُکاد'
-          : 'هنرستان پسرانه رُکاد',
-      slug: slugToUse,
+      id: user.tenantId,
+      name: loginData.tenant?.name || 'مدرسه رُکاد',
+      slug: tenantSlug,
       type: 'SCHOOL',
-      theme,
+      theme: (loginData.tenant?.theme || 'ecosystem').toLowerCase() as any,
     });
 
-    login(mockUser as any, 'mock_access_token_' + Date.now(), 'mock_refresh_token_' + Date.now());
+    login(user, accessToken, refreshToken);
     navigate('/app');
   };
 
@@ -130,38 +92,74 @@ export const LoginPage: React.FC = () => {
         return;
       }
 
-      const loginData = res.data || res;
-      const { user, accessToken, refreshToken } = loginData;
-
-      // Update active tenant store
-      setCurrentTenant({
-        id: user.tenantId,
-        name: loginData.tenant?.name || 'مدرسه رُکاد',
-        slug: tenantSlug,
-        type: 'SCHOOL',
-        theme: (loginData.tenant?.theme || 'ecosystem').toLowerCase() as any,
-      });
-
-      // Update auth store
-      login(user, accessToken, refreshToken);
-
-      // Redirect directly to Super-App Home
-      navigate('/app');
+      applyLoginSuccess(res);
     } catch (err: any) {
-      // If backend server is unreachable or offline locally, gracefully log in with local demo credentials
-      console.warn('Backend login unavailable, entering via local dev session:', err);
-      performMockLogin(tenantSlug, identifier);
+      const status = err?.response?.status ?? err?.statusCode;
+      const msg =
+        err?.message ||
+        err?.response?.data?.message ||
+        (status === 401
+          ? 'شناسه یا رمز عبور نادرست است'
+          : status === 404
+            ? 'شعبه یافت نشد؛ شناسه شعبه را بررسی کنید'
+            : 'خطا در ورود؛ دوباره تلاش کنید');
+
+      // Real API error (4xx/5xx with response) — show it, never fake-login.
+      if (err?.response || (status && status !== 0)) {
+        setError(msg);
+      } else {
+        // Network unreachable only
+        setError('اتصال به سرور برقرار نیست؛ اتصال اینترنت را بررسی کنید');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Quick preset login switcher for paired development & testing (Click to instant login)
+  // Quick preset: fills credentials and performs a REAL login.
   const selectPreset = (slug: string, phone: string, pass: string) => {
     setTenantSlug(slug);
     setIdentifier(phone);
     setPassword(pass);
-    performMockLogin(slug, phone);
+    setError(null);
+    void (async () => {
+      setIsLoading(true);
+      try {
+        const res: any = await apiClient.post(
+          '/auth/login',
+          { identifier: phone, password: pass },
+          { headers: { 'x-tenant-slug': slug } },
+        );
+        if (res?.requiresTwoFactor) {
+          setTempToken(res.tempToken);
+          setIs2FAModalOpen(true);
+          return;
+        }
+        // applyLoginSuccess uses tenantSlug state — set slug on store first
+        const loginData = res?.data || res;
+        const { user, accessToken, refreshToken } = loginData || {};
+        if (!user || !accessToken) throw new Error('پاسخ نامعتبر از سرویس ورود');
+        setCurrentTenant({
+          id: user.tenantId,
+          name: loginData.tenant?.name || 'مدرسه رُکاد',
+          slug,
+          type: 'SCHOOL',
+          theme: (loginData.tenant?.theme || 'ecosystem').toLowerCase() as any,
+        });
+        login(user, accessToken, refreshToken);
+        navigate('/app');
+      } catch (err: any) {
+        const status = err?.response?.status ?? err?.statusCode;
+        const msg =
+          err?.message ||
+          err?.response?.data?.message ||
+          (status === 401 ? 'شناسه یا رمز عبور نادرست است' : 'خطا در ورود');
+        if (err?.response || (status && status !== 0)) setError(msg);
+        else setError('اتصال به سرور برقرار نیست');
+      } finally {
+        setIsLoading(false);
+      }
+    })();
   };
 
   return (

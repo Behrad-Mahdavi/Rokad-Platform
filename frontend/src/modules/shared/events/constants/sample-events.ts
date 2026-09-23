@@ -45,30 +45,4 @@ export function hydrateEvent(ev: SchoolEventItem): SchoolEventItem {
   return { ...ev, categoryKey, tags: displayTags(ev.tags) };
 }
 
-export const INITIAL_SAMPLE_EVENTS: SchoolEventItem[] = [
-  {
-    id: 'evt_startup_weekend_2026',
-    title: 'استارت‌آپ ویکند نوآوری و طراحی نرم‌افزار',
-    description: 'رویداد ایده‌پردازی، رای‌گیری، تشکیل تیم و بوم مدل کسب‌وکار ویژه هنرجویان و دانش‌آموزان نوآور',
-    eventType: 'STARTUP_WEEKEND',
-    startDate: '1405/07/01',
-    endDate: '1405/07/03',
-    isAllDay: true,
-    targetAudience: 'STUDENTS',
-    location: 'سالن همایش و آمفی‌تئاتر هنرستان',
-    tags: ['استارت‌آپ ویکند', 'ایده‌پردازی', 'تیم‌سازی', 'نوآوری'],
-    workflowModules: [
-      { key: 'IDEA_SUBMISSION', step: 1, enabled: true },
-      { key: 'IDEA_HALL', step: 2, enabled: true },
-      { key: 'VOTING', step: 3, enabled: true },
-      { key: 'TEAM_FORMATION', step: 4, enabled: true },
-      { key: 'EVENT_CANVAS', step: 5, enabled: true },
-    ],
-    createdAt: new Date().toISOString(),
-    createdBy: {
-      firstName: 'مدیر',
-      lastName: 'رویداد',
-      role: 'SUPER_ADMIN',
-    },
-  },
-];
+export const INITIAL_SAMPLE_EVENTS: SchoolEventItem[] = [];

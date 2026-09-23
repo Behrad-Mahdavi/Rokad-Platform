@@ -39,7 +39,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
       }
     } else if (exception instanceof Error) {
       this.logger.error(`Unhandled Exception: ${exception.message}`, exception.stack);
-      message = exception.message;
+      // Never leak raw Prisma/infra messages to the client.
+      message = 'خطای داخلی سرور رخ داده است';
     }
 
     const tenantId = (request as any)?.tenant?.id || (request as any)?.tenantId;

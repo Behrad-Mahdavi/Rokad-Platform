@@ -7,6 +7,7 @@ import { apiClient } from '../../../../lib/api/client';
 import { toPersianDigits } from '../../../../utils/jalali';
 import { EventIdea } from './EventIdeaSubmissionStep';
 import { porscadClient } from '../../../../lib/porscad/porscad-client';
+import { isOwnedByUser } from '../constants/event-access';
 import {
   Users,
   User,
@@ -303,6 +304,11 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
     if (!currentTeam) return;
 
     const nextState = !currentTeam.isApprovedByAdmin;
+    if (nextState && (!currentTeam.members || currentTeam.members.length === 0)) {
+      toast.error('تیم هنوز عضوی ندارد؛ ابتدا حداقل یک عضو اضافه کنید.');
+      return;
+    }
+
     setTeamsMap((prev) => ({
       ...prev,
       [ideaId]: {
@@ -322,10 +328,10 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
   return (
     <div className="space-y-8">
       {/* Header Container */}
-      <div className="rounded-2xl border-3 border-zinc-900 bg-white p-6 md:p-8 shadow-[6px_6px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[6px_6px_0px_0px_#f4f4f5]">
+      <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 md:p-8 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-5 mb-5">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-amber-400 text-zinc-950 text-xs font-black mb-2 shadow-[2px_2px_0px_0px_#18181b]">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-amber-400 text-zinc-950 text-xs font-black mb-2 shadow-[2px_2px_0px_0px_#202A5A]">
               <Users className="w-4 h-4" />
               <span>گام چهارم: تشکیل تیم و انتخاب اعضاء</span>
             </div>
@@ -350,7 +356,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
 
       {/* Ideas Teams List Grid (ONLY FOR WINNING IDEAS FROM STEP 3) */}
       {winningIdeas.length === 0 ? (
-        <div className="rounded-2xl border-3 border-dashed border-zinc-400 bg-white p-12 text-center dark:border-zinc-700 dark:bg-zinc-900 space-y-3">
+        <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] dark:border-[#242F42] bg-white p-8 sm:p-12 text-center dark:border-zinc-700 dark:bg-zinc-900 space-y-3">
           <AlertCircle className="w-12 h-12 mx-auto text-amber-500 mb-2" />
           <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
             در انتظار مشخص‌سازی ایده‌های برگزیده رویداد (گام سوم)
@@ -363,16 +369,13 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {winningIdeas.map((idea) => {
             const team = getIdeaTeam(idea);
-            const isLeader =
-              currentUser &&
-              (idea.authorName.includes(currentUser.lastName || '') ||
-                idea.authorName.includes(currentUser.firstName || ''));
+            const isLeader = !!currentUser && isOwnedByUser(idea.authorName, currentUser);
             const canEditTeam = isManager || (isLeader && !team.isApprovedByAdmin);
 
             return (
               <div
                 key={idea.id}
-                className={`rounded-2xl border-3 border-zinc-900 bg-white p-6 shadow-[5px_5px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 flex flex-col justify-between space-y-6 ${
+                className={`rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] flex flex-col justify-between space-y-6 ${
                   team.isApprovedByAdmin ? 'ring-2 ring-emerald-500' : ''
                 }`}
               >
@@ -380,7 +383,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                   {/* Top Bar: Idea Number & Approval Status Badge */}
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-4">
                     <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 rounded-lg border-2 border-zinc-900 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black text-xs shadow-[1px_1px_0px_0px_#18181b]">
+                      <span className="px-3 py-1 rounded-lg border-2 border-zinc-900 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black text-xs shadow-[1px_1px_0px_0px_#202A5A]">
                         ایده #{toPersianDigits(idea.ideaNumber || 1)}
                       </span>
                       <h3 className="text-base font-black text-zinc-900 dark:text-zinc-50 truncate max-w-[220px]">
@@ -441,7 +444,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                             setSelectedStudentId('');
                             setCustomStudentName('');
                           }}
-                          className="gap-1 text-[11px] font-bold py-1 px-2.5 border-2 border-zinc-900 shadow-[1px_1px_0px_0px_#18181b]"
+                          className="gap-1 text-[11px] font-bold py-1 px-2.5"
                         >
                           <UserPlus className="w-3 h-3 text-indigo-600" />
                           <span>افزودن عضو جدید</span>
@@ -458,7 +461,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                         {team.members.map((member) => (
                           <div
                             key={member.id}
-                            className="p-3 rounded-xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800/80 flex items-center justify-between shadow-[2px_2px_0px_0px_#18181b]"
+                            className="p-3 rounded-xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800/80 flex items-center justify-between shadow-[2px_2px_0px_0px_#202A5A]"
                           >
                             <div className="flex items-center gap-2.5">
                               <div className="w-7 h-7 rounded-lg border border-zinc-900 bg-indigo-200 dark:bg-indigo-900 text-indigo-950 dark:text-indigo-100 flex items-center justify-center font-black text-xs">
@@ -479,7 +482,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                               <button
                                 type="button"
                                 onClick={() => handleRemoveMember(idea.id, member.id, member.name)}
-                                className="p-1 rounded-lg text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950 transition-colors"
+                                className="p-1.5 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950 transition-colors"
                                 title="حذف از ترکیب تیم"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -501,7 +504,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                     <Button
                       onClick={() => handleToggleAdminApproval(idea.id)}
                       variant={team.isApprovedByAdmin ? 'outline' : 'primary'}
-                      className={`gap-2 text-xs font-black border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] ${
+                      className={`gap-2 text-xs font-black ${
                         team.isApprovedByAdmin ? 'text-rose-600 hover:bg-rose-50' : 'bg-emerald-500 text-zinc-950 hover:bg-emerald-400'
                       }`}
                     >
@@ -545,7 +548,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
           >
             <div className="space-y-5">
               {/* Role & Search Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800/60 shadow-[2px_2px_0px_0px_#18181b]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800/60 shadow-[2px_2px_0px_0px_#202A5A]">
                 <div>
                   <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1.5 flex items-center gap-1.5">
                     <Briefcase className="w-3.5 h-3.5 text-amber-500" />
@@ -554,7 +557,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                   <select
                     value={memberRole}
                     onChange={(e) => setMemberRole(e.target.value)}
-                    className="w-full rounded-xl border-2 border-zinc-900 bg-white p-2.5 text-xs font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                   >
                     <option value="عضو تیم / توسعه‌دهنده">عضو تیم / توسعه‌دهنده</option>
                     <option value="برنامه‌نویس و کدنویس">برنامه‌نویس و کدنویس</option>
@@ -577,7 +580,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                       placeholder="نام دانش‌آموز..."
                       value={searchStudentQuery}
                       onChange={(e) => setSearchStudentQuery(e.target.value)}
-                      className="w-full rounded-xl border-2 border-zinc-900 bg-white pr-9 pl-3 py-2 text-xs font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 focus:outline-none"
+                      className="w-full pr-9 pl-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -613,7 +616,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                               ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/40 opacity-75'
                               : isAssignedToOtherTeam
                               ? 'border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800/40 opacity-60'
-                              : 'border-zinc-900 bg-white dark:bg-zinc-900 shadow-[2px_2px_0px_0px_#18181b]'
+                              : 'border-zinc-900 bg-white dark:bg-zinc-900 shadow-[2px_2px_0px_0px_#202A5A]'
                           }`}
                         >
                           <div className="flex items-center gap-3">
@@ -655,7 +658,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                               <Button
                                 variant="primary"
                                 onClick={() => handleAddMemberDirectly(targetIdea, std)}
-                                className="text-xs font-black border-2 border-zinc-900 bg-emerald-400 text-zinc-950 shadow-[2px_2px_0px_0px_#18181b] px-3 py-1"
+                                className="text-xs font-black bg-emerald-400 text-zinc-950 px-3 py-1"
                               >
                                 + افزودن
                               </Button>
@@ -679,13 +682,13 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                     placeholder="مثلاً: علی رضایی"
                     value={customStudentName}
                     onChange={(e) => setCustomStudentName(e.target.value)}
-                    className="flex-1 rounded-xl border-2 border-zinc-900 bg-white p-2.5 text-xs font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 focus:outline-none"
+                    className="flex-1 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                   />
                   <Button
                     variant="outline"
                     disabled={!customStudentName.trim()}
                     onClick={() => handleAddMember(targetIdea)}
-                    className="text-xs font-black border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] px-4"
+                    className="text-xs font-black px-4"
                   >
                     + افزودن دستی
                   </Button>
@@ -700,7 +703,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                 <Button
                   variant="primary"
                   onClick={() => setActiveIdeaIdForModal(null)}
-                  className="text-xs font-black border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b] px-6"
+                  className="text-xs font-black px-6"
                 >
                   تایید و بستن
                 </Button>

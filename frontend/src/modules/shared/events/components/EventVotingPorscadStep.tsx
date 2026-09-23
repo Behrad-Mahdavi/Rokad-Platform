@@ -117,8 +117,13 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
   useEffect(() => {
     const loadPoll = async () => {
       let poll = porscadClient.getLocalPollData(eventId);
-      if (poll && poll.isPublished) {
-        poll = await porscadClient.fetchLiveAnalytics(eventId);
+      if (poll) {
+        try {
+          const live = await porscadClient.fetchLiveAnalytics(eventId);
+          if (live) poll = live;
+        } catch {
+          toast.error('دریافت نتایج آنلاین از پرس‌کاد ناموفق بود؛ آمار محلی نمایش داده می‌شود.');
+        }
       }
       setPorscadPoll(poll);
       if (!poll || !poll.isPublished) {
@@ -143,7 +148,11 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
       if (updated) {
         setPorscadPoll(updated);
         toast.success('آمار و پاسخ‌ها به صورت آنلاین از پرس‌کاد دریافت و به‌روزرسانی شد!');
+      } else {
+        toast.error('نظرسنجی یافت نشد یا امکان دریافت نتایج از پرس‌کاد وجود ندارد.');
       }
+    } catch {
+      toast.error('خطا در دریافت نتایج آنلاین از پرس‌کاد.');
     } finally {
       setIsRefreshingAnalytics(false);
     }
@@ -279,8 +288,8 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
         ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'دانش‌آموز'
         : 'دانش‌آموز';
       const res = await porscadClient.submitVote(eventId, selectedOptionIds, voterName);
-      if (res.success && res.updatedPoll) {
-        setPorscadPoll(res.updatedPoll);
+      if (res.success) {
+        if (res.updatedPoll) setPorscadPoll(res.updatedPoll);
         setHasVoted(true);
         localStorage.setItem(userVoteStorageKey, 'true');
         localStorage.setItem(selectedOptionsKey, JSON.stringify(selectedOptionIds));
@@ -304,23 +313,32 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
     setIsFinishModalOpen(true);
   };
 
-  const handleConfirmFinishAssessment = (e: React.FormEvent) => {
+  const handleConfirmFinishAssessment = async (e: React.FormEvent) => {
     e.preventDefault();
-    const updated = porscadClient.finishAssessmentAndDetermineWinner(
-      eventId,
-      finishTopWinnersCount,
-      {
-        showVoteCounts: finishShowVoteCounts,
-        displayOrder: finishDisplayOrder,
-        isResultsPublic: false,
-      }
-    );
-    if (updated) {
-      setPorscadPoll(updated);
-      setIsFinishModalOpen(false);
-      toast.success(
-        `فرم نظرسنجی بسته شد و ${toPersianDigits(finishTopWinnersCount)} ایده برتر مشخص شدند. نتایج در حال حاضر به صورت خصوصی برای مدیر قابل مشاهده است.`
+    setIsSubmittingVote(true);
+    try {
+      const updated = await porscadClient.finishAssessmentAndDetermineWinner(
+        eventId,
+        finishTopWinnersCount,
+        {
+          showVoteCounts: finishShowVoteCounts,
+          displayOrder: finishDisplayOrder,
+          isResultsPublic: false,
+        }
       );
+      if (updated) {
+        setPorscadPoll(updated);
+        setIsFinishModalOpen(false);
+        toast.success(
+          `فرم نظرسنجی بسته شد و ${toPersianDigits(finishTopWinnersCount)} ایده برتر مشخص شدند. نتایج در حال حاضر به صورت خصوصی برای مدیر قابل مشاهده است.`
+        );
+      } else {
+        toast.error('نظرسنجی یافت نشد.');
+      }
+    } catch (err: any) {
+      toast.error(err?.message || 'خطا در بستن نظرسنجی');
+    } finally {
+      setIsSubmittingVote(false);
     }
   };
 
@@ -389,10 +407,10 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Header Card */}
-      <div className="rounded-2xl border-3 border-zinc-900 bg-white p-6 shadow-[6px_6px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[6px_6px_0px_0px_#f4f4f5]">
+      <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-5 mb-5">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-amber-400 text-zinc-950 text-xs font-black mb-2 shadow-[2px_2px_0px_0px_#18181b]">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-amber-400 text-zinc-950 text-xs font-black mb-2 shadow-[2px_2px_0px_0px_#202A5A]">
               <Vote className="w-4 h-4" />
               <span>گام سوم: وب‌سرویس پرس‌کاد و رای‌گیری ایده‌ها</span>
             </div>
@@ -409,7 +427,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               <Button
                 variant="outline"
                 onClick={() => setIsTokenModalOpen(true)}
-                className="gap-2 text-xs font-bold border-2 border-zinc-900 bg-indigo-50 hover:bg-indigo-100 text-indigo-950 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-800 dark:text-indigo-300"
+                className="gap-2 text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-950 dark:bg-zinc-800 dark:text-indigo-300"
               >
                 <Settings2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 <span>تنظیمات اتصال پرس‌کاد</span>
@@ -419,7 +437,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               <Button
                 variant="outline"
                 onClick={() => setIsBuildingMode(!isBuildingMode)}
-                className="gap-2 text-xs font-bold border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200"
+                className="gap-2 text-xs font-bold"
               >
                 <Sliders className="w-4 h-4 text-primary" />
                 <span>{isBuildingMode ? 'مشاهده نظرسنجی فعال' : 'ویرایش فرم پرس‌کاد'}</span>
@@ -429,7 +447,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               <Button
                 variant="outline"
                 onClick={handleToggleShowVoteCounts}
-                className={`gap-2 text-xs font-bold border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] ${
+                className={`gap-2 text-xs font-bold ${
                   porscadPoll?.showVoteCounts ? 'bg-emerald-100 text-emerald-950' : 'bg-zinc-50 dark:bg-zinc-800'
                 }`}
               >
@@ -444,7 +462,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
             <Button
               variant="outline"
               onClick={onGoToIdeasList}
-              className="gap-2 text-xs font-bold border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b]"
+              className="gap-2 text-xs font-bold"
             >
               <ArrowRight className="w-4 h-4" />
               <span>مشاهده تمام ایده‌ها</span>
@@ -453,14 +471,14 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
           </div>
         </div>
 
-        {/* Action controls (Refresh Analytics / Finish Poll) */}
-        {porscadPoll?.isPublished && (
+        {/* Action controls (Refresh Analytics / Finish Poll) — manager only */}
+        {isManager && porscadPoll?.isPublished && (
           <div className="flex items-center gap-2 mb-4">
             <Button
               variant="outline"
               onClick={handleRefreshAnalytics}
               disabled={isRefreshingAnalytics}
-              className="gap-2 text-xs font-bold border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b]"
+              className="gap-2 text-xs font-bold"
             >
               <RefreshCw className={`w-3.5 h-3.5 text-primary ${isRefreshingAnalytics ? 'animate-spin' : ''}`} />
               <span>بروزرسانی آنلاین آمار</span>
@@ -475,7 +493,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                 {isManager && (
                   <button
                     onClick={handleReopenAssessment}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border-2 border-zinc-900 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-black shadow-[2px_2px_0px_0px_#18181b]"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border-2 border-zinc-900 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-black shadow-[2px_2px_0px_0px_#202A5A]"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span>بازگشایی فرم</span>
@@ -487,7 +505,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                 <Button
                   variant="outline"
                   onClick={handleOpenFinishModal}
-                  className="gap-2 text-xs font-black border-2 border-zinc-900 bg-amber-300 hover:bg-amber-400 text-zinc-950 shadow-[3px_3px_0px_0px_#18181b]"
+                  className="gap-2 text-xs font-black bg-amber-300 hover:bg-amber-400 text-zinc-950"
                 >
                   <Trophy className="w-4 h-4 text-zinc-950" />
                   <span>اتمام نظرسنجی و انتخاب ایده‌های برتر</span>
@@ -498,13 +516,15 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
         )}
       </div>
 
-      {/* ================= WINNING IDEAS PODIUM (SHOWS FOR ALL WHEN POLL IS CLOSED) ================= */}
-      {porscadPoll?.isClosed && winningOptions.length > 0 && (
+      {/* ================= WINNING IDEAS PODIUM ================= */}
+      {porscadPoll?.isClosed &&
+        winningOptions.length > 0 &&
+        (isManager || porscadPoll.isResultsPublic !== false) && (
         <div className="space-y-6">
           {/* Status Announcement Banner */}
-          <div className="p-4 md:p-5 rounded-2xl border-3 border-zinc-900 bg-amber-300 text-zinc-950 shadow-[4px_4px_0px_0px_#18181b] flex flex-wrap items-center justify-between gap-3">
+          <div className="p-4 md:p-5 rounded-2xl border-[1.5px] border-[#EAEAEA] bg-amber-300 text-zinc-950 shadow-[4px_4px_0px_0px_#202A5A] flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl border-2 border-zinc-900 bg-white flex items-center justify-center font-black shadow-[2px_2px_0px_0px_#18181b]">
+              <div className="w-9 h-9 rounded-xl border-2 border-zinc-900 bg-white flex items-center justify-center font-black shadow-[2px_2px_0px_0px_#202A5A]">
                 <Trophy className="w-5 h-5 text-amber-600 fill-amber-400" />
               </div>
               <div>
@@ -523,7 +543,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               <Button
                 variant={porscadPoll.isResultsPublic ? 'outline' : 'primary'}
                 onClick={handleTogglePublishResults}
-                className="gap-2 text-xs font-black border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] bg-white text-zinc-950"
+                className="gap-2 text-xs font-black bg-white text-zinc-950"
               >
                 {porscadPoll.isResultsPublic ? (
                   <>
@@ -557,15 +577,15 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                   ? 'border-slate-400 bg-gradient-to-b from-slate-100/80 via-slate-50 to-white dark:from-zinc-800/60 dark:via-zinc-900 dark:to-zinc-900 shadow-[6px_6px_0px_0px_#64748b]'
                   : isThirdPlace
                   ? 'border-amber-800 bg-gradient-to-b from-amber-100/60 via-orange-50 to-white dark:from-amber-950/30 dark:via-zinc-900 dark:to-zinc-900 shadow-[6px_6px_0px_0px_#92400e]'
-                  : 'border-zinc-900 bg-white dark:bg-zinc-900 shadow-[5px_5px_0px_0px_#18181b]'
-                : 'border-zinc-900 bg-white dark:bg-zinc-900 shadow-[5px_5px_0px_0px_#18181b]';
+                  : 'border-zinc-900 bg-white dark:bg-zinc-900 shadow-[2.75px_2.75px_0_#202A5A]'
+                : 'border-zinc-900 bg-white dark:bg-zinc-900 shadow-[2.75px_2.75px_0_#202A5A]';
 
               const rankBadgeBg = isFirstPlace
-                ? 'bg-amber-400 text-zinc-950 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b]'
+                ? 'bg-amber-400 text-zinc-950 border-zinc-900 shadow-[2px_2px_0px_0px_#202A5A]'
                 : isSecondPlace
-                ? 'bg-slate-200 text-zinc-950 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b]'
+                ? 'bg-slate-200 text-zinc-950 border-zinc-900 shadow-[2px_2px_0px_0px_#202A5A]'
                 : isThirdPlace
-                ? 'bg-amber-800 text-white border-zinc-900 shadow-[2px_2px_0px_0px_#18181b]'
+                ? 'bg-amber-800 text-white border-zinc-900 shadow-[2px_2px_0px_0px_#202A5A]'
                 : 'bg-indigo-100 text-indigo-950 border-zinc-900';
 
               const rankTitle = isFirstPlace
@@ -579,13 +599,13 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               return (
                 <div
                   key={opt.id}
-                  className={`relative flex flex-col justify-between rounded-2xl border-3 p-6 transition-all ${cardContainerStyle}`}
+                  className={`relative flex flex-col justify-between rounded-2xl border-[1.5px] p-6 transition-all ${cardContainerStyle}`}
                 >
                   <div className="space-y-4">
                     {/* Rank Badge & Manager Stats */}
                     <div className="flex items-center justify-between">
                       <span className={`px-3 py-1 rounded-xl border-2 font-black text-xs ${
-                        isManager ? rankBadgeBg : 'bg-amber-400 text-zinc-950 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b]'
+                        isManager ? rankBadgeBg : 'bg-amber-400 text-zinc-950 border-zinc-900 shadow-[2px_2px_0px_0px_#202A5A]'
                       }`}>
                         {porscadPoll.displayOrder === 'IGNORE_RANK' || porscadPoll.displayOrder === 'RANDOM'
                           ? '✨ ایده برگزیده رویداد'
@@ -636,18 +656,21 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
 
                   {(() => {
                     const matchingOwner = ideas.find((i) => i.id === opt.ideaId || i.id === opt.id);
+                    const ownerLast = (currentUser?.lastName || '').trim();
+                    const ownerFirst = (currentUser?.firstName || '').trim();
+                    const authorLower = (matchingOwner?.authorName || '').toLowerCase();
                     const isOwner =
                       !!matchingOwner &&
                       !!currentUser &&
-                      (matchingOwner.authorName.includes(currentUser.lastName || '') ||
-                        matchingOwner.authorName.includes(currentUser.firstName || ''));
+                      ((ownerLast && authorLower.includes(ownerLast.toLowerCase())) ||
+                        (ownerFirst && authorLower.includes(ownerFirst.toLowerCase())));
                     if (!isOwner) return null;
                     return (
                       <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800">
                         <Button
                           variant="primary"
                           onClick={onGoToTeamFormation || onGoToCanvasStep}
-                          className="w-full text-xs font-black border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]"
+                          className="w-full text-xs font-black"
                         >
                           <span>ورود به تشکیل تیم (طرح برگزیده)</span>
                           <ArrowLeft className="w-4 h-4" />
@@ -664,9 +687,9 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
 
       {/* ================= PORSCAD VOTING & FORM BUILDER ================= */}
       {isBuildingMode && isManager ? (
-            <div className="rounded-2xl border-3 border-zinc-900 bg-white p-6 md:p-8 shadow-[6px_6px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 space-y-6">
+            <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 md:p-8 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] space-y-6">
               <div className="border-b-2 border-zinc-900/10 pb-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-indigo-400 text-zinc-950 text-xs font-black mb-2 shadow-[2px_2px_0px_0px_#18181b]">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-indigo-400 text-zinc-950 text-xs font-black mb-2 shadow-[2px_2px_0px_0px_#202A5A]">
                   <Sliders className="w-4 h-4" />
                   <span>پنل مدیریت: طراحی دستی و انتشار فرم در پرس‌کاد</span>
                 </div>
@@ -695,7 +718,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                       value={builderFormTitle}
                       onChange={(e) => setBuilderFormTitle(e.target.value)}
                       required
-                      className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-xs md:text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 focus:outline-none"
+                      className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs md:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                       placeholder="مثال: نظرسنجی ایده‌های هکاتون"
                     />
                   </div>
@@ -708,7 +731,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                       type="text"
                       value={builderFormDescription}
                       onChange={(e) => setBuilderFormDescription(e.target.value)}
-                      className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-xs md:text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 focus:outline-none"
+                      className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs md:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                       placeholder="مثال: فرم داوری و انتخاب بهترین طرح‌های نوآورانه"
                     />
                   </div>
@@ -724,7 +747,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                     value={builderQuestionTitle}
                     onChange={(e) => setBuilderQuestionTitle(e.target.value)}
                     required
-                    className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-xs md:text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 focus:outline-none"
+                    className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs md:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                     placeholder="مثال: کدام ایده بیشترین نوآوری را دارد؟"
                   />
                 </div>
@@ -738,7 +761,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                     <select
                       value={builderQuestionType}
                       onChange={(e) => setBuilderQuestionType(e.target.value as any)}
-                      className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-xs font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                      className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                     >
                       <option value="choice">چندگزینه‌ای / دکمه‌ای (Choice)</option>
                       <option value="dropdown">منوی کشویی (Dropdown)</option>
@@ -756,7 +779,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                     <select
                       value={builderMaxSelections}
                       onChange={(e) => setBuilderMaxSelections(Number(e.target.value))}
-                      className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-xs font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                      className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                     >
                       <option value={1}>۱ انتخاب (تک گزینه‌ای - هر کاربر فقط به یک ایده رای می‌دهد)</option>
                       <option value={2}>۲ انتخاب (امکان رای به ۲ ایده)</option>
@@ -768,7 +791,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                 </div>
 
                 {/* Ideas Selection Checkboxes */}
-                <div className="rounded-2xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800/40 p-5 shadow-[3px_3px_0px_0px_#18181b]">
+                <div className="rounded-2xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800/40 p-5 shadow-[3px_3px_0px_0px_#202A5A]">
                   <div className="flex items-center justify-between gap-2 border-b border-zinc-300 dark:border-zinc-700 pb-3 mb-4">
                     <div className="flex items-center gap-2">
                       <CheckSquare className="w-5 h-5 text-primary" />
@@ -800,7 +823,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                             onClick={() => handleToggleBuilderIdea(idea.id)}
                             className={`cursor-pointer flex items-start gap-3 p-3.5 rounded-xl border-2 transition-all ${
                               isChecked
-                                ? 'border-zinc-900 bg-amber-100 dark:bg-amber-950/50 shadow-[2px_2px_0px_0px_#18181b]'
+                                ? 'border-zinc-900 bg-amber-100 dark:bg-amber-950/50 shadow-[2px_2px_0px_0px_#202A5A]'
                                 : 'border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-zinc-500'
                             }`}
                           >
@@ -833,7 +856,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                       type="button"
                       variant="outline"
                       onClick={() => setIsBuildingMode(false)}
-                      className="border-2 border-zinc-900 font-bold text-xs"
+                      className="font-bold text-xs"
                     >
                       انصراف
                     </Button>
@@ -842,7 +865,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                     type="submit"
                     variant="primary"
                     disabled={isCreatingForm || builderSelectedIdeaIds.length === 0}
-                    className="border-2 border-zinc-900 font-black text-xs gap-2 px-8 py-3 shadow-[4px_4px_0px_0px_#18181b]"
+                    className="font-black text-xs gap-2 px-8 py-3"
                   >
                     <Send className="w-4 h-4" />
                     <span>
@@ -860,7 +883,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
             /* 2. ACTIVE PUBLISHED POLL VIEW FOR STUDENTS & ADMIN */
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
-                <div className="rounded-2xl border-3 border-zinc-900 bg-white p-6 md:p-8 shadow-[6px_6px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[6px_6px_0px_0px_#f4f4f5]">
+                <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 md:p-8 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
                   {/* Meta */}
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-4 mb-5">
                     <div className="flex items-center gap-2">
@@ -934,14 +957,14 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                         <div
                           key={option.id}
                           onClick={() => isInteractive && handleToggleOption(option.id)}
-                          className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border-3 transition-all ${
+                          className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border-[1.5px] transition-all ${
                             isWinner
                               ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/40 shadow-[4px_4px_0px_0px_#f59e0b]'
                               : isSelected
                               ? 'border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/40 shadow-[4px_4px_0px_0px_#059669]'
                               : porscadPoll.isClosed || hasVoted
                               ? 'border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/40 opacity-90'
-                              : 'cursor-pointer border-zinc-900 bg-white hover:bg-zinc-50 dark:border-zinc-200 dark:bg-zinc-900 shadow-[3px_3px_0px_0px_#18181b]'
+                              : 'cursor-pointer border-zinc-900 bg-white hover:bg-zinc-50 dark:border-zinc-200 dark:bg-zinc-900 shadow-[3px_3px_0px_0px_#202A5A]'
                           } p-4 md:p-5`}
                         >
                           {/* Fill Progress Bar (only if vote counts shown) */}
@@ -963,12 +986,12 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2">
                                 {(!porscadPoll.isClosed || isManager) && (
-                                  <span className="w-7 h-7 rounded-lg border-2 border-zinc-900 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 flex items-center justify-center font-black text-xs shadow-[1px_1px_0px_0px_#18181b]">
+                                  <span className="w-7 h-7 rounded-lg border-2 border-zinc-900 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 flex items-center justify-center font-black text-xs shadow-[1px_1px_0px_0px_#202A5A]">
                                     {toPersianDigits(idx + 1)}
                                   </span>
                                 )}
                                 {isWinner && (
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-amber-600 bg-amber-400 text-zinc-950 text-xs font-black shadow-[1px_1px_0px_0px_#18181b]">
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-amber-600 bg-amber-400 text-zinc-950 text-xs font-black shadow-[1px_1px_0px_0px_#202A5A]">
                                     <Trophy className="w-3.5 h-3.5" />
                                     <span>ایده برگزیده</span>
                                   </span>
@@ -978,7 +1001,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                               <div
                                 className={`w-6 h-6 ${isMultiSelect ? 'rounded-lg' : 'rounded-full'} border-2 flex items-center justify-center transition-all flex-shrink-0 ${
                                   isWinner
-                                    ? 'border-amber-600 bg-amber-400 text-zinc-950 shadow-[1px_1px_0px_0px_#18181b]'
+                                    ? 'border-amber-600 bg-amber-400 text-zinc-950 shadow-[1px_1px_0px_0px_#202A5A]'
                                     : isSelected
                                     ? 'border-emerald-600 bg-emerald-500 text-white'
                                     : 'border-zinc-900 bg-white dark:border-zinc-300 dark:bg-zinc-800'
@@ -1037,7 +1060,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                         variant="primary"
                         disabled={isSubmittingVote || selectedOptionIds.length === 0}
                         onClick={handleVoteSubmit}
-                        className="gap-2 text-xs font-black border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b] px-6 py-2.5"
+                        className="gap-2 text-xs font-black px-6 py-2.5"
                       >
                         <Send className="w-4 h-4" />
                         <span>{isSubmittingVote ? 'در حال ارسال به پرس‌کاد...' : `ثبت نهایی رای در پرس‌کاد (${toPersianDigits(selectedOptionIds.length)} ایده)`}</span>
@@ -1050,7 +1073,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               {/* Right Sidebar: Real-Time Analytics from Porscad (Admin Only) */}
               {isManager && (
                 <div className="space-y-6">
-                  <div className="rounded-2xl border-3 border-zinc-900 bg-white p-5 md:p-6 shadow-[5px_5px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[5px_5px_0px_0px_#f4f4f5]">
+                  <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-5 md:p-6 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
                     <div className="flex items-center justify-between border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-4 mb-4">
                       <div className="flex items-center gap-2">
                         <BarChart3 className="w-5 h-5 text-primary" />
@@ -1122,8 +1145,8 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
           ) : (
             /* 3. AWAITING POLL CREATION BY ADMIN (FOR STUDENTS) - SHOW REGISTERED IDEAS IN CARDS */
             <div className="space-y-6">
-              <div className="rounded-2xl border-3 border-zinc-900 bg-white p-6 md:p-8 text-center shadow-[6px_6px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 space-y-3">
-                <div className="w-14 h-14 mx-auto rounded-2xl border-2 border-zinc-900 bg-amber-300 flex items-center justify-center shadow-[2px_2px_0px_0px_#18181b]">
+              <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 md:p-8 text-center shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] space-y-3">
+                <div className="w-14 h-14 mx-auto rounded-2xl border-2 border-zinc-900 bg-amber-300 flex items-center justify-center shadow-[2px_2px_0px_0px_#202A5A]">
                   <Clock className="w-7 h-7 text-zinc-950 animate-spin" />
                 </div>
                 <h3 className="text-lg md:text-xl font-black text-zinc-900 dark:text-zinc-100">
@@ -1135,7 +1158,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               </div>
 
               {/* Registered Ideas Card Showcase in Porscad Tab */}
-              <div className="rounded-2xl border-3 border-zinc-900 bg-white p-6 md:p-8 shadow-[6px_6px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 space-y-5">
+              <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 md:p-8 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] space-y-5">
                 <div className="flex items-center justify-between border-b-2 border-zinc-900/10 pb-4">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-amber-500" />
@@ -1155,7 +1178,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                     {ideas.map((idea, idx) => (
                       <div
                         key={idea.id}
-                        className="flex flex-col justify-between rounded-2xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800/60 p-4 shadow-[3px_3px_0px_0px_#18181b] space-y-3"
+                        className="flex flex-col justify-between rounded-2xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800/60 p-4 shadow-[3px_3px_0px_0px_#202A5A] space-y-3"
                       >
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
@@ -1185,18 +1208,18 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
           )}
       {/* ================= TOKEN MANAGEMENT MODAL ================= */}
       {isTokenModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-2xl border-3 border-zinc-900 bg-white p-6 shadow-[8px_8px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 space-y-5 animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-zinc-950/70 p-0 sm:p-4 backdrop-blur-sm overflow-y-auto overscroll-contain">
+          <div className="w-full max-w-lg rounded-t-3xl sm:rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-5 sm:p-6 shadow-[4px_4px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] space-y-5 animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150 max-h-[88vh] overflow-y-auto overscroll-contain sm:max-h-[90vh] pb-[max(1.25rem,env(safe-area-inset-bottom))]">
             <div className="flex items-center justify-between border-b-2 border-zinc-900/10 pb-4">
-              <div className="flex items-center gap-2">
-                <Settings2 className="w-5 h-5 text-primary" />
-                <h3 className="text-base font-black text-zinc-900 dark:text-zinc-100">
+              <div className="flex items-center gap-2 min-w-0">
+                <Settings2 className="w-5 h-5 text-primary flex-shrink-0" />
+                <h3 className="text-sm sm:text-base font-black text-zinc-900 dark:text-zinc-100 leading-snug">
                   تنظیمات اتصال و توکن احراز هویت پرس‌کاد
                 </h3>
               </div>
               <button
                 onClick={() => setIsTokenModalOpen(false)}
-                className="rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
               >
                 ✕
               </button>
@@ -1216,7 +1239,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                   value={tokenInput}
                   onChange={(e) => setTokenInput(e.target.value)}
                   placeholder="eyJhbGciOiJFUzI1NiIsImtpZCI6..."
-                  className="w-full rounded-xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800 p-3 font-mono text-[11px] font-bold shadow-[2px_2px_0px_0px_#18181b] focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] font-mono text-[11px] font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                 />
               </div>
 
@@ -1238,7 +1261,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                 type="button"
                 variant="outline"
                 onClick={() => setIsTokenModalOpen(false)}
-                className="border-2 border-zinc-900 text-xs font-bold"
+                className="text-xs font-bold"
               >
                 بستن
               </Button>
@@ -1247,7 +1270,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                 variant="primary"
                 disabled={isTestingToken}
                 onClick={handleSaveToken}
-                className="border-2 border-zinc-900 text-xs font-black gap-2 shadow-[3px_3px_0px_0px_#18181b]"
+                className="text-xs font-black gap-2"
               >
                 <span>{isTestingToken ? 'در حال تست اتصال...' : 'تست اتصال و ذخیره توکن'}</span>
               </Button>
@@ -1258,13 +1281,13 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
 
       {/* ================= FINISH POLL & SELECT TOP N WINNERS MODAL ================= */}
       {isFinishModalOpen && porscadPoll && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-2xl border-3 border-zinc-900 bg-white p-6 shadow-[8px_8px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 space-y-5 animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-zinc-950/70 p-0 sm:p-4 backdrop-blur-sm overflow-y-auto overscroll-contain">
+          <div className="w-full max-w-xl rounded-t-3xl sm:rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-5 sm:p-6 shadow-[4px_4px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] space-y-5 animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150 max-h-[88vh] overflow-y-auto overscroll-contain pb-[max(1.25rem,env(safe-area-inset-bottom))]">
             <div className="flex items-center justify-between border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-4">
-              <div className="flex items-center gap-2">
-                <Trophy className="w-6 h-6 text-amber-500 fill-amber-400" />
-                <div>
-                  <h3 className="text-base font-black text-zinc-900 dark:text-zinc-100">
+              <div className="flex items-center gap-2 min-w-0">
+                <Trophy className="w-6 h-6 text-amber-500 fill-amber-400 flex-shrink-0" />
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base font-black text-zinc-900 dark:text-zinc-100 leading-snug">
                     اتمام نظرسنجی و مشخص‌سازی ایده‌های برتر
                   </h3>
                   <p className="text-[11px] font-bold text-zinc-500 mt-0.5">
@@ -1310,7 +1333,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                       onClick={() => setFinishDisplayOrder(opt.key as typeof finishDisplayOrder)}
                       className={`py-2 px-2 rounded-xl text-xs font-black border-2 transition-all ${
                         finishDisplayOrder === opt.key
-                          ? 'border-zinc-900 bg-indigo-400 text-zinc-950 shadow-[2px_2px_0px_0px_#18181b]'
+                          ? 'border-zinc-900 bg-indigo-400 text-zinc-950 shadow-[2px_2px_0px_0px_#202A5A]'
                           : 'border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-zinc-500'
                       }`}
                     >
@@ -1343,7 +1366,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                 </label>
 
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-3">
-                  {[1, 2, 3, 5, 10, porscadPoll.options.length].map((num) => {
+                  {Array.from(new Set([1, 2, 3, 5, 10, porscadPoll.options.length])).map((num) => {
                     const label = num === porscadPoll.options.length ? 'همه' : `${toPersianDigits(num)} برتر`;
                     const isSelected = finishTopWinnersCount === num;
                     return (
@@ -1353,7 +1376,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                         onClick={() => setFinishTopWinnersCount(num)}
                         className={`py-2 px-1 rounded-xl text-xs font-black border-2 transition-all ${
                           isSelected
-                            ? 'border-zinc-900 bg-amber-400 text-zinc-950 shadow-[2px_2px_0px_0px_#18181b]'
+                            ? 'border-zinc-900 bg-amber-400 text-zinc-950 shadow-[2px_2px_0px_0px_#202A5A]'
                             : 'border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-zinc-500'
                         }`}
                       >
@@ -1371,7 +1394,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                     max={porscadPoll.options.length}
                     value={finishTopWinnersCount}
                     onChange={(e) => setFinishTopWinnersCount(Math.max(1, Math.min(porscadPoll.options.length, Number(e.target.value))))}
-                    className="w-24 rounded-xl border-2 border-zinc-900 bg-white dark:bg-zinc-800 p-2 text-center text-xs font-black shadow-[2px_2px_0px_0px_#18181b]"
+                    className="w-24 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-center text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                   />
                   <span className="text-xs font-bold text-zinc-500">
                     از مجموع {toPersianDigits(porscadPoll.options.length)} ایده فرم
@@ -1441,14 +1464,14 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                   type="button"
                   variant="outline"
                   onClick={() => setIsFinishModalOpen(false)}
-                  className="border-2 border-zinc-900 text-xs font-bold"
+                  className="text-xs font-bold"
                 >
                   انصراف
                 </Button>
                 <Button
                   type="submit"
                   variant="primary"
-                  className="border-2 border-zinc-900 text-xs font-black gap-2 bg-amber-400 hover:bg-amber-500 text-zinc-950 shadow-[3px_3px_0px_0px_#18181b]"
+                  className="text-xs font-black gap-2 bg-amber-400 hover:bg-amber-500 text-zinc-950"
                 >
                   <Lock className="w-4 h-4" />
                   <span>تایید، بستن فرم و نمایش {toPersianDigits(finishTopWinnersCount)} ایده برتر</span>

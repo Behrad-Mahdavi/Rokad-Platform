@@ -3,14 +3,16 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
-export default defineConfig({
+export default defineConfig(() => ({
   plugins: [
     react(),
+    // Always load so `virtual:pwa-register/*` resolves in dev.
+    // SW stays off in dev (devOptions.enabled=false); App.tsx unregisters stale SWs.
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       devOptions: {
-        enabled: true,
+        enabled: false,
         type: 'classic',
       },
       includeAssets: [
@@ -25,7 +27,8 @@ export default defineConfig({
         id: '/?source=pwa',
         name: 'سامانه مدیریت هوشمند مدارس و هنرستان‌های رُکاد',
         short_name: 'رُکاد',
-        description: 'پلتفرم جامع آموزشی، مدیریت هنرستان‌های فنی و حرفه‌ای، ارزشیابی پودمانی، کارنامه، برنامه‌ریزی کلاسی و ارتباطات اولیاء',
+        description:
+          'پلتفرم جامع آموزشی، مدیریت هنرستان‌های فنی و حرفه‌ای، ارزشیابی پودمانی، کارنامه، برنامه‌ریزی کلاسی و ارتباطات اولیاء',
         theme_color: '#2FAA9E',
         background_color: '#FFFFFF',
         display: 'standalone',
@@ -97,7 +100,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MiB
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         importScripts: ['/push-worker.js'],
         globPatterns: ['**/*.{js,css,html,svg,png,ttf,woff,woff2,webmanifest}'],
         navigateFallback: '/index.html',
@@ -110,7 +113,7 @@ export default defineConfig({
               cacheName: 'google-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365,
               },
               cacheableResponse: {
                 statuses: [0, 200],
@@ -138,7 +141,10 @@ export default defineConfig({
               cacheName: 'images-cache',
               expiration: {
                 maxEntries: 80,
-                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
               },
             },
           },
@@ -150,7 +156,7 @@ export default defineConfig({
               networkTimeoutSeconds: 3,
               expiration: {
                 maxEntries: 30,
-                maxAgeSeconds: 60 * 60 * 24, // 24 hours
+                maxAgeSeconds: 60 * 60 * 24,
               },
               cacheableResponse: {
                 statuses: [0, 200],
@@ -176,4 +182,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

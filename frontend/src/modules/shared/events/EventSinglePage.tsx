@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { apiClient } from '../../../lib/api/client';
 import { useAuthStore } from '../../../lib/auth/auth-store';
@@ -38,17 +38,34 @@ import {
   Trophy,
   Compass,
   Rocket,
-} from 'lucide-react';
-import { SchoolEventItem, INITIAL_SAMPLE_EVENTS, EventCategoryItem, hydrateEvent, displayTags } from './constants/sample-events';
-import { normalizeWorkflowModules } from './constants/event-modules';
-import { EventStepWizard } from './components/EventStepWizard';
-import {
+  Upload,
+  X,
   Workflow,
   Lightbulb,
   Star,
   Layers,
   FileSpreadsheet,
 } from 'lucide-react';
+import { SchoolEventItem, INITIAL_SAMPLE_EVENTS, EventCategoryItem, hydrateEvent, displayTags } from './constants/sample-events';
+import {
+  EventCoverCropModal,
+  EVENT_COVER_SPEC_LABEL,
+  EVENT_COVER_MAX_BYTES,
+  needsCoverCrop,
+  uploadCoverBlob,
+} from './components/EventCoverCropModal';
+import {
+  canViewEventAudience,
+  isEventManagerRole,
+  isServerRejection,
+  extractApiErrorMessage,
+} from './constants/event-access';
+import {
+  normalizeWorkflowModules,
+  renumberWorkflowModules,
+  WorkflowModuleEntry,
+} from './constants/event-modules';
+import { EventStepWizard } from './components/EventStepWizard';
 
 const EVENT_CATEGORIES: Record<string, { label: string; icon: any; color: string }> = {
   STARTUP_WEEKEND: { label: 'استارت‌آپ ویکند', icon: Rocket, color: 'bg-amber-100 text-amber-900 border-amber-400 dark:bg-amber-950/60 dark:text-amber-300' },
@@ -74,19 +91,113 @@ export const EventSinglePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const currentUser = useAuthStore((s) => s.user);
-  const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF'].includes(currentUser?.role || '');
+  const canManageEvents = isEventManagerRole(currentUser?.role);
 
   const [event, setEvent] = useState<SchoolEventItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState<'WORKFLOW' | 'OVERVIEW'>('WORKFLOW');
   const [customCategories, setCustomCategories] = useState<EventCategoryItem[]>([]);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [workflowModulesState, setWorkflowModulesState] = useState<{ key: string; step: number; enabled?: boolean }[]>([]);
+  const [workflowModulesState, setWorkflowModulesState] = useState<WorkflowModuleEntry[]>([]);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const coverFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [cropFileName, setCropFileName] = useState<string | undefined>(undefined);
+
+  const uploadCoverBlobDirect = async (file: File) => {
+    setIsUploadingCover(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('moduleName', 'calendar');
+      let coverUrl = '';
+      try {
+        const uploadRes = await apiClient.post('/storage/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        const uploadData = uploadRes.data?.data || uploadRes.data;
+        coverUrl = uploadData?.fileUrl || uploadData?.url || '';
+      } catch {
+        coverUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+      }
+      if (coverUrl) {
+        setForm((f) => ({ ...f, coverUrl }));
+        toast.success('عکس بنر رویداد آپلود شد');
+      }
+    } catch {
+      toast.error('خطا در آپلود عکس بنر');
+    } finally {
+      setIsUploadingCover(false);
+      if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+    }
+  };
+
+  const handleCoverFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('فقط فایل تصویری انتخاب کنید');
+      if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+      return;
+    }
+    if (file.size > EVENT_COVER_MAX_BYTES) {
+      toast.error('حداکثر حجم عکس ۵ مگابایت است');
+      if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+      return;
+    }
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('read fail'));
+        reader.readAsDataURL(file);
+      });
+      const dims = await new Promise<{ w: number; h: number }>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+        img.onerror = () => reject(new Error('img fail'));
+        img.src = dataUrl;
+      });
+      if (needsCoverCrop(dims.w, dims.h)) {
+        setCropImageSrc(dataUrl);
+        setCropFileName(file.name);
+        return;
+      }
+      await uploadCoverBlobDirect(file);
+    } catch {
+      toast.error('خطا در خواندن فایل تصویری');
+      if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+    }
+  };
+
+  const handleCoverCropConfirm = async (blob: Blob) => {
+    setIsUploadingCover(true);
+    try {
+      const coverUrl = await uploadCoverBlob(blob, cropFileName || 'event-cover.jpg');
+      if (coverUrl) {
+        setForm((f) => ({ ...f, coverUrl }));
+        toast.success('عکس بنر بریده و آپلود شد');
+      }
+    } catch {
+      toast.error('خطا در آپلود عکس بنر');
+    } finally {
+      setIsUploadingCover(false);
+      setCropImageSrc(null);
+      setCropFileName(undefined);
+      if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+    }
+  };
+
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -118,7 +229,13 @@ export const EventSinglePage: React.FC = () => {
     try {
       const res = await apiClient.get(`/calendar/events/${id}`);
       if (res && res.data) {
-        setEvent(hydrateEvent(res.data));
+        const loaded = hydrateEvent(res.data);
+        if (!canViewEventAudience(loaded.targetAudience, currentUser?.role)) {
+          setEvent(null);
+          setIsLoading(false);
+          return;
+        }
+        setEvent(loaded);
         setIsLoading(false);
         return;
       }
@@ -135,8 +252,12 @@ export const EventSinglePage: React.FC = () => {
           allEvents = parsed;
         }
       }
-      const found = allEvents.find((e) => e.id === id) || allEvents[0];
-      setEvent(found ? hydrateEvent(found) : null);
+      const found = allEvents.find((e) => e.id === id);
+      if (found && !canViewEventAudience(found.targetAudience, currentUser?.role)) {
+        setEvent(null);
+      } else {
+        setEvent(found ? hydrateEvent(found) : null);
+      }
     } catch (e) {
       console.error('Failed to load fallback event', e);
     } finally {
@@ -147,7 +268,10 @@ export const EventSinglePage: React.FC = () => {
   const fetchCategories = async () => {
     try {
       const res = await apiClient.get('/calendar/event-categories');
-      if (Array.isArray(res?.data)) setCustomCategories(res.data);
+      if (Array.isArray(res?.data)) {
+        setCustomCategories(res.data);
+        setCategoriesLoaded(true);
+      }
     } catch {}
   };
 
@@ -309,15 +433,17 @@ export const EventSinglePage: React.FC = () => {
         location: form.location.trim() || undefined,
         coverUrl: form.coverUrl.trim() || undefined,
         tags: tagsArray,
-        workflowModules: workflowModulesState
-          .filter((m) => m.enabled !== false)
-          .map((m) => ({ key: m.key, step: m.step, enabled: true })),
+        workflowModules: renumberWorkflowModules(
+          workflowModulesState.filter((m) => m.enabled !== false)
+        ).map((m) => ({ key: m.key, step: m.step, enabled: true })),
       };
 
       try {
         await apiClient.patch(`/calendar/events/${id}`, patchPayload);
-      } catch {
-        // Safe offline fallback
+      } catch (err: any) {
+        // Server rejected the update — surface the error instead of silently falling back
+        if (isServerRejection(err)) throw err;
+        // Network/offline — safe local fallback continues below
       }
 
       // Update local storage
@@ -349,11 +475,33 @@ export const EventSinglePage: React.FC = () => {
       setIsEditModalOpen(false);
       toast.success(TOAST_MESSAGES.operations.calendarEventUpdated(form.title));
     } catch (err: any) {
-      setFormError(err?.response?.data?.message || 'خطا در ویرایش رویداد');
+      setFormError(extractApiErrorMessage(err, 'خطا در ویرایش رویداد'));
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const workflowModules = event ? normalizeWorkflowModules(event.workflowModules) : [];
+  const hasWorkflow = workflowModules.length > 0 || event?.eventType === 'STARTUP_WEEKEND';
+
+  // MUST be before early returns so hook count stays stable across renders.
+  const wizardWorkflowModules = useMemo(() => {
+    if (workflowModules.length === 0) return undefined;
+    const present = new Set(workflowModules.map((m) => m.key));
+    const hasAnyNew = present.has('TASK_DEFINITION') || present.has('LEADERBOARD');
+    if (hasAnyNew) return renumberWorkflowModules(workflowModules);
+    const missing = (['TASK_DEFINITION', 'LEADERBOARD'] as const).filter(
+      (k) => !present.has(k)
+    );
+    if (missing.length === 0) return renumberWorkflowModules(workflowModules);
+    let maxStep = workflowModules.reduce((m, e) => Math.max(m, e.step), 0);
+    const merged = [...workflowModules];
+    for (const key of missing) {
+      maxStep += 1;
+      merged.push({ key, step: maxStep, enabled: true });
+    }
+    return renumberWorkflowModules(merged);
+  }, [workflowModules]);
 
   if (isLoading) {
     return (
@@ -366,12 +514,12 @@ export const EventSinglePage: React.FC = () => {
 
   if (!event) {
     return (
-      <div className="rounded-2xl border-3 border-zinc-900 bg-white p-12 text-center shadow-[6px_6px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[6px_6px_0px_0px_#f4f4f5]">
+      <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-8 sm:p-12 text-center shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
         <AlertCircle className="mx-auto w-12 h-12 text-red-500 mb-3" />
         <h2 className="text-xl font-black text-zinc-900 dark:text-zinc-100">رویداد مورد نظر یافت نشد</h2>
-        <p className="mt-2 text-sm text-zinc-500">ممکن است این رویداد حذف شده باشد یا به تننت دیگری تعلق داشته باشد.</p>
+        <p className="mt-2 text-sm text-zinc-500">ممکن است این رویداد حذف شده باشد، برای شما قابل مشاهده نباشد یا به تننت دیگری تعلق داشته باشد.</p>
         <Link to="/app/events">
-          <Button variant="primary" className="mt-6 gap-2 font-bold border-2 border-zinc-900">
+          <Button variant="primary" className="mt-6 gap-2">
             <ArrowRight className="w-4 h-4" />
             بازگشت به رودمپ سالانه
           </Button>
@@ -395,9 +543,6 @@ export const EventSinglePage: React.FC = () => {
   const startTimeStr = new Date(event.startDate).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
   const endTimeStr = new Date(event.endDate).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
 
-  const workflowModules = normalizeWorkflowModules(event.workflowModules);
-  const hasWorkflow = workflowModules.length > 0 || event.eventType === 'STARTUP_WEEKEND';
-
   return (
     <div className="space-y-8 pb-16">
       {/* Navigation Breadcrumb */}
@@ -411,20 +556,20 @@ export const EventSinglePage: React.FC = () => {
         </Link>
 
         {/* Quick Admin Actions */}
-        {isManager && (
+        {canManageEvents && (
           <div className="flex items-center gap-2">
             <Button
               onClick={handleOpenEdit}
               variant="outline"
-              className="gap-2 text-xs font-bold border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:shadow-[2px_2px_0px_0px_#f4f4f5]"
+              className="gap-2 text-xs font-bold"
             >
               <Edit3 className="w-3.5 h-3.5" />
               ویرایش رویداد
             </Button>
             <Button
               onClick={handleDelete}
-              variant="outline"
-              className="gap-2 text-xs font-bold border-2 border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 shadow-[2px_2px_0px_0px_#dc2626]"
+              variant="destructive"
+              className="gap-2 text-xs"
             >
               <Trash2 className="w-3.5 h-3.5" />
               حذف رویداد
@@ -434,7 +579,7 @@ export const EventSinglePage: React.FC = () => {
       </div>
 
       {/* Hero Card with Cover Image */}
-      <div className="overflow-hidden rounded-2xl border-3 border-zinc-900 bg-white shadow-[6px_6px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[6px_6px_0px_0px_#f4f4f5]">
+      <div className="overflow-hidden rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
         {event.coverUrl ? (
           <div className="relative h-64 w-full md:h-96 overflow-hidden bg-zinc-900">
             <img
@@ -493,25 +638,25 @@ export const EventSinglePage: React.FC = () => {
 
           {/* Countdown Widget */}
           {timeLeft.status === 'upcoming' && (
-            <div className="rounded-2xl border-2 border-zinc-900 bg-zinc-50 p-4 md:p-6 shadow-[4px_4px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-800/80 dark:shadow-[4px_4px_0px_0px_#f4f4f5]">
+            <div className="rounded-2xl border-2 border-zinc-900 bg-zinc-50 p-4 md:p-6 shadow-[4px_4px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28]/80 dark:shadow-[4px_4px_0px_0px_#59BBAF]">
               <div className="text-xs font-black text-zinc-500 dark:text-zinc-400 mb-3 flex items-center gap-1.5">
                 <Clock className="w-4 h-4 text-primary animate-pulse" />
                 <span>شمارش معکوس تا آغاز رویداد:</span>
               </div>
-              <div className="grid grid-cols-4 gap-3 text-center max-w-md">
-                <div className="rounded-xl border-2 border-zinc-900 bg-white p-3 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-300 dark:bg-zinc-900">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-center max-w-md">
+                <div className="rounded-xl border-2 border-zinc-900 bg-white p-3 shadow-[2px_2px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28]">
                   <span className="block text-2xl md:text-3xl font-black text-primary">{toPersianDigits(timeLeft.days)}</span>
                   <span className="text-[11px] font-bold text-zinc-500">روز</span>
                 </div>
-                <div className="rounded-xl border-2 border-zinc-900 bg-white p-3 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-300 dark:bg-zinc-900">
+                <div className="rounded-xl border-2 border-zinc-900 bg-white p-3 shadow-[2px_2px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28]">
                   <span className="block text-2xl md:text-3xl font-black text-zinc-900 dark:text-zinc-100">{toPersianDigits(timeLeft.hours)}</span>
                   <span className="text-[11px] font-bold text-zinc-500">ساعت</span>
                 </div>
-                <div className="rounded-xl border-2 border-zinc-900 bg-white p-3 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-300 dark:bg-zinc-900">
+                <div className="rounded-xl border-2 border-zinc-900 bg-white p-3 shadow-[2px_2px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28]">
                   <span className="block text-2xl md:text-3xl font-black text-zinc-900 dark:text-zinc-100">{toPersianDigits(timeLeft.minutes)}</span>
                   <span className="text-[11px] font-bold text-zinc-500">دقیقه</span>
                 </div>
-                <div className="rounded-xl border-2 border-zinc-900 bg-white p-3 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-300 dark:bg-zinc-900">
+                <div className="rounded-xl border-2 border-zinc-900 bg-white p-3 shadow-[2px_2px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28]">
                   <span className="block text-2xl md:text-3xl font-black text-rose-600">{toPersianDigits(timeLeft.seconds)}</span>
                   <span className="text-[11px] font-bold text-zinc-500">ثانیه</span>
                 </div>
@@ -523,24 +668,24 @@ export const EventSinglePage: React.FC = () => {
 
       {/* Main Tabs Navigation (shown when event has workflow modules) */}
       {hasWorkflow && (
-        <div className="flex flex-wrap items-center gap-3 p-2 rounded-2xl border-3 border-zinc-900 bg-white shadow-[4px_4px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[4px_4px_0px_0px_#f4f4f5]">
+        <div className="flex flex-wrap items-center gap-3 p-2 rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white shadow-[4px_4px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[4px_4px_0px_0px_#59BBAF]">
           <button
             onClick={() => setActiveMainTab('WORKFLOW')}
             className={`flex-1 min-w-[200px] flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-sm font-black transition-all ${
               activeMainTab === 'WORKFLOW'
-                ? 'bg-amber-400 text-zinc-950 border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]'
+                ? 'bg-amber-400 text-zinc-950 border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#202A5A]'
                 : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
             }`}
           >
             <Workflow className="w-4 h-4" />
-            <span>{hasWorkflow ? 'چرخه گام‌به‌گام رویداد' : 'شناسنامه و زمان‌بندی کامل رویداد'}</span>
+            <span>چرخه گام‌به‌گام رویداد</span>
           </button>
 
           <button
             onClick={() => setActiveMainTab('OVERVIEW')}
             className={`flex-1 min-w-[180px] flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl text-sm font-black transition-all ${
               activeMainTab === 'OVERVIEW'
-                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-2 border-zinc-900 dark:border-zinc-100 shadow-[3px_3px_0px_0px_#18181b] dark:shadow-[3px_3px_0px_0px_#f4f4f5]'
+                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-2 border-zinc-900 dark:border-zinc-100 shadow-[3px_3px_0px_0px_#202A5A] dark:shadow-[3px_3px_0px_0px_#59BBAF]'
                 : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
             }`}
           >
@@ -552,13 +697,17 @@ export const EventSinglePage: React.FC = () => {
 
       {/* Render Active Tab Content */}
       {hasWorkflow && activeMainTab === 'WORKFLOW' ? (
-        <EventStepWizard eventId={event.id} eventTitle={event.title} />
+        <EventStepWizard
+          eventId={event.id}
+          eventTitle={event.title}
+          workflowModules={wizardWorkflowModules}
+        />
       ) : (
         <div className="space-y-8">
           {/* Information Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Start Date */}
-            <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[3px_3px_0px_0px_#f4f4f5]">
+            <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[3px_3px_0px_0px_#59BBAF]">
               <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-xs mb-1">
                 <CalendarDays className="w-4 h-4" />
                 <span>زمان آغاز</span>
@@ -568,7 +717,7 @@ export const EventSinglePage: React.FC = () => {
             </div>
 
             {/* End Date */}
-            <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[3px_3px_0px_0px_#f4f4f5]">
+            <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[3px_3px_0px_0px_#59BBAF]">
               <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold text-xs mb-1">
                 <Clock className="w-4 h-4" />
                 <span>زمان پایان</span>
@@ -578,7 +727,7 @@ export const EventSinglePage: React.FC = () => {
             </div>
 
             {/* Location */}
-            <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[3px_3px_0px_0px_#f4f4f5]">
+            <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[3px_3px_0px_0px_#59BBAF]">
               <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-xs mb-1">
                 <MapPin className="w-4 h-4" />
                 <span>محل برگزاری</span>
@@ -590,7 +739,7 @@ export const EventSinglePage: React.FC = () => {
             </div>
 
             {/* Organizer */}
-            <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[3px_3px_0px_0px_#f4f4f5]">
+            <div className="rounded-2xl border-2 border-zinc-900 bg-white p-5 shadow-[3px_3px_0px_0px_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[3px_3px_0px_0px_#59BBAF]">
               <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs mb-1">
                 <ShieldCheck className="w-4 h-4" />
                 <span>برگزارکننده</span>
@@ -605,7 +754,7 @@ export const EventSinglePage: React.FC = () => {
           </div>
 
           {/* Description & Full Details */}
-          <div className="rounded-2xl border-3 border-zinc-900 bg-white p-6 md:p-8 shadow-[5px_5px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[5px_5px_0px_0px_#f4f4f5] space-y-6">
+          <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 md:p-8 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF] space-y-6">
             <div>
               <h2 className="text-xl font-black text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-amber-500" />
@@ -627,7 +776,7 @@ export const EventSinglePage: React.FC = () => {
                   {displayTags(event.tags).map((tag, idx) => (
                     <span
                       key={idx}
-                      className="px-3 py-1 rounded-xl text-xs font-bold border-2 border-zinc-900 bg-zinc-100 text-zinc-800 dark:border-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#f4f4f5]"
+                      className="px-3 py-1 rounded-xl text-xs font-bold border-2 border-zinc-900 bg-zinc-100 text-zinc-800 dark:border-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 shadow-[2px_2px_0px_0px_#202A5A] dark:shadow-[2px_2px_0px_0px_#59BBAF]"
                     >
                       #{tag}
                     </span>
@@ -662,7 +811,7 @@ export const EventSinglePage: React.FC = () => {
               required
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+              className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
             />
           </div>
 
@@ -682,25 +831,26 @@ export const EventSinglePage: React.FC = () => {
                     setForm({ ...form, categoryKey: '', eventType: v as any });
                   }
                 }}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
               >
-                <optgroup label="دسته‌های پیش‌فرض">
-                  <option value="STARTUP_WEEKEND">استارت‌آپ ویکند</option>
-                  <option value="ACADEMIC">آموزشی و مهارت</option>
-                  <option value="CULTURAL">فرهنگی و آیین‌ها</option>
-                  <option value="SPORTS">مسابقات و ورزش</option>
-                  <option value="EXAM">آزمون و ارزشیابی</option>
-                  <option value="EXCURSION">اردو و بازدید علمی</option>
-                  <option value="MEETING">جلسه و نشست</option>
-                  <option value="HOLIDAY">تعطیلی و مناسبت</option>
-                </optgroup>
-                {customCategories.length > 0 && (
-                  <optgroup label="دسته‌بندی‌های سفارشی مدرسه">
+                {categoriesLoaded ? (
+                  <optgroup label="دسته‌بندی‌های مدرسه">
                     {customCategories.map((c) => (
                       <option key={c.key} value={c.key}>
                         {c.label}
                       </option>
                     ))}
+                  </optgroup>
+                ) : (
+                  <optgroup label="دسته‌های پیش‌فرض">
+                    <option value="STARTUP_WEEKEND">استارت‌آپ ویکند</option>
+                    <option value="ACADEMIC">آموزشی و مهارت</option>
+                    <option value="CULTURAL">فرهنگی و آیین‌ها</option>
+                    <option value="SPORTS">مسابقات و ورزش</option>
+                    <option value="EXAM">آزمون و ارزشیابی</option>
+                    <option value="EXCURSION">اردو و بازدید علمی</option>
+                    <option value="MEETING">جلسه و نشست</option>
+                    <option value="HOLIDAY">تعطیلی و مناسبت</option>
                   </optgroup>
                 )}
               </select>
@@ -713,7 +863,7 @@ export const EventSinglePage: React.FC = () => {
               <select
                 value={form.targetAudience}
                 onChange={(e) => setForm({ ...form, targetAudience: e.target.value as any })}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
               >
                 <option value="ALL">عمومی (کلیه مخاطبین)</option>
                 <option value="STUDENTS">دانش‌آموزان</option>
@@ -742,7 +892,7 @@ export const EventSinglePage: React.FC = () => {
                 type="time"
                 value={form.startTime}
                 onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
               />
             </div>
           </div>
@@ -765,7 +915,7 @@ export const EventSinglePage: React.FC = () => {
                 type="time"
                 value={form.endTime}
                 onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
               />
             </div>
           </div>
@@ -778,19 +928,77 @@ export const EventSinglePage: React.FC = () => {
               type="text"
               value={form.location}
               onChange={(e) => setForm({ ...form, location: e.target.value })}
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+              className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
             />
           </div>
 
           <div>
             <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
-              URL تصویر بنر کاور
+              عکس یا بنر رویداد
             </label>
-            <input
-              type="url"
-              value={form.coverUrl}
-              onChange={(e) => setForm({ ...form, coverUrl: e.target.value })}
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+            <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-2 leading-relaxed">
+              {EVENT_COVER_SPEC_LABEL}
+            </p>
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  ref={coverFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleCoverFileSelect}
+                />
+                <Button
+                  type="button"
+                  variant="sec"
+                  size="sm"
+                  disabled={isUploadingCover}
+                  onClick={() => coverFileInputRef.current?.click()}
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  {isUploadingCover ? 'در حال آپلود...' : 'آپلود عکس بنر'}
+                </Button>
+                {form.coverUrl && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setForm({ ...form, coverUrl: '' })}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    حذف عکس
+                  </Button>
+                )}
+              </div>
+
+              {form.coverUrl && (
+                <div className="relative w-full max-w-md rounded-xl border-2 border-zinc-900 overflow-hidden shadow-[3px_3px_0px_0px_#202A5A] dark:border-zinc-200">
+                  <img
+                    src={form.coverUrl}
+                    alt="پیش‌نمایش بنر رویداد"
+                    className="w-full h-36 object-cover"
+                  />
+                </div>
+              )}
+
+              <input
+                type="text"
+                value={form.coverUrl}
+                onChange={(e) => setForm({ ...form, coverUrl: e.target.value })}
+                placeholder="یا آدرس تصویر را وارد کنید: https://..."
+                className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
+              />
+            </div>
+            <EventCoverCropModal
+              isOpen={!!cropImageSrc}
+              onClose={() => {
+                setCropImageSrc(null);
+                setCropFileName(undefined);
+                if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+              }}
+              imageSrc={cropImageSrc || ''}
+              fileName={cropFileName}
+              onConfirm={handleCoverCropConfirm}
             />
           </div>
 
@@ -802,7 +1010,7 @@ export const EventSinglePage: React.FC = () => {
               type="text"
               value={form.tags}
               onChange={(e) => setForm({ ...form, tags: e.target.value })}
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+              className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
             />
           </div>
 
@@ -814,7 +1022,7 @@ export const EventSinglePage: React.FC = () => {
               rows={4}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+              className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
             />
           </div>
 
@@ -823,7 +1031,7 @@ export const EventSinglePage: React.FC = () => {
               type="button"
               variant="outline"
               onClick={() => setIsEditModalOpen(false)}
-              className="border-2 border-zinc-900 font-bold"
+              className="font-bold"
             >
               انصراف
             </Button>
@@ -831,7 +1039,7 @@ export const EventSinglePage: React.FC = () => {
               type="submit"
               variant="primary"
               disabled={isSubmitting}
-              className="border-2 border-zinc-900 font-black px-6 shadow-[3px_3px_0px_0px_#18181b]"
+              className="font-black px-6"
             >
               {isSubmitting ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
             </Button>

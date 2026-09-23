@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiClient } from '../../../lib/api/client';
 import { useAuthStore } from '../../../lib/auth/auth-store';
@@ -44,12 +44,28 @@ import {
   PartyPopper,
   Compass as CompassIcon,
   Rocket,
+  Upload,
+  X,
 } from 'lucide-react';
-import { SchoolEventItem, INITIAL_SAMPLE_EVENTS, EventCategoryItem, hydrateEvent } from './constants/sample-events';
+import { SchoolEventItem, EventCategoryItem, hydrateEvent } from './constants/sample-events';
+import {
+  EventCoverCropModal,
+  EVENT_COVER_SPEC_LABEL,
+  EVENT_COVER_MAX_BYTES,
+  needsCoverCrop,
+  uploadCoverBlob,
+} from './components/EventCoverCropModal';
+import {
+  canViewEventAudience,
+  isEventManagerRole,
+  isServerRejection,
+  extractApiErrorMessage,
+} from './constants/event-access';
 import {
   EVENT_MODULE_LIST,
   DEFAULT_WORKFLOW_MODULES,
   normalizeWorkflowModules,
+  renumberWorkflowModules,
   EventModuleKey,
   WorkflowModuleEntry,
 } from './constants/event-modules';
@@ -84,21 +100,17 @@ const EVENTS_STORAGE_KEY = 'rokad_calendar_events';
 export const EventsRoadmapPage: React.FC = () => {
   const navigate = useNavigate();
   const currentUser = useAuthStore((s) => s.user);
-  const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(currentUser?.role || '');
+  const canManageEvents = isEventManagerRole(currentUser?.role);
 
   const [events, setEvents] = useState<SchoolEventItem[]>(() => {
     try {
       const cached = localStorage.getItem(EVENTS_STORAGE_KEY);
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const hasStartup = parsed.some((e: any) => e.eventType === 'STARTUP_WEEKEND' || e.id === 'evt_startup_weekend_2026');
-          if (hasStartup) return parsed;
-          return [...INITIAL_SAMPLE_EVENTS, ...parsed];
-        }
+        if (Array.isArray(parsed)) return parsed.map(hydrateEvent);
       }
     } catch {}
-    return INITIAL_SAMPLE_EVENTS;
+    return [];
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -108,6 +120,7 @@ export const EventsRoadmapPage: React.FC = () => {
 
   // Custom Event Categories (backend CRUD via Tenant.settings)
   const [customCategories, setCustomCategories] = useState<EventCategoryItem[]>([]);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
   const [categoryError, setCategoryError] = useState<string | null>(null);
@@ -115,15 +128,21 @@ export const EventsRoadmapPage: React.FC = () => {
   const [categoryForm, setCategoryForm] = useState({ key: '', label: '', icon: 'Tag', color: '' });
 
   const allCategoryTabs = useMemo(() => {
-    // Prefer backend categories (seeded defaults + custom); FALLBACK only as offline fallback
-    const backendKeys = new Set(customCategories.map((c) => c.key));
-    const fallbackOnly = FALLBACK_CATEGORIES.filter((f) => !backendKeys.has(f.key)).map((f) => ({
-      key: f.key,
-      label: f.label,
-      icon: f.icon,
-      color: f.color,
-      isCustom: false,
-    }));
+    // After a successful backend load, trust that list only (deleted categories must not reappear).
+    // FALLBACK is offline/initial UI only.
+    if (!categoriesLoaded) {
+      return [
+        { key: 'ALL', label: 'همه رویدادها', icon: Layers, color: 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200', isCustom: false },
+        ...FALLBACK_CATEGORIES.map((f) => ({
+          key: f.key,
+          label: f.label,
+          icon: f.icon,
+          color: f.color,
+          isCustom: false,
+        })),
+      ];
+    }
+
     const fromBackend = customCategories.map((c) => ({
       key: c.key,
       label: c.label,
@@ -134,9 +153,8 @@ export const EventsRoadmapPage: React.FC = () => {
     return [
       { key: 'ALL', label: 'همه رویدادها', icon: Layers, color: 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200', isCustom: false },
       ...fromBackend,
-      ...fallbackOnly,
     ];
-  }, [customCategories]);
+  }, [customCategories, categoriesLoaded]);
 
   const categoryLabelMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -172,27 +190,118 @@ export const EventsRoadmapPage: React.FC = () => {
   });
 
   const [workflowModules, setWorkflowModules] = useState<WorkflowModuleEntry[]>([]);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const coverFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [cropFileName, setCropFileName] = useState<string | undefined>(undefined);
+
+  const uploadCoverBlobDirect = async (file: File) => {
+    setIsUploadingCover(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('moduleName', 'calendar');
+      let coverUrl = '';
+      try {
+        const uploadRes = await apiClient.post('/storage/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        const uploadData = uploadRes.data?.data || uploadRes.data;
+        coverUrl = uploadData?.fileUrl || uploadData?.url || '';
+      } catch {
+        coverUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+      }
+      if (coverUrl) {
+        setForm((f) => ({ ...f, coverUrl }));
+        toast.success('عکس بنر رویداد آپلود شد');
+      }
+    } catch {
+      toast.error('خطا در آپلود عکس بنر');
+    } finally {
+      setIsUploadingCover(false);
+      if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+    }
+  };
+
+  const handleCoverFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('فقط فایل تصویری انتخاب کنید');
+      if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+      return;
+    }
+    if (file.size > EVENT_COVER_MAX_BYTES) {
+      toast.error('حداکثر حجم عکس ۵ مگابایت است');
+      if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+      return;
+    }
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('read fail'));
+        reader.readAsDataURL(file);
+      });
+      const dims = await new Promise<{ w: number; h: number }>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+        img.onerror = () => reject(new Error('img fail'));
+        img.src = dataUrl;
+      });
+      if (needsCoverCrop(dims.w, dims.h)) {
+        setCropImageSrc(dataUrl);
+        setCropFileName(file.name);
+        return;
+      }
+      await uploadCoverBlobDirect(file);
+    } catch {
+      toast.error('خطا در خواندن فایل تصویری');
+      if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+    }
+  };
+
+  const handleCoverCropConfirm = async (blob: Blob) => {
+    setIsUploadingCover(true);
+    try {
+      const coverUrl = await uploadCoverBlob(blob, cropFileName || 'event-cover.jpg');
+      if (coverUrl) {
+        setForm((f) => ({ ...f, coverUrl }));
+        toast.success('عکس بنر بریده و آپلود شد');
+      }
+    } catch {
+      toast.error('خطا در آپلود عکس بنر');
+    } finally {
+      setIsUploadingCover(false);
+      setCropImageSrc(null);
+      setCropFileName(undefined);
+      if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+    }
+  };
 
   const fetchEvents = async () => {
     try {
       const res = await apiClient.get('/calendar/events');
-      if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
+      if (res && Array.isArray(res.data)) {
         const hydrated = res.data.map(hydrateEvent);
         setEvents(hydrated);
         localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(hydrated));
+        return;
       }
     } catch (err) {
       // Fallback gracefully to local storage / sample events
-      try {
-        const cached = localStorage.getItem(EVENTS_STORAGE_KEY);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setEvents(parsed.map(hydrateEvent));
-          }
-        }
-      } catch {}
     }
+    try {
+      const cached = localStorage.getItem(EVENTS_STORAGE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed)) setEvents(parsed.map(hydrateEvent));
+      }
+    } catch {}
   };
 
   const fetchCategories = async () => {
@@ -200,9 +309,10 @@ export const EventsRoadmapPage: React.FC = () => {
       const res = await apiClient.get('/calendar/event-categories');
       if (Array.isArray(res?.data)) {
         setCustomCategories(res.data);
+        setCategoriesLoaded(true);
       }
     } catch {
-      // Backend offline / no categories yet — keep empty custom list
+      // Backend offline — keep FALLBACK chips until a successful load
     }
   };
 
@@ -211,7 +321,7 @@ export const EventsRoadmapPage: React.FC = () => {
     fetchCategories();
   }, []);
 
-  // Filtered events
+  // Filtered events (category + search + targetAudience)
   const filteredEvents = useMemo(() => {
     return events.filter((ev) => {
       const eventCatKey = ev.categoryKey || ev.eventType;
@@ -222,9 +332,10 @@ export const EventsRoadmapPage: React.FC = () => {
         (ev.description && ev.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (ev.location && ev.location.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (ev.tags && ev.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase())));
-      return matchCat && matchSearch;
+      const matchAudience = canViewEventAudience(ev.targetAudience, currentUser?.role);
+      return matchCat && matchSearch && matchAudience;
     });
-  }, [events, selectedCategory, searchQuery]);
+  }, [events, selectedCategory, searchQuery, currentUser?.role]);
 
   // Group events by Jalali month for the annual roadmap
   const roadmapGroups = useMemo(() => {
@@ -335,6 +446,7 @@ export const EventsRoadmapPage: React.FC = () => {
     setCategoryForm({ key: '', label: '', icon: 'Tag', color: '' });
     setCategoryError(null);
     setIsCategoryModalOpen(true);
+    void fetchCategories();
   };
 
   const openCategoryEdit = (cat: EventCategoryItem) => {
@@ -347,6 +459,7 @@ export const EventsRoadmapPage: React.FC = () => {
     });
     setCategoryError(null);
     setIsCategoryModalOpen(true);
+    void fetchCategories();
   };
 
   const resetCategoryForm = () => {
@@ -356,8 +469,9 @@ export const EventsRoadmapPage: React.FC = () => {
   };
 
   const allCategoriesForManage = useMemo(() => {
-    // Backend list already includes seeded defaults + custom; FALLBACK only if backend empty/offline
-    if (customCategories.length > 0) {
+    // Prefer backend list when loaded. FALLBACK only as offline placeholder —
+    // those keys still map to backend defaults and remain deletable via API.
+    if (categoriesLoaded) {
       return customCategories.map((c) => ({
         key: c.key,
         label: c.label,
@@ -372,10 +486,10 @@ export const EventsRoadmapPage: React.FC = () => {
       label: c.label,
       icon: 'Tag',
       color: '',
-      removable: false,
-      isBuiltIn: true,
+      removable: true,
+      isBuiltIn: false,
     }));
-  }, [customCategories]);
+  }, [customCategories, categoriesLoaded]);
 
   const handleCategorySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -435,15 +549,25 @@ export const EventsRoadmapPage: React.FC = () => {
   };
 
   const handleCategoryDelete = async (cat: EventCategoryItem) => {
+    if (cat.removable === false) {
+      toast.error('این دسته‌بندی قابل حذف نیست.');
+      return;
+    }
     try {
-      await apiClient.delete(`/calendar/event-categories/${cat.key}`);
+      await apiClient.delete(`/calendar/event-categories/${encodeURIComponent(cat.key)}`);
       setCustomCategories((prev) => prev.filter((c) => c.key !== cat.key));
       if (selectedCategory === cat.key) setSelectedCategory('ALL');
       if (editingCategoryKey === cat.key) resetCategoryForm();
       toast.success('دسته‌بندی حذف شد');
+      await fetchCategories();
     } catch (err: any) {
-      const msg = err?.message || err?.response?.data?.message || 'خطا در حذف دسته‌بندی';
+      const msg =
+        err?.message ||
+        err?.response?.data?.message ||
+        err?.data?.message ||
+        'خطا در حذف دسته‌بندی';
       toast.error(msg);
+      await fetchCategories();
     }
   };
 
@@ -462,11 +586,7 @@ export const EventsRoadmapPage: React.FC = () => {
       });
     },
     mutationFn: async (ev) => {
-      try {
-        await apiClient.delete(`/calendar/events/${ev.id}`);
-      } catch {
-        // Handled gracefully in offline mode
-      }
+      await apiClient.delete(`/calendar/events/${ev.id}`);
     },
     undoFn: async (ev) => {
       try {
@@ -531,16 +651,18 @@ export const EventsRoadmapPage: React.FC = () => {
         location: form.location.trim() || undefined,
         coverUrl: form.coverUrl.trim() || undefined,
         tags: tagsArray,
-        workflowModules: workflowModules
-          .filter((m) => m.enabled !== false)
-          .map((m) => ({ key: m.key, step: m.step, enabled: true })),
+        workflowModules: renumberWorkflowModules(
+          workflowModules.filter((m) => m.enabled !== false)
+        ).map((m) => ({ key: m.key, step: m.step, enabled: true })),
       };
 
       if (isEditing && editingId) {
         try {
           await apiClient.patch(`/calendar/events/${editingId}`, payload);
-        } catch {
-          // fallback locally
+        } catch (err: any) {
+          // Server rejected — surface the error instead of silently falling back
+          if (isServerRejection(err)) throw err;
+          // Network/offline — local fallback continues below
         }
 
         setEvents((prev) => {
@@ -591,8 +713,10 @@ export const EventsRoadmapPage: React.FC = () => {
           if (res?.data?.id) {
             newEventObj.id = res.data.id;
           }
-        } catch {
-          // fallback locally
+        } catch (err: any) {
+          // Server rejected — surface the error instead of silently falling back
+          if (isServerRejection(err)) throw err;
+          // Network/offline — local fallback continues below
         }
 
         setEvents((prev) => {
@@ -608,7 +732,7 @@ export const EventsRoadmapPage: React.FC = () => {
       setIsModalOpen(false);
     } catch (err: any) {
       console.error('Event submit error', err);
-      const msg = err?.response?.data?.message || 'خطا در ذخیره‌سازی رویداد';
+      const msg = extractApiErrorMessage(err, 'خطا در ذخیره‌سازی رویداد');
       setFormError(msg);
       toast.error(msg);
     } finally {
@@ -630,7 +754,7 @@ export const EventsRoadmapPage: React.FC = () => {
   return (
     <div className="space-y-8 pb-16">
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl border-3 border-zinc-900 bg-white p-6 shadow-[6px_6px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[6px_6px_0px_0px_#f4f4f5] md:p-8">
+      <div className="relative overflow-hidden rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF] md:p-8">
         <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="flex items-center gap-2 text-primary font-bold text-sm tracking-wide mb-2">
@@ -640,22 +764,22 @@ export const EventsRoadmapPage: React.FC = () => {
             <h1 className="text-3xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight md:text-4xl">
               رودمپ رویدادهای سالانه
             </h1>
-            <p className="mt-2 max-w-2xl text-base text-zinc-600 dark:text-zinc-400 leading-relaxed font-medium">
+            <p className="mt-2 max-w-2xl text-sm sm:text-base text-zinc-600 dark:text-zinc-400 leading-relaxed font-medium">
               نمای زمان‌بندی تمام رویدادها، هکاتون‌ها، کارگاه‌های مهارتی، آزمون‌ها و آیین‌های شاخص هنرستان در طول سال تحصیلی با جزئیات کامل و سینگل پیج اختصاصی.
             </p>
 
             {/* Quick Metrics */}
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black border-2 border-zinc-900 bg-zinc-100 text-zinc-900 dark:border-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#f4f4f5]">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black border-2 border-zinc-900 bg-zinc-100 text-zinc-900 dark:border-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 shadow-[2px_2px_0px_0px_#202A5A] dark:shadow-[2px_2px_0px_0px_#59BBAF]">
                 <Layers className="w-3.5 h-3.5" />
                 کل رویدادها: {toPersianDigits(totalCount)}
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black border-2 border-zinc-900 bg-cyan-100 text-cyan-900 dark:border-zinc-200 dark:bg-cyan-950 dark:text-cyan-300 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#f4f4f5]">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black border-2 border-zinc-900 bg-cyan-100 text-cyan-900 dark:border-zinc-200 dark:bg-cyan-950 dark:text-cyan-300 shadow-[2px_2px_0px_0px_#202A5A] dark:shadow-[2px_2px_0px_0px_#59BBAF]">
                 <Clock className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                 پیش‌رو: {toPersianDigits(upcomingCount)}
               </span>
               {liveCount > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black border-2 border-zinc-900 bg-emerald-100 text-emerald-900 dark:border-zinc-200 dark:bg-emerald-950 dark:text-emerald-300 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#f4f4f5] animate-pulse">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black border-2 border-zinc-900 bg-emerald-100 text-emerald-900 dark:border-zinc-200 dark:bg-emerald-950 dark:text-emerald-300 shadow-[2px_2px_0px_0px_#202A5A] dark:shadow-[2px_2px_0px_0px_#59BBAF] animate-pulse">
                   <Flame className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   در حال برگزاری: {toPersianDigits(liveCount)}
                 </span>
@@ -665,12 +789,12 @@ export const EventsRoadmapPage: React.FC = () => {
 
           {/* Action Button for Admins */}
           <div className="flex flex-wrap items-center gap-3">
-            {isManager && (
+            {canManageEvents && (
               <>
                 <Button
                   onClick={openCategoryCreate}
                   variant="outline"
-                  className="gap-2 px-4 py-3 font-bold border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#f4f4f5]"
+                  className="gap-2 px-4 py-3 font-bold"
                 >
                   <Tag className="w-4 h-4" />
                   مدیریت دسته‌بندی‌ها
@@ -678,7 +802,7 @@ export const EventsRoadmapPage: React.FC = () => {
                 <Button
                   onClick={handleOpenCreate}
                   variant="primary"
-                  className="gap-2 px-5 py-3 text-base font-black border-3 border-zinc-900 shadow-[4px_4px_0px_0px_#18181b] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
+                  className="gap-2 px-5 py-3 text-base font-black"
                 >
                   <Plus className="w-5 h-5" />
                   تعریف رویداد جدید
@@ -688,7 +812,7 @@ export const EventsRoadmapPage: React.FC = () => {
             <Link to="/app/calendar">
               <Button
                 variant="outline"
-                className="gap-2 px-4 py-3 font-bold border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#f4f4f5]"
+                className="gap-2 px-4 py-3 font-bold"
               >
                 <CalendarDays className="w-4 h-4" />
                 مشاهده تقویم ماهانه
@@ -708,13 +832,13 @@ export const EventsRoadmapPage: React.FC = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="جستجو در عنوان، مکان یا کلیدواژه‌ها..."
-            className="w-full rounded-xl border-2 border-zinc-900 bg-white pr-10 pl-4 py-2.5 text-sm font-medium placeholder:text-zinc-400 shadow-[3px_3px_0px_0px_#18181b] focus:outline-none focus:ring-2 focus:ring-primary dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[3px_3px_0px_0px_#f4f4f5]"
+            className="w-full pr-10 pl-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-sm font-medium placeholder:text-zinc-400 focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
           />
         </div>
 
         {/* View Mode Switcher */}
         <div className="flex items-center gap-2 self-end md:self-auto">
-          <div className="flex rounded-xl border-2 border-zinc-900 bg-white p-1 shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[3px_3px_0px_0px_#f4f4f5]">
+          <div className="flex rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] p-1">
             <button
               onClick={() => setViewMode('roadmap')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
@@ -754,13 +878,13 @@ export const EventsRoadmapPage: React.FC = () => {
                 className={`flex items-center gap-2 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs font-black border-2 transition-all duration-150 cursor-pointer touch-manipulation active:scale-95 active:shadow-none select-none ${
                   isSelected
                     ? 'border-zinc-900 bg-zinc-900 text-white shadow-[3px_3px_0px_0px_#000] dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 dark:shadow-[3px_3px_0px_0px_#fff]'
-                    : 'border-zinc-900/40 bg-white text-zinc-700 hover:border-zinc-900 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-200 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#f4f4f5]'
+                    : 'border-zinc-900/40 bg-white text-zinc-700 hover:border-zinc-900 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-200 shadow-[2px_2px_0px_0px_#202A5A] dark:shadow-[2px_2px_0px_0px_#59BBAF]'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5 transition-transform duration-150 group-hover/tab:scale-125 group-hover/tab:rotate-6 group-active/tab:scale-90" />
                 {cat.label}
               </button>
-              {isManager && rawCustomCat && (
+              {canManageEvents && rawCustomCat && (
                 <button
                   type="button"
                   onClick={(e) => {
@@ -776,7 +900,7 @@ export const EventsRoadmapPage: React.FC = () => {
             </div>
           );
         })}
-        {isManager && (
+        {canManageEvents && (
           <button
             onClick={openCategoryCreate}
             title="افزودن دسته‌بندی جدید"
@@ -795,14 +919,14 @@ export const EventsRoadmapPage: React.FC = () => {
           <p className="mt-3 text-sm font-bold text-zinc-600 dark:text-zinc-400">در حال دریافت رودمپ رویدادها...</p>
         </div>
       ) : filteredEvents.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-zinc-300 p-12 text-center dark:border-zinc-700">
+        <div className="rounded-2xl border-2 border-dashed border-zinc-300 p-8 sm:p-12 text-center dark:border-zinc-700">
           <CalendarDays className="mx-auto w-12 h-12 text-zinc-400 mb-3" />
           <h3 className="text-lg font-bold text-zinc-800 dark:text-zinc-200">رویدادی یافت نشد</h3>
           <p className="mt-1 text-sm text-zinc-500 max-w-sm mx-auto">
             هیچ رویدادی مطابق با فیلترها و عبارت جستجوی انتخاب‌شده ثبت نشده است.
           </p>
-          {isManager && (
-            <Button onClick={handleOpenCreate} variant="primary" className="mt-4 gap-2 font-bold border-2 border-zinc-900">
+          {canManageEvents && (
+            <Button onClick={handleOpenCreate} variant="primary" className="mt-4 gap-2">
               <Plus className="w-4 h-4" />
               افزودن اولین رویداد
             </Button>
@@ -815,7 +939,7 @@ export const EventsRoadmapPage: React.FC = () => {
             <div key={`${group.year}-${group.monthIndex}`} className="space-y-6">
               {/* Month Header Banner */}
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 rounded-xl border-2 border-zinc-900 bg-primary px-4 py-2 text-white font-black text-base shadow-[3px_3px_0px_0px_#18181b] dark:border-zinc-200 dark:shadow-[3px_3px_0px_0px_#f4f4f5]">
+                <div className="flex items-center gap-2 rounded-xl border-2 border-zinc-900 bg-primary px-4 py-2 text-white font-black text-base shadow-[3px_3px_0px_0px_#202A5A] dark:border-zinc-200 dark:shadow-[3px_3px_0px_0px_#59BBAF]">
                   <Flag className="w-4 h-4" />
                   <span>{group.monthName}</span>
                   <span className="text-xs opacity-80">{toPersianDigits(group.year)}</span>
@@ -827,7 +951,7 @@ export const EventsRoadmapPage: React.FC = () => {
               </div>
 
               {/* Events in Month */}
-              <div className="relative mr-4 space-y-6 border-r-3 border-zinc-300 pr-6 dark:border-zinc-700">
+              <div className="relative mr-3 sm:mr-4 space-y-6 border-r-3 border-zinc-300 pr-4 sm:pr-6 dark:border-zinc-700">
                 {group.events.map((ev) => {
                   const status = getEventStatus(ev.startDate, ev.endDate);
                   const jalaliStartFormatted = formatJalaliDisplay(ev.startDate, true);
@@ -840,10 +964,10 @@ export const EventsRoadmapPage: React.FC = () => {
                       className="group relative cursor-pointer transition-all"
                     >
                       {/* Timeline Node Dot */}
-                      <div className="absolute -right-[33px] top-6 h-5 w-5 rounded-full border-3 border-zinc-900 bg-white shadow-[2px_2px_0px_0px_#000] transition-transform group-hover:scale-125 dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[2px_2px_0px_0px_#fff]" />
+                      <div className="absolute -right-[25px] sm:-right-[33px] top-6 h-5 w-5 rounded-full border-[1.5px] border-[#EAEAEA] bg-white shadow-[2.75px_2.75px_0_#202A5A] transition-transform group-hover:scale-125 dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]" />
 
                       {/* Event Card */}
-                      <div className="overflow-hidden rounded-2xl border-3 border-zinc-900 bg-white shadow-[5px_5px_0px_0px_#18181b] transition-all hover:-translate-y-1 hover:shadow-[7px_7px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[5px_5px_0px_0px_#f4f4f5] dark:hover:shadow-[7px_7px_0px_0px_#f4f4f5]">
+                      <div className="overflow-hidden rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white shadow-[2.75px_2.75px_0_#202A5A] transition-all hover:-translate-y-1 hover:shadow-[3.5px_3.5px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF] dark:hover:shadow-[3.5px_3.5px_0_#59BBAF]">
                         <div className="flex flex-col lg:flex-row">
                           {/* Left Cover/Badge visual */}
                           {ev.coverUrl ? (
@@ -877,19 +1001,19 @@ export const EventsRoadmapPage: React.FC = () => {
                                 </div>
 
                                 {/* Admin Action Buttons */}
-                                {isManager && (
+                                {canManageEvents && (
                                   <div className="flex items-center gap-1 opacity-90 group-hover:opacity-100">
                                     <button
                                       title="ویرایش رویداد"
                                       onClick={(e) => handleOpenEdit(ev, e)}
-                                      className="rounded-lg p-1.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                                      className="rounded-lg p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
                                     >
                                       <Edit3 className="w-4 h-4" />
                                     </button>
                                     <button
                                       title="حذف رویداد"
                                       onClick={(e) => handleDeleteEvent(ev, e)}
-                                      className="rounded-lg p-1.5 text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/50"
+                                      className="rounded-lg p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/50"
                                     >
                                       <Trash2 className="w-4 h-4" />
                                     </button>
@@ -926,7 +1050,7 @@ export const EventsRoadmapPage: React.FC = () => {
                               </div>
 
                               <div className="flex items-center gap-3">
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-zinc-900 bg-amber-300 text-zinc-950 text-[11px] font-black shadow-[1px_1px_0px_0px_#18181b]">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-zinc-900 bg-amber-300 text-zinc-950 text-[11px] font-black shadow-[1px_1px_0px_0px_#202A5A]">
                                   <Sparkles className="w-3 h-3" />
                                   <span>ایده‌ها، ستاره‌دهی و بوم</span>
                                 </span>
@@ -959,7 +1083,7 @@ export const EventsRoadmapPage: React.FC = () => {
               <div
                 key={ev.id}
                 onClick={() => navigate(`/app/events/${ev.id}`)}
-                className="group flex flex-col justify-between overflow-hidden rounded-2xl border-3 border-zinc-900 bg-white shadow-[5px_5px_0px_0px_#18181b] transition-all hover:-translate-y-1 hover:shadow-[7px_7px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[5px_5px_0px_0px_#f4f4f5] cursor-pointer"
+                className="group flex flex-col justify-between overflow-hidden rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white shadow-[2.75px_2.75px_0_#202A5A] transition-all hover:-translate-y-1 hover:shadow-[3.5px_3.5px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF] cursor-pointer"
               >
                 <div>
                   {ev.coverUrl ? (
@@ -1016,7 +1140,7 @@ export const EventsRoadmapPage: React.FC = () => {
                   </div>
 
                   <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-zinc-900 bg-amber-300 text-zinc-950 text-[10px] font-black shadow-[1px_1px_0px_0px_#18181b]">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-zinc-900 bg-amber-300 text-zinc-950 text-[10px] font-black shadow-[1px_1px_0px_0px_#202A5A]">
                       <Sparkles className="w-3 h-3" />
                       <span>ایده، رای‌گیری و بوم</span>
                     </span>
@@ -1058,7 +1182,7 @@ export const EventsRoadmapPage: React.FC = () => {
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="مثال: مسابقه هکاتون پاییزه هوش مصنوعی و برنامه‌نویسی"
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] focus:outline-none dark:border-zinc-200 dark:bg-zinc-900"
+              className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
             />
           </div>
 
@@ -1080,29 +1204,30 @@ export const EventsRoadmapPage: React.FC = () => {
                       setForm({ ...form, categoryKey: '', eventType: v as any });
                     }
                   }}
-                  className="flex-1 min-w-0 rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                  className="flex-1 min-w-0 rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                 >
-                  <optgroup label="دسته‌های پیش‌فرض">
-                    <option value="STARTUP_WEEKEND">استارت‌آپ ویکند</option>
-                    <option value="ACADEMIC">آموزشی و مهارت</option>
-                    <option value="CULTURAL">فرهنگی و آیین‌ها</option>
-                    <option value="SPORTS">مسابقات و ورزش</option>
-                    <option value="EXAM">آزمون و ارزشیابی</option>
-                    <option value="EXCURSION">اردو و بازدید علمی</option>
-                    <option value="MEETING">جلسه و نشست</option>
-                    <option value="HOLIDAY">تعطیلی و مناسبت</option>
-                  </optgroup>
-                  {customCategories.length > 0 && (
-                    <optgroup label="دسته‌بندی‌های سفارشی مدرسه">
+                  {categoriesLoaded ? (
+                    <optgroup label="دسته‌بندی‌های مدرسه">
                       {customCategories.map((c) => (
                         <option key={c.key} value={c.key}>
                           {c.label}
                         </option>
                       ))}
                     </optgroup>
+                  ) : (
+                    <optgroup label="دسته‌های پیش‌فرض">
+                      <option value="STARTUP_WEEKEND">استارت‌آپ ویکند</option>
+                      <option value="ACADEMIC">آموزشی و مهارت</option>
+                      <option value="CULTURAL">فرهنگی و آیین‌ها</option>
+                      <option value="SPORTS">مسابقات و ورزش</option>
+                      <option value="EXAM">آزمون و ارزشیابی</option>
+                      <option value="EXCURSION">اردو و بازدید علمی</option>
+                      <option value="MEETING">جلسه و نشست</option>
+                      <option value="HOLIDAY">تعطیلی و مناسبت</option>
+                    </optgroup>
                   )}
                 </select>
-                {isManager &&
+                {canManageEvents &&
                   (() => {
                     const selectedCustom = customCategories.find((c) => c.key === form.categoryKey);
                     if (!selectedCustom) return null;
@@ -1111,22 +1236,13 @@ export const EventsRoadmapPage: React.FC = () => {
                         type="button"
                         onClick={() => openCategoryEdit(selectedCustom)}
                         title="ویرایش این دسته‌بندی"
-                        className="flex-shrink-0 flex items-center justify-center w-11 rounded-xl border-2 border-zinc-900 bg-zinc-50 text-zinc-700 shadow-[2px_2px_0px_0px_#18181b] transition-all hover:bg-indigo-50 hover:text-indigo-700 active:scale-95 active:shadow-none touch-manipulation dark:border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-indigo-950 dark:hover:text-indigo-300"
+                        className="flex-shrink-0 flex items-center justify-center w-11 rounded-xl border-2 border-zinc-900 bg-zinc-50 text-zinc-700 shadow-[2px_2px_0px_0px_#202A5A] transition-all hover:bg-indigo-50 hover:text-indigo-700 active:scale-95 active:shadow-none touch-manipulation dark:border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-indigo-950 dark:hover:text-indigo-300"
                       >
                         <Edit3 className="w-4 h-4" />
                       </button>
                     );
                   })()}
               </div>
-              {isManager && (
-                <button
-                  type="button"
-                  onClick={openCategoryCreate}
-                  className="mt-1.5 text-[11px] font-black text-indigo-600 hover:underline"
-                >
-                  + مدیریت دسته‌بندی‌ها
-                </button>
-              )}
             </div>
 
             <div>
@@ -1136,7 +1252,7 @@ export const EventsRoadmapPage: React.FC = () => {
               <select
                 value={form.targetAudience}
                 onChange={(e) => setForm({ ...form, targetAudience: e.target.value as any })}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
               >
                 <option value="ALL">عمومی (کلیه مخاطبین هنرستان)</option>
                 <option value="STUDENTS">صرفاً دانش‌آموزان</option>
@@ -1166,7 +1282,7 @@ export const EventsRoadmapPage: React.FC = () => {
                 type="time"
                 value={form.startTime}
                 onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
               />
             </div>
           </div>
@@ -1189,7 +1305,7 @@ export const EventsRoadmapPage: React.FC = () => {
                 type="time"
                 value={form.endTime}
                 onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
               />
             </div>
           </div>
@@ -1204,21 +1320,78 @@ export const EventsRoadmapPage: React.FC = () => {
               value={form.location}
               onChange={(e) => setForm({ ...form, location: e.target.value })}
               placeholder="مثال: سالن آمفی‌تئاتر خوارزمی یا لینک اسکای‌روم"
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+              className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
             />
           </div>
 
-          {/* Cover Image URL */}
+          {/* Cover Image Upload + URL */}
           <div>
             <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
-              آدرس تصویر بنر رویداد (URL کاور)
+              عکس یا بنر رویداد
             </label>
-            <input
-              type="url"
-              value={form.coverUrl}
-              onChange={(e) => setForm({ ...form, coverUrl: e.target.value })}
-              placeholder="https://images.unsplash.com/..."
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+            <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-2 leading-relaxed">
+              {EVENT_COVER_SPEC_LABEL}
+            </p>
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  ref={coverFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleCoverFileSelect}
+                />
+                <Button
+                  type="button"
+                  variant="sec"
+                  size="sm"
+                  disabled={isUploadingCover}
+                  onClick={() => coverFileInputRef.current?.click()}
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  {isUploadingCover ? 'در حال آپلود...' : 'آپلود عکس بنر'}
+                </Button>
+                {form.coverUrl && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setForm({ ...form, coverUrl: '' })}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    حذف عکس
+                  </Button>
+                )}
+              </div>
+
+              {form.coverUrl && (
+                <div className="relative w-full max-w-md rounded-xl border-2 border-zinc-900 overflow-hidden shadow-[3px_3px_0px_0px_#202A5A] dark:border-zinc-200">
+                  <img
+                    src={form.coverUrl}
+                    alt="پیش‌نمایش بنر رویداد"
+                    className="w-full h-36 object-cover"
+                  />
+                </div>
+              )}
+
+              <input
+                type="text"
+                value={form.coverUrl}
+                onChange={(e) => setForm({ ...form, coverUrl: e.target.value })}
+                placeholder="یا آدرس تصویر را وارد کنید: https://..."
+                className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
+              />
+            </div>
+            <EventCoverCropModal
+              isOpen={!!cropImageSrc}
+              onClose={() => {
+                setCropImageSrc(null);
+                setCropFileName(undefined);
+                if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+              }}
+              imageSrc={cropImageSrc || ''}
+              fileName={cropFileName}
+              onConfirm={handleCoverCropConfirm}
             />
           </div>
 
@@ -1232,7 +1405,7 @@ export const EventsRoadmapPage: React.FC = () => {
               value={form.tags}
               onChange={(e) => setForm({ ...form, tags: e.target.value })}
               placeholder="هوش مصنوعی، هکاتون، کدنویسی، جایزه"
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+              className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
             />
           </div>
 
@@ -1246,7 +1419,7 @@ export const EventsRoadmapPage: React.FC = () => {
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="جزئیات برنامه، اهداف، شرایط شرکت، ملزومات همراه و..."
-              className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+              className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
             />
           </div>
 
@@ -1258,7 +1431,7 @@ export const EventsRoadmapPage: React.FC = () => {
             <p className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 mb-3">
               ماژول‌های مورد نیاز را انتخاب و شماره مرحله هر کدام را مشخص کنید. در صورت عدم انتخاب، رویداد بدون چرخه گام‌به‌گام ساخته می‌شود.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               {EVENT_MODULE_LIST.map((mod) => {
                 const entry = workflowModules.find((m) => m.key === mod.key);
                 const checked = !!entry && entry.enabled !== false;
@@ -1268,7 +1441,7 @@ export const EventsRoadmapPage: React.FC = () => {
                     key={mod.key}
                     className={`flex items-center gap-3 rounded-xl border-2 p-3 transition-all ${
                       checked
-                        ? 'border-zinc-900 bg-white shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[2px_2px_0px_0px_#f4f4f5]'
+                        ? 'border-zinc-900 bg-white shadow-[2px_2px_0px_0px_#202A5A] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[2px_2px_0px_0px_#59BBAF]'
                         : 'border-zinc-300 bg-white/60 dark:border-zinc-700 dark:bg-zinc-900/40'
                     }`}
                   >
@@ -1281,16 +1454,24 @@ export const EventsRoadmapPage: React.FC = () => {
                             if (e.target.checked) {
                               const existing = prev.find((m) => m.key === mod.key);
                               if (existing) {
-                                return prev.map((m) =>
-                                  m.key === mod.key ? { ...m, enabled: true } : m
+                                return renumberWorkflowModules(
+                                  prev.map((m) =>
+                                    m.key === mod.key ? { ...m, enabled: true } : m
+                                  )
                                 );
                               }
                               const maxStep = prev.length
                                 ? Math.max(...prev.map((m) => m.step))
                                 : 0;
-                              return [...prev, { key: mod.key, step: maxStep + 1, enabled: true }];
+                              return renumberWorkflowModules([
+                                ...prev,
+                                { key: mod.key, step: maxStep + 1, enabled: true },
+                              ]);
                             }
-                            return prev.filter((m) => m.key !== mod.key);
+                            // Remove module and renumber remaining steps (1..n, no gaps)
+                            return renumberWorkflowModules(
+                              prev.filter((m) => m.key !== mod.key)
+                            );
                           });
                         }}
                         className="w-4 h-4 accent-indigo-600 flex-shrink-0"
@@ -1312,12 +1493,14 @@ export const EventsRoadmapPage: React.FC = () => {
                           onChange={(e) => {
                             const newStep = Math.max(1, parseInt(e.target.value, 10) || 1);
                             setWorkflowModules((prev) =>
-                              prev.map((m) =>
-                                m.key === mod.key ? { ...m, step: newStep } : m
+                              renumberWorkflowModules(
+                                prev.map((m) =>
+                                  m.key === mod.key ? { ...m, step: newStep } : m
+                                )
                               )
                             );
                           }}
-                          className="w-14 rounded-lg border-2 border-zinc-900 bg-white px-2 py-1 text-xs font-black text-center dark:border-zinc-700 dark:bg-zinc-900"
+                          className="w-14 px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium text-center focus:border-primary focus:outline-none transition-all"
                         />
                       </div>
                     )}
@@ -1352,7 +1535,7 @@ export const EventsRoadmapPage: React.FC = () => {
               type="button"
               variant="outline"
               onClick={() => setIsModalOpen(false)}
-              className="border-2 border-zinc-900 font-bold"
+              className="font-bold"
             >
               انصراف
             </Button>
@@ -1360,7 +1543,7 @@ export const EventsRoadmapPage: React.FC = () => {
               type="submit"
               variant="primary"
               disabled={isSubmitting}
-              className="border-2 border-zinc-900 font-black px-6 shadow-[3px_3px_0px_0px_#18181b]"
+              className="font-black px-6"
             >
               {isSubmitting ? 'در حال ثبت...' : isEditing ? 'بروزرسانی رویداد' : 'افزودن به رودمپ سالانه'}
             </Button>
@@ -1391,9 +1574,6 @@ export const EventsRoadmapPage: React.FC = () => {
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-black text-zinc-700 dark:text-zinc-300">
                 همه دسته‌بندی‌ها ({allCategoriesForManage.length})
-              </span>
-              <span className="text-[10px] font-bold text-zinc-500">
-                پیش‌فرض‌ها غیرقابل حذف‌اند
               </span>
             </div>
             <div className="rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 divide-y divide-zinc-100 dark:divide-zinc-800 max-h-72 min-h-[8rem] overflow-y-auto overscroll-contain bg-zinc-50/50 dark:bg-zinc-900/30">
@@ -1432,7 +1612,7 @@ export const EventsRoadmapPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => openCategoryEdit(cat)}
-                          className={`rounded-lg p-1.5 transition-colors ${
+                          className={`rounded-lg p-2 min-w-[36px] min-h-[36px] flex items-center justify-center transition-colors ${
                             isEditingThis
                               ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300'
                               : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800'
@@ -1444,7 +1624,7 @@ export const EventsRoadmapPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleCategoryDelete(cat)}
-                          className="rounded-lg p-1.5 text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/50"
+                          className="rounded-lg p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/50"
                           title="حذف"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1485,7 +1665,7 @@ export const EventsRoadmapPage: React.FC = () => {
                   value={categoryForm.key}
                   onChange={(e) => setCategoryForm({ ...categoryForm, key: e.target.value })}
                   placeholder="MY_CUSTOM_EVENT"
-                  className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-mono font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900 disabled:opacity-60"
+                  className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-mono font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all disabled:opacity-60"
                 />
               </div>
               <div>
@@ -1498,7 +1678,7 @@ export const EventsRoadmapPage: React.FC = () => {
                   value={categoryForm.label}
                   onChange={(e) => setCategoryForm({ ...categoryForm, label: e.target.value })}
                   placeholder="عنوان دسته‌بندی"
-                  className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+                  className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                 />
               </div>
             </div>
@@ -1509,7 +1689,7 @@ export const EventsRoadmapPage: React.FC = () => {
                   type="button"
                   variant="outline"
                   onClick={resetCategoryForm}
-                  className="border-2 border-zinc-900 font-bold"
+                  className="font-bold"
                 >
                   انصراف
                 </Button>
@@ -1518,7 +1698,7 @@ export const EventsRoadmapPage: React.FC = () => {
                 type="submit"
                 variant="primary"
                 disabled={isSubmittingCategory}
-                className="border-2 border-zinc-900 font-black px-6 shadow-[3px_3px_0px_0px_#18181b]"
+                className="font-black px-6"
               >
                 {isSubmittingCategory
                   ? 'در حال ذخیره...'
@@ -1537,7 +1717,7 @@ export const EventsRoadmapPage: React.FC = () => {
                 resetCategoryForm();
                 setIsCategoryModalOpen(false);
               }}
-              className="border-2 border-zinc-900 font-bold"
+              className="font-bold"
             >
               بستن
             </Button>

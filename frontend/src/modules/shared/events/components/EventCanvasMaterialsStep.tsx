@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '../../../../components/ui/Button';
 import { Modal } from '../../../../components/ui/Modal';
 import { toast } from '../../../../components/ui/toast/toast';
 import { toPersianDigits } from '../../../../utils/jalali';
+import { useAuthStore } from '../../../../lib/auth/auth-store';
+import { isWizardManagerRole } from '../constants/event-access';
 import {
   Layers,
   FileText,
@@ -64,10 +66,15 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
   onGoToVotingStep,
   onGoToIdeasList,
 }) => {
+  const currentUser = useAuthStore((s) => s.user);
+  const isManager = isWizardManagerRole(currentUser?.role);
   const [activeTab, setActiveTab] = useState<'CANVAS' | 'MATERIALS' | 'CHECKLIST'>('CANVAS');
 
-  // Canvas Blocks State (9 Standard Event Canvas Blocks)
-  const [canvasBlocks, setCanvasBlocks] = useState<CanvasBlock[]>([
+  const canvasStorageKey = `rokad_event_canvas_${eventId}`;
+  const checklistStorageKey = `rokad_event_checklist_${eventId}`;
+
+  // Canvas Blocks State (9 Standard Event Canvas Blocks) — persist items only (icons are not serializable)
+  const defaultCanvasBlocks: CanvasBlock[] = [
     {
       id: 'vision_goals',
       title: '۱. هدف و چشم‌انداز رویداد',
@@ -177,7 +184,31 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
         'تکمیل حداقل ۱۰ کاربرگ بوم تیمی',
       ],
     },
-  ]);
+  ];
+
+  const [canvasBlocks, setCanvasBlocks] = useState<CanvasBlock[]>(() => {
+    try {
+      const saved = localStorage.getItem(`rokad_event_canvas_${eventId}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          return defaultCanvasBlocks.map((block) => ({
+            ...block,
+            items: Array.isArray(parsed[block.id]) ? parsed[block.id] : block.items,
+          }));
+        }
+      }
+    } catch {}
+    return defaultCanvasBlocks;
+  });
+
+  useEffect(() => {
+    try {
+      const itemsMap: Record<string, string[]> = {};
+      for (const block of canvasBlocks) itemsMap[block.id] = block.items;
+      localStorage.setItem(canvasStorageKey, JSON.stringify(itemsMap));
+    } catch {}
+  }, [canvasBlocks, canvasStorageKey]);
 
   // Add Item to Block Modal
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
@@ -215,8 +246,16 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
     },
   ];
 
-  // Interactive Logistics Checklist
-  const [checklist, setChecklist] = useState<ChecklistItem[]>([
+  // Interactive Logistics Checklist — persisted per event
+  const [checklist, setChecklist] = useState<ChecklistItem[]>(() => {
+    try {
+      const saved = localStorage.getItem(checklistStorageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed as ChecklistItem[];
+      }
+    } catch {}
+    return [
     { id: 'c1', text: 'طراحی و چاپ بوم‌های کارگاهی و کاربرگ‌های تمرینی', category: 'متریال و چاپ', isDone: true },
     { id: 'c2', text: 'تست سیستم صوتی و ویدئو پروژکتور سالن اصلی', category: 'فنی و تجهیزات', isDone: true },
     { id: 'c3', text: 'ارسال پیامک و نوتیفیکیشن یادآوری به شرکت‌کنندگان', category: 'اطلاع‌رسانی', isDone: false },
@@ -224,15 +263,24 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
     { id: 'c5', text: 'هماهنگی پذیرایی میان‌وعده و بسته‌های آب‌معدنی', category: 'تدارکات', isDone: false },
     { id: 'c6', text: 'آماده‌سازی لوح‌های تقدیر، تندیس‌ها و جوایز برگزیدگان', category: 'جوایز و تشریفات', isDone: false },
     { id: 'c7', text: 'تنظیم لینک نظرسنجی آنلاین پرس‌کاد در سامانه', category: 'فنی و پلتفرم', isDone: true },
-  ]);
+    ];
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(checklistStorageKey, JSON.stringify(checklist));
+    } catch {}
+  }, [checklist, checklistStorageKey]);
 
   const toggleChecklistItem = (id: string) => {
+    if (!isManager) return;
     setChecklist((prev) =>
       prev.map((item) => (item.id === id ? { ...item, isDone: !item.isDone } : item))
     );
   };
 
   const handleAddItemToBlock = () => {
+    if (!isManager) return;
     if (!selectedBlockId || !newItemText.trim()) return;
 
     setCanvasBlocks((prev) =>
@@ -249,6 +297,7 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
   };
 
   const handleDeleteItemFromBlock = (blockId: string, itemIdx: number) => {
+    if (!isManager) return;
     setCanvasBlocks((prev) =>
       prev.map((block) =>
         block.id === blockId
@@ -266,10 +315,10 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
   return (
     <div className="space-y-6">
       {/* Top Header Card */}
-      <div className="rounded-2xl border-3 border-zinc-900 bg-white p-6 shadow-[6px_6px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[6px_6px_0px_0px_#f4f4f5]">
+      <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-5 mb-5">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-emerald-400 text-zinc-950 text-xs font-black mb-2 shadow-[2px_2px_0px_0px_#18181b]">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-emerald-400 text-zinc-950 text-xs font-black mb-2 shadow-[2px_2px_0px_0px_#202A5A]">
               <Layers className="w-4 h-4" />
               <span>گام چهارم: بوم و ورک‌شیت رویداد</span>
             </div>
@@ -285,7 +334,7 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
             <Button
               variant="outline"
               onClick={handlePrintCanvas}
-              className="gap-2 text-xs font-bold border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200"
+              className="gap-2 text-xs font-bold"
             >
               <Printer className="w-4 h-4" />
               <span>چاپ / خروجی بوم</span>
@@ -293,7 +342,7 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
             <Button
               variant="primary"
               onClick={onGoToVotingStep}
-              className="gap-2 text-xs font-black border-2 border-zinc-900 shadow-[3px_3px_0px_0px_#18181b]"
+              className="gap-2 text-xs font-black"
             >
               <span>بازگشت به رای‌گیری و پرس‌کاد</span>
             </Button>
@@ -301,12 +350,12 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
         </div>
 
         {/* Tab Toggle: Canvas Grid vs Materials Downloads vs Interactive Checklist */}
-        <div className="flex gap-2 p-1.5 rounded-xl border-2 border-zinc-900 bg-zinc-100 dark:bg-zinc-800 max-w-lg">
+        <div className="flex flex-col sm:flex-row gap-2 p-1.5 rounded-xl border-2 border-zinc-900 bg-zinc-100 dark:bg-zinc-800 sm:max-w-lg">
           <button
             onClick={() => setActiveTab('CANVAS')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-black transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 sm:py-2 rounded-lg text-xs font-black transition-all ${
               activeTab === 'CANVAS'
-                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-[2px_2px_0px_0px_#18181b]'
+                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-[2px_2px_0px_0px_#202A5A]'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900'
             }`}
           >
@@ -315,9 +364,9 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
           </button>
           <button
             onClick={() => setActiveTab('MATERIALS')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-black transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 sm:py-2 rounded-lg text-xs font-black transition-all ${
               activeTab === 'MATERIALS'
-                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-[2px_2px_0px_0px_#18181b]'
+                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-[2px_2px_0px_0px_#202A5A]'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900'
             }`}
           >
@@ -326,9 +375,9 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
           </button>
           <button
             onClick={() => setActiveTab('CHECKLIST')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-black transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 sm:py-2 rounded-lg text-xs font-black transition-all ${
               activeTab === 'CHECKLIST'
-                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-[2px_2px_0px_0px_#18181b]'
+                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-[2px_2px_0px_0px_#202A5A]'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900'
             }`}
           >
@@ -348,24 +397,26 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
               return (
                 <div
                   key={block.id}
-                  className={`flex flex-col justify-between rounded-2xl border-3 border-zinc-900 p-5 shadow-[5px_5px_0px_0px_#18181b] dark:border-zinc-100 dark:shadow-[5px_5px_0px_0px_#f4f4f5] ${block.color}`}
+                  className={`flex flex-col justify-between rounded-2xl border-[1.5px] border-[#EAEAEA] p-5 shadow-[2.75px_2.75px_0_#202A5A] dark:border-zinc-100 dark:shadow-[2.75px_2.75px_0_#59BBAF] ${block.color}`}
                 >
                   <div>
                     {/* Header of Block */}
                     <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-current/20">
                       <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg border-2 border-zinc-900 bg-white dark:bg-zinc-900 shadow-[1px_1px_0px_0px_#18181b]">
+                        <div className="p-1.5 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg border-2 border-zinc-900 bg-white dark:bg-zinc-900 shadow-[1px_1px_0px_0px_#202A5A]">
                           <IconComp className="w-4 h-4 text-zinc-900 dark:text-zinc-100" />
                         </div>
                         <h3 className="text-sm font-black tracking-tight">{block.title}</h3>
                       </div>
-                      <button
-                        onClick={() => setSelectedBlockId(block.id)}
-                        className="p-1 rounded-md bg-white/80 hover:bg-white text-zinc-900 border border-zinc-900 shadow-[1px_1px_0px_0px_#18181b] transition-all"
-                        title="افزودن نکته به این بخش"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                      </button>
+                      {isManager && (
+                        <button
+                          onClick={() => setSelectedBlockId(block.id)}
+                          className="p-1 rounded-md bg-white/80 hover:bg-white text-zinc-900 border border-zinc-900 shadow-[1px_1px_0_#202A5A] transition-all"
+                          title="افزودن نکته به این بخش"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
 
                     <p className="text-[11px] font-bold opacity-75 mb-3">{block.description}</p>
@@ -375,7 +426,7 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
                       {block.items.map((item, idx) => (
                         <div
                           key={idx}
-                          className="group/item flex items-start justify-between gap-2 rounded-xl border-2 border-zinc-900 bg-white/95 p-2.5 shadow-[2px_2px_0px_0px_#18181b] dark:bg-zinc-900 dark:border-zinc-200"
+                          className="group/item flex items-start justify-between gap-2 rounded-xl border-2 border-zinc-900 bg-white/95 p-2.5 shadow-[2px_2px_0px_0px_#202A5A] dark:bg-zinc-900 dark:border-zinc-200"
                         >
                           <div className="flex items-start gap-1.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-zinc-900 dark:bg-zinc-100 mt-1.5 flex-shrink-0" />
@@ -383,28 +434,31 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
                               {item}
                             </span>
                           </div>
-                          <button
-                            onClick={() => handleDeleteItemFromBlock(block.id, idx)}
-                            className="opacity-0 group-hover/item:opacity-100 p-1 text-red-500 hover:text-red-700 transition-opacity"
-                            title="حذف این مورد"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
+                      {isManager && (
+                        <button
+                          onClick={() => handleDeleteItemFromBlock(block.id, idx)}
+                          className="opacity-0 group-hover/item:opacity-100 p-1 text-red-500 hover:text-red-700 transition-opacity"
+                          title="حذف این مورد"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Add item footer quick button */}
-                  <div className="pt-2 mt-2 border-t border-current/10">
-                    <button
-                      onClick={() => setSelectedBlockId(block.id)}
-                      className="w-full text-center py-1 rounded-lg text-xs font-black opacity-80 hover:opacity-100 hover:bg-black/5 transition-all flex items-center justify-center gap-1"
-                    >
-                      <Plus className="w-3 h-3" />
-                      <span>افزودن کارت جدید</span>
-                    </button>
-                  </div>
+                  {isManager && (
+                    <div className="pt-2 mt-2 border-t border-current/10">
+                      <button
+                        onClick={() => setSelectedBlockId(block.id)}
+                        className="w-full text-center py-1 rounded-lg text-xs font-black opacity-80 hover:opacity-100 hover:bg-black/5 transition-all flex items-center justify-center gap-1"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>افزودن کارت جدید</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -419,11 +473,11 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
             {materialsList.map((mat) => (
               <div
                 key={mat.id}
-                className="flex items-start justify-between gap-4 rounded-2xl border-3 border-zinc-900 bg-white p-5 shadow-[5px_5px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[5px_5px_0px_0px_#f4f4f5]"
+                className="flex flex-col sm:flex-row sm:items-start items-stretch justify-between gap-4 rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-5 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]"
               >
                 <div className="flex items-start gap-3">
                   <div
-                    className={`w-12 h-12 rounded-xl border-2 border-zinc-900 flex items-center justify-center font-black text-xs shadow-[2px_2px_0px_0px_#18181b] ${
+                    className={`w-12 h-12 rounded-xl border-2 border-zinc-900 flex items-center justify-center font-black text-xs shadow-[2px_2px_0px_0px_#202A5A] ${
                       mat.type === 'PDF'
                         ? 'bg-red-400 text-zinc-950'
                         : mat.type === 'PPTX'
@@ -450,7 +504,7 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
                   onClick={() => {
                     toast.success(`دانلود فایل «${mat.title}» آغاز شد.`);
                   }}
-                  className="gap-1.5 text-xs font-black border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] flex-shrink-0"
+                  className="gap-1.5 text-xs font-black sm:flex-shrink-0 w-full sm:w-auto justify-center"
                 >
                   <Download className="w-3.5 h-3.5 text-primary" />
                   <span>دانلود متریال</span>
@@ -463,13 +517,13 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
 
       {/* ================= TAB 3: LOGISTICS CHECKLIST ================= */}
       {activeTab === 'CHECKLIST' && (
-        <div className="rounded-2xl border-3 border-zinc-900 bg-white p-6 shadow-[6px_6px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[6px_6px_0px_0px_#f4f4f5]">
-          <div className="flex items-center justify-between border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-4 mb-5">
-            <h3 className="text-base font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <CheckSquare className="w-5 h-5 text-emerald-500" />
+        <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-4 mb-5">
+            <h3 className="text-sm sm:text-base font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2 min-w-0">
+              <CheckSquare className="w-5 h-5 text-emerald-500 flex-shrink-0" />
               <span>چک‌لیست آمادگی ملزومات و تدارکات اجرایی رویداد</span>
             </h3>
-            <span className="text-xs font-black text-zinc-600 dark:text-zinc-400">
+            <span className="text-xs font-black text-zinc-600 dark:text-zinc-400 flex-shrink-0">
               {toPersianDigits(checklist.filter((c) => c.isDone).length)} از {toPersianDigits(checklist.length)} مورد تکمیل شده
             </span>
           </div>
@@ -478,8 +532,8 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
             {checklist.map((item) => (
               <div
                 key={item.id}
-                onClick={() => toggleChecklistItem(item.id)}
-                className={`cursor-pointer flex items-center justify-between gap-3 p-3.5 rounded-xl border-2 transition-all ${
+                onClick={() => isManager && toggleChecklistItem(item.id)}
+                className={`${isManager ? 'cursor-pointer' : 'cursor-default'} flex items-center justify-between gap-3 p-3.5 rounded-xl border-2 transition-all ${
                   item.isDone
                     ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200'
                     : 'border-zinc-900 bg-zinc-50 hover:bg-zinc-100 dark:border-zinc-200 dark:bg-zinc-800'
@@ -526,21 +580,21 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
             placeholder="مثال: دعوت از سخنران ویژه حوزه استارتاپ‌های دانش‌آموزی"
             value={newItemText}
             onChange={(e) => setNewItemText(e.target.value)}
-            className="w-full rounded-xl border-2 border-zinc-900 bg-white p-3 text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-900"
+            className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
           />
 
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
             <Button
               variant="outline"
               onClick={() => setSelectedBlockId(null)}
-              className="border-2 border-zinc-900 font-bold"
+              className="font-bold"
             >
               انصراف
             </Button>
             <Button
               variant="primary"
               onClick={handleAddItemToBlock}
-              className="border-2 border-zinc-900 font-black px-6 shadow-[2px_2px_0px_0px_#18181b]"
+              className="font-black px-6"
             >
               افزودن به این بخش
             </Button>

@@ -94,10 +94,10 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
   return (
     <div className="space-y-6">
       {/* Header & Controls */}
-      <div className="rounded-2xl border-3 border-zinc-900 bg-white p-6 shadow-[6px_6px_0px_0px_#18181b] dark:border-zinc-100 dark:bg-zinc-900 dark:shadow-[6px_6px_0px_0px_#f4f4f5]">
+      <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-5 mb-5">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-indigo-400 text-zinc-950 text-xs font-black mb-2 shadow-[2px_2px_0px_0px_#18181b]">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-indigo-400 text-zinc-950 text-xs font-black mb-2 shadow-[2px_2px_0px_0px_#202A5A]">
               <Sparkles className="w-4 h-4" />
               <span>گام دوم: تالار ایده‌ها</span>
             </div>
@@ -120,14 +120,14 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
             placeholder="جستجو در اسم ایده، شماره ایده یا نام دانش‌آموز..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800 pr-10 pl-4 py-2.5 text-xs md:text-sm font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 placeholder:text-zinc-400 focus:outline-none"
+            className="w-full pr-10 pl-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs md:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
           />
         </div>
       </div>
 
       {/* Ideas Cards Grid */}
       {filteredIdeas.length === 0 ? (
-        <div className="rounded-2xl border-3 border-dashed border-zinc-400 bg-white p-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] dark:border-[#242F42] bg-white p-8 sm:p-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
           <Lightbulb className="w-12 h-12 mx-auto text-amber-500 mb-3" />
           <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">ایده‌ای یافت نشد</h3>
           <p className="text-xs font-bold text-zinc-500 mt-1">
@@ -137,15 +137,18 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredIdeas.map((idea) => {
+            const ownerLast = (currentUser?.lastName || '').trim();
+            const ownerFirst = (currentUser?.firstName || '').trim();
+            const authorLower = (idea.authorName || '').toLowerCase();
             const isCurrentUserIdea =
-              currentUser &&
-              (idea.authorName.includes(currentUser.lastName || '') ||
-                idea.authorName.includes(currentUser.firstName || ''));
+              !!currentUser &&
+              ((ownerLast && authorLower.includes(ownerLast.toLowerCase())) ||
+                (ownerFirst && authorLower.includes(ownerFirst.toLowerCase())));
 
             return (
               <div
                 key={idea.id}
-                className={`group flex flex-col justify-between rounded-2xl border-3 border-zinc-900 p-5 shadow-[5px_5px_0px_0px_#18181b] transition-all hover:-translate-y-1 dark:border-zinc-100 ${
+                className={`group flex flex-col justify-between rounded-2xl border-[1.5px] border-[#EAEAEA] p-5 shadow-[2.75px_2.75px_0_#202A5A] transition-all hover:-translate-y-1 dark:border-zinc-100 ${
                   isCurrentUserIdea
                     ? 'bg-amber-50/60 dark:bg-amber-950/30 ring-2 ring-amber-400'
                     : 'bg-white dark:bg-zinc-900'
@@ -154,7 +157,7 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
                 <div>
                   {/* Top Bar: Idea Number & Admin Edit */}
                   <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="px-3 py-1 rounded-lg border-2 border-zinc-900 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black text-xs shadow-[1px_1px_0px_0px_#18181b]">
+                    <span className="px-3 py-1 rounded-lg border-2 border-zinc-900 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black text-xs shadow-[1px_1px_0px_0px_#202A5A]">
                       ایده #{toPersianDigits(idea.ideaNumber || 1)}
                     </span>
 
@@ -170,7 +173,7 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
                         <button
                           type="button"
                           onClick={(e) => handleOpenEditModal(idea, e)}
-                          className="p-1.5 rounded-lg border-2 border-zinc-900 bg-indigo-100 text-indigo-900 hover:bg-indigo-200 dark:bg-indigo-950 dark:text-indigo-200 text-xs font-black shadow-[1px_1px_0px_0px_#18181b]"
+                          className="p-2 min-w-[40px] min-h-[40px] rounded-lg border-2 border-zinc-900 bg-indigo-100 text-indigo-900 hover:bg-indigo-200 dark:bg-indigo-950 dark:text-indigo-200 text-xs font-black shadow-[1px_1px_0px_0px_#202A5A]"
                           title="ادیت کامل فیلدهای ایده توسط ادمین"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
@@ -204,7 +207,7 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
                     <Button
                       variant="outline"
                       onClick={() => setSelectedIdeaDetail(idea)}
-                      className="text-xs font-bold border-2 border-zinc-900 py-2 dark:border-zinc-200 gap-1.5"
+                      className="text-xs font-bold py-2 gap-1.5"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       <span>مشاهده جزئیات کامل</span>
@@ -238,7 +241,7 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
                     setSelectedIdeaDetail(null);
                     handleOpenEditModal(ideaToEdit);
                   }}
-                  className="text-xs font-bold border-2 border-zinc-900 gap-1.5"
+                  className="text-xs font-bold gap-1.5"
                 >
                   <Edit3 className="w-3.5 h-3.5 text-indigo-600" />
                   <span>ادیت ادمین</span>
@@ -269,7 +272,7 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
               <Button
                 variant="outline"
                 onClick={() => setSelectedIdeaDetail(null)}
-                className="border-2 border-zinc-900 font-bold"
+                className="font-bold"
               >
                 بستن
               </Button>
@@ -301,7 +304,7 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
                   required
                   value={editForm.ideaNumber}
                   onChange={(e) => setEditForm({ ...editForm, ideaNumber: Number(e.target.value) })}
-                  className="w-full rounded-xl border-2 border-zinc-900 bg-white p-2.5 text-xs font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-800"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                 />
               </div>
 
@@ -314,7 +317,7 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
                   required
                   value={editForm.authorName}
                   onChange={(e) => setEditForm({ ...editForm, authorName: e.target.value })}
-                  className="w-full rounded-xl border-2 border-zinc-900 bg-white p-2.5 text-xs font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-800"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                 />
               </div>
             </div>
@@ -328,7 +331,7 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
                 required
                 value={editForm.title}
                 onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-2.5 text-xs font-bold shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-800"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
               />
             </div>
 
@@ -341,7 +344,7 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
                 rows={4}
                 value={editForm.description}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                className="w-full rounded-xl border-2 border-zinc-900 bg-white p-2.5 text-xs font-medium shadow-[2px_2px_0px_0px_#18181b] dark:border-zinc-200 dark:bg-zinc-800"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
               />
             </div>
 
@@ -350,14 +353,14 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
                 type="button"
                 variant="outline"
                 onClick={() => setEditingIdea(null)}
-                className="border-2 border-zinc-900 font-bold"
+                className="font-bold"
               >
                 انصراف
               </Button>
               <Button
                 type="submit"
                 variant="primary"
-                className="border-2 border-zinc-900 font-black shadow-[2px_2px_0px_0px_#18181b]"
+                className="font-black"
               >
                 ذخیره تغییرات ادمین
               </Button>
