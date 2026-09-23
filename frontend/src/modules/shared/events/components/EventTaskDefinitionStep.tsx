@@ -36,8 +36,6 @@ interface EventTaskDefinitionStepProps {
   eventId: string;
   eventTitle: string;
   ideas: EventIdea[];
-  onGoToLeaderboard: () => void;
-  onGoToTeamFormation: () => void;
 }
 
 interface TaskFormState {
@@ -60,8 +58,6 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
   eventId,
   eventTitle,
   ideas,
-  onGoToLeaderboard,
-  onGoToTeamFormation,
 }) => {
   const currentUser = useAuthStore((s) => s.user);
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(
@@ -279,9 +275,6 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
           ابتدا ایده‌ها را ثبت، رای‌گیری را تکمیل و تیم‌ها را در مرحله تشکیل تیم بسازید؛ سپس
           برای هر تیم تسک و امتیاز تعریف کنید.
         </p>
-        <Button variant="outline" size="sm" onClick={onGoToTeamFormation} className="mx-auto">
-          رفتن به تشکیل تیم
-        </Button>
       </div>
     );
   }
@@ -318,10 +311,6 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
                 </Button>
               </>
             )}
-            <Button variant="outline" size="sm" onClick={onGoToLeaderboard}>
-              <Trophy className="w-3.5 h-3.5" />
-              لیدربورد
-            </Button>
           </div>
         </div>
 
@@ -609,17 +598,6 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
           </div>
         </div>
       </Modal>
-
-      <div className="flex justify-between">
-        <Button variant="outline" size="sm" onClick={onGoToTeamFormation}>
-          <ArrowLeft className="w-3.5 h-3.5" />
-          تشکیل تیم
-        </Button>
-        <Button variant="sec" size="sm" onClick={onGoToLeaderboard}>
-          <Trophy className="w-3.5 h-3.5" />
-          رفتن به لیدربورد
-        </Button>
-      </div>
     </div>
   );
 };

@@ -44,9 +44,6 @@ interface EventVotingPorscadStepProps {
   eventTitle: string;
   ideas: EventIdea[];
   selectedIdeaId?: string | null;
-  onGoToIdeasList: () => void;
-  onGoToCanvasStep: () => void;
-  onGoToTeamFormation?: () => void;
 }
 
 export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
@@ -54,14 +51,13 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
   eventTitle,
   ideas,
   selectedIdeaId,
-  onGoToIdeasList,
-  onGoToCanvasStep,
-  onGoToTeamFormation,
 }) => {
   const currentUser = useAuthStore((s) => s.user);
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(currentUser?.role || '');
 
-  const [porscadPoll, setPorscadPoll] = useState<PorscadPollData | null>(null);
+  const [porscadPoll, setPorscadPoll] = useState<PorscadPollData | null>(() =>
+    porscadClient.getLocalPollData(eventId)
+  );
   const [isRefreshingAnalytics, setIsRefreshingAnalytics] = useState(false);
 
   // Voting state with single submission per student
@@ -83,7 +79,10 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
   const [isSubmittingVote, setIsSubmittingVote] = useState(false);
 
   // Admin Custom Form Builder State
-  const [isBuildingMode, setIsBuildingMode] = useState(false);
+  const [isBuildingMode, setIsBuildingMode] = useState<boolean>(() => {
+    const existing = porscadClient.getLocalPollData(eventId);
+    return !existing || !existing.isPublished;
+  });
   const [builderFormTitle, setBuilderFormTitle] = useState(
     `نظرسنجی ایده‌های رویداد: ${eventTitle}`
   );
@@ -97,12 +96,6 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
   const [builderMaxSelections, setBuilderMaxSelections] = useState<number>(1);
   const [builderSelectedIdeaIds, setBuilderSelectedIdeaIds] = useState<string[]>(() => ideas.map((i) => i.id));
   const [isCreatingForm, setIsCreatingForm] = useState(false);
-
-  // Token Modal State
-  const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
-  const [tokenInput, setTokenInput] = useState(() => porscadClient.getToken());
-  const [tokenTestResult, setTokenTestResult] = useState<{ success?: boolean; message?: string } | null>(null);
-  const [isTestingToken, setIsTestingToken] = useState(false);
 
   // Star Rating state
   const [activeIdeaId, setActiveIdeaId] = useState<string>(
@@ -158,30 +151,6 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
     }
   };
 
-  // Test and Save Token
-  const handleSaveToken = async () => {
-    if (!tokenInput.trim()) {
-      toast.error('لطفاً توکن معتبر پرس‌کاد را وارد کنید.');
-      return;
-    }
-
-    setIsTestingToken(true);
-    setTokenTestResult(null);
-    try {
-      const res = await porscadClient.testConnection(tokenInput.trim());
-      setTokenTestResult(res);
-      if (res.success) {
-        porscadClient.setToken(tokenInput.trim());
-        toast.success('توکن پرس‌کاد با موفقیت ذخیره و اعتبارسنجی شد! ✅');
-        setIsTokenModalOpen(false);
-      } else {
-        toast.error(res.message || 'خطا در اعتبارسنجی توکن');
-      }
-    } finally {
-      setIsTestingToken(false);
-    }
-  };
-
   // Admin handles publishing or updating form on Porscad (edit existing — never create duplicate)
   const handleCreateAndPublishForm = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -219,9 +188,6 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
     } catch (err: any) {
       const errMsg = err?.message || 'خطا در اعمال فرم در پرس‌کاد';
       toast.error(errMsg);
-      if (errMsg.includes('توکن') || errMsg.includes('JWT') || errMsg.includes('منقضی')) {
-        setIsTokenModalOpen(true);
-      }
     } finally {
       setIsCreatingForm(false);
     }
@@ -317,9 +283,14 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
     e.preventDefault();
     setIsSubmittingVote(true);
     try {
+      const safeCount =
+        Number.isFinite(finishTopWinnersCount) && finishTopWinnersCount > 0
+          ? Math.floor(finishTopWinnersCount)
+          : parseInt(String(finishTopWinnersCount), 10) || 1;
+
       const updated = await porscadClient.finishAssessmentAndDetermineWinner(
         eventId,
-        finishTopWinnersCount,
+        safeCount,
         {
           showVoteCounts: finishShowVoteCounts,
           displayOrder: finishDisplayOrder,
@@ -330,7 +301,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
         setPorscadPoll(updated);
         setIsFinishModalOpen(false);
         toast.success(
-          `فرم نظرسنجی بسته شد و ${toPersianDigits(finishTopWinnersCount)} ایده برتر مشخص شدند. نتایج در حال حاضر به صورت خصوصی برای مدیر قابل مشاهده است.`
+          `فرم نظرسنجی با موفقیت بسته شد و ${toPersianDigits(safeCount)} ایده برتر مشخص شدند 🎉`
         );
       } else {
         toast.error('نظرسنجی یافت نشد.');
@@ -423,16 +394,6 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {isManager && (
-              <Button
-                variant="outline"
-                onClick={() => setIsTokenModalOpen(true)}
-                className="gap-2 text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-950 dark:bg-zinc-800 dark:text-indigo-300"
-              >
-                <Settings2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <span>تنظیمات اتصال پرس‌کاد</span>
-              </Button>
-            )}
             {isManager && porscadPoll?.isPublished && (
               <Button
                 variant="outline"
@@ -459,15 +420,6 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                 </span>
               </Button>
             )}
-            <Button
-              variant="outline"
-              onClick={onGoToIdeasList}
-              className="gap-2 text-xs font-bold"
-            >
-              <ArrowRight className="w-4 h-4" />
-              <span>مشاهده تمام ایده‌ها</span>
-            </Button>
-
           </div>
         </div>
 
@@ -653,31 +605,6 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                       </div>
                     )}
                   </div>
-
-                  {(() => {
-                    const matchingOwner = ideas.find((i) => i.id === opt.ideaId || i.id === opt.id);
-                    const ownerLast = (currentUser?.lastName || '').trim();
-                    const ownerFirst = (currentUser?.firstName || '').trim();
-                    const authorLower = (matchingOwner?.authorName || '').toLowerCase();
-                    const isOwner =
-                      !!matchingOwner &&
-                      !!currentUser &&
-                      ((ownerLast && authorLower.includes(ownerLast.toLowerCase())) ||
-                        (ownerFirst && authorLower.includes(ownerFirst.toLowerCase())));
-                    if (!isOwner) return null;
-                    return (
-                      <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-                        <Button
-                          variant="primary"
-                          onClick={onGoToTeamFormation || onGoToCanvasStep}
-                          className="w-full text-xs font-black"
-                        >
-                          <span>ورود به تشکیل تیم (طرح برگزیده)</span>
-                          <ArrowLeft className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    );
-                  })()}
                 </div>
               );
             })}
@@ -1206,79 +1133,6 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               </div>
             </div>
           )}
-      {/* ================= TOKEN MANAGEMENT MODAL ================= */}
-      {isTokenModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-zinc-950/70 p-0 sm:p-4 backdrop-blur-sm overflow-y-auto overscroll-contain">
-          <div className="w-full max-w-lg rounded-t-3xl sm:rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-5 sm:p-6 shadow-[4px_4px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] space-y-5 animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150 max-h-[88vh] overflow-y-auto overscroll-contain sm:max-h-[90vh] pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-            <div className="flex items-center justify-between border-b-2 border-zinc-900/10 pb-4">
-              <div className="flex items-center gap-2 min-w-0">
-                <Settings2 className="w-5 h-5 text-primary flex-shrink-0" />
-                <h3 className="text-sm sm:text-base font-black text-zinc-900 dark:text-zinc-100 leading-snug">
-                  تنظیمات اتصال و توکن احراز هویت پرس‌کاد
-                </h3>
-              </div>
-              <button
-                onClick={() => setIsTokenModalOpen(false)}
-                className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                برای ثبت مستقیم فرم‌ها و سوالات در اکانت پرس‌کاد شما، توکن نشست (Access Token) خود را از پرس‌کاد (یا با لاگین در پرس‌کاد از بخش Inspect ➔ Application ➔ LocalStorage کلید <code className="font-mono text-primary font-bold">sb-pivwmyacpxdywevccpmw-auth-token</code>) کپی کرده و در کادر زیر قرار دهید:
-              </p>
-
-              <div>
-                <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1.5">
-                  توکن پرس‌کاد (JWT Access Token):
-                </label>
-                <textarea
-                  rows={4}
-                  value={tokenInput}
-                  onChange={(e) => setTokenInput(e.target.value)}
-                  placeholder="eyJhbGciOiJFUzI1NiIsImtpZCI6..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] font-mono text-[11px] font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
-                />
-              </div>
-
-              {tokenTestResult && (
-                <div
-                  className={`p-3 rounded-xl border-2 text-xs font-bold ${
-                    tokenTestResult.success
-                      ? 'border-emerald-600 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300'
-                      : 'border-rose-600 bg-rose-50 text-rose-900 dark:bg-rose-950/40 dark:text-rose-300'
-                  }`}
-                >
-                  {tokenTestResult.message}
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsTokenModalOpen(false)}
-                className="text-xs font-bold"
-              >
-                بستن
-              </Button>
-              <Button
-                type="button"
-                variant="primary"
-                disabled={isTestingToken}
-                onClick={handleSaveToken}
-                className="text-xs font-black gap-2"
-              >
-                <span>{isTestingToken ? 'در حال تست اتصال...' : 'تست اتصال و ذخیره توکن'}</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ================= FINISH POLL & SELECT TOP N WINNERS MODAL ================= */}
       {isFinishModalOpen && porscadPoll && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-zinc-950/70 p-0 sm:p-4 backdrop-blur-sm overflow-y-auto overscroll-contain">
@@ -1392,8 +1246,17 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                     type="number"
                     min={1}
                     max={porscadPoll.options.length}
-                    value={finishTopWinnersCount}
-                    onChange={(e) => setFinishTopWinnersCount(Math.max(1, Math.min(porscadPoll.options.length, Number(e.target.value))))}
+                    value={finishTopWinnersCount || ''}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      if (isNaN(val)) {
+                        setFinishTopWinnersCount(1);
+                      } else {
+                        setFinishTopWinnersCount(
+                          Math.max(1, Math.min(porscadPoll.options.length || 1, val))
+                        );
+                      }
+                    }}
                     className="w-24 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-center text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                   />
                   <span className="text-xs font-bold text-zinc-500">

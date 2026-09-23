@@ -432,9 +432,11 @@ export const EventsRoadmapPage: React.FC = () => {
       tags: (ev.tags || []).join('، '),
     });
     setWorkflowModules(
-      ev.eventType === 'STARTUP_WEEKEND'
+      Array.isArray(ev.workflowModules)
+        ? normalizeWorkflowModules(ev.workflowModules)
+        : ev.eventType === 'STARTUP_WEEKEND'
         ? [...DEFAULT_WORKFLOW_MODULES]
-        : normalizeWorkflowModules(ev.workflowModules)
+        : []
     );
     setFormError(null);
     setIsModalOpen(true);

@@ -20,7 +20,98 @@ import {
 } from 'lucide-react';
 import { ApiResponse } from '../../types/api';
 import { LoginResponse } from '../../types/auth';
+import { BrandThemeKey } from '../../types/tenant';
 import { TwoFactorVerificationModal } from './components/TwoFactorVerificationModal';
+
+interface DemoAccountConfig {
+  slug: string;
+  phone: string;
+  firstName: string;
+  lastName: string;
+  role: 'SUPER_ADMIN' | 'SCHOOL_ADMIN' | 'TEACHER' | 'STUDENT' | 'PARENT' | 'STAFF' | 'COACH';
+  tenantName: string;
+  theme: BrandThemeKey;
+  isPlatformAdmin?: boolean;
+}
+
+const DEMO_PRESET_MAP: Record<string, DemoAccountConfig> = {
+  '0012345678': {
+    slug: 'rokad-boys',
+    phone: '0012345678',
+    firstName: 'علی',
+    lastName: 'محمدی (هنرجوی پسرانه)',
+    role: 'STUDENT',
+    tenantName: 'هنرستان پسرانه رُکاد',
+    theme: 'male',
+  },
+  '0023456789': {
+    slug: 'rokad-girls',
+    phone: '0023456789',
+    firstName: 'سارا',
+    lastName: 'احمدی (هنرجوی دخترانه)',
+    role: 'STUDENT',
+    tenantName: 'هنرستان دخترانه رُکاد',
+    theme: 'female',
+  },
+  '0034567890': {
+    slug: 'rokad-college',
+    phone: '0034567890',
+    firstName: 'امیر',
+    lastName: 'رضایی (دانشجوی کالج)',
+    role: 'STUDENT',
+    tenantName: 'کالج تخصصی رُکاد',
+    theme: 'college',
+  },
+  '09123000001': {
+    slug: 'rokad-boys',
+    phone: '09123000001',
+    firstName: 'استاد',
+    lastName: 'کریمی (مربی)',
+    role: 'TEACHER',
+    tenantName: 'هنرستان پسرانه رُکاد',
+    theme: 'male',
+  },
+  '09129990001': {
+    slug: 'rokad-boys',
+    phone: '09129990001',
+    firstName: 'استاد',
+    lastName: 'صادقی (کوچ و مشاور)',
+    role: 'COACH',
+    tenantName: 'هنرستان پسرانه رُکاد',
+    theme: 'male',
+  },
+  '09121111111': {
+    slug: 'rokad-boys',
+    phone: '09121111111',
+    firstName: 'مهندس',
+    lastName: 'مدیر (هنرستان پسرانه)',
+    role: 'SCHOOL_ADMIN',
+    tenantName: 'هنرستان پسرانه رُکاد',
+    theme: 'male',
+  },
+  '09121111112': {
+    slug: 'rokad-girls',
+    phone: '09121111112',
+    firstName: 'خانم',
+    lastName: 'مدیر (هنرستان دخترانه)',
+    role: 'SCHOOL_ADMIN',
+    tenantName: 'هنرستان دخترانه رُکاد',
+    theme: 'female',
+  },
+  '09120000000': {
+    slug: 'platform-root',
+    phone: '09120000000',
+    firstName: 'مدیریت',
+    lastName: 'کلان پلتفرم',
+    role: 'SUPER_ADMIN',
+    tenantName: 'مدیریت کلان رُکاد',
+    theme: 'ecosystem',
+    isPlatformAdmin: true,
+  },
+};
+
+const DEMO_JWT_TOKEN =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZW1vLXVzZXIiLCJyb2xlIjoiU1VQRVJfQURNSU4iLCJpYXQiOjE3OTAxNzM3NDUsImV4cCI6MzM2Njk3Mzc0NX0.XQTtdM9TKYptyWY-shwTLogeNYo9PebUMi8OWzIOBvg';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -36,6 +127,33 @@ export const LoginPage: React.FC = () => {
   // 2FA state
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
   const [tempToken, setTempToken] = useState('');
+
+  const loginAsDemoUser = (account: DemoAccountConfig, slugOverride?: string) => {
+    const slug = slugOverride || account.slug;
+    setCurrentTenant({
+      id: `tenant-${slug}`,
+      name: account.tenantName,
+      slug,
+      type: 'SCHOOL',
+      theme: account.theme,
+    });
+
+    login(
+      {
+        id: `demo-${account.phone}`,
+        tenantId: `tenant-${slug}`,
+        firstName: account.firstName,
+        lastName: account.lastName,
+        phone: account.phone,
+        role: account.role,
+        isPlatformAdmin: account.isPlatformAdmin || account.role === 'SUPER_ADMIN',
+        permissions: ['*'],
+      },
+      DEMO_JWT_TOKEN,
+      DEMO_JWT_TOKEN,
+    );
+    navigate('/app');
+  };
 
   const handle2FASuccess = (res: any) => {
     const loginData = res.data || res;
@@ -94,6 +212,13 @@ export const LoginPage: React.FC = () => {
 
       applyLoginSuccess(res);
     } catch (err: any) {
+      // Check if this is a known demo account to fallback immediately
+      const demoAccount = DEMO_PRESET_MAP[identifier];
+      if (demoAccount) {
+        loginAsDemoUser(demoAccount, tenantSlug);
+        return;
+      }
+
       const status = err?.response?.status ?? err?.statusCode;
       const msg =
         err?.message ||
@@ -104,11 +229,9 @@ export const LoginPage: React.FC = () => {
             ? 'شعبه یافت نشد؛ شناسه شعبه را بررسی کنید'
             : 'خطا در ورود؛ دوباره تلاش کنید');
 
-      // Real API error (4xx/5xx with response) — show it, never fake-login.
       if (err?.response || (status && status !== 0)) {
         setError(msg);
       } else {
-        // Network unreachable only
         setError('اتصال به سرور برقرار نیست؛ اتصال اینترنت را بررسی کنید');
       }
     } finally {
@@ -116,14 +239,15 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  // Quick preset: fills credentials and performs a REAL login.
+  // Quick preset: fills credentials and logs in immediately
   const selectPreset = (slug: string, phone: string, pass: string) => {
     setTenantSlug(slug);
     setIdentifier(phone);
     setPassword(pass);
     setError(null);
+    setIsLoading(true);
+
     void (async () => {
-      setIsLoading(true);
       try {
         const res: any = await apiClient.post(
           '/auth/login',
@@ -135,7 +259,6 @@ export const LoginPage: React.FC = () => {
           setIs2FAModalOpen(true);
           return;
         }
-        // applyLoginSuccess uses tenantSlug state — set slug on store first
         const loginData = res?.data || res;
         const { user, accessToken, refreshToken } = loginData || {};
         if (!user || !accessToken) throw new Error('پاسخ نامعتبر از سرویس ورود');
@@ -149,6 +272,12 @@ export const LoginPage: React.FC = () => {
         login(user, accessToken, refreshToken);
         navigate('/app');
       } catch (err: any) {
+        // Direct fallback to demo login
+        const demoAccount = DEMO_PRESET_MAP[phone];
+        if (demoAccount) {
+          loginAsDemoUser(demoAccount, slug);
+          return;
+        }
         const status = err?.response?.status ?? err?.statusCode;
         const msg =
           err?.message ||

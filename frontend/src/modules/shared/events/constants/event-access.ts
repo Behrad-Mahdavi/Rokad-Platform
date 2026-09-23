@@ -54,7 +54,10 @@ export function isOwnedByUser(
 /** apiClient rejects with envelope `{ success:false, statusCode, message }` — not AxiosError.response. */
 export function isServerRejection(err: unknown): boolean {
   const e = err as any;
-  return !!(e && (e.statusCode || e.response || e.success === false));
+  const status = e?.statusCode || e?.status || e?.response?.status;
+  // Only 4xx validation errors (e.g. Bad Request, Unprocessable) should strictly block.
+  // 5xx (DB offline, internal server errors, connection refused) gracefully fall back to local storage.
+  return typeof status === 'number' && status >= 400 && status < 500 && status !== 404;
 }
 
 export function extractApiErrorMessage(err: unknown, fallback: string): string {

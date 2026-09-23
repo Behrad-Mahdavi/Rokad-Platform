@@ -32,14 +32,12 @@ interface EventLeaderboardStepProps {
   eventId: string;
   eventTitle: string;
   ideas: EventIdea[];
-  onGoToTasks: () => void;
 }
 
 export const EventLeaderboardStep: React.FC<EventLeaderboardStepProps> = ({
   eventId,
   eventTitle,
   ideas,
-  onGoToTasks,
 }) => {
   const currentUser = useAuthStore((s) => s.user);
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(
@@ -154,9 +152,6 @@ export const EventLeaderboardStep: React.FC<EventLeaderboardStepProps> = ({
         <p className="text-xs font-bold text-zinc-500 max-w-md mx-auto leading-relaxed">
           ابتدا تیم‌ها را تشکیل دهید و در مرحله تعریف تسک، تسک و امتیاز ثبت کنید.
         </p>
-        <Button variant="outline" size="sm" onClick={onGoToTasks} className="mx-auto">
-          رفتن به تعریف تسک
-        </Button>
       </div>
     );
   }
@@ -192,10 +187,6 @@ export const EventLeaderboardStep: React.FC<EventLeaderboardStepProps> = ({
                 تغییر امتیاز دستی
               </Button>
             )}
-            <Button variant="outline" size="sm" onClick={onGoToTasks}>
-              <ListChecks className="w-3.5 h-3.5" />
-              تسک‌ها
-            </Button>
           </div>
         </div>
 
@@ -426,13 +417,6 @@ export const EventLeaderboardStep: React.FC<EventLeaderboardStepProps> = ({
           </div>
         )}
       </Modal>
-
-      <div className="flex justify-between">
-        <Button variant="outline" size="sm" onClick={onGoToTasks}>
-          <ArrowLeft className="w-3.5 h-3.5" />
-          تعریف تسک
-        </Button>
-      </div>
     </div>
   );
 };

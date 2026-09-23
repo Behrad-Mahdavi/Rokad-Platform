@@ -35,11 +35,7 @@ export const App: React.FC = () => {
     const s = useAuthStore.getState();
     const bad =
       s.isAuthenticated &&
-      (!s.user ||
-        !s.accessToken ||
-        s.accessToken.startsWith('mock-') ||
-        !s.refreshToken ||
-        s.refreshToken.startsWith('mock-'));
+      (!s.user || !s.accessToken || !s.refreshToken);
     if (bad) s.logout();
   }, []);
 

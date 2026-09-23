@@ -21,17 +21,12 @@ interface EventIdeasListStepProps {
   ideas: EventIdea[];
   onUpdateIdea?: (updatedIdea: EventIdea) => void;
   onSelectIdeaForVote?: (ideaId: string) => void;
-  onGoToSubmitStep: () => void;
-  onGoToVotingStep: () => void;
-  onGoToCanvasStep: () => void;
 }
 
 export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
   ideas,
   onUpdateIdea,
   onSelectIdeaForVote,
-  onGoToSubmitStep,
-  onGoToVotingStep,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIdeaDetail, setSelectedIdeaDetail] = useState<EventIdea | null>(null);

@@ -52,8 +52,6 @@ interface EventIdeaSubmissionStepProps {
   onToggleLock?: () => void;
   onIdeaSubmitted: (idea: EventIdea) => void;
   onUpdateIdea?: (updatedIdea: EventIdea) => void;
-  onGoToNextStep: () => void;
-  onGoToVotingStep?: () => void;
 }
 
 export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = ({
@@ -64,8 +62,6 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
   onToggleLock,
   onIdeaSubmitted,
   onUpdateIdea,
-  onGoToNextStep,
-  onGoToVotingStep,
 }) => {
   const currentUser = useAuthStore((s) => s.user);
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(currentUser?.role || '');
@@ -268,18 +264,6 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
                   </>
                 )}
               </button>
-            )}
-
-            {isLocked && onGoToVotingStep && (
-              <Button
-                variant="primary"
-                onClick={onGoToVotingStep}
-                className="gap-2 text-xs font-black"
-              >
-                <Vote className="w-4 h-4" />
-                <span>رفتن به مرحله نظرسنجی</span>
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
             )}
           </div>
         </div>

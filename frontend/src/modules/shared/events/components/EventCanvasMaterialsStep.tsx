@@ -31,8 +31,6 @@ import {
 interface EventCanvasMaterialsStepProps {
   eventId: string;
   eventTitle: string;
-  onGoToVotingStep: () => void;
-  onGoToIdeasList: () => void;
 }
 
 interface CanvasBlock {
@@ -63,8 +61,6 @@ interface ChecklistItem {
 export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> = ({
   eventId,
   eventTitle,
-  onGoToVotingStep,
-  onGoToIdeasList,
 }) => {
   const currentUser = useAuthStore((s) => s.user);
   const isManager = isWizardManagerRole(currentUser?.role);
@@ -338,13 +334,6 @@ export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> =
             >
               <Printer className="w-4 h-4" />
               <span>چاپ / خروجی بوم</span>
-            </Button>
-            <Button
-              variant="primary"
-              onClick={onGoToVotingStep}
-              className="gap-2 text-xs font-black"
-            >
-              <span>بازگشت به رای‌گیری و پرس‌کاد</span>
             </Button>
           </div>
         </div>

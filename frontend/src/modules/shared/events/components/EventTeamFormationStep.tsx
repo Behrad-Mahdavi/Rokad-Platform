@@ -52,30 +52,51 @@ interface EventTeamFormationStepProps {
   eventId: string;
   eventTitle: string;
   ideas: EventIdea[];
-  onGoToVotingStep: () => void;
-  onGoToCanvasStep: () => void;
 }
 
 // Default Fallback Database Students List (names only — no class labels)
 const FALLBACK_DB_STUDENTS = [
-  { id: 'std_101', name: 'امیرحسین رضایی' },
+  // هنرستان پسرانه - شبکه و نرم‌افزار
+  { id: 'std_101', name: 'امیرعلی رضایی' },
   { id: 'std_102', name: 'محمدحسین علیزاده' },
   { id: 'std_103', name: 'علیرضا حسینی' },
   { id: 'std_104', name: 'مهدی محمودی' },
   { id: 'std_105', name: 'رضا صبوری' },
   { id: 'std_106', name: 'سینا کاظمی' },
-  { id: 'std_107', name: 'پارس اوسطی' },
+  { id: 'std_107', name: 'پارسا اوسطی' },
   { id: 'std_108', name: 'حسین اکبری' },
   { id: 'std_109', name: 'دانیال مهدوی' },
   { id: 'std_110', name: 'کیان سلطانی' },
+  { id: 'std_111', name: 'بردیا کریمی' },
+  { id: 'std_112', name: 'آرین شمس' },
+  { id: 'std_113', name: 'نیما طاهری' },
+  { id: 'std_114', name: 'سامان یزدانی' },
+  { id: 'std_115', name: 'پویا صالحی' },
+
+  // هنرستان دخترانه - شبکه و چندرسانه‌ای
+  { id: 'std_201', name: 'ستایش مرادی' },
+  { id: 'std_202', name: 'سارا احمدی' },
+  { id: 'std_203', name: 'فاطمه موسوی' },
+  { id: 'std_204', name: 'نرگس ابراهیمی' },
+  { id: 'std_205', name: 'یکتا خسروی' },
+  { id: 'std_206', name: 'رها سلیمانی' },
+  { id: 'std_207', name: 'آوا قربانی' },
+  { id: 'std_208', name: 'مبینا حسینی' },
+  { id: 'std_209', name: 'هلیا رفیعی' },
+  { id: 'std_210', name: 'دیانا نوری' },
+
+  // کالج تخصصی و طراحی
+  { id: 'std_301', name: 'امیررضا مختاری' },
+  { id: 'std_302', name: 'شایان دهقان' },
+  { id: 'std_303', name: 'ماهان فرهمند' },
+  { id: 'std_304', name: 'نازنین زارع' },
+  { id: 'std_305', name: 'غزل اکبریان' },
 ];
 
 export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
   eventId,
   eventTitle,
   ideas,
-  onGoToVotingStep,
-  onGoToCanvasStep,
 }) => {
   const currentUser = useAuthStore((s) => s.user);
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(currentUser?.role || '');
@@ -92,20 +113,33 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
       return []; // empty until poll is finished and top winning ideas are selected!
     }
 
-    const winningIds = poll.winningOptionIds || (poll.winningOptionId ? [poll.winningOptionId] : []);
+    const winningOptionIds =
+      poll.winningOptionIds || (poll.winningOptionId ? [poll.winningOptionId] : []);
+    const topCount =
+      Number(poll.topWinnersCount) > 0 ? Number(poll.topWinnersCount) : winningOptionIds.length || 1;
 
-    if (winningIds.length > 0) {
-      return ideas.filter((idea) => winningIds.includes(idea.id));
+    const sortedOptions = [...(poll.options || [])].sort(
+      (a, b) => (b.voteCount || 0) - (a.voteCount || 0)
+    );
+    const topWinningOptions = sortedOptions.slice(0, topCount);
+
+    const winningIdeaIds = new Set<string>();
+    for (const opt of topWinningOptions) {
+      if (opt.ideaId) winningIdeaIds.add(opt.ideaId);
+      if (opt.id) winningIdeaIds.add(opt.id);
+    }
+    for (const wId of winningOptionIds) {
+      winningIdeaIds.add(wId);
     }
 
-    // Fallback: If topWinnersCount is set, pick top N options sorted by voteCount
-    const topCount = poll.topWinnersCount || 1;
-    const sortedOptionIdeaIds = [...poll.options]
-      .sort((a, b) => b.voteCount - a.voteCount)
-      .slice(0, topCount)
-      .map((opt) => opt.ideaId || opt.id);
+    const matched = ideas.filter(
+      (idea) =>
+        winningIdeaIds.has(idea.id) ||
+        topWinningOptions.some((o) => o.text && o.text.includes(idea.title))
+    );
 
-    return ideas.filter((idea) => sortedOptionIdeaIds.includes(idea.id));
+    if (matched.length > 0) return matched;
+    return ideas.slice(0, topCount);
   }, [eventId, ideas]);
 
   // Teams state per idea

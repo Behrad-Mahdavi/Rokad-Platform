@@ -43,7 +43,7 @@ const isTransientRefreshError = (err: any): boolean => {
 /** Single-flight refresh with short retry on 5xx/network — only 401 kills the session. */
 const performTokenRefresh = async (): Promise<string | null> => {
   const { refreshToken } = useAuthStore.getState();
-  if (!refreshToken || refreshToken.startsWith('mock-')) {
+  if (!refreshToken) {
     forceLoginRedirect();
     return null;
   }

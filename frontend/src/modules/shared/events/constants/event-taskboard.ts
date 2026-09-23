@@ -85,18 +85,34 @@ export interface TaskBoardTeamInfo {
 export function getWinningIdeas(eventId: string, ideas: EventIdea[]): EventIdea[] {
   const poll = porscadClient.getLocalPollData(eventId);
   if (!poll || !poll.isClosed) return [];
-  const winningIds =
-    poll.winningOptionIds ||
-    (poll.winningOptionId ? [poll.winningOptionId] : []);
-  if (winningIds.length > 0) {
-    return ideas.filter((idea) => winningIds.includes(idea.id));
+
+  const winningOptionIds =
+    poll.winningOptionIds || (poll.winningOptionId ? [poll.winningOptionId] : []);
+  const topCount =
+    Number(poll.topWinnersCount) > 0 ? Number(poll.topWinnersCount) : winningOptionIds.length || 1;
+
+  const sortedOptions = [...(poll.options || [])].sort(
+    (a, b) => (b.voteCount || 0) - (a.voteCount || 0)
+  );
+  const topWinningOptions = sortedOptions.slice(0, topCount);
+
+  const winningIdeaIds = new Set<string>();
+  for (const opt of topWinningOptions) {
+    if (opt.ideaId) winningIdeaIds.add(opt.ideaId);
+    if (opt.id) winningIdeaIds.add(opt.id);
   }
-  const topCount = poll.topWinnersCount || 1;
-  const sortedOptionIdeaIds = [...poll.options]
-    .sort((a, b) => b.voteCount - a.voteCount)
-    .slice(0, topCount)
-    .map((opt) => opt.ideaId || opt.id);
-  return ideas.filter((idea) => sortedOptionIdeaIds.includes(idea.id));
+  for (const wId of winningOptionIds) {
+    winningIdeaIds.add(wId);
+  }
+
+  const matched = ideas.filter(
+    (idea) =>
+      winningIdeaIds.has(idea.id) ||
+      topWinningOptions.some((o) => o.text && o.text.includes(idea.title))
+  );
+
+  if (matched.length > 0) return matched;
+  return ideas.slice(0, topCount);
 }
 
 export function buildTaskBoardTeams(

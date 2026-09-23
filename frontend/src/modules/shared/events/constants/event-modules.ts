@@ -7,6 +7,7 @@ import {
   Layers,
   ListChecks,
   Trophy,
+  FileUp,
 } from 'lucide-react';
 
 export type EventModuleKey =
@@ -16,6 +17,7 @@ export type EventModuleKey =
   | 'TEAM_FORMATION'
   | 'EVENT_CANVAS'
   | 'TASK_DEFINITION'
+  | 'PRESENTATION_UPLOAD'
   | 'LEADERBOARD';
 
 export interface EventModuleDef {
@@ -69,6 +71,13 @@ export const EVENT_MODULE_REGISTRY: Record<EventModuleKey, EventModuleDef> = {
     icon: ListChecks,
     activeColor: 'bg-cyan-600 text-white border-zinc-900 shadow-[3px_3px_0px_0px_#202A5A]',
   },
+  PRESENTATION_UPLOAD: {
+    key: 'PRESENTATION_UPLOAD',
+    title: 'ارائه و تحویل فایل‌ها',
+    subtitle: 'ارسال اسلاید و فایل توسط سرتیم',
+    icon: FileUp,
+    activeColor: 'bg-rose-600 text-white border-zinc-900 shadow-[3px_3px_0px_0px_#202A5A]',
+  },
   LEADERBOARD: {
     key: 'LEADERBOARD',
     title: 'لیدربورد امتیازات',
@@ -87,7 +96,8 @@ export const DEFAULT_WORKFLOW_MODULES: { key: EventModuleKey; step: number; enab
   { key: 'TEAM_FORMATION', step: 4, enabled: true },
   { key: 'EVENT_CANVAS', step: 5, enabled: true },
   { key: 'TASK_DEFINITION', step: 6, enabled: true },
-  { key: 'LEADERBOARD', step: 7, enabled: true },
+  { key: 'PRESENTATION_UPLOAD', step: 7, enabled: true },
+  { key: 'LEADERBOARD', step: 8, enabled: true },
 ];
 
 export interface WorkflowModuleEntry {

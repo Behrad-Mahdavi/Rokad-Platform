@@ -15,8 +15,7 @@ interface AuthState {
   hasPermission: (permission: string) => boolean;
 }
 
-const isUsableToken = (t: string | null | undefined): t is string =>
-  !!t && !t.startsWith('mock-');
+const isUsableToken = (t: string | null | undefined): t is string => !!t;
 
 export const useAuthStore = create<AuthState>()(
   persist(

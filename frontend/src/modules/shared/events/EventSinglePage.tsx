@@ -64,6 +64,8 @@ import {
   normalizeWorkflowModules,
   renumberWorkflowModules,
   WorkflowModuleEntry,
+  EVENT_MODULE_LIST,
+  DEFAULT_WORKFLOW_MODULES,
 } from './constants/event-modules';
 import { EventStepWizard } from './components/EventStepWizard';
 
@@ -93,8 +95,24 @@ export const EventSinglePage: React.FC = () => {
   const currentUser = useAuthStore((s) => s.user);
   const canManageEvents = isEventManagerRole(currentUser?.role);
 
-  const [event, setEvent] = useState<SchoolEventItem | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [event, setEvent] = useState<SchoolEventItem | null>(() => {
+    if (!id) return null;
+    try {
+      const cached = localStorage.getItem('rokad_calendar_events');
+      let allEvents: SchoolEventItem[] = INITIAL_SAMPLE_EVENTS;
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          allEvents = parsed;
+        }
+      }
+      const found = allEvents.find((e) => e.id === id);
+      return found ? hydrateEvent(found) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isLoading, setIsLoading] = useState(() => !event);
   const [copied, setCopied] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState<'WORKFLOW' | 'OVERVIEW'>('WORKFLOW');
   const [customCategories, setCustomCategories] = useState<EventCategoryItem[]>([]);
@@ -225,19 +243,16 @@ export const EventSinglePage: React.FC = () => {
 
   const fetchEvent = async () => {
     if (!id) return;
-    setIsLoading(true);
+    if (!event) setIsLoading(true);
     try {
       const res = await apiClient.get(`/calendar/events/${id}`);
       if (res && res.data) {
         const loaded = hydrateEvent(res.data);
         if (!canViewEventAudience(loaded.targetAudience, currentUser?.role)) {
           setEvent(null);
-          setIsLoading(false);
-          return;
+        } else {
+          setEvent(loaded);
         }
-        setEvent(loaded);
-        setIsLoading(false);
-        return;
       }
     } catch (err) {
       // Gracefully load from local storage or default sample events
@@ -392,7 +407,13 @@ export const EventSinglePage: React.FC = () => {
       coverUrl: event.coverUrl || '',
       tags: displayTags(event.tags).join('، '),
     });
-    setWorkflowModulesState(normalizeWorkflowModules(event.workflowModules));
+    setWorkflowModulesState(
+      Array.isArray(event.workflowModules)
+        ? normalizeWorkflowModules(event.workflowModules)
+        : event.eventType === 'STARTUP_WEEKEND'
+        ? [...DEFAULT_WORKFLOW_MODULES]
+        : []
+    );
     setFormError(null);
     setIsEditModalOpen(true);
   };
@@ -481,27 +502,18 @@ export const EventSinglePage: React.FC = () => {
     }
   };
 
-  const workflowModules = event ? normalizeWorkflowModules(event.workflowModules) : [];
-  const hasWorkflow = workflowModules.length > 0 || event?.eventType === 'STARTUP_WEEKEND';
-
-  // MUST be before early returns so hook count stays stable across renders.
-  const wizardWorkflowModules = useMemo(() => {
-    if (workflowModules.length === 0) return undefined;
-    const present = new Set(workflowModules.map((m) => m.key));
-    const hasAnyNew = present.has('TASK_DEFINITION') || present.has('LEADERBOARD');
-    if (hasAnyNew) return renumberWorkflowModules(workflowModules);
-    const missing = (['TASK_DEFINITION', 'LEADERBOARD'] as const).filter(
-      (k) => !present.has(k)
-    );
-    if (missing.length === 0) return renumberWorkflowModules(workflowModules);
-    let maxStep = workflowModules.reduce((m, e) => Math.max(m, e.step), 0);
-    const merged = [...workflowModules];
-    for (const key of missing) {
-      maxStep += 1;
-      merged.push({ key, step: maxStep, enabled: true });
+  const workflowModules = useMemo(() => {
+    if (!event) return [];
+    if (Array.isArray(event.workflowModules)) {
+      return normalizeWorkflowModules(event.workflowModules);
     }
-    return renumberWorkflowModules(merged);
-  }, [workflowModules]);
+    if (event.eventType === 'STARTUP_WEEKEND') {
+      return [...DEFAULT_WORKFLOW_MODULES];
+    }
+    return [];
+  }, [event]);
+
+  const hasWorkflow = workflowModules.length > 0;
 
   if (isLoading) {
     return (
@@ -700,7 +712,7 @@ export const EventSinglePage: React.FC = () => {
         <EventStepWizard
           eventId={event.id}
           eventTitle={event.title}
-          workflowModules={wizardWorkflowModules}
+          workflowModules={workflowModules}
         />
       ) : (
         <div className="space-y-8">
@@ -1024,6 +1036,111 @@ export const EventSinglePage: React.FC = () => {
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
             />
+          </div>
+
+          {/* Workflow Modules Selection in Edit Modal */}
+          <div className="rounded-2xl border-2 border-zinc-900 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/50">
+            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+              ماژول‌های گردش کار رویداد (اختیاری)
+            </label>
+            <p className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 mb-3">
+              ماژول‌های مورد نیاز این رویداد را تیک بزنید. ماژول‌های بدون تیک در ویزارد رویداد نمایش داده نمی‌شوند.
+            </p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {EVENT_MODULE_LIST.map((mod) => {
+                const entry = workflowModulesState.find((m) => m.key === mod.key);
+                const checked = !!entry && entry.enabled !== false;
+                const Icon = mod.icon;
+                return (
+                  <div
+                    key={mod.key}
+                    className={`flex items-center gap-3 rounded-xl border-2 p-3 transition-all ${
+                      checked
+                        ? 'border-zinc-900 bg-white shadow-[2px_2px_0px_0px_#202A5A] dark:border-zinc-200 dark:bg-zinc-900 dark:shadow-[2px_2px_0px_0px_#59BBAF]'
+                        : 'border-zinc-300 bg-white/60 dark:border-zinc-700 dark:bg-zinc-900/40'
+                    }`}
+                  >
+                    <label className="flex items-center gap-2.5 flex-1 cursor-pointer min-w-0">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          setWorkflowModulesState((prev) => {
+                            if (e.target.checked) {
+                              const existing = prev.find((m) => m.key === mod.key);
+                              if (existing) {
+                                return renumberWorkflowModules(
+                                  prev.map((m) =>
+                                    m.key === mod.key ? { ...m, enabled: true } : m
+                                  )
+                                );
+                              }
+                              const maxStep = prev.length
+                                ? Math.max(...prev.map((m) => m.step))
+                                : 0;
+                              return renumberWorkflowModules([
+                                ...prev,
+                                { key: mod.key as any, step: maxStep + 1, enabled: true },
+                              ]);
+                            }
+                            return renumberWorkflowModules(
+                              prev.filter((m) => m.key !== mod.key)
+                            );
+                          });
+                        }}
+                        className="w-4 h-4 accent-indigo-600 flex-shrink-0"
+                      />
+                      <Icon className={`w-4 h-4 flex-shrink-0 ${checked ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-400'}`} />
+                      <div className="min-w-0">
+                        <div className="text-xs font-black text-zinc-900 dark:text-zinc-100 truncate">{mod.title}</div>
+                        <div className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 truncate">{mod.subtitle}</div>
+                      </div>
+                    </label>
+                    {checked && (
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400">مرحله:</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={20}
+                          value={entry?.step || 1}
+                          onChange={(e) => {
+                            const newStep = Math.max(1, parseInt(e.target.value, 10) || 1);
+                            setWorkflowModulesState((prev) =>
+                              renumberWorkflowModules(
+                                prev.map((m) =>
+                                  m.key === mod.key ? { ...m, step: newStep } : m
+                                )
+                              )
+                            );
+                          }}
+                          className="w-14 px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium text-center focus:border-primary focus:outline-none transition-all"
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {workflowModulesState.length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400">ترتیب مراحل فعال:</span>
+                {[...workflowModulesState]
+                  .filter((m) => m.enabled !== false)
+                  .sort((a, b) => a.step - b.step)
+                  .map((m) => {
+                    const def = EVENT_MODULE_LIST.find((d) => d.key === m.key);
+                    return (
+                      <span
+                        key={m.key}
+                        className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 text-[10px] font-black border border-indigo-300 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-700"
+                      >
+                        {m.step}. {def?.title || m.key}
+                      </span>
+                    );
+                  })}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">

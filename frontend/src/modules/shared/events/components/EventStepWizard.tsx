@@ -5,6 +5,7 @@ import { EventVotingPorscadStep } from './EventVotingPorscadStep';
 import { EventTeamFormationStep } from './EventTeamFormationStep';
 import { EventCanvasMaterialsStep } from './EventCanvasMaterialsStep';
 import { EventTaskDefinitionStep } from './EventTaskDefinitionStep';
+import { EventPresentationUploadStep } from './EventPresentationUploadStep';
 import { EventLeaderboardStep } from './EventLeaderboardStep';
 import { useAuthStore } from '../../../../lib/auth/auth-store';
 import { toast } from '../../../../components/ui/toast/toast';
@@ -33,7 +34,8 @@ const DEFAULT_WORKFLOW: WorkflowModuleEntry[] = [
   { key: 'TEAM_FORMATION', step: 4, enabled: true },
   { key: 'EVENT_CANVAS', step: 5, enabled: true },
   { key: 'TASK_DEFINITION', step: 6, enabled: true },
-  { key: 'LEADERBOARD', step: 7, enabled: true },
+  { key: 'PRESENTATION_UPLOAD', step: 7, enabled: true },
+  { key: 'LEADERBOARD', step: 8, enabled: true },
 ];
 
 const DEFAULT_EVENT_IDEAS: EventIdea[] = [];
@@ -51,24 +53,36 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
 
   // Dynamic steps config derived from workflowModules (always contiguous 1..n)
   const STEPS_CONFIG = useMemo(() => {
-    const entries = renumberWorkflowModules(
-      (workflowModules && workflowModules.length > 0 ? workflowModules : DEFAULT_WORKFLOW).filter(
-        (m) => m.enabled !== false
-      )
-    );
+    const rawList =
+      workflowModules !== undefined
+        ? workflowModules
+        : DEFAULT_WORKFLOW;
 
-    return entries.map((entry, index) => {
-      const def = EVENT_MODULE_REGISTRY[entry.key as keyof typeof EVENT_MODULE_REGISTRY];
-      const displayStep = index + 1;
-      return {
-        step: displayStep,
-        key: entry.key,
-        title: `${toPersianDigits(displayStep)}. ${def.title}`,
-        subtitle: def.subtitle,
-        icon: def.icon,
-        activeColor: def.activeColor,
-      };
-    });
+    const activeList = rawList.filter((m) => m.enabled !== false);
+    const entries = renumberWorkflowModules(activeList);
+
+    return entries
+      .map((entry, index) => {
+        const def = EVENT_MODULE_REGISTRY[entry.key as keyof typeof EVENT_MODULE_REGISTRY];
+        if (!def) return null;
+        const displayStep = index + 1;
+        return {
+          step: displayStep,
+          key: entry.key,
+          title: `${toPersianDigits(displayStep)}. ${def.title}`,
+          subtitle: def.subtitle,
+          icon: def.icon,
+          activeColor: def.activeColor,
+        };
+      })
+      .filter(Boolean) as Array<{
+      step: number;
+      key: keyof typeof EVENT_MODULE_REGISTRY;
+      title: string;
+      subtitle: string;
+      icon: any;
+      activeColor: string;
+    }>;
   }, [workflowModules]);
 
   const stepNumbers = useMemo(() => new Set(STEPS_CONFIG.map((s) => s.step)), [STEPS_CONFIG]);
@@ -314,8 +328,6 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                   onToggleLock={handleToggleIdeaLock}
                   onIdeaSubmitted={handleIdeaSubmitted}
                   onUpdateIdea={handleUpdateIdea}
-                  onGoToNextStep={() => goToStepByKey('IDEA_HALL')}
-                  onGoToVotingStep={() => goToStepByKey('VOTING')}
                 />
               );
             case 'IDEA_HALL':
@@ -325,9 +337,6 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                   ideas={ideas}
                   onUpdateIdea={handleUpdateIdea}
                   onSelectIdeaForVote={(id) => setSelectedIdeaForVote(id)}
-                  onGoToSubmitStep={() => goToStepByKey('IDEA_SUBMISSION')}
-                  onGoToVotingStep={() => goToStepByKey('VOTING')}
-                  onGoToCanvasStep={() => goToStepByKey('EVENT_CANVAS')}
                 />
               );
             case 'VOTING':
@@ -338,9 +347,6 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                   eventTitle={eventTitle}
                   ideas={ideas}
                   selectedIdeaId={selectedIdeaForVote}
-                  onGoToIdeasList={() => goToStepByKey('IDEA_HALL')}
-                  onGoToCanvasStep={() => goToStepByKey('EVENT_CANVAS')}
-                  onGoToTeamFormation={() => goToStepByKey('TEAM_FORMATION')}
                 />
               );
             case 'TEAM_FORMATION':
@@ -350,8 +356,6 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                   eventId={eventId}
                   eventTitle={eventTitle}
                   ideas={ideas}
-                  onGoToVotingStep={() => goToStepByKey('VOTING')}
-                  onGoToCanvasStep={() => goToStepByKey('EVENT_CANVAS')}
                 />
               );
             case 'EVENT_CANVAS':
@@ -360,8 +364,6 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                   key={cfg.key}
                   eventId={eventId}
                   eventTitle={eventTitle}
-                  onGoToVotingStep={() => goToStepByKey('VOTING')}
-                  onGoToIdeasList={() => goToStepByKey('IDEA_HALL')}
                 />
               );
             case 'TASK_DEFINITION':
@@ -371,8 +373,15 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                   eventId={eventId}
                   eventTitle={eventTitle}
                   ideas={ideas}
-                  onGoToLeaderboard={() => goToStepByKey('LEADERBOARD')}
-                  onGoToTeamFormation={() => goToStepByKey('TEAM_FORMATION')}
+                />
+              );
+            case 'PRESENTATION_UPLOAD':
+              return (
+                <EventPresentationUploadStep
+                  key={cfg.key}
+                  eventId={eventId}
+                  eventTitle={eventTitle}
+                  ideas={ideas}
                 />
               );
             case 'LEADERBOARD':
@@ -382,7 +391,6 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                   eventId={eventId}
                   eventTitle={eventTitle}
                   ideas={ideas}
-                  onGoToTasks={() => goToStepByKey('TASK_DEFINITION')}
                 />
               );
             default:
