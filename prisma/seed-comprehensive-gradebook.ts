@@ -479,7 +479,7 @@ async function main() {
     { code: '4041005', nationalId: '0012345675', first: 'علی', last: 'اکبری', phone: '09123333335' },
     { code: '4041006', nationalId: '0012345676', first: 'شایان', last: 'مهدوی', phone: '09123333336' },
     { code: '4041007', nationalId: '0012345677', first: 'آرتین', last: 'قاسمی', phone: '09123333337' },
-    { code: '4041008', nationalId: '0012345678', first: 'کیان', last: 'احمدی', phone: '09123333338' },
+    { code: '4041008', nationalId: '0012345688', first: 'کیان', last: 'احمدی', phone: '09123333338' },
     { code: '4041009', nationalId: '0012345679', first: 'دانیال', last: 'طاهری', phone: '09123333339' },
     { code: '4041010', nationalId: '0012345680', first: 'سینا', last: 'رستمی', phone: '09123333340' },
   ];
@@ -528,13 +528,13 @@ async function main() {
       },
     });
 
-    // Parent account for this student (Username: nationalId, Password: p + nationalId)
+    // Parent account for this student (Username: p + nationalId, Password: p + nationalId)
     const parentPasswordHash = await argon2.hash(`p${st.nationalId}`);
     const parentPhone = `0999${st.nationalId.slice(3)}`;
 
     const parentUser = await upsertUser({
       nationalId: `PAR-${st.nationalId}`,
-      username: st.nationalId,
+      username: `p${st.nationalId}`,
       passwordHash: parentPasswordHash,
       firstName: `ولی دانش‌آموز ${st.first}`,
       lastName: st.last,
