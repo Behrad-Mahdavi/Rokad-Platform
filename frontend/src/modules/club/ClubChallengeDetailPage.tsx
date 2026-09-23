@@ -193,11 +193,11 @@ export const ClubChallengeDetailPage: React.FC = () => {
 
             {challenge.type === 'PLACEMENT' ? (
               <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
-                🎯 چالش ورودی تعیین سطح
+                 چالش ورودی تعیین سطح
               </span>
             ) : (
               <span className="px-3 py-1 rounded-full bg-[#8A38F5]/20 text-[#C084FC] border border-[#8A38F5]/30 text-xs font-bold">
-                ⭐ چالش ارتقای گرید
+                 چالش ارتقای گرید
               </span>
             )}
 
@@ -344,7 +344,7 @@ export const ClubChallengeDetailPage: React.FC = () => {
                     </div>
                     {activeChallengesCount >= 2 ? (
                       <p className="text-rose-600 dark:text-rose-400 font-bold text-[11px] leading-relaxed">
-                        ⚠️ سقف ۲ چالش فعال همزمان تکمیل است. برای شروع این چالش، ابتدا یکی از چالش‌های جاری را تحویل دهید.
+                         سقف ۲ چالش فعال همزمان تکمیل است. برای شروع این چالش، ابتدا یکی از چالش‌های جاری را تحویل دهید.
                       </p>
                     ) : (
                       <p className="text-gray-500 text-[11px]">

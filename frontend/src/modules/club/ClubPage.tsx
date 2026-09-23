@@ -49,7 +49,7 @@ export const ClubPage: React.FC = () => {
   const [data, setData] = useState<MyClubStatusResponse | null>(null);
   const [challenges, setChallenges] = useState<ClubChallenge[]>([]);
   const [selectedDeptFilter, setSelectedDeptFilter] = useState<ClubDepartment | 'ALL'>('ALL');
-  const [activeTab, setActiveTab] = useState<'roadmap' | 'challenges' | 'studio'>('roadmap');
+  const [activeTab, setActiveTab] = useState<'roadmap' | 'challenges' | 'studio' | 'rotello'>('roadmap');
 
   const fetchClubData = async () => {
     try {
@@ -265,6 +265,21 @@ export const ClubPage: React.FC = () => {
             }`}
           >
             رُکاد استودیو 🚀
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('rotello')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              activeTab === 'rotello'
+                ? 'bg-[#8A38F5] text-white shadow-xs font-black'
+                : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>روتلو (Rotello)</span>
+            {isMember && (
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            )}
           </button>
         </div>
       </div>
@@ -725,6 +740,101 @@ export const ClubPage: React.FC = () => {
               </h4>
               <p className="text-xs text-gray-500 leading-relaxed">
                 تحلیل داده‌های رفتاری کاربران، استراتژی لانچ و هک رشد در کنار منتورهای بیزینس و مدیران محصول.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────────────────────
+          Tab 4: Rotello Platform Gateway
+          ───────────────────────────────────────────────────────────────────────────── */}
+      {activeTab === 'rotello' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="relative overflow-hidden rounded-3xl p-6 sm:p-10 bg-gradient-to-br from-[#1C1427] via-[#2D1B4E] to-[#120B1C] text-white border-2 border-[#8A38F5]/40 shadow-2xl">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-[#8A38F5]/25 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+            <div className="relative z-10 space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#8A38F5]/25 text-[#C084FC] border border-[#8A38F5]/40 text-xs font-bold">
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <span>پلتفرم تخصصی همکاری اعضای باشگاه رُکاد</span>
+                </div>
+                {isMember ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>عضویت رسمی باشگاه فعال است</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold">
+                    <span>در حال طی نقشه راه پذیرش</span>
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
+                  سامانه مدیریت تسک‌ها و تیم‌های روتلو (Rotello)
+                </h2>
+                <p className="text-sm sm:text-base text-purple-100/90 leading-relaxed max-w-2xl font-normal">
+                  روتلو، فضای کار اشتراکی دانش‌آموزان و اعضای باشگاه کسب‌وکار رُکاد است؛ جایی برای مدیریت تسک‌های اسپرینت، اشتراک کارهای تیمی، پورتفولیو و تعامل نزدیک با منتورهای صنعتی.
+                </p>
+              </div>
+
+              {/* Direct Entry Button */}
+              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                <a
+                  href="https://rotello.vercel.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-[#8A38F5] hover:bg-[#7828E0] text-white font-black text-sm shadow-[3px_3px_0_#5B21B6] hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer text-center group"
+                >
+                  <Rocket className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                  <span>ورود مستقیم به سامانه روتلو</span>
+                  <ExternalLink className="w-4 h-4 opacity-80" />
+                </a>
+
+                <div className="text-xs text-purple-200/80 font-mono text-center sm:text-right">
+                  آدرس سامانه: rotello.vercel.app
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Rotello Feature Highlights */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-5 rounded-3xl bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 space-y-3 shadow-2xs hover:border-[#8A38F5]/50 transition-colors">
+              <div className="w-12 h-12 rounded-2xl bg-[#8A38F5]/10 text-[#8A38F5] flex items-center justify-center">
+                <Target className="w-6 h-6" />
+              </div>
+              <h4 className="font-black text-sm text-gray-900 dark:text-white">
+                مدیریت تسک‌ها و اسپرینت‌ها
+              </h4>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                بورد کانبان و برنامه‌ریزی هفتگی پروژه‌ها جهت تحویل به موقع چالش‌ها و مایلسون‌های باشگاه.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-3xl bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 space-y-3 shadow-2xs hover:border-[#8A38F5]/50 transition-colors">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center">
+                <Users className="w-6 h-6" />
+              </div>
+              <h4 className="font-black text-sm text-gray-900 dark:text-white">
+                تیم‌سازی و اشتراک تجارب
+              </h4>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                همکاری بین دپارتمان‌های مهندسی، طراحی و مدیریت محصول برای ساخت پروژه‌های میان‌رشته‌ای.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-3xl bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 space-y-3 shadow-2xs hover:border-[#8A38F5]/50 transition-colors">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 flex items-center justify-center">
+                <Trophy className="w-6 h-6" />
+              </div>
+              <h4 className="font-black text-sm text-gray-900 dark:text-white">
+                ساخت پورتفولیو و رزومه
+              </h4>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                مستندسازی خروجی‌های واقعی چالش‌ها و اخذ تأییدیه فنی برای ارتقا به گرید A و استودیو.
               </p>
             </div>
           </div>
