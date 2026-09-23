@@ -148,7 +148,7 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
             return (
               <div
                 key={idea.id}
-                className={`group flex flex-col justify-between rounded-2xl border-[1.5px] border-[#EAEAEA] p-5 shadow-[2.75px_2.75px_0_#202A5A] transition-all hover:-translate-y-1 dark:border-zinc-100 ${
+                className={`group flex flex-col justify-between rounded-2xl border-[1.5px] border-[#EAEAEA] p-5 shadow-[2.75px_2.75px_0_#202A5A] transition-all hover:-translate-y-1 dark:border-[#242F42] ${
                   isCurrentUserIdea
                     ? 'bg-amber-50/60 dark:bg-amber-950/30 ring-2 ring-amber-400'
                     : 'bg-white dark:bg-zinc-900'

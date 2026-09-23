@@ -398,8 +398,16 @@ export class PorscadService {
       };
     }
 
-    const prevVotedStr = localStorage.getItem(`rokad_porscad_voted_${eventId}`);
-    const prevVoted: string[] = prevVotedStr ? JSON.parse(prevVotedStr) : [];
+    let prevVoted: string[] = [];
+    try {
+      const prevVotedStr = localStorage.getItem(`rokad_porscad_voted_${eventId}`);
+      if (prevVotedStr) {
+        const parsed = JSON.parse(prevVotedStr);
+        if (Array.isArray(parsed)) prevVoted = parsed;
+      }
+    } catch {
+      prevVoted = [];
+    }
 
     const updatedOptions = poll.options.map((opt) => {
       let count = opt.voteCount;
