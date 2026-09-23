@@ -62,7 +62,7 @@ describe('Rokad Multi-Tenant Platform — Phase 4 LMS & Exam Engine Tests', () =
       .set('x-tenant-slug', 'rokad-boys')
       .send({
         identifier: '09124000001',
-        password: 'RokadPass2026!',
+        password: 'b0012345678',
       });
     boysStudentToken = studentLogin.body.data.accessToken;
 

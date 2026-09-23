@@ -251,12 +251,13 @@ async function main() {
 
   const boysVice = await prisma.user.upsert({
     where: {
-      tenantId_phone: {
+      tenantId_username: {
         tenantId: boysTenant.id,
-        phone: '09122221111',
+        username: 'boysvice',
       },
     },
     update: {
+      phone: '09122221111',
       passwordHash: boysAdminPasswordHash,
       role: 'STAFF',
       status: 'ACTIVE',

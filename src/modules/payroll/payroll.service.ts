@@ -616,7 +616,7 @@ export class PayrollService {
     return this.prisma.payrollSlip.update({
       where: { id: slipId },
       data: {
-        status: 'SETTLED',
+        status: 'PAID',
         paidAt: new Date(),
         paidById: approverUserId,
         paymentRefNumber: dto.paymentRefNumber,
@@ -626,6 +626,152 @@ export class PayrollService {
         paidBy: { select: { firstName: true, lastName: true } },
         items: true,
       },
+    });
+  }
+
+  /**
+   * تولید مستقیم فیش حقوقی برای یک پرسنل بر مبنای پروفایل حقوقی
+   */
+  async generateSlipForUser(
+    tenantId: string,
+    createdById: string,
+    dto: GeneratePayrollSlipDto,
+  ) {
+    const profile = await this.prisma.staffPayrollProfile.findFirst({
+      where: { tenantId, userId: dto.userId },
+      include: { user: true },
+    });
+
+    if (!profile) {
+      throw new NotFoundException('پروفایل حقوقی برای این کاربر یافت نشد');
+    }
+
+    const baseSalary = Number(profile.baseMonthlySalary || 0);
+
+    let items: Array<{
+      type: any;
+      title: string;
+      amount: number;
+      multiplierOrHours?: number;
+      notes?: string;
+    }> = [];
+
+    let grossPay = 0;
+    let totalDeductions = 0;
+    let netPay = 0;
+
+    if (dto.customItems && dto.customItems.length > 0) {
+      items = dto.customItems.map((ci) => ({
+        type: ci.type,
+        title: ci.title,
+        amount: ci.amount,
+        multiplierOrHours: ci.multiplierOrHours,
+        notes: ci.notes,
+      }));
+      grossPay = items.filter((i) => i.amount > 0).reduce((sum, i) => sum + i.amount, 0);
+      totalDeductions = Math.abs(
+        items.filter((i) => i.amount < 0).reduce((sum, i) => sum + i.amount, 0),
+      );
+      netPay = Math.max(0, grossPay - totalDeductions);
+    } else {
+      grossPay = baseSalary;
+      const insuranceDeduction = Math.round(grossPay * 0.07);
+      const taxable = Math.max(0, grossPay - 15000000);
+      const taxDeduction = taxable > 0 ? Math.round(taxable * 0.1) : 0;
+      totalDeductions = insuranceDeduction + taxDeduction;
+      netPay = Math.max(0, grossPay - totalDeductions);
+
+      const monthName = PERSIAN_MONTH_NAMES[dto.month] || `ماه ${dto.month}`;
+      items.push({
+        type: 'BASE_SALARY',
+        title: `حقوق پایه ماهانه (${monthName})`,
+        amount: grossPay,
+      });
+
+      if (insuranceDeduction > 0) {
+        items.push({
+          type: 'INSURANCE_DEDUCTION',
+          title: 'بیمه تأمین اجتماعی سهم کارمند (۷٪)',
+          amount: -insuranceDeduction,
+        });
+      }
+
+      if (taxDeduction > 0) {
+        items.push({
+          type: 'TAX_DEDUCTION',
+          title: 'مالیات بر حقوق',
+          amount: -taxDeduction,
+        });
+      }
+    }
+
+    const slipNumber = `PAY-${dto.year}-${String(dto.month).padStart(2, '0')}-${profile.user.id.slice(0, 5).toUpperCase()}`;
+
+    return this.prisma.$transaction(async (tx) => {
+      const existingSlip = await tx.payrollSlip.findUnique({
+        where: {
+          tenantId_userId_year_month: {
+            tenantId,
+            userId: dto.userId,
+            year: dto.year,
+            month: dto.month,
+          },
+        },
+      });
+
+      let slip: any;
+      if (existingSlip) {
+        await tx.payrollItem.deleteMany({ where: { payrollSlipId: existingSlip.id } });
+        slip = await tx.payrollSlip.update({
+          where: { id: existingSlip.id },
+          data: {
+            calculatedAmount: grossPay,
+            finalAmount: netPay,
+            grossPay,
+            totalDeductions,
+            netPay,
+            status: 'DRAFT',
+          },
+        });
+      } else {
+        slip = await tx.payrollSlip.create({
+          data: {
+            tenantId,
+            userId: dto.userId,
+            year: dto.year,
+            month: dto.month,
+            slipNumber,
+            calculatedAmount: grossPay,
+            finalAmount: netPay,
+            grossPay,
+            totalDeductions,
+            netPay,
+            status: 'DRAFT',
+          },
+        });
+      }
+
+      for (const item of items) {
+        await tx.payrollItem.create({
+          data: {
+            tenantId,
+            payrollSlipId: slip.id,
+            type: item.type as any,
+            title: item.title,
+            amount: item.amount,
+            multiplierOrHours: item.multiplierOrHours,
+            notes: item.notes,
+          },
+        });
+      }
+
+      return tx.payrollSlip.findUnique({
+        where: { id: slip.id },
+        include: {
+          user: { select: { firstName: true, lastName: true, phone: true } },
+          items: true,
+        },
+      });
     });
   }
 

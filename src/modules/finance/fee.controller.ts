@@ -121,6 +121,18 @@ export class FeeController {
     });
   }
 
+  @Get('contracts/my-overview')
+  @Roles(Role.STUDENT, Role.PARENT, Role.SCHOOL_ADMIN, Role.STAFF, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'مشاهده لیست قراردادها و اقساط شهریه توسط دانش‌آموز جاری' })
+  async getMyContractsOverview(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.feeService.getStudentContractsOverview(effectiveTenantId, userId);
+  }
+
   @Get('contracts/:id')
   @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF, Role.PARENT)
   @ApiOperation({ summary: 'مشاهده جزئیات کامل قرارداد، چک‌ها، اقساط و مانده بدهی' })
