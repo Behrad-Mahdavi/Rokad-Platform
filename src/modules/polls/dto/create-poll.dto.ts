@@ -4,13 +4,17 @@ import {
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
   IsNotEmpty,
+  IsObject,
   IsOptional,
   IsString,
   Max,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { PollType, TargetAudience } from '@prisma/client';
 
 export class CreatePollOptionDto {
@@ -18,6 +22,80 @@ export class CreatePollOptionDto {
   @IsString()
   @IsNotEmpty()
   text: string;
+}
+
+export const PORSCAD_QUESTION_TYPES = [
+  'choice',
+  'picture_choice',
+  'dropdown',
+  'yes_no',
+  'likert',
+  'nps',
+  'rating',
+  'matrix',
+  'ranking',
+  'short_text',
+  'long_text',
+  'number',
+  'email',
+  'phone_ir',
+  'link',
+  'telegram_id',
+  'statement',
+  'group',
+  'file_upload',
+  'payment',
+  // legacy Rokad type kept for old polls
+  'opinion_scale',
+] as const;
+export type PorscadQuestionType = (typeof PORSCAD_QUESTION_TYPES)[number];
+
+export class CreateSurveyQuestionDto {
+  @ApiProperty({
+    description:
+      'نوع سوال پرس‌کاد (choice, picture_choice, dropdown, yes_no, likert, nps, rating, matrix, ranking, short_text, long_text, number, email, phone_ir, link, telegram_id, statement, group, file_upload, payment)',
+    example: 'choice',
+  })
+  @IsString()
+  @IsNotEmpty()
+  type: string;
+
+  @ApiProperty({ description: 'متن سوال', example: 'کیفیت خدمات مدرسه چگونه بود؟' })
+  @IsString()
+  @IsNotEmpty()
+  title: string;
+
+  @ApiPropertyOptional({ description: 'توضیحات سوال' })
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @ApiPropertyOptional({ description: 'گزینه‌های پاسخ (برای choice و dropdown)', type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  options?: string[];
+
+  @ApiPropertyOptional({ description: 'حداکثر انتخاب (تک/چندگزینه‌ای)', default: 1 })
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  maxSelections?: number;
+
+  @ApiPropertyOptional({ description: 'پاسخ اجباری', default: true })
+  @IsBoolean()
+  @IsOptional()
+  required?: boolean;
+
+  @ApiPropertyOptional({ description: 'نحوه نمایش گزینه‌ها', enum: ['buttons', 'list'] })
+  @IsString()
+  @IsOptional()
+  displayMode?: 'buttons' | 'list';
+
+  @ApiPropertyOptional({ description: 'شناسه سوال در پرس‌کاد (اختیاری؛ سرور از porscadMeta بازسازی می‌کند)' })
+  @IsString()
+  @IsOptional()
+  porscadQuestionId?: string | null;
 }
 
 export class CreatePollDto {
@@ -41,7 +119,7 @@ export class CreatePollDto {
   pollType?: PollType;
 
   @ApiPropertyOptional({
-    description: 'مخاطبان نظرسنجی (ALL, STUDENTS, PARENTS, TEACHERS)',
+    description: 'مخاطبان نظرسنجی (ALL, STUDENTS, PARENTS, TEACHERS, STAFF)',
     enum: TargetAudience,
     default: TargetAudience.ALL,
   })
@@ -73,7 +151,61 @@ export class CreatePollDto {
     type: [CreatePollOptionDto],
   })
   @IsArray()
-  options: CreatePollOptionDto[];
+  @ValidateNested({ each: true })
+  @Type(() => CreatePollOptionDto)
+  @IsOptional()
+  options?: CreatePollOptionDto[];
+
+  @ApiPropertyOptional({
+    description: 'سوالات فرم پرس‌کاد (چندسؤالی، مرحله‌به‌مرحله)',
+    type: [CreateSurveyQuestionDto],
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateSurveyQuestionDto)
+  @IsOptional()
+  questions?: CreateSurveyQuestionDto[];
+
+  @ApiPropertyOptional({ description: 'شناسه فرم پرس‌کاد پس از ایجاد در سامانه' })
+  @IsString()
+  @IsOptional()
+  porscadFormId?: string;
+
+  @ApiPropertyOptional({ description: 'شناسه عمومی فرم پرس‌کاد' })
+  @IsString()
+  @IsOptional()
+  porscadFormPublicId?: string;
+
+  @ApiPropertyOptional({ description: 'شناسه‌های سوالات پرس‌کاد (questionId به ترتیب)' })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  porscadQuestionIds?: string[];
+
+  @ApiPropertyOptional({ description: 'متادیتای فرم پرس‌کاد' })
+  @IsObject()
+  @IsOptional()
+  porscadMeta?: Record<string, unknown>;
+}
+
+export class SubmitPollAnswersDto {
+  @ApiProperty({
+    description: 'پاسخ‌های سؤال‌ها: { [questionId یا index]: مقدار }',
+    example: { '0': 'گزینه الف', '1': 4 },
+  })
+  @IsObject()
+  @IsNotEmpty()
+  answers: Record<string, string | number | boolean | string[]>;
+
+  @ApiPropertyOptional({ description: 'شناسه پاسخ پرس‌کاد پس از ثبت' })
+  @IsString()
+  @IsOptional()
+  porscadResponseId?: string;
+
+  @ApiPropertyOptional({ description: 'نام پاسخ‌دهنده (از اکانت کاربر)' })
+  @IsString()
+  @IsOptional()
+  respondentName?: string;
 }
 
 export class CastVoteDto {
@@ -94,4 +226,19 @@ export class CastVoteDto {
   @IsString()
   @IsOptional()
   textResponse?: string;
+}
+
+export type PollStatusAction =
+  | 'close'
+  | 'open'
+  | 'archive'
+  | 'unarchive';
+
+export class UpdatePollStatusDto {
+  @ApiProperty({
+    description: 'عملیات وضعیت: close (بستن), open (بازگشایی), archive (آرشیو), unarchive (خروج از آرشیو)',
+    enum: ['close', 'open', 'archive', 'unarchive'],
+  })
+  @IsIn(['close', 'open', 'archive', 'unarchive'])
+  action: PollStatusAction;
 }

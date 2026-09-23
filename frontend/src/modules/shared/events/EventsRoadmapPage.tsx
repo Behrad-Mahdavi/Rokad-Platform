@@ -16,6 +16,15 @@ import { toast } from '../../../components/ui/toast/toast';
 import { useUndoableMutation } from '../../../lib/hooks/useUndoableMutation';
 import { TOAST_MESSAGES } from '../../../constants/toast-messages';
 import {
+  EventCoverCropModal,
+  EVENT_COVER_SPEC_LABEL,
+  EVENT_COVER_MAX_BYTES,
+  needsCoverCrop,
+  readFileAsDataUrl,
+  loadImageDimensions,
+  uploadCoverBlob,
+} from './components/EventCoverCropModal';
+import {
   CalendarDays,
   Clock,
   MapPin,
@@ -48,6 +57,7 @@ import {
   ArrowUpDown,
   ChevronDown,
   Check,
+  Upload,
 } from 'lucide-react';
 
 export interface SchoolEventItem {
@@ -323,6 +333,48 @@ export const EventsRoadmapPage: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [cropFileName, setCropFileName] = useState<string | undefined>();
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+
+  const handleCoverFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('فقط فایل تصویری مجاز است');
+      return;
+    }
+    if (file.size > EVENT_COVER_MAX_BYTES) {
+      toast.error('حجم تصویر نباید بیشتر از ۵ مگابایت باشد');
+      return;
+    }
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      const dims = await loadImageDimensions(dataUrl);
+      setCropFileName(file.name);
+      if (needsCoverCrop(dims.w, dims.h)) {
+        setCropImageSrc(dataUrl);
+        return;
+      }
+      setIsUploadingCover(true);
+      const blob = await (await fetch(dataUrl)).blob();
+      const url = await uploadCoverBlob(blob, file.name);
+      setForm((f) => ({ ...f, coverUrl: url }));
+      toast.success('تصویر بنر آپلود شد');
+    } catch {
+      toast.error('خطا در پردازش یا آپلود تصویر');
+    } finally {
+      setIsUploadingCover(false);
+    }
+  };
+
+  const handleCoverCropConfirm = async (blob: Blob) => {
+    const url = await uploadCoverBlob(blob, cropFileName || 'event-cover.jpg');
+    setForm((f) => ({ ...f, coverUrl: url }));
+    setCropImageSrc(null);
+    toast.success('بنر برش خورد و آپلود شد');
+  };
 
   const todayJalaliStr = useMemo(() => gregorianToJalaliStr(new Date()), []);
 
@@ -1220,18 +1272,45 @@ export const EventsRoadmapPage: React.FC = () => {
             />
           </div>
 
-          {/* Cover Image URL */}
+          {/* Cover Image URL + Upload/Crop */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">
-              آدرس تصویر بنر رویداد (URL)
+              تصویر بنر رویداد
             </label>
-            <input
-              type="url"
-              value={form.coverUrl}
-              onChange={(e) => setForm({ ...form, coverUrl: e.target.value })}
-              placeholder="https://..."
-              className="w-full min-h-[42px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-[#1C2536] text-ink-darker dark:text-white text-xs sm:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none"
-            />
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
+              {EVENT_COVER_SPEC_LABEL}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="url"
+                value={form.coverUrl}
+                onChange={(e) => setForm({ ...form, coverUrl: e.target.value })}
+                placeholder="https://..."
+                className="flex-1 min-w-0 min-h-[42px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-[#1C2536] text-ink-darker dark:text-white text-xs sm:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none"
+              />
+              <label
+                className={`shrink-0 min-h-[42px] px-3.5 py-2.5 rounded-xl border border-dashed border-primary/50 bg-primary/5 text-primary text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer hover:bg-primary/10 transition-all ${
+                  isUploadingCover ? 'opacity-60 pointer-events-none' : ''
+                }`}
+              >
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={handleCoverFileSelect}
+                  disabled={isUploadingCover}
+                />
+                <Upload className="w-3.5 h-3.5" />
+                {isUploadingCover ? 'در حال آپلود…' : 'آپلود و برش'}
+              </label>
+            </div>
+            {form.coverUrl && (
+              <img
+                src={form.coverUrl}
+                alt="پیش‌نمایش بنر"
+                className="mt-2 w-full max-h-28 object-cover rounded-xl border border-gray-200 dark:border-gray-700"
+              />
+            )}
           </div>
 
           {/* Tags */}
@@ -1283,6 +1362,14 @@ export const EventsRoadmapPage: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      <EventCoverCropModal
+        isOpen={!!cropImageSrc}
+        onClose={() => setCropImageSrc(null)}
+        imageSrc={cropImageSrc || ''}
+        fileName={cropFileName}
+        onConfirm={handleCoverCropConfirm}
+      />
     </div>
   );
 };
