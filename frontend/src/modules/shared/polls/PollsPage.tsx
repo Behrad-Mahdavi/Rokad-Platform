@@ -45,6 +45,8 @@ import {
   Layers,
   RefreshCw,
   X,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 
 type QuestionType = PorscadQuestionType;
@@ -65,6 +67,7 @@ interface Poll {
   startDate: string;
   endDate: string;
   isAnonymous: boolean;
+  isMandatory?: boolean;
   isClosed: boolean;
   isArchived?: boolean;
   createdAt: string;
@@ -79,9 +82,25 @@ interface QuestionDraft {
   type: QuestionType;
   title: string;
   description: string;
+  placeholder?: string;
   options: string[];
   maxSelections: number;
   required: boolean;
+  validation: {
+    min?: number;
+    max?: number;
+    step?: number;
+    minLength?: number;
+    maxLength?: number;
+    allowedExtensions?: string[];
+    maxFileSizeMb?: number;
+  };
+  jump_actions?: Array<{
+    conditionValue: string;
+    targetQuestionIndex: number | 'END';
+  }>;
+  points?: number;
+  showAdvanced?: boolean;
 }
 
 interface AnalyticsData {
@@ -187,9 +206,13 @@ function emptyDraft(): QuestionDraft {
     type: 'choice',
     title: '',
     description: '',
+    placeholder: '',
     options: [...DEFAULT_OPTIONS],
     maxSelections: 1,
     required: true,
+    validation: {},
+    jump_actions: [],
+    showAdvanced: false,
   };
 }
 
@@ -198,8 +221,22 @@ type PollStatusAction = 'close' | 'open' | 'archive' | 'unarchive';
 
 export const PollsPage: React.FC = () => {
   const { user } = useAuthStore();
-  const [polls, setPolls] = useState<Poll[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [polls, setPolls] = useState<Poll[]>(() => {
+    try {
+      const cached = sessionStorage.getItem('rokad_polls_cache');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    try {
+      const cached = sessionStorage.getItem('rokad_polls_cache');
+      return !cached || JSON.parse(cached).length === 0;
+    } catch {
+      return true;
+    }
+  });
   const [activeFilter, setActiveFilter] = useState<PollFilter>('ACTIVE');
   const [statusAction, setStatusAction] = useState<{
     poll: Poll;
@@ -239,6 +276,9 @@ export const PollsPage: React.FC = () => {
       | 'PARENTS'
       | 'TEACHERS'
       | 'STAFF',
+    isMandatory: false,
+    preventDuplicate: true,
+    isAnonymous: false,
     startDate: gregorianToJalaliStr(new Date()),
     endDate: gregorianToJalaliStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
   });
@@ -247,7 +287,9 @@ export const PollsPage: React.FC = () => {
   // Fill (step-by-step) state
   const [activePoll, setActivePoll] = useState<Poll | null>(null);
   const [fillStep, setFillStep] = useState(0);
+  const [stepHistory, setStepHistory] = useState<number[]>([]);
   const [fillAnswers, setFillAnswers] = useState<SurveyAnswers>({});
+  const [fillError, setFillError] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [isSubmittingAnswers, setIsSubmittingAnswers] = useState(false);
 
@@ -258,15 +300,22 @@ export const PollsPage: React.FC = () => {
   const [liveAnalytics, setLiveAnalytics] = useState<any>(null);
   const [isRefreshingLive, setIsRefreshingLive] = useState(false);
 
-  const fetchPolls = async () => {
-    setIsLoading(true);
+  const fetchPolls = async (silent = false) => {
+    if (!silent && polls.length === 0) {
+      setIsLoading(true);
+    }
     try {
       const res = await apiClient.get<Poll[]>('/polls');
       const data = res.data || [];
       setPolls(data);
+      try {
+        sessionStorage.setItem('rokad_polls_cache', JSON.stringify(data));
+      } catch {}
     } catch (err) {
       console.error('Failed to fetch polls:', err);
-      toast.error('خطا در دریافت نظرسنجی‌ها');
+      if (polls.length === 0) {
+        toast.error('خطا در دریافت نظرسنجی‌ها');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -403,6 +452,9 @@ export const PollsPage: React.FC = () => {
       title: '',
       description: '',
       targetAudience: 'ALL',
+      isMandatory: false,
+      preventDuplicate: true,
+      isAnonymous: false,
       startDate: gregorianToJalaliStr(new Date()),
       endDate: gregorianToJalaliStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
     });
@@ -443,11 +495,11 @@ export const PollsPage: React.FC = () => {
       if (drafts.length === 0) return 'حداقل یک سوال اضافه کنید';
       for (let i = 0; i < drafts.length; i++) {
         const d = drafts[i];
-        if (!d.title.trim()) return `متن سوال ${i + 1} الزامی است`;
+        if (!d.title.trim()) return `متن سوال ${toPersianDigits(i + 1)} الزامی است`;
         if (questionNeedsOptions(d.type)) {
           const opts = d.options.filter((o) => o.trim());
           if (opts.length < 2) {
-            return `سوال ${i + 1} باید حداقل ۲ گزینه داشته باشد`;
+            return `سوال ${toPersianDigits(i + 1)} باید حداقل ۲ گزینه داشته باشد`;
           }
         }
       }
@@ -460,6 +512,7 @@ export const PollsPage: React.FC = () => {
     const err = validateStep(createStep);
     if (err) {
       setCreateError(err);
+      toast.error(err);
       return;
     }
     setCreateError(null);
@@ -475,6 +528,7 @@ export const PollsPage: React.FC = () => {
     const err = validateStep(0) || validateStep(1);
     if (err) {
       setCreateError(err);
+      toast.error(err);
       return;
     }
 
@@ -486,6 +540,7 @@ export const PollsPage: React.FC = () => {
         type: d.type,
         title: d.title.trim(),
         description: d.description.trim() || undefined,
+        placeholder: d.placeholder?.trim() || undefined,
         options: questionNeedsOptions(d.type)
           ? d.options.filter((o) => o.trim())
           : undefined,
@@ -493,6 +548,13 @@ export const PollsPage: React.FC = () => {
           d.type === 'choice' ? Math.max(1, d.maxSelections) : 1,
         required: INFORMATIONAL_TYPES.has(d.type) ? false : d.required,
         displayMode: 'buttons',
+        validation:
+          d.validation && Object.values(d.validation).some((v) => v !== undefined && (v as any) !== '')
+            ? d.validation
+            : undefined,
+        jump_actions:
+          d.jump_actions && d.jump_actions.length > 0 ? d.jump_actions : undefined,
+        points: d.points || 0,
       }));
 
       let formId: string | undefined;
@@ -528,6 +590,9 @@ export const PollsPage: React.FC = () => {
             ? 'MULTIPLE_CHOICE'
             : 'SINGLE_CHOICE',
         targetAudience: form.targetAudience,
+        isMandatory: form.isMandatory,
+        preventDuplicate: form.preventDuplicate,
+        isAnonymous: form.isAnonymous,
         startDate: (() => {
           const d = jalaliToGregorianDate(form.startDate);
           d.setHours(0, 0, 0, 0);
@@ -538,7 +603,6 @@ export const PollsPage: React.FC = () => {
           d.setHours(23, 59, 59, 999);
           return d.toISOString();
         })(),
-        isAnonymous: false,
         questions,
         porscadFormId: formId,
         porscadFormPublicId: formPublicId,
@@ -548,19 +612,34 @@ export const PollsPage: React.FC = () => {
       };
 
       await apiClient.post('/polls', payload);
+      setIsCreateOpen(false);
+      setCreateStep(0);
+      setCreateError(null);
+      setDrafts([emptyDraft()]);
+      setForm({
+        title: '',
+        description: '',
+        targetAudience: 'ALL',
+        isMandatory: false,
+        preventDuplicate: true,
+        isAnonymous: false,
+        startDate: gregorianToJalaliStr(new Date()),
+        endDate: gregorianToJalaliStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
+      });
       toast.success(
         porscadOk
-          ? 'نظرسنجی ساخته شد و فرم در پرس‌کاد ایجاد گردید'
-          : 'نظرسنجی ساخته شد',
+          ? 'نظرسنجی با موفقیت ذخیره و فرم در پرس‌کاد ایجاد شد ✨'
+          : 'نظرسنجی با موفقیت ذخیره شد ✨',
       );
-      setIsCreateOpen(false);
       await fetchPolls();
     } catch (e: any) {
       const msg =
         e?.response?.data?.message ||
         e?.message ||
         'خطا در ایجاد نظرسنجی';
-      setCreateError(typeof msg === 'string' ? msg : 'خطا در ایجاد نظرسنجی');
+      const strMsg = typeof msg === 'string' ? msg : 'خطا در ایجاد نظرسنجی';
+      toast.error(strMsg);
+      setCreateError(strMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -570,7 +649,9 @@ export const PollsPage: React.FC = () => {
   const openPoll = async (poll: Poll) => {
     setActivePoll(poll);
     setFillStep(0);
+    setStepHistory([]);
     setFillAnswers({});
+    setFillError(null);
     setHasVoted(false);
     try {
       const detail = await apiClient.get<{
@@ -594,7 +675,9 @@ export const PollsPage: React.FC = () => {
   const closePoll = () => {
     setActivePoll(null);
     setFillStep(0);
+    setStepHistory([]);
     setFillAnswers({});
+    setFillError(null);
     setHasVoted(false);
   };
 
@@ -611,14 +694,112 @@ export const PollsPage: React.FC = () => {
     return true;
   };
 
+  const validateCurrentQuestionAnswer = (q: SurveyQuestion, raw: unknown): string | null => {
+    if (INFORMATIONAL_TYPES.has(q.type)) return null;
+    if (q.required !== false) {
+      if (raw === undefined || raw === null || raw === '') {
+        return 'پاسخ به این سوال الزامی است؛ لطفاً گزینه یا متن مورد نظر را وارد کنید.';
+      }
+      if (Array.isArray(raw) && raw.length === 0) {
+        return 'حداقل یک گزینه را انتخاب کنید';
+      }
+    }
+    if (raw === undefined || raw === null || raw === '') return null;
+
+    const val = q.validation;
+    if (!val) return null;
+
+    // Number validations
+    if (q.type === 'number') {
+      const num = Number(raw);
+      if (isNaN(num)) return 'لطفاً یک عدد معتبر وارد کنید';
+      if (val.min !== undefined && num < val.min) {
+        return `حداقل مقدار مجاز ${toPersianDigits(val.min)} است`;
+      }
+      if (val.max !== undefined && num > val.max) {
+        return `حداکثر مقدار مجاز ${toPersianDigits(val.max)} است`;
+      }
+    }
+
+    // Text length validations
+    if (typeof raw === 'string') {
+      if (val.minLength !== undefined && raw.length < val.minLength) {
+        return `حداقل طول پاسخ ${toPersianDigits(val.minLength)} کاراکتر است (فعلی: ${toPersianDigits(raw.length)})`;
+      }
+      if (val.maxLength !== undefined && raw.length > val.maxLength) {
+        return `حداکثر طول پاسخ ${toPersianDigits(val.maxLength)} کاراکتر است (فعلی: ${toPersianDigits(raw.length)})`;
+      }
+    }
+
+    return null;
+  };
+
   const canGoNext = (() => {
     const q = activeQuestions[fillStep];
     if (!q) return true;
-    if (q.required === false) return true;
-    return isQuestionAnswered(q, fillStep);
+    const err = validateCurrentQuestionAnswer(q, fillAnswers[String(fillStep)]);
+    return !err;
   })();
 
+  const handleNextStep = async () => {
+    const q = activeQuestions[fillStep];
+    if (!q) return;
+
+    const currentAnswer = fillAnswers[String(fillStep)];
+    const validationError = validateCurrentQuestionAnswer(q, currentAnswer);
+    if (validationError) {
+      setFillError(validationError);
+      toast.error(validationError);
+      return;
+    }
+    setFillError(null);
+
+    // Check Jump Logic (Branching)
+    if (q.jump_actions && q.jump_actions.length > 0) {
+      const matched = q.jump_actions.find((act) => {
+        if (Array.isArray(currentAnswer)) {
+          return currentAnswer.includes(act.conditionValue);
+        }
+        return String(currentAnswer) === String(act.conditionValue);
+      });
+
+      if (matched) {
+        if (matched.targetQuestionIndex === 'END') {
+          // Jump to submit / finish
+          await submitAllAnswers();
+          return;
+        }
+        const targetIdx = Number(matched.targetQuestionIndex);
+        if (!isNaN(targetIdx) && targetIdx >= 0 && targetIdx < activeQuestions.length) {
+          setStepHistory((prev) => [...prev, fillStep]);
+          setFillStep(targetIdx);
+          return;
+        }
+      }
+    }
+
+    // Standard Next
+    if (fillStep < activeQuestions.length - 1) {
+      setStepHistory((prev) => [...prev, fillStep]);
+      setFillStep((s) => s + 1);
+    } else {
+      await submitAllAnswers();
+    }
+  };
+
+  const handlePreviousStep = () => {
+    setFillError(null);
+    if (stepHistory.length > 0) {
+      const prevStep = stepHistory[stepHistory.length - 1];
+      setStepHistory((prev) => prev.slice(0, -1));
+      setFillStep(prevStep);
+    } else {
+      setFillStep((s) => Math.max(0, s - 1));
+    }
+  };
+
   const setAnswer = (index: number, value: SurveyAnswers[string]) => {
+    setFillError(null);
     setFillAnswers((prev) => ({ ...prev, [String(index)]: value }));
   };
 
@@ -628,6 +809,7 @@ export const PollsPage: React.FC = () => {
     multi: boolean,
     maxSel: number,
   ) => {
+    setFillError(null);
     const key = String(index);
     const current = fillAnswers[key];
     if (!multi) {
@@ -658,7 +840,9 @@ export const PollsPage: React.FC = () => {
       if (INFORMATIONAL_TYPES.has(questions[i].type)) continue;
       if (!isQuestionAnswered(questions[i], i)) {
         setFillStep(i);
-        toast.error(`به سوال «${questions[i].title}» پاسخ دهید`);
+        const errMsg = `پاسخ به سوال ${toPersianDigits(i + 1)} («${questions[i].title}») الزامی است`;
+        setFillError(errMsg);
+        toast.error(errMsg);
         return;
       }
     }
@@ -671,14 +855,10 @@ export const PollsPage: React.FC = () => {
       const questionIds =
         questions.map((q) => q.porscadQuestionId).filter(Boolean) as string[];
 
-      if (
-        activePoll.porscadFormPublicId &&
-        questionIds.length > 0 &&
-        porscadSurvey.getToken()
-      ) {
+      if (activePoll.porscadFormId) {
         const result = await porscadSurvey.submitSurveyAnswers({
-          formPublicId: activePoll.porscadFormPublicId,
-          formId: activePoll.porscadFormId || '',
+          formPublicId: activePoll.porscadFormPublicId || undefined,
+          formId: activePoll.porscadFormId,
           questionIds,
           questions,
           answersByIndex: fillAnswers,
@@ -699,13 +879,12 @@ export const PollsPage: React.FC = () => {
 
       if (porscadError) {
         toast.error(`پاسخ محلی ثبت شد؛ ${porscadError}`);
-      } else if (porscadResponseId || !activePoll.porscadFormId) {
-        toast.success('پاسخ‌های شما ثبت شد');
       } else {
-        toast.success('پاسخ‌های شما ثبت شد');
+        toast.success('پاسخ‌های شما با موفقیت ثبت گردید ✨');
       }
 
       setHasVoted(true);
+      closePoll();
       await fetchPolls();
     } catch (e: any) {
       const msg =
@@ -725,6 +904,24 @@ export const PollsPage: React.FC = () => {
     try {
       const res = await apiClient.get<AnalyticsData>(`/polls/${poll.id}/analytics`);
       if (res.data) setAnalytics(res.data);
+
+      // Auto-fetch live Porscad analytics if linked to Porscad
+      if (poll.porscadFormId) {
+        const questions = legacyQuestionsFromPoll(poll);
+        const questionIds = questions
+          .map((q) => q.porscadQuestionId)
+          .filter(Boolean) as string[];
+        try {
+          const live = await porscadSurvey.fetchLiveAnalytics({
+            formId: poll.porscadFormId,
+            questionIds,
+            questions,
+          });
+          setLiveAnalytics(live);
+        } catch (liveErr) {
+          console.warn('Live Porscad analytics auto-fetch error:', liveErr);
+        }
+      }
     } catch {
       toast.error('خطا در دریافت آنالیتیکس');
     } finally {
@@ -740,18 +937,15 @@ export const PollsPage: React.FC = () => {
     const questionIds = questions
       .map((q) => q.porscadQuestionId)
       .filter(Boolean) as string[];
-    if (questionIds.length === 0) {
-      toast.error('این نظرسنجی به پرس‌کاد متصل نیست');
-      return;
-    }
     setIsRefreshingLive(true);
     try {
       const live = await porscadSurvey.fetchLiveAnalytics({
+        formId: poll.porscadFormId,
         questionIds,
         questions,
       });
       setLiveAnalytics(live);
-      toast.success('داده زنده پرس‌کاد دریافت شد');
+      toast.success('داده‌های زنده پرس‌کاد با موفقیت دریافت شد ✨');
     } catch (e: any) {
       toast.error(e?.message || 'خطا در دریافت آنالیتیکس پرس‌کاد');
     } finally {
@@ -764,29 +958,84 @@ export const PollsPage: React.FC = () => {
 
     if (INFORMATIONAL_TYPES.has(q.type)) {
       return (
-        <div className="p-4 rounded-xl border border-dashed border-border text-xs font-bold text-muted-foreground text-center">
-          {q.type === 'group' ? 'این بخش فقط جداکننده است' : 'بدون نیاز به پاسخ'}
+        <div className="p-5 rounded-2xl border border-dashed border-primary/40 bg-primary/5 text-center space-y-2">
+          <div className="inline-flex p-2 rounded-xl bg-primary/10 text-primary font-black text-xs">
+            {q.type === 'group' ? 'گروه و بخش‌بندی سوالات' : 'پیام توضیحی'}
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {q.description || 'این بخش صرفاً جهت راهنمایی است و نیاز به انتخاب یا پاسخ ندارد.'}
+          </p>
         </div>
       );
     }
 
     if (q.type === 'yes_no') {
       return (
-        <div className="grid grid-cols-2 gap-3">
-          {['بله', 'خیر'].map((opt) => {
+        <div className="grid grid-cols-2 gap-3.5">
+          {[
+            { label: 'بله', color: 'hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30' },
+            { label: 'خیر', color: 'hover:border-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30' },
+          ].map((item) => {
+            const selected = value === item.label;
+            return (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => setAnswer(index, item.label)}
+                className={`h-16 rounded-2xl border-2 text-base font-black transition-all flex items-center justify-center gap-2 ${
+                  selected
+                    ? item.label === 'بله'
+                      ? 'border-emerald-500 bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 scale-[1.02]'
+                      : 'border-rose-500 bg-rose-500 text-white shadow-lg shadow-rose-500/25 scale-[1.02]'
+                    : `border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-foreground ${item.color}`
+                }`}
+              >
+                <span>{item.label}</span>
+                {selected && <Check className="w-5 h-5 stroke-[3]" />}
+              </button>
+            );
+          })}
+        </div>
+      );
+    }
+
+    if (q.type === 'likert') {
+      const likertSteps = [
+        { label: 'کاملاً موافق', emoji: '😍', color: 'border-emerald-500 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200' },
+        { label: 'موافق', emoji: '😊', color: 'border-teal-500 bg-teal-50 text-teal-900 dark:bg-teal-950/40 dark:text-teal-200' },
+        { label: 'ممتنع / خنثی', emoji: '😐', color: 'border-amber-500 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200' },
+        { label: 'مخالف', emoji: '🙁', color: 'border-orange-500 bg-orange-50 text-orange-900 dark:bg-orange-950/40 dark:text-orange-200' },
+        { label: 'کاملاً مخالف', emoji: '😡', color: 'border-rose-500 bg-rose-50 text-rose-900 dark:bg-rose-950/40 dark:text-rose-200' },
+      ];
+      const options = q.options && q.options.length === 5 ? q.options : likertSteps.map((s) => s.label);
+
+      return (
+        <div className="space-y-2.5">
+          {options.map((opt, oi) => {
             const selected = value === opt;
+            const step = likertSteps[oi] || likertSteps[2];
             return (
               <button
                 key={opt}
                 type="button"
                 onClick={() => setAnswer(index, opt)}
-                className={`h-14 rounded-xl border text-sm font-black transition-all ${
+                className={`w-full flex items-center justify-between p-3.5 rounded-2xl border-2 text-right transition-all font-bold text-xs sm:text-sm ${
                   selected
-                    ? 'border-primary bg-primary/10 text-primary shadow-[2px_2px_0_#202A5A] dark:shadow-[2px_2px_0_#59BBAF]'
-                    : 'border-gray-200 dark:border-[#242F42] bg-[#FAFAFA] dark:bg-[#1C2536] hover:border-primary/40'
+                    ? `${step.color} shadow-sm ring-2 ring-primary/20 scale-[1.01]`
+                    : 'border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-foreground hover:border-primary/40'
                 }`}
               >
-                {opt}
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xl">{step.emoji}</span>
+                  <span>{opt}</span>
+                </div>
+                <div
+                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    selected ? 'border-primary bg-primary text-white' : 'border-gray-300 dark:border-zinc-600'
+                  }`}
+                >
+                  {selected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                </div>
               </button>
             );
           })}
@@ -797,47 +1046,64 @@ export const PollsPage: React.FC = () => {
     if (q.type === 'rating') {
       const current = typeof value === 'number' ? value : 0;
       return (
-        <div className="flex items-center justify-center gap-2 py-4">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <button
-              key={star}
-              type="button"
-              onClick={() => setAnswer(index, star)}
-              className={`p-2 rounded-xl transition-all ${
-                current >= star
-                  ? 'text-amber-400 bg-amber-400/10 scale-110'
-                  : 'text-gray-300 dark:text-gray-600 hover:text-amber-400/70'
-              }`}
-            >
-              <Star className="w-8 h-8 fill-current" />
-            </button>
-          ))}
+        <div className="py-4 space-y-3">
+          <div className="flex items-center justify-center gap-2.5 sm:gap-4">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => setAnswer(index, star)}
+                className={`p-2.5 rounded-2xl transition-all ${
+                  current >= star
+                    ? 'text-amber-400 bg-amber-400/15 scale-110 shadow-sm'
+                    : 'text-gray-300 dark:text-zinc-700 hover:text-amber-400/70 hover:scale-105'
+                }`}
+              >
+                <Star className={`w-8 h-8 sm:w-10 sm:h-10 ${current >= star ? 'fill-amber-400' : ''}`} />
+              </button>
+            ))}
+          </div>
+          {current > 0 && (
+            <p className="text-center font-black text-xs text-amber-600 dark:text-amber-400">
+              {toPersianDigits(current)} از ۵ ستاره انتخاب شد
+            </p>
+          )}
         </div>
       );
     }
 
     if (q.type === 'opinion_scale' || q.type === 'nps') {
-      const current = typeof value === 'number' ? value : 0;
+      const current = typeof value === 'number' ? value : null;
       const nums =
         q.type === 'nps'
           ? Array.from({ length: 11 }, (_, i) => i)
           : Array.from({ length: 10 }, (_, i) => i + 1);
+
       return (
-        <div className="grid grid-cols-5 sm:grid-cols-11 gap-2 py-2">
-          {nums.map((n) => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => setAnswer(index, n)}
-              className={`h-11 rounded-xl border text-xs sm:text-sm font-black transition-all ${
-                current === n
-                  ? 'border-primary bg-primary text-white'
-                  : 'border-gray-200 dark:border-[#242F42] bg-[#FAFAFA] dark:bg-[#1C2536] hover:border-primary/50'
-              }`}
-            >
-              {toPersianDigits(n)}
-            </button>
-          ))}
+        <div className="space-y-3 py-2">
+          <div className="grid grid-cols-6 sm:grid-cols-11 gap-1.5 sm:gap-2">
+            {nums.map((n) => {
+              const selected = current === n;
+              return (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setAnswer(index, n)}
+                  className={`h-12 rounded-xl border-2 text-xs sm:text-sm font-black transition-all flex items-center justify-center ${
+                    selected
+                      ? 'border-primary bg-primary text-white shadow-md shadow-primary/25 scale-105'
+                      : 'border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-foreground hover:border-primary/50'
+                  }`}
+                >
+                  {toPersianDigits(n)}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex justify-between text-[11px] font-bold text-muted-foreground px-1">
+            <span>{q.type === 'nps' ? 'اصلاً پیشنهاد نمی‌کنم (۰)' : 'خیلی ضعیف (۱)'}</span>
+            <span>{q.type === 'nps' ? 'قطعاً پیشنهاد می‌کنم (۱۰)' : 'عالی و بی‌نظیر (۱۰)'}</span>
+          </div>
         </div>
       );
     }
@@ -848,9 +1114,9 @@ export const PollsPage: React.FC = () => {
         <select
           value={typeof value === 'string' ? value : ''}
           onChange={(e) => setAnswer(index, e.target.value)}
-          className="w-full h-12 px-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-sm font-medium focus:border-primary focus:outline-none"
+          className="w-full h-12 px-3.5 rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-foreground text-sm font-medium focus:border-primary focus:outline-hidden"
         >
-          <option value="">انتخاب کنید…</option>
+          <option value="">انتخاب از فهرست گزینه‌ها…</option>
           {options.map((opt) => (
             <option key={opt} value={opt}>
               {opt}
@@ -870,11 +1136,14 @@ export const PollsPage: React.FC = () => {
             {ordered.map((opt, ri) => (
               <div
                 key={opt}
-                className="flex items-center justify-between gap-2 p-3 rounded-xl border border-primary/40 bg-primary/5 text-sm font-bold"
+                className="flex items-center justify-between gap-2 p-3.5 rounded-2xl border-2 border-primary/50 bg-primary/5 text-xs sm:text-sm font-bold shadow-xs"
               >
-                <span>
-                  {toPersianDigits(ri + 1)}. {opt}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-black">
+                    {toPersianDigits(ri + 1)}
+                  </span>
+                  <span>{opt}</span>
+                </div>
                 <button
                   type="button"
                   onClick={() =>
@@ -883,7 +1152,7 @@ export const PollsPage: React.FC = () => {
                       ordered.filter((o) => o !== opt),
                     )
                   }
-                  className="text-xs text-muted-foreground hover:text-destructive min-h-[36px] px-2"
+                  className="text-xs text-rose-500 hover:text-rose-700 font-bold px-2 py-1"
                 >
                   حذف
                 </button>
@@ -891,20 +1160,22 @@ export const PollsPage: React.FC = () => {
             ))}
           </div>
           {remaining.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-2 pt-1">
               <p className="text-[11px] font-bold text-muted-foreground">
-                اضافه کردن (به ترتیب اولویت):
+                افزودن گزینه‌ها به ترتیب اولویت شما:
               </p>
-              {remaining.map((opt) => (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => setAnswer(index, [...ordered, opt])}
-                  className="w-full text-right p-3 rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#1C2536] text-sm font-bold hover:border-primary/40"
-                >
-                  + {opt}
-                </button>
-              ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {remaining.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setAnswer(index, [...ordered, opt])}
+                    className="text-right p-3 rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-bold hover:border-primary/50 transition-all"
+                  >
+                    + {opt}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -921,21 +1192,19 @@ export const PollsPage: React.FC = () => {
               key={opt}
               type="button"
               onClick={() => setAnswer(index, opt)}
-              className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-right transition-all text-sm font-bold ${
+              className={`w-full flex items-center justify-between p-3.5 rounded-2xl border text-right transition-all text-xs sm:text-sm font-bold ${
                 selected === opt
-                  ? 'border-primary bg-primary/10 text-primary shadow-[2px_2px_0_#202A5A] dark:shadow-[2px_2px_0_#59BBAF]'
-                  : 'border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#1C2536] hover:border-primary/40'
+                  ? 'border-primary bg-primary/10 text-primary shadow-sm ring-2 ring-primary/20'
+                  : 'border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-primary/40'
               }`}
             >
               <span>{opt}</span>
               <span
                 className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  selected === opt
-                    ? 'border-primary bg-primary text-white'
-                    : 'border-gray-300 dark:border-gray-600'
+                  selected === opt ? 'border-primary bg-primary text-white' : 'border-gray-300 dark:border-zinc-600'
                 }`}
               >
-                {selected === opt && <Check className="w-3.5 h-3.5" />}
+                {selected === opt && <Check className="w-3.5 h-3.5 stroke-[3]" />}
               </span>
             </button>
           ))}
@@ -944,58 +1213,140 @@ export const PollsPage: React.FC = () => {
     }
 
     if (q.type === 'long_text') {
+      const textVal = typeof value === 'string' ? value : '';
+      const minLen = q.validation?.minLength;
+      const maxLen = q.validation?.maxLength;
       return (
-        <textarea
-          value={typeof value === 'string' ? value : ''}
-          onChange={(e) => setAnswer(index, e.target.value)}
-          rows={5}
-          className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-sm font-medium focus:border-primary focus:outline-none"
-          placeholder="پاسخ خود را بنویسید…"
-        />
+        <div className="space-y-2">
+          <textarea
+            value={textVal}
+            onChange={(e) => setAnswer(index, e.target.value)}
+            rows={5}
+            maxLength={maxLen}
+            className="w-full px-4 py-3 rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm font-medium focus:border-primary focus:outline-hidden leading-relaxed"
+            placeholder={q.placeholder || 'پاسخ و نظرات کامل خود را در این بخش بنویسید…'}
+          />
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
+            <div className="flex gap-2">
+              {minLen !== undefined && (
+                <span className={textVal.length < minLen ? 'text-amber-600 font-bold' : 'text-emerald-600 font-bold'}>
+                  حداقل: {toPersianDigits(minLen)} کاراکتر
+                </span>
+              )}
+              {maxLen !== undefined && (
+                <span>حداکثر: {toPersianDigits(maxLen)} کاراکتر</span>
+              )}
+            </div>
+            <span className="font-mono">
+              {toPersianDigits(textVal.length)} {maxLen ? `/ ${toPersianDigits(maxLen)}` : ''} کاراکتر
+            </span>
+          </div>
+        </div>
       );
     }
 
     if (q.type === 'number') {
-      return (
-        <input
-          type="number"
-          value={typeof value === 'number' ? String(value) : ''}
-          onChange={(e) =>
-            setAnswer(
-              index,
-              e.target.value === '' ? '' : Number(e.target.value),
-            )
-          }
-          className="w-full h-12 px-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-sm font-medium focus:border-primary focus:outline-none"
-          placeholder="مثلاً: ۱۲۳"
-        />
-      );
-    }
+      const minVal = q.validation?.min;
+      const maxVal = q.validation?.max;
+      const stepVal = q.validation?.step;
+      const numVal = typeof value === 'number' ? value : (value !== '' && !isNaN(Number(value)) ? Number(value) : null);
+      const isOutOfBounds = numVal !== null && ((minVal !== undefined && numVal < minVal) || (maxVal !== undefined && numVal > maxVal));
 
-    if (q.type === 'payment') {
       return (
-        <div className="p-4 rounded-xl border border-amber-400/50 bg-amber-50 dark:bg-amber-950/30 text-xs font-bold text-amber-800 dark:text-amber-300">
-          پرداخت آنلاین در نسخه فعلی فقط نمایشی است؛ مبلغ توسط سازنده فرم تعیین
-          می‌شود.
+        <div className="space-y-2">
+          <input
+            type="number"
+            min={minVal}
+            max={maxVal}
+            step={stepVal}
+            value={typeof value === 'number' ? String(value) : ''}
+            onChange={(e) =>
+              setAnswer(
+                index,
+                e.target.value === '' ? '' : Number(e.target.value),
+              )
+            }
+            className={`w-full h-12 px-4 rounded-2xl border bg-white dark:bg-zinc-900 text-sm font-medium focus:border-primary focus:outline-hidden font-mono ${
+              isOutOfBounds ? 'border-rose-500 ring-1 ring-rose-500' : 'border-gray-200 dark:border-zinc-700'
+            }`}
+            placeholder={q.placeholder || 'مثلاً: ۱۲۳'}
+          />
+          {(minVal !== undefined || maxVal !== undefined) && (
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
+              <span className={isOutOfBounds ? 'text-rose-500 font-bold' : 'text-muted-foreground'}>
+                محدوده مجاز:{' '}
+                {minVal !== undefined && `از ${toPersianDigits(minVal)} `}
+                {maxVal !== undefined && `تا ${toPersianDigits(maxVal)}`}
+              </span>
+              {stepVal !== undefined && (
+                <span>گام تغییرات: {toPersianDigits(stepVal)}</span>
+              )}
+            </div>
+          )}
         </div>
       );
     }
 
     if (q.type === 'file_upload') {
+      const allowedExts = q.validation?.allowedExtensions || [];
+      const maxMb = q.validation?.maxFileSizeMb;
+
       return (
-        <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-xl border border-dashed border-border text-xs font-bold text-muted-foreground cursor-pointer hover:border-primary/50 min-h-[88px]">
-          <input
-            type="file"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) setAnswer(index, f.name);
-            }}
-          />
-          {typeof value === 'string' && value
-            ? `فایل انتخاب شد: ${value}`
-            : 'انتخاب فایل (تصویر یا سند)'}
-        </label>
+        <div className="space-y-2">
+          <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 text-xs font-bold text-muted-foreground cursor-pointer hover:border-primary/60 transition-all min-h-[90px]">
+            <input
+              type="file"
+              className="hidden"
+              accept={allowedExts.length > 0 ? allowedExts.map((ext) => `.${ext.replace(/^\./, '')}`).join(',') : undefined}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+
+                if (maxMb) {
+                  const maxBytes = maxMb * 1024 * 1024;
+                  if (f.size > maxBytes) {
+                    toast.error(`حجم فایل بیش از سقف مجاز (${toPersianDigits(maxMb)} مگابایت) است`);
+                    e.target.value = '';
+                    return;
+                  }
+                }
+
+                if (allowedExts.length > 0) {
+                  const ext = f.name.split('.').pop()?.toLowerCase() || '';
+                  const cleanAllowed = allowedExts.map((x) => x.replace(/^\./, '').toLowerCase());
+                  if (!cleanAllowed.includes(ext)) {
+                    toast.error(`فرمت فایل مجاز نیست. فرمت‌های مجاز: ${cleanAllowed.join(', ')}`);
+                    e.target.value = '';
+                    return;
+                  }
+                }
+
+                setAnswer(index, `${f.name} (${Math.round(f.size / 1024)} KB)`);
+              }}
+            />
+            {typeof value === 'string' && value ? (
+              <div className="flex items-center gap-2 text-primary font-black">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>فایل انتخاب شد: {value}</span>
+              </div>
+            ) : (
+              <div className="text-center space-y-1">
+                <p className="text-foreground font-black">انتخاب فایل یا سند</p>
+                <p className="text-[10px] text-muted-foreground">کلیک کنید تا فایل ضمیمه شود</p>
+              </div>
+            )}
+          </label>
+          {(allowedExts.length > 0 || maxMb) && (
+            <div className="flex flex-wrap items-center justify-between text-[11px] text-muted-foreground px-1 gap-2">
+              {allowedExts.length > 0 && (
+                <span>فرمت‌های مجاز: {allowedExts.join(', ')}</span>
+              )}
+              {maxMb && (
+                <span>حداکثر حجم مجاز: {toPersianDigits(maxMb)} مگابایت</span>
+              )}
+            </div>
+          )}
+        </div>
       );
     }
 
@@ -1008,7 +1359,7 @@ export const PollsPage: React.FC = () => {
     ]);
     if (textTypes.has(q.type)) {
       const inputType = q.type === 'email' ? 'email' : 'text';
-      const placeholder =
+      const defaultPlaceholder =
         q.type === 'email'
           ? 'example@email.com'
           : q.type === 'phone_ir'
@@ -1018,18 +1369,42 @@ export const PollsPage: React.FC = () => {
               : q.type === 'telegram_id'
                 ? 'username@'
                 : 'پاسخ خود را بنویسید…';
+      const textVal = typeof value === 'string' ? value : '';
+      const minLen = q.validation?.minLength;
+      const maxLen = q.validation?.maxLength;
+
       return (
-        <input
-          type={inputType}
-          value={typeof value === 'string' ? value : ''}
-          onChange={(e) => setAnswer(index, e.target.value)}
-          className="w-full h-12 px-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-sm font-medium focus:border-primary focus:outline-none"
-          placeholder={placeholder}
-        />
+        <div className="space-y-2">
+          <input
+            type={inputType}
+            value={textVal}
+            maxLength={maxLen}
+            onChange={(e) => setAnswer(index, e.target.value)}
+            className="w-full h-12 px-4 rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm font-medium focus:border-primary focus:outline-hidden"
+            placeholder={q.placeholder || defaultPlaceholder}
+          />
+          {(minLen !== undefined || maxLen !== undefined) && (
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
+              <div className="flex gap-2">
+                {minLen !== undefined && (
+                  <span className={textVal.length < minLen ? 'text-amber-600 font-bold' : 'text-emerald-600 font-bold'}>
+                    حداقل: {toPersianDigits(minLen)} کاراکتر
+                  </span>
+                )}
+                {maxLen !== undefined && (
+                  <span>حداکثر: {toPersianDigits(maxLen)} کاراکتر</span>
+                )}
+              </div>
+              <span className="font-mono">
+                {toPersianDigits(textVal.length)} {maxLen ? `/ ${toPersianDigits(maxLen)}` : ''}
+              </span>
+            </div>
+          )}
+        </div>
       );
     }
 
-    // choice / picture_choice / likert / legacy fallback
+    // choice / picture_choice / legacy fallback
     const options = q.options || [];
     const multi = (q.maxSelections || 1) > 1;
     const maxSel = q.maxSelections || 1;
@@ -1041,6 +1416,11 @@ export const PollsPage: React.FC = () => {
 
     return (
       <div className="space-y-2">
+        {multi && (
+          <p className="text-[11px] font-bold text-muted-foreground mb-1">
+            امکان انتخاب تا {toPersianDigits(maxSel)} گزینه
+          </p>
+        )}
         {options.map((opt) => {
           const selected = selectedList.includes(opt);
           return (
@@ -1048,21 +1428,19 @@ export const PollsPage: React.FC = () => {
               key={opt}
               type="button"
               onClick={() => toggleChoice(index, opt, multi, maxSel)}
-              className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-right transition-all text-sm font-bold ${
+              className={`w-full flex items-center justify-between p-3.5 rounded-2xl border text-right transition-all text-xs sm:text-sm font-bold ${
                 selected
-                  ? 'border-primary bg-primary/10 text-primary shadow-[2px_2px_0_#202A5A] dark:shadow-[2px_2px_0_#59BBAF]'
-                  : 'border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#1C2536] hover:border-primary/40'
+                  ? 'border-primary bg-primary/10 text-primary shadow-sm ring-2 ring-primary/20'
+                  : 'border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-primary/40'
               }`}
             >
               <span>{opt}</span>
               <span
                 className={`w-5 h-5 ${multi ? 'rounded-md' : 'rounded-full'} border-2 flex items-center justify-center ${
-                  selected
-                    ? 'border-primary bg-primary text-white'
-                    : 'border-gray-300 dark:border-gray-600'
+                  selected ? 'border-primary bg-primary text-white' : 'border-gray-300 dark:border-zinc-600'
                 }`}
               >
-                {selected && <Check className="w-3.5 h-3.5" />}
+                {selected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
               </span>
             </button>
           );
@@ -1078,18 +1456,18 @@ export const PollsPage: React.FC = () => {
       <Modal
         isOpen={!!analyticsPollId}
         onClose={() => setAnalyticsPollId(null)}
-        title={`آنالیتیکس: ${poll?.title || ''}`}
+        title={`آنالیتیکس زنده نظرسنجی: «${poll?.title || ''}»`}
         maxWidth="3xl"
       >
         <div className="space-y-4 pt-1">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-xs font-bold text-gray-500 dark:text-gray-400">
+          <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+            <div className="flex items-center gap-2 text-xs font-black text-zinc-700 dark:text-zinc-300">
               <BarChart3 className="w-4 h-4 text-primary" />
               <span>
                 {liveAnalytics
-                  ? 'منبع: پرس‌کاد (زنده)'
+                  ? 'منبع: سرور زنده پرس‌کاد (Porscad Cloud Sync)'
                   : analytics?.porscadLinked
-                    ? 'منبع: پاسخ‌های ثبت‌شده'
+                    ? 'منبع: پاسخ‌های ثبت‌شده در پایگاه داده'
                     : 'منبع: پاسخ‌های محلی'}
               </span>
             </div>
@@ -1099,105 +1477,138 @@ export const PollsPage: React.FC = () => {
               size="sm"
               onClick={refreshLiveAnalytics}
               disabled={isRefreshingLive}
-              className="gap-1.5 text-xs"
+              className="gap-1.5 text-xs font-bold"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingLive ? 'animate-spin' : ''}`} />
-              {isRefreshingLive ? 'در حال دریافت…' : 'دریافت زنده پرس‌کاد'}
+              {isRefreshingLive ? 'در حال دریافت…' : 'به‌روزرسانی آنالیتیکس پرس‌کاد'}
             </Button>
           </div>
 
           {isAnalyticsLoading ? (
             <div className="space-y-3">
-              <Skeleton className="h-20 rounded-xl" />
-              <Skeleton className="h-40 rounded-xl" />
+              <Skeleton className="h-20 rounded-2xl" />
+              <Skeleton className="h-40 rounded-2xl" />
             </div>
           ) : !shown ? (
-            <div className="p-6 text-center text-sm text-gray-500">
-              داده‌ای موجود نیست
+            <div className="p-8 text-center text-sm text-gray-500">
+              داده‌ای برای نمایش موجود نیست
             </div>
           ) : (
             <>
+              {/* Summary Stats */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div className="p-3 rounded-xl border border-gray-200 dark:border-[#242F42] bg-[#FAFAFA] dark:bg-[#1C2536]">
-                  <p className="text-[11px] font-bold text-gray-500">تعداد پاسخ‌دهنده</p>
-                  <p className="text-xl font-black text-ink-normal dark:text-white">
+                <div className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+                  <p className="text-[11px] font-bold text-gray-500 mb-1">تعداد کل پاسخ‌دهندگان</p>
+                  <p className="text-2xl font-black text-foreground font-mono">
                     {toPersianDigits(shown.totalRespondents ?? analytics?.totalResponses ?? 0)}
                   </p>
                 </div>
-                <div className="p-3 rounded-xl border border-gray-200 dark:border-[#242F42] bg-[#FAFAFA] dark:bg-[#1C2536]">
-                  <p className="text-[11px] font-bold text-gray-500">تعداد سوالات</p>
-                  <p className="text-xl font-black text-ink-normal dark:text-white">
+                <div className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+                  <p className="text-[11px] font-bold text-gray-500 mb-1">تعداد سوالات فرم</p>
+                  <p className="text-2xl font-black text-foreground font-mono">
                     {toPersianDigits(shown.perQuestion?.length || 0)}
                   </p>
                 </div>
-                <div className="p-3 rounded-xl border border-gray-200 dark:border-[#242F42] bg-[#FAFAFA] dark:bg-[#1C2536]">
-                  <p className="text-[11px] font-bold text-gray-500">اتصال پرس‌کاد</p>
-                  <p className="text-sm font-black text-emerald-600">
-                    {poll?.porscadFormId ? 'متصل' : 'محلی'}
+                <div className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+                  <p className="text-[11px] font-bold text-gray-500 mb-1">وضعیت پرس‌کاد</p>
+                  <p className="text-xs font-black text-emerald-600 dark:text-emerald-400 mt-2 flex items-center gap-1">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{poll?.porscadFormId ? 'متصل به سرور' : 'محلی'}</span>
                   </p>
                 </div>
               </div>
 
-              {(shown.perQuestion || []).map((q: any) => (
-                <div
-                  key={q.index}
-                  className="rounded-xl border border-gray-200 dark:border-[#242F42] p-4 space-y-2 bg-white dark:bg-[#151C28]"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <h4 className="text-sm font-black text-ink-normal dark:text-white">
-                      {toPersianDigits(q.index + 1)}. {q.title}
-                    </h4>
-                    <Badge variant="neutral">
-                      {TYPE_LABEL[q.type as QuestionType] || q.type}
-                    </Badge>
-                  </div>
-                  <p className="text-[11px] font-bold text-gray-500">
-                    پاسخ‌ها: {toPersianDigits(q.answered)}
-                    {q.avgRating != null && (
-                      <span className="mr-2">
-                        میانگین: {toPersianDigits(q.avgRating)}
-                      </span>
-                    )}
-                  </p>
-                  {q.options?.length > 0 && (
-                    <div className="space-y-2">
-                      {q.options.map((opt: any) => (
-                        <div key={opt.text} className="space-y-1">
-                          <div className="flex justify-between text-xs font-bold">
-                            <span className="text-ink-normal dark:text-white">{opt.text}</span>
-                            <span className="text-gray-500">
-                              {toPersianDigits(opt.count)} (
-                              {toPersianDigits(opt.percentage || 0)}٪)
-                            </span>
-                          </div>
-                          <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                            <div
-                              className="h-full bg-primary rounded-full transition-all"
-                              style={{ width: `${opt.percentage || 0}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
+              {/* Per Question Detailed Analytics */}
+              <div className="space-y-3">
+                {(shown.perQuestion || []).map((q: any) => (
+                  <div
+                    key={q.index}
+                    className="rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 space-y-3 bg-white dark:bg-zinc-900"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="text-sm font-black text-foreground">
+                        {toPersianDigits(q.index + 1)}. {q.title}
+                      </h4>
+                      <Badge variant="neutral">
+                        {TYPE_LABEL[q.type as QuestionType] || q.type}
+                      </Badge>
                     </div>
-                  )}
-                </div>
-              ))}
 
-              {analytics?.responses && analytics.responses.length > 0 && !liveAnalytics && (
-                <div className="rounded-xl border border-gray-200 dark:border-[#242F42] p-4">
-                  <h4 className="text-xs font-black text-ink-normal dark:text-white mb-3">
-                    پاسخ‌دهندگان ({toPersianDigits(analytics.responses.length)})
+                    <div className="flex items-center gap-4 text-[11px] font-bold text-gray-500">
+                      <span>تعداد پاسخ‌ها: {toPersianDigits(q.answered)}</span>
+                      {q.avgRating != null && (
+                        <span className="text-amber-600 dark:text-amber-400 font-black">
+                          ★ میانگین امتیاز: {toPersianDigits(q.avgRating)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Progress bars for options */}
+                    {q.options?.length > 0 && (
+                      <div className="space-y-2 pt-1">
+                        {q.options.map((opt: any) => (
+                          <div key={opt.text} className="space-y-1">
+                            <div className="flex justify-between text-xs font-bold">
+                              <span className="text-foreground">{opt.text}</span>
+                              <span className="text-gray-500 font-mono">
+                                {toPersianDigits(opt.count)} رای ({toPersianDigits(opt.percentage || 0)}٪)
+                              </span>
+                            </div>
+                            <div className="h-2 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${
+                                  opt.text.includes('موافق')
+                                    ? 'bg-emerald-500'
+                                    : opt.text.includes('مخالف')
+                                      ? 'bg-rose-500'
+                                      : 'bg-primary'
+                                }`}
+                                style={{ width: `${opt.percentage || 0}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Text / Input Responses List */}
+                    {q.textAnswers && q.textAnswers.length > 0 && (
+                      <div className="space-y-1.5 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                        <p className="text-[11px] font-bold text-muted-foreground">
+                          پاسخ‌های ثبت‌شده کاربران:
+                        </p>
+                        <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                          {q.textAnswers.map((item: any, ti: number) => (
+                            <div
+                              key={ti}
+                              className="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 text-xs font-medium text-foreground leading-relaxed border border-zinc-200/60 dark:border-zinc-700/60"
+                            >
+                              {item.value || item}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Individual Responses List */}
+              {analytics?.responses && analytics.responses.length > 0 && (
+                <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 bg-white dark:bg-zinc-900 space-y-2">
+                  <h4 className="text-xs font-black text-foreground">
+                    لیست پاسخ‌دهندگان ({toPersianDigits(analytics.responses.length)})
                   </h4>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {analytics.responses.map((r) => (
                       <div
                         key={r.id}
-                        className="flex items-center justify-between text-xs p-2 rounded-lg bg-[#FAFAFA] dark:bg-[#1C2536]"
+                        className="flex items-center justify-between text-xs p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800"
                       >
-                        <span className="font-bold text-ink-normal dark:text-white">
+                        <span className="font-bold text-foreground">
                           {r.respondentName}
                         </span>
-                        <span className="text-gray-500">
+                        <span className="text-gray-500 font-mono text-[11px]">
                           {formatJalaliDisplay(r.createdAt, true)}
                         </span>
                       </div>
@@ -1343,6 +1754,14 @@ export const PollsPage: React.FC = () => {
                           <Badge variant="college">
                             {AUDIENCE_LABEL[poll.targetAudience] || poll.targetAudience}
                           </Badge>
+                          {poll.isMandatory ? (
+                            <Badge variant="warning">الزامی (تکلیفی)</Badge>
+                          ) : (
+                            <Badge variant="neutral">اختیاری</Badge>
+                          )}
+                          {poll.isAnonymous && (
+                            <Badge variant="neutral">ناشناس</Badge>
+                          )}
                           {linked && (
                             <Badge variant="male">پرس‌کاد</Badge>
                           )}
@@ -1567,6 +1986,62 @@ export const PollsPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Requirement & Participation Mode */}
+              <div className="space-y-2 p-3.5 rounded-xl border border-border/80 bg-surface/30">
+                <label className="block text-xs font-bold text-foreground">
+                  الزام و نوع مشارکت در نظرسنجی:
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, isMandatory: false })}
+                    className={`p-3 rounded-xl border text-right transition-all font-bold text-xs ${
+                      !form.isMandatory
+                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 ring-2 ring-emerald-500/20'
+                        : 'border-border bg-background text-muted-foreground hover:border-border/80'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+                      <span className="text-foreground">مشارکت اختیاری و داوطلبانه</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground font-normal mt-1 pr-4.5">
+                      کاربران و دانش‌آموزان به انتخاب خود در نظرسنجی شرکت می‌کنند.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, isMandatory: true })}
+                    className={`p-3 rounded-xl border text-right transition-all font-bold text-xs ${
+                      form.isMandatory
+                        ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200 ring-2 ring-rose-500/20'
+                        : 'border-border bg-background text-muted-foreground hover:border-border/80'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
+                      <span className="text-foreground">تکمیل الزامی (تکلیفی)</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground font-normal mt-1 pr-4.5">
+                      تکمیل این فرم برای تمام افراد مشخص‌شده اجباری و لازم خواهد بود.
+                    </p>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-4 pt-2 border-t border-border/40">
+                  <label className="flex items-center gap-2 text-xs font-bold text-foreground cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.isAnonymous}
+                      onChange={(e) => setForm({ ...form, isAnonymous: e.target.checked })}
+                      className="w-4 h-4 rounded text-primary"
+                    />
+                    <span>ثبت پاسخ‌ها به‌صورت ناشناس</span>
+                  </label>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <PersianDatePicker
                   label="تاریخ شروع"
@@ -1584,7 +2059,7 @@ export const PollsPage: React.FC = () => {
 
           {createStep === 1 && (
             <div className="space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <p className="text-xs font-bold text-muted-foreground">
                   انواع سوال پرس‌کاد: گزینه‌ای، متنی، عددی، NPS، لیکرت، ماتریس و بیشتر
                 </p>
@@ -1603,19 +2078,39 @@ export const PollsPage: React.FC = () => {
               {drafts.map((d, idx) => (
                 <div
                   key={idx}
-                  className="rounded-xl border border-border p-4 space-y-3 bg-surface/20"
+                  className="rounded-xl border border-border p-4 space-y-3 bg-surface/20 shadow-2xs"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-primary">
-                      سوال {toPersianDigits(idx + 1)}
-                    </span>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-primary">
+                        سوال {toPersianDigits(idx + 1)}
+                      </span>
+                      {/* Prominent Per-Question Required Toggle */}
+                      <button
+                        type="button"
+                        disabled={INFORMATIONAL_TYPES.has(d.type)}
+                        onClick={() => updateDraft(idx, { required: !d.required })}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-black transition-all ${
+                          INFORMATIONAL_TYPES.has(d.type)
+                            ? 'opacity-40 cursor-not-allowed border-border text-muted-foreground'
+                            : d.required
+                              ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 shadow-xs'
+                              : 'border-emerald-500/50 bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 hover:border-emerald-500'
+                        }`}
+                        title="مشخص کردن الزامی یا اختیاری بودن پاسخ این سوال برای کاربر"
+                      >
+                        <span className={`w-2 h-2 rounded-full ${d.required ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+                        <span>{d.required ? 'پاسخ الزامی *' : 'پاسخ اختیاری'}</span>
+                      </button>
+                    </div>
+
                     {drafts.length > 1 && (
                       <button
                         type="button"
                         onClick={() =>
                           setDrafts((p) => p.filter((_, i) => i !== idx))
                         }
-                        className="p-2.5 -m-1 text-muted-foreground hover:text-destructive rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        className="p-2 -m-1 text-muted-foreground hover:text-destructive rounded-lg flex items-center justify-center"
                         aria-label={`حذف سوال ${toPersianDigits(idx + 1)}`}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -1634,7 +2129,13 @@ export const PollsPage: React.FC = () => {
                           updateDraft(idx, { title: e.target.value })
                         }
                         placeholder="کیفیت خدمات چگونه بود؟"
+                        className={!d.title.trim() && createError ? 'border-rose-500 ring-2 ring-rose-500/30' : ''}
                       />
+                      {!d.title.trim() && createError && (
+                        <p className="text-[10px] font-bold text-rose-600 mt-1">
+                          متن این سوال نمی‌تواند خالی باشد
+                        </p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-[11px] font-bold text-foreground mb-1">
@@ -1752,26 +2253,313 @@ export const PollsPage: React.FC = () => {
                     </div>
                   )}
 
-                  <label
-                    className={`flex items-center gap-2 text-xs font-bold text-foreground ${
-                      INFORMATIONAL_TYPES.has(d.type)
-                        ? 'opacity-40 pointer-events-none'
-                        : ''
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={
-                        INFORMATIONAL_TYPES.has(d.type) ? false : d.required
-                      }
-                      onChange={(e) =>
-                        updateDraft(idx, { required: e.target.checked })
-                      }
-                      className="w-4 h-4"
-                      disabled={INFORMATIONAL_TYPES.has(d.type)}
-                    />
-                    پاسخ اجباری
-                  </label>
+                  {/* Advanced Porscad Validation & Conditions Accordion */}
+                  <div className="pt-2 border-t border-border/40">
+                    <button
+                      type="button"
+                      onClick={() => updateDraft(idx, { showAdvanced: !d.showAdvanced })}
+                      className="w-full flex items-center justify-between p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-bold text-muted-foreground transition-all"
+                    >
+                      <div className="flex items-center gap-1.5 text-primary">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>تنظیمات اعتبارسنجی و شروط پرس‌کاد (پیشرفته)</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-[11px]">
+                        <span>{d.showAdvanced ? 'بستن' : 'مشاهده و تنظیم'}</span>
+                        {d.showAdvanced ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                      </div>
+                    </button>
+
+                    {d.showAdvanced && (
+                      <div className="mt-3 p-3.5 rounded-xl border border-primary/20 bg-primary/5 space-y-3 animate-in fade-in duration-200">
+                        {/* Number Validation */}
+                        {d.type === 'number' && (
+                          <div className="space-y-2">
+                            <p className="text-[11px] font-black text-foreground">
+                              محدودیت‌های عددی پرس‌کاد:
+                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                              <div>
+                                <label className="block text-[10px] font-bold text-muted-foreground mb-1">
+                                  حداقل عدد مجاز (Min)
+                                </label>
+                                <Input
+                                  type="number"
+                                  value={d.validation.min ?? ''}
+                                  onChange={(e) =>
+                                    updateDraft(idx, {
+                                      validation: {
+                                        ...d.validation,
+                                        min: e.target.value === '' ? undefined : Number(e.target.value),
+                                      },
+                                    })
+                                  }
+                                  placeholder="مثلاً: ۰"
+                                  className="h-8 text-xs font-mono"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold text-muted-foreground mb-1">
+                                  حداکثر عدد مجاز (Max)
+                                </label>
+                                <Input
+                                  type="number"
+                                  value={d.validation.max ?? ''}
+                                  onChange={(e) =>
+                                    updateDraft(idx, {
+                                      validation: {
+                                        ...d.validation,
+                                        max: e.target.value === '' ? undefined : Number(e.target.value),
+                                      },
+                                    })
+                                  }
+                                  placeholder="مثلاً: ۱۰۰"
+                                  className="h-8 text-xs font-mono"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold text-muted-foreground mb-1">
+                                  گام تغییر (Step)
+                                </label>
+                                <Input
+                                  type="number"
+                                  value={d.validation.step ?? ''}
+                                  onChange={(e) =>
+                                    updateDraft(idx, {
+                                      validation: {
+                                        ...d.validation,
+                                        step: e.target.value === '' ? undefined : Number(e.target.value),
+                                      },
+                                    })
+                                  }
+                                  placeholder="مثلاً: ۱"
+                                  className="h-8 text-xs font-mono"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Text Validation */}
+                        {(d.type === 'short_text' || d.type === 'long_text' || d.type === 'email' || d.type === 'phone_ir' || d.type === 'link' || d.type === 'telegram_id') && (
+                          <div className="space-y-2">
+                            <p className="text-[11px] font-black text-foreground">
+                              اعتبارسنجی متنی پرس‌کاد:
+                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                              <div>
+                                <label className="block text-[10px] font-bold text-muted-foreground mb-1">
+                                  متن نگهدارنده (Placeholder)
+                                </label>
+                                <Input
+                                  value={d.placeholder || ''}
+                                  onChange={(e) =>
+                                    updateDraft(idx, { placeholder: e.target.value })
+                                  }
+                                  placeholder="متن نمونه در کادر…"
+                                  className="h-8 text-xs"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold text-muted-foreground mb-1">
+                                  حداقل کاراکتر (Min Length)
+                                </label>
+                                <Input
+                                  type="number"
+                                  value={d.validation.minLength ?? ''}
+                                  onChange={(e) =>
+                                    updateDraft(idx, {
+                                      validation: {
+                                        ...d.validation,
+                                        minLength: e.target.value === '' ? undefined : Number(e.target.value),
+                                      },
+                                    })
+                                  }
+                                  placeholder="مثلاً: ۳"
+                                  className="h-8 text-xs font-mono"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold text-muted-foreground mb-1">
+                                  حداکثر کاراکتر (Max Length)
+                                </label>
+                                <Input
+                                  type="number"
+                                  value={d.validation.maxLength ?? ''}
+                                  onChange={(e) =>
+                                    updateDraft(idx, {
+                                      validation: {
+                                        ...d.validation,
+                                        maxLength: e.target.value === '' ? undefined : Number(e.target.value),
+                                      },
+                                    })
+                                  }
+                                  placeholder="مثلاً: ۵۰۰"
+                                  className="h-8 text-xs font-mono"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* File Upload Constraints */}
+                        {d.type === 'file_upload' && (
+                          <div className="space-y-2">
+                            <p className="text-[11px] font-black text-foreground">
+                              محدودیت‌های فایل در پرس‌کاد:
+                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-[10px] font-bold text-muted-foreground mb-1">
+                                  فرمت‌های مجاز (جدا شده با کاما)
+                                </label>
+                                <Input
+                                  value={(d.validation.allowedExtensions || []).join(', ')}
+                                  onChange={(e) =>
+                                    updateDraft(idx, {
+                                      validation: {
+                                        ...d.validation,
+                                        allowedExtensions: e.target.value
+                                          .split(',')
+                                          .map((s) => s.trim().toLowerCase())
+                                          .filter(Boolean),
+                                      },
+                                    })
+                                  }
+                                  placeholder="مثلاً: pdf, zip, png, jpg"
+                                  className="h-8 text-xs"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold text-muted-foreground mb-1">
+                                  حداکثر حجم فایل (مگابایت)
+                                </label>
+                                <Input
+                                  type="number"
+                                  value={d.validation.maxFileSizeMb ?? ''}
+                                  onChange={(e) =>
+                                    updateDraft(idx, {
+                                      validation: {
+                                        ...d.validation,
+                                        maxFileSizeMb: e.target.value === '' ? undefined : Number(e.target.value),
+                                      },
+                                    })
+                                  }
+                                  placeholder="مثلاً: ۱۰"
+                                  className="h-8 text-xs font-mono"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Jump Logic (Branching) */}
+                        {(d.type === 'choice' || d.type === 'picture_choice' || d.type === 'yes_no' || d.type === 'dropdown') && (
+                          <div className="space-y-2 pt-2 border-t border-primary/20">
+                            <div className="flex items-center justify-between">
+                              <p className="text-[11px] font-black text-foreground">
+                                شرط پرش (Jump Logic):
+                              </p>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  const actions = d.jump_actions || [];
+                                  const firstOpt = d.options?.[0] || 'بله';
+                                  updateDraft(idx, {
+                                    jump_actions: [
+                                      ...actions,
+                                      { conditionValue: firstOpt, targetQuestionIndex: idx + 2 < drafts.length ? idx + 2 : 'END' },
+                                    ],
+                                  });
+                                }}
+                                className="h-7 text-[10px] px-2 gap-1"
+                              >
+                                <Plus className="w-3 h-3" />
+                                افزودن شرط پرش
+                              </Button>
+                            </div>
+
+                            {d.jump_actions && d.jump_actions.length > 0 ? (
+                              <div className="space-y-1.5">
+                                {d.jump_actions.map((act, ai) => (
+                                  <div key={ai} className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-background border border-border text-xs">
+                                    <span className="text-[11px] font-bold text-muted-foreground">اگر پاسخ برابر بود با:</span>
+                                    <select
+                                      value={act.conditionValue}
+                                      onChange={(e) => {
+                                        const next = [...(d.jump_actions || [])];
+                                        next[ai].conditionValue = e.target.value;
+                                        updateDraft(idx, { jump_actions: next });
+                                      }}
+                                      className="h-7 px-2 rounded-md border border-border bg-surface text-xs font-bold"
+                                    >
+                                      {(d.type === 'yes_no' ? ['بله', 'خیر'] : d.options).map((opt) => (
+                                        <option key={opt} value={opt}>
+                                          {opt}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <span className="text-[11px] font-bold text-muted-foreground">➔ پرش به:</span>
+                                    <select
+                                      value={act.targetQuestionIndex}
+                                      onChange={(e) => {
+                                        const next = [...(d.jump_actions || [])];
+                                        next[ai].targetQuestionIndex = e.target.value === 'END' ? 'END' : Number(e.target.value);
+                                        updateDraft(idx, { jump_actions: next });
+                                      }}
+                                      className="h-7 px-2 rounded-md border border-border bg-surface text-xs font-bold"
+                                    >
+                                      {drafts.map((otherQ, oi) => (
+                                        <option key={oi} value={oi}>
+                                          سوال {toPersianDigits(oi + 1)}: {otherQ.title.substring(0, 15) || 'بدون عنوان'}…
+                                        </option>
+                                      ))}
+                                      <option value="END">پایان نظرسنجی (ثبت پاسخ)</option>
+                                    </select>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const next = (d.jump_actions || []).filter((_, i) => i !== ai);
+                                        updateDraft(idx, { jump_actions: next });
+                                      }}
+                                      className="text-rose-500 hover:text-rose-700 font-bold px-1.5 py-1 text-xs"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-[10px] text-muted-foreground">
+                                هنوز شرط پرشی برای این سوال تعریف نشده است.
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Quiz Points */}
+                        <div className="pt-2 border-t border-primary/20 flex items-center justify-between gap-4">
+                          <div>
+                            <p className="text-[11px] font-black text-foreground">نمره سوال در ارزیابی:</p>
+                            <p className="text-[10px] text-muted-foreground">اختیاری (برای فرم‌های ارزیابی و کوییز)</p>
+                          </div>
+                          <Input
+                            type="number"
+                            value={d.points ?? ''}
+                            onChange={(e) =>
+                              updateDraft(idx, {
+                                points: e.target.value === '' ? undefined : Number(e.target.value),
+                              })
+                            }
+                            placeholder="مثلاً: ۵"
+                            className="w-24 h-8 text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
 
@@ -1870,12 +2658,18 @@ export const PollsPage: React.FC = () => {
           )}
 
           {hasVoted ? (
-            <div className="p-4 rounded-xl border-2 border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 flex items-start gap-2 text-sm font-bold">
-              <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
-              <span>
-                شما قبلاً در این نظرسنجی پاسخ داده‌اید. پاسخ‌ها برای ادمین و در
-                پرس‌کاد ثبت شده است.
-              </span>
+            <div className="space-y-4 py-2">
+              <div className="p-4 rounded-xl border-2 border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 flex items-start gap-2 text-sm font-bold">
+                <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+                <span>
+                  پاسخ‌های شما با موفقیت در سیستم و فرم پرس‌کاد ثبت گردید.
+                </span>
+              </div>
+              <div className="flex justify-end pt-2">
+                <Button type="button" onClick={closePoll} className="gap-1.5">
+                  بستن پنجره
+                </Button>
+              </div>
             </div>
           ) : activeQuestions.length === 0 ? (
             <div className="p-6 text-center text-sm text-muted-foreground">
@@ -1932,27 +2726,41 @@ export const PollsPage: React.FC = () => {
                 const q = activeQuestions[fillStep];
                 if (!q) return null;
                 return (
-                  <div className="rounded-xl border border-border p-4 sm:p-5 space-y-4 bg-surface/20">
+                  <div className={`rounded-2xl border p-4 sm:p-5 space-y-4 bg-surface/20 transition-all ${
+                    fillError ? 'border-rose-400 dark:border-rose-800 ring-2 ring-rose-500/20 shadow-sm' : 'border-border'
+                  }`}>
                     <div>
                       <div className="flex items-start justify-between gap-2">
-                        <h4 className="text-base font-black text-foreground leading-relaxed">
-                          {q.title}
+                        <h4 className="text-base font-black text-foreground leading-relaxed flex items-center gap-1.5 flex-wrap">
+                          <span>{q.title}</span>
+                          {q.required !== false && (
+                            <span className="text-rose-500 font-black text-lg leading-none" title="پاسخ به این سوال الزامی است">*</span>
+                          )}
                         </h4>
-                        <Badge variant="neutral">
-                          {TYPE_LABEL[q.type] || q.type}
-                        </Badge>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <Badge variant={q.required !== false ? 'warning' : 'neutral'}>
+                            {q.required !== false ? 'الزامی' : 'اختیاری'}
+                          </Badge>
+                          <Badge variant="neutral">
+                            {TYPE_LABEL[q.type] || q.type}
+                          </Badge>
+                        </div>
                       </div>
                       {q.description && (
-                        <p className="text-xs text-muted-foreground mt-1.5">
+                        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
                           {q.description}
                         </p>
                       )}
-                      {q.required !== false && (
-                        <p className="text-[11px] font-bold text-amber-600 mt-1">
-                          پاسخ اجباری
-                        </p>
-                      )}
                     </div>
+
+                    {/* Inline Validation Error Banner */}
+                    {fillError && (
+                      <div className="p-3 bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-200 rounded-xl text-xs font-bold flex items-center gap-2 animate-in fade-in duration-200">
+                        <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                        <span>{fillError}</span>
+                      </div>
+                    )}
+
                     {renderAnswerControl(q, fillStep)}
                   </div>
                 );
@@ -1963,8 +2771,8 @@ export const PollsPage: React.FC = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setFillStep((s) => Math.max(0, s - 1))}
-                  disabled={fillStep === 0}
+                  onClick={handlePreviousStep}
+                  disabled={fillStep === 0 && stepHistory.length === 0}
                   className="gap-1"
                 >
                   <ArrowRight className="w-4 h-4" />
@@ -1974,13 +2782,7 @@ export const PollsPage: React.FC = () => {
                 {fillStep < activeQuestions.length - 1 ? (
                   <Button
                     type="button"
-                    onClick={() => {
-                      if (!canGoNext && activeQuestions[fillStep]?.required !== false) {
-                        toast.error('لطفاً به این سوال پاسخ دهید');
-                        return;
-                      }
-                      setFillStep((s) => s + 1);
-                    }}
+                    onClick={handleNextStep}
                     className="gap-1"
                   >
                     بعدی

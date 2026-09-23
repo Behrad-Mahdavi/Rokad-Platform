@@ -70,6 +70,11 @@ export class CreateSurveyQuestionDto {
   @IsOptional()
   description?: string;
 
+  @ApiPropertyOptional({ description: 'متن راهنما داخل کادر' })
+  @IsString()
+  @IsOptional()
+  placeholder?: string;
+
   @ApiPropertyOptional({ description: 'گزینه‌های پاسخ (برای choice و dropdown)', type: [String] })
   @IsArray()
   @IsString({ each: true })
@@ -91,6 +96,30 @@ export class CreateSurveyQuestionDto {
   @IsString()
   @IsOptional()
   displayMode?: 'buttons' | 'list';
+
+  @ApiPropertyOptional({ description: 'تنظیمات اعتبارسنجی پرس‌کاد (min, max, step, minLength, maxLength, ...)' })
+  @IsObject()
+  @IsOptional()
+  validation?: Record<string, unknown>;
+
+  @ApiPropertyOptional({ description: 'شروط پرش به سوالات دیگر' })
+  @IsArray()
+  @IsOptional()
+  jump_actions?: Array<Record<string, unknown>>;
+
+  @ApiPropertyOptional({ description: 'شروط نمایش پرس‌کاد' })
+  @IsArray()
+  @IsOptional()
+  conditions?: Array<Record<string, unknown>>;
+
+  @ApiPropertyOptional({ description: 'امتیاز یا نمره سوال' })
+  @IsInt()
+  @IsOptional()
+  points?: number;
+
+  @ApiPropertyOptional({ description: 'پاسخ صحیح سوال' })
+  @IsOptional()
+  correct_answer?: unknown;
 
   @ApiPropertyOptional({ description: 'شناسه سوال در پرس‌کاد (اختیاری؛ سرور از porscadMeta بازسازی می‌کند)' })
   @IsString()
@@ -145,6 +174,16 @@ export class CreatePollDto {
   @IsBoolean()
   @IsOptional()
   isAnonymous?: boolean;
+
+  @ApiPropertyOptional({ description: 'آیا پاسخ‌دهی به این نظرسنجی برای مخاطبان اجباری و تکلیفی است؟', default: false })
+  @IsBoolean()
+  @IsOptional()
+  isMandatory?: boolean;
+
+  @ApiPropertyOptional({ description: 'جلوگیری از ثبت پاسخ تکراری توسط یک کاربر', default: true })
+  @IsBoolean()
+  @IsOptional()
+  preventDuplicate?: boolean;
 
   @ApiProperty({
     description: 'لیست گزینه‌های نظرسنجی (حداقل ۲ گزینه برای تک/چند انتخابی)',

@@ -18,10 +18,9 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@/*": ["src/*"],
-      "@prisma/client": ["node_modules/.prisma/client"]
+      "@/*": ["src/*"]
     }
   },
-  "include": ["src/**/*", "test/**/*", "prisma/**/*"],
-  "exclude": ["node_modules", "dist", "frontend"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "frontend", "prisma"]
 }

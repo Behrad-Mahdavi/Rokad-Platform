@@ -40,3 +40,4 @@ coverage/
 # Temporary / Scratch scripts
 scratch/
 .tempmediaStorage/
+.polls_dev_store.json
