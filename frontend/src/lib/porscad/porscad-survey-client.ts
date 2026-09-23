@@ -292,7 +292,7 @@ export class PorscadSurveyClient {
       if (res.ok) {
         return {
           success: true,
-          message: 'اتصال به سرور پرس‌کاد با موفقیت برقرار شد ✨',
+          message: 'اتصال به سرور پرس‌کاد با موفقیت برقرار شد',
         };
       }
 

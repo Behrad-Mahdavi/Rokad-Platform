@@ -47,6 +47,11 @@ import {
   X,
   ChevronUp,
   ChevronDown,
+  SmilePlus,
+  Smile,
+  Meh,
+  Frown,
+  Angry,
 } from 'lucide-react';
 
 type QuestionType = PorscadQuestionType;
@@ -628,8 +633,8 @@ export const PollsPage: React.FC = () => {
       });
       toast.success(
         porscadOk
-          ? 'نظرسنجی با موفقیت ذخیره و فرم در پرس‌کاد ایجاد شد ✨'
-          : 'نظرسنجی با موفقیت ذخیره شد ✨',
+          ? 'نظرسنجی با موفقیت ذخیره و فرم در پرس‌کاد ایجاد شد'
+          : 'نظرسنجی با موفقیت ذخیره شد',
       );
       await fetchPolls();
     } catch (e: any) {
@@ -880,7 +885,7 @@ export const PollsPage: React.FC = () => {
       if (porscadError) {
         toast.error(`پاسخ محلی ثبت شد؛ ${porscadError}`);
       } else {
-        toast.success('پاسخ‌های شما با موفقیت ثبت گردید ✨');
+        toast.success('پاسخ‌های شما با موفقیت ثبت گردید');
       }
 
       setHasVoted(true);
@@ -945,7 +950,7 @@ export const PollsPage: React.FC = () => {
         questions,
       });
       setLiveAnalytics(live);
-      toast.success('داده‌های زنده پرس‌کاد با موفقیت دریافت شد ✨');
+      toast.success('داده‌های زنده پرس‌کاد با موفقیت دریافت شد');
     } catch (e: any) {
       toast.error(e?.message || 'خطا در دریافت آنالیتیکس پرس‌کاد');
     } finally {
@@ -1001,11 +1006,11 @@ export const PollsPage: React.FC = () => {
 
     if (q.type === 'likert') {
       const likertSteps = [
-        { label: 'کاملاً موافق', emoji: '😍', color: 'border-emerald-500 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200' },
-        { label: 'موافق', emoji: '😊', color: 'border-teal-500 bg-teal-50 text-teal-900 dark:bg-teal-950/40 dark:text-teal-200' },
-        { label: 'ممتنع / خنثی', emoji: '😐', color: 'border-amber-500 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200' },
-        { label: 'مخالف', emoji: '🙁', color: 'border-orange-500 bg-orange-50 text-orange-900 dark:bg-orange-950/40 dark:text-orange-200' },
-        { label: 'کاملاً مخالف', emoji: '😡', color: 'border-rose-500 bg-rose-50 text-rose-900 dark:bg-rose-950/40 dark:text-rose-200' },
+        { label: 'کاملاً موافق', icon: SmilePlus, color: 'border-emerald-500 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200', iconColor: 'text-emerald-600 dark:text-emerald-400' },
+        { label: 'موافق', icon: Smile, color: 'border-teal-500 bg-teal-50 text-teal-900 dark:bg-teal-950/40 dark:text-teal-200', iconColor: 'text-teal-600 dark:text-teal-400' },
+        { label: 'ممتنع / خنثی', icon: Meh, color: 'border-amber-500 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200', iconColor: 'text-amber-600 dark:text-amber-400' },
+        { label: 'مخالف', icon: Frown, color: 'border-orange-500 bg-orange-50 text-orange-900 dark:bg-orange-950/40 dark:text-orange-200', iconColor: 'text-orange-600 dark:text-orange-400' },
+        { label: 'کاملاً مخالف', icon: Angry, color: 'border-rose-500 bg-rose-50 text-rose-900 dark:bg-rose-950/40 dark:text-rose-200', iconColor: 'text-rose-600 dark:text-rose-400' },
       ];
       const options = q.options && q.options.length === 5 ? q.options : likertSteps.map((s) => s.label);
 
@@ -1014,6 +1019,7 @@ export const PollsPage: React.FC = () => {
           {options.map((opt, oi) => {
             const selected = value === opt;
             const step = likertSteps[oi] || likertSteps[2];
+            const StepIcon = step.icon;
             return (
               <button
                 key={opt}
@@ -1026,7 +1032,7 @@ export const PollsPage: React.FC = () => {
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <span className="text-xl">{step.emoji}</span>
+                  <StepIcon className={`w-5 h-5 shrink-0 ${step.iconColor}`} />
                   <span>{opt}</span>
                 </div>
                 <div
@@ -1537,8 +1543,9 @@ export const PollsPage: React.FC = () => {
                     <div className="flex items-center gap-4 text-[11px] font-bold text-gray-500">
                       <span>تعداد پاسخ‌ها: {toPersianDigits(q.answered)}</span>
                       {q.avgRating != null && (
-                        <span className="text-amber-600 dark:text-amber-400 font-black">
-                          ★ میانگین امتیاز: {toPersianDigits(q.avgRating)}
+                        <span className="text-amber-600 dark:text-amber-400 font-black flex items-center gap-1">
+                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                          میانگین امتیاز: {toPersianDigits(q.avgRating)}
                         </span>
                       )}
                     </div>
@@ -2501,7 +2508,10 @@ export const PollsPage: React.FC = () => {
                                         </option>
                                       ))}
                                     </select>
-                                    <span className="text-[11px] font-bold text-muted-foreground">➔ پرش به:</span>
+                                    <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1">
+                                      <ArrowLeft className="w-3 h-3 text-primary shrink-0" />
+                                      پرش به:
+                                    </span>
                                     <select
                                       value={act.targetQuestionIndex}
                                       onChange={(e) => {
@@ -2524,9 +2534,10 @@ export const PollsPage: React.FC = () => {
                                         const next = (d.jump_actions || []).filter((_, i) => i !== ai);
                                         updateDraft(idx, { jump_actions: next });
                                       }}
-                                      className="text-rose-500 hover:text-rose-700 font-bold px-1.5 py-1 text-xs"
+                                      className="text-rose-500 hover:text-rose-700 p-1 rounded-md hover:bg-rose-500/10 transition-colors"
+                                      title="حذف شرط"
                                     >
-                                      ✕
+                                      <X className="w-3.5 h-3.5" />
                                     </button>
                                   </div>
                                 ))}
