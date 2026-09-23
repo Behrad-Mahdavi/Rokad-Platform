@@ -21,25 +21,27 @@ export class CalendarService {
       if (!tags.includes(marker)) tags.push(marker);
     }
 
+    const createData: any = {
+      tenantId,
+      title: dto.title,
+      description: dto.description,
+      eventType: dto.eventType || 'ACADEMIC',
+      startDate: new Date(dto.startDate),
+      endDate: new Date(dto.endDate),
+      isAllDay: dto.isAllDay || false,
+      targetAudience: dto.targetAudience || 'ALL',
+      targetClassIds: dto.targetClassIds || [],
+      location: dto.location,
+      coverUrl: dto.coverUrl,
+      tags,
+      workflowModules: dto.workflowModules
+        ? (dto.workflowModules as any)
+        : undefined,
+      createdById,
+    };
+
     return this.prisma.schoolEvent.create({
-      data: {
-        tenantId,
-        title: dto.title,
-        description: dto.description,
-        eventType: dto.eventType || 'ACADEMIC',
-        startDate: new Date(dto.startDate),
-        endDate: new Date(dto.endDate),
-        isAllDay: dto.isAllDay || false,
-        targetAudience: dto.targetAudience || 'ALL',
-        targetClassIds: dto.targetClassIds || [],
-        location: dto.location,
-        coverUrl: dto.coverUrl,
-        tags,
-        workflowModules: dto.workflowModules
-          ? (dto.workflowModules as any)
-          : undefined,
-        createdById,
-      },
+      data: createData,
       include: {
         createdBy: {
           select: { firstName: true, lastName: true, role: true, avatarUrl: true },
