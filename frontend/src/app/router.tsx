@@ -75,6 +75,9 @@ import { ProfileSettingsPage } from '../modules/profile/ProfileSettingsPage';
 import { NotificationsPage } from '../modules/notifications/NotificationsPage';
 import { KaPlatformPage } from '../modules/ka-platform/KaPlatformPage';
 import { ClubPage } from '../modules/club/ClubPage';
+import { ClubChallengeDetailPage } from '../modules/club/ClubChallengeDetailPage';
+import { AdminClubPage } from '../modules/school-admin/club/AdminClubPage';
+import { TeacherClubApprovalsPage } from '../modules/teacher/club/TeacherClubApprovalsPage';
 import { SmsCenterPage } from '../modules/sms/SmsCenterPage';
 
 export const router = createBrowserRouter([
@@ -141,6 +144,7 @@ export const router = createBrowserRouter([
               { path: 'finance/fees', element: <FeesPage /> },
               { path: 'finance/payroll', element: <PayrollPage /> },
               { path: 'reports', element: <ReportsPage /> },
+              { path: 'club', element: <AdminClubPage /> },
             ],
           },
         ],
@@ -166,6 +170,7 @@ export const router = createBrowserRouter([
               { path: 'schedule', element: <TeacherSchedulePage /> },
               { path: 'payroll', element: <TeacherMySlipsPage /> },
               { path: 'matters', element: <MattersPage /> },
+              { path: 'club-approvals', element: <TeacherClubApprovalsPage /> },
             ],
           },
         ],
@@ -224,6 +229,7 @@ export const router = createBrowserRouter([
               { path: 'notifications', element: <NotificationsPage /> },
               { path: 'ka-platform', element: <KaPlatformPage /> },
               { path: 'club', element: <ClubPage /> },
+              { path: 'club/challenges/:id', element: <ClubChallengeDetailPage /> },
               { path: 'chat', element: <Navigate to="/app" replace /> },
               { path: 'messages', element: <MessagesPage /> },
               {

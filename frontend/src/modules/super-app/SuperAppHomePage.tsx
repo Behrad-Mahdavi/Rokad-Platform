@@ -31,6 +31,7 @@ import {
   Sparkles,
   MessageSquare,
   Briefcase,
+  Award,
 } from 'lucide-react';
 
 interface SuperAppCard {
@@ -238,6 +239,14 @@ export const SuperAppHomePage: React.FC = () => {
             iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
             iconColor: 'text-primary-dark dark:text-primary',
           },
+          {
+            id: 'club-approvals',
+            title: 'باشگاه کسب‌وکار',
+            href: '/app/teacher/club-approvals',
+            icon: Award,
+            iconBg: 'bg-amber-100 dark:bg-amber-950/60',
+            iconColor: 'text-amber-600 dark:text-amber-400',
+          },
         ];
 
       case 'SCHOOL_ADMIN':
@@ -322,6 +331,14 @@ export const SuperAppHomePage: React.FC = () => {
             icon: Building2,
             iconBg: 'bg-male-light dark:bg-[#182346]',
             iconColor: 'text-sec dark:text-[#8194EE]',
+          },
+          {
+            id: 'club-admin',
+            title: 'باشگاه کسب‌وکار',
+            href: '/app/admin/club',
+            icon: Award,
+            iconBg: 'bg-amber-100 dark:bg-amber-950/60',
+            iconColor: 'text-amber-600 dark:text-amber-400',
           },
         ];
 

@@ -356,6 +356,13 @@ model Tenant {
   smsQuickTemplates   SmsQuickTemplate[]
   smsGatewayConfig    SmsGatewayConfig?
 
+  // Rokad Business Club Relations
+  clubMemberships                ClubMembership[]
+  clubRoadmapMilestones          ClubRoadmapMilestone[]
+  clubStudentMilestoneProgresses ClubStudentMilestoneProgress[]
+  clubChallenges                 ClubChallenge[]
+  clubChallengeSubmissions       ClubChallengeSubmission[]
+
   @@index([status])
   @@index([parentTenantId])
   @@index([createdAt])
@@ -457,6 +464,13 @@ model User {
   // SMS Engine Relations
   receivedSmsLogs          SmsLog[]                   @relation("RecipientSmsLogs")
   sentSmsLogs              SmsLog[]                   @relation("SenderSmsLogs")
+
+  // Rokad Business Club Relations
+  clubMembership           ClubMembership?            @relation("UserClubMembership")
+  studentClubMilestones    ClubStudentMilestoneProgress[] @relation("StudentClubMilestones")
+  approvedClubMilestones   ClubStudentMilestoneProgress[] @relation("ApprovedMilestones")
+  studentClubSubmissions   ClubChallengeSubmission[]  @relation("StudentClubSubmissions")
+  gradedClubSubmissions    ClubChallengeSubmission[]  @relation("GradedClubSubmissions")
 
   @@unique([tenantId, email])
   @@unique([tenantId, phone])
@@ -708,6 +722,9 @@ model Lesson {
   // Phase 5 Relations
   courseMaterials CourseMaterial[]
   teacherLessons  TeacherLesson[]
+
+  // Rokad Business Club Relations
+  clubRoadmapMilestones ClubRoadmapMilestone[]
 
   @@unique([tenantId, code])
   @@index([tenantId, levelId])
@@ -2771,5 +2788,172 @@ model SmsQuickTemplate {
 
   @@index([tenantId])
 }
+
+// ==========================================
+// Rokad Business Club Module (باشگاه کسب‌وکار رکاد)
+// ==========================================
+
+enum ClubDepartment {
+  ENGINEER
+  ARTIST
+  JACK_OF_ALL_TRADES
+}
+
+enum ClubGrade {
+  A
+  B
+  C
+}
+
+enum ClubMembershipStatus {
+  LOCKED
+  IN_ROADMAP
+  ACTIVE_MEMBER
+  STUDIO_READY
+  SUSPENDED
+}
+
+enum ClubMilestoneType {
+  TEACHER_APPROVAL
+  PLACEMENT_CHALLENGE
+  ADMIN_CHECKLIST
+  LESSON_GRADE
+}
+
+enum ClubMilestoneStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ClubChallengeType {
+  PLACEMENT
+  GRADE_UPGRADE
+  MONTHLY_MISSION
+}
+
+enum ClubSubmissionStatus {
+  IN_PROGRESS
+  SUBMITTED
+  GRADED
+  EXPIRED
+}
+
+model ClubMembership {
+  id                 String               @id @default(uuid())
+  tenantId           String
+  tenant             Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId             String               @unique
+  user               User                 @relation("UserClubMembership", fields: [userId], references: [id], onDelete: Cascade)
+  status             ClubMembershipStatus @default(IN_ROADMAP)
+  department         ClubDepartment?
+  grade              ClubGrade?
+  joinedAt           DateTime?
+  promotedToGradeAAt DateTime?
+  adminNotes         String?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@index([tenantId, status])
+  @@index([tenantId, department, grade])
+}
+
+model ClubRoadmapMilestone {
+  id          String            @id @default(uuid())
+  tenantId    String
+  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  icon        String?           @default("award")
+  orderIndex  Int               @default(1)
+  weight      Int               @default(25) // وزن درصدی در محاسبه پیشرفت کل رودمپ
+  type        ClubMilestoneType @default(TEACHER_APPROVAL)
+  lessonId    String?
+  lesson      Lesson?           @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  isRequired  Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  progressRecords ClubStudentMilestoneProgress[]
+
+  @@index([tenantId, orderIndex])
+}
+
+model ClubStudentMilestoneProgress {
+  id           String               @id @default(uuid())
+  tenantId     String
+  tenant       Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  milestoneId  String
+  milestone    ClubRoadmapMilestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  studentId    String
+  student      User                 @relation("StudentClubMilestones", fields: [studentId], references: [id], onDelete: Cascade)
+  status       ClubMilestoneStatus  @default(PENDING)
+  approvedAt   DateTime?
+  approvedById String?
+  approvedBy   User?                @relation("ApprovedMilestones", fields: [approvedById], references: [id], onDelete: SetNull)
+  notes        String?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@unique([tenantId, studentId, milestoneId])
+  @@index([tenantId, studentId])
+  @@index([tenantId, milestoneId])
+}
+
+model ClubChallenge {
+  id           String            @id @default(uuid())
+  tenantId     String
+  tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title        String
+  slug         String            @unique
+  description  String
+  missionBrief String            // شرح دقیق مأموریت و صورت‌مسئله
+  rules        String?           // قوانین و الزامات تحویل
+  department   ClubDepartment    // دپارتمان مرتبط: مهندس / آرتیست / آچارفرانسه
+  type         ClubChallengeType @default(PLACEMENT)
+  minGrade     ClubGrade?        // حداقل گرید مجاز (برای چالش‌های ارتقا)
+  maxDays      Int               @default(7) // مهلت انجام به روز
+  maxScore     Int               @default(100)
+  attachments  Json?             // فایل‌ها یا مستندات پیوست
+  isPublished  Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  submissions ClubChallengeSubmission[]
+
+  @@index([tenantId, department, type])
+  @@index([tenantId, isPublished])
+}
+
+model ClubChallengeSubmission {
+  id              String               @id @default(uuid())
+  tenantId        String
+  tenant          Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  challengeId     String
+  challenge       ClubChallenge        @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  studentId       String
+  student         User                 @relation("StudentClubSubmissions", fields: [studentId], references: [id], onDelete: Cascade)
+  status          ClubSubmissionStatus @default(IN_PROGRESS)
+  startedAt       DateTime             @default(now())
+  submittedAt     DateTime?
+  deadlineAt      DateTime
+  repositoryUrl   String?
+  figmaUrl        String?
+  demoUrl         String?
+  submissionNotes String?
+  attachments     Json?
+  score           Decimal?             @db.Decimal(5, 2)
+  feedback        String?
+  awardedGrade    ClubGrade?
+  gradedAt        DateTime?
+  gradedById      String?
+  gradedBy        User?                @relation("GradedClubSubmissions", fields: [gradedById], references: [id], onDelete: SetNull)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([tenantId, studentId, status])
+  @@index([tenantId, challengeId])
+}
+
 
 

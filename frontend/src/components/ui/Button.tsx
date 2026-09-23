@@ -28,7 +28,7 @@ const buttonVariants = cva(
         college:
           'bg-college-normal hover:bg-college-normal-hover text-white border-[1.5px] border-college-dark shadow-[2.5px_2.5px_0_#57390A] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[3px_3px_0_#57390A] active:shadow-[1px_1px_0_#57390A]',
         club:
-          'bg-club-normal hover:bg-club-normal-hover text-white border-[1.5px] border-club-dark shadow-[2.5px_2.5px_0_#231032] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[3px_3px_0_#231032] active:shadow-[1px_1px_0_#231032]',
+          'bg-club-normal hover:bg-club-normal-hover text-white border-[1.5px] border-club-dark shadow-[2.5px_2.5px_0_#5B21B6] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[3px_3px_0_#5B21B6] active:shadow-[1px_1px_0_#5B21B6]',
         ghost:
           'bg-transparent hover:bg-gray-100/90 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-ink-darker dark:hover:text-white',
         destructive:

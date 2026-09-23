@@ -14,6 +14,7 @@
     --color-girl:    #E0195B;
     --color-third:   #F8A41D;
     --color-sec:     #202A5A;
+    --color-club:    #8A38F5;
     --text-normal:   #292827;
     --font-family: 'IRANSansXFaNum', 'IRANSansX', sans-serif;
 
@@ -113,18 +114,20 @@
     --theme-shadow:       2.75px 2.75px 0 #F8A41D;
   }
 
-  [data-theme='club'] {
-    --theme-light:        #F0EAF4;
-    --theme-light-hover:  #E8E0EE;
-    --theme-light-active: #CFBEDD;
-    --theme-normal:       #652D90;
-    --theme-normal-hover: #5B2982;
-    --theme-normal-active:#512473;
-    --theme-dark:         #4C226C;
-    --theme-dark-hover:   #3D1B56;
-    --theme-dark-active:  #2D1441;
-    --theme-darker:       #231032;
-    --theme-shadow:       2.75px 2.75px 0 #652D90;
+  [data-theme='club'],
+  .theme-club {
+    --color-primary:      #8A38F5;
+    --theme-light:        #F4EBFD;
+    --theme-light-hover:  #ECE0FC;
+    --theme-light-active: #DEC7FA;
+    --theme-normal:       #8A38F5;
+    --theme-normal-hover: #7828E0;
+    --theme-normal-active:#6618CB;
+    --theme-dark:         #5B21B6;
+    --theme-dark-hover:   #4C1D95;
+    --theme-dark-active:  #3B0764;
+    --theme-darker:       #2E1065;
+    --theme-shadow:       2.75px 2.75px 0 #8A38F5;
   }
 
   html {

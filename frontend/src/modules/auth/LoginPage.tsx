@@ -30,7 +30,7 @@ export const LoginPage: React.FC = () => {
 
   const [tenantSlug, setTenantSlug] = useState(currentTenant?.slug || 'rokad-boys');
   const [identifier, setIdentifier] = useState('09121111111');
-  const [password, setPassword] = useState('RokadBoysPass2026!');
+  const [password, setPassword] = useState('Rokad1404!');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -268,7 +268,7 @@ export const LoginPage: React.FC = () => {
             {/* Admin Boys */}
             <button
               type="button"
-              onClick={() => selectPreset('rokad-boys', '09121111111', 'RokadBoysPass2026!')}
+              onClick={() => selectPreset('rokad-boys', '09121111111', 'Rokad1404!')}
               className="p-2.5 min-h-[44px] rounded-xl bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] text-right border border-gray-200 dark:border-gray-700 transition-colors flex flex-col justify-center"
             >
               <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
@@ -294,14 +294,14 @@ export const LoginPage: React.FC = () => {
             {/* Vice Admin Boys */}
             <button
               type="button"
-              onClick={() => selectPreset('rokad-boys', '09122221111', 'RokadBoysPass2026!')}
+              onClick={() => selectPreset('rokad-boys', '09121111119', 'Rokad1404!')}
               className="p-2.5 min-h-[44px] rounded-xl bg-sec/5 dark:bg-sec/15 hover:bg-sec/10 dark:hover:bg-sec/25 text-right border border-sec/30 transition-colors flex flex-col justify-center"
             >
               <div className="font-bold text-sec dark:text-indigo-400 flex items-center gap-1.5">
                 <ShieldCheck className="h-3.5 w-3.5 text-sec dark:text-indigo-400 shrink-0" />
                 <span>معاون پسرانه</span>
               </div>
-              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09122221111</div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09121111119</div>
             </button>
 
             {/* Vice Admin Girls */}
