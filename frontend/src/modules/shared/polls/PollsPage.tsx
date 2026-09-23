@@ -44,7 +44,6 @@ import {
   ListChecks,
   Layers,
   RefreshCw,
-  KeyRound,
   X,
 } from 'lucide-react';
 
@@ -244,10 +243,6 @@ export const PollsPage: React.FC = () => {
     endDate: gregorianToJalaliStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
   });
   const [drafts, setDrafts] = useState<QuestionDraft[]>([emptyDraft()]);
-  const [porscadToken, setPorscadToken] = useState(() => porscadSurvey.getToken());
-  const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
-  const [isTestingToken, setIsTestingToken] = useState(false);
-  const [tokenInput, setTokenInput] = useState('');
 
   // Fill (step-by-step) state
   const [activePoll, setActivePoll] = useState<Poll | null>(null);
@@ -412,7 +407,6 @@ export const PollsPage: React.FC = () => {
       endDate: gregorianToJalaliStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
     });
     setDrafts([emptyDraft()]);
-    setPorscadToken(porscadSurvey.getToken());
     setIsCreateOpen(true);
   };
 
@@ -475,27 +469,6 @@ export const PollsPage: React.FC = () => {
   const goBackCreate = () => {
     setCreateError(null);
     setCreateStep((s) => (s === 1 ? 0 : 1));
-  };
-
-  const handleSaveToken = async () => {
-    if (!tokenInput.trim()) {
-      toast.error('توکن پرس‌کاد را وارد کنید');
-      return;
-    }
-    setIsTestingToken(true);
-    try {
-      const res = await porscadSurvey.testConnection(tokenInput.trim());
-      if (res.success) {
-        porscadSurvey.setToken(tokenInput.trim());
-        setPorscadToken(tokenInput.trim());
-        toast.success('توکن پرس‌کاد ذخیره شد');
-        setIsTokenModalOpen(false);
-      } else {
-        toast.error(res.message || 'توکن نامعتبر است');
-      }
-    } finally {
-      setIsTestingToken(false);
-    }
   };
 
   const handleCreateSubmit = async () => {
@@ -1803,18 +1776,7 @@ export const PollsPage: React.FC = () => {
               ))}
 
               <div className="rounded-xl border border-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 p-3 text-[11px] font-bold text-indigo-900 dark:text-indigo-300">
-                با ذخیره، فرم مرحله‌به‌مرحله در پرس‌کاد ساخته می‌شود (اگر توکن تنظیم
-                شده باشد).
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTokenInput(porscadSurvey.getToken());
-                    setIsTokenModalOpen(true);
-                  }}
-                  className="mr-2 underline font-black"
-                >
-                  {porscadToken ? 'ویرایش توکن' : 'تنظیم توکن پرس‌کاد'}
-                </button>
+                با ذخیره، فرم مرحله‌به‌مرحله در پرس‌کاد ساخته می‌شود.
               </div>
             </div>
           )}
@@ -1854,12 +1816,6 @@ export const PollsPage: React.FC = () => {
                   </li>
                 ))}
               </ol>
-              {!porscadToken && (
-                <p className="text-[11px] font-bold text-amber-600 flex items-center gap-1">
-                  <KeyRound className="w-3.5 h-3.5" />
-                  توکن پرس‌کاد تنظیم نشده؛ فقط محلی ذخیره می‌شود.
-                </p>
-              )}
             </div>
           )}
 
@@ -1890,43 +1846,6 @@ export const PollsPage: React.FC = () => {
                 {isSubmitting ? 'در حال ذخیره…' : 'ذخیره و ساخت فرم'}
               </Button>
             )}
-          </div>
-        </div>
-      </Modal>
-
-      {/* ——— Token modal ——— */}
-      <Modal
-        isOpen={isTokenModalOpen}
-        onClose={() => setIsTokenModalOpen(false)}
-        title="توکن دسترسی پرس‌کاد"
-        maxWidth="md"
-      >
-        <div className="space-y-3 pt-1">
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            توکن JWT از پنل پرس‌کاد (Supabase) را وارد کنید تا فرم‌ها ساخته و پاسخ‌ها
-            ارسال شوند.
-          </p>
-          <Input
-            value={tokenInput}
-            onChange={(e) => setTokenInput(e.target.value)}
-            placeholder="eyJhbGciOi…"
-            type="password"
-          />
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsTokenModalOpen(false)}
-            >
-              انصراف
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSaveToken}
-              disabled={isTestingToken}
-            >
-              {isTestingToken ? 'در حال بررسی…' : 'ذخیره توکن'}
-            </Button>
           </div>
         </div>
       </Modal>

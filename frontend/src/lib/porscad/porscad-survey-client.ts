@@ -205,30 +205,21 @@ const SUPABASE_URL = 'https://pivwmyacpxdywevccpmw.supabase.co/rest/v1';
 const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdndteWFjcHhkeXdldmNjcG13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2NjI1NTEsImV4cCI6MjEwMzIzODU1MX0.kJVVLPH7qu0X73r0qegGx8G_SOMtgiimDjyHetfz4Os';
 
+/** Fixed service token for polls integration (not user-editable). */
+const PORSCAD_SERVICE_TOKEN =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjozMzY2OTczNzQ1LCJpYXQiOjE3OTAxNzM3NDUsImlzcyI6InN1cGFiYXNlIiwic3ViIjoiNzA0NWVkYzYtNjk3ZC00ZWY4LWI0MDYtNmU4NGI2MTUyYmUzIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7fSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc5MDE3Mzc0NX1dLCJpc19hbm9ueW1vdXMiOmZhbHNlfQ.XQTtdM9TKYptyWY-shwTLogeNYo9PebUMi8OWzIOBvg';
+
 export type SurveyAnswerValue = string | number | boolean | string[];
 export type SurveyAnswers = Record<string, SurveyAnswerValue>;
 
 export class PorscadSurveyClient {
   public getToken(): string {
-    try {
-      const customToken = localStorage.getItem('rokad_porscad_token');
-      if (customToken) return customToken.trim();
-
-      const porscadAuth = localStorage.getItem(
-        'sb-pivwmyacpxdywevccpmw-auth-token',
-      );
-      if (porscadAuth) {
-        const parsed = JSON.parse(porscadAuth);
-        if (parsed?.access_token) return parsed.access_token;
-      }
-    } catch {
-      // ignore
-    }
-    return '';
+    return PORSCAD_SERVICE_TOKEN;
   }
 
-  public setToken(token: string): void {
-    localStorage.setItem('rokad_porscad_token', token.trim());
+  /** Kept for API compatibility; the service token is fixed. */
+  public setToken(_token: string): void {
+    // no-op — fixed token
   }
 
   private getHeaders(customToken?: string) {
