@@ -264,7 +264,7 @@ export const ClubPage: React.FC = () => {
                 : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
-            رُکاد استودیو 🚀
+            رُکاد استودیو
           </button>
           <button
             type="button"
@@ -276,7 +276,7 @@ export const ClubPage: React.FC = () => {
             }`}
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>روتلو (Rotello)</span>
+            <span>روتلو</span>
             {isMember && (
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             )}
@@ -773,7 +773,7 @@ export const ClubPage: React.FC = () => {
 
               <div className="space-y-3">
                 <h2 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
-                  سامانه مدیریت تسک‌ها و تیم‌های روتلو (Rotello)
+                  سامانه مدیریت تسک‌ها و تیم‌های روتلو
                 </h2>
                 <p className="text-sm sm:text-base text-purple-100/90 leading-relaxed max-w-2xl font-normal">
                   روتلو، فضای کار اشتراکی دانش‌آموزان و اعضای باشگاه کسب‌وکار رُکاد است؛ جایی برای مدیریت تسک‌های اسپرینت، اشتراک کارهای تیمی، پورتفولیو و تعامل نزدیک با منتورهای صنعتی.
