@@ -121,7 +121,7 @@ export const LoginPage: React.FC = () => {
 
   const [tenantSlug, setTenantSlug] = useState(currentTenant?.slug || 'rokad-boys');
   const [identifier, setIdentifier] = useState('09121111111');
-  const [password, setPassword] = useState('Rokad1404!');
+  const [password, setPassword] = useState('RokadBoysPass2026!');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -168,15 +168,18 @@ export const LoginPage: React.FC = () => {
     }
 
     const tenant = loginData?.tenant || user?.tenant;
+    const effectiveTenantId = user.tenantId || tenant?.id || currentTenant?.id || 'd51697c7-85cd-423f-a526-b567590638f1';
+    const effectiveSlug = tenant?.slug || tenantSlug || currentTenant?.slug || 'rokad-boys';
+
     setCurrentTenant({
-      id: user.tenantId,
+      id: effectiveTenantId,
       name: tenant?.name || 'مدرسه رکاد',
-      slug: tenant?.slug || tenantSlug || 'rokad-boys',
+      slug: effectiveSlug,
       type: 'SCHOOL',
       theme: (tenant?.theme || 'ecosystem').toLowerCase() as any,
     });
 
-    login(user, accessToken, refreshToken);
+    login({ ...user, tenantId: effectiveTenantId }, accessToken, refreshToken);
     setIs2FAModalOpen(false);
     navigate('/app');
   };
@@ -185,18 +188,22 @@ export const LoginPage: React.FC = () => {
     const loginData = res?.data || res;
     const { user, accessToken, refreshToken } = loginData || {};
     if (!user || !accessToken) {
-      throw new Error('پاسخ نامعتبر از سرویس ورود');
+      throw new Error(loginData?.message || 'پاسخ نامعتبر از سرویس ورود');
     }
 
+    const tenant = loginData?.tenant || user?.tenant;
+    const effectiveTenantId = user.tenantId || tenant?.id || currentTenant?.id || 'd51697c7-85cd-423f-a526-b567590638f1';
+    const effectiveSlug = tenant?.slug || tenantSlug || currentTenant?.slug || 'rokad-boys';
+
     setCurrentTenant({
-      id: user.tenantId,
-      name: loginData.tenant?.name || 'مدرسه رُکاد',
-      slug: tenantSlug,
+      id: effectiveTenantId,
+      name: tenant?.name || 'مدرسه رُکاد',
+      slug: effectiveSlug,
       type: 'SCHOOL',
-      theme: (loginData.tenant?.theme || 'ecosystem').toLowerCase() as any,
+      theme: (tenant?.theme || 'ecosystem').toLowerCase() as any,
     });
 
-    login(user, accessToken, refreshToken);
+    login({ ...user, tenantId: effectiveTenantId }, accessToken, refreshToken);
     navigate('/app');
   };
 
@@ -266,23 +273,13 @@ export const LoginPage: React.FC = () => {
           { identifier: phone, password: pass },
           { headers: { 'x-tenant-slug': slug } },
         );
-        if (res?.requiresTwoFactor) {
-          setTempToken(res.tempToken);
+        const responsePayload = res?.data || res;
+        if (responsePayload?.requiresTwoFactor || res?.requiresTwoFactor) {
+          setTempToken(responsePayload?.tempToken || res?.tempToken);
           setIs2FAModalOpen(true);
           return;
         }
-        const loginData = res?.data || res;
-        const { user, accessToken, refreshToken } = loginData || {};
-        if (!user || !accessToken) throw new Error('پاسخ نامعتبر از سرویس ورود');
-        setCurrentTenant({
-          id: user.tenantId,
-          name: loginData.tenant?.name || 'مدرسه رُکاد',
-          slug,
-          type: 'SCHOOL',
-          theme: (loginData.tenant?.theme || 'ecosystem').toLowerCase() as any,
-        });
-        login(user, accessToken, refreshToken);
-        navigate('/app');
+        applyLoginSuccess(res);
       } catch (err: any) {
         // Direct fallback to demo login
         const demoAccount = DEMO_PRESET_MAP[phone];
@@ -445,7 +442,7 @@ export const LoginPage: React.FC = () => {
             {/* Admin Boys */}
             <button
               type="button"
-              onClick={() => selectPreset('rokad-boys', '09121111111', 'Rokad1404!')}
+              onClick={() => selectPreset('rokad-boys', '09121111111', 'RokadBoysPass2026!')}
               className="p-2.5 min-h-[44px] rounded-xl bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] text-right border border-gray-200 dark:border-gray-700 transition-colors flex flex-col justify-center"
             >
               <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
@@ -471,7 +468,7 @@ export const LoginPage: React.FC = () => {
             {/* Vice Admin Boys */}
             <button
               type="button"
-              onClick={() => selectPreset('rokad-boys', '09121111119', 'Rokad1404!')}
+              onClick={() => selectPreset('rokad-boys', '09121111119', 'RokadBoysPass2026!')}
               className="p-2.5 min-h-[44px] rounded-xl bg-sec/5 dark:bg-sec/15 hover:bg-sec/10 dark:hover:bg-sec/25 text-right border border-sec/30 transition-colors flex flex-col justify-center"
             >
               <div className="font-bold text-sec dark:text-indigo-400 flex items-center gap-1.5">
