@@ -26,8 +26,9 @@ import {
   AlertCircle,
   Crown,
   Briefcase,
-  Layers,
   UserX,
+  Plus,
+  Check,
 } from 'lucide-react';
 
 export interface TeamMember {
@@ -261,7 +262,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
       [idea.id]: updatedTeam,
     }));
 
-    toast.success(`«${candidateName}» با نقش «${memberRole}» به تیم اضافه شد 🎉`);
+    toast.success(`«${candidateName}» با نقش «${memberRole}» به تیم اضافه شد.`);
     setSelectedStudentId('');
     setCustomStudentName('');
   };
@@ -306,7 +307,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
       [idea.id]: updatedTeam,
     }));
 
-    toast.success(`«${candidateName}» به ترکیب تیم اضافه شد 🎉`);
+    toast.success(`«${candidateName}» به ترکیب تیم اضافه شد.`);
   };
 
   // Remove Member from Idea Team
@@ -353,7 +354,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
     }));
 
     if (nextState) {
-      toast.success(`ترکیب تیم ایده #${toPersianDigits(currentTeam.ideaNumber)} توسط مدیر تایید نهایی و برای زیرمجموعه‌ها قفل شد ✅`);
+      toast.success(`ترکیب تیم ایده #${toPersianDigits(currentTeam.ideaNumber)} توسط مدیر تایید نهایی و برای زیرمجموعه‌ها قفل شد.`);
     } else {
       toast.info(`تاییدیه ترکیب تیم ایده #${toPersianDigits(currentTeam.ideaNumber)} توسط مدیر بازگشایی شد.`);
     }
@@ -667,8 +668,9 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                                 <span>{std.name}</span>
                               </h5>
                               {isMemberOfThisTeam && (
-                                <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
-                                  ✓ قبلاً به این تیم اضافه شده است
+                                <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 mt-0.5 flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                                  <span>قبلاً به این تیم اضافه شده است</span>
                                 </p>
                               )}
                               {isAssignedToOtherTeam && (
@@ -681,8 +683,9 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
 
                           <div>
                             {isMemberOfThisTeam ? (
-                              <span className="px-3 py-1 rounded-lg border border-emerald-600 bg-emerald-200 text-emerald-900 text-xs font-black">
-                                افزوده شد ✓
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-emerald-600 bg-emerald-200 text-emerald-900 text-xs font-black">
+                                <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                                <span>افزوده شد</span>
                               </span>
                             ) : isAssignedToOtherTeam ? (
                               <span className="px-3 py-1 rounded-lg border border-zinc-400 bg-zinc-200 text-zinc-600 text-xs font-bold">
@@ -692,9 +695,10 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                               <Button
                                 variant="primary"
                                 onClick={() => handleAddMemberDirectly(targetIdea, std)}
-                                className="text-xs font-black bg-emerald-400 text-zinc-950 px-3 py-1"
+                                className="text-xs font-black bg-emerald-400 text-zinc-950 px-3 py-1 inline-flex items-center gap-1"
                               >
-                                + افزودن
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>افزودن</span>
                               </Button>
                             )}
                           </div>

@@ -19,6 +19,7 @@ import {
   Hash,
   Edit3,
   ShieldCheck,
+  X,
 } from 'lucide-react';
 
 export interface EventIdea {
@@ -141,7 +142,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
     if (onUpdateIdea) {
       onUpdateIdea(updated);
     }
-    toast.success('ویرایش ایده شما با موفقیت ذخیره شد ✨');
+    toast.success('ویرایش ایده شما با موفقیت ذخیره شد');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -186,7 +187,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
       setIsSubmittedSuccess(true);
       setTitle('');
       setDescription('');
-      toast.success(`ایده شما با شماره #${toPersianDigits(assignedNumber)} ثبت شد! 🎉`);
+      toast.success(`ایده شما با شماره #${toPersianDigits(assignedNumber)} ثبت شد.`);
     }, 300);
   };
 
@@ -273,14 +274,14 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
           <div className="mb-6 flex items-center justify-between gap-3 p-4 rounded-xl border-2 border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-200">
             <div className="flex items-center gap-2.5 text-xs md:text-sm font-black">
               <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-              <span>ایده شما با موفقیت ثبت شد و به لیست ایده‌های پایین صفحه اضافه گردید! 🎉</span>
+              <span>ایده شما با موفقیت ثبت شد و به لیست ایده‌های پایین صفحه اضافه گردید.</span>
             </div>
             <button
               type="button"
               onClick={() => setIsSubmittedSuccess(false)}
-              className="text-xs font-bold text-zinc-500 hover:text-zinc-900"
+              className="text-zinc-500 hover:text-zinc-900 p-1 rounded-md transition-colors"
             >
-              ✕
+              <X className="w-4 h-4" />
             </button>
           </div>
         )}

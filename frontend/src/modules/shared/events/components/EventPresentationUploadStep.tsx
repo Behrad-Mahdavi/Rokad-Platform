@@ -350,8 +350,8 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
       setSelectedFile(null);
       toast.success(
         prevSub
-          ? 'فایل اصلاح‌شده با موفقیت ثبت شد و در انتظار بررسی مدیر قرار گرفت 🎉'
-          : 'فایل و اطلاعات ارائه تیم با موفقیت بارگذاری شد و قفل گردید 🎉',
+          ? 'فایل اصلاح‌شده با موفقیت ثبت شد و در انتظار بررسی مدیر قرار گرفت.'
+          : 'فایل و اطلاعات ارائه تیم با موفقیت بارگذاری شد و قفل گردید.',
       );
     }, 600);
   };
@@ -379,7 +379,7 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
     }));
 
     setIsDeadlineModalOpen(false);
-    toast.success('تنظیمات مهلت تحویل و فرمت‌های مجاز با موفقیت ذخیره شد ✨');
+    toast.success('تنظیمات مهلت تحویل و فرمت‌های مجاز با موفقیت ذخیره شد.');
   };
 
   const handleToggleFormat = (fmt: string) => {
@@ -444,7 +444,7 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
       };
     });
     if (!config.isManuallyLocked) {
-      toast.info('ارسال فایل‌ها توسط مدیر قفل شد 🔒');
+      toast.info('ارسال فایل‌ها توسط مدیر قفل شد.');
     } else {
       toast.success('قفل دستی غیرفعال شد.');
     }
@@ -460,7 +460,7 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
       };
     });
     if (!config.isManuallyOpened) {
-      toast.success('ارسال فایل‌ها مجدداً توسط مدیر بازگشایی شد 🔓');
+      toast.success('ارسال فایل‌ها مجدداً توسط مدیر بازگشایی شد.');
     } else {
       toast.info('بازگشایی اضطراری لغو شد.');
     }
@@ -482,9 +482,9 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
     }));
 
     if (feedbackStatus === 'APPROVED') {
-      toast.success('پروژه تیم تایید شد ✅');
+      toast.success('پروژه تیم تایید شد.');
     } else if (feedbackStatus === 'NEEDS_REVISION') {
-      toast.warning('وضعیت به «نیاز به اصلاح» تغییر یافت و امکان ویرایش برای سرتیم باز شد 🔄');
+      toast.warning('وضعیت به «نیاز به اصلاح» تغییر یافت و امکان ویرایش برای سرتیم باز شد.');
     } else {
       toast.info('وضعیت پروژه ذخیره شد.');
     }
@@ -780,9 +780,11 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
                   )}
                 </div>
               ) : (
-                <div className="p-4 rounded-xl border border-amber-300 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/30 text-xs text-amber-900 dark:text-amber-200">
-                  ⚠️ سرتیم شما هنوز فایلی ارسال نکرده است. لطفاً با سرتیم خود جهت تحویل قبل از اتمام
-                  مهلت هماهنگ کنید.
+                <div className="p-4 rounded-xl border border-amber-300 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/30 text-xs text-amber-900 dark:text-amber-200 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>
+                    سرتیم شما هنوز فایلی ارسال نکرده است. لطفاً با سرتیم خود جهت تحویل قبل از اتمام مهلت هماهنگ کنید.
+                  </span>
                 </div>
               )}
             </div>
@@ -860,7 +862,7 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2 font-black text-sm text-emerald-900 dark:text-emerald-100">
                         <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                        <span>فایل و ارائه تیم شما توسط مدیر رویداد تایید شد 🎉</span>
+                        <span>فایل و ارائه تیم شما توسط مدیر رویداد تایید شد</span>
                       </div>
                     </div>
                     <p className="text-xs text-emerald-800 dark:text-emerald-300">
@@ -1009,9 +1011,12 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
                       </p>
 
                       {config.submissions[myTeamInfo.key]?.adminFeedback && (
-                        <div className="mt-2 p-3 rounded-lg bg-white dark:bg-zinc-800 border border-amber-300 dark:border-amber-700 text-xs text-zinc-900 dark:text-zinc-100">
-                          <span className="font-black text-amber-800 dark:text-amber-300">📝 نکات و توضیحات اصلاحی مدیر: </span>
-                          <span>{config.submissions[myTeamInfo.key]?.adminFeedback}</span>
+                        <div className="mt-2 p-3 rounded-lg bg-white dark:bg-zinc-800 border border-amber-300 dark:border-amber-700 text-xs text-zinc-900 dark:text-zinc-100 flex items-start gap-2">
+                          <FileText className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                          <div>
+                            <span className="font-black text-amber-800 dark:text-amber-300">نکات و توضیحات اصلاحی مدیر: </span>
+                            <span>{config.submissions[myTeamInfo.key]?.adminFeedback}</span>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1442,8 +1447,9 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
                 فرمت‌های انتخاب‌شده فعال ({toPersianDigits(modalAllowedFormats.length)}):
               </label>
               {modalAllowedFormats.length === 0 ? (
-                <div className="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 text-xs">
-                  ⚠️ هیچ فرمتی انتخاب نشده است. لطفاً حداقل یک فرمت را انتخاب کنید.
+                <div className="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>هیچ فرمتی انتخاب نشده است. لطفاً حداقل یک فرمت را انتخاب کنید.</span>
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-1.5">

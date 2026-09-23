@@ -37,6 +37,7 @@ import {
   EyeOff,
   Medal,
   ShieldCheck,
+  X,
 } from 'lucide-react';
 
 interface EventVotingPorscadStepProps {
@@ -180,7 +181,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
         toast.success('فرم موجود با موفقیت ویرایش و روی پرس‌کاد اعمال شد!');
       } else {
         resultPoll = await porscadClient.createCustomPorscadForm(payload);
-        toast.success('فرم نظرسنجی رویداد با موفقیت در پرس‌کاد ایجاد و برای دانش‌آموزان فعال شد! 🎉');
+        toast.success('فرم نظرسنجی رویداد با موفقیت در پرس‌کاد ایجاد و برای دانش‌آموزان فعال شد!');
       }
 
       setPorscadPoll(resultPoll);
@@ -259,7 +260,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
         setHasVoted(true);
         localStorage.setItem(userVoteStorageKey, 'true');
         localStorage.setItem(selectedOptionsKey, JSON.stringify(selectedOptionIds));
-        toast.success(res.message || 'رای شما با موفقیت در پرس‌کاد ثبت شد! 🎉');
+        toast.success(res.message || 'رای شما با موفقیت در پرس‌کاد ثبت شد.');
       } else {
         toast.error(res.message || 'خطا در ثبت رای');
       }
@@ -301,7 +302,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
         setPorscadPoll(updated);
         setIsFinishModalOpen(false);
         toast.success(
-          `فرم نظرسنجی با موفقیت بسته شد و ${toPersianDigits(safeCount)} ایده برتر مشخص شدند 🎉`
+          `فرم نظرسنجی با موفقیت بسته شد و ${toPersianDigits(safeCount)} ایده برتر مشخص شدند.`
         );
       } else {
         toast.error('نظرسنجی یافت نشد.');
@@ -332,7 +333,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
     if (updated) {
       setPorscadPoll(updated);
       if (nextPublic) {
-        toast.success('نتایج و رتبه‌بندی ایده‌ها برای همه دانش‌آموزان منتشر شد! 📢');
+        toast.success('نتایج و رتبه‌بندی ایده‌ها برای همه دانش‌آموزان منتشر شد.');
       } else {
         toast.info('نتایج از دید عمومی دانش‌آموزان مخفی شد.');
       }
@@ -505,7 +506,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                 ) : (
                   <>
                     <Eye className="w-4 h-4" />
-                    <span>📢 انتشار عمومی نتایج</span>
+                    <span>انتشار عمومی نتایج</span>
                   </>
                 )}
               </Button>
@@ -541,12 +542,12 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                 : 'bg-indigo-100 text-indigo-950 border-zinc-900';
 
               const rankTitle = isFirstPlace
-                ? '🥇 رتبه اول (ایده برتر طلایی)'
+                ? 'رتبه اول (ایده برتر طلایی)'
                 : isSecondPlace
-                ? '🥈 رتبه دوم (نقره‌ای)'
+                ? 'رتبه دوم (نقره‌ای)'
                 : isThirdPlace
-                ? '🥉 رتبه سوم (برنزی)'
-                : `🎖️ رتبه ${toPersianDigits(rankIdx + 1)} برگزیده`;
+                ? 'رتبه سوم (برنزی)'
+                : `رتبه ${toPersianDigits(rankIdx + 1)} برگزیده`;
 
               return (
                 <div
@@ -556,14 +557,25 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                   <div className="space-y-4">
                     {/* Rank Badge & Manager Stats */}
                     <div className="flex items-center justify-between">
-                      <span className={`px-3 py-1 rounded-xl border-2 font-black text-xs ${
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border-2 font-black text-xs ${
                         isManager ? rankBadgeBg : 'bg-amber-400 text-zinc-950 border-zinc-900 shadow-[2px_2px_0px_0px_#202A5A]'
                       }`}>
-                        {porscadPoll.displayOrder === 'IGNORE_RANK' || porscadPoll.displayOrder === 'RANDOM'
-                          ? '✨ ایده برگزیده رویداد'
-                          : isManager
-                          ? rankTitle
-                          : '✨ ایده برگزیده رویداد'}
+                        {isFirstPlace ? (
+                          <Trophy className="w-3.5 h-3.5 text-amber-950 shrink-0" />
+                        ) : isSecondPlace ? (
+                          <Medal className="w-3.5 h-3.5 text-zinc-900 shrink-0" />
+                        ) : isThirdPlace ? (
+                          <Medal className="w-3.5 h-3.5 text-amber-200 shrink-0" />
+                        ) : (
+                          <Award className="w-3.5 h-3.5 shrink-0" />
+                        )}
+                        <span>
+                          {porscadPoll.displayOrder === 'IGNORE_RANK' || porscadPoll.displayOrder === 'RANDOM'
+                            ? 'ایده برگزیده رویداد'
+                            : isManager
+                            ? rankTitle
+                            : 'ایده برگزیده رویداد'}
+                        </span>
                       </span>
                       {showVoteStats && (
                         <div className="text-left">
@@ -1151,9 +1163,10 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               </div>
               <button
                 onClick={() => setIsFinishModalOpen(false)}
-                className="rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                className="rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                title="بستن پنجره"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 

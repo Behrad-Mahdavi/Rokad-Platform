@@ -149,10 +149,10 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
       let next: number[];
       if (prev.includes(stepNum)) {
         next = prev.filter((s) => s !== stepNum);
-        toast.info(`مرحله ${toPersianDigits(stepNum)} برای دانش‌آموزان قفل شد 🔒`);
+        toast.info(`مرحله ${toPersianDigits(stepNum)} برای دانش‌آموزان قفل شد.`);
       } else {
         next = [...prev, stepNum];
-        toast.success(`مرحله ${toPersianDigits(stepNum)} برای دانش‌آموزان بازگشایی شد 🔓`);
+        toast.success(`مرحله ${toPersianDigits(stepNum)} برای دانش‌آموزان بازگشایی شد.`);
       }
       localStorage.setItem(unlockedStepsKey, JSON.stringify(next));
       return next;
