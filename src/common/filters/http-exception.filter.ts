@@ -45,7 +45,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
         `Unhandled Exception [Client-Version: ${appVersion || 'unknown'}]: ${exception.message}`,
         exception.stack,
       );
-      message = exception.message;
+      // Never leak raw Prisma/infra messages to client in production
+      message = process.env.NODE_ENV === 'production' ? 'خطای داخلی سرور رخ داده است' : exception.message;
     }
 
     response.status(status).json({

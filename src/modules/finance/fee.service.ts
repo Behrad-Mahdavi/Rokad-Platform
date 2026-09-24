@@ -548,4 +548,26 @@ export class FeeService {
       contracts,
     };
   }
+
+  // Get Student Fee Contracts Overview for Student Portal
+  async getStudentContractsOverview(tenantId: string, userId: string) {
+    const student = await this.prisma.studentProfile.findUnique({
+      where: { userId },
+    });
+    if (!student) {
+      return [];
+    }
+    return this.prisma.studentFeeContract.findMany({
+      where: { tenantId, studentId: student.id },
+      include: {
+        academicYear: true,
+        installments: { orderBy: { installmentNumber: 'asc' } },
+        payments: {
+          orderBy: { recordedAt: 'desc' },
+        },
+        receipts: { orderBy: { issuedAt: 'desc' } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

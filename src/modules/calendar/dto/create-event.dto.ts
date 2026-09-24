@@ -7,8 +7,26 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { EventType, TargetAudience } from '@prisma/client';
+
+export class EventWorkflowModuleDto {
+  @ApiProperty({ description: 'کلید ماژول (IDEA_SUBMISSION, IDEA_HALL, VOTING, TEAM_FORMATION, EVENT_CANVAS)' })
+  @IsString()
+  @IsNotEmpty()
+  key: string;
+
+  @ApiProperty({ description: 'شماره مرحله (از ۱ شروع می‌شود)' })
+  @IsNotEmpty()
+  step: number;
+
+  @ApiPropertyOptional({ description: 'فعال بودن ماژول', default: true })
+  @IsBoolean()
+  @IsOptional()
+  enabled?: boolean;
+}
 
 export class CreateEventDto {
   @ApiProperty({ description: 'عنوان رویداد', example: 'برگزاری اولین آزمون جامع ترم اول' })
@@ -22,13 +40,12 @@ export class CreateEventDto {
   description?: string;
 
   @ApiPropertyOptional({
-    description: 'نوع رویداد (ACADEMIC, HOLIDAY, EXAM, MEETING, CULTURAL, SPORTS, EXCURSION)',
-    enum: EventType,
-    default: EventType.ACADEMIC,
+    description: 'نوع یا دسته‌بندی رویداد (ACADEMIC, STARTUP_WEEKEND, ... یا کلید سفارشی)',
+    default: 'ACADEMIC',
   })
-  @IsEnum(EventType)
+  @IsString()
   @IsOptional()
-  eventType?: EventType;
+  eventType?: string;
 
   @ApiProperty({ description: 'تاریخ و زمان شروع', example: '2026-09-15T08:00:00.000Z' })
   @IsDateString()
@@ -73,6 +90,21 @@ export class CreateEventDto {
   @IsString({ each: true })
   @IsOptional()
   tags?: string[];
+
+  @ApiPropertyOptional({ description: 'کلید دسته‌بندی سفارشی (در صورت وجود)' })
+  @IsString()
+  @IsOptional()
+  categoryKey?: string;
+
+  @ApiPropertyOptional({
+    description: 'ماژول‌های جریان کار رویداد (آرایه‌ای از {key, step, enabled})',
+    type: [EventWorkflowModuleDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => EventWorkflowModuleDto)
+  workflowModules?: EventWorkflowModuleDto[];
 }
 
 export class UpdateEventDto {
@@ -86,10 +118,10 @@ export class UpdateEventDto {
   @IsOptional()
   description?: string;
 
-  @ApiPropertyOptional({ enum: EventType })
-  @IsEnum(EventType)
+  @ApiPropertyOptional({ description: 'نوع یا دسته‌بندی رویداد' })
+  @IsString()
   @IsOptional()
-  eventType?: EventType;
+  eventType?: string;
 
   @ApiPropertyOptional({ description: 'تاریخ و زمان شروع' })
   @IsDateString()
@@ -132,4 +164,19 @@ export class UpdateEventDto {
   @IsString({ each: true })
   @IsOptional()
   tags?: string[];
+
+  @ApiPropertyOptional({ description: 'کلید دسته‌بندی سفارشی (در صورت وجود)' })
+  @IsString()
+  @IsOptional()
+  categoryKey?: string;
+
+  @ApiPropertyOptional({
+    description: 'ماژول‌های جریان کار رویداد',
+    type: [EventWorkflowModuleDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => EventWorkflowModuleDto)
+  workflowModules?: EventWorkflowModuleDto[];
 }

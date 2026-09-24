@@ -1125,18 +1125,22 @@ export class MembersService {
     },
   ) {
     const nationalCode = dto.studentNationalCode || studentProfile.nationalCode;
-    const parentPhone =
+    const rawParentPhone =
       dto.fatherPhone ||
       dto.motherPhone ||
       studentProfile.fatherPhone ||
       studentProfile.motherPhone ||
-      dto.phone ||
-      studentProfile.studentMobile ||
-      `09${Math.floor(Math.random() * 1000000000).toString().padStart(9, '0')}`;
+      null;
+
+    const studentUserPhone = studentProfile.user?.phone || dto.phone || null;
+    let parentPhone: string | null = null;
+    if (rawParentPhone && rawParentPhone !== studentUserPhone) {
+      parentPhone = rawParentPhone;
+    }
 
     const parentCreds = generateParentCredentials({
       studentNationalCode: nationalCode,
-      fallbackPhone: parentPhone,
+      fallbackPhone: parentPhone || undefined,
     });
 
     const parentPasswordHash = await argon2.hash(parentCreds.finalPassword);
@@ -1168,12 +1172,22 @@ export class MembersService {
 
     if (existingLink && existingLink.parent) {
       // به‌روزرسانی اکانت والد موجود
+      let updatePhone: string | undefined = undefined;
+      if (parentPhone) {
+        const phoneOwner = await tx.user.findFirst({
+          where: { tenantId, phone: parentPhone, NOT: { id: existingLink.parent.userId } },
+        });
+        if (!phoneOwner) {
+          updatePhone = parentPhone;
+        }
+      }
+
       await tx.user.update({
         where: { id: existingLink.parent.userId },
         data: {
           username: parentCreds.username,
           passwordHash: parentPasswordHash,
-          ...(parentPhone ? { phone: parentPhone } : {}),
+          ...(updatePhone ? { phone: updatePhone } : {}),
           ...(rawFullName ? { firstName: pFirstName, lastName: pLastName } : {}),
         },
       });
@@ -1181,14 +1195,29 @@ export class MembersService {
       return existingLink.parent;
     }
 
-    // اگر وجود نداشت: بررسی آیا کاربری با این username قبلاً ثبت شده
+    // اگر وجود نداشت: بررسی آیا کاربری با این username یا phone قبلاً ثبت شده
     let parentUser = await tx.user.findFirst({
       where: {
         tenantId,
-        username: parentCreds.username,
+        OR: [
+          { username: parentCreds.username },
+          ...(parentPhone ? [{ phone: parentPhone }] : []),
+        ],
       },
       include: { parentProfile: true },
     });
+
+    // اگر کاربر پیدا شد اما والد نبود (مثلا شماره به کاربر دیگری تخصیص داده شده)، نباید از آن شماره استفاده شود
+    if (parentUser && parentUser.role !== Role.PARENT) {
+      parentUser = await tx.user.findFirst({
+        where: {
+          tenantId,
+          username: parentCreds.username,
+        },
+        include: { parentProfile: true },
+      });
+      parentPhone = null;
+    }
 
     if (parentUser) {
       if (!parentUser.parentProfile) {
@@ -1209,12 +1238,22 @@ export class MembersService {
         },
       });
     } else {
+      let createPhone = parentPhone;
+      if (createPhone) {
+        const phoneOwner = await tx.user.findFirst({
+          where: { tenantId, phone: createPhone },
+        });
+        if (phoneOwner) {
+          createPhone = null;
+        }
+      }
+
       parentUser = await tx.user.create({
         data: {
           tenantId,
           firstName: pFirstName,
           lastName: pLastName,
-          phone: parentPhone,
+          phone: createPhone,
           username: parentCreds.username,
           passwordHash: parentPasswordHash,
           role: Role.PARENT as any,

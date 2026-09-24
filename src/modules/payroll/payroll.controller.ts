@@ -17,6 +17,7 @@ import { TeacherContractService } from './teacher-contract.service';
 import { PayrollExportService } from './payroll-export.service';
 import {
   UpdateStaffPayrollProfileDto,
+  GeneratePayrollSlipDto,
   ApproveAndPaySlipDto,
   CreateTeacherContractDto,
   CalculateMonthlyPayrollDto,
@@ -184,6 +185,20 @@ export class PayrollController {
   }
 
   // ==================== فیش‌های حقوقی ====================
+
+  @Post('slips')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.FINANCE_PAYROLL_WRITE)
+  @ApiOperation({ summary: 'تولید فیش حقوقی برای یک پرسنل بر مبنای پروفایل حقوقی' })
+  async generateSlip(
+    @CurrentUser('id') createdById: string,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Body() dto: GeneratePayrollSlipDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.payrollService.generateSlipForUser(effectiveTenantId, createdById, dto);
+  }
 
   @Get('slips')
   @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)

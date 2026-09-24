@@ -62,7 +62,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   }, [location.pathname, close]);
 
   const getNavItems = (): { section: string; items: NavItem[] }[] => {
-    const isManagerOrAdmin = role === 'SUPER_ADMIN' || role === 'SCHOOL_ADMIN';
+    const isManagerOrAdmin = role === 'SUPER_ADMIN' || role === 'SCHOOL_ADMIN' || role === 'STAFF';
+
+    const clubLink = (() => {
+      if (isManagerOrAdmin) {
+        return { title: 'باشگاه کسب‌وکار رُکاد (مدیریت)', href: '/app/admin/club', icon: Award };
+      }
+      if (role === 'TEACHER') {
+        return { title: 'باشگاه کسب‌وکار رُکاد (تأییدیه‌ها)', href: '/app/teacher/club-approvals', icon: Award };
+      }
+      return { title: 'باشگاه کسب‌وکار رُکاد', href: '/app/club', icon: Award };
+    })();
 
     const commsSection = {
       section: 'ارتباطات و اکوسیستم',
@@ -71,11 +81,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
         { title: 'رسانه هنرستان', href: '/app/media', icon: Sparkles },
         { title: 'پیام‌ها و مکاتبات', href: '/app/messages', icon: MessageSquare },
         { title: 'تقویم آموزشی', href: '/app/calendar', icon: CalendarDays },
-        { title: 'رویدادها', href: '/app/events', icon: CalendarRange },
-        { title: 'کوچینگ', href: '/app/coaching', icon: Compass },
-        { title: 'نظرسنجی و آراء', href: '/app/polls', icon: Vote },
+        { title: 'رودمپ رویدادها', href: '/app/events', icon: CalendarRange },
+        { title: 'کوچینگ و مربی‌گری', href: '/app/coaching', icon: Compass },
+        { title: 'پرس‌کاد (نظرسنجی و آراء)', href: '/app/polls', icon: Vote },
         { title: 'پلتفرم کا', href: '/app/ka-platform', icon: CoinStackIcon },
-        { title: 'باشگاه دانش‌آموزان', href: '/app/club', icon: Star },
+        clubLink,
       ],
     };
 
@@ -86,6 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             section: 'مرکز فرماندهی SaaS',
             items: [
               { title: 'داشبورد متریک‌ها', href: '/app/super-admin/dashboard', icon: LayoutDashboard },
+              { title: 'مدیریت باشگاه کسب‌وکار', href: '/app/admin/club', icon: Award },
               { title: 'مدیریت شعب و تننت‌ها', href: '/app/super-admin/tenants', icon: Building2 },
               { title: 'پلن‌های اشتراک و سهمیه‌ها', href: '/app/super-admin/subscriptions', icon: CreditCard },
               { title: 'قالب‌های نقش پویا', href: '/app/super-admin/role-templates', icon: Sliders },
@@ -102,6 +113,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             section: 'مدیریت هنرستان',
             items: [
               { title: 'داشبورد مدیریت', href: '/app/admin/dashboard', icon: LayoutDashboard },
+              { title: 'مدیریت باشگاه کسب‌وکار رُکاد', href: '/app/admin/club', icon: Award },
               { title: 'پروفایل رسمی مدرسه', href: '/app/admin/profile', icon: School },
               { title: 'ساختار سال و کلاس‌ها', href: '/app/admin/academic', icon: BookOpen },
               { title: 'برنامه هفتگی کلاس‌ها', href: '/app/admin/schedule', icon: CalendarDays },
@@ -139,6 +151,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             section: 'میز کار مربی',
             items: [
               { title: 'داشبورد کلاس‌ها', href: '/app/teacher/dashboard', icon: LayoutDashboard },
+              { title: 'تأییدیه‌های باشگاه رُکاد', href: '/app/teacher/club-approvals', icon: Award },
               { title: 'برنامه هفتگی کلاس‌ها', href: '/app/teacher/schedule', icon: CalendarDays },
               { title: 'دفتر کلاسی و حضور غیاب', href: '/app/teacher/attendance', icon: UserCheck },
               { title: 'ارزشیابی و ثبت نمرات', href: '/app/teacher/gradebook', icon: BookOpen },

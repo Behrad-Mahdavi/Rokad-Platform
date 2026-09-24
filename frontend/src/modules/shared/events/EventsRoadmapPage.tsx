@@ -16,15 +16,6 @@ import { toast } from '../../../components/ui/toast/toast';
 import { useUndoableMutation } from '../../../lib/hooks/useUndoableMutation';
 import { TOAST_MESSAGES } from '../../../constants/toast-messages';
 import {
-  EventCoverCropModal,
-  EVENT_COVER_SPEC_LABEL,
-  EVENT_COVER_MAX_BYTES,
-  needsCoverCrop,
-  readFileAsDataUrl,
-  loadImageDimensions,
-  uploadCoverBlob,
-} from './components/EventCoverCropModal';
-import {
   CalendarDays,
   Clock,
   MapPin,
@@ -49,6 +40,7 @@ import {
   Trophy,
   PartyPopper,
   Compass as CompassIcon,
+  Rocket,
   X,
   Filter,
   ArrowUpRight,
@@ -57,14 +49,22 @@ import {
   ArrowUpDown,
   ChevronDown,
   Check,
-  Upload,
 } from 'lucide-react';
+import { INITIAL_SAMPLE_EVENTS } from './constants/sample-events';
+import {
+  EVENT_MODULE_LIST,
+  renumberWorkflowModules,
+  normalizeWorkflowModules,
+  DEFAULT_WORKFLOW_MODULES,
+  WorkflowModuleEntry,
+} from './constants/event-modules';
 
 export interface SchoolEventItem {
   id: string;
   title: string;
   description: string;
-  eventType: 'ACADEMIC' | 'HOLIDAY' | 'EXAM' | 'MEETING' | 'CULTURAL' | 'SPORTS' | 'EXCURSION';
+  eventType: 'ACADEMIC' | 'HOLIDAY' | 'EXAM' | 'MEETING' | 'CULTURAL' | 'SPORTS' | 'EXCURSION' | 'STARTUP_WEEKEND';
+  categoryKey?: string;
   startDate: string;
   endDate: string;
   isAllDay: boolean;
@@ -72,6 +72,7 @@ export interface SchoolEventItem {
   location?: string;
   coverUrl?: string;
   tags?: string[];
+  workflowModules?: { key: string; step: number; enabled?: boolean }[];
   createdAt?: string;
   updatedAt?: string;
   createdBy?: {
@@ -99,6 +100,14 @@ export const EVENT_CATEGORIES: EventCategoryConfig[] = [
     colorClass: 'text-primary bg-primary/10 border-primary/20',
     activeClass: 'bg-primary text-white border-primary shadow-sm',
     badgeClass: 'bg-primary/10 text-primary border-primary/20',
+  },
+  {
+    key: 'STARTUP_WEEKEND',
+    label: 'استارت‌آپ ویکند',
+    icon: Rocket,
+    colorClass: 'text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800/60',
+    activeClass: 'bg-amber-500 text-white border-amber-500 shadow-sm',
+    badgeClass: 'bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700',
   },
   {
     key: 'ACADEMIC',
@@ -333,48 +342,7 @@ export const EventsRoadmapPage: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
-  const [cropFileName, setCropFileName] = useState<string | undefined>();
-  const [isUploadingCover, setIsUploadingCover] = useState(false);
-
-  const handleCoverFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast.error('فقط فایل تصویری مجاز است');
-      return;
-    }
-    if (file.size > EVENT_COVER_MAX_BYTES) {
-      toast.error('حجم تصویر نباید بیشتر از ۵ مگابایت باشد');
-      return;
-    }
-    try {
-      const dataUrl = await readFileAsDataUrl(file);
-      const dims = await loadImageDimensions(dataUrl);
-      setCropFileName(file.name);
-      if (needsCoverCrop(dims.w, dims.h)) {
-        setCropImageSrc(dataUrl);
-        return;
-      }
-      setIsUploadingCover(true);
-      const blob = await (await fetch(dataUrl)).blob();
-      const url = await uploadCoverBlob(blob, file.name);
-      setForm((f) => ({ ...f, coverUrl: url }));
-      toast.success('تصویر بنر آپلود شد');
-    } catch {
-      toast.error('خطا در پردازش یا آپلود تصویر');
-    } finally {
-      setIsUploadingCover(false);
-    }
-  };
-
-  const handleCoverCropConfirm = async (blob: Blob) => {
-    const url = await uploadCoverBlob(blob, cropFileName || 'event-cover.jpg');
-    setForm((f) => ({ ...f, coverUrl: url }));
-    setCropImageSrc(null);
-    toast.success('بنر برش خورد و آپلود شد');
-  };
+  const [workflowModulesState, setWorkflowModulesState] = useState<WorkflowModuleEntry[]>([]);
 
   const todayJalaliStr = useMemo(() => gregorianToJalaliStr(new Date()), []);
 
@@ -397,11 +365,46 @@ export const EventsRoadmapPage: React.FC = () => {
     setIsLoading(true);
     try {
       const res = await apiClient.get('/calendar/events');
-      if (res && res.data) {
-        setEvents(res.data);
+      let loadedEvents: SchoolEventItem[] = [];
+      if (res && Array.isArray(res.data)) {
+        loadedEvents = res.data;
       }
+      const hasStartup = loadedEvents.some(
+        (e: any) => e.eventType === 'STARTUP_WEEKEND' || e.id === 'evt_startup_weekend_2026'
+      );
+      let combined = loadedEvents;
+      if (!hasStartup) {
+        let startupEventToInclude = INITIAL_SAMPLE_EVENTS.find((s) => s.id === 'evt_startup_weekend_2026');
+        try {
+          const cached = localStorage.getItem('rokad_calendar_events');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            const foundCached = Array.isArray(parsed) ? parsed.find((p: any) => p.id === 'evt_startup_weekend_2026' || p.eventType === 'STARTUP_WEEKEND') : null;
+            if (foundCached) startupEventToInclude = foundCached;
+          }
+        } catch {}
+        combined = startupEventToInclude ? [startupEventToInclude, ...loadedEvents] : [...INITIAL_SAMPLE_EVENTS, ...loadedEvents];
+      }
+      setEvents(combined);
+      try {
+        localStorage.setItem('rokad_calendar_events', JSON.stringify(combined));
+      } catch {}
     } catch (err) {
       console.error('Failed to load roadmap events', err);
+      try {
+        const cached = localStorage.getItem('rokad_calendar_events');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const hasStartup = parsed.some(
+              (e: any) => e.eventType === 'STARTUP_WEEKEND' || e.id === 'evt_startup_weekend_2026'
+            );
+            setEvents(hasStartup ? parsed : [...INITIAL_SAMPLE_EVENTS, ...parsed]);
+            return;
+          }
+        }
+      } catch {}
+      setEvents(INITIAL_SAMPLE_EVENTS);
     } finally {
       setIsLoading(false);
     }
@@ -539,6 +542,7 @@ export const EventsRoadmapPage: React.FC = () => {
       coverUrl: '',
       tags: '',
     });
+    setWorkflowModulesState(DEFAULT_WORKFLOW_MODULES);
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -571,6 +575,15 @@ export const EventsRoadmapPage: React.FC = () => {
       coverUrl: ev.coverUrl || '',
       tags: (ev.tags || []).join('، '),
     });
+
+    setWorkflowModulesState(
+      Array.isArray(ev.workflowModules) && ev.workflowModules.length > 0
+        ? normalizeWorkflowModules(ev.workflowModules)
+        : ev.eventType === 'STARTUP_WEEKEND'
+        ? DEFAULT_WORKFLOW_MODULES
+        : []
+    );
+
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -630,6 +643,10 @@ export const EventsRoadmapPage: React.FC = () => {
         ? form.tags.split(/[,،]+/).map((t) => t.trim()).filter(Boolean)
         : [];
 
+      const activeWorkflowModules = renumberWorkflowModules(
+        workflowModulesState.filter((m) => m.enabled !== false)
+      );
+
       const payload = {
         title: form.title.trim(),
         description: form.description.trim(),
@@ -641,6 +658,7 @@ export const EventsRoadmapPage: React.FC = () => {
         location: form.location.trim() || undefined,
         coverUrl: form.coverUrl.trim() || undefined,
         tags: tagsArray,
+        workflowModules: activeWorkflowModules.length > 0 ? activeWorkflowModules : undefined,
       };
 
       if (isEditing && editingId) {
@@ -665,61 +683,24 @@ export const EventsRoadmapPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-16">
-      {/* 1. Top Header Toolbar */}
-      <div className="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] p-4 sm:p-5 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Title & Icon (No count badge, as requested) */}
+      {/* 1. Main Header Box (Includes Title, Filter Button, Search, Create Button & Category Tabs) */}
+      <div className="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] p-4 sm:p-5 shadow-sm space-y-4">
+        {/* Row 1: Title & Top-Left Actions (Filter Button + View Switcher) */}
+        <div className="flex items-center justify-between gap-3">
+          {/* Right: Title & Icon */}
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0 shadow-2xs">
               <CalendarDays className="w-5 h-5 text-primary" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white tracking-tight">
-              نقشۀ رویدادها
-            </h1>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white tracking-tight">
+                نقشۀ رویدادها
+              </h1>
+            </div>
           </div>
 
-          {/* Action Buttons: Search, Filter Toggle, View Switcher, and Create Event Button */}
-          <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
-            {/* Search Box */}
-            <div className="relative flex-1 sm:w-64 min-w-[160px]">
-              <Search className="w-3.5 h-3.5 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="جستجو در رویدادها..."
-                className="w-full h-10 pr-9 pl-8 text-xs rounded-xl border-[1.5px] border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-ink-darker dark:text-white outline-none focus:border-primary focus:bg-white dark:focus:bg-gray-900 transition-colors shadow-2xs font-medium"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0.5 rounded-md cursor-pointer"
-                  title="پاک کردن جستجو"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Filter Toggle Button (Matching Homework & Messages Page) */}
-            <button
-              type="button"
-              onClick={() => setIsFilterOpen((prev) => !prev)}
-              className={`relative cursor-pointer select-none flex items-center justify-center w-10 h-10 rounded-xl border-[1.5px] transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] shrink-0 ${
-                isFilterOpen || hasActiveFilters
-                  ? 'bg-primary text-white border-primary-dark shadow-[2px_2px_0_#438C83]'
-                  : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground dark:text-slate-300 border-gray-200 dark:border-[#242F42] hover:bg-gray-100 dark:hover:bg-[#253248] shadow-[2px_2px_0_#CBD5E1] dark:shadow-[2px_2px_0_#0F172A]'
-              }`}
-              title={isFilterOpen ? 'بستن فیلترها' : 'نمایش فیلترها'}
-              aria-label={isFilterOpen ? 'بستن فیلترها' : 'نمایش فیلترها'}
-            >
-              <Filter className="w-4 h-4 shrink-0" />
-              {hasActiveFilters && (
-                <span className="absolute top-1.5 left-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#151C28]" />
-              )}
-            </button>
-
+          {/* Left: Top Actions (Filter Button moved here, plus View Switcher) */}
+          <div className="flex items-center gap-2">
             {/* View Mode Switcher: Timeline vs Grid */}
             <div className="flex items-center p-1 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200/60 dark:border-gray-700/60 shrink-0">
               <button
@@ -750,122 +731,169 @@ export const EventsRoadmapPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Create Event Button (Staff / Admin only) */}
-            {isManager && (
-              <Button
-                onClick={handleOpenCreate}
-                variant="primary"
-                className="h-10 px-4 rounded-xl text-xs sm:text-sm font-bold rokad-btn-primary shrink-0 gap-1.5 shadow-ecosystem"
+            {/* Filter Toggle Button (Moved to top-left of header box) */}
+            <button
+              type="button"
+              onClick={() => setIsFilterOpen((prev) => !prev)}
+              className={`relative cursor-pointer select-none flex items-center justify-center w-10 h-10 rounded-xl border-[1.5px] transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] shrink-0 ${
+                isFilterOpen || hasActiveFilters
+                  ? 'bg-primary text-white border-primary-dark shadow-[2px_2px_0_#438C83]'
+                  : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground dark:text-slate-300 border-gray-200 dark:border-[#242F42] hover:bg-gray-100 dark:hover:bg-[#253248] shadow-[2px_2px_0_#CBD5E1] dark:shadow-[2px_2px_0_#0F172A]'
+              }`}
+              title={isFilterOpen ? 'بستن فیلترها' : 'نمایش فیلترها'}
+              aria-label={isFilterOpen ? 'بستن فیلترها' : 'نمایش فیلترها'}
+            >
+              <Filter className="w-4 h-4 shrink-0" />
+              {hasActiveFilters && (
+                <span className="absolute top-1.5 left-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#151C28]" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Row 2: Expanded Search Box & Large Create Event Button */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {/* Expanded Search Box */}
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="جستجو در نام، توضیحات، مکان یا برچسب‌های رویدادها..."
+              className="w-full h-11 pr-10 pl-9 text-xs sm:text-[13px] rounded-xl border-[1.5px] border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-ink-darker dark:text-white outline-none focus:border-primary focus:bg-white dark:focus:bg-gray-900 transition-colors shadow-2xs font-medium"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0.5 rounded-md cursor-pointer"
+                title="پاک کردن جستجو"
               >
-                <Plus className="w-4 h-4" />
-                <span>رویداد جدید</span>
-              </Button>
+                <X className="w-4 h-4" />
+              </button>
             )}
           </div>
-        </div>
-      </div>
 
-      {/* 2. Category Filter Pills (Horizontal Scrolling Bar - Always Visible & Fast Access) */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none pt-1">
-        {EVENT_CATEGORIES.map((cat) => {
-          const isSelected = selectedCategory === cat.key;
-          const Icon = cat.icon;
-          const count =
-            cat.key === 'ALL'
-              ? events.length
-              : events.filter((e) => e.eventType === cat.key).length;
-
-          return (
-            <button
-              key={cat.key}
-              type="button"
-              onClick={() => setSelectedCategory(cat.key)}
-              className={`min-h-[40px] flex items-center gap-2 whitespace-nowrap px-3.5 py-2 rounded-xl text-xs sm:text-[13px] font-bold border transition-all duration-150 cursor-pointer select-none active:scale-98 ${
-                isSelected
-                  ? cat.activeClass
-                  : 'bg-white dark:bg-[#151C28] text-gray-600 dark:text-gray-300 border-gray-200/80 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/60 hover:border-gray-300 dark:hover:border-gray-700'
-              }`}
+          {/* Create Event Button (Staff / Admin only - Large width matching toolbar) */}
+          {isManager && (
+            <Button
+              onClick={handleOpenCreate}
+              variant="primary"
+              className="h-11 px-6 min-w-[200px] sm:w-auto w-full rounded-xl text-xs sm:text-sm font-bold rokad-btn-primary shrink-0 gap-2 shadow-ecosystem justify-center"
             >
-              <Icon className="w-4 h-4 shrink-0" />
-              <span>{cat.label}</span>
-              <span
-                className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-                  isSelected
-                    ? 'bg-white/20 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
-                }`}
-              >
-                {toPersianDigits(count)}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+              <Plus className="w-4 h-4 shrink-0" />
+              <span>رویداد جدید</span>
+            </Button>
+          )}
+        </div>
 
-      {/* 3. Collapsible Filter & Sort Panel (Dedicated 3-column card with smooth animation matching HomeworkPage) */}
-      <div
-        className={`grid transition-all duration-300 ease-in-out ${
-          isFilterOpen
-            ? 'grid-rows-[1fr] opacity-100 translate-y-0'
-            : 'grid-rows-[0fr] opacity-0 -translate-y-2 pointer-events-none'
-        }`}
-      >
-        <div className={`min-h-0 ${isFilterOpen ? 'overflow-visible' : 'overflow-hidden'}`}>
-          <div className="bg-white dark:bg-[#151C28] rounded-2xl border border-gray-200/80 dark:border-[#242F42] p-4 sm:p-5 shadow-xs space-y-4 relative overflow-visible">
-            {/* Filter Dropdowns Grid: 3 Balanced Columns */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 relative z-20">
-              {/* Status Filter */}
-              <CustomFilterDropdown
-                label="وضعیت برگزاری:"
-                labelIcon={Clock}
-                iconColorClass="text-cyan-500"
-                options={STATUS_OPTIONS}
-                value={statusFilter}
-                onChange={(val) => setStatusFilter(val as any)}
-              />
+        {/* Row 3: Event Category Tabs (Moved inside top box) */}
+        <div className="pt-3 border-t border-gray-100 dark:border-gray-800/80">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            {EVENT_CATEGORIES.map((cat) => {
+              const isSelected = selectedCategory === cat.key;
+              const Icon = cat.icon;
+              const count =
+                cat.key === 'ALL'
+                  ? events.length
+                  : events.filter((e) => e.eventType === cat.key).length;
 
-              {/* Target Audience Filter */}
-              <CustomFilterDropdown
-                label="مخاطبین هدف:"
-                labelIcon={Users}
-                iconColorClass="text-purple-500"
-                options={AUDIENCE_OPTIONS}
-                value={audienceFilter}
-                onChange={setAudienceFilter}
-              />
-
-              {/* Sort Order Filter */}
-              <CustomFilterDropdown
-                label="ترتیب نمایش:"
-                labelIcon={ArrowUpDown}
-                iconColorClass="text-primary"
-                options={SORT_OPTIONS}
-                value={sortOption}
-                onChange={setSortOption}
-              />
-            </div>
-
-            {/* Footer Row: Result Counter & Reset Button */}
-            <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800/80">
-              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                تعداد {toPersianDigits(filteredEvents.length)} رویداد با این مشخصات یافت شد.
-              </span>
-
-              {hasActiveFilters && (
+              return (
                 <button
+                  key={cat.key}
                   type="button"
-                  onClick={resetFilters}
-                  className="text-xs h-8 px-3 gap-1.5 inline-flex items-center text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-all cursor-pointer font-bold"
-                  title="پاک کردن تمام فیلترها"
+                  onClick={() => setSelectedCategory(cat.key)}
+                  className={`min-h-[38px] flex items-center gap-2 whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs sm:text-[13px] font-bold border transition-all duration-150 cursor-pointer select-none active:scale-98 ${
+                    isSelected
+                      ? cat.activeClass
+                      : 'bg-white dark:bg-[#1C2536] text-gray-600 dark:text-gray-300 border-gray-200/80 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
                 >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>بازنشانی فیلترها</span>
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span>{cat.label}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                      isSelected
+                        ? 'bg-white/20 text-white'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                    }`}
+                  >
+                    {toPersianDigits(count)}
+                  </span>
                 </button>
-              )}
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Collapsible Filter Panel (Directly inside top box beneath tabs) */}
+        <div
+          className={`grid transition-all duration-300 ease-in-out ${
+            isFilterOpen
+              ? 'grid-rows-[1fr] opacity-100 translate-y-0 pt-2 border-t border-gray-100 dark:border-gray-800/80'
+              : 'grid-rows-[0fr] opacity-0 -translate-y-2 pointer-events-none'
+          }`}
+        >
+          <div className={`min-h-0 ${isFilterOpen ? 'overflow-visible' : 'overflow-hidden'}`}>
+            <div className="bg-gray-50/70 dark:bg-[#1C2536]/80 rounded-xl border border-gray-200/80 dark:border-[#242F42] p-4 shadow-xs space-y-4 relative overflow-visible">
+              {/* Filter Dropdowns Grid: 3 Balanced Columns */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 relative z-20">
+                {/* Status Filter */}
+                <CustomFilterDropdown
+                  label="وضعیت برگزاری:"
+                  labelIcon={Clock}
+                  iconColorClass="text-cyan-500"
+                  options={STATUS_OPTIONS}
+                  value={statusFilter}
+                  onChange={(val) => setStatusFilter(val as any)}
+                />
+
+                {/* Target Audience Filter */}
+                <CustomFilterDropdown
+                  label="مخاطبین هدف:"
+                  labelIcon={Users}
+                  iconColorClass="text-purple-500"
+                  options={AUDIENCE_OPTIONS}
+                  value={audienceFilter}
+                  onChange={setAudienceFilter}
+                />
+
+                {/* Sort Order Filter */}
+                <CustomFilterDropdown
+                  label="ترتیب نمایش:"
+                  labelIcon={ArrowUpDown}
+                  iconColorClass="text-primary"
+                  options={SORT_OPTIONS}
+                  value={sortOption}
+                  onChange={setSortOption}
+                />
+              </div>
+
+              {/* Footer Row: Result Counter & Reset Button */}
+              <div className="flex items-center justify-between pt-2 border-t border-gray-200/70 dark:border-gray-800/80">
+                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                  تعداد {toPersianDigits(filteredEvents.length)} رویداد با این مشخصات یافت شد.
+                </span>
+
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="text-xs h-8 px-3 gap-1.5 inline-flex items-center text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-all cursor-pointer font-bold"
+                    title="پاک کردن تمام فیلترها"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>بازنشانی فیلترها</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+
 
       {/* 4. Content Display */}
       {isLoading ? (
@@ -1031,7 +1059,14 @@ export const EventsRoadmapPage: React.FC = () => {
                               </div>
 
                               <div className="flex items-center gap-1.5 text-xs font-bold text-primary group-hover:underline">
-                                <span>جزئیات برنامه</span>
+                                {ev.eventType === 'STARTUP_WEEKEND' ? (
+                                  <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-black">
+                                    <Rocket className="w-3.5 h-3.5" />
+                                    <span>ورود به مراحل استارت‌آپ ویکند</span>
+                                  </span>
+                                ) : (
+                                  <span>جزئیات برنامه</span>
+                                )}
                                 <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
                               </div>
                             </div>
@@ -1135,6 +1170,15 @@ export const EventsRoadmapPage: React.FC = () => {
                         <span className="truncate">{ev.location}</span>
                       </div>
                     )}
+                    {ev.eventType === 'STARTUP_WEEKEND' && (
+                      <div className="pt-2 flex items-center justify-between text-xs font-black text-amber-600 dark:text-amber-400 border-t border-amber-100 dark:border-amber-950/60 mt-1">
+                        <span className="flex items-center gap-1.5">
+                          <Rocket className="w-3.5 h-3.5" />
+                          <span>ورود به مراحل استارت‌آپ ویکند</span>
+                        </span>
+                        <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1183,6 +1227,7 @@ export const EventsRoadmapPage: React.FC = () => {
                 onChange={(e) => setForm({ ...form, eventType: e.target.value as any })}
                 className="w-full min-h-[42px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-[#1C2536] text-xs sm:text-sm font-bold text-ink-darker dark:text-white focus:border-primary focus:outline-none"
               >
+                <option value="STARTUP_WEEKEND">استارت‌آپ ویکند</option>
                 <option value="ACADEMIC">آموزشی و مهارت</option>
                 <option value="CULTURAL">فرهنگی و آیین‌ها</option>
                 <option value="SPORTS">مسابقات و ورزش</option>
@@ -1272,45 +1317,18 @@ export const EventsRoadmapPage: React.FC = () => {
             />
           </div>
 
-          {/* Cover Image URL + Upload/Crop */}
+          {/* Cover Image URL */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">
-              تصویر بنر رویداد
+              آدرس تصویر بنر رویداد (URL)
             </label>
-            <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
-              {EVENT_COVER_SPEC_LABEL}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="url"
-                value={form.coverUrl}
-                onChange={(e) => setForm({ ...form, coverUrl: e.target.value })}
-                placeholder="https://..."
-                className="flex-1 min-w-0 min-h-[42px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-[#1C2536] text-ink-darker dark:text-white text-xs sm:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none"
-              />
-              <label
-                className={`shrink-0 min-h-[42px] px-3.5 py-2.5 rounded-xl border border-dashed border-primary/50 bg-primary/5 text-primary text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer hover:bg-primary/10 transition-all ${
-                  isUploadingCover ? 'opacity-60 pointer-events-none' : ''
-                }`}
-              >
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={handleCoverFileSelect}
-                  disabled={isUploadingCover}
-                />
-                <Upload className="w-3.5 h-3.5" />
-                {isUploadingCover ? 'در حال آپلود…' : 'آپلود و برش'}
-              </label>
-            </div>
-            {form.coverUrl && (
-              <img
-                src={form.coverUrl}
-                alt="پیش‌نمایش بنر"
-                className="mt-2 w-full max-h-28 object-cover rounded-xl border border-gray-200 dark:border-gray-700"
-              />
-            )}
+            <input
+              type="url"
+              value={form.coverUrl}
+              onChange={(e) => setForm({ ...form, coverUrl: e.target.value })}
+              placeholder="https://..."
+              className="w-full min-h-[42px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-[#1C2536] text-ink-darker dark:text-white text-xs sm:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none"
+            />
           </div>
 
           {/* Tags */}
@@ -1341,6 +1359,152 @@ export const EventsRoadmapPage: React.FC = () => {
             />
           </div>
 
+          {/* Workflow Modules Selection in Modal */}
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-[#1C2536]/80 p-4 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <label className="block text-xs font-black text-ink-darker dark:text-white">
+                  ماژول‌های گردش کار رویداد (Workflow Modules)
+                </label>
+                <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mt-0.5">
+                  ماژول‌های مورد نیاز این رویداد را انتخاب و شماره مرحله آن‌ها را تعیین کنید.
+                </p>
+              </div>
+
+              {/* Quick actions for modules */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setWorkflowModulesState(DEFAULT_WORKFLOW_MODULES)}
+                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-colors cursor-pointer"
+                >
+                  پیش‌فرض استارت‌آپ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWorkflowModulesState([])}
+                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-gray-500 dark:text-gray-400 hover:text-rose-500 hover:border-rose-300 transition-colors cursor-pointer"
+                >
+                  غیرفعال‌سازی همه
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-64 overflow-y-auto pr-1">
+              {EVENT_MODULE_LIST.map((mod) => {
+                const entry = workflowModulesState.find((m) => m.key === mod.key);
+                const checked = !!entry && entry.enabled !== false;
+                const Icon = mod.icon;
+                return (
+                  <div
+                    key={mod.key}
+                    className={`flex items-center gap-2.5 rounded-xl border p-2.5 transition-all ${
+                      checked
+                        ? 'border-primary/40 bg-white dark:bg-[#151C28] shadow-xs'
+                        : 'border-gray-200/80 dark:border-gray-800 bg-white/50 dark:bg-[#151C28]/40'
+                    }`}
+                  >
+                    <label className="flex items-center gap-2.5 flex-1 cursor-pointer min-w-0">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          setWorkflowModulesState((prev) => {
+                            if (e.target.checked) {
+                              const existing = prev.find((m) => m.key === mod.key);
+                              if (existing) {
+                                return renumberWorkflowModules(
+                                  prev.map((m) =>
+                                    m.key === mod.key ? { ...m, enabled: true } : m
+                                  )
+                                );
+                              }
+                              const maxStep = prev.length
+                                ? Math.max(...prev.map((m) => m.step))
+                                : 0;
+                              return renumberWorkflowModules([
+                                ...prev,
+                                { key: mod.key as any, step: maxStep + 1, enabled: true },
+                              ]);
+                            }
+                            return renumberWorkflowModules(
+                              prev.filter((m) => m.key !== mod.key)
+                            );
+                          });
+                        }}
+                        className="w-4 h-4 accent-primary rounded flex-shrink-0 cursor-pointer"
+                      />
+                      <div
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                          checked
+                            ? 'bg-primary/10 text-primary'
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-400'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4 shrink-0" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-black text-ink-darker dark:text-white truncate">
+                          {mod.title}
+                        </div>
+                        <div className="text-[10px] font-medium text-gray-500 dark:text-gray-400 truncate">
+                          {mod.subtitle}
+                        </div>
+                      </div>
+                    </label>
+                    {checked && (
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                          گام:
+                        </span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={20}
+                          value={entry?.step || 1}
+                          onChange={(e) => {
+                            const newStep = Math.max(1, parseInt(e.target.value, 10) || 1);
+                            setWorkflowModulesState((prev) =>
+                              renumberWorkflowModules(
+                                prev.map((m) =>
+                                  m.key === mod.key ? { ...m, step: newStep } : m
+                                )
+                              )
+                            );
+                          }}
+                          className="w-11 h-7 px-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#1C2536] text-xs font-bold text-center focus:border-primary focus:outline-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Ordered Active Steps Badges */}
+            {workflowModulesState.some((m) => m.enabled !== false) && (
+              <div className="pt-2 border-t border-gray-200/60 dark:border-gray-800 flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                  ترتیب مراحل فعال:
+                </span>
+                {[...workflowModulesState]
+                  .filter((m) => m.enabled !== false)
+                  .sort((a, b) => a.step - b.step)
+                  .map((m) => {
+                    const def = EVENT_MODULE_LIST.find((d) => d.key === m.key);
+                    return (
+                      <span
+                        key={m.key}
+                        className="px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 text-[10px] font-black"
+                      >
+                        {toPersianDigits(m.step)}. {def?.title || m.key}
+                      </span>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+
           {/* Submit Actions */}
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
             <Button
@@ -1362,14 +1526,6 @@ export const EventsRoadmapPage: React.FC = () => {
           </div>
         </form>
       </Modal>
-
-      <EventCoverCropModal
-        isOpen={!!cropImageSrc}
-        onClose={() => setCropImageSrc(null)}
-        imageSrc={cropImageSrc || ''}
-        fileName={cropFileName}
-        onConfirm={handleCoverCropConfirm}
-      />
     </div>
   );
 };

@@ -251,12 +251,13 @@ async function main() {
 
   const boysVice = await prisma.user.upsert({
     where: {
-      tenantId_phone: {
+      tenantId_username: {
         tenantId: boysTenant.id,
-        phone: '09122221111',
+        username: 'boysvice',
       },
     },
     update: {
+      phone: '09121111119',
       passwordHash: boysAdminPasswordHash,
       role: 'STAFF',
       status: 'ACTIVE',
@@ -265,7 +266,7 @@ async function main() {
       tenantId: boysTenant.id,
       firstName: 'محمدرضا',
       lastName: 'کاظمی (معاون پسرانه)',
-      phone: '09122221111',
+      phone: '09121111119',
       email: 'boys-vice@rokadschool.ir',
       username: 'boysvice',
       passwordHash: boysAdminPasswordHash,
@@ -278,6 +279,32 @@ async function main() {
           jobTitle: 'معاون آموزشی',
         },
       },
+    },
+  });
+
+  const coachPasswordHash = await argon2.hash('RokadPass2026!');
+  const boysCoach = await prisma.user.upsert({
+    where: {
+      tenantId_phone: {
+        tenantId: boysTenant.id,
+        phone: '09129990001',
+      },
+    },
+    update: {
+      passwordHash: coachPasswordHash,
+      role: 'COACH',
+      status: 'ACTIVE',
+    },
+    create: {
+      tenantId: boysTenant.id,
+      firstName: 'استاد علی',
+      lastName: 'صادقی (کوچ و مشاور)',
+      phone: '09129990001',
+      email: 'coach@rokadschool.ir',
+      username: 'boyscoach',
+      passwordHash: coachPasswordHash,
+      role: 'COACH',
+      status: 'ACTIVE',
     },
   });
 

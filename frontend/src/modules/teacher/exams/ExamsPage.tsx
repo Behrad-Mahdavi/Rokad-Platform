@@ -99,6 +99,7 @@ export const ExamsPage: React.FC = () => {
     lessonId: '',
     classroomId: '',
     type: 'ONLINE',
+    round: 'CLASS_EXAM',
     durationMinutes: 60,
     examDate: gregorianToJalaliStr(new Date()),
     passingScore: 10,
@@ -203,7 +204,8 @@ export const ExamsPage: React.FC = () => {
         passingScore: Number(examForm.passingScore) || 10,
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
-        examType: 'ONLINE',
+        examType: examForm.type || 'ONLINE',
+        round: examForm.round || 'CLASS_EXAM',
       });
       setIsCreateExamOpen(false);
       setExamForm((prev) => ({
@@ -620,13 +622,37 @@ export const ExamsPage: React.FC = () => {
             </div>
           )}
 
-          <Input
-            label="عنوان آزمون"
-            placeholder="مثال: آزمون میان‌ترم حسابان ۱"
-            value={examForm.title}
-            onChange={(e) => setExamForm({ ...examForm, title: e.target.value })}
-            required
-          />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Select
+              label="نحوه برگزاری آزمون"
+              value={examForm.type}
+              onChange={(e) => setExamForm({ ...examForm, type: e.target.value })}
+              required
+            >
+              <option value="ONLINE">آزمون آنلاین (با پاسخ‌برگ سامانه)</option>
+              <option value="PAPER_BASED">آزمون حضوری / کتبی (در مدرسه)</option>
+            </Select>
+
+            <Select
+              label="نوبت آزمون"
+              value={examForm.round}
+              onChange={(e) => setExamForm({ ...examForm, round: e.target.value })}
+              required
+            >
+              <option value="CLASS_EXAM">آزمون کلاسی</option>
+              <option value="CONTINUOUS">امتحان مستمر</option>
+              <option value="MIDTERM_1">نوبت اول</option>
+              <option value="FINAL_2">نوبت دوم</option>
+            </Select>
+
+            <Input
+              label="عنوان آزمون"
+              placeholder="مثال: آزمون میان‌ترم حسابان ۱"
+              value={examForm.title}
+              onChange={(e) => setExamForm({ ...examForm, title: e.target.value })}
+              required
+            />
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Select

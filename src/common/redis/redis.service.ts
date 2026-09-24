@@ -26,18 +26,16 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         password: password || undefined,
         enableOfflineQueue: false,
         maxRetriesPerRequest: null,
-        retryStrategy: (times) => {
-          if (times > 2) {
-            this.logger.warn('Redis reconnection limit reached — running in offline cache fallback mode');
-            return null;
-          }
-          return Math.min(times * 200, 1000);
-        },
+        retryStrategy: (times) => Math.min(times * 200, 5000),
         lazyConnect: true,
       });
 
       this.client.on('error', (err) => {
         this.logger.debug(`Redis service error: ${err.message}`);
+      });
+
+      this.client.on('ready', () => {
+        this.logger.log(`Redis reconnected on ${host}:${port}`);
       });
 
       await this.client.connect();

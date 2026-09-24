@@ -115,7 +115,7 @@ export class ExamsService {
       ]),
     );
 
-    return this.prisma.exam.create({
+    return (this.prisma.exam.create as any)({
       data: {
         tenantId,
         academicYearId,
@@ -125,6 +125,7 @@ export class ExamsService {
         title: dto.title,
         description: dto.description,
         examType: dto.examType || dto.type || 'ONLINE',
+        round: dto.round || 'CLASS_EXAM',
         durationMinutes: dto.durationMinutes,
         startTime: new Date(dto.startTime),
         endTime: new Date(dto.endTime),
@@ -195,6 +196,13 @@ export class ExamsService {
         teacher: { include: { user: { select: { firstName: true, lastName: true } } } },
         classrooms: { include: { classroom: true } },
         _count: { select: { questions: true, participations: true } },
+        questions: {
+          select: {
+            id: true,
+            score: true,
+            question: { select: { type: true } },
+          },
+        },
         participations: studentId
           ? {
               where: { studentId },

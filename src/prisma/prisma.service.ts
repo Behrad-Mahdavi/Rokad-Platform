@@ -52,6 +52,46 @@ export class PrismaService
     await this.$disconnect();
   }
 
+  /** True when Prisma failed because the DB TCP connection died. */
+  isConnectionError(err: unknown): boolean {
+    const msg = err instanceof Error ? `${err.message} ${err.stack ?? ''}` : String(err);
+    return (
+      /Server has closed the connection/i.test(msg) ||
+      /Connection reset/i.test(msg) ||
+      /ECONNRESET/i.test(msg) ||
+      /ECONNREFUSED/i.test(msg) ||
+      /P1001/i.test(msg) ||
+      /P1002/i.test(msg) ||
+      /P1008/i.test(msg) ||
+      /timed out/i.test(msg) ||
+      /Connection terminated/i.test(msg) ||
+      (/PrismaClientKnownRequestError/i.test(msg) && /connection/i.test(msg))
+    );
+  }
+
+  /**
+   * Reconnect and retry once after a dropped PostgreSQL connection.
+   * Prevents refresh/login from bubbling raw Prisma 500s during Docker/network blips.
+   */
+  async withReconnectRetry<T>(op: () => Promise<T>): Promise<T> {
+    try {
+      return await op();
+    } catch (err) {
+      if (!this.isConnectionError(err)) throw err;
+      this.logger.warn('PostgreSQL connection lost — reconnecting and retrying once');
+      try {
+        await this.$disconnect();
+      } catch {}
+      try {
+        await this.$connect();
+      } catch (reconnectErr: any) {
+        this.logger.error(`PostgreSQL reconnect failed: ${reconnectErr?.message}`);
+        throw reconnectErr;
+      }
+      return op();
+    }
+  }
+
   /**
    * Run a callback inside a transaction with PostgreSQL RLS tenant context set
    */

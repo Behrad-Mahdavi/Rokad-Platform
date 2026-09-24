@@ -63,7 +63,7 @@ describe('Rokad Multi-Tenant Platform — Phase 3 Daily Academic Operations Test
       .set('x-tenant-slug', 'rokad-boys')
       .send({
         identifier: '09124000001',
-        password: 'RokadPass2026!',
+        password: 'b0012345678',
       });
     boysStudentToken = studentLogin.body.data.accessToken;
 
@@ -73,7 +73,7 @@ describe('Rokad Multi-Tenant Platform — Phase 3 Daily Academic Operations Test
       .set('x-tenant-slug', 'rokad-boys')
       .send({
         identifier: '09125000001',
-        password: 'RokadPass2026!',
+        password: 'p0012345678',
       });
     boysParentToken = parentLogin.body.data.accessToken;
 

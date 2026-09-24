@@ -3,6 +3,7 @@ import { MembersService } from './members.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as argon2 from 'argon2';
 
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TenantContextService } from '../../common/tenant/tenant-context.service';
 
 describe('MembersService - Unified Credentials Generation', () => {
@@ -14,7 +15,15 @@ describe('MembersService - Unified Credentials Generation', () => {
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [MembersService, PrismaService, TenantContextService],
+      providers: [
+        MembersService,
+        PrismaService,
+        TenantContextService,
+        {
+          provide: EventEmitter2,
+          useValue: { emit: jest.fn(), on: jest.fn() },
+        },
+      ],
     }).compile();
 
     service = module.get<MembersService>(MembersService);

@@ -54,7 +54,6 @@ export const EventCoverCropModal: React.FC<Props> = ({
   fileName,
   onConfirm,
 }) => {
-  const wrapRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const [nat, setNat] = useState<{ w: number; h: number } | null>(null);
@@ -77,12 +76,12 @@ export const EventCoverCropModal: React.FC<Props> = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    const el = wrapRef.current;
+    const el = stageRef.current;
     if (!el) return;
     const measure = () => {
-      const w = Math.max(240, Math.min(el.clientWidth || stageMaxW, stageMaxW));
-      const h = Math.min(stageMaxH, Math.max(160, Math.round(w / EVENT_COVER_ASPECT) + 36));
-      setStage({ w, h });
+      const w = Math.min(el.clientWidth || stageMaxW, stageMaxW);
+      const h = Math.min(Math.max(el.clientHeight || 200, 200), stageMaxH);
+      setStage({ w, h: Math.min(h, Math.round(w / EVENT_COVER_ASPECT) + 40) });
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -184,55 +183,53 @@ export const EventCoverCropModal: React.FC<Props> = ({
       maxWidth="lg"
     >
       <div className="space-y-4">
-        <div ref={wrapRef} className="w-full mx-auto" style={{ maxWidth: stageMaxW }}>
+        <div
+          ref={stageRef}
+          className="relative mx-auto w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-[#0f172a] select-none touch-none"
+          style={{ height: Math.min(stageMaxH, Math.round(stageMaxW / EVENT_COVER_ASPECT) + 40), maxHeight: stageMaxH, maxWidth: stageMaxW }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+        >
           <div
-            ref={stageRef}
-            className="relative w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-[#0f172a] select-none touch-none"
-            style={{ height: stage.h }}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerUp}
-          >
-            <div
-              className="absolute"
+            className="absolute"
+            style={{
+              left: '50%',
+              top: '50%',
+              width: view?.w ?? stage.w,
+              height: view?.h ?? stage.h,
+              transform: 'translate(-50%, -50%)',
+              boxShadow: '0 0 0 9999px rgba(0,0,0,0.55)',
+              border: '2px solid #59BBAF',
+              borderRadius: 8,
+              pointerEvents: 'none',
+              zIndex: 2,
+            }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <img
+              ref={imgRef}
+              src={imageSrc}
+              alt={fileName || 'پیش‌نمایش برش'}
+              draggable={false}
+              onLoad={onImgLoad}
+              className="max-w-none cursor-grab active:cursor-grabbing"
               style={{
-                left: '50%',
-                top: '50%',
-                width: view?.w ?? stage.w,
-                height: view?.h ?? stage.h,
-                transform: 'translate(-50%, -50%)',
-                boxShadow: '0 0 0 9999px rgba(0,0,0,0.55)',
-                border: '2px solid #59BBAF',
-                borderRadius: 8,
-                pointerEvents: 'none',
-                zIndex: 2,
+                transform: `translate(${offset.x}px, ${offset.y}px) rotate(${rotation}deg) scale(${zoom})`,
+                transformOrigin: 'center center',
+                maxWidth: '92%',
+                maxHeight: '92%',
               }}
             />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <img
-                ref={imgRef}
-                src={imageSrc}
-                alt={fileName || 'پیش‌نمایش برش'}
-                draggable={false}
-                onLoad={onImgLoad}
-                className="max-w-none cursor-grab active:cursor-grabbing"
-                style={{
-                  transform: `translate(${offset.x}px, ${offset.y}px) rotate(${rotation}deg) scale(${zoom})`,
-                  transformOrigin: 'center center',
-                  maxWidth: '92%',
-                  maxHeight: '92%',
-                }}
-              />
-            </div>
-            <div className="absolute bottom-2 left-2 right-2 z-10 flex items-center justify-between gap-2 pointer-events-none">
-              <span className="px-2 py-1 rounded-md bg-black/60 text-white text-[10px] font-bold">
-                بکشید تا جابه‌جا شود
-              </span>
-              <span className="px-2 py-1 rounded-md bg-black/60 text-white text-[10px] font-bold font-mono">
-                {EVENT_COVER_TARGET_W}×{EVENT_COVER_TARGET_H}
-              </span>
-            </div>
+          </div>
+          <div className="absolute bottom-2 left-2 right-2 z-10 flex items-center justify-between gap-2 pointer-events-none">
+            <span className="px-2 py-1 rounded-md bg-black/60 text-white text-[10px] font-bold">
+              بکشید تا جابه‌جا شود
+            </span>
+            <span className="px-2 py-1 rounded-md bg-black/60 text-white text-[10px] font-bold font-mono">
+              {EVENT_COVER_TARGET_W}×{EVENT_COVER_TARGET_H}
+            </span>
           </div>
         </div>
 
@@ -240,7 +237,7 @@ export const EventCoverCropModal: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => setZoom((z) => clampZoom(z - 0.1))}
-            className="min-w-[44px] min-h-[44px] p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-ink-normal dark:text-white hover:bg-gray-50 dark:hover:bg-[#1C2536] transition-all"
+            className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-ink-normal dark:text-white hover:bg-gray-50 dark:hover:bg-[#1C2536] transition-all"
             title="کوچک‌نمایی"
             aria-label="کوچک‌نمایی"
           >
@@ -253,13 +250,13 @@ export const EventCoverCropModal: React.FC<Props> = ({
             step={0.05}
             value={zoom}
             onChange={(e) => setZoom(clampZoom(Number(e.target.value)))}
-            className="w-32 sm:w-40 accent-[#59BBAF]"
+            className="w-40 accent-[#59BBAF]"
             aria-label="بزرگ‌نمایی"
           />
           <button
             type="button"
             onClick={() => setZoom((z) => clampZoom(z + 0.1))}
-            className="min-w-[44px] min-h-[44px] p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-ink-normal dark:text-white hover:bg-gray-50 dark:hover:bg-[#1C2536] transition-all"
+            className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-ink-normal dark:text-white hover:bg-gray-50 dark:hover:bg-[#1C2536] transition-all"
             title="بزرگ‌نمایی"
             aria-label="بزرگ‌نمایی"
           >
@@ -268,7 +265,7 @@ export const EventCoverCropModal: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => setRotation((r) => (r + 90) % 360)}
-            className="min-w-[44px] min-h-[44px] p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-ink-normal dark:text-white hover:bg-gray-50 dark:hover:bg-[#1C2536] transition-all"
+            className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-ink-normal dark:text-white hover:bg-gray-50 dark:hover:bg-[#1C2536] transition-all"
             title="چرخش ۹۰ درجه"
             aria-label="چرخش ۹۰ درجه"
           >
@@ -276,7 +273,7 @@ export const EventCoverCropModal: React.FC<Props> = ({
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
           <Button type="button" variant="outline" size="md" onClick={onClose} disabled={isConfirming}>
             انصراف
           </Button>
@@ -313,14 +310,16 @@ export async function uploadCoverBlob(blob: Blob, fileName = 'event-cover.jpg'):
   const formData = new FormData();
   formData.append('file', file);
   formData.append('moduleName', 'calendar');
-  const { apiClient } = await import('../../../../lib/api/client');
-  const uploadRes = await apiClient.post('/storage/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
-  const uploadData = uploadRes.data?.data || uploadRes.data;
-  const url = uploadData?.fileUrl || uploadData?.url || '';
-  if (!url) {
-    throw new Error('آپلود تصویر بنر ناموفق بود');
+  try {
+    const { apiClient } = await import('../../../../lib/api/client');
+    const uploadRes = await apiClient.post('/storage/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    const uploadData = uploadRes.data?.data || uploadRes.data;
+    const url = uploadData?.fileUrl || uploadData?.url || '';
+    if (url) return url;
+  } catch {
+    // fall through to data URL
   }
-  return url;
+  return readFileAsDataUrl(file);
 }

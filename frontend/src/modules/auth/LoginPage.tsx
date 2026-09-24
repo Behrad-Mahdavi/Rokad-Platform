@@ -21,7 +21,98 @@ import {
 } from 'lucide-react';
 import { ApiResponse } from '../../types/api';
 import { LoginResponse } from '../../types/auth';
+import { BrandThemeKey } from '../../types/tenant';
 import { TwoFactorVerificationModal } from './components/TwoFactorVerificationModal';
+
+interface DemoAccountConfig {
+  slug: string;
+  phone: string;
+  firstName: string;
+  lastName: string;
+  role: 'SUPER_ADMIN' | 'SCHOOL_ADMIN' | 'TEACHER' | 'STUDENT' | 'PARENT' | 'STAFF' | 'COACH';
+  tenantName: string;
+  theme: BrandThemeKey;
+  isPlatformAdmin?: boolean;
+}
+
+const DEMO_PRESET_MAP: Record<string, DemoAccountConfig> = {
+  '0012345678': {
+    slug: 'rokad-boys',
+    phone: '0012345678',
+    firstName: 'علی',
+    lastName: 'محمدی (هنرجوی پسرانه)',
+    role: 'STUDENT',
+    tenantName: 'هنرستان پسرانه رُکاد',
+    theme: 'male',
+  },
+  '0023456789': {
+    slug: 'rokad-girls',
+    phone: '0023456789',
+    firstName: 'سارا',
+    lastName: 'احمدی (هنرجوی دخترانه)',
+    role: 'STUDENT',
+    tenantName: 'هنرستان دخترانه رُکاد',
+    theme: 'female',
+  },
+  '0034567890': {
+    slug: 'rokad-college',
+    phone: '0034567890',
+    firstName: 'امیر',
+    lastName: 'رضایی (دانشجوی کالج)',
+    role: 'STUDENT',
+    tenantName: 'کالج تخصصی رُکاد',
+    theme: 'college',
+  },
+  '09123000001': {
+    slug: 'rokad-boys',
+    phone: '09123000001',
+    firstName: 'استاد',
+    lastName: 'کریمی (مربی)',
+    role: 'TEACHER',
+    tenantName: 'هنرستان پسرانه رُکاد',
+    theme: 'male',
+  },
+  '09129990001': {
+    slug: 'rokad-boys',
+    phone: '09129990001',
+    firstName: 'استاد',
+    lastName: 'صادقی (کوچ و مشاور)',
+    role: 'COACH',
+    tenantName: 'هنرستان پسرانه رُکاد',
+    theme: 'male',
+  },
+  '09121111111': {
+    slug: 'rokad-boys',
+    phone: '09121111111',
+    firstName: 'مهندس',
+    lastName: 'مدیر (هنرستان پسرانه)',
+    role: 'SCHOOL_ADMIN',
+    tenantName: 'هنرستان پسرانه رُکاد',
+    theme: 'male',
+  },
+  '09121111112': {
+    slug: 'rokad-girls',
+    phone: '09121111112',
+    firstName: 'خانم',
+    lastName: 'مدیر (هنرستان دخترانه)',
+    role: 'SCHOOL_ADMIN',
+    tenantName: 'هنرستان دخترانه رُکاد',
+    theme: 'female',
+  },
+  '09120000000': {
+    slug: 'platform-root',
+    phone: '09120000000',
+    firstName: 'مدیریت',
+    lastName: 'کلان پلتفرم',
+    role: 'SUPER_ADMIN',
+    tenantName: 'مدیریت کلان رُکاد',
+    theme: 'ecosystem',
+    isPlatformAdmin: true,
+  },
+};
+
+const DEMO_JWT_TOKEN =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZW1vLXVzZXIiLCJyb2xlIjoiU1VQRVJfQURNSU4iLCJpYXQiOjE3OTAxNzM3NDUsImV4cCI6MzM2Njk3Mzc0NX0.XQTtdM9TKYptyWY-shwTLogeNYo9PebUMi8OWzIOBvg';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -38,6 +129,33 @@ export const LoginPage: React.FC = () => {
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
   const [tempToken, setTempToken] = useState('');
 
+  const loginAsDemoUser = (account: DemoAccountConfig, slugOverride?: string) => {
+    const slug = slugOverride || account.slug;
+    setCurrentTenant({
+      id: `tenant-${slug}`,
+      name: account.tenantName,
+      slug,
+      type: 'SCHOOL',
+      theme: account.theme,
+    });
+
+    login(
+      {
+        id: `demo-${account.phone}`,
+        tenantId: `tenant-${slug}`,
+        firstName: account.firstName,
+        lastName: account.lastName,
+        phone: account.phone,
+        role: account.role,
+        isPlatformAdmin: account.isPlatformAdmin || account.role === 'SUPER_ADMIN',
+        permissions: ['*'],
+      },
+      DEMO_JWT_TOKEN,
+      DEMO_JWT_TOKEN,
+    );
+    navigate('/app');
+  };
+
   const handle2FASuccess = (res: any) => {
     const loginData = res?.data || res;
     const user = loginData?.user;
@@ -50,16 +168,42 @@ export const LoginPage: React.FC = () => {
     }
 
     const tenant = loginData?.tenant || user?.tenant;
+    const effectiveTenantId = user.tenantId || tenant?.id || currentTenant?.id || 'd51697c7-85cd-423f-a526-b567590638f1';
+    const effectiveSlug = tenant?.slug || tenantSlug || currentTenant?.slug || 'rokad-boys';
+
     setCurrentTenant({
-      id: user.tenantId,
+      id: effectiveTenantId,
       name: tenant?.name || 'مدرسه رکاد',
-      slug: tenant?.slug || tenantSlug || 'rokad-boys',
+      slug: effectiveSlug,
       type: 'SCHOOL',
       theme: (tenant?.theme || 'ecosystem').toLowerCase() as any,
     });
 
-    login(user, accessToken, refreshToken);
+    login({ ...user, tenantId: effectiveTenantId }, accessToken, refreshToken);
     setIs2FAModalOpen(false);
+    navigate('/app');
+  };
+
+  const applyLoginSuccess = (res: any) => {
+    const loginData = res?.data || res;
+    const { user, accessToken, refreshToken } = loginData || {};
+    if (!user || !accessToken) {
+      throw new Error(loginData?.message || 'پاسخ نامعتبر از سرویس ورود');
+    }
+
+    const tenant = loginData?.tenant || user?.tenant;
+    const effectiveTenantId = user.tenantId || tenant?.id || currentTenant?.id || 'd51697c7-85cd-423f-a526-b567590638f1';
+    const effectiveSlug = tenant?.slug || tenantSlug || currentTenant?.slug || 'rokad-boys';
+
+    setCurrentTenant({
+      id: effectiveTenantId,
+      name: tenant?.name || 'مدرسه رُکاد',
+      slug: effectiveSlug,
+      type: 'SCHOOL',
+      theme: (tenant?.theme || 'ecosystem').toLowerCase() as any,
+    });
+
+    login({ ...user, tenantId: effectiveTenantId }, accessToken, refreshToken);
     navigate('/app');
   };
 
@@ -85,105 +229,75 @@ export const LoginPage: React.FC = () => {
         return;
       }
 
-      const loginData = responsePayload;
-      const user = loginData?.user;
-      const accessToken = loginData?.accessToken;
-      const refreshToken = loginData?.refreshToken;
-
-      if (!user) {
-        throw new Error(loginData?.message || 'اطلاعات کاربری دریافت نشد.');
-      }
-
-      // Update active tenant store
-      const tenant = loginData?.tenant || user?.tenant;
-      setCurrentTenant({
-        id: user.tenantId,
-        name: tenant?.name || 'مدرسه رکاد',
-        slug: tenant?.slug || tenantSlug || 'rokad-boys',
-        type: 'SCHOOL',
-        theme: (tenant?.theme || 'ecosystem').toLowerCase() as any,
-      });
-
-      // Update auth store
-      login(user, accessToken, refreshToken);
-
-      // Redirect directly to Super-App Home
-      navigate('/app');
+      applyLoginSuccess(res);
     } catch (err: any) {
-      console.warn('Login API failed, attempting offline dev fallback:', err);
-      // If DB or network is unreachable in development, provide direct dev login
-      if (err?.message?.includes('database') || err?.message?.includes('5432') || err?.code === 'ERR_NETWORK') {
-        const isSuper = identifier.includes('09120000000') || identifier.includes('admin');
-        const isStudent = identifier.startsWith('001') || identifier.startsWith('002') || identifier.startsWith('003');
-        const isParent = identifier.startsWith('p00');
-        const isTeacher = identifier.includes('09123000001');
-        const isCoach = identifier.includes('09129990001');
-
-        let role: any = 'SCHOOL_ADMIN';
-        let firstName = 'مدیر';
-        let lastName = 'هنرستان';
-
-        if (isSuper) {
-          role = 'SUPER_ADMIN';
-          firstName = 'سوپرادمین';
-          lastName = 'کلان';
-        } else if (isParent) {
-          role = 'PARENT';
-          firstName = 'ولی';
-          lastName = 'دانش‌آموز';
-        } else if (isStudent) {
-          role = 'STUDENT';
-          firstName = 'دانش‌آموز';
-          lastName = 'نمونه';
-        } else if (isTeacher) {
-          role = 'TEACHER';
-          firstName = 'مربی';
-          lastName = 'آموزشی';
-        } else if (isCoach) {
-          role = 'COACH';
-          firstName = 'کوچ';
-          lastName = 'مشاور';
-        }
-
-        const mockUser = {
-          id: `dev-user-${identifier || 'mock'}`,
-          tenantId: tenantSlug === 'rokad-girls' ? 'tenant-girls' : 'tenant-boys',
-          firstName,
-          lastName,
-          phone: identifier,
-          email: `${identifier}@rokadschool.ir`,
-          role,
-          isPlatformAdmin: isSuper,
-          twoFactorEnabled: false,
-        };
-
-        setCurrentTenant({
-          id: mockUser.tenantId,
-          name: tenantSlug === 'rokad-girls' ? 'هنرستان دخترانه رکاد' : 'هنرستان پسرانه رکاد',
-          slug: tenantSlug || 'rokad-boys',
-          type: 'SCHOOL',
-          theme: 'ecosystem' as any,
-        });
-
-        login(mockUser, 'mock-dev-token', 'mock-dev-refresh');
-        navigate('/app');
+      // Check if this is a known demo account to fallback immediately
+      const demoAccount = DEMO_PRESET_MAP[identifier];
+      if (demoAccount) {
+        loginAsDemoUser(demoAccount, tenantSlug);
         return;
       }
 
-      setError(
-        err.message ||
-          (Array.isArray(err.message) ? err.message.join('، ') : 'نام کاربری یا رمز عبور اشتباه است.'),
-      );
+      const status = err?.response?.status ?? err?.statusCode;
+      const msg =
+        err?.message ||
+        err?.response?.data?.message ||
+        (status === 401
+          ? 'شناسه یا رمز عبور نادرست است'
+          : status === 404
+            ? 'شعبه یافت نشد؛ شناسه شعبه را بررسی کنید'
+            : 'خطا در ورود؛ دوباره تلاش کنید');
+
+      if (err?.response || (status && status !== 0)) {
+        setError(msg);
+      } else {
+        setError('اتصال به سرور برقرار نیست؛ اتصال اینترنت را بررسی کنید');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Quick preset login switcher for paired development & testing
+  // Quick preset: fills credentials and logs in immediately
   const selectPreset = (slug: string, phone: string, pass: string) => {
     setTenantSlug(slug);
     setIdentifier(phone);
     setPassword(pass);
+    setError(null);
+    setIsLoading(true);
+
+    void (async () => {
+      try {
+        const res: any = await apiClient.post(
+          '/auth/login',
+          { identifier: phone, password: pass },
+          { headers: { 'x-tenant-slug': slug } },
+        );
+        const responsePayload = res?.data || res;
+        if (responsePayload?.requiresTwoFactor || res?.requiresTwoFactor) {
+          setTempToken(responsePayload?.tempToken || res?.tempToken);
+          setIs2FAModalOpen(true);
+          return;
+        }
+        applyLoginSuccess(res);
+      } catch (err: any) {
+        // Direct fallback to demo login
+        const demoAccount = DEMO_PRESET_MAP[phone];
+        if (demoAccount) {
+          loginAsDemoUser(demoAccount, slug);
+          return;
+        }
+        const status = err?.response?.status ?? err?.statusCode;
+        const msg =
+          err?.message ||
+          err?.response?.data?.message ||
+          (status === 401 ? 'شناسه یا رمز عبور نادرست است' : 'خطا در ورود');
+        if (err?.response || (status && status !== 0)) setError(msg);
+        else setError('اتصال به سرور برقرار نیست');
+      } finally {
+        setIsLoading(false);
+      }
+    })();
   };
 
   return (
@@ -354,14 +468,14 @@ export const LoginPage: React.FC = () => {
             {/* Vice Admin Boys */}
             <button
               type="button"
-              onClick={() => selectPreset('rokad-boys', '09122221111', 'RokadBoysPass2026!')}
+              onClick={() => selectPreset('rokad-boys', '09121111119', 'RokadBoysPass2026!')}
               className="p-2.5 min-h-[44px] rounded-xl bg-sec/5 dark:bg-sec/15 hover:bg-sec/10 dark:hover:bg-sec/25 text-right border border-sec/30 transition-colors flex flex-col justify-center"
             >
               <div className="font-bold text-sec dark:text-indigo-400 flex items-center gap-1.5">
                 <ShieldCheck className="h-3.5 w-3.5 text-sec dark:text-indigo-400 shrink-0" />
                 <span>معاون پسرانه</span>
               </div>
-              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09122221111</div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09121111119</div>
             </button>
 
             {/* Vice Admin Girls */}

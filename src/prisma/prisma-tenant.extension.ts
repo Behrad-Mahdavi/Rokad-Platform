@@ -65,6 +65,12 @@ const TENANT_BOUND_MODELS = [
   'PayrollAdjustment',
   // Phase 7
   'TenantSubscription',
+  // Rokad Business Club
+  'ClubMembership',
+  'ClubRoadmapMilestone',
+  'ClubStudentMilestoneProgress',
+  'ClubChallenge',
+  'ClubChallengeSubmission',
 ];
 
 const SOFT_DELETE_MODELS = [

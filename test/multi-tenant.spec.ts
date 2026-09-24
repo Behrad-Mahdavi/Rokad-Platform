@@ -202,7 +202,7 @@ describe('Rokad Multi-Tenant Platform — Phase 1 Integration Tests', () => {
         .post('/api/v1/auth/login')
         .set('x-tenant-slug', 'rokad-girls')
         .send({
-          identifier: '09122222222',
+          identifier: '09121111112',
           password: 'RokadGirlsPass2026!',
         });
       girlsToken = girlsLogin.body.data.accessToken;

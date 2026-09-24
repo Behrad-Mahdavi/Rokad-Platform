@@ -31,6 +31,7 @@ import {
   Sparkles,
   MessageSquare,
   Briefcase,
+  Award,
 } from 'lucide-react';
 
 interface SuperAppCard {
@@ -94,7 +95,16 @@ export const SuperAppHomePage: React.FC = () => {
         }
         if (exRes.status === 'fulfilled') {
           const list = Array.isArray(exRes.value.data) ? exRes.value.data : [];
-          setExamsCount(list.length);
+          const now = Date.now();
+          const holdingCount = list.filter((e: any) => {
+            const start = new Date(e.startTime).getTime();
+            const end = new Date(e.endTime).getTime();
+            const part = e.participations?.[0];
+            const isSubmitted = part?.status === 'SUBMITTED' || part?.status === 'TIMED_OUT';
+            const hasScore = part?.totalScore !== null && part?.totalScore !== undefined;
+            return now >= start && now <= end && !isSubmitted && !hasScore && e.status !== 'FINISHED';
+          }).length;
+          setExamsCount(holdingCount);
         }
         if (messagesRes.status === 'fulfilled') {
           const res = messagesRes.value.data;
@@ -238,6 +248,14 @@ export const SuperAppHomePage: React.FC = () => {
             iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
             iconColor: 'text-primary-dark dark:text-primary',
           },
+          {
+            id: 'club-approvals',
+            title: 'باشگاه کسب‌وکار',
+            href: '/app/teacher/club-approvals',
+            icon: Award,
+            iconBg: 'bg-amber-100 dark:bg-amber-950/60',
+            iconColor: 'text-amber-600 dark:text-amber-400',
+          },
         ];
 
       case 'SCHOOL_ADMIN':
@@ -322,6 +340,14 @@ export const SuperAppHomePage: React.FC = () => {
             icon: Building2,
             iconBg: 'bg-male-light dark:bg-[#182346]',
             iconColor: 'text-sec dark:text-[#8194EE]',
+          },
+          {
+            id: 'club-admin',
+            title: 'باشگاه کسب‌وکار',
+            href: '/app/admin/club',
+            icon: Award,
+            iconBg: 'bg-amber-100 dark:bg-amber-950/60',
+            iconColor: 'text-amber-600 dark:text-amber-400',
           },
         ];
 
@@ -699,7 +725,7 @@ export const SuperAppHomePage: React.FC = () => {
       {card.badge && (
         <span
           className={`absolute top-2.5 left-2.5 z-10 min-w-[20px] h-[20px] px-1.5 rounded-full bg-girl text-white text-[10px] font-black flex items-center justify-center leading-none border border-white dark:border-gray-800 shadow-xs select-none ${
-            card.id === 'messages' ? 'animate-pulse ring-2 ring-girl/30' : ''
+            card.id === 'messages' || card.id === 'exams' ? 'animate-pulse ring-2 ring-girl/30' : ''
           }`}
         >
           <span className="inline-block transform -translate-y-[0.5px]">{card.badge}</span>

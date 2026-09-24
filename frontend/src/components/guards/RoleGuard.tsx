@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../lib/auth/auth-store';
 import { UserRole } from '../../types/auth';
@@ -23,9 +23,25 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ allowedRoles }) => {
 };
 
 export const GuestGuard: React.FC = () => {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, accessToken, refreshToken } = useAuthStore();
 
-  if (isAuthenticated && user) {
+  const sessionUsable =
+    isAuthenticated &&
+    !!user &&
+    !!accessToken &&
+    !accessToken.startsWith('mock-') &&
+    !!refreshToken &&
+    !refreshToken.startsWith('mock-');
+
+  const hasStale = isAuthenticated || !!user || !!accessToken;
+
+  useEffect(() => {
+    if (!sessionUsable && hasStale) {
+      useAuthStore.getState().logout();
+    }
+  }, [sessionUsable, hasStale]);
+
+  if (sessionUsable) {
     return <Navigate to="/app" replace />;
   }
 

@@ -48,6 +48,7 @@ import { MessagesModule } from './modules/messages/messages.module';
 import { AppController } from './app.controller';
 import { KaModule } from './modules/ka/ka.module';
 import { SmsModule } from './modules/sms/sms.module';
+import { ClubModule } from './modules/club/club.module';
 
 @Module({
   imports: [
@@ -94,6 +95,7 @@ import { SmsModule } from './modules/sms/sms.module';
     MessagesModule,
     KaModule,
     SmsModule,
+    ClubModule,
   ],
   controllers: [AppController],
   providers: [

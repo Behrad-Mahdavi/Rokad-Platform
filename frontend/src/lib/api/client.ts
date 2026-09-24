@@ -1,5 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { useAuthStore } from '../auth/auth-store';
+import { forceLoginRedirect, useAuthStore } from '../auth/auth-store';
 import { useTenantStore } from '../auth/tenant-store';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
@@ -27,6 +27,62 @@ const processQueue = (error: any, token: string | null = null) => {
     }
   });
   failedQueue = [];
+};
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+const isAuthFailure = (status?: number) => status === 401 || status === 403;
+
+const isTransientRefreshError = (err: any): boolean => {
+  const status = err?.response?.status ?? err?.status;
+  if (status === undefined || status === 0) return true; // network / timeout
+  if (status >= 500) return true;
+  return false;
+};
+
+/** Single-flight refresh with short retry on 5xx/network — only 401 kills the session. */
+const performTokenRefresh = async (): Promise<string | null> => {
+  const { refreshToken } = useAuthStore.getState();
+  if (!refreshToken) {
+    forceLoginRedirect();
+    return null;
+  }
+
+  let lastErr: any = null;
+  const attempts = 3;
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/auth/refresh`,
+        { refreshToken },
+        {
+          headers: {
+            'x-tenant-slug': useTenantStore.getState().currentTenant?.slug || 'rokad-boys',
+          },
+          timeout: 15000,
+        },
+      );
+
+      const newAccessToken = response.data?.data?.accessToken;
+      const newRefreshToken = response.data?.data?.refreshToken;
+      if (newAccessToken) {
+        useAuthStore.getState().setTokens(newAccessToken, newRefreshToken);
+        return newAccessToken;
+      }
+      lastErr = new Error('پاسخ نامعتبر از سرویس نوسازی توکن');
+    } catch (err: any) {
+      lastErr = err;
+      const status = err?.response?.status;
+      // Definitive auth failure — do not retry (avoids reuse-detection loops).
+      if (isAuthFailure(status)) break;
+      // Transient (5xx / network) — brief backoff then retry.
+      if (!isTransientRefreshError(err) || attempt === attempts) break;
+      await sleep(300 * attempt);
+    }
+  }
+
+  throw lastErr;
 };
 
 // 1. Request Interceptor: Attach Auth Token and Tenant Slug
@@ -78,36 +134,23 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const refreshToken = useAuthStore.getState().refreshToken;
-
-      if (!refreshToken) {
-        useAuthStore.getState().logout();
-        isRefreshing = false;
-        return Promise.reject(error);
-      }
-
       try {
-        const response = await axios.post(
-          `${API_BASE_URL}/auth/refresh`,
-          { refreshToken },
-          {
-            headers: {
-              'x-tenant-slug': useTenantStore.getState().currentTenant?.slug || 'rokad-boys',
-            },
-          },
-        );
-
-        const newAccessToken = response.data.data.accessToken;
-        const newRefreshToken = response.data.data.refreshToken;
-
-        useAuthStore.getState().setTokens(newAccessToken, newRefreshToken);
-        processQueue(null, newAccessToken);
-
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        return apiClient(originalRequest);
-      } catch (refreshErr) {
+        const newAccessToken = await performTokenRefresh();
+        if (newAccessToken) {
+          processQueue(null, newAccessToken);
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          return apiClient(originalRequest);
+        }
+        processQueue(error.response?.data || error, null);
+        return Promise.reject(error.response?.data || error);
+      } catch (refreshErr: any) {
+        const refreshStatus = refreshErr?.response?.status;
         processQueue(refreshErr, null);
-        useAuthStore.getState().logout();
+        // Only hard-fail session on explicit auth rejection from /auth/refresh.
+        // Transient 5xx must not wipe the session — surface original 401 instead.
+        if (isAuthFailure(refreshStatus)) {
+          forceLoginRedirect();
+        }
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;

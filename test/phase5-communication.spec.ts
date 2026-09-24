@@ -68,7 +68,7 @@ describe('Rokad Multi-Tenant Platform — Phase 5 Communication & Content Tests'
       .set('x-tenant-slug', 'rokad-boys')
       .send({
         identifier: '09124000001',
-        password: 'RokadPass2026!',
+        password: 'b0012345678',
       });
     boysStudentToken = studentLogin.body.data.accessToken;
     testStudentUserId = studentLogin.body.data.user.id;
