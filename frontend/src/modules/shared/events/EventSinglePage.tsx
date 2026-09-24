@@ -253,6 +253,18 @@ export const EventSinglePage: React.FC = () => {
         } else {
           setEvent(loaded);
         }
+        try {
+          const cached = localStorage.getItem('rokad_calendar_events');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed)) {
+              const updated = parsed.map((item: any) => item.id === loaded.id ? loaded : item);
+              if (!updated.some((item: any) => item.id === loaded.id)) updated.push(loaded);
+              localStorage.setItem('rokad_calendar_events', JSON.stringify(updated));
+            }
+          }
+        } catch {}
+        return;
       }
     } catch (err) {
       // Gracefully load from local storage or default sample events
@@ -476,6 +488,9 @@ export const EventSinglePage: React.FC = () => {
             const next = parsed.map((item: any) =>
               item.id === id ? { ...item, ...patchPayload } : item
             );
+            if (!next.some((item: any) => item.id === id)) {
+              next.push({ id, ...patchPayload });
+            }
             localStorage.setItem('rokad_calendar_events', JSON.stringify(next));
           }
         }

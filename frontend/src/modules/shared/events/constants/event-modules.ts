@@ -106,16 +106,34 @@ export interface WorkflowModuleEntry {
   enabled?: boolean;
 }
 
+const LEGACY_KEY_MAP: Record<string, EventModuleKey> = {
+  idea_submission: 'IDEA_SUBMISSION',
+  ideas_list: 'IDEA_HALL',
+  voting_porscad: 'VOTING',
+  team_formation: 'TEAM_FORMATION',
+  canvas_materials: 'EVENT_CANVAS',
+  task_definition: 'TASK_DEFINITION',
+  presentation_upload: 'PRESENTATION_UPLOAD',
+  leaderboard: 'LEADERBOARD',
+};
+
 export function normalizeWorkflowModules(raw: unknown): WorkflowModuleEntry[] {
   if (!Array.isArray(raw)) return [];
   const entries: WorkflowModuleEntry[] = [];
   for (const item of raw) {
     if (item && typeof item === 'object' && 'key' in item && 'step' in item) {
       const obj = item as Record<string, unknown>;
-      const key = String(obj.key);
-      if (key in EVENT_MODULE_REGISTRY) {
+      const rawKey = String(obj.key);
+      const mappedKey =
+        rawKey in EVENT_MODULE_REGISTRY
+          ? (rawKey as EventModuleKey)
+          : rawKey.toUpperCase() in EVENT_MODULE_REGISTRY
+          ? (rawKey.toUpperCase() as EventModuleKey)
+          : LEGACY_KEY_MAP[rawKey.toLowerCase()];
+
+      if (mappedKey && mappedKey in EVENT_MODULE_REGISTRY) {
         entries.push({
-          key: key as EventModuleKey,
+          key: mappedKey,
           step: Number(obj.step) || 1,
           enabled: obj.enabled !== false,
         });

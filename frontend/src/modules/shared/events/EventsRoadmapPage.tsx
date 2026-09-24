@@ -364,7 +364,19 @@ export const EventsRoadmapPage: React.FC = () => {
       const hasStartup = loadedEvents.some(
         (e: any) => e.eventType === 'STARTUP_WEEKEND' || e.id === 'evt_startup_weekend_2026'
       );
-      const combined = hasStartup ? loadedEvents : [...INITIAL_SAMPLE_EVENTS, ...loadedEvents];
+      let combined = loadedEvents;
+      if (!hasStartup) {
+        let startupEventToInclude = INITIAL_SAMPLE_EVENTS.find((s) => s.id === 'evt_startup_weekend_2026');
+        try {
+          const cached = localStorage.getItem('rokad_calendar_events');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            const foundCached = Array.isArray(parsed) ? parsed.find((p: any) => p.id === 'evt_startup_weekend_2026' || p.eventType === 'STARTUP_WEEKEND') : null;
+            if (foundCached) startupEventToInclude = foundCached;
+          }
+        } catch {}
+        combined = startupEventToInclude ? [startupEventToInclude, ...loadedEvents] : [...INITIAL_SAMPLE_EVENTS, ...loadedEvents];
+      }
       setEvents(combined);
       try {
         localStorage.setItem('rokad_calendar_events', JSON.stringify(combined));

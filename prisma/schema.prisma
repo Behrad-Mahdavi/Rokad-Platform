@@ -1590,6 +1590,7 @@ model Exam {
   title                  String // e.g. "آزمون میان‌ترم حسابان ۱"
   description            String?
   examType               ExamType       @default(ONLINE)
+  round                  String?        @default("CLASS_EXAM")
   durationMinutes        Int            @default(60)
   startTime              DateTime
   endTime                DateTime

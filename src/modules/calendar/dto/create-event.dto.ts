@@ -40,13 +40,12 @@ export class CreateEventDto {
   description?: string;
 
   @ApiPropertyOptional({
-    description: 'نوع رویداد (ACADEMIC, HOLIDAY, EXAM, MEETING, CULTURAL, SPORTS, EXCURSION, STARTUP_WEEKEND)',
-    enum: EventType,
-    default: EventType.ACADEMIC,
+    description: 'نوع یا دسته‌بندی رویداد (ACADEMIC, STARTUP_WEEKEND, ... یا کلید سفارشی)',
+    default: 'ACADEMIC',
   })
-  @IsEnum(EventType)
+  @IsString()
   @IsOptional()
-  eventType?: EventType;
+  eventType?: string;
 
   @ApiProperty({ description: 'تاریخ و زمان شروع', example: '2026-09-15T08:00:00.000Z' })
   @IsDateString()
@@ -119,10 +118,10 @@ export class UpdateEventDto {
   @IsOptional()
   description?: string;
 
-  @ApiPropertyOptional({ enum: EventType })
-  @IsEnum(EventType)
+  @ApiPropertyOptional({ description: 'نوع یا دسته‌بندی رویداد' })
+  @IsString()
   @IsOptional()
-  eventType?: EventType;
+  eventType?: string;
 
   @ApiPropertyOptional({ description: 'تاریخ و زمان شروع' })
   @IsDateString()
