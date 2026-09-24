@@ -161,6 +161,10 @@ export class AuthService {
     const strippedPIdentifier = cleanIdentifier.startsWith('p') ? cleanIdentifier.slice(1) : '';
     const strippedNationalBlind = strippedPIdentifier ? this.encryptionService.blindIndex(strippedPIdentifier) : null;
 
+    const strippedZeroIdentifier = cleanIdentifier.replace(/^0+/, '');
+    const strippedZeroPIdentifier = strippedPIdentifier ? strippedPIdentifier.replace(/^0+/, '') : '';
+    const paddedTenIdentifier = cleanIdentifier.length < 10 && /^\d+$/.test(cleanIdentifier) ? cleanIdentifier.padStart(10, '0') : '';
+
     // Look for candidate users matching identifier in this tenant (supports both direct match & parent matching child's national code)
     const candidateUsers = await this.prisma.user.findMany({
       where: {
@@ -170,14 +174,21 @@ export class AuthService {
           { username: `p${cleanIdentifier}` },
           { username: `p_${cleanIdentifier}` },
           ...(strippedPIdentifier ? [{ username: strippedPIdentifier }] : []),
+          ...(strippedZeroIdentifier ? [{ username: strippedZeroIdentifier }, { username: `p${strippedZeroIdentifier}` }] : []),
+          ...(strippedZeroPIdentifier ? [{ username: strippedZeroPIdentifier }, { username: `p${strippedZeroPIdentifier}` }] : []),
+          ...(paddedTenIdentifier ? [{ username: paddedTenIdentifier }, { username: `p${paddedTenIdentifier}` }] : []),
           { nationalId: cleanIdentifier },
           ...(strippedPIdentifier ? [{ nationalId: strippedPIdentifier }] : []),
+          ...(strippedZeroIdentifier ? [{ nationalId: strippedZeroIdentifier }] : []),
+          ...(paddedTenIdentifier ? [{ nationalId: paddedTenIdentifier }] : []),
           ...(nationalBlind ? [{ nationalIdBlindIndex: nationalBlind }] : []),
           ...(strippedNationalBlind ? [{ nationalIdBlindIndex: strippedNationalBlind }] : []),
           { phone: cleanIdentifier },
           { email: rawIdentifier.toLowerCase() },
           { email: cleanIdentifier.toLowerCase() },
           { studentProfile: { nationalCode: cleanIdentifier } },
+          ...(strippedZeroIdentifier ? [{ studentProfile: { nationalCode: strippedZeroIdentifier } }] : []),
+          ...(paddedTenIdentifier ? [{ studentProfile: { nationalCode: paddedTenIdentifier } }] : []),
           ...(nationalBlind ? [{ studentProfile: { nationalCodeBlindIndex: nationalBlind } }] : []),
           // Match Parent account linked to student with this national code or username
           {
@@ -187,10 +198,15 @@ export class AuthService {
                   student: {
                     OR: [
                       { nationalCode: cleanIdentifier },
+                      ...(strippedZeroIdentifier ? [{ nationalCode: strippedZeroIdentifier }] : []),
+                      ...(paddedTenIdentifier ? [{ nationalCode: paddedTenIdentifier }] : []),
                       ...(nationalBlind ? [{ nationalCodeBlindIndex: nationalBlind }] : []),
                       { user: { username: cleanIdentifier } },
+                      ...(strippedZeroIdentifier ? [{ user: { username: strippedZeroIdentifier } }] : []),
+                      ...(paddedTenIdentifier ? [{ user: { username: paddedTenIdentifier } }] : []),
                       ...(strippedPIdentifier ? [{ nationalCode: strippedPIdentifier }] : []),
                       ...(strippedPIdentifier ? [{ user: { username: strippedPIdentifier } }] : []),
+                      ...(strippedZeroPIdentifier ? [{ user: { username: strippedZeroPIdentifier } }] : []),
                     ],
                   },
                 },
