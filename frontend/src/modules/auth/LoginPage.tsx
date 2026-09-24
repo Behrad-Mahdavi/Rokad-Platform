@@ -11,10 +11,8 @@ import {
   Phone,
   School,
   AlertCircle,
-  GraduationCap,
   Shield,
   ShieldCheck,
-  Users,
   Crown,
   BookOpen,
   Target,
@@ -36,32 +34,41 @@ interface DemoAccountConfig {
 }
 
 const DEMO_PRESET_MAP: Record<string, DemoAccountConfig> = {
-  '0012345678': {
+  '09121111111': {
     slug: 'rokad-boys',
-    phone: '0012345678',
-    firstName: 'علی',
-    lastName: 'محمدی (هنرجوی پسرانه)',
-    role: 'STUDENT',
+    phone: '09121111111',
+    firstName: 'مهندس',
+    lastName: 'مدیر (هنرستان پسرانه)',
+    role: 'SCHOOL_ADMIN',
     tenantName: 'هنرستان پسرانه رُکاد',
     theme: 'male',
   },
-  '0023456789': {
+  '09121111119': {
+    slug: 'rokad-boys',
+    phone: '09121111119',
+    firstName: 'محمدرضا',
+    lastName: 'کاظمی (معاون پسرانه)',
+    role: 'STAFF',
+    tenantName: 'هنرستان پسرانه رُکاد',
+    theme: 'male',
+  },
+  '09121111112': {
     slug: 'rokad-girls',
-    phone: '0023456789',
-    firstName: 'سارا',
-    lastName: 'احمدی (هنرجوی دخترانه)',
-    role: 'STUDENT',
+    phone: '09121111112',
+    firstName: 'خانم',
+    lastName: 'مدیر (هنرستان دخترانه)',
+    role: 'SCHOOL_ADMIN',
     tenantName: 'هنرستان دخترانه رُکاد',
     theme: 'female',
   },
-  '0034567890': {
-    slug: 'rokad-college',
-    phone: '0034567890',
-    firstName: 'امیر',
-    lastName: 'رضایی (دانشجوی کالج)',
-    role: 'STUDENT',
-    tenantName: 'کالج تخصصی رُکاد',
-    theme: 'college',
+  '09122221112': {
+    slug: 'rokad-girls',
+    phone: '09122221112',
+    firstName: 'مریم',
+    lastName: 'سلیمانی (معاون دخترانه)',
+    role: 'STAFF',
+    tenantName: 'هنرستان دخترانه رُکاد',
+    theme: 'female',
   },
   '09123000001': {
     slug: 'rokad-boys',
@@ -80,24 +87,6 @@ const DEMO_PRESET_MAP: Record<string, DemoAccountConfig> = {
     role: 'COACH',
     tenantName: 'هنرستان پسرانه رُکاد',
     theme: 'male',
-  },
-  '09121111111': {
-    slug: 'rokad-boys',
-    phone: '09121111111',
-    firstName: 'مهندس',
-    lastName: 'مدیر (هنرستان پسرانه)',
-    role: 'SCHOOL_ADMIN',
-    tenantName: 'هنرستان پسرانه رُکاد',
-    theme: 'male',
-  },
-  '09121111112': {
-    slug: 'rokad-girls',
-    phone: '09121111112',
-    firstName: 'خانم',
-    lastName: 'مدیر (هنرستان دخترانه)',
-    role: 'SCHOOL_ADMIN',
-    tenantName: 'هنرستان دخترانه رُکاد',
-    theme: 'female',
   },
   '09120000000': {
     slug: 'platform-root',
@@ -353,65 +342,7 @@ export const LoginPage: React.FC = () => {
             ورود سریع آزمایشی:
           </p>
           <div className="grid grid-cols-2 gap-2 text-xs">
-            {/* Unified Boys Student */}
-            <button
-              type="button"
-              onClick={() => selectPreset('rokad-boys', '0012345678', 'b0012345678')}
-              className="p-2.5 min-h-[44px] rounded-xl bg-sec/5 dark:bg-sec/15 hover:bg-sec/10 dark:hover:bg-sec/25 text-right border border-sec/30 transition-colors flex flex-col justify-center"
-            >
-              <div className="font-bold text-sec dark:text-indigo-400 flex items-center gap-1.5">
-                <GraduationCap className="h-3.5 w-3.5 shrink-0" />
-                <span>دانش‌آموز پسرانه</span>
-              </div>
-              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">
-                0012345678
-              </div>
-            </button>
 
-            {/* Unified Parent (Boys School) */}
-            <button
-              type="button"
-              onClick={() => selectPreset('rokad-boys', '0012345678', 'p0012345678')}
-              className="p-2.5 min-h-[44px] rounded-xl bg-purple-50 dark:bg-purple-950/20 hover:bg-purple-100 dark:hover:bg-purple-950/40 text-right border border-purple-200 dark:border-purple-800 transition-colors flex flex-col justify-center"
-            >
-              <div className="font-bold text-purple-700 dark:text-purple-300 flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5 shrink-0" />
-                <span>ولی دانش‌آموز</span>
-              </div>
-              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">
-                0012345678
-              </div>
-            </button>
-
-            {/* Unified Girls Student */}
-            <button
-              type="button"
-              onClick={() => selectPreset('rokad-girls', '0023456789', 'g0023456789')}
-              className="p-2.5 min-h-[44px] rounded-xl bg-pink-50 dark:bg-pink-950/20 hover:bg-pink-100 dark:hover:bg-pink-950/40 text-right border border-pink-200 dark:border-pink-800 transition-colors flex flex-col justify-center"
-            >
-              <div className="font-bold text-pink-700 dark:text-pink-300 flex items-center gap-1.5">
-                <GraduationCap className="h-3.5 w-3.5 shrink-0" />
-                <span>دانش‌آموز دخترانه</span>
-              </div>
-              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">
-                0023456789
-              </div>
-            </button>
-
-            {/* Unified College Student */}
-            <button
-              type="button"
-              onClick={() => selectPreset('rokad-college', '0034567890', 'c0034567890')}
-              className="p-2.5 min-h-[44px] rounded-xl bg-teal-50 dark:bg-teal-950/20 hover:bg-teal-100 dark:hover:bg-teal-950/40 text-right border border-teal-200 dark:border-teal-800 transition-colors flex flex-col justify-center"
-            >
-              <div className="font-bold text-teal-700 dark:text-teal-300 flex items-center gap-1.5">
-                <GraduationCap className="h-3.5 w-3.5 shrink-0" />
-                <span>دانشجوی کالج</span>
-              </div>
-              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">
-                0034567890
-              </div>
-            </button>
 
             {/* Teacher */}
             <button
