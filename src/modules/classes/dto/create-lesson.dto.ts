@@ -175,12 +175,12 @@ export class CreateScheduleDto {
   @Min(1)
   periodNumber: number;
 
-  @ApiProperty({ description: 'ساعت شروع', example: '08:00' })
+  @ApiProperty({ description: 'ساعت شروع', example: '07:30' })
   @IsString()
   @IsNotEmpty()
   startTime: string;
 
-  @ApiProperty({ description: 'ساعت پایان', example: '09:30' })
+  @ApiProperty({ description: 'ساعت پایان', example: '09:00' })
   @IsString()
   @IsNotEmpty()
   endTime: string;

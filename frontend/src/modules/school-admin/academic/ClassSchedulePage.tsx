@@ -25,11 +25,9 @@ import {
   CheckCircle2,
   Layers,
 } from 'lucide-react';
+import { generateSchedulePdf } from '../../student-parent/schedule/schedulePdfGenerator';
 
-interface DayDef {
-  key: string;
-  label: string;
-}
+import { DAYS, DayDef } from '../../student-parent/schedule/StudentSchedulePage';
 
 interface PeriodDef {
   number: number;
@@ -38,22 +36,11 @@ interface PeriodDef {
   defaultEnd: string;
 }
 
-const DAYS: DayDef[] = [
-  { key: 'SATURDAY', label: 'شنبه' },
-  { key: 'SUNDAY', label: 'یکشنبه' },
-  { key: 'MONDAY', label: 'دوشنبه' },
-  { key: 'TUESDAY', label: 'سه‌شنبه' },
-  { key: 'WEDNESDAY', label: 'چهارشنبه' },
-  { key: 'THURSDAY', label: 'پنج‌شنبه' },
-];
-
 const PERIODS: PeriodDef[] = [
-  { number: 1, label: 'زنگ اول', defaultStart: '07:45', defaultEnd: '09:00' },
-  { number: 2, label: 'زنگ دوم', defaultStart: '09:15', defaultEnd: '10:30' },
-  { number: 3, label: 'زنگ سوم', defaultStart: '10:45', defaultEnd: '12:00' },
-  { number: 4, label: 'زنگ چهارم', defaultStart: '12:30', defaultEnd: '13:45' },
-  { number: 5, label: 'زنگ پنجم', defaultStart: '14:00', defaultEnd: '15:15' },
-  { number: 6, label: 'زنگ ششم', defaultStart: '15:30', defaultEnd: '16:45' },
+  { number: 1, label: 'زنگ اول', defaultStart: '07:30', defaultEnd: '09:00' },
+  { number: 2, label: 'زنگ دوم', defaultStart: '09:20', defaultEnd: '10:40' },
+  { number: 3, label: 'زنگ سوم', defaultStart: '11:00', defaultEnd: '12:10' },
+  { number: 4, label: 'زنگ چهارم', defaultStart: '12:30', defaultEnd: '13:35' },
 ];
 
 interface ClassSchedulePageProps {
@@ -96,7 +83,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
     isSplitPeriod: false,
     secondLessonId: '',
     secondTeacherId: '',
-    startTime: '07:45',
+    startTime: '07:30',
     endTime: '09:00',
     allowTeacherConflict: false,
   });
@@ -344,9 +331,19 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
     }
   };
 
-  // Print Timetable
+  // Print Timetable (PDF / Print)
   const handlePrint = () => {
-    window.print();
+    generateSchedulePdf({
+      classroomName: selectedClassroom?.name || 'کلاس درس',
+      schedules,
+      days: DAYS,
+      periodLabels: {
+        1: 'زنگ اول',
+        2: 'زنگ دوم',
+        3: 'زنگ سوم',
+        4: 'زنگ چهارم',
+      },
+    });
   };
 
   if (isLoading) {
@@ -367,8 +364,8 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
         title={isStudent ? 'برنامه هفتگی کلاس من' : 'برنامه هفتگی و ساعات درسی'}
         description={
           canManageSchedule
-            ? 'تنظیم ساعات ۶ زنگ درسی روزانه (شنبه تا پنج‌شنبه)، تخصیص درس و دبیر و بررسی تداخل'
-            : 'مشاهده ساعات ۶ زنگ درسی روزانه، اسامی دروس و مربیان مدرس'
+            ? 'تنظیم ساعات ۴ زنگ درسی روزانه (شنبه تا پنج‌شنبه)، تخصیص درس و دبیر و بررسی تداخل'
+            : 'مشاهده ساعات ۴ زنگ درسی روزانه، اسامی دروس و مربیان مدرس'
         }
         badge={
           isStudent ? (

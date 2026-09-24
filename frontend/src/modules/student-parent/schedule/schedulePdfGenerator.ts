@@ -21,7 +21,13 @@ export function generateSchedulePdf({
   schedules,
   days,
 }: GeneratePdfOptions) {
-  const periods = [1, 2, 3, 4, 5, 6];
+  const PERIOD_CONFIG = [
+    { number: 1, label: 'زنگ اول', time: '۰۷:۳۰ تا ۰۹:۰۰' },
+    { number: 2, label: 'زنگ دوم', time: '۰۹:۲۰ تا ۱۰:۴۰' },
+    { number: 3, label: 'زنگ سوم', time: '۱۱:۰۰ تا ۱۲:۱۰' },
+    { number: 4, label: 'زنگ چهارم', time: '۱۲:۳۰ تا ۱۳:۳۵' },
+  ];
+  const periods = [1, 2, 3, 4];
   const targetLabel = isTeacher ? (teacherName || 'برنامه تدریس') : classroomName;
 
   // Build matrix rows with strict fixed heights so cells never vary in size
@@ -70,12 +76,16 @@ export function generateSchedulePdf({
             ? (slot.classroom?.name || '')
             : (slot.teacher?.user ? `${slot.teacher.user.firstName} ${slot.teacher.user.lastName}` : '');
 
+          const timeDisplay = (slot.startTime && slot.endTime)
+            ? `${toPersianDigits(slot.startTime)} تا ${toPersianDigits(slot.endTime)}`
+            : (PERIOD_CONFIG.find((p) => p.number === periodNum)?.time || '');
+
           return `
             <td class="slot-cell">
               <div class="cell-content">
                 <div class="lesson-name">${slot.lesson?.name || '—'}</div>
                 ${subLabel ? `<div class="teacher-name">${subLabel}</div>` : ''}
-                <div class="slot-time">${toPersianDigits(slot.startTime)} تا ${toPersianDigits(slot.endTime)}</div>
+                <div class="slot-time">${timeDisplay}</div>
               </div>
             </td>
           `;
@@ -212,18 +222,29 @@ export function generateSchedulePdf({
       font-family: 'IRANSansXFaNum', 'IRANSansX', 'Vazirmatn', sans-serif !important;
     }
     .schedule-table thead th.day-col {
-      width: 10%;
+      width: 12%;
       background-color: #161D3F;
     }
     .schedule-table thead th.period-col {
-      width: 15%;
+      width: 22%;
+    }
+    .period-head-title {
+      font-size: 11pt;
+      font-weight: 800;
+    }
+    .period-head-time {
+      font-size: 8.5pt;
+      font-weight: 500;
+      opacity: 0.9;
+      margin-top: 2px;
+      font-family: 'IRANSansXFaNum', 'IRANSansX', 'Vazirmatn', sans-serif !important;
     }
 
-    /* Strict 24mm height per day row so all cells are permanently proportionate */
+    /* Strict 25mm height per day row so all cells are permanently proportionate */
     .day-row {
-      height: 24mm !important;
-      max-height: 24mm !important;
-      min-height: 24mm !important;
+      height: 25mm !important;
+      max-height: 25mm !important;
+      min-height: 25mm !important;
     }
     .schedule-table td, .schedule-table th {
       border: 1px solid #CBD5E1;
@@ -240,10 +261,10 @@ export function generateSchedulePdf({
       font-weight: 900;
       font-size: 11pt;
       border: 1.5px solid #202A5A !important;
-      width: 10% !important;
+      width: 12% !important;
     }
     .day-content {
-      height: 24mm;
+      height: 25mm;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -251,18 +272,18 @@ export function generateSchedulePdf({
     }
     .slot-cell {
       background-color: #FFFFFF;
-      width: 15% !important;
-      height: 24mm !important;
-      max-height: 24mm !important;
+      width: 22% !important;
+      height: 25mm !important;
+      max-height: 25mm !important;
     }
     .cell-content {
-      height: 24mm;
-      max-height: 24mm;
+      height: 25mm;
+      max-height: 25mm;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 1px 3px;
+      padding: 2px 4px;
       box-sizing: border-box;
       text-align: center;
       width: 100%;
@@ -274,7 +295,7 @@ export function generateSchedulePdf({
     }
     .lesson-name {
       font-weight: 900;
-      font-size: 8.5pt;
+      font-size: 9.5pt;
       color: #202A5A;
       margin-bottom: 2px;
       line-height: 1.25;
@@ -284,7 +305,7 @@ export function generateSchedulePdf({
       max-width: 100%;
     }
     .teacher-name {
-      font-size: 7.5pt;
+      font-size: 8.5pt;
       color: #475569;
       font-weight: 700;
       font-family: 'IRANSansXFaNum', 'IRANSansX', 'Vazirmatn', sans-serif !important;
@@ -294,18 +315,18 @@ export function generateSchedulePdf({
       max-width: 100%;
     }
     .slot-time {
-      font-size: 7pt;
+      font-size: 7.5pt;
       color: #64748B;
-      margin-top: 1.5px;
+      margin-top: 2px;
       font-weight: 600;
       font-family: 'IRANSansXFaNum', 'IRANSansX', 'Vazirmatn', sans-serif !important;
       white-space: nowrap;
     }
 
-    /* Split cell: 2 equal halves inside the fixed 24mm height */
+    /* Split cell: 2 equal halves inside the fixed height */
     .split-content {
-      height: 24mm;
-      max-height: 24mm;
+      height: 25mm;
+      max-height: 25mm;
       display: flex;
       flex-direction: column;
       justify-content: space-evenly;
@@ -319,12 +340,12 @@ export function generateSchedulePdf({
       line-height: 1.15;
     }
     .split-half .lesson-name {
-      font-size: 7.5pt;
+      font-size: 8pt;
       margin-bottom: 1px;
       line-height: 1.15;
     }
     .split-half .teacher-name {
-      font-size: 6.5pt;
+      font-size: 7pt;
       line-height: 1.1;
     }
     .split-divider {
@@ -355,7 +376,7 @@ export function generateSchedulePdf({
             ${targetLabel ? `<span class="class-badge">${targetLabel}</span>` : ''}
           </div>
           <div class="year-label">
-            سال تحصیلی: <strong>${toPersianDigits('۱۴۰۴-۱۴۰۵')}</strong>
+            سال تحصیلی: <strong>${toPersianDigits('۱۴۰۵-۱۴۰۶')}</strong>
           </div>
         </td>
         <td style="width: 25%; text-align: left; vertical-align: middle;">
@@ -366,26 +387,34 @@ export function generateSchedulePdf({
       </tr>
     </table>
 
-    <!-- Timetable Grid: Strictly proportionate 6x6 matrix with fixed column widths and heights -->
+    <!-- Timetable Grid: Strictly proportionate 4-period matrix with fixed column widths and heights -->
     <table class="schedule-table">
       <colgroup>
-        <col style="width: 10%;" />
-        <col style="width: 15%;" />
-        <col style="width: 15%;" />
-        <col style="width: 15%;" />
-        <col style="width: 15%;" />
-        <col style="width: 15%;" />
-        <col style="width: 15%;" />
+        <col style="width: 12%;" />
+        <col style="width: 22%;" />
+        <col style="width: 22%;" />
+        <col style="width: 22%;" />
+        <col style="width: 22%;" />
       </colgroup>
       <thead>
         <tr>
           <th class="day-col">روز / زنگ</th>
-          <th class="period-col">زنگ اول</th>
-          <th class="period-col">زنگ دوم</th>
-          <th class="period-col">زنگ سوم</th>
-          <th class="period-col">زنگ چهارم</th>
-          <th class="period-col">زنگ پنجم</th>
-          <th class="period-col">زنگ ششم</th>
+          <th class="period-col">
+            <div class="period-head-title">زنگ اول</div>
+            <div class="period-head-time">۰۷:۳۰ تا ۰۹:۰۰</div>
+          </th>
+          <th class="period-col">
+            <div class="period-head-title">زنگ دوم</div>
+            <div class="period-head-time">۰۹:۲۰ تا ۱۰:۴۰</div>
+          </th>
+          <th class="period-col">
+            <div class="period-head-title">زنگ سوم</div>
+            <div class="period-head-time">۱۱:۰۰ تا ۱۲:۱۰</div>
+          </th>
+          <th class="period-col">
+            <div class="period-head-title">زنگ چهارم</div>
+            <div class="period-head-time">۱۲:۳۰ تا ۱۳:۳۵</div>
+          </th>
         </tr>
       </thead>
       <tbody>

@@ -49,9 +49,14 @@ export const PERIOD_LABELS: Record<number, string> = {
   2: 'زنگ دوم',
   3: 'زنگ سوم',
   4: 'زنگ چهارم',
-  5: 'زنگ پنجم',
-  6: 'زنگ ششم',
 };
+
+export const STANDARD_PERIODS = [
+  { number: 1, label: 'زنگ اول', startTime: '07:30', endTime: '09:00' },
+  { number: 2, label: 'زنگ دوم', startTime: '09:20', endTime: '10:40' },
+  { number: 3, label: 'زنگ سوم', startTime: '11:00', endTime: '12:10' },
+  { number: 4, label: 'زنگ چهارم', startTime: '12:30', endTime: '13:35' },
+];
 
 export interface StudentScheduleItem {
   id: string;
