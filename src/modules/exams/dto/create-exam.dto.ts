@@ -80,6 +80,14 @@ export class CreateExamDto {
   @IsOptional()
   type?: ExamType;
 
+  @ApiPropertyOptional({
+    description: 'نوبت آزمون (CLASS_EXAM, CONTINUOUS, MIDTERM_1, FINAL_2)',
+    example: 'CONTINUOUS',
+  })
+  @IsString()
+  @IsOptional()
+  round?: string;
+
   @ApiProperty({ description: 'مدت زمان آزمون به دقیقه', example: 60 })
   @IsInt()
   @Min(5)

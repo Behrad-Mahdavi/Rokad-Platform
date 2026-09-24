@@ -162,7 +162,7 @@ export const StudentHomeworkPage: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedLessonFilter, setSelectedLessonFilter] = useState<string>(lessonIdParam || 'ALL');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('ALL');
-  const [sortOption, setSortOption] = useState<string>('DUE_DATE_ASC');
+  const [sortOption, setSortOption] = useState<string>('DEFAULT');
 
   // Modal state
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
@@ -341,33 +341,107 @@ export const StudentHomeworkPage: React.FC = () => {
     const mySub = hw.submissions && hw.submissions.length > 0 ? hw.submissions[0] : null;
     const isSubmitted = !!mySub;
     const isPastDue = hw.dueDate ? new Date(hw.dueDate).getTime() < Date.now() : false;
+    const allowLate = !!hw.allowLateSubmissions;
+    const isGraded = isSubmitted && mySub.score !== null && mySub.score !== undefined;
 
-    if (isSubmitted) {
+    // ۱. در صورت ارزیابی شدن تکلیف
+    if (isGraded) {
+      const subTime = mySub.submittedAt ? new Date(mySub.submittedAt).getTime() : 0;
+      const dueTime = hw.dueDate ? new Date(hw.dueDate).getTime() : Infinity;
+      const isLate = mySub.status === 'LATE' || (subTime > 0 && dueTime > 0 && subTime > dueTime);
+
       return {
-        key: 'SUBMITTED',
-        label: 'تحویل شده',
-        variant: 'success' as const,
-        badgeClass: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30',
-        icon: CheckCircle2,
+        key: 'GRADED',
+        label: 'ارزیابی شده',
+        variant: 'default' as const,
+        badgeClass: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30',
+        icon: Award,
+        colorDot: 'bg-indigo-500',
+        canSubmit: allowLate || !isPastDue,
+        isSubmitted: true,
+        isLate,
+        isGraded: true,
       };
     }
 
+    // ۲. در صورت تحویل: تفکیک به دو حالت «تحویل به موقع» و «تحویل با تأخیر»
+    if (isSubmitted) {
+      const subTime = mySub.submittedAt ? new Date(mySub.submittedAt).getTime() : 0;
+      const dueTime = hw.dueDate ? new Date(hw.dueDate).getTime() : Infinity;
+      const isLate = mySub.status === 'LATE' || (subTime > 0 && dueTime > 0 && subTime > dueTime);
+
+      if (isLate) {
+        return {
+          key: 'SUBMITTED_LATE',
+          label: 'تحویل با تأخیر',
+          variant: 'warning' as const,
+          badgeClass: 'bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border border-orange-500/40',
+          icon: Clock,
+          colorDot: 'bg-orange-500',
+          canSubmit: allowLate || !isPastDue,
+          isSubmitted: true,
+          isLate: true,
+          isGraded: false,
+        };
+      }
+
+      return {
+        key: 'SUBMITTED_ON_TIME',
+        label: 'تحویل به موقع',
+        variant: 'success' as const,
+        badgeClass: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30',
+        icon: CheckCircle2,
+        colorDot: 'bg-emerald-500',
+        canSubmit: allowLate || !isPastDue,
+        isSubmitted: true,
+        isLate: false,
+        isGraded: false,
+      };
+    }
+
+    // ۳. در صورت عدم تحویل و اتمام مهلت
     if (isPastDue) {
+      if (allowLate) {
+        return {
+          key: 'OVERDUE_CAN_SUBMIT',
+          label: 'مهلت گذشته (امکان ارسال با تأخیر)',
+          variant: 'warning' as const,
+          badgeClass: 'bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border border-orange-500/40',
+          icon: Clock,
+          colorDot: 'bg-orange-500',
+          canSubmit: true,
+          isSubmitted: false,
+          isLate: false,
+          isGraded: false,
+        };
+      }
+
       return {
         key: 'OVERDUE',
         label: 'عدم تحویل',
         variant: 'destructive' as const,
         badgeClass: 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-500/30',
         icon: AlertCircle,
+        colorDot: 'bg-rose-500',
+        canSubmit: false,
+        isSubmitted: false,
+        isLate: false,
+        isGraded: false,
       };
     }
 
+    // ۴. در انتظار تحویل (هنوز مهلت دارد)
     return {
       key: 'PENDING',
       label: 'در انتظار تحویل',
       variant: 'warning' as const,
-      badgeClass: 'bg-third-light/80 dark:bg-third/15 text-third-dark dark:text-third border border-third/40',
+      badgeClass: 'bg-yellow-50 dark:bg-yellow-950/40 text-yellow-800 dark:text-yellow-300 border border-yellow-400/50',
       icon: Clock,
+      colorDot: 'bg-yellow-500',
+      canSubmit: true,
+      isSubmitted: false,
+      isLate: false,
+      isGraded: false,
     };
   };
 
@@ -397,12 +471,73 @@ export const StudentHomeworkPage: React.FC = () => {
         // 2. Status Filter
         if (selectedStatusFilter !== 'ALL') {
           const status = getHomeworkStatus(hw);
-          if (status.key !== selectedStatusFilter) return false;
+          if (selectedStatusFilter === 'OVERDUE') {
+            if (status.key !== 'OVERDUE' && status.key !== 'OVERDUE_CAN_SUBMIT') return false;
+          } else if (status.key !== selectedStatusFilter) {
+            return false;
+          }
         }
 
         return true;
       })
       .sort((a, b) => {
+        // دیفالت: تکالیف در انتظار تحویل با کمترین مهلت، بعد تکالیف تحویل شده به موقع و با تأخیر با دورترین زمان تحویل و بعد تکالیف ارزیابی شده
+        if (sortOption === 'DEFAULT') {
+          const getStatusPriority = (hw: any) => {
+            const s = getHomeworkStatus(hw);
+            if (s.key === 'PENDING' || s.key === 'OVERDUE_CAN_SUBMIT') return 1;
+            if (s.key === 'SUBMITTED_ON_TIME' || s.key === 'SUBMITTED_LATE') return 2;
+            if (s.key === 'GRADED') return 3;
+            if (s.key === 'OVERDUE') return 4;
+            return 5;
+          };
+
+          const pA = getStatusPriority(a);
+          const pB = getStatusPriority(b);
+
+          if (pA !== pB) {
+            return pA - pB;
+          }
+
+          // ۱. در انتظار تحویل: با کمترین مهلت (نزدیک‌ترین مهلت صعودی)
+          if (pA === 1) {
+            const timeA = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+            const timeB = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+            return timeA - timeB;
+          }
+
+          // ۲. تحویل شده به موقع و با تأخیر: با دورترین زمان تحویل (جدیدترین تاریخ ثبت تحویل نزولی)
+          if (pA === 2) {
+            const subTimeA = a.submissions?.[0]?.submittedAt
+              ? new Date(a.submissions[0].submittedAt).getTime()
+              : (a.dueDate ? new Date(a.dueDate).getTime() : 0);
+            const subTimeB = b.submissions?.[0]?.submittedAt
+              ? new Date(b.submissions[0].submittedAt).getTime()
+              : (b.dueDate ? new Date(b.dueDate).getTime() : 0);
+            return subTimeB - subTimeA;
+          }
+
+          // ۳. ارزیابی شده: جدیدترین زمان ارزیابی یا ثبت تحویل (نزولی)
+          if (pA === 3) {
+            const gradeTimeA = a.submissions?.[0]?.gradedAt
+              ? new Date(a.submissions[0].gradedAt).getTime()
+              : (a.submissions?.[0]?.submittedAt ? new Date(a.submissions[0].submittedAt).getTime() : 0);
+            const gradeTimeB = b.submissions?.[0]?.gradedAt
+              ? new Date(b.submissions[0].gradedAt).getTime()
+              : (b.submissions?.[0]?.submittedAt ? new Date(b.submissions[0].submittedAt).getTime() : 0);
+            return gradeTimeB - gradeTimeA;
+          }
+
+          // ۴. عدم تحویل: جدیدترین تاریخ ددلاین (نزولی)
+          if (pA === 4) {
+            const timeA = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+            const timeB = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+            return timeB - timeA;
+          }
+
+          return 0;
+        }
+
         if (sortOption === 'DUE_DATE_ASC') {
           const timeA = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
           const timeB = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
@@ -422,12 +557,12 @@ export const StudentHomeworkPage: React.FC = () => {
       });
   }, [homeworkList, selectedLessonFilter, selectedStatusFilter, sortOption]);
 
-  const hasActiveFilters = selectedLessonFilter !== 'ALL' || selectedStatusFilter !== 'ALL' || sortOption !== 'DUE_DATE_ASC';
+  const hasActiveFilters = selectedLessonFilter !== 'ALL' || selectedStatusFilter !== 'ALL' || sortOption !== 'DEFAULT';
 
   const resetFilters = () => {
     setSelectedLessonFilter('ALL');
     setSelectedStatusFilter('ALL');
-    setSortOption('DUE_DATE_ASC');
+    setSortOption('DEFAULT');
     if (lessonIdParam) {
       searchParams.delete('lessonId');
       searchParams.delete('lessonName');
@@ -442,19 +577,25 @@ export const StudentHomeworkPage: React.FC = () => {
 
   const statusOptions = useMemo(() => [
     { value: 'ALL', label: 'همه وضعیت‌ها' },
-    { value: 'PENDING', label: 'در انتظار تحویل', colorDot: 'bg-third' },
-    { value: 'SUBMITTED', label: 'تحویل شده', colorDot: 'bg-emerald-500' },
+    { value: 'PENDING', label: 'در انتظار تحویل', colorDot: 'bg-yellow-500' },
+    { value: 'SUBMITTED_ON_TIME', label: 'تحویل به موقع', colorDot: 'bg-emerald-500' },
+    { value: 'SUBMITTED_LATE', label: 'تحویل با تأخیر', colorDot: 'bg-orange-500' },
+    { value: 'GRADED', label: 'ارزیابی شده', colorDot: 'bg-indigo-500' },
     { value: 'OVERDUE', label: 'عدم تحویل', colorDot: 'bg-rose-500' },
   ], []);
 
   const sortOptions = useMemo(() => [
+    { value: 'DEFAULT', label: 'ترتیب پیش‌فرض هوشمند' },
     { value: 'DUE_DATE_ASC', label: 'نزدیک‌ترین مهلت تحویل' },
     { value: 'CREATED_AT_DESC', label: 'جدیدترین تاریخ تعریف' },
     { value: 'CREATED_AT_ASC', label: 'قدیمی‌ترین تاریخ تعریف' },
   ], []);
 
   const pendingHomeworkCount = useMemo(() => {
-    return homeworkList.filter((hw) => getHomeworkStatus(hw).key === 'PENDING').length;
+    return homeworkList.filter((hw) => {
+      const s = getHomeworkStatus(hw);
+      return s.key === 'PENDING' || s.key === 'OVERDUE_CAN_SUBMIT';
+    }).length;
   }, [homeworkList]);
 
   return (
@@ -631,24 +772,55 @@ export const StudentHomeworkPage: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Due Date Box (قرمز برای جلب توجه بیشتر) */}
-                  <div className="flex items-center gap-2 p-2.5 rounded-xl bg-rose-50/70 dark:bg-rose-950/25 border border-rose-200/80 dark:border-rose-900/40 text-rose-700 dark:text-rose-300 text-xs font-bold">
-                    <Clock className="h-4 w-4 text-rose-500 shrink-0" />
-                    <span>مهلت تحویل: {formatJalaliDateTime(hw.dueDate, true) || formatJalaliDisplay(hw.dueDate, true)}</span>
+                  {/* Due Date Box */}
+                  <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-rose-50/70 dark:bg-rose-950/25 border border-rose-200/80 dark:border-rose-900/40 text-rose-700 dark:text-rose-300 text-xs font-bold">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Clock className="h-4 w-4 text-rose-500 shrink-0" />
+                      <span className="truncate">مهلت تحویل: {formatJalaliDateTime(hw.dueDate, true) || formatJalaliDisplay(hw.dueDate, true)}</span>
+                    </div>
+                    {hw.allowLateSubmissions && !mySub && (
+                      <span className="text-[10px] text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-900/40 px-2 py-0.5 rounded-md font-bold shrink-0">
+                        امکان تأخیر
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* Footer Action Button */}
+                {/* Footer Action & Score */}
                 <div className="pt-3 mt-3 border-t border-gray-100 dark:border-[#242F42]">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openHomeworkModal(hw)}
-                    className="w-full text-xs flex items-center justify-center gap-1.5 h-9 rounded-xl font-bold bg-white dark:bg-[#1C2536] border-gray-200 dark:border-[#242F42] text-foreground dark:text-white hover:bg-gray-50 dark:hover:bg-[#242F42] shadow-2xs transition-colors"
-                  >
-                    <Eye className="w-4 h-4 text-primary shrink-0" />
-                    <span>مشاهده جزئیات</span>
-                  </Button>
+                  {statusInfo.isGraded && mySub?.score !== null && mySub?.score !== undefined ? (
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 flex items-center justify-between gap-1.5 px-3 h-9 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-900/40 text-indigo-800 dark:text-indigo-200 text-xs font-bold min-w-0">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Award className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                          <span className="truncate">نمره:</span>
+                        </div>
+                        <span className="font-mono text-sm font-black text-indigo-700 dark:text-indigo-300 shrink-0">
+                          {toPersianDigits(mySub.score)} <span className="text-[10px] font-normal text-muted-foreground">/ {toPersianDigits(hw.maxScore || 20)}</span>
+                        </span>
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openHomeworkModal(hw)}
+                        className="flex-1 text-xs flex items-center justify-center gap-1.5 h-9 rounded-xl font-bold bg-white dark:bg-[#1C2536] border-gray-200 dark:border-[#242F42] text-foreground dark:text-white hover:bg-gray-50 dark:hover:bg-[#242F42] shadow-2xs transition-colors shrink-0"
+                      >
+                        <Eye className="w-4 h-4 text-primary shrink-0" />
+                        <span className="truncate">مشاهده جزئیات</span>
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openHomeworkModal(hw)}
+                      className="w-full text-xs flex items-center justify-center gap-1.5 h-9 rounded-xl font-bold bg-white dark:bg-[#1C2536] border-gray-200 dark:border-[#242F42] text-foreground dark:text-white hover:bg-gray-50 dark:hover:bg-[#242F42] shadow-2xs transition-colors"
+                    >
+                      <Eye className="w-4 h-4 text-primary shrink-0" />
+                      <span>مشاهده جزئیات</span>
+                    </Button>
+                  )}
                 </div>
               </Card>
             );
@@ -684,6 +856,8 @@ export const StudentHomeworkPage: React.FC = () => {
           const isSubmitted = !!mySub;
           const statusInfo = getHomeworkStatus(selectedHomework);
           const StatusIcon = statusInfo.icon;
+          const isPastDue = selectedHomework.dueDate ? new Date(selectedHomework.dueDate).getTime() < Date.now() : false;
+          const allowLate = !!selectedHomework.allowLateSubmissions;
 
           return (
             <div className="space-y-4">
@@ -801,128 +975,171 @@ export const StudentHomeworkPage: React.FC = () => {
                 </div>
               )}
 
-              {/* 5. Student Submission Form with RichTextEditor and File Upload */}
-              <form onSubmit={handleSubmitHomework} className="space-y-4">
-                <div>
-                  <RichTextEditor
-                    value={submissionText}
-                    onChange={setSubmissionText}
-                    label={isSubmitted ? 'پاسخ ارسالی شما:' : 'متن و پاسخ تکلیف:'}
-                    placeholder="پاسخ تمرینات یا توضیحات خود را اینجا بنویسید..."
-                    rows={4}
-                  />
-                  {mySub?.submittedAt && (
-                    <div className="text-[11px] text-muted-foreground dark:text-slate-400 mt-1">
-                      آخرین ارسال: {formatJalaliDateTime(mySub.submittedAt)}
-                    </div>
-                  )}
+              {/* Late Submission Allowed Info Banner */}
+              {!isSubmitted && isPastDue && allowLate && (
+                <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/60 text-xs text-amber-900 dark:text-amber-200 space-y-1">
+                  <div className="font-bold flex items-center gap-1.5 text-amber-800 dark:text-amber-300">
+                    <Clock className="h-4 w-4 text-amber-600 shrink-0" />
+                    <span>امکان ارسال با تأخیر فعال است</span>
+                  </div>
+                  <p className="leading-relaxed">
+                    مهلت رسمی تحویل این تکلیف منقضی شده است، اما با مجوز مربی محترم می‌توانید پاسخ خود را ارسال نمایید. تکلیف شما با وضعیت <strong>«تحویل با تأخیر»</strong> در سامانه ثبت خواهد شد.
+                  </p>
                 </div>
+              )}
 
-                {/* Attachments Section */}
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs sm:text-[13px] font-bold text-ink-normal/90 dark:text-gray-200 flex items-center gap-1.5">
-                      <Paperclip className="w-4 h-4 text-primary" />
-                      <span>فایل‌ها و تصاویر پیوست:</span>
-                    </label>
-                    <button
-                      type="button"
-                      disabled={isUploading}
-                      onClick={() => fileInputRef.current?.click()}
-                      className="cursor-pointer inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary-dark transition-colors px-2.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/15"
-                    >
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>{isUploading ? 'در حال آپلود...' : 'افزودن فایل/تصویر'}</span>
-                    </button>
+              {/* Overdue (No Late Submission Allowed) Banner */}
+              {!isSubmitted && isPastDue && !allowLate && (
+                <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-xs text-rose-800 dark:text-rose-200 space-y-1">
+                  <div className="font-bold flex items-center gap-1.5 text-rose-700 dark:text-rose-300">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    <span>مهلت تحویل به پایان رسیده است</span>
+                  </div>
+                  <p className="leading-relaxed">
+                    مهلت تعیین‌شده برای تحویل این تکلیف منقضی شده است و امکان ارسال با تأخیر توسط دبیر محترم فعال نشده است.
+                  </p>
+                </div>
+              )}
+
+              {/* 5. Student Submission Form with RichTextEditor and File Upload */}
+              {statusInfo.canSubmit ? (
+                <form onSubmit={handleSubmitHomework} className="space-y-4">
+                  <div>
+                    <RichTextEditor
+                      value={submissionText}
+                      onChange={setSubmissionText}
+                      label={isSubmitted ? 'پاسخ ارسالی شما:' : 'متن و پاسخ تکلیف:'}
+                      placeholder="پاسخ تمرینات یا توضیحات خود را اینجا بنویسید..."
+                      rows={4}
+                    />
+                    {mySub?.submittedAt && (
+                      <div className="text-[11px] text-muted-foreground dark:text-slate-400 mt-1">
+                        آخرین ارسال: {formatJalaliDateTime(mySub.submittedAt)}
+                      </div>
+                    )}
                   </div>
 
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept="image/*,.pdf,.doc,.docx,.zip,.rar,.txt"
-                    className="hidden"
-                    onChange={handleFileUpload}
-                  />
+                  {/* Attachments Section */}
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs sm:text-[13px] font-bold text-ink-normal/90 dark:text-gray-200 flex items-center gap-1.5">
+                        <Paperclip className="w-4 h-4 text-primary" />
+                        <span>فایل‌ها و تصاویر پیوست:</span>
+                      </label>
+                      <button
+                        type="button"
+                        disabled={isUploading}
+                        onClick={() => fileInputRef.current?.click()}
+                        className="cursor-pointer inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary-dark transition-colors px-2.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/15"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>{isUploading ? 'در حال آپلود...' : 'افزودن فایل/تصویر'}</span>
+                      </button>
+                    </div>
 
-                  {/* Uploaded Attachments List */}
-                  {attachments.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {attachments.map((att, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center justify-between p-2.5 bg-gray-50 dark:bg-[#1C2536] rounded-xl border border-gray-200 dark:border-[#242F42] gap-2 min-w-0"
-                        >
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            {att.type === 'image' ? (
-                              <img
-                                src={att.url}
-                                alt={att.name}
-                                className="w-10 h-10 rounded-lg object-cover border border-gray-200 dark:border-gray-700 shrink-0"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                                <FileText className="w-5 h-5" />
-                              </div>
-                            )}
-                            <div className="min-w-0 flex-1">
-                              <span className="text-xs font-bold text-ink-darker dark:text-white truncate block">
-                                {att.name}
-                              </span>
-                              <a
-                                href={att.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[11px] text-primary hover:underline inline-flex items-center gap-1 mt-0.5"
-                              >
-                                <span>مشاهده فایل</span>
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
-                            </div>
-                          </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept="image/*,.pdf,.doc,.docx,.zip,.rar,.txt"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                    />
 
-                          <button
-                            type="button"
-                            onClick={() => removeAttachment(idx)}
-                            className="cursor-pointer p-1.5 text-gray-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors shrink-0"
-                            title="حذف پیوست"
+                    {/* Uploaded Attachments List */}
+                    {attachments.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {attachments.map((att, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between p-2.5 bg-gray-50 dark:bg-[#1C2536] rounded-xl border border-gray-200 dark:border-[#242F42] gap-2 min-w-0"
                           >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div
-                      onClick={() => fileInputRef.current?.click()}
-                      className="border border-dashed border-gray-200 dark:border-[#242F42] hover:border-primary/50 dark:hover:border-primary/50 rounded-xl p-3.5 text-center cursor-pointer transition-colors bg-gray-50/50 dark:bg-[#1C2536]/40 flex items-center justify-center gap-2 text-xs font-bold text-muted-foreground hover:text-foreground dark:text-slate-400 dark:hover:text-white"
-                    >
-                      <Upload className="w-4 h-4 text-primary" />
-                      <span>برای افزودن فایل یا تصویر اینجا کلیک کنید</span>
-                    </div>
-                  )}
-                </div>
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              {att.type === 'image' ? (
+                                <img
+                                  src={att.url}
+                                  alt={att.name}
+                                  className="w-10 h-10 rounded-lg object-cover border border-gray-200 dark:border-gray-700 shrink-0"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                  <FileText className="w-5 h-5" />
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <span className="text-xs font-bold text-ink-darker dark:text-white truncate block">
+                                  {att.name}
+                                </span>
+                                <a
+                                  href={att.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[11px] text-primary hover:underline inline-flex items-center gap-1 mt-0.5"
+                                >
+                                  <span>مشاهده فایل</span>
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              </div>
+                            </div>
 
-                {/* Modal Action Buttons */}
-                <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-[#242F42]">
+                            <button
+                              type="button"
+                              onClick={() => removeAttachment(idx)}
+                              className="cursor-pointer p-1.5 text-gray-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors shrink-0"
+                              title="حذف پیوست"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="border border-dashed border-gray-200 dark:border-[#242F42] hover:border-primary/50 dark:hover:border-primary/50 rounded-xl p-3.5 text-center cursor-pointer transition-colors bg-gray-50/50 dark:bg-[#1C2536]/40 flex items-center justify-center gap-2 text-xs font-bold text-muted-foreground hover:text-foreground dark:text-slate-400 dark:hover:text-white"
+                      >
+                        <Upload className="w-4 h-4 text-primary" />
+                        <span>برای افزودن فایل یا تصویر اینجا کلیک کنید</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Modal Action Buttons */}
+                  <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-[#242F42]">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setIsSubmitModalOpen(false)}
+                      className="rounded-xl"
+                    >
+                      بستن
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant={!isSubmitted && isPastDue ? 'secondary' : 'primary'}
+                      isLoading={isSubmitting}
+                      className="rounded-xl shadow-[2px_2px_0_#438C83]"
+                    >
+                      {!isSubmitted && isPastDue
+                        ? 'ارسال پاسخ با تأخیر'
+                        : isSubmitted
+                        ? 'ویرایش و ارسال مجدد'
+                        : 'ارسال نهایی پاسخ'}
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <div className="flex justify-end pt-2 border-t border-gray-100 dark:border-[#242F42]">
                   <Button
                     type="button"
                     variant="ghost"
                     onClick={() => setIsSubmitModalOpen(false)}
-                    className="rounded-xl"
+                    className="rounded-xl px-5 text-xs"
                   >
                     بستن
                   </Button>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    isLoading={isSubmitting}
-                    className="rounded-xl shadow-[2px_2px_0_#438C83]"
-                  >
-                    {isSubmitted ? 'ویرایش و ارسال مجدد' : 'ارسال نهایی پاسخ'}
-                  </Button>
                 </div>
-              </form>
+              )}
             </div>
           );
         })()}

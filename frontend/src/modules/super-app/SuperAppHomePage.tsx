@@ -95,7 +95,16 @@ export const SuperAppHomePage: React.FC = () => {
         }
         if (exRes.status === 'fulfilled') {
           const list = Array.isArray(exRes.value.data) ? exRes.value.data : [];
-          setExamsCount(list.length);
+          const now = Date.now();
+          const holdingCount = list.filter((e: any) => {
+            const start = new Date(e.startTime).getTime();
+            const end = new Date(e.endTime).getTime();
+            const part = e.participations?.[0];
+            const isSubmitted = part?.status === 'SUBMITTED' || part?.status === 'TIMED_OUT';
+            const hasScore = part?.totalScore !== null && part?.totalScore !== undefined;
+            return now >= start && now <= end && !isSubmitted && !hasScore && e.status !== 'FINISHED';
+          }).length;
+          setExamsCount(holdingCount);
         }
         if (messagesRes.status === 'fulfilled') {
           const res = messagesRes.value.data;
@@ -716,7 +725,7 @@ export const SuperAppHomePage: React.FC = () => {
       {card.badge && (
         <span
           className={`absolute top-2.5 left-2.5 z-10 min-w-[20px] h-[20px] px-1.5 rounded-full bg-girl text-white text-[10px] font-black flex items-center justify-center leading-none border border-white dark:border-gray-800 shadow-xs select-none ${
-            card.id === 'messages' ? 'animate-pulse ring-2 ring-girl/30' : ''
+            card.id === 'messages' || card.id === 'exams' ? 'animate-pulse ring-2 ring-girl/30' : ''
           }`}
         >
           <span className="inline-block transform -translate-y-[0.5px]">{card.badge}</span>
