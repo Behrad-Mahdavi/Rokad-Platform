@@ -32,6 +32,17 @@ import { AppPermission } from '../../common/constants/permissions';
 export class AcademicController {
   constructor(private readonly academicService: AcademicService) {}
 
+  @Get('dashboard-stats')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF, Role.TEACHER, Role.COACH)
+  @ApiOperation({ summary: 'آمار و متریک‌های داینامیک داشبورد مدیریت هنرستان' })
+  async getDashboardStats(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.academicService.getSchoolDashboardStats(effectiveTenantId);
+  }
+
   // Academic Years
   @Get('years')
   @ApiOperation({ summary: 'لیست سال‌های تحصیلی مدرسه' })

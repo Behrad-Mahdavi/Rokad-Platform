@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   Award,
 } from 'lucide-react';
+import { toPersianDigits } from '../../lib/utils';
 
 const getPersianDayKey = (): string => {
   const dayIndex = new Date().getDay(); // 0 is Sunday, 6 is Saturday
@@ -32,15 +33,19 @@ export const TeacherDashboard: React.FC = () => {
   const user = useAuthStore((state) => state.user);
   const [schedules, setSchedules] = useState<any[]>([]);
   const [homeworkList, setHomeworkList] = useState<any[]>([]);
+  const [examsList, setExamsList] = useState<any[]>([]);
+  const [academicStats, setAcademicStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const [schedRes, hwRes] = await Promise.allSettled([
+        const [schedRes, hwRes, exRes, statsRes] = await Promise.allSettled([
           apiClient.get('/classes/my-schedule'),
           apiClient.get('/homework'),
+          apiClient.get('/exams'),
+          apiClient.get('/academic/dashboard-stats'),
         ]);
 
         if (schedRes.status === 'fulfilled') {
@@ -50,6 +55,13 @@ export const TeacherDashboard: React.FC = () => {
         if (hwRes.status === 'fulfilled') {
           const hData = hwRes.value.data;
           setHomeworkList(Array.isArray(hData) ? hData : (hData?.data || []));
+        }
+        if (exRes.status === 'fulfilled') {
+          const eData = exRes.value.data;
+          setExamsList(Array.isArray(eData) ? eData : (eData?.data || []));
+        }
+        if (statsRes.status === 'fulfilled') {
+          setAcademicStats(statsRes.value.data);
         }
       } catch (err) {
         console.error('Failed to load teacher dashboard', err);
@@ -63,6 +75,9 @@ export const TeacherDashboard: React.FC = () => {
 
   const todayKey = getPersianDayKey();
   const todaySchedules = schedules.filter((s: any) => s.dayOfWeek === todayKey);
+  const totalSubmissions = homeworkList.reduce((acc, hw) => acc + (hw._count?.submissions || 0), 0);
+  const uniqueClassroomIds = new Set(schedules.map((s: any) => s.classroomId).filter(Boolean));
+  const activeClassesCount = uniqueClassroomIds.size || academicStats?.classrooms?.length || 0;
 
   return (
     <div className="space-y-5">
@@ -76,7 +91,14 @@ export const TeacherDashboard: React.FC = () => {
             <h1 className="text-base sm:text-lg font-black text-ink-darker dark:text-white">
               درود، {user?.firstName} {user?.lastName}
             </h1>
-            <Badge variant="male" className="text-[11px] mt-1">مربی تخصصی</Badge>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="male" className="text-[11px]">مربی تخصصی</Badge>
+              {academicStats?.academicYear && (
+                <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                  سال تحصیلی {academicStats.academicYear.year} ({academicStats.term?.name || 'نیم‌سال اول'})
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -101,42 +123,64 @@ export const TeacherDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* 4 Stats Cards */}
+      {/* 4 Dynamic Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         <Card className="p-4 sm:p-5">
           <div className="flex justify-between items-center text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">
             <span>کلاس‌های امروز</span>
             <CalendarDays className="h-4 w-4 text-primary" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">۳ جلسه</div>
-          <p className="text-[11px] text-primary font-medium mt-1">جلسه فعال: کلاس ۱۰۲</p>
+          <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">
+            {toPersianDigits(todaySchedules.length)} جلسه
+          </div>
+          <p className="text-[11px] text-primary font-medium mt-1 truncate">
+            {todaySchedules.length > 0
+              ? `جلسه بعدی: ${todaySchedules[0]?.classroom?.name || 'کلاس'} (${todaySchedules[0]?.lesson?.name || ''})`
+              : 'امروز جلسه فعالی در برنامه هفتگی ندارید'}
+          </p>
         </Card>
 
         <Card className="p-4 sm:p-5">
           <div className="flex justify-between items-center text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">
-            <span>تکالیف نیازمند بررسی</span>
+            <span>تکالیف و پاسخ‌ها</span>
             <FileCheck className="h-4 w-4 text-amber-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">۱۲ ارسال</div>
-          <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium mt-1">۳ مهلت امروز</p>
+          <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">
+            {toPersianDigits(totalSubmissions)} ارسال
+          </div>
+          <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium mt-1">
+            {toPersianDigits(homeworkList.length)} تکلیف فعال تعریف‌شده
+          </p>
         </Card>
 
         <Card className="p-4 sm:p-5">
           <div className="flex justify-between items-center text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">
-            <span>آزمون‌های فعال</span>
+            <span>آزمون‌های ثبت‌شده</span>
             <HelpCircle className="h-4 w-4 text-blue-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">۱ آزمون</div>
-          <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium mt-1">۲۸ شرکت‌کننده</p>
+          <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">
+            {toPersianDigits(examsList.length)} آزمون
+          </div>
+          <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium mt-1 truncate">
+            {examsList.length > 0
+              ? `آخرین عنوان: ${examsList[0]?.title || ''}`
+              : 'آزمون فعالی برای این ترم ثبت نشده'}
+          </p>
         </Card>
 
         <Card className="p-4 sm:p-5">
           <div className="flex justify-between items-center text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">
-            <span>میانگین نمرات</span>
+            <span>کلاس‌های در حال تدریس</span>
             <Award className="h-4 w-4 text-purple-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-purple-600 dark:text-purple-400 font-mono">۱۹.۰۵</div>
-          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1">رشد مطلوب</p>
+          <div className="text-xl sm:text-2xl font-black text-purple-600 dark:text-purple-400 font-mono">
+            {toPersianDigits(activeClassesCount)} کلاس
+          </div>
+          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1">
+            {academicStats?.summary?.studentCount
+              ? `${toPersianDigits(academicStats.summary.studentCount)} دانش‌آموز فعال در مدرسه`
+              : 'ترم تحصیلی فعال'}
+          </p>
         </Card>
       </div>
 

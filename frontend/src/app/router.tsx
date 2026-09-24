@@ -79,6 +79,7 @@ import { ClubChallengeDetailPage } from '../modules/club/ClubChallengeDetailPage
 import { AdminClubPage } from '../modules/school-admin/club/AdminClubPage';
 import { TeacherClubApprovalsPage } from '../modules/teacher/club/TeacherClubApprovalsPage';
 import { SmsCenterPage } from '../modules/sms/SmsCenterPage';
+import { DashboardRedirect } from './routes/DashboardRedirect';
 
 export const router = createBrowserRouter([
   // 1. Guest / Auth Routes
@@ -96,10 +97,17 @@ export const router = createBrowserRouter([
     ],
   },
 
+  // 1.1 Direct /dashboard route
+  {
+    path: '/dashboard',
+    element: <DashboardRedirect />,
+  },
+
   // 2. Protected App Routes per Persona
   {
     path: '/app',
     children: [
+      { path: 'dashboard', element: <DashboardRedirect /> },
       // 2.1 Persona 1: Super Admin
       {
         path: 'super-admin',

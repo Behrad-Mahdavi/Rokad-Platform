@@ -18,6 +18,7 @@ import {
   GraduationCap,
   Scale,
 } from 'lucide-react';
+import { toPersianDigits } from '../../lib/utils';
 
 const getPersianDayKey = (): string => {
   const dayIndex = new Date().getDay(); // 0 is Sunday, 6 is Saturday
@@ -143,11 +144,16 @@ export const StudentDashboard: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         <Card className="p-4 sm:p-5">
           <div className="flex justify-between items-center text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">
-            <span>معدل نیم‌سال</span>
+            <span>وضعیت تحصیلی</span>
             <TrendingUp className="h-4 w-4 text-primary" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-primary font-mono">۱۹.۳۱</div>
-          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1">رتبه ۲ پایه دهم</p>
+          <div className="text-xl sm:text-2xl font-black text-primary font-mono">
+            {scheduleData?.classroom?.name ? `کلاس ${scheduleData.classroom.name}` : 'سال ۱۴۰۵-۱۴۰۶'}
+          </div>
+          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1">
+            {scheduleData?.classroom?.level?.name ? `پایه ${scheduleData.classroom.level.name} - ` : ''}
+            {scheduleData?.classroom?.field?.name || 'نیم‌سال اول'}
+          </p>
         </Card>
 
         <Card className="p-4 sm:p-5">
@@ -155,8 +161,12 @@ export const StudentDashboard: React.FC = () => {
             <span>تکالیف جاری</span>
             <FileCheck className="h-4 w-4 text-amber-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">۲ تکلیف</div>
-          <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium mt-1">مهلت نزدیک‌ترین: فردا</p>
+          <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">
+            {toPersianDigits(realHomework.length)} تکلیف
+          </div>
+          <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium mt-1">
+            {realHomework.length > 0 ? 'تکلیف فعال جهت بررسی و ارسال' : 'بدون تکلیف معوق'}
+          </p>
         </Card>
 
         <Card className="p-4 sm:p-5">
@@ -164,8 +174,12 @@ export const StudentDashboard: React.FC = () => {
             <span>آزمون‌های فعال</span>
             <HelpCircle className="h-4 w-4 text-blue-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">۱ آزمون</div>
-          <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium mt-1">آماده شرکت آنلاین</p>
+          <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">
+            {toPersianDigits(realExams.length)} آزمون
+          </div>
+          <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium mt-1">
+            {realExams.length > 0 ? 'آماده شرکت آنلاین' : 'آزمون فعالی برای امروز ثبت نشده'}
+          </p>
         </Card>
 
         <Card
@@ -179,7 +193,7 @@ export const StudentDashboard: React.FC = () => {
           <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white group-hover:text-primary transition-colors">
             پرونده منظم
           </div>
-          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1">بدون مورد منفی</p>
+          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1">بدون مورد انضباطی منفی</p>
         </Card>
       </div>
 

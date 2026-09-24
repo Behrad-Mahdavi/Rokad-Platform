@@ -133,10 +133,10 @@ export const SuperAdminDashboard: React.FC = () => {
             <Building2 className="h-4 w-4 text-primary" />
           </div>
           <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">
-            ۲ شعبه
+            {metrics?.tenants?.active ?? tenants.length ?? 0} شعبه
           </div>
           <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1">
-            شعب پسرانه و دخترانه فعال
+            {metrics?.tenants?.total ?? 0} مرکز آموزشی در سامانه
           </p>
         </Card>
 
@@ -147,24 +147,27 @@ export const SuperAdminDashboard: React.FC = () => {
             <Users className="h-4 w-4 text-blue-500" />
           </div>
           <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">
-            {((metrics?.users?.total || 650)).toLocaleString('fa-IR')} نفر
+            {(metrics?.users?.total ?? 0).toLocaleString('fa-IR')} نفر
           </div>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium mt-1">
-            ۵۲۰ دانش‌آموز • ۱۳۰ پرسنل
+          <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium mt-1 font-mono">
+            {metrics?.users?.students ?? 0} دانش‌آموز • {metrics?.users?.parents ?? 0} ولی • {metrics?.users?.teachers ?? 0} مربی
           </p>
         </Card>
 
         {/* Card 3: MRR */}
         <Card className="p-4 sm:p-5">
           <div className="flex justify-between items-center text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">
-            <span>درآمد ماهانه</span>
+            <span>درآمد ماهانه (MRR)</span>
             <CreditCard className="h-4 w-4 text-amber-500" />
           </div>
           <div className="text-xl sm:text-2xl font-black text-amber-500 dark:text-amber-400 font-mono">
-            ۴۸۰ <span className="text-xs font-normal text-gray-500 dark:text-gray-400">میلیون تومان</span>
+            {metrics?.commercial?.estimatedMrrTomans
+              ? (Math.round(metrics.commercial.estimatedMrrTomans / 1000000)).toLocaleString('fa-IR')
+              : '۰'}{' '}
+            <span className="text-xs font-normal text-gray-500 dark:text-gray-400">میلیون تومان</span>
           </div>
-          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1">
-            +۲۴٪ رشد ماهانه
+          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1 font-mono">
+            {metrics?.commercial?.activeSubscriptions ?? 0} اشتراک فعال پلتفرم
           </p>
         </Card>
 
@@ -175,10 +178,13 @@ export const SuperAdminDashboard: React.FC = () => {
             <HardDrive className="h-4 w-4 text-purple-500" />
           </div>
           <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">
-            ۱.۲ <span className="text-xs font-normal text-gray-500 dark:text-gray-400">ترابایت</span>
+            {metrics?.storage?.totalStorageMb
+              ? (metrics.storage.totalStorageMb / 1024).toFixed(1)
+              : '۰'}{' '}
+            <span className="text-xs font-normal text-gray-500 dark:text-gray-400">گیگابایت</span>
           </div>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium mt-1">
-            ذخیره‌سازی ابری امن
+          <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium mt-1 font-mono">
+            {metrics?.storage?.totalFiles ?? 0} فایل ابری ذخیره‌شده
           </p>
         </Card>
       </div>

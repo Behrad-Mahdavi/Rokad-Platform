@@ -30,6 +30,7 @@ export const SchoolAdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const currentTenant = useTenantStore((state) => state.currentTenant);
+  const [academicStats, setAcademicStats] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
   const [, setIsLoading] = useState(true);
 
@@ -52,11 +53,17 @@ export const SchoolAdminDashboard: React.FC = () => {
   useEffect(() => {
     const fetchSchoolStats = async () => {
       try {
-        if (currentTenant?.id) {
-          const res = await apiClient.get(`/saas/subscriptions/tenant/${currentTenant.id}`).catch(() => null);
-          if (res?.data) {
-            setStats(res.data);
-          }
+        const [subRes, acadRes] = await Promise.allSettled([
+          currentTenant?.id ? apiClient.get(`/saas/subscriptions/tenant/${currentTenant.id}`) : Promise.reject(),
+          apiClient.get('/academic/dashboard-stats'),
+        ]);
+
+        if (subRes.status === 'fulfilled' && subRes.value?.data) {
+          setStats(subRes.value.data);
+        }
+        if (acadRes.status === 'fulfilled' && acadRes.value?.data) {
+          const aData = acadRes.value.data;
+          setAcademicStats(aData?.data || aData);
         }
       } catch (e) {
         console.error('Failed to load tenant stats', e);
@@ -66,6 +73,12 @@ export const SchoolAdminDashboard: React.FC = () => {
     };
     fetchSchoolStats();
   }, [currentTenant?.id]);
+
+  const studentsCount = academicStats?.studentsCount ?? stats?.quotas?.students?.currentUsage ?? 100;
+  const maxStudents = academicStats?.maxStudents ?? stats?.quotas?.students?.maxAllowed ?? 150;
+  const teachersCount = academicStats?.teachersCount ?? stats?.quotas?.teachers?.currentUsage ?? 1;
+  const maxTeachers = academicStats?.maxTeachers ?? stats?.quotas?.teachers?.maxAllowed ?? 40;
+  const classrooms = academicStats?.classrooms || [];
 
   return (
     <div className="space-y-5">
@@ -79,7 +92,12 @@ export const SchoolAdminDashboard: React.FC = () => {
             <h1 className="text-base sm:text-lg font-black text-ink-darker dark:text-white">
               درود، {user?.firstName} {user?.lastName}
             </h1>
-            <Badge variant="default" className="text-[11px] mt-1">مدیریت هنرستان</Badge>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="default" className="text-[11px]">مدیریت هنرستان</Badge>
+              <Badge variant="neutral" className="text-[11px] font-mono">
+                سال تحصیلی {academicStats?.currentYear || '۱۴۰۵-۱۴۰۶'} • {academicStats?.currentTerm || 'نیم‌سال اول'}
+              </Badge>
+            </div>
           </div>
         </div>
 
@@ -113,11 +131,14 @@ export const SchoolAdminDashboard: React.FC = () => {
             <GraduationCap className="h-4 w-4 text-primary" />
           </div>
           <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">
-            {stats?.quotas?.students?.currentUsage || 320}
-            <span className="text-xs font-normal text-gray-500 dark:text-gray-400 mr-1 font-mono">/ {stats?.quotas?.students?.maxAllowed || 400}</span>
+            {studentsCount}
+            <span className="text-xs font-normal text-gray-500 dark:text-gray-400 mr-1 font-mono">/ {maxStudents}</span>
           </div>
           <div className="w-full bg-gray-100 dark:bg-gray-800 h-1.5 rounded-full mt-2.5 overflow-hidden">
-            <div className="bg-primary h-1.5 rounded-full" style={{ width: '80%' }} />
+            <div
+              className="bg-primary h-1.5 rounded-full transition-all"
+              style={{ width: `${Math.min(100, Math.round((studentsCount / (maxStudents || 1)) * 100))}%` }}
+            />
           </div>
         </Card>
 
@@ -128,25 +149,29 @@ export const SchoolAdminDashboard: React.FC = () => {
             <Users className="h-4 w-4 text-blue-500" />
           </div>
           <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">
-            {stats?.quotas?.teachers?.currentUsage || 28}
-            <span className="text-xs font-normal text-gray-500 dark:text-gray-400 mr-1 font-mono">/ {stats?.quotas?.teachers?.maxAllowed || 40}</span>
+            {teachersCount}
+            <span className="text-xs font-normal text-gray-500 dark:text-gray-400 mr-1 font-mono">/ {maxTeachers}</span>
           </div>
           <div className="w-full bg-gray-100 dark:bg-gray-800 h-1.5 rounded-full mt-2.5 overflow-hidden">
-            <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: '70%' }} />
+            <div
+              className="bg-blue-500 h-1.5 rounded-full transition-all"
+              style={{ width: `${Math.min(100, Math.round((teachersCount / (maxTeachers || 1)) * 100))}%` }}
+            />
           </div>
         </Card>
 
         {/* Card 3: Fee Collection */}
         <Card className="p-4 sm:p-5">
           <div className="flex justify-between items-center text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">
-            <span>وصول شهریه</span>
+            <span>کلاس‌های فعال</span>
             <Receipt className="h-4 w-4 text-amber-500" />
           </div>
           <div className="text-xl sm:text-2xl font-black text-amber-500 dark:text-amber-400 font-mono">
-            ۳۹۰ <span className="text-xs font-normal text-gray-500 dark:text-gray-400">میلیون تومان</span>
+            {classrooms.length || 4}{' '}
+            <span className="text-xs font-normal text-gray-500 dark:text-gray-400">کلاس درس</span>
           </div>
           <div className="w-full bg-gray-100 dark:bg-gray-800 h-1.5 rounded-full mt-2.5 overflow-hidden">
-            <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: '92%' }} />
+            <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: '100%' }} />
           </div>
         </Card>
 
@@ -157,13 +182,65 @@ export const SchoolAdminDashboard: React.FC = () => {
             <CalendarCheck className="h-4 w-4 text-emerald-500" />
           </div>
           <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-            ۹۷.۴٪
+            {academicStats?.attendanceRate ?? 100}٪
           </div>
           <div className="w-full bg-gray-100 dark:bg-gray-800 h-1.5 rounded-full mt-2.5 overflow-hidden">
-            <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: '97.4%' }} />
+            <div
+              className="bg-emerald-500 h-1.5 rounded-full"
+              style={{ width: `${academicStats?.attendanceRate ?? 100}%` }}
+            />
           </div>
         </Card>
       </div>
+
+      {/* Classrooms Roster Overview */}
+      {classrooms.length > 0 && (
+        <Card className="p-4 sm:p-5">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                <GraduationCap className="h-4 w-4" />
+              </div>
+              <h2 className="font-black text-sm sm:text-base text-ink-darker dark:text-white">
+                توزیع کلاسی دانش‌آموزان
+              </h2>
+            </div>
+            <Badge variant="default" className="font-mono">{studentsCount} دانش‌آموز در {classrooms.length} کلاس</Badge>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {classrooms.map((cls: any) => (
+              <div
+                key={cls.id}
+                onClick={() => navigate('/app/admin/members?tab=students')}
+                className="p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 hover:border-primary/40 cursor-pointer transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <span className="font-bold text-xs text-primary font-mono">{cls.code}</span>
+                    <span className="text-[10px] text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700">
+                      {cls.roomNumber || 'کارگاه'}
+                    </span>
+                  </div>
+                  <h4 className="font-black text-xs text-ink-darker dark:text-white truncate">
+                    {cls.name}
+                  </h4>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                    {cls.fieldName || cls.levelName || 'رشته تخصصی'}
+                  </p>
+                </div>
+
+                <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between text-[11px]">
+                  <span className="text-gray-500 dark:text-gray-400">جمعیت کلاس:</span>
+                  <span className="font-bold text-primary font-mono">
+                    {cls.studentsCount} نفر
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Visual Analytics Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">

@@ -21,7 +21,7 @@ export const ParentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
 
-  const { data: childrenData } = useQuery({
+  const { data: childrenData, isLoading: isLoadingChildren } = useQuery({
     queryKey: ['parent-my-children'],
     queryFn: async () => {
       const res: any = await apiClient.get('/members/my-children');
@@ -29,12 +29,48 @@ export const ParentDashboard: React.FC = () => {
     },
   });
 
+  const { data: feeOverview } = useQuery({
+    queryKey: ['parent-fee-overview'],
+    queryFn: async () => {
+      try {
+        const res: any = await apiClient.get('/fee/contracts/my-overview');
+        return res?.data || res || null;
+      } catch {
+        return null;
+      }
+    },
+  });
+
+  const { data: attendanceHistory } = useQuery({
+    queryKey: ['parent-my-attendance'],
+    queryFn: async () => {
+      try {
+        const res: any = await apiClient.get('/attendance/my-attendance');
+        return Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+      } catch {
+        return [];
+      }
+    },
+  });
+
   const primaryLink = Array.isArray(childrenData) ? childrenData[0] : null;
   const student = primaryLink?.student;
   const studentUser = student?.user;
-  const childFullName = studentUser ? `${studentUser.firstName} ${studentUser.lastName}`.trim() : 'امیرعلی صادقی';
+  const childFullName = studentUser 
+    ? `${studentUser.firstName} ${studentUser.lastName}`.trim() 
+    : (isLoadingChildren ? 'در حال دریافت اطلاعات...' : 'فرزند ثبت‌شده');
   const classroomName = student?.enrollments?.[0]?.classroom?.name;
   const studentCode = student?.studentCode || student?.nationalCode;
+
+  // Compute fee summary
+  const contracts = feeOverview?.contracts || (Array.isArray(feeOverview) ? feeOverview : []);
+  const totalRemaining = contracts.reduce((acc: number, c: any) => acc + Number(c.remainingAmount || 0), 0);
+  const totalPaid = contracts.reduce((acc: number, c: any) => acc + Number(c.paidAmount || 0), 0);
+
+  // Compute attendance stats
+  const attendances = Array.isArray(attendanceHistory) ? attendanceHistory : [];
+  const absentCount = attendances.filter((a: any) => a.status === 'ABSENT' || a.status === 'UNEXCUSED_ABSENCE').length;
+  const presentCount = attendances.filter((a: any) => a.status === 'PRESENT').length;
 
   return (
     <div className="space-y-5">
@@ -55,12 +91,12 @@ export const ParentDashboard: React.FC = () => {
               </Badge>
               {classroomName && (
                 <Badge variant="neutral" className="text-[10px]">
-                  {classroomName}
+                  کلاس {classroomName}
                 </Badge>
               )}
               {studentCode && (
                 <span className="text-[11px] text-gray-500 dark:text-gray-400 font-mono">
-                  کد: {toPersianDigits(studentCode)}
+                  کد ملی / شناسه: {toPersianDigits(studentCode)}
                 </span>
               )}
             </div>
@@ -95,15 +131,26 @@ export const ParentDashboard: React.FC = () => {
         <Card className="p-4 sm:p-5 flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-bold text-gray-500 dark:text-gray-400">مانده شهریه</span>
+              <span className="text-xs font-bold text-gray-500 dark:text-gray-400">وضعیت شهریه و مالی</span>
               <CreditCard className="h-4 w-4 text-amber-500" />
             </div>
             <div className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white font-mono">
-              ۱۰ <span className="text-xs font-normal text-gray-500 dark:text-gray-400">میلیون تومان</span>
+              {totalRemaining > 0 ? (
+                <>
+                  {toPersianDigits((totalRemaining / 10000000).toLocaleString('fa-IR'))}{' '}
+                  <span className="text-xs font-normal text-gray-500 dark:text-gray-400">میلیون تومان مانده</span>
+                </>
+              ) : (
+                <span className="text-emerald-600 dark:text-emerald-400 text-lg">فاقد بدهی معوق</span>
+              )}
             </div>
             <div className="mt-2.5 flex items-center justify-between text-xs">
-              <Badge variant="success" className="text-[10px]">۲ قسط تسویه</Badge>
-              <span className="text-gray-500 dark:text-gray-400">سررسید: بهمن</span>
+              <Badge variant={totalRemaining > 0 ? 'warning' : 'success'} className="text-[10px]">
+                {contracts.length > 0 ? `${toPersianDigits(contracts.length)} قرارداد ثبت‌شده` : 'پرونده مالی تسویه'}
+              </Badge>
+              <span className="text-gray-500 dark:text-gray-400">
+                {totalPaid > 0 ? `پرداختی: ${toPersianDigits((totalPaid / 10000000).toLocaleString('fa-IR'))} م.ت` : 'سال ۱۴۰۵-۱۴۰۶'}
+              </span>
             </div>
           </div>
           <Button
@@ -112,7 +159,7 @@ export const ParentDashboard: React.FC = () => {
             onClick={() => navigate('/app/parent/fees')}
             className="w-full mt-4 text-xs font-bold"
           >
-            پرداخت شهریه
+            جزئیات و پرداخت شهریه
           </Button>
         </Card>
 
@@ -120,15 +167,15 @@ export const ParentDashboard: React.FC = () => {
         <Card className="p-4 sm:p-5 flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-bold text-gray-500 dark:text-gray-400">وضعیت حضور</span>
+              <span className="text-xs font-bold text-gray-500 dark:text-gray-400">وضعیت حضور و غیاب</span>
               <CalendarDays className="h-4 w-4 text-primary" />
             </div>
             <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
-              حضور منظم (۱۰۰٪)
+              {absentCount === 0 ? 'حضور منظم (بدون غیبت)' : `${toPersianDigits(absentCount)} غیبت ثبت‌شده`}
             </div>
             <div className="mt-2.5 text-xs text-gray-500 dark:text-gray-400 space-y-1">
-              <div>ورود امروز: <strong className="text-ink-darker dark:text-white font-mono">۰۷:۳۵</strong></div>
-              <div>غیبت غیرموجه: <strong className="text-emerald-600 dark:text-emerald-400 font-mono">۰</strong></div>
+              <div>جلسات حاضر: <strong className="text-ink-darker dark:text-white font-mono">{toPersianDigits(presentCount)}</strong></div>
+              <div>غیبت غیرموجه: <strong className="text-emerald-600 dark:text-emerald-400 font-mono">{toPersianDigits(absentCount)}</strong></div>
             </div>
           </div>
           <Button
@@ -137,7 +184,7 @@ export const ParentDashboard: React.FC = () => {
             onClick={() => navigate('/app/parent/reports')}
             className="w-full mt-4 text-xs font-bold"
           >
-            گزارش تحصیلی
+            گزارش تردد و حضور
           </Button>
         </Card>
 
@@ -145,15 +192,15 @@ export const ParentDashboard: React.FC = () => {
         <Card className="p-4 sm:p-5 flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-bold text-gray-500 dark:text-gray-400">پیشرفت تحصیلی</span>
+              <span className="text-xs font-bold text-gray-500 dark:text-gray-400">وضعیت تحصیلی و کلاسی</span>
               <Award className="h-4 w-4 text-blue-500" />
             </div>
             <div className="text-xl sm:text-2xl font-black text-primary font-mono">
-              ۱۹.۳۱
+              {classroomName ? `کلاس ${classroomName}` : 'سال ۱۴۰۵-۱۴۰۶'}
             </div>
             <div className="mt-2.5 text-xs text-gray-500 dark:text-gray-400 space-y-1">
-              <div>رتبه کلاس: <strong className="text-ink-darker dark:text-white">رتبه ۲ (ممتاز)</strong></div>
-              <div>وضعیت انضباطی: <strong className="text-emerald-600 dark:text-emerald-400">عادی</strong></div>
+              <div>دوره تحصیلی: <strong className="text-ink-darker dark:text-white">نیم‌سال اول</strong></div>
+              <div>وضعیت انضباطی: <strong className="text-emerald-600 dark:text-emerald-400">عادی (پرونده منظم)</strong></div>
             </div>
           </div>
           <Button
@@ -162,7 +209,7 @@ export const ParentDashboard: React.FC = () => {
             onClick={() => navigate('/app/student/grades')}
             className="w-full mt-4 text-xs font-bold"
           >
-            مشاهده کارنامه
+            مشاهده سوابق و کارنامه
           </Button>
         </Card>
       </div>
