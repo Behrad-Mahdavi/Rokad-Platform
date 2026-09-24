@@ -40,6 +40,7 @@ import {
   Trophy,
   PartyPopper,
   Compass as CompassIcon,
+  Rocket,
   X,
   Filter,
   ArrowUpRight,
@@ -49,12 +50,14 @@ import {
   ChevronDown,
   Check,
 } from 'lucide-react';
+import { INITIAL_SAMPLE_EVENTS } from './constants/sample-events';
 
 export interface SchoolEventItem {
   id: string;
   title: string;
   description: string;
-  eventType: 'ACADEMIC' | 'HOLIDAY' | 'EXAM' | 'MEETING' | 'CULTURAL' | 'SPORTS' | 'EXCURSION';
+  eventType: 'ACADEMIC' | 'HOLIDAY' | 'EXAM' | 'MEETING' | 'CULTURAL' | 'SPORTS' | 'EXCURSION' | 'STARTUP_WEEKEND';
+  categoryKey?: string;
   startDate: string;
   endDate: string;
   isAllDay: boolean;
@@ -62,6 +65,7 @@ export interface SchoolEventItem {
   location?: string;
   coverUrl?: string;
   tags?: string[];
+  workflowModules?: { key: string; step: number; enabled?: boolean }[];
   createdAt?: string;
   updatedAt?: string;
   createdBy?: {
@@ -89,6 +93,14 @@ export const EVENT_CATEGORIES: EventCategoryConfig[] = [
     colorClass: 'text-primary bg-primary/10 border-primary/20',
     activeClass: 'bg-primary text-white border-primary shadow-sm',
     badgeClass: 'bg-primary/10 text-primary border-primary/20',
+  },
+  {
+    key: 'STARTUP_WEEKEND',
+    label: 'استارت‌آپ ویکند',
+    icon: Rocket,
+    colorClass: 'text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800/60',
+    activeClass: 'bg-amber-500 text-white border-amber-500 shadow-sm',
+    badgeClass: 'bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700',
   },
   {
     key: 'ACADEMIC',
@@ -345,11 +357,34 @@ export const EventsRoadmapPage: React.FC = () => {
     setIsLoading(true);
     try {
       const res = await apiClient.get('/calendar/events');
-      if (res && res.data) {
-        setEvents(res.data);
+      let loadedEvents: SchoolEventItem[] = [];
+      if (res && Array.isArray(res.data)) {
+        loadedEvents = res.data;
       }
+      const hasStartup = loadedEvents.some(
+        (e: any) => e.eventType === 'STARTUP_WEEKEND' || e.id === 'evt_startup_weekend_2026'
+      );
+      const combined = hasStartup ? loadedEvents : [...INITIAL_SAMPLE_EVENTS, ...loadedEvents];
+      setEvents(combined);
+      try {
+        localStorage.setItem('rokad_calendar_events', JSON.stringify(combined));
+      } catch {}
     } catch (err) {
       console.error('Failed to load roadmap events', err);
+      try {
+        const cached = localStorage.getItem('rokad_calendar_events');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const hasStartup = parsed.some(
+              (e: any) => e.eventType === 'STARTUP_WEEKEND' || e.id === 'evt_startup_weekend_2026'
+            );
+            setEvents(hasStartup ? parsed : [...INITIAL_SAMPLE_EVENTS, ...parsed]);
+            return;
+          }
+        }
+      } catch {}
+      setEvents(INITIAL_SAMPLE_EVENTS);
     } finally {
       setIsLoading(false);
     }
@@ -979,7 +1014,14 @@ export const EventsRoadmapPage: React.FC = () => {
                               </div>
 
                               <div className="flex items-center gap-1.5 text-xs font-bold text-primary group-hover:underline">
-                                <span>جزئیات برنامه</span>
+                                {ev.eventType === 'STARTUP_WEEKEND' ? (
+                                  <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-black">
+                                    <Rocket className="w-3.5 h-3.5" />
+                                    <span>ورود به مراحل استارت‌آپ ویکند</span>
+                                  </span>
+                                ) : (
+                                  <span>جزئیات برنامه</span>
+                                )}
                                 <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
                               </div>
                             </div>
@@ -1083,6 +1125,15 @@ export const EventsRoadmapPage: React.FC = () => {
                         <span className="truncate">{ev.location}</span>
                       </div>
                     )}
+                    {ev.eventType === 'STARTUP_WEEKEND' && (
+                      <div className="pt-2 flex items-center justify-between text-xs font-black text-amber-600 dark:text-amber-400 border-t border-amber-100 dark:border-amber-950/60 mt-1">
+                        <span className="flex items-center gap-1.5">
+                          <Rocket className="w-3.5 h-3.5" />
+                          <span>ورود به مراحل استارت‌آپ ویکند</span>
+                        </span>
+                        <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1131,6 +1182,7 @@ export const EventsRoadmapPage: React.FC = () => {
                 onChange={(e) => setForm({ ...form, eventType: e.target.value as any })}
                 className="w-full min-h-[42px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-[#1C2536] text-xs sm:text-sm font-bold text-ink-darker dark:text-white focus:border-primary focus:outline-none"
               >
+                <option value="STARTUP_WEEKEND">استارت‌آپ ویکند</option>
                 <option value="ACADEMIC">آموزشی و مهارت</option>
                 <option value="CULTURAL">فرهنگی و آیین‌ها</option>
                 <option value="SPORTS">مسابقات و ورزش</option>
