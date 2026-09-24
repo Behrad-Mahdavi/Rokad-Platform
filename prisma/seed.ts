@@ -308,25 +308,25 @@ async function main() {
     },
   });
 
-  // 5. Seed Academic Structure for Boys School
+  // 5. Seed Academic Structure for Boys School (Only Current Academic Year 1405-1406)
   const academicYear = await prisma.academicYear.upsert({
     where: {
       tenantId_name: {
         tenantId: boysTenant.id,
-        name: '۱۴۰۴-۱۴۰۵',
+        name: '۱۴۰۵-۱۴۰۶',
       },
     },
     update: { isCurrent: true },
     create: {
       tenantId: boysTenant.id,
-      name: '۱۴۰۴-۱۴۰۵',
-      startDate: new Date('2025-09-23T00:00:00.000Z'),
-      endDate: new Date('2026-06-20T00:00:00.000Z'),
+      name: '۱۴۰۵-۱۴۰۶',
+      startDate: new Date('2026-09-23T00:00:00.000Z'),
+      endDate: new Date('2027-06-20T00:00:00.000Z'),
       isCurrent: true,
     },
   });
 
-  const term1 = await prisma.term.upsert({
+  await prisma.term.upsert({
     where: {
       academicYearId_name: {
         academicYearId: academicYear.id,
@@ -338,271 +338,12 @@ async function main() {
       tenantId: boysTenant.id,
       academicYearId: academicYear.id,
       name: 'نیم‌سال اول',
-      startDate: new Date('2025-09-23T00:00:00.000Z'),
-      endDate: new Date('2026-01-20T00:00:00.000Z'),
+      startDate: new Date('2026-09-23T00:00:00.000Z'),
+      endDate: new Date('2027-01-20T00:00:00.000Z'),
       isCurrent: true,
     },
   });
 
-  // 5. Seed Academic Structure for Boys School
-  const grade10Level = await prisma.educationalLevel.upsert({
-    where: { tenantId_code: { tenantId: boysTenant.id, code: 'GRADE_10' } },
-    update: { name: 'دهم' },
-    create: {
-      tenantId: boysTenant.id,
-      name: 'دهم',
-      code: 'GRADE_10',
-      orderIndex: 10,
-    },
-  });
-
-  const grade11Level = await prisma.educationalLevel.upsert({
-    where: { tenantId_code: { tenantId: boysTenant.id, code: 'GRADE_11' } },
-    update: { name: 'یازدهم' },
-    create: {
-      tenantId: boysTenant.id,
-      name: 'یازدهم',
-      code: 'GRADE_11',
-      orderIndex: 11,
-    },
-  });
-
-  const grade12Level = await prisma.educationalLevel.upsert({
-    where: { tenantId_code: { tenantId: boysTenant.id, code: 'GRADE_12' } },
-    update: { name: 'دوازدهم' },
-    create: {
-      tenantId: boysTenant.id,
-      name: 'دوازدهم',
-      code: 'GRADE_12',
-      orderIndex: 12,
-    },
-  });
-
-  // Boys Fields: شبکه و نرم‌افزار رایانه - تولید و توسعه پایگاه اینترنتی - تولید محتوای چندرسانه‌ای
-  const boysNetField10 = await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade10Level.id, name: 'شبکه و نرم‌افزار رایانه' } },
-    update: { code: 'BOYS_NET_10' },
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade10Level.id,
-      name: 'شبکه و نرم‌افزار رایانه',
-      code: 'BOYS_NET_10',
-    },
-  });
-
-  const boysWebField10 = await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade10Level.id, name: 'تولید و توسعه پایگاه اینترنتی' } },
-    update: { code: 'BOYS_WEB_10' },
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade10Level.id,
-      name: 'تولید و توسعه پایگاه اینترنتی',
-      code: 'BOYS_WEB_10',
-    },
-  });
-
-  const boysMediaField10 = await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade10Level.id, name: 'تولید محتوای چندرسانه‌ای' } },
-    update: { code: 'BOYS_MEDIA_10' },
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade10Level.id,
-      name: 'تولید محتوای چندرسانه‌ای',
-      code: 'BOYS_MEDIA_10',
-    },
-  });
-
-  // Grade 11 Boys Fields
-  await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade11Level.id, name: 'شبکه و نرم‌افزار رایانه' } },
-    update: { code: 'BOYS_NET_11' },
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade11Level.id,
-      name: 'شبکه و نرم‌افزار رایانه',
-      code: 'BOYS_NET_11',
-    },
-  });
-
-  await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade11Level.id, name: 'تولید و توسعه پایگاه اینترنتی' } },
-    update: { code: 'BOYS_WEB_11' },
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade11Level.id,
-      name: 'تولید و توسعه پایگاه اینترنتی',
-      code: 'BOYS_WEB_11',
-    },
-  });
-
-  await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade11Level.id, name: 'تولید محتوای چندرسانه‌ای' } },
-    update: { code: 'BOYS_MEDIA_11' },
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade11Level.id,
-      name: 'تولید محتوای چندرسانه‌ای',
-      code: 'BOYS_MEDIA_11',
-    },
-  });
-
-  // Grade 12 Boys Fields
-  await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade12Level.id, name: 'شبکه و نرم‌افزار رایانه' } },
-    update: { code: 'BOYS_NET_12' },
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade12Level.id,
-      name: 'شبکه و نرم‌افزار رایانه',
-      code: 'BOYS_NET_12',
-    },
-  });
-
-  await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade12Level.id, name: 'تولید و توسعه پایگاه اینترنتی' } },
-    update: { code: 'BOYS_WEB_12' },
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade12Level.id,
-      name: 'تولید و توسعه پایگاه اینترنتی',
-      code: 'BOYS_WEB_12',
-    },
-  });
-
-  await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade12Level.id, name: 'تولید محتوای چندرسانه‌ای' } },
-    update: { code: 'BOYS_MEDIA_12' },
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade12Level.id,
-      name: 'تولید محتوای چندرسانه‌ای',
-      code: 'BOYS_MEDIA_12',
-    },
-  });
-
-  // Legacy highSchoolLevel reference for compatibility
-  const highSchoolLevel = grade10Level;
-  const mathField = boysNetField10;
-
-  // Lessons
-  const calculusLesson = await prisma.lesson.upsert({
-    where: {
-      tenantId_code: {
-        tenantId: boysTenant.id,
-        code: 'CALC-10',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade10Level.id,
-      fieldId: boysNetField10.id,
-      name: 'حسابان ۱',
-      code: 'CALC-10',
-      unitCount: 4,
-      type: 'SPECIALIZED',
-    },
-  });
-
-  const physicsLesson = await prisma.lesson.upsert({
-    where: {
-      tenantId_code: {
-        tenantId: boysTenant.id,
-        code: 'PHYS-10',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade10Level.id,
-      fieldId: boysNetField10.id,
-      name: 'فیزیک ۱ و آزمایشگاه',
-      code: 'PHYS-10',
-      unitCount: 3,
-      type: 'SPECIALIZED',
-    },
-  });
-
-  const webLesson = await prisma.lesson.upsert({
-    where: {
-      tenantId_code: {
-        tenantId: boysTenant.id,
-        code: 'WEB-DEV-10',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade10Level.id,
-      fieldId: boysWebField10.id,
-      name: 'تولید و توسعه پایگاه اینترنتی ۱',
-      code: 'WEB-DEV-10',
-      unitCount: 4,
-      type: 'SPECIALIZED',
-    },
-  });
-
-  const mediaLesson = await prisma.lesson.upsert({
-    where: {
-      tenantId_code: {
-        tenantId: boysTenant.id,
-        code: 'MEDIA-DEV-10',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade10Level.id,
-      fieldId: boysMediaField10.id,
-      name: 'تولید محتوای الکترونیکی و چندرسانه‌ای',
-      code: 'MEDIA-DEV-10',
-      unitCount: 4,
-      type: 'SPECIALIZED',
-    },
-  });
-
-  const persianLesson = await prisma.lesson.upsert({
-    where: {
-      tenantId_code: {
-        tenantId: boysTenant.id,
-        code: 'FA-10',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade10Level.id,
-      name: 'فارسی و نگارش ۱',
-      code: 'FA-10',
-      unitCount: 2,
-      type: 'GENERAL',
-    },
-  });
-
-  // Classroom
-  const classroom10M1 = await prisma.classroom.upsert({
-    where: {
-      tenantId_academicYearId_code: {
-        tenantId: boysTenant.id,
-        academicYearId: academicYear.id,
-        code: 'CLS-10-M1',
-      },
-    },
-    update: {
-      levelId: grade10Level.id,
-      fieldId: boysNetField10.id,
-    },
-    create: {
-      tenantId: boysTenant.id,
-      academicYearId: academicYear.id,
-      levelId: grade10Level.id,
-      fieldId: boysNetField10.id,
-      name: 'کلاس دهم شبکه ۱',
-      code: 'CLS-10-M1',
-      capacity: 30,
-      roomNumber: 'اتاق ۲۰۱',
-    },
-  });
 
   // 5.1 Seed Girls School (شعبه دخترانه)
   const girlsTenant = await prisma.tenant.upsert({
@@ -688,151 +429,40 @@ async function main() {
     where: {
       tenantId_name: {
         tenantId: girlsTenant.id,
-        name: '۱۴۰۴-۱۴۰۵',
+        name: '۱۴۰۵-۱۴۰۶',
       },
     },
     update: { isCurrent: true },
     create: {
       tenantId: girlsTenant.id,
-      name: '۱۴۰۴-۱۴۰۵',
-      startDate: new Date('2025-09-23T00:00:00.000Z'),
-      endDate: new Date('2026-06-20T00:00:00.000Z'),
+      name: '۱۴۰۵-۱۴۰۶',
+      startDate: new Date('2026-09-23T00:00:00.000Z'),
+      endDate: new Date('2027-06-20T00:00:00.000Z'),
       isCurrent: true,
     },
   });
 
-  // Girls Levels: دهم یازدهم دوازدهم
-  const girlsGrade10 = await prisma.educationalLevel.upsert({
-    where: { tenantId_code: { tenantId: girlsTenant.id, code: 'GRADE_10' } },
-    update: { name: 'دهم' },
-    create: {
-      tenantId: girlsTenant.id,
-      name: 'دهم',
-      code: 'GRADE_10',
-      orderIndex: 10,
-    },
-  });
-
-  const girlsGrade11 = await prisma.educationalLevel.upsert({
-    where: { tenantId_code: { tenantId: girlsTenant.id, code: 'GRADE_11' } },
-    update: { name: 'یازدهم' },
-    create: {
-      tenantId: girlsTenant.id,
-      name: 'یازدهم',
-      code: 'GRADE_11',
-      orderIndex: 11,
-    },
-  });
-
-  const girlsGrade12 = await prisma.educationalLevel.upsert({
-    where: { tenantId_code: { tenantId: girlsTenant.id, code: 'GRADE_12' } },
-    update: { name: 'دوازدهم' },
-    create: {
-      tenantId: girlsTenant.id,
-      name: 'دوازدهم',
-      code: 'GRADE_12',
-      orderIndex: 12,
-    },
-  });
-
-  // Girls Field: شبکه و نرم‌افزار رایانه
-  const girlsNet10 = await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: girlsTenant.id, levelId: girlsGrade10.id, name: 'شبکه و نرم‌افزار رایانه' } },
-    update: { code: 'GIRLS_NET_10' },
-    create: {
-      tenantId: girlsTenant.id,
-      levelId: girlsGrade10.id,
-      name: 'شبکه و نرم‌افزار رایانه',
-      code: 'GIRLS_NET_10',
-    },
-  });
-
-  await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: girlsTenant.id, levelId: girlsGrade11.id, name: 'شبکه و نرم‌افزار رایانه' } },
-    update: { code: 'GIRLS_NET_11' },
-    create: {
-      tenantId: girlsTenant.id,
-      levelId: girlsGrade11.id,
-      name: 'شبکه و نرم‌افزار رایانه',
-      code: 'GIRLS_NET_11',
-    },
-  });
-
-  await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: girlsTenant.id, levelId: girlsGrade12.id, name: 'شبکه و نرم‌افزار رایانه' } },
-    update: { code: 'GIRLS_NET_12' },
-    create: {
-      tenantId: girlsTenant.id,
-      levelId: girlsGrade12.id,
-      name: 'شبکه و نرم‌افزار رایانه',
-      code: 'GIRLS_NET_12',
-    },
-  });
-
-  // Classroom for Girls
-  await prisma.classroom.upsert({
+  await prisma.term.upsert({
     where: {
-      tenantId_academicYearId_code: {
-        tenantId: girlsTenant.id,
+      academicYearId_name: {
         academicYearId: girlsAcademicYear.id,
-        code: 'CLS-10-G-NET',
+        name: 'نیم‌سال اول',
       },
     },
-    update: {},
+    update: { isCurrent: true },
     create: {
       tenantId: girlsTenant.id,
       academicYearId: girlsAcademicYear.id,
-      levelId: girlsGrade10.id,
-      fieldId: girlsNet10.id,
-      name: 'کلاس دهم شبکه دختران',
-      code: 'CLS-10-G-NET',
-      capacity: 25,
-      roomNumber: 'اتاق ۱۰۱',
+      name: 'نیم‌سال اول',
+      startDate: new Date('2026-09-23T00:00:00.000Z'),
+      endDate: new Date('2027-01-20T00:00:00.000Z'),
+      isCurrent: true,
     },
   });
 
-  // Lessons for Girls
-  await prisma.lesson.upsert({
-    where: {
-      tenantId_code: {
-        tenantId: girlsTenant.id,
-        code: 'G-NET-TECH-10',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: girlsTenant.id,
-      levelId: girlsGrade10.id,
-      fieldId: girlsNet10.id,
-      name: 'دانش فنی پایه شبکه و نرم‌افزار',
-      code: 'G-NET-TECH-10',
-      unitCount: 3,
-      type: 'SPECIALIZED',
-    },
-  });
-
-  await prisma.lesson.upsert({
-    where: {
-      tenantId_code: {
-        tenantId: girlsTenant.id,
-        code: 'G-FA-10',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: girlsTenant.id,
-      levelId: girlsGrade10.id,
-      name: 'فارسی و نگارش ۱',
-      code: 'G-FA-10',
-      unitCount: 2,
-      type: 'GENERAL',
-    },
-  });
-
-  // 6. Seed Teacher & Student & Parent with Links
+  // 6. Seed Teacher
   const defaultPass = await argon2.hash('RokadPass2026!');
 
-  // Teacher
   const teacherUser = await prisma.user.upsert({
     where: {
       tenantId_phone: {
@@ -853,7 +483,7 @@ async function main() {
     },
   });
 
-  const teacherProfile = await prisma.teacherProfile.upsert({
+  await prisma.teacherProfile.upsert({
     where: { userId: teacherUser.id },
     update: {},
     create: {
@@ -862,37 +492,6 @@ async function main() {
       speciality: 'ریاضیات و حسابان پیشرفته',
       degree: 'دکتری ریاضی کاربردی',
       employmentType: 'FULL_TIME',
-    },
-  });
-
-  // Assign lessons to Dr. Kazemi (Calculus & Physics)
-  await prisma.teacherLesson.upsert({
-    where: {
-      teacherId_lessonId: {
-        teacherId: teacherProfile.id,
-        lessonId: calculusLesson.id,
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      teacherId: teacherProfile.id,
-      lessonId: calculusLesson.id,
-    },
-  });
-
-  await prisma.teacherLesson.upsert({
-    where: {
-      teacherId_lessonId: {
-        teacherId: teacherProfile.id,
-        lessonId: physicsLesson.id,
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      teacherId: teacherProfile.id,
-      lessonId: physicsLesson.id,
     },
   });
   // 7. Seed School Profiles
