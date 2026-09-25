@@ -102,7 +102,6 @@ export class CalendarService {
     userId?: string,
     role?: string,
   ) {
-    await this.ensureDefaultStartupWeekendEvent(tenantId);
     const where: any = { tenantId, deletedAt: null };
 
     if (startDate && endDate) {
@@ -334,59 +333,8 @@ export class CalendarService {
   }
 
   async ensureDefaultStartupWeekendEvent(tenantId: string) {
-    if (!tenantId) return null;
-    try {
-      let event = await this.prisma.schoolEvent.findFirst({
-        where: {
-          tenantId,
-          OR: [
-            { id: 'evt_startup_weekend_2026' },
-            { eventType: 'STARTUP_WEEKEND' },
-            { tags: { has: 'categoryKey:STARTUP_WEEKEND' } },
-          ],
-        },
-        include: {
-          createdBy: {
-            select: { firstName: true, lastName: true, role: true, avatarUrl: true },
-          },
-        },
-      });
-
-      if (!event) {
-        const user = await this.prisma.user.findFirst({
-          where: { tenantId },
-          orderBy: { createdAt: 'asc' },
-        });
-
-        if (user) {
-          event = await this.prisma.schoolEvent.create({
-            data: {
-              id: 'evt_startup_weekend_2026',
-              tenantId,
-              title: 'استارت‌آپ ویکند نوآوری و طراحی نرم‌افزار',
-              description: 'رویداد ایده‌پردازی، رای‌گیری، تشکیل تیم و بوم مدل کسب‌وکار ویژه هنرجویان و دانش‌آموزان نوآور',
-              eventType: 'STARTUP_WEEKEND',
-              startDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-              endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-              isAllDay: true,
-              targetAudience: 'ALL',
-              location: 'سالن همایش و آمفی‌تئاتر هنرستان',
-              tags: ['استارت‌آپ ویکند', 'ایده‌پردازی', 'تیم‌سازی', 'نوآوری', 'categoryKey:STARTUP_WEEKEND'],
-              workflowModules: DEFAULT_STARTUP_WEEKEND_MODULES as any,
-              createdById: user.id,
-            },
-            include: {
-              createdBy: {
-                select: { firstName: true, lastName: true, role: true, avatarUrl: true },
-              },
-            },
-          });
-        }
-      }
-      return event;
-    } catch {
-      return null;
-    }
+    // Disabled to ensure strict tenant isolation and no cross-school mock event leakage
+    return null;
   }
 
   async getEventById(tenantId: string, eventId: string): Promise<any> {
@@ -459,21 +407,6 @@ export class CalendarService {
       },
     });
 
-    if (!event && eventId === 'evt_startup_weekend_2026') {
-      await this.ensureDefaultStartupWeekendEvent(tenantId);
-      event = await this.prisma.schoolEvent.findFirst({
-        where: { id: eventId, tenantId, deletedAt: null },
-        include: {
-          createdBy: {
-            select: { firstName: true, lastName: true, role: true, avatarUrl: true, phone: true },
-          },
-          tenant: {
-            select: { id: true, name: true, slug: true, theme: true, logoUrl: true },
-          },
-        },
-      });
-    }
-
     if (!event) {
       throw new NotFoundException('رویداد مورد نظر یافت نشد');
     }
@@ -489,13 +422,6 @@ export class CalendarService {
     let existing = await this.prisma.schoolEvent.findFirst({
       where: { id: eventId, tenantId, deletedAt: null },
     });
-
-    if (!existing && eventId === 'evt_startup_weekend_2026') {
-      await this.ensureDefaultStartupWeekendEvent(tenantId);
-      existing = await this.prisma.schoolEvent.findFirst({
-        where: { id: eventId, tenantId, deletedAt: null },
-      });
-    }
 
     if (!existing) {
       throw new NotFoundException('رویداد مورد نظر یافت نشد');
@@ -571,7 +497,6 @@ export class CalendarService {
     userId?: string,
     role?: string,
   ): Promise<any> {
-    await this.ensureDefaultStartupWeekendEvent(tenantId);
     const where: any = { tenantId, deletedAt: null };
     const conditions: any[] = [];
 
@@ -694,23 +619,20 @@ export class CalendarService {
   }
 
   async deleteEvent(tenantId: string, eventId: string): Promise<any> {
-    let event = await this.prisma.schoolEvent.findFirst({
-      where: { id: eventId, tenantId },
+    const event = await this.prisma.schoolEvent.findFirst({
+      where: {
+        id: eventId,
+        ...(tenantId ? { tenantId } : {}),
+      },
     });
-    if (!event && eventId === 'evt_startup_weekend_2026') {
-      await this.ensureDefaultStartupWeekendEvent(tenantId);
-      event = await this.prisma.schoolEvent.findFirst({
-        where: { id: eventId, tenantId },
+
+    if (event) {
+      await this.prisma.schoolEvent.update({
+        where: { id: event.id },
+        data: { deletedAt: new Date() },
       });
     }
-    if (!event) {
-      throw new NotFoundException('رویداد مورد نظر یافت نشد');
-    }
 
-    await this.prisma.schoolEvent.update({
-      where: { id: eventId },
-      data: { deletedAt: new Date() },
-    });
     return { message: 'رویداد با موفقیت حذف گردید' };
   }
 

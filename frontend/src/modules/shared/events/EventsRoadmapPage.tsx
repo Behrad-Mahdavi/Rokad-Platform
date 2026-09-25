@@ -51,7 +51,6 @@ import {
   Check,
   ArrowUp,
 } from 'lucide-react';
-import { INITIAL_SAMPLE_EVENTS } from './constants/sample-events';
 import {
   EVENT_MODULE_LIST,
   renumberWorkflowModules,
@@ -398,48 +397,19 @@ export const EventsRoadmapPage: React.FC = () => {
         );
       });
 
-      const hasStartup = eventsOnly.some(
-        (e: any) => e.eventType === 'STARTUP_WEEKEND' || e.id === 'evt_startup_weekend_2026'
-      );
-      let combined = eventsOnly;
-      if (!hasStartup) {
-        let startupEventToInclude = INITIAL_SAMPLE_EVENTS.find((s) => s.id === 'evt_startup_weekend_2026');
-        try {
-          const cached = localStorage.getItem('rokad_calendar_events');
-          if (cached) {
-            const parsed = JSON.parse(cached);
-            const foundCached = Array.isArray(parsed) ? parsed.find((p: any) => p.id === 'evt_startup_weekend_2026' || p.eventType === 'STARTUP_WEEKEND') : null;
-            if (foundCached) startupEventToInclude = foundCached;
-          }
-        } catch { }
-        combined = startupEventToInclude ? [startupEventToInclude, ...eventsOnly] : [...INITIAL_SAMPLE_EVENTS, ...eventsOnly];
-      }
-      setEvents(combined);
-      try {
-        localStorage.setItem('rokad_calendar_events', JSON.stringify(combined));
-      } catch { }
+      setEvents(eventsOnly);
     } catch (err) {
       console.error('Failed to load roadmap events', err);
-      try {
-        const cached = localStorage.getItem('rokad_calendar_events');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const hasStartup = parsed.some(
-              (e: any) => e.eventType === 'STARTUP_WEEKEND' || e.id === 'evt_startup_weekend_2026'
-            );
-            setEvents(hasStartup ? parsed : [...INITIAL_SAMPLE_EVENTS, ...parsed]);
-            return;
-          }
-        }
-      } catch { }
-      setEvents(INITIAL_SAMPLE_EVENTS);
+      setEvents([]);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
+    try {
+      localStorage.removeItem('rokad_calendar_events');
+    } catch {}
     fetchEvents();
   }, []);
 

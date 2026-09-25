@@ -51,7 +51,7 @@ import {
   ExternalLink,
   Image as ImageIcon,
 } from 'lucide-react';
-import { SchoolEventItem, INITIAL_SAMPLE_EVENTS, EventCategoryItem, hydrateEvent, displayTags } from './constants/sample-events';
+import { SchoolEventItem, EventCategoryItem, hydrateEvent, displayTags } from './constants/sample-events';
 import {
   EventCoverCropModal,
   EVENT_COVER_SPEC_LABEL,
@@ -187,24 +187,8 @@ export const EventSinglePage: React.FC = () => {
   const currentUser = useAuthStore((s) => s.user);
   const canManageEvents = isEventManagerRole(currentUser?.role);
 
-  const [event, setEvent] = useState<SchoolEventItem | null>(() => {
-    if (!id) return null;
-    try {
-      const cached = localStorage.getItem('rokad_calendar_events');
-      let allEvents: SchoolEventItem[] = INITIAL_SAMPLE_EVENTS;
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          allEvents = parsed;
-        }
-      }
-      const found = allEvents.find((e) => e.id === id);
-      return found ? hydrateEvent(found) : null;
-    } catch {
-      return null;
-    }
-  });
-  const [isLoading, setIsLoading] = useState(() => !event);
+  const [event, setEvent] = useState<SchoolEventItem | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState<'WORKFLOW' | 'OVERVIEW'>('OVERVIEW');
   const [customCategories, setCustomCategories] = useState<EventCategoryItem[]>([]);
@@ -345,40 +329,11 @@ export const EventSinglePage: React.FC = () => {
         } else {
           setEvent(loaded);
         }
-        try {
-          const cached = localStorage.getItem('rokad_calendar_events');
-          if (cached) {
-            const parsed = JSON.parse(cached);
-            if (Array.isArray(parsed)) {
-              const updated = parsed.map((item: any) => item.id === loaded.id ? loaded : item);
-              if (!updated.some((item: any) => item.id === loaded.id)) updated.push(loaded);
-              localStorage.setItem('rokad_calendar_events', JSON.stringify(updated));
-            }
-          }
-        } catch {}
         return;
       }
+      setEvent(null);
     } catch (err) {
-      // Gracefully load from local storage or default sample events
-    }
-
-    try {
-      const cached = localStorage.getItem('rokad_calendar_events');
-      let allEvents: SchoolEventItem[] = INITIAL_SAMPLE_EVENTS;
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          allEvents = parsed;
-        }
-      }
-      const found = allEvents.find((e) => e.id === id);
-      if (found && !canViewEventAudience(found.targetAudience, currentUser?.role)) {
-        setEvent(null);
-      } else {
-        setEvent(found ? hydrateEvent(found) : null);
-      }
-    } catch (e) {
-      console.error('Failed to load fallback event', e);
+      setEvent(null);
     } finally {
       setIsLoading(false);
     }
