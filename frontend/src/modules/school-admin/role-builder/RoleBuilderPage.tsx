@@ -316,7 +316,7 @@ export const RoleBuilderPage: React.FC = () => {
       {/* Warning Modal when Role has Assigned Members and cannot be deleted */}
       {roleToDelete &&
         createPortal(
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in">
             <div className="bg-white dark:bg-[#1E293B] rounded-2xl w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-800 p-5 space-y-4">
               <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400">
                 <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40">

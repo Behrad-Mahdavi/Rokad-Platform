@@ -11,6 +11,7 @@ interface ModalProps {
   description?: string;
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
+  hideHeaderBorder?: boolean;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -20,6 +21,7 @@ export const Modal: React.FC<ModalProps> = ({
   description,
   children,
   maxWidth = 'lg',
+  hideHeaderBorder = false,
 }) => {
   useScrollLock(isOpen);
 
@@ -50,6 +52,11 @@ export const Modal: React.FC<ModalProps> = ({
   const modalElement = (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 overscroll-contain"
+      onWheel={(e) => {
+        if (e.target === e.currentTarget) {
+          e.preventDefault();
+        }
+      }}
       onTouchMove={(e) => {
         if (e.target === e.currentTarget) {
           e.preventDefault();
@@ -58,7 +65,7 @@ export const Modal: React.FC<ModalProps> = ({
     >
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
+        className="fixed inset-0 bg-black/60 transition-opacity duration-200"
         onClick={onClose}
         onWheel={(e) => e.preventDefault()}
         onTouchMove={(e) => e.preventDefault()}
@@ -73,7 +80,13 @@ export const Modal: React.FC<ModalProps> = ({
         {/* Mobile Drag Indicator Pill */}
         <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-3 sm:hidden shrink-0" />
 
-        <div className="flex items-center justify-between pb-3.5 border-b border-gray-100 dark:border-gray-800 mb-4">
+        <div
+          className={`flex items-center justify-between ${
+            hideHeaderBorder
+              ? 'mb-2'
+              : 'pb-3.5 border-b border-gray-100 dark:border-gray-800 mb-4'
+          }`}
+        >
           <div className="text-right min-w-0 pr-1">
             <h3 className="text-base sm:text-lg font-black text-sec dark:text-white leading-snug truncate">
               {title}

@@ -1573,7 +1573,7 @@ export const AttendancePage: React.FC = () => {
           7. STUDENT EVALUATION & TRACK RECORD BOTTOM SHEET / MODAL
       ───────────────────────────────────────────────────────────── */}
       {evaluationModalStudent && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-white dark:bg-card border-t-3 sm:border-3 border-black dark:border-white/20 rounded-t-3xl sm:rounded-3xl p-4 sm:p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-[8px_8px_0px_#000] space-y-4 animate-in slide-in-from-bottom duration-200">
             
             {/* Modal Header */}

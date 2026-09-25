@@ -1021,7 +1021,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
           )}
       {/* ================= FINISH POLL & SELECT TOP N WINNERS MODAL ================= */}
       {isFinishModalOpen && porscadPoll && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-zinc-950/70 p-0 sm:p-4 backdrop-blur-sm overflow-y-auto overscroll-contain">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-zinc-950/70 p-0 sm:p-4 overflow-y-auto overscroll-contain">
           <div className="w-full max-w-xl rounded-t-3xl sm:rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#151C28] p-5 sm:p-6 shadow-xl space-y-5 animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150 max-h-[88vh] overflow-y-auto overscroll-contain pb-[max(1.25rem,env(safe-area-inset-bottom))]">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800/80 pb-4">
               <div className="flex items-center gap-2 min-w-0">

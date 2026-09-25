@@ -141,7 +141,8 @@
   }
 
   html,
-  body {
+  body,
+  main {
     font-family: 'IRANSansXFaNum', 'IRANSansX', sans-serif !important;
     background-color: var(--surface-sunken);
     color: var(--text-normal);
@@ -150,6 +151,7 @@
     min-height: 100vh;
     overflow-x: hidden;
     max-width: 100vw;
+    scrollbar-gutter: stable;
     -webkit-font-smoothing: antialiased;
     -webkit-tap-highlight-color: transparent;
   }
@@ -755,14 +757,7 @@
 
   html.modal-scroll-locked,
   body.modal-scroll-locked {
-    overflow: hidden !important;
     overscroll-behavior: contain !important;
-  }
-
-  body.modal-scroll-locked main,
-  body.modal-scroll-locked #root,
-  body.modal-scroll-locked [data-scroll-container] {
-    overflow: hidden !important;
   }
 
   @keyframes sheetSlideUp {

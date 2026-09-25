@@ -83,6 +83,8 @@ export class CalendarController {
   @Get('events')
   @ApiOperation({ summary: 'استعلام رویدادهای تقویم در یک بازه زمانی یا رودمپ' })
   async listEvents(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') role: string,
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentTenant('id') tenantId: string,
     @Query('startDate') startDate?: string,
@@ -98,6 +100,8 @@ export class CalendarController {
         startDate,
         endDate,
         audience,
+        userId,
+        role,
       );
     }
     return this.calendarService.listRoadmapEvents(
@@ -105,6 +109,8 @@ export class CalendarController {
       eventType,
       audience,
       search,
+      userId,
+      role,
     );
   }
 

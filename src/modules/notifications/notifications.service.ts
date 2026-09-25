@@ -39,6 +39,10 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
   private reminderTimer: ReturnType<typeof setInterval> | null = null;
   private readonly remindedHomeworkSet = new Set<string>();
 
+  // Background timer for 24-hour coaching session reminders
+  private coachingReminderTimer: ReturnType<typeof setInterval> | null = null;
+  private readonly remindedCoachingSet = new Set<string>();
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
@@ -63,12 +67,19 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
 
     // Start background 24-hour homework reminder runner
     this.scheduleHomeworkReminders();
+
+    // Start background 24-hour coaching session reminder runner
+    this.scheduleCoachingReminders();
   }
 
   onModuleDestroy() {
     if (this.reminderTimer) {
       clearInterval(this.reminderTimer);
       this.reminderTimer = null;
+    }
+    if (this.coachingReminderTimer) {
+      clearInterval(this.coachingReminderTimer);
+      this.coachingReminderTimer = null;
     }
   }
 
@@ -171,6 +182,125 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       }
     } catch (err: any) {
       this.logger.error(`Error in checkAndSendHomeworkReminders: ${err.message}`);
+    }
+  }
+
+  /**
+   * Schedule periodic checks for coaching sessions due within 24 hours
+   */
+  private scheduleCoachingReminders() {
+    // Initial run after 20 seconds
+    setTimeout(() => {
+      this.checkAndSendCoachingReminders().catch((err) => {
+        this.logger.error(`Initial coaching reminder check failed: ${err.message}`);
+      });
+    }, 20000);
+
+    // Periodic run every 30 minutes
+    this.coachingReminderTimer = setInterval(() => {
+      this.checkAndSendCoachingReminders().catch((err) => {
+        this.logger.error(`Periodic coaching reminder check failed: ${err.message}`);
+      });
+    }, 30 * 60 * 1000);
+  }
+
+  /**
+   * Scan active coaching sessions due in next 24h and push reminder to students and coaches
+   */
+  async checkAndSendCoachingReminders() {
+    try {
+      const now = new Date();
+      const in24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+      const upcomingSessions = await this.prisma.coachingSession.findMany({
+        where: {
+          scheduledDate: {
+            gt: now,
+            lte: in24Hours,
+          },
+          attendanceStatus: 'PENDING',
+        },
+        include: {
+          coach: { select: { id: true, firstName: true, lastName: true } },
+          student: { select: { id: true, firstName: true, lastName: true } },
+        },
+      });
+
+      if (!upcomingSessions.length) return;
+
+      const redisClient = this.redis.getClient();
+
+      for (const cs of upcomingSessions) {
+        const timeStr = cs.scheduledDate.toLocaleTimeString('fa-IR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+        const dateStr = cs.scheduledDate.toLocaleDateString('fa-IR');
+
+        // 1. Remind Student
+        if (cs.studentId) {
+          const studentReminderKey = `coaching:reminded:24h:${cs.id}:${cs.studentId}`;
+          let studentAlreadyReminded = false;
+
+          if (redisClient && redisClient.status === 'ready') {
+            const exists = await redisClient.get(studentReminderKey);
+            studentAlreadyReminded = !!exists;
+          } else {
+            studentAlreadyReminded = this.remindedCoachingSet.has(studentReminderKey);
+          }
+
+          if (!studentAlreadyReminded) {
+            const coachName = `${cs.coach?.firstName || ''} ${cs.coach?.lastName || ''}`.trim();
+            await this.sendPushToUser(cs.studentId, {
+              title: `⏰ یادآوری جلسه کوچینگ`,
+              body: `جلسه بعدی شما با کوچ «${coachName}» در تاریخ ${dateStr} ساعت ${timeStr} برگزار خواهد شد.`,
+              url: `/app/coaching`,
+              tag: `coaching-remind-${cs.id}`,
+            }).catch((err) => {
+              this.logger.warn(`Push to student ${cs.studentId} failed: ${err.message}`);
+            });
+
+            if (redisClient && redisClient.status === 'ready') {
+              await redisClient.set(studentReminderKey, '1', 'EX', 48 * 3600);
+            } else {
+              this.remindedCoachingSet.add(studentReminderKey);
+            }
+          }
+        }
+
+        // 2. Remind Coach
+        if (cs.coachId) {
+          const coachReminderKey = `coaching:reminded:24h:${cs.id}:${cs.coachId}`;
+          let coachAlreadyReminded = false;
+
+          if (redisClient && redisClient.status === 'ready') {
+            const exists = await redisClient.get(coachReminderKey);
+            coachAlreadyReminded = !!exists;
+          } else {
+            coachAlreadyReminded = this.remindedCoachingSet.has(coachReminderKey);
+          }
+
+          if (!coachAlreadyReminded) {
+            const studentName = `${cs.student?.firstName || ''} ${cs.student?.lastName || ''}`.trim();
+            await this.sendPushToUser(cs.coachId, {
+              title: `⏰ یادآوری جلسه کوچینگ`,
+              body: `جلسه کوچینگ شما با دانش‌آموز «${studentName}» در تاریخ ${dateStr} ساعت ${timeStr} برگزار خواهد شد.`,
+              url: `/app/coaching`,
+              tag: `coaching-remind-${cs.id}`,
+            }).catch((err) => {
+              this.logger.warn(`Push to coach ${cs.coachId} failed: ${err.message}`);
+            });
+
+            if (redisClient && redisClient.status === 'ready') {
+              await redisClient.set(coachReminderKey, '1', 'EX', 48 * 3600);
+            } else {
+              this.remindedCoachingSet.add(coachReminderKey);
+            }
+          }
+        }
+      }
+    } catch (err: any) {
+      this.logger.error(`Error in checkAndSendCoachingReminders: ${err.message}`);
     }
   }
 
@@ -554,6 +684,64 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
             });
           });
         }
+        // 5. Upcoming Coaching Sessions for Student
+        const upcomingCoaching = await this.prisma.coachingSession.findMany({
+          where: {
+            tenantId,
+            studentId: user.id,
+            scheduledDate: { gte: new Date() },
+          },
+          include: { coach: { select: { firstName: true, lastName: true } } },
+          orderBy: { scheduledDate: 'asc' },
+          take: 2,
+        });
+
+        upcomingCoaching.forEach((cs) => {
+          const coachName = `${cs.coach?.firstName || ''} ${cs.coach?.lastName || ''}`.trim();
+          const dateStr = cs.scheduledDate.toLocaleDateString('fa-IR');
+          const timeStr = cs.scheduledDate.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+          notifications.push({
+            id: `coaching-session-${cs.id}`,
+            title: '⏰ یادآوری جلسه کوچینگ',
+            desc: `جلسه بعدی شما با کوچ «${coachName}» در تاریخ ${dateStr} ساعت ${timeStr} برنامه‌ریزی شده است.`,
+            time: 'جلسه پیش‌رو',
+            read: readIds.has(`coaching-session-${cs.id}`),
+            type: 'COACHING',
+            badge: 'college',
+            targetUrl: '/app/coaching',
+            createdAt: cs.scheduledDate.toISOString(),
+          });
+        });
+
+        // 6. Responded Extra Requests for Student
+        const recentExtraRequests = await this.prisma.coachingExtraRequest.findMany({
+          where: {
+            tenantId,
+            studentId: user.id,
+            status: { in: ['APPROVED', 'REJECTED'] },
+            updatedAt: { gte: new Date(Date.now() - 7 * 86400000) },
+          },
+          include: { coach: { select: { firstName: true, lastName: true } } },
+          orderBy: { updatedAt: 'desc' },
+          take: 2,
+        });
+
+        recentExtraRequests.forEach((req) => {
+          const isApproved = req.status === 'APPROVED';
+          notifications.push({
+            id: `coaching-extra-status-${req.id}`,
+            title: isApproved ? '✅ تایید درخواست جلسه فوق‌العاده' : 'نتیجه درخواست جلسه فوق‌العاده',
+            desc: isApproved
+              ? `درخواست جلسه فوق‌العاده توسط کوچ تایید شد.${req.scheduledDate ? ` زمان جلسه: ${req.scheduledDate.toLocaleDateString('fa-IR')}` : ''}`
+              : `درخواست جلسه فوق‌العاده رد شد. پیام کوچ: ${req.coachResponse || 'عدم امکان برگزاری'}`,
+            time: isApproved ? 'تایید شد' : 'بررسی شد',
+            read: readIds.has(`coaching-extra-status-${req.id}`),
+            type: 'COACHING',
+            badge: isApproved ? 'success' : 'destructive',
+            targetUrl: '/app/coaching',
+            createdAt: req.updatedAt.toISOString(),
+          });
+        });
       }
     }
 
@@ -672,6 +860,62 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
           createdAt: mr.createdAt.toISOString(),
         });
       });
+      // Coaching notifications for Coaches
+      const coachLinksCount = await this.prisma.studentCoachLink.count({
+        where: { coachId: user.id, tenantId, status: 'ACTIVE' },
+      });
+      if (role === Role.COACH || coachLinksCount > 0) {
+        // Pending extra requests needing response
+        const pendingCoachRequests = await this.prisma.coachingExtraRequest.findMany({
+          where: { tenantId, coachId: user.id, status: 'PENDING' },
+          include: { student: { select: { firstName: true, lastName: true } } },
+          orderBy: { createdAt: 'desc' },
+          take: 3,
+        });
+
+        pendingCoachRequests.forEach((req) => {
+          notifications.push({
+            id: `coaching-req-${req.id}`,
+            title: 'درخواست جلسه فوق‌العاده کوچینگ',
+            desc: `دانش‌آموز «${req.student?.firstName || ''} ${req.student?.lastName || ''}» درخواست جلسه فوق‌العاده با موضوع «${req.reason}» ثبت نموده است.`,
+            time: 'نیازمند بررسی',
+            read: readIds.has(`coaching-req-${req.id}`),
+            type: 'COACHING',
+            badge: 'warning',
+            targetUrl: '/app/coaching',
+            createdAt: req.createdAt.toISOString(),
+          });
+        });
+
+        // Upcoming coaching sessions in next 48h
+        const upcomingCoachSessions = await this.prisma.coachingSession.findMany({
+          where: {
+            tenantId,
+            coachId: user.id,
+            scheduledDate: { gte: new Date() },
+          },
+          include: { student: { select: { firstName: true, lastName: true } } },
+          orderBy: { scheduledDate: 'asc' },
+          take: 3,
+        });
+
+        upcomingCoachSessions.forEach((cs) => {
+          const studentName = `${cs.student?.firstName || ''} ${cs.student?.lastName || ''}`.trim();
+          const dateStr = cs.scheduledDate.toLocaleDateString('fa-IR');
+          const timeStr = cs.scheduledDate.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+          notifications.push({
+            id: `coaching-coach-session-${cs.id}`,
+            title: '⏰ یادآوری جلسه کوچینگ با دانش‌آموز',
+            desc: `جلسه شما با «${studentName}» در تاریخ ${dateStr} ساعت ${timeStr} زمان‌بندی شده است.`,
+            time: 'جلسه پیش‌رو',
+            read: readIds.has(`coaching-coach-session-${cs.id}`),
+            type: 'COACHING',
+            badge: 'college',
+            targetUrl: '/app/coaching',
+            createdAt: cs.scheduledDate.toISOString(),
+          });
+        });
+      }
     } catch {
       // non-blocking
     }

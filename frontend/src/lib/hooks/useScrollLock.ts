@@ -11,14 +11,8 @@ export function lockScroll() {
     document.documentElement.classList.add('modal-scroll-locked');
     document.body.classList.add('modal-scroll-locked');
 
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overscrollBehavior = 'contain';
     document.body.style.overscrollBehavior = 'contain';
-
-    // قفل کردن تمام المان‌های اسکرول‌شونده چیدمان (مانند main)
-    document.querySelectorAll('main').forEach((el) => {
-      (el as HTMLElement).style.overflow = 'hidden';
-    });
   }
 }
 
@@ -31,14 +25,8 @@ export function unlockScroll() {
     document.documentElement.classList.remove('modal-scroll-locked');
     document.body.classList.remove('modal-scroll-locked');
 
-    document.documentElement.style.overflow = '';
-    document.body.style.overflow = '';
+    document.documentElement.style.overscrollBehavior = '';
     document.body.style.overscrollBehavior = '';
-
-    // بازگرداندن اسکرول کانتینرهای main
-    document.querySelectorAll('main').forEach((el) => {
-      (el as HTMLElement).style.overflow = '';
-    });
   }
 }
 

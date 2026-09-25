@@ -219,10 +219,10 @@ export const GradebookPage: React.FC = () => {
         const studentsArr = Array.isArray(rawStudents)
           ? rawStudents
           : Array.isArray(rawStudents?.students)
-          ? rawStudents.students
-          : Array.isArray(rawStudents?.enrollments)
-          ? rawStudents.enrollments
-          : [];
+            ? rawStudents.students
+            : Array.isArray(rawStudents?.enrollments)
+              ? rawStudents.enrollments
+              : [];
 
         const normalizedStudents: StudentItem[] = studentsArr.map((s: any) => {
           const profile = s.student || (s.user ? s : s);
@@ -605,11 +605,10 @@ export const GradebookPage: React.FC = () => {
                   key={cat.key}
                   type="button"
                   onClick={() => setLessonCategoryFilter(cat.key as any)}
-                  className={`py-1.5 px-3 rounded-lg transition-all text-center ${
-                    lessonCategoryFilter === cat.key
+                  className={`py-1.5 px-3 rounded-lg transition-all text-center ${lessonCategoryFilter === cat.key
                       ? 'bg-amber-400 text-black border border-black shadow-[1px_1px_0px_#000]'
                       : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                    }`}
                 >
                   {cat.label}
                 </button>
@@ -837,11 +836,10 @@ export const GradebookPage: React.FC = () => {
                       key={num}
                       type="button"
                       onClick={() => setSelectedPodmanNumber(num)}
-                      className={`py-1.5 px-3 rounded-xl text-xs font-black border-2 transition-all text-center ${
-                        selectedPodmanNumber === num
+                      className={`py-1.5 px-3 rounded-xl text-xs font-black border-2 transition-all text-center ${selectedPodmanNumber === num
                           ? 'bg-amber-400 text-black border-black shadow-[2px_2px_0px_#000] scale-105'
                           : 'bg-neutral-100 dark:bg-neutral-800 text-muted-foreground border-transparent hover:border-black/30'
-                      }`}
+                        }`}
                     >
                       پودمان {toPersianDigits(num)}
                     </button>
@@ -1015,11 +1013,10 @@ export const GradebookPage: React.FC = () => {
                                       }));
                                       setHasUnsavedChanges(true);
                                     }}
-                                    className={`py-1 px-1 rounded-lg border transition-all ${
-                                      podData.competencyScore === item.val
+                                    className={`py-1 px-1 rounded-lg border transition-all ${podData.competencyScore === item.val
                                         ? 'bg-sky-500 text-white border-black shadow-[1px_1px_0px_#000]'
                                         : 'bg-white dark:bg-neutral-800 text-muted-foreground border-neutral-300'
-                                    }`}
+                                      }`}
                                   >
                                     {item.label}
                                   </button>
@@ -1258,7 +1255,7 @@ export const GradebookPage: React.FC = () => {
           STEP 4: 360-DEGREE STUDENT DOSSIER MODAL (پرونده ۳۶۰ درجه عملکرد)
       ───────────────────────────────────────────────────────────────────── */}
       {dossierStudentId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-sm animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 animate-in fade-in">
           <div className="relative w-full max-w-3xl max-h-[90vh] bg-white dark:bg-card border-3 border-black rounded-3xl shadow-[6px_6px_0px_#000] overflow-hidden flex flex-col text-right" dir="rtl">
             {/* Modal Header */}
             <div className="p-4 sm:p-5 border-b-2 border-black bg-neutral-100 dark:bg-neutral-900 flex items-start justify-between gap-3">
@@ -1359,11 +1356,10 @@ export const GradebookPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setDossierActiveTab('ORAL')}
-                      className={`py-2 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                        dossierActiveTab === 'ORAL'
+                      className={`py-2 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${dossierActiveTab === 'ORAL'
                           ? 'bg-white dark:bg-card text-foreground border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
                           : 'text-muted-foreground hover:text-foreground'
-                      }`}
+                        }`}
                     >
                       <Award className="w-3.5 h-3.5 text-amber-500" />
                       پرسش کلاسی و جلسات
@@ -1372,11 +1368,10 @@ export const GradebookPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setDossierActiveTab('HOMEWORK')}
-                      className={`py-2 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                        dossierActiveTab === 'HOMEWORK'
+                      className={`py-2 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${dossierActiveTab === 'HOMEWORK'
                           ? 'bg-white dark:bg-card text-foreground border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
                           : 'text-muted-foreground hover:text-foreground'
-                      }`}
+                        }`}
                     >
                       <FileCheck className="w-3.5 h-3.5 text-sky-500" />
                       ارزشیابی تکالیف
@@ -1385,11 +1380,10 @@ export const GradebookPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setDossierActiveTab('ATTENDANCE')}
-                      className={`py-2 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                        dossierActiveTab === 'ATTENDANCE'
+                      className={`py-2 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${dossierActiveTab === 'ATTENDANCE'
                           ? 'bg-white dark:bg-card text-foreground border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
                           : 'text-muted-foreground hover:text-foreground'
-                      }`}
+                        }`}
                     >
                       <Clock className="w-3.5 h-3.5 text-emerald-500" />
                       حضور و غیاب و انضباط
@@ -1496,8 +1490,8 @@ export const GradebookPage: React.FC = () => {
                               sess.status === 'PRESENT'
                                 ? 'ecosystem'
                                 : sess.status === 'ABSENT'
-                                ? 'female'
-                                : 'college'
+                                  ? 'female'
+                                  : 'college'
                             }
                             className="text-[10px] px-2 py-0.5"
                           >

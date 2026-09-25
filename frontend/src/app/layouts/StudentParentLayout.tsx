@@ -14,7 +14,7 @@ export const StudentParentLayout: React.FC = () => {
       <Header />
       <div className="flex flex-1 relative">
         <Sidebar role={effectiveRole} />
-        <main className="flex-1 p-3 sm:p-5 md:p-6 pb-20 md:pb-8 max-w-7xl mx-auto w-full min-w-0 overflow-y-auto">
+        <main className="flex-1 p-3 sm:p-5 md:p-6 pb-20 md:pb-8 max-w-7xl mx-auto w-full min-w-0 overflow-y-auto [scrollbar-gutter:stable]">
           <Outlet />
         </main>
       </div>

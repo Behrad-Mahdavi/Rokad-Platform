@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateEventDto, UpdateEventDto } from './dto/create-event.dto';
+import { Role } from '../../common/constants';
 
 const VALID_PRISMA_EVENT_TYPES: string[] = [
   'ACADEMIC',
@@ -98,6 +99,8 @@ export class CalendarService {
     startDate?: string,
     endDate?: string,
     audience?: string,
+    userId?: string,
+    role?: string,
   ) {
     await this.ensureDefaultStartupWeekendEvent(tenantId);
     const where: any = { tenantId, deletedAt: null };
@@ -175,9 +178,121 @@ export class CalendarService {
       // Non-blocking fallback
     }
 
-    const allEvents = [...schoolEvents, ...homeworkEvents];
+    const coachingEvents = await this.fetchCoachingCalendarEvents(tenantId, {
+      startDate,
+      endDate,
+      userId,
+      role,
+    });
+
+    const allEvents = [...schoolEvents, ...homeworkEvents, ...coachingEvents];
     allEvents.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     return allEvents;
+  }
+
+  private async fetchCoachingCalendarEvents(
+    tenantId: string,
+    filter: {
+      startDate?: string;
+      endDate?: string;
+      search?: string;
+      userId?: string;
+      role?: string;
+    },
+  ): Promise<any[]> {
+    try {
+      const csWhere: any = { tenantId };
+      if (filter.startDate && filter.endDate) {
+        csWhere.scheduledDate = {
+          gte: new Date(filter.startDate),
+          lte: new Date(filter.endDate),
+        };
+      }
+
+      if (filter.search) {
+        csWhere.OR = [
+          { coachNotes: { contains: filter.search, mode: 'insensitive' } },
+          { coach: { firstName: { contains: filter.search, mode: 'insensitive' } } },
+          { coach: { lastName: { contains: filter.search, mode: 'insensitive' } } },
+          { student: { firstName: { contains: filter.search, mode: 'insensitive' } } },
+          { student: { lastName: { contains: filter.search, mode: 'insensitive' } } },
+        ];
+      }
+
+      if (filter.role === Role.STUDENT && filter.userId) {
+        csWhere.studentId = filter.userId;
+      } else if (filter.role === Role.COACH && filter.userId) {
+        csWhere.coachId = filter.userId;
+      } else if (filter.role === Role.PARENT && filter.userId) {
+        const parent = await this.prisma.parentProfile.findFirst({
+          where: { userId: filter.userId, tenantId },
+          include: { studentLinks: { include: { student: true } } },
+        });
+        const childUserIds = parent?.studentLinks?.map((l) => l.student?.userId).filter(Boolean) || [];
+        if (childUserIds.length > 0) {
+          csWhere.studentId = { in: childUserIds };
+        } else {
+          return [];
+        }
+      } else if (
+        filter.role !== Role.SUPER_ADMIN &&
+        filter.role !== Role.SCHOOL_ADMIN &&
+        filter.role !== Role.STAFF &&
+        filter.userId
+      ) {
+        csWhere.OR = [{ studentId: filter.userId }, { coachId: filter.userId }];
+      }
+
+      const sessions = await this.prisma.coachingSession.findMany({
+        where: csWhere,
+        include: {
+          coach: { select: { firstName: true, lastName: true, avatarUrl: true } },
+          student: { select: { firstName: true, lastName: true, avatarUrl: true } },
+        },
+        orderBy: { scheduledDate: 'asc' },
+      });
+
+      return sessions.map((cs) => {
+        const end = new Date(cs.scheduledDate.getTime() + (cs.durationMinutes || 20) * 60 * 1000);
+        const partyName =
+          filter.role === Role.STUDENT
+            ? `کوچ ${cs.coach?.firstName || ''} ${cs.coach?.lastName || ''}`.trim()
+            : `دانش‌آموز ${cs.student?.firstName || ''} ${cs.student?.lastName || ''}`.trim();
+
+        return {
+          id: `coaching-${cs.id}`,
+          tenantId: cs.tenantId,
+          title: `جلسه کوچینگ: ${partyName}`,
+          description:
+            cs.coachNotes ||
+            (cs.sessionType === 'EXTRA' ? 'جلسه فوق‌العاده کوچینگ' : 'جلسه منظم کوچینگ'),
+          eventType: 'MEETING',
+          type: 'MEETING',
+          startDate: cs.scheduledDate,
+          endDate: end,
+          isAllDay: false,
+          targetAudience: 'ALL',
+          targetClassIds: [],
+          location: 'اتاق مشاوره و کوچینگ',
+          tags: ['COACHING', 'MEETING', `sessionType:${cs.sessionType}`],
+          coachingSessionId: cs.id,
+          sessionType: cs.sessionType,
+          durationMinutes: cs.durationMinutes,
+          attendanceStatus: cs.attendanceStatus,
+          createdBy: cs.coach
+            ? {
+                firstName: cs.coach.firstName,
+                lastName: cs.coach.lastName,
+                role: 'COACH',
+                avatarUrl: cs.coach.avatarUrl,
+              }
+            : undefined,
+          createdAt: cs.createdAt,
+        };
+      });
+    } catch {
+      return [];
+    }
   }
 
   async listAnnouncements(
@@ -453,6 +568,8 @@ export class CalendarService {
     eventType?: string,
     audience?: string,
     search?: string,
+    userId?: string,
+    role?: string,
   ): Promise<any> {
     await this.ensureDefaultStartupWeekendEvent(tenantId);
     const where: any = { tenantId, deletedAt: null };
@@ -562,7 +679,16 @@ export class CalendarService {
       }
     }
 
-    const allEvents = [...schoolEvents, ...homeworkEvents];
+    let coachingEvents: any[] = [];
+    if (!eventType || eventType === 'ALL' || eventType === 'MEETING' || eventType === 'COACHING') {
+      coachingEvents = await this.fetchCoachingCalendarEvents(tenantId, {
+        search,
+        userId,
+        role,
+      });
+    }
+
+    const allEvents = [...schoolEvents, ...homeworkEvents, ...coachingEvents];
     allEvents.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     return allEvents;
   }

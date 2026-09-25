@@ -531,7 +531,7 @@ export const KaLeaderboard: React.FC = () => {
       {/* ========================================================================= */}
       {selectedStudentForModal && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm transition-opacity duration-200"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 transition-opacity duration-200"
           onClick={() => setSelectedStudentForModal(null)}
           role="presentation"
         >

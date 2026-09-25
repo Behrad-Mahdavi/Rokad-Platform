@@ -64,7 +64,7 @@ export const OverrideToggleModal: React.FC<Props> = ({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in">
       <div className="bg-white dark:bg-[#1E293B] rounded-2xl w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-800 p-5 space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">

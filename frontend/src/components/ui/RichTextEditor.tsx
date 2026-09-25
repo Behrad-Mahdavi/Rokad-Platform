@@ -524,7 +524,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
       {/* Link Insertion Modal Dialog */}
       {showLinkModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 animate-in fade-in">
           <div className="bg-white dark:bg-[#1A2230] border-[1.5px] border-primary-dark/30 dark:border-gray-700 rounded-2xl shadow-xl w-full max-w-sm p-4 space-y-3.5">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-2.5">
               <h4 className="text-xs font-black text-ink-darker dark:text-white flex items-center gap-1.5">
