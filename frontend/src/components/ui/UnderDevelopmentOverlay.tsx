@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Construction, Eye } from 'lucide-react';
+import { ArrowRight, Construction } from 'lucide-react';
 import { Button } from './Button';
 
 interface UnderDevelopmentOverlayProps {
@@ -10,7 +10,6 @@ interface UnderDevelopmentOverlayProps {
   badgeText?: string;
   icon?: React.ComponentType<{ className?: string }>;
   accentColor?: 'primary' | 'amber' | 'purple' | 'emerald';
-  allowPreview?: boolean;
   children: React.ReactNode;
 }
 
@@ -21,11 +20,9 @@ export const UnderDevelopmentOverlay: React.FC<UnderDevelopmentOverlayProps> = (
   badgeText = 'نسخه آزمایشی / در حال توسعه',
   icon: Icon = Construction,
   accentColor = 'amber',
-  allowPreview = true,
   children,
 }) => {
   const navigate = useNavigate();
-  const [isPreviewActive, setIsPreviewActive] = useState(false);
 
   const getAccentStyles = () => {
     switch (accentColor) {
@@ -63,33 +60,11 @@ export const UnderDevelopmentOverlay: React.FC<UnderDevelopmentOverlayProps> = (
 
   const accents = getAccentStyles();
 
-  if (isPreviewActive) {
-    return (
-      <div className="relative">
-        <div className="sticky top-2 z-50 mx-auto max-w-md px-4 mb-4">
-          <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-amber-500/90 text-white backdrop-blur-md shadow-lg border border-amber-400 text-xs font-bold">
-            <div className="flex items-center gap-2">
-              <Eye className="w-4 h-4" />
-              <span>حالت پیش‌نمایش محتوا فعال است</span>
-            </div>
-            <button
-              onClick={() => setIsPreviewActive(false)}
-              className="px-2.5 py-1 rounded-xl bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer text-xs"
-            >
-              فعال‌سازی پرده محافظ
-            </button>
-          </div>
-        </div>
-        {children}
-      </div>
-    );
-  }
-
   return (
     <div className="relative min-h-[calc(100vh-6rem)] w-full overflow-hidden">
       {/* Blurred background preview */}
       <div
-        className="filter blur-[7px] md:blur-[10px] pointer-events-none select-none opacity-40 dark:opacity-25 transition-all duration-300"
+        className="filter blur-[8px] md:blur-[12px] pointer-events-none select-none opacity-40 dark:opacity-20 transition-all duration-300"
         aria-hidden="true"
         tabIndex={-1}
       >
@@ -97,7 +72,7 @@ export const UnderDevelopmentOverlay: React.FC<UnderDevelopmentOverlayProps> = (
       </div>
 
       {/* Clean Blur Overlay Layer */}
-      <div className="absolute inset-0 z-30 flex items-center justify-center p-4 sm:p-6 bg-slate-900/15 dark:bg-black/45 backdrop-blur-[4px]">
+      <div className="absolute inset-0 z-30 flex items-center justify-center p-4 sm:p-6 bg-slate-900/15 dark:bg-black/45 backdrop-blur-[5px]">
         {/* Glassmorphism Card */}
         <div className="w-full max-w-lg relative rounded-3xl p-6 sm:p-9 text-center bg-white/85 dark:bg-[#111827]/85 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
           {/* Subtle Ambient Top Glow */}
@@ -135,28 +110,16 @@ export const UnderDevelopmentOverlay: React.FC<UnderDevelopmentOverlayProps> = (
           </p>
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 relative">
+          <div className="flex items-center justify-center relative">
             <Button
               variant="primary"
               size="md"
               onClick={() => navigate('/app')}
-              className="w-full sm:w-auto h-10 px-5 text-xs sm:text-sm font-bold gap-2 rounded-xl shadow-[2px_2px_0_#438C83]"
+              className="w-full sm:w-auto h-10 px-6 text-xs sm:text-sm font-bold gap-2 rounded-xl shadow-[2px_2px_0_#438C83]"
             >
               <ArrowRight className="w-4 h-4 rotate-180" />
               <span>بازگشت به پیشخوان</span>
             </Button>
-
-            {allowPreview && (
-              <Button
-                variant="outline"
-                size="md"
-                onClick={() => setIsPreviewActive(true)}
-                className="w-full sm:w-auto h-10 px-4 text-xs font-bold gap-1.5 rounded-xl border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                <Eye className="w-3.5 h-3.5 text-muted-foreground" />
-                <span>مشاهده پیش‌نمایش</span>
-              </Button>
-            )}
           </div>
         </div>
       </div>
