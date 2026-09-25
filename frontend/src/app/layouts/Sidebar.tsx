@@ -39,6 +39,8 @@ import { CoinStackIcon } from '../../components/icons/CustomNavIcons';
 import { UserRole } from '../../types/auth';
 import { useSidebarStore } from '../../lib/ui/sidebar-store';
 import { useScrollLock } from '../../lib/hooks/useScrollLock';
+import { useCuriosityStore } from '../../lib/ui/curiosity-store';
+import { toPersianDigits } from '../../lib/utils';
 
 export interface NavItem {
   title: string;
@@ -294,12 +296,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
     </div>
   );
 
+  const recordCuriosityClick = useCuriosityStore((s) => s.recordClick);
+
   const renderFooterBanner = () => (
-    <div className="rounded-xl bg-gray-50 dark:bg-[#161D2A] p-2.5 border border-gray-200 dark:border-gray-800 text-center">
+    <div className="rounded-xl bg-gray-50 dark:bg-[#161D2A] p-2.5 border border-gray-200 dark:border-gray-800 text-center select-none">
       <div className="flex items-center justify-center space-x-1.5 space-x-reverse text-gray-600 dark:text-gray-300 font-bold text-xs">
         <img src="/logo.svg" alt="رکاد" className="h-4 w-4 rounded-md object-cover inline-block shrink-0" />
         <span>سامانه یکپارچه رکاد</span>
       </div>
+      <button
+        type="button"
+        onClick={recordCuriosityClick}
+        title="نسخه ۱.۰.۰"
+        className="mt-1 text-[10.5px] text-gray-400/90 dark:text-gray-500 font-mono hover:text-amber-500 dark:hover:text-amber-400 transition-colors cursor-pointer active:scale-95 inline-block"
+      >
+        نسخه {toPersianDigits('1.0.0')}
+      </button>
     </div>
   );
 

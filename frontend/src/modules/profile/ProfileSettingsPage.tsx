@@ -20,9 +20,11 @@ import {
 } from 'lucide-react';
 import { SecuritySection } from './components/SecuritySection';
 import { toPersianDigits } from '../../lib/utils';
+import { useCuriosityStore } from '../../lib/ui/curiosity-store';
 
 export const ProfileSettingsPage: React.FC = () => {
   const navigate = useNavigate();
+  const recordCuriosityClick = useCuriosityStore((s) => s.recordClick);
   const { user, logout } = useAuthStore();
   const { currentTenant } = useTenantStore();
 
@@ -322,9 +324,14 @@ export const ProfileSettingsPage: React.FC = () => {
 
       {/* App Version & Build Footer */}
       <div className="pt-6 pb-2 text-center select-none">
-        <p className="text-[11.5px] text-gray-400/80 dark:text-gray-500 font-medium tracking-wide">
-          سامانه هوشمند مدارس رُکاد • نسخه {toPersianDigits(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.7.14')}
-        </p>
+        <button
+          type="button"
+          onClick={recordCuriosityClick}
+          title="پاداش نسخه ۱.۰.۰"
+          className="text-[11.5px] text-gray-400/80 dark:text-gray-500 font-medium tracking-wide hover:text-amber-500 dark:hover:text-amber-400 transition-colors cursor-pointer active:scale-95 inline-block"
+        >
+          سامانه هوشمند مدارس رُکاد • نسخه {toPersianDigits(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0')}
+        </button>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { PwaInstallPrompt } from './components/pwa/PwaInstallPrompt';
 import { OfflineIndicator } from './components/pwa/OfflineIndicator';
 import { PwaUpdatePrompt } from './components/pwa/PwaUpdatePrompt';
 import { useAuthStore } from './lib/auth/auth-store';
+import { CuriosityEasterEggModal } from './components/ui/CuriosityEasterEggModal';
 
 const cleanupStaleServiceWorkers = () => {
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
@@ -45,6 +46,7 @@ export const App: React.FC = () => {
       <PwaInstallPrompt />
       <OfflineIndicator />
       <PwaUpdatePrompt />
+      <CuriosityEasterEggModal />
     </AppProviders>
   );
 };
