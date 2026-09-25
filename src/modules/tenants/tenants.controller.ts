@@ -105,7 +105,7 @@ export class TenantsController {
   @ApiBearerAuth()
   @Roles(Role.SUPER_ADMIN)
   @Get('all')
-  @ApiOperation({ summary: 'مدیریت سوپرادمین: لیست تمام مدارس و مراکز ثبت‌شده' })
+  @ApiOperation({ summary: 'مدیریت سوپر ادمین: لیست تمام مدارس و مراکز ثبت‌شده' })
   async listAllSchools() {
     return this.tenantsService.listAll();
   }
