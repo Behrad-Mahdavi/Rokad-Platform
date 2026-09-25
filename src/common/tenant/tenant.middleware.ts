@@ -127,24 +127,36 @@ export class TenantMiddleware implements NestMiddleware {
 
     let tenant: any = null;
 
-    if (identifier.type === 'id') {
-      tenant = await this.prisma.tenant.findUnique({
-        where: { id: identifier.value },
-      });
-    } else if (identifier.type === 'slug') {
-      tenant = await this.prisma.tenant.findUnique({
-        where: { slug: identifier.value },
-      });
-    } else if (identifier.type === 'subdomain') {
-      tenant = await this.prisma.tenant.findFirst({
-        where: {
-          OR: [{ subdomain: identifier.value }, { slug: identifier.value }],
-        },
-      });
-    } else if (identifier.type === 'domain') {
-      tenant = await this.prisma.tenant.findUnique({
-        where: { customDomain: identifier.value },
-      });
+    try {
+      if (identifier.type === 'id') {
+        tenant = await this.prisma.tenant.findUnique({
+          where: { id: identifier.value },
+        });
+      } else if (identifier.type === 'slug') {
+        tenant = await this.prisma.tenant.findUnique({
+          where: { slug: identifier.value },
+        });
+      } else if (identifier.type === 'subdomain') {
+        tenant = await this.prisma.tenant.findFirst({
+          where: {
+            OR: [{ subdomain: identifier.value }, { slug: identifier.value }],
+          },
+        });
+      } else if (identifier.type === 'domain') {
+        tenant = await this.prisma.tenant.findUnique({
+          where: { customDomain: identifier.value },
+        });
+      }
+    } catch (dbErr) {
+      // Offline / dev fallback tenant
+      return {
+        id: 'tenant-rokad-boys',
+        name: identifier.value === 'rokad-girls' ? 'هنرستان دخترانه رکاد' : 'هنرستان پسرانه رکاد',
+        slug: identifier.value || 'rokad-boys',
+        status: 'ACTIVE',
+        theme: 'ECOSYSTEM',
+        type: 'SCHOOL',
+      };
     }
 
     if (tenant) {

@@ -522,7 +522,7 @@ export const AttendancePage: React.FC = () => {
       const res: any = await apiClient.post('/attendance/students/bulk', payload);
       return res?.data || res;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast.success(data?.message || 'دفتر کلاسی با موفقیت ثبت و ذخیره شد', {
         description: `کلاس ${activeSession?.classroomName} - زنگ ${toPersianDigits(activeSession?.periodNumber)}`,
       });

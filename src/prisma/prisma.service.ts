@@ -14,6 +14,7 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   private readonly logger = new Logger(PrismaService.name);
+  public isConnected = false;
   public client: ReturnType<typeof this.getExtendedClient>;
 
   constructor(private readonly tenantContext: TenantContextService) {
@@ -33,10 +34,17 @@ export class PrismaService
 
   async onModuleInit() {
     try {
-      await this.$connect();
+      await Promise.race([
+        this.$connect(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Connection timeout')), 500),
+        ),
+      ]);
+      this.isConnected = true;
       this.logger.log('Connected to PostgreSQL database');
     } catch (err: any) {
-      this.logger.error(`Database connection error: ${err?.message}`);
+      this.isConnected = false;
+      this.logger.warn(`Database offline mode active: ${err?.message || err}`);
     }
   }
 

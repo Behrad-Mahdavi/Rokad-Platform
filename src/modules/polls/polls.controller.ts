@@ -2,14 +2,20 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Delete,
   Body,
   Param,
   UseGuards,
-  ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PollsService } from './polls.service';
-import { CreatePollDto, CastVoteDto } from './dto/create-poll.dto';
+import {
+  CreatePollDto,
+  CastVoteDto,
+  SubmitPollAnswersDto,
+  UpdatePollStatusDto,
+} from './dto/create-poll.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
@@ -27,7 +33,7 @@ export class PollsController {
 
   @Post()
   @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF, Role.TEACHER, Role.COACH)
-  @ApiOperation({ summary: 'ایجاد نظرسنجی جدید' })
+  @ApiOperation({ summary: 'ایجاد نظرسنجی / فرم پرس‌کاد' })
   async createPoll(
     @CurrentUser('id') userId: string,
     @CurrentUser('tenantId') userTenantId: string,
@@ -38,19 +44,57 @@ export class PollsController {
     return this.pollsService.createPoll(effectiveTenantId, userId, dto);
   }
 
+  @Patch(':id/status')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF, Role.TEACHER, Role.COACH)
+  @ApiOperation({ summary: 'تغییر وضعیت نظرسنجی (بستن/بازگشایی/آرشیو/خروج از آرشیو)' })
+  async updatePollStatus(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') pollId: string,
+    @Body() dto: UpdatePollStatusDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.pollsService.updatePollStatus(effectiveTenantId, pollId, dto.action);
+  }
+
+  @Delete(':id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF, Role.TEACHER, Role.COACH)
+  @ApiOperation({ summary: 'حذف نظرسنجی' })
+  async deletePoll(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') pollId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.pollsService.deletePoll(effectiveTenantId, pollId);
+  }
+
   @Get()
   @ApiOperation({ summary: 'لیست نظرسنجی‌های فعال و گذشته مدرسه' })
   async listPolls(
     @CurrentUser('id') userId: string,
     @CurrentUser('tenantId') userTenantId: string,
+    @CurrentUser('role') role: string,
     @CurrentTenant('id') tenantId: string,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
-    return this.pollsService.listPolls(effectiveTenantId, userId);
+    return this.pollsService.listPolls(effectiveTenantId, userId, role);
+  }
+
+  @Get(':id/analytics')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF, Role.TEACHER, Role.COACH)
+  @ApiOperation({ summary: 'آنالیتیکس نظرسنجی برای ادمین' })
+  async getAnalytics(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') pollId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.pollsService.getAnalytics(effectiveTenantId, pollId);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'مشاهده گزینه‌ها، آمار آرا و وضعیت رأی کاربر جاری' })
+  @ApiOperation({ summary: 'مشاهده سوالات، آمار و وضعیت پاسخ کاربر جاری' })
   async getPollDetails(
     @CurrentUser('id') userId: string,
     @CurrentUser('tenantId') userTenantId: string,
@@ -59,6 +103,31 @@ export class PollsController {
   ) {
     const effectiveTenantId = tenantId || userTenantId;
     return this.pollsService.getPollDetails(effectiveTenantId, pollId, userId);
+  }
+
+  @Post(':id/answers')
+  @ApiOperation({ summary: 'ثبت پاسخ مرحله‌به‌مرحله نظرسنجی' })
+  async submitAnswers(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentUser('firstName') firstName: string,
+    @CurrentUser('lastName') lastName: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') pollId: string,
+    @Body() dto: SubmitPollAnswersDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    const name =
+      dto.respondentName ||
+      `${firstName || ''} ${lastName || ''}`.trim() ||
+      'کاربر';
+    return this.pollsService.submitAnswers(
+      effectiveTenantId,
+      pollId,
+      userId,
+      name,
+      dto,
+    );
   }
 
   @Post(':id/vote')

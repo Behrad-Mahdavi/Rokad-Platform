@@ -9,11 +9,14 @@ export const EVENT_COVER_ASPECT = EVENT_COVER_TARGET_W / EVENT_COVER_TARGET_H;
 export const EVENT_COVER_MAX_BYTES = 5 * 1024 * 1024;
 
 export const EVENT_COVER_SPEC_LABEL =
-  'ابعاد پیشنهادی ۱۲۰۰×۶۳۰ پیکسل (نسبت ~۱.۹۱:۱)؛ حداکثر ۵ مگابایت. اگر عکس بزرگ‌تر باشد، قبل از آپلود می‌توانید قسمت دلخواه را ببرید.';
+  'ابعاد پیشنهادی ۱۲۰۰×۶۳۰ پیکسل (نسبت ~۱.۹۱:۱)؛ حداکثر ۵ مگابایت. اگر عکس بزرگ‌تر یا نسبت‌دار نباشد، قبل از آپلود می‌توانید قسمت دلخواه را ببرید.';
 
 export function needsCoverCrop(naturalW: number, naturalH: number): boolean {
   if (!naturalW || !naturalH) return false;
-  return naturalW > EVENT_COVER_TARGET_W || naturalH > EVENT_COVER_TARGET_H;
+  if (naturalW > EVENT_COVER_TARGET_W || naturalH > EVENT_COVER_TARGET_H) return true;
+  const aspect = naturalW / naturalH;
+  const drift = Math.abs(aspect - EVENT_COVER_ASPECT) / EVENT_COVER_ASPECT;
+  return drift > 0.08;
 }
 
 interface Props {
@@ -72,13 +75,16 @@ export const EventCoverCropModal: React.FC<Props> = ({
   }, [isOpen]);
 
   useEffect(() => {
+    if (!isOpen) return;
     const el = stageRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => {
-      const w = Math.min(el.clientWidth, stageMaxW);
-      const h = Math.min(Math.max(el.clientHeight, 200), stageMaxH);
+    const measure = () => {
+      const w = Math.min(el.clientWidth || stageMaxW, stageMaxW);
+      const h = Math.min(Math.max(el.clientHeight || 200, 200), stageMaxH);
       setStage({ w, h: Math.min(h, Math.round(w / EVENT_COVER_ASPECT) + 40) });
-    });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
   }, [isOpen]);
@@ -108,71 +114,53 @@ export const EventCoverCropModal: React.FC<Props> = ({
 
   const buildCropBlob = useCallback(async (): Promise<Blob | null> => {
     const img = imgRef.current;
-    if (!img || !nat) return null;
-
     const stageEl = stageRef.current;
-    if (!stageEl) return null;
+    if (!img || !stageEl) return null;
+
     const stageRect = stageEl.getBoundingClientRect();
+    const sw = stageRect.width;
+    const sh = stageRect.height;
+    if (sw < 1 || sh < 1) return null;
 
-    const view = fitCoverBox(stage.w, stage.h);
-    const stageLeft = (stageRect.width - stage.w) / 2;
-    const stageTop = (stageRect.height - stage.h) / 2;
-
-    const boxScreen = {
-      left: stageLeft + view.x,
-      top: stageTop + view.y,
-      w: view.w,
-      h: view.h,
-    };
-
-    const imgRect = img.getBoundingClientRect();
-    const imgScreen = {
-      left: imgRect.left - stageRect.left,
-      top: imgRect.top - stageRect.top,
-      w: imgRect.width,
-      h: imgRect.height,
-    };
-
-    const scaleX = nat.w / imgScreen.w;
-    const scaleY = nat.h / imgScreen.h;
-
-    const srcX = (boxScreen.left - imgScreen.left) * scaleX;
-    const srcY = (boxScreen.top - imgScreen.top) * scaleY;
-    const srcW = boxScreen.w * scaleX;
-    const srcH = boxScreen.h * scaleY;
+    const view = fitCoverBox(sw, sh);
+    const layoutW = img.offsetWidth;
+    const layoutH = img.offsetHeight;
+    if (layoutW < 1 || layoutH < 1) return null;
 
     const canvas = document.createElement('canvas');
     canvas.width = EVENT_COVER_TARGET_W;
     canvas.height = EVENT_COVER_TARGET_H;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
+
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(
-      img,
-      Math.max(0, srcX),
-      Math.max(0, srcY),
-      Math.max(1, Math.min(srcW, nat.w)),
-      Math.max(1, Math.min(srcH, nat.h)),
-      0,
-      0,
-      canvas.width,
-      canvas.height,
-    );
+
+    const sx = canvas.width / view.w;
+    const sy = canvas.height / view.h;
+
+    ctx.save();
+    ctx.translate(-view.x * sx, -view.y * sy);
+    ctx.scale(sx, sy);
+
+    ctx.translate(sw / 2 + offset.x, sh / 2 + offset.y);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.scale(zoom, zoom);
+    ctx.drawImage(img, -layoutW / 2, -layoutH / 2, layoutW, layoutH);
+    ctx.restore();
 
     return new Promise((resolve) => {
       canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.9);
     });
-  }, [nat, stage.w, stage.h]);
+  }, [offset.x, offset.y, rotation, zoom]);
 
   const handleConfirm = async () => {
     try {
       setIsConfirming(true);
       const blob = await buildCropBlob();
-      if (!blob) {
-        return;
-      }
+      if (!blob) return;
       await onConfirm(blob);
       onClose();
     } finally {
@@ -198,7 +186,7 @@ export const EventCoverCropModal: React.FC<Props> = ({
         <div
           ref={stageRef}
           className="relative mx-auto w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-[#0f172a] select-none touch-none"
-          style={{ height: Math.min(stageMaxH, Math.round(stageMaxW / EVENT_COVER_ASPECT) + 40), maxHeight: stageMaxH }}
+          style={{ height: Math.min(stageMaxH, Math.round(stageMaxW / EVENT_COVER_ASPECT) + 40), maxHeight: stageMaxH, maxWidth: stageMaxW }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -251,6 +239,7 @@ export const EventCoverCropModal: React.FC<Props> = ({
             onClick={() => setZoom((z) => clampZoom(z - 0.1))}
             className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-ink-normal dark:text-white hover:bg-gray-50 dark:hover:bg-[#1C2536] transition-all"
             title="کوچک‌نمایی"
+            aria-label="کوچک‌نمایی"
           >
             <ZoomOut className="w-4 h-4" />
           </button>
@@ -269,6 +258,7 @@ export const EventCoverCropModal: React.FC<Props> = ({
             onClick={() => setZoom((z) => clampZoom(z + 0.1))}
             className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-ink-normal dark:text-white hover:bg-gray-50 dark:hover:bg-[#1C2536] transition-all"
             title="بزرگ‌نمایی"
+            aria-label="بزرگ‌نمایی"
           >
             <ZoomIn className="w-4 h-4" />
           </button>
@@ -277,6 +267,7 @@ export const EventCoverCropModal: React.FC<Props> = ({
             onClick={() => setRotation((r) => (r + 90) % 360)}
             className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-ink-normal dark:text-white hover:bg-gray-50 dark:hover:bg-[#1C2536] transition-all"
             title="چرخش ۹۰ درجه"
+            aria-label="چرخش ۹۰ درجه"
           >
             <RotateCw className="w-4 h-4" />
           </button>

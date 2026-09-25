@@ -43,4 +43,5 @@ scratch/
 .tempmediaStorage/
 *.sql
 *.xlsx
+.polls_dev_store.json
 
