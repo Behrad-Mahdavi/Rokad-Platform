@@ -334,7 +334,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
         )}
       >
         {/* Drawer Header */}
-        <div className="p-4 border-b border-[#EAEAEA] dark:border-gray-800 flex items-center justify-between bg-gray-50/70 dark:bg-[#161D2A] shrink-0">
+        <div className="pt-[calc(1rem+env(safe-area-inset-top,0px))] px-4 pb-4 border-b border-[#EAEAEA] dark:border-gray-800 flex items-center justify-between bg-gray-50/70 dark:bg-[#161D2A] shrink-0">
           <div className="flex items-center gap-2.5">
             <img
               src="/logo.svg"
@@ -364,7 +364,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
         </div>
 
         {/* Docked Drawer Footer */}
-        <div className="p-4 border-t border-[#EAEAEA] dark:border-gray-800 bg-white dark:bg-[#121824] shrink-0">
+        <div className="pt-4 px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] border-t border-[#EAEAEA] dark:border-gray-800 bg-white dark:bg-[#121824] shrink-0">
           {renderFooterBanner()}
         </div>
       </aside>

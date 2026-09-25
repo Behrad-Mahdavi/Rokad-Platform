@@ -26,8 +26,9 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
     <nav
       aria-label="سوپراپلیکیشن ناوبری پایین"
       dir="rtl"
-      className="fixed bottom-0 inset-x-0 z-40 h-16 min-h-[64px] max-h-[64px] px-2 flex items-center justify-between md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.05)] bg-white/95 dark:bg-[#151C28]/95 backdrop-blur-md border-t border-gray-200/90 dark:border-gray-800 box-border select-none transition-colors"
+      className="fixed bottom-0 inset-x-0 z-40 pb-[env(safe-area-inset-bottom,0px)] md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.05)] bg-white/95 dark:bg-[#151C28]/95 backdrop-blur-md border-t border-gray-200/90 dark:border-gray-800 box-border select-none transition-colors"
     >
+      <div className="w-full h-16 min-h-[64px] max-h-[64px] px-2 flex items-center justify-between">
       {/* 1. First on Right: پلتفرم کا (دسته‌سکه / چند سکه روی هم) */}
       <NavLink
         to="/app/ka-platform"
@@ -203,6 +204,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
           </>
         )}
       </NavLink>
+      </div>
     </nav>
   );
 };

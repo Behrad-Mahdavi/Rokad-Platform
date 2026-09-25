@@ -1288,7 +1288,7 @@ export const AttendancePage: React.FC = () => {
           </div>
 
           {/* Sticky Mobile Floating Action Footer */}
-          <div className="sm:hidden fixed bottom-0 inset-x-0 bg-white/95 dark:bg-card/95 backdrop-blur-md border-t-2 border-black p-3 z-40 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] flex items-center justify-between gap-3">
+          <div className="sm:hidden fixed bottom-0 inset-x-0 bg-white/95 dark:bg-card/95 backdrop-blur-md border-t-2 border-black p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-40 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] flex items-center justify-between gap-3">
             <div className="text-xs font-black">
               <span className="text-emerald-600">{toPersianDigits(rosterStats.present)} حاضر</span>
               <span className="mx-1.5 text-muted-foreground">•</span>
