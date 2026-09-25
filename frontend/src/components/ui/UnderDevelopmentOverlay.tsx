@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Construction } from 'lucide-react';
 import { Button } from './Button';
@@ -23,6 +23,29 @@ export const UnderDevelopmentOverlay: React.FC<UnderDevelopmentOverlayProps> = (
   children,
 }) => {
   const navigate = useNavigate();
+
+  // قفل کردن کامل اسکرول پس‌زمینه هنگام نمایش این کاور
+  useEffect(() => {
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    const mainElement = document.querySelector('main');
+    const originalMainOverflow = mainElement?.style.overflow;
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    if (mainElement) {
+      mainElement.style.overflow = 'hidden';
+      mainElement.scrollTop = 0;
+    }
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      if (mainElement && originalMainOverflow !== undefined) {
+        mainElement.style.overflow = originalMainOverflow;
+      }
+    };
+  }, []);
 
   const getAccentStyles = () => {
     switch (accentColor) {
@@ -61,27 +84,27 @@ export const UnderDevelopmentOverlay: React.FC<UnderDevelopmentOverlayProps> = (
   const accents = getAccentStyles();
 
   return (
-    <div className="relative min-h-[calc(100vh-6rem)] w-full overflow-hidden">
-      {/* Blurred background preview */}
+    <div className="relative w-full h-[calc(100dvh-5.5rem)] md:h-[calc(100dvh-6.5rem)] max-h-[calc(100dvh-5.5rem)] md:max-h-[calc(100dvh-6.5rem)] overflow-hidden select-none">
+      {/* پیش‌نمایش بلورشده و قفل‌شده پس‌زمینه (بدون امکان اسکرول) */}
       <div
-        className="filter blur-[8px] md:blur-[12px] pointer-events-none select-none opacity-40 dark:opacity-20 transition-all duration-300"
+        className="h-full w-full max-h-full overflow-hidden filter blur-[8px] md:blur-[12px] pointer-events-none select-none opacity-40 dark:opacity-20 transition-all duration-300"
         aria-hidden="true"
         tabIndex={-1}
       >
         {children}
       </div>
 
-      {/* Clean Blur Overlay Layer */}
-      <div className="absolute inset-0 z-30 flex items-center justify-center p-4 sm:p-6 bg-slate-900/15 dark:bg-black/45 backdrop-blur-[5px]">
-        {/* Glassmorphism Card */}
-        <div className="w-full max-w-lg relative rounded-3xl p-6 sm:p-9 text-center bg-white/85 dark:bg-[#111827]/85 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-          {/* Subtle Ambient Top Glow */}
+      {/* لایه بلور و تثبیت‌شده با چینش کارت در بالای صفحه */}
+      <div className="absolute inset-0 z-30 flex items-start justify-center pt-4 sm:pt-8 md:pt-10 px-4 sm:px-6 pb-6 bg-slate-900/20 dark:bg-black/50 backdrop-blur-[6px] overflow-y-auto overscroll-contain">
+        {/* کارت شیشه‌ای در بالای صفحه */}
+        <div className="w-full max-w-lg relative rounded-3xl p-6 sm:p-8 text-center bg-white/90 dark:bg-[#111827]/90 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.14)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.7)] overflow-hidden animate-in fade-in zoom-in-95 duration-200 mt-1 sm:mt-2">
+          {/* افکت نور محیطی ملایم در بالای کارت */}
           <div
             className={`absolute -top-24 left-1/2 -translate-x-1/2 w-72 h-40 bg-gradient-to-b ${accents.glow} rounded-full blur-2xl pointer-events-none`}
           />
 
-          {/* Badge */}
-          <div className="flex justify-center mb-5 relative">
+          {/* نشان وضعیت */}
+          <div className="flex justify-center mb-4 relative">
             <span className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold border ${accents.badge}`}>
               <span className="relative flex h-2 w-2">
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${accents.dot} opacity-75`} />
@@ -91,25 +114,25 @@ export const UnderDevelopmentOverlay: React.FC<UnderDevelopmentOverlayProps> = (
             </span>
           </div>
 
-          {/* Icon Box */}
-          <div className="flex justify-center mb-5 relative">
-            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border shadow-xs ${accents.iconBg}`}>
-              <Icon className="w-8 h-8" />
+          {/* باکس آیکون */}
+          <div className="flex justify-center mb-4 relative">
+            <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center border shadow-xs ${accents.iconBg}`}>
+              <Icon className="w-7 h-7 sm:w-8 sm:h-8" />
             </div>
           </div>
 
-          {/* Title and Subtitle */}
-          <h2 className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white tracking-tight mb-2 relative">
+          {/* عنوان و زیرعنوان */}
+          <h2 className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white tracking-tight mb-1.5 relative">
             {title}
           </h2>
-          <p className="text-xs sm:text-sm font-bold text-primary dark:text-teal-400 mb-3 relative">
+          <p className="text-xs sm:text-sm font-bold text-primary dark:text-teal-400 mb-2.5 relative">
             {subtitle}
           </p>
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed max-w-md mx-auto mb-7 relative">
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed max-w-md mx-auto mb-6 relative">
             {description}
           </p>
 
-          {/* Actions */}
+          {/* دکمه بازگشت */}
           <div className="flex items-center justify-center relative">
             <Button
               variant="primary"
