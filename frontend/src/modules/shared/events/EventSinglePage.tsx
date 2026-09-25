@@ -586,43 +586,8 @@ export const EventSinglePage: React.FC = () => {
 
   const hasWorkflow = workflowModules.length > 0;
 
-  if (isLoading) {
-    return (
-      <div className="py-24 text-center">
-        <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-zinc-900 border-t-transparent dark:border-zinc-100" />
-        <p className="mt-4 text-sm font-black text-zinc-600 dark:text-zinc-400">در حال بارگذاری اطلاعات رویداد...</p>
-      </div>
-    );
-  }
-
-  if (!event) {
-    return (
-      <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-8 sm:p-12 text-center shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
-        <AlertCircle className="mx-auto w-12 h-12 text-red-500 mb-3" />
-        <h2 className="text-xl font-black text-zinc-900 dark:text-zinc-100">رویداد مورد نظر یافت نشد</h2>
-        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">ممکن است این رویداد حذف شده باشد، برای شما قابل مشاهده نباشد یا به تننت دیگری تعلق داشته باشد.</p>
-        <Link to="/app/events">
-          <Button variant="primary" className="mt-6 gap-2">
-            <ArrowRight className="w-4 h-4" />
-            بازگشت به رودمپ سالانه
-          </Button>
-        </Link>
-      </div>
-    );
-  }
-
-  const categoryMeta =
-    EVENT_CATEGORIES[event.eventType] ||
-    (event.categoryKey && EVENT_CATEGORIES[event.categoryKey]) ||
-    EVENT_CATEGORIES.STARTUP_WEEKEND;
-  const CategoryIcon = categoryMeta.icon;
-  const jalaliStart = formatJalaliDisplay(event.startDate, true);
-  const jalaliEnd = formatJalaliDisplay(event.endDate, true);
-  const startTimeStr = new Date(event.startDate).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
-  const endTimeStr = new Date(event.endDate).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
-
   const eventStatus = useMemo(() => {
-    if (!event) return null;
+    if (!event?.startDate || !event?.endDate) return null;
     return getEventStatus(event.startDate, event.endDate);
   }, [event?.startDate, event?.endDate]);
 
@@ -659,6 +624,41 @@ export const EventSinglePage: React.FC = () => {
 
     return list;
   }, [event?.coverUrl, event?.attachments]);
+
+  if (isLoading) {
+    return (
+      <div className="py-24 text-center">
+        <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-zinc-900 border-t-transparent dark:border-zinc-100" />
+        <p className="mt-4 text-sm font-black text-zinc-600 dark:text-zinc-400">در حال بارگذاری اطلاعات رویداد...</p>
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-8 sm:p-12 text-center shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
+        <AlertCircle className="mx-auto w-12 h-12 text-red-500 mb-3" />
+        <h2 className="text-xl font-black text-zinc-900 dark:text-zinc-100">رویداد مورد نظر یافت نشد</h2>
+        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">ممکن است این رویداد حذف شده باشد، برای شما قابل مشاهده نباشد یا به تننت دیگری تعلق داشته باشد.</p>
+        <Link to="/app/events">
+          <Button variant="primary" className="mt-6 gap-2">
+            <ArrowRight className="w-4 h-4" />
+            بازگشت به رودمپ سالانه
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const categoryMeta =
+    EVENT_CATEGORIES[event.eventType] ||
+    (event.categoryKey && EVENT_CATEGORIES[event.categoryKey]) ||
+    EVENT_CATEGORIES.STARTUP_WEEKEND;
+  const CategoryIcon = categoryMeta.icon;
+  const jalaliStart = formatJalaliDisplay(event.startDate, true);
+  const jalaliEnd = formatJalaliDisplay(event.endDate, true);
+  const startTimeStr = new Date(event.startDate).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+  const endTimeStr = new Date(event.endDate).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
 
   return (
     <div className="space-y-6 pb-16">

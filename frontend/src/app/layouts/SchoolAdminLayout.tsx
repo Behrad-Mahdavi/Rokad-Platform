@@ -23,7 +23,7 @@ export const SchoolAdminLayout: React.FC = () => {
         <Sidebar role="SCHOOL_ADMIN" />
         <main
           ref={mainRef}
-          className="flex-1 p-3 sm:p-5 md:p-6 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-8 max-w-7xl mx-auto w-full min-w-0 overflow-y-auto [scrollbar-gutter:stable]"
+          className="flex-1 p-3 sm:p-5 md:p-6 pb-[calc(4.25rem+env(safe-area-inset-bottom,0px))] md:pb-8 max-w-7xl mx-auto w-full min-w-0 overflow-y-auto [scrollbar-gutter:stable]"
         >
           <Outlet />
         </main>

@@ -26,16 +26,16 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
     <nav
       aria-label="سوپراپلیکیشن ناوبری پایین"
       dir="rtl"
-      className="fixed bottom-0 inset-x-0 z-40 pb-[env(safe-area-inset-bottom,0px)] md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.05)] bg-white/95 dark:bg-[#151C28]/95 backdrop-blur-md border-t border-gray-200/90 dark:border-gray-800 box-border select-none transition-colors"
+      className="fixed bottom-0 inset-x-0 z-40 pb-[max(2px,calc(env(safe-area-inset-bottom,0px)*0.45))] md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.05)] bg-white/95 dark:bg-[#151C28]/95 backdrop-blur-md border-t border-gray-200/90 dark:border-gray-800 box-border select-none transition-colors"
     >
-      <div className="w-full h-16 min-h-[64px] max-h-[64px] px-2 flex items-center justify-between">
+      <div className="w-full h-[54px] min-h-[54px] max-h-[54px] px-2 flex items-center justify-between">
       {/* 1. First on Right: پلتفرم کا (دسته‌سکه / چند سکه روی هم) */}
       <NavLink
         to="/app/ka-platform"
         className={({ isActive }) =>
           twMerge(
             clsx(
-              'h-full flex flex-col items-center justify-center flex-1 py-1 px-0.5 transition-all text-[10px] select-none min-w-0 active:scale-95',
+              'h-full flex flex-col items-center justify-center flex-1 py-0.5 px-0.5 transition-all text-[10px] select-none min-w-0 active:scale-95',
               isActive
                 ? 'text-emerald-600 dark:text-teal-400 font-bold'
                 : 'text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-medium',
@@ -45,18 +45,18 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
       >
         {({ isActive }) => (
           <>
-            <div className="h-7 w-7 flex items-center justify-center transition-all mb-0.5 shrink-0 overflow-visible">
+            <div className="h-6 w-6 flex items-center justify-center transition-all shrink-0 overflow-visible">
               <CoinStackIcon
                 solid={isActive}
                 className={clsx(
-                  'h-[22px] w-[22px] shrink-0 transition-all',
+                  'h-5 w-5 shrink-0 transition-all',
                   isActive
                     ? 'text-emerald-600 dark:text-teal-400'
                     : 'text-gray-400 dark:text-gray-400',
                 )}
               />
             </div>
-            <span className="truncate max-w-[66px] text-center leading-tight shrink-0">پلتفرم کا</span>
+            <span className="truncate max-w-[66px] text-center leading-tight shrink-0 mt-0.5">پلتفرم کا</span>
           </>
         )}
       </NavLink>
@@ -67,7 +67,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
         className={({ isActive }) =>
           twMerge(
             clsx(
-              'h-full flex flex-col items-center justify-center flex-1 py-1 px-0.5 transition-all text-[10px] select-none min-w-0 active:scale-95',
+              'h-full flex flex-col items-center justify-center flex-1 py-0.5 px-0.5 transition-all text-[10px] select-none min-w-0 active:scale-95',
               isActive
                 ? 'text-emerald-600 dark:text-teal-400 font-bold'
                 : 'text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-medium',
@@ -77,14 +77,14 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
       >
         {({ isActive }) => (
           <>
-            <div className="h-7 w-7 flex items-center justify-center transition-all mb-0.5 shrink-0">
+            <div className="h-6 w-6 flex items-center justify-center transition-all shrink-0">
               {isActive ? (
-                <Star className="h-6 w-6 shrink-0 fill-current text-emerald-600 dark:text-teal-400" />
+                <Star className="h-5 w-5 shrink-0 fill-current text-emerald-600 dark:text-teal-400" />
               ) : (
-                <Star className="h-6 w-6 shrink-0 text-gray-400 dark:text-gray-400" />
+                <Star className="h-5 w-5 shrink-0 text-gray-400 dark:text-gray-400" />
               )}
             </div>
-            <span className="truncate max-w-[66px] text-center leading-tight shrink-0">باشگاه</span>
+            <span className="truncate max-w-[66px] text-center leading-tight shrink-0 mt-0.5">باشگاه</span>
           </>
         )}
       </NavLink>
@@ -94,20 +94,20 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
         to="/app"
         title="صفحه اصلی"
         aria-label="صفحه اصلی"
-        className="h-full flex flex-col items-center justify-center flex-1 py-1 px-0.5 select-none min-w-0 group"
+        className="h-full flex flex-col items-center justify-center flex-1 py-0.5 px-0.5 select-none min-w-0 group"
       >
         <div
           className={clsx(
-            'w-[52px] h-[52px] rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 shrink-0',
+            'w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 shrink-0',
             isHomeActive
-              ? 'text-emerald-600 dark:text-teal-400 bg-emerald-500/15 dark:bg-teal-500/20 border-2 border-emerald-500/35 dark:border-teal-400/40 shadow-[0_4px_16px_rgba(20,184,166,0.25)] -translate-y-2'
-              : 'text-gray-500 dark:text-gray-300 bg-gray-100/90 dark:bg-[#1C2536] border border-gray-200/80 dark:border-gray-700/80 hover:text-gray-700 dark:hover:text-white dark:hover:bg-[#242F42] shadow-sm -translate-y-1.5',
+              ? 'text-emerald-600 dark:text-teal-400 bg-emerald-500/15 dark:bg-teal-500/20 border-2 border-emerald-500/35 dark:border-teal-400/40 shadow-[0_4px_16px_rgba(20,184,166,0.25)] -translate-y-1'
+              : 'text-gray-500 dark:text-gray-300 bg-gray-100/90 dark:bg-[#1C2536] border border-gray-200/80 dark:border-gray-700/80 hover:text-gray-700 dark:hover:text-white dark:hover:bg-[#242F42] shadow-sm -translate-y-0.5',
           )}
         >
           {isHomeActive ? (
             <svg
               viewBox="0 0 24 24"
-              className="h-7 w-7 shrink-0 fill-current transition-all"
+              className="h-6 w-6 shrink-0 fill-current transition-all"
               aria-hidden="true"
             >
               <path
@@ -117,7 +117,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
               />
             </svg>
           ) : (
-            <Home className="h-7 w-7 shrink-0" />
+            <Home className="h-6 w-6 shrink-0" />
           )}
         </div>
       </NavLink>
@@ -128,7 +128,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
         className={({ isActive }) =>
           twMerge(
             clsx(
-              'h-full flex flex-col items-center justify-center flex-1 py-1 px-0.5 transition-all text-[10px] select-none min-w-0 active:scale-95',
+              'h-full flex flex-col items-center justify-center flex-1 py-0.5 px-0.5 transition-all text-[10px] select-none min-w-0 active:scale-95',
               isActive
                 ? 'text-emerald-600 dark:text-teal-400 font-bold'
                 : 'text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-medium',
@@ -138,11 +138,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
       >
         {({ isActive }) => (
           <>
-            <div className="h-7 w-7 flex items-center justify-center transition-all mb-0.5 shrink-0">
+            <div className="h-6 w-6 flex items-center justify-center transition-all shrink-0">
               {isActive ? (
                 <svg
                   viewBox="0 0 24 24"
-                  className="h-6 w-6 shrink-0 fill-current transition-all"
+                  className="h-5 w-5 shrink-0 fill-current transition-all"
                   aria-hidden="true"
                 >
                   <path
@@ -152,10 +152,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
                   />
                 </svg>
               ) : (
-                <PlayCircle className="h-6 w-6 shrink-0 text-gray-400 dark:text-gray-400" />
+                <PlayCircle className="h-5 w-5 shrink-0 text-gray-400 dark:text-gray-400" />
               )}
             </div>
-            <span className="truncate max-w-[66px] text-center leading-tight shrink-0">رسانه</span>
+            <span className="truncate max-w-[66px] text-center leading-tight shrink-0 mt-0.5">رسانه</span>
           </>
         )}
       </NavLink>
@@ -166,7 +166,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
         className={({ isActive }) =>
           twMerge(
             clsx(
-              'h-full flex flex-col items-center justify-center flex-1 py-1 px-0.5 transition-all text-[10px] select-none min-w-0 active:scale-95',
+              'h-full flex flex-col items-center justify-center flex-1 py-0.5 px-0.5 transition-all text-[10px] select-none min-w-0 active:scale-95',
               isActive
                 ? 'text-emerald-600 dark:text-teal-400 font-bold'
                 : 'text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-medium',
@@ -176,11 +176,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
       >
         {({ isActive }) => (
           <>
-            <div className="h-7 w-7 flex items-center justify-center transition-all mb-0.5 shrink-0">
+            <div className="h-6 w-6 flex items-center justify-center transition-all shrink-0">
               {isActive ? (
                 <svg
                   viewBox="0 0 24 24"
-                  className="h-6 w-6 shrink-0 fill-current transition-all"
+                  className="h-5 w-5 shrink-0 fill-current transition-all"
                   aria-hidden="true"
                 >
                   {/* Top Binder Pins */}
@@ -197,10 +197,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
                   />
                 </svg>
               ) : (
-                <CalendarDays className="h-6 w-6 shrink-0 text-gray-400 dark:text-gray-400" />
+                <CalendarDays className="h-5 w-5 shrink-0 text-gray-400 dark:text-gray-400" />
               )}
             </div>
-            <span className="truncate max-w-[66px] text-center leading-tight shrink-0">تقویم</span>
+            <span className="truncate max-w-[66px] text-center leading-tight shrink-0 mt-0.5">تقویم</span>
           </>
         )}
       </NavLink>
