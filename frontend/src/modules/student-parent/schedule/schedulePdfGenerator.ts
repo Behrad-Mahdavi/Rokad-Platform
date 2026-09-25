@@ -23,6 +23,7 @@ export function generateSchedulePdf({
   isTeacher = false,
   schedules,
   days,
+  periodLabels,
 }: GeneratePdfOptions) {
   const periods = OFFICIAL_PERIODS;
   const targetLabel = isTeacher ? (teacherName || 'برنامه تدریس') : classroomName;
@@ -35,12 +36,10 @@ export function generateSchedulePdf({
         .map((period) => {
           const periodNum = period.number;
           const slot = daySlots.find((s) => s.periodNumber === periodNum);
-          const isExtra = period.isExtracurricular;
-          const extraClass = isExtra ? ' extra-slot' : '';
 
           if (!slot) {
             return `
-              <td class="slot-cell${extraClass}">
+              <td class="slot-cell">
                 <div class="cell-content empty-content">—</div>
               </td>
             `;
@@ -222,10 +221,6 @@ export function generateSchedulePdf({
       width: 10%;
       background-color: #161D3F;
     }
-    .schedule-table thead th.extra-col {
-      background-color: #1E1B4B !important;
-      border-color: #1E1B4B !important;
-    }
     .period-time-badge {
       display: block;
       font-size: 7pt;
@@ -234,19 +229,6 @@ export function generateSchedulePdf({
       margin-top: 1px;
       font-family: 'IRANSansXFaNum', 'IRANSansX', 'Vazirmatn', sans-serif !important;
       letter-spacing: -0.2px;
-    }
-    .extra-tag-pill {
-      display: inline-block;
-      font-size: 6pt;
-      background: #FDE68A;
-      color: #78350F;
-      padding: 0.5px 4px;
-      border-radius: 9999px;
-      font-weight: 900;
-      margin-top: 1.5px;
-    }
-    .slot-cell.extra-slot {
-      background-color: #FAF5FF !important;
     }
 
     /* Strict 24mm height per day row so all cells are permanently proportionate */
@@ -411,15 +393,20 @@ export function generateSchedulePdf({
         <tr>
           <th class="day-col">روز / زنگ</th>
           ${periods
-            .map(
-              (p) => `
-            <th class="period-col${p.isExtracurricular ? ' extra-col' : ''}">
-              <div>${p.label}</div>
+            .map((p) => {
+              const rawLabel = (periodLabels && periodLabels[p.number]) || p.label;
+              const cleanLabel = rawLabel
+                .replace(/\s*\(فوق\s*برنامه\)/g, '')
+                .replace(/\s*فوق\s*برنامه/g, '')
+                .trim();
+
+              return `
+            <th class="period-col">
+              <div>${cleanLabel}</div>
               <span class="period-time-badge">${toPersianDigits(p.defaultStart)} تا ${toPersianDigits(p.defaultEnd)}</span>
-              ${p.isExtracurricular ? '<span class="extra-tag-pill">فوق برنامه</span>' : ''}
             </th>
-          `,
-            )
+          `;
+            })
             .join('')}
         </tr>
       </thead>

@@ -97,6 +97,7 @@ export class GradebookController {
   @Get('student/:studentId/report-card')
   @ApiOperation({ summary: 'محاسبه کارنامه تحصیلی و معدل وزنی (GPA) دانش‌آموز' })
   async getStudentReportCard(
+    @CurrentUser() user: any,
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentTenant('id') tenantId: string,
     @Param('studentId') studentId: string,
@@ -107,6 +108,7 @@ export class GradebookController {
       effectiveTenantId,
       studentId,
       academicYearId,
+      user,
     );
   }
 

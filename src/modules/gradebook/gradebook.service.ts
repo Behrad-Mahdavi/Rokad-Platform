@@ -228,17 +228,47 @@ export class GradebookService {
     tenantId: string,
     studentId: string,
     academicYearId?: string,
+    requestingUser?: any,
   ) {
-    const student = await this.prisma.studentProfile.findFirst({
-      where: { id: studentId, tenantId },
-      include: { user: true },
-    });
+    let resolvedStudentId = studentId;
+    let student: any = null;
+
+    if (studentId === 'me' || requestingUser?.role === 'STUDENT') {
+      student = await this.prisma.studentProfile.findFirst({
+        where: { userId: requestingUser?.id || studentId, tenantId },
+        include: { user: true },
+      });
+      if (student) resolvedStudentId = student.id;
+    } else if (requestingUser?.role === 'PARENT') {
+      const parent = await this.prisma.parentProfile.findFirst({
+        where: { userId: requestingUser.id, tenantId },
+        include: { studentLinks: { include: { student: { include: { user: true } } } } },
+      });
+      if (parent && parent.studentLinks.length > 0) {
+        student = parent.studentLinks[0].student;
+        resolvedStudentId = student.id;
+      }
+    }
+
+    if (!student) {
+      student = await this.prisma.studentProfile.findFirst({
+        where: { id: resolvedStudentId, tenantId },
+        include: { user: true },
+      });
+      if (!student) {
+        student = await this.prisma.studentProfile.findFirst({
+          where: { userId: resolvedStudentId, tenantId },
+          include: { user: true },
+        });
+        if (student) resolvedStudentId = student.id;
+      }
+    }
 
     if (!student) {
       throw new NotFoundException('دانش‌آموز یافت نشد');
     }
 
-    const where: any = { tenantId, studentId };
+    const where: any = { tenantId, studentId: resolvedStudentId };
     if (academicYearId) where.academicYearId = academicYearId;
 
     const grades = await this.prisma.gradeEntry.findMany({
@@ -253,7 +283,7 @@ export class GradebookService {
     const podmanGrades = await this.prisma.podmanGrade.findMany({
       where: {
         tenantId,
-        studentId,
+        studentId: resolvedStudentId,
         ...(academicYearId ? { academicYearId } : {}),
       },
       include: {
@@ -879,15 +909,42 @@ export class GradebookService {
         : null;
 
     // Disciplinary & Reward Events from Sessions
-    const positiveRewardsCount = attendanceRecords.filter(
+    const sessionPositiveRewardsCount = attendanceRecords.filter(
       (r) => r.rewardDisciplineType === 'POSITIVE' || r.rewardDisciplineType === 'EXCELLENT',
     ).length;
-    const negativeDisciplineCount = attendanceRecords.filter(
+    const sessionNegativeDisciplineCount = attendanceRecords.filter(
       (r) =>
         r.rewardDisciplineType === 'NEGATIVE' ||
         r.rewardDisciplineType === 'WARNING' ||
         r.rewardDisciplineType === 'HOMEWORK_INCOMPLETE',
     ).length;
+
+    // Disciplinary & Commendation Matters from the Matters Module
+    const studentMatters = await this.prisma.disciplinaryMatter.findMany({
+      where: {
+        tenantId,
+        studentId: resolvedStudentId,
+      },
+      include: {
+        reportedBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+          },
+        },
+      },
+      orderBy: { reportedAt: 'desc' },
+    });
+
+    const matterPositiveCount = studentMatters.filter((m) => m.type === 'POSITIVE').length;
+    const matterNegativeCount = studentMatters.filter(
+      (m) => m.type === 'NEGATIVE' || m.type === 'WARNING' || m.type === 'SUSPENSION',
+    ).length;
+
+    const positiveRewardsCount = sessionPositiveRewardsCount + matterPositiveCount;
+    const negativeDisciplineCount = sessionNegativeDisciplineCount + matterNegativeCount;
 
     // 2. Homework Stats
     const homeworkWhere: any = {
@@ -1027,6 +1084,11 @@ export class GradebookService {
         oralGradesCount: oralGrades.length,
         positiveRewardsCount,
         negativeDisciplineCount,
+        sessionPositiveRewardsCount,
+        sessionNegativeDisciplineCount,
+        matterPositiveCount,
+        matterNegativeCount,
+        mattersTotalPoints: studentMatters.reduce((acc, m) => acc + (m.points || 0), 0),
         totalHomeworks,
         submittedHomeworks,
         homeworkAverage,
@@ -1072,8 +1134,20 @@ export class GradebookService {
         podmanTitle: p.podman.title,
         continuousScore: p.continuousScore,
         competencyScore: p.competencyScore,
-        finalScore: p.finalScore,
         isPassed: p.isPassed,
+      })),
+      matters: studentMatters.map((m) => ({
+        id: m.id,
+        type: m.type,
+        title: m.title,
+        description: m.description,
+        points: m.points,
+        actionTaken: m.actionTaken,
+        notifiedParents: m.notifiedParents,
+        reportedAt: m.reportedAt,
+        reportedBy: m.reportedBy
+          ? `${m.reportedBy.firstName || ''} ${m.reportedBy.lastName || ''}`.trim()
+          : null,
       })),
     };
   }

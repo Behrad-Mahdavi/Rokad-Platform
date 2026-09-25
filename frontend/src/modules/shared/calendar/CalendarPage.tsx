@@ -218,6 +218,14 @@ export const CalendarPage: React.FC = () => {
       if (holidaysRes.status === 'fulfilled') {
         setTenantHolidays(holidaysRes.value.data || []);
       }
+
+      if (
+        eventTypesRes.status === 'fulfilled' &&
+        Array.isArray(eventTypesRes.value.data) &&
+        eventTypesRes.value.data.length > 0
+      ) {
+        setEventTypes(eventTypesRes.value.data);
+      }
     } catch (err) {
       console.error('Failed to load calendar data', err);
     } finally {
@@ -413,7 +421,10 @@ export const CalendarPage: React.FC = () => {
   const handleSaveEventTypes = async () => {
     setIsSavingEventTypes(true);
     try {
-      await apiClient.put('/calendar/event-types', { eventTypes });
+      const res = await apiClient.put('/calendar/event-types', { eventTypes });
+      if (res.data?.eventTypes && Array.isArray(res.data.eventTypes)) {
+        setEventTypes(res.data.eventTypes);
+      }
       toast.success('انواع رویدادهای مدرسه با موفقیت ذخیره شدند.');
       setIsEventTypesModalOpen(false);
     } catch (err: any) {
@@ -443,7 +454,9 @@ export const CalendarPage: React.FC = () => {
       const payload = {
         title: form.title,
         description: form.description,
+        type: form.type,
         eventType: baseEventType,
+        baseType: baseEventType,
         startDate: startDateObj.toISOString(),
         endDate: endDateObj.toISOString(),
         location: form.location,
@@ -937,12 +950,17 @@ export const CalendarPage: React.FC = () => {
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               {!isHomework && (
-                                <Badge
-                                  variant="neutral"
-                                  className="text-[10px]"
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/app/events/${ev.id}`);
+                                  }}
+                                  className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold text-primary hover:text-primary-dark dark:hover:text-primary-light transition-colors cursor-pointer group/link hover:underline"
                                 >
-                                  {getTypeLabel(ev.type || ev.eventType)}
-                                </Badge>
+                                  <span>رفتن به صفحه رویداد</span>
+                                  <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover/link:-translate-x-0.5 shrink-0" />
+                                </button>
                               )}
                               {isHomework ? (
                                 <Button
@@ -1283,12 +1301,17 @@ export const CalendarPage: React.FC = () => {
 
                             <div className="flex items-center gap-2 shrink-0">
                               {!isHomework && (
-                                <Badge
-                                  variant="neutral"
-                                  className="text-[10px]"
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/app/events/${ev.id}`);
+                                  }}
+                                  className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold text-primary hover:text-primary-dark dark:hover:text-primary-light transition-colors cursor-pointer group/link hover:underline"
                                 >
-                                  {getTypeLabel(ev.type || ev.eventType)}
-                                </Badge>
+                                  <span>رفتن به صفحه رویداد</span>
+                                  <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover/link:-translate-x-0.5 shrink-0" />
+                                </button>
                               )}
                               {isHomework ? (
                                 <Button

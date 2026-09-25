@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateEventDto, UpdateEventDto } from './dto/create-event.dto';
@@ -33,33 +34,90 @@ const DEFAULT_STARTUP_WEEKEND_MODULES = [
 export class CalendarService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private hydrateEvent(event: any): any {
+    if (!event) return event;
+    let resolvedType = event.eventType;
+    let customKey: string | undefined;
+
+    if (Array.isArray(event.tags)) {
+      const typeTag = event.tags.find(
+        (t: string) => typeof t === 'string' && t.startsWith('type:'),
+      );
+      if (typeTag) {
+        customKey = typeTag.replace('type:', '');
+      } else {
+        const catTag = event.tags.find(
+          (t: string) => typeof t === 'string' && t.startsWith('categoryKey:'),
+        );
+        if (catTag) {
+          customKey = catTag.replace('categoryKey:', '');
+        }
+      }
+    }
+
+    if (customKey) {
+      resolvedType = customKey;
+    }
+
+    return {
+      ...event,
+      type: resolvedType,
+      eventType: resolvedType,
+      baseEventType: event.eventType,
+      categoryKey: customKey || undefined,
+    };
+  }
+
   async createEvent(
     tenantId: string,
     createdById: string,
     dto: CreateEventDto,
   ) {
-    const tags = [...(dto.tags || [])];
-    const categoryKey =
-      dto.categoryKey ||
-      (dto.eventType && !VALID_PRISMA_EVENT_TYPES.includes(dto.eventType)
-        ? dto.eventType
-        : undefined);
+    const customTypes = await this.getEventTypes(tenantId);
 
-    if (categoryKey) {
-      const marker = `categoryKey:${categoryKey}`;
-      if (!tags.includes(marker)) tags.push(marker);
+    // Identify selected type code
+    let selectedTypeCode = dto.type || dto.eventType || dto.categoryKey;
+    if (!selectedTypeCode && Array.isArray(dto.tags)) {
+      const typeTag = dto.tags.find((t) => typeof t === 'string' && t.startsWith('type:'));
+      if (typeTag) {
+        selectedTypeCode = typeTag.replace('type:', '');
+      } else {
+        const catTag = dto.tags.find((t) => typeof t === 'string' && t.startsWith('categoryKey:'));
+        if (catTag) selectedTypeCode = catTag.replace('categoryKey:', '');
+      }
     }
 
+    const isCustomType = Boolean(selectedTypeCode && !VALID_PRISMA_EVENT_TYPES.includes(selectedTypeCode));
+
+    // Determine final valid Prisma enum eventType
     let finalEventType: any = 'ACADEMIC';
-    if (dto.eventType && VALID_PRISMA_EVENT_TYPES.includes(dto.eventType)) {
+    if (dto.baseType && VALID_PRISMA_EVENT_TYPES.includes(dto.baseType)) {
+      finalEventType = dto.baseType;
+    } else if (dto.eventType && VALID_PRISMA_EVENT_TYPES.includes(dto.eventType)) {
       finalEventType = dto.eventType;
-    } else if (categoryKey && VALID_PRISMA_EVENT_TYPES.includes(categoryKey)) {
-      finalEventType = categoryKey;
+    } else if (dto.type && VALID_PRISMA_EVENT_TYPES.includes(dto.type)) {
+      finalEventType = dto.type;
+    } else if (isCustomType) {
+      const matchingType = customTypes.find((t) => t.code === selectedTypeCode);
+      if (matchingType?.baseType && VALID_PRISMA_EVENT_TYPES.includes(matchingType.baseType)) {
+        finalEventType = matchingType.baseType;
+      }
+    }
+
+    // Construct clean tags
+    let tags = [...(dto.tags || [])];
+    if (isCustomType && selectedTypeCode) {
+      tags = tags.filter((t) => !String(t).startsWith('type:') && !String(t).startsWith('categoryKey:'));
+      tags.push(`type:${selectedTypeCode}`);
+      tags.push(`categoryKey:${selectedTypeCode}`);
+    } else if (dto.categoryKey) {
+      const marker = `categoryKey:${dto.categoryKey}`;
+      if (!tags.includes(marker)) tags.push(marker);
     }
 
     let workflowModules = dto.workflowModules;
     if (
-      (finalEventType === 'STARTUP_WEEKEND' || categoryKey === 'STARTUP_WEEKEND') &&
+      (finalEventType === 'STARTUP_WEEKEND' || selectedTypeCode === 'STARTUP_WEEKEND') &&
       (!workflowModules || (Array.isArray(workflowModules) && workflowModules.length === 0))
     ) {
       workflowModules = DEFAULT_STARTUP_WEEKEND_MODULES as any;
@@ -84,7 +142,7 @@ export class CalendarService {
       createdById,
     };
 
-    return this.prisma.schoolEvent.create({
+    const created = await this.prisma.schoolEvent.create({
       data: createData,
       include: {
         createdBy: {
@@ -92,6 +150,8 @@ export class CalendarService {
         },
       },
     });
+
+    return this.hydrateEvent(created);
   }
 
   async listEvents(
@@ -101,6 +161,8 @@ export class CalendarService {
     audience?: string,
     userId?: string,
     role?: string,
+    eventType?: string,
+    search?: string,
   ) {
     const where: any = { tenantId, deletedAt: null };
 
@@ -118,6 +180,47 @@ export class CalendarService {
       ];
     }
 
+    if (search) {
+      const searchCondition = {
+        OR: [
+          { title: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+          { location: { contains: search, mode: 'insensitive' } },
+        ],
+      };
+      if (where.AND) {
+        where.AND.push(searchCondition);
+      } else {
+        where.AND = [searchCondition];
+      }
+    }
+
+    if (eventType && eventType !== 'ALL') {
+      let typeCondition: any;
+      if (VALID_PRISMA_EVENT_TYPES.includes(eventType)) {
+        typeCondition = {
+          OR: [
+            { eventType: eventType as any },
+            { tags: { has: `type:${eventType}` } },
+            { tags: { has: `categoryKey:${eventType}` } },
+          ],
+        };
+      } else {
+        typeCondition = {
+          OR: [
+            { tags: { has: `type:${eventType}` } },
+            { tags: { has: `categoryKey:${eventType}` } },
+          ],
+        };
+      }
+
+      if (where.AND) {
+        where.AND.push(typeCondition);
+      } else {
+        where.AND = [typeCondition];
+      }
+    }
+
     const schoolEvents = await this.prisma.schoolEvent.findMany({
       where,
       include: {
@@ -128,63 +231,77 @@ export class CalendarService {
       orderBy: { startDate: 'asc' },
     });
 
-    let homeworkEvents: any[] = [];
-    try {
-      const hwWhere: any = { tenantId };
-      if (startDate && endDate) {
-        hwWhere.dueDate = {
-          gte: new Date(startDate),
-          lte: new Date(endDate),
-        };
-      }
-      const homeworks = await this.prisma.homework.findMany({
-        where: hwWhere,
-        include: {
-          lesson: { select: { id: true, name: true } },
-          classroom: { select: { id: true, name: true } },
-          teacher: { include: { user: { select: { firstName: true, lastName: true, role: true, avatarUrl: true } } } },
-        },
-        orderBy: { dueDate: 'asc' },
-      });
+    const hydratedSchoolEvents = schoolEvents.map((ev) => this.hydrateEvent(ev));
 
-      homeworkEvents = homeworks.map((hw) => ({
-        id: `hw-${hw.id}`,
-        tenantId: hw.tenantId,
-        title: `مهلت تکلیف: ${hw.title}`,
-        description: hw.description || '',
-        eventType: 'HOMEWORK',
-        type: 'HOMEWORK',
-        startDate: hw.dueDate,
-        endDate: hw.dueDate,
-        isAllDay: false,
-        targetAudience: 'SPECIFIC_CLASSES',
-        targetClassIds: [hw.classroomId],
-        location: hw.lesson?.name || (hw.classroom?.name ? (hw.classroom.name.startsWith('کلاس') ? hw.classroom.name : `کلاس ${hw.classroom.name}`) : undefined),
-        tags: ['HOMEWORK', `lesson:${hw.lessonId}`],
-        homeworkId: hw.id,
-        lessonName: hw.lesson?.name,
-        classroomName: hw.classroom?.name,
-        createdBy: hw.teacher?.user
-          ? {
-              firstName: hw.teacher.user.firstName,
-              lastName: hw.teacher.user.lastName,
-              role: 'TEACHER',
-            }
-          : undefined,
-        createdAt: hw.createdAt,
-      }));
-    } catch {
-      // Non-blocking fallback
+    let homeworkEvents: any[] = [];
+    if (!eventType || eventType === 'ALL' || eventType === 'HOMEWORK') {
+      try {
+        const hwWhere: any = { tenantId };
+        if (startDate && endDate) {
+          hwWhere.dueDate = {
+            gte: new Date(startDate),
+            lte: new Date(endDate),
+          };
+        }
+        if (search) {
+          hwWhere.OR = [
+            { title: { contains: search, mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } },
+          ];
+        }
+        const homeworks = await this.prisma.homework.findMany({
+          where: hwWhere,
+          include: {
+            lesson: { select: { id: true, name: true } },
+            classroom: { select: { id: true, name: true } },
+            teacher: { include: { user: { select: { firstName: true, lastName: true, role: true, avatarUrl: true } } } },
+          },
+          orderBy: { dueDate: 'asc' },
+        });
+
+        homeworkEvents = homeworks.map((hw) => ({
+          id: `hw-${hw.id}`,
+          tenantId: hw.tenantId,
+          title: `مهلت تکلیف: ${hw.title}`,
+          description: hw.description || '',
+          eventType: 'HOMEWORK',
+          type: 'HOMEWORK',
+          startDate: hw.dueDate,
+          endDate: hw.dueDate,
+          isAllDay: false,
+          targetAudience: 'SPECIFIC_CLASSES',
+          targetClassIds: [hw.classroomId],
+          location: hw.lesson?.name || (hw.classroom?.name ? (hw.classroom.name.startsWith('کلاس') ? hw.classroom.name : `کلاس ${hw.classroom.name}`) : undefined),
+          tags: ['HOMEWORK', `lesson:${hw.lessonId}`],
+          homeworkId: hw.id,
+          lessonName: hw.lesson?.name,
+          classroomName: hw.classroom?.name,
+          createdBy: hw.teacher?.user
+            ? {
+                firstName: hw.teacher.user.firstName,
+                lastName: hw.teacher.user.lastName,
+                role: 'TEACHER',
+              }
+            : undefined,
+          createdAt: hw.createdAt,
+        }));
+      } catch {
+        // Non-blocking fallback
+      }
     }
 
-    const coachingEvents = await this.fetchCoachingCalendarEvents(tenantId, {
-      startDate,
-      endDate,
-      userId,
-      role,
-    });
+    let coachingEvents: any[] = [];
+    if (!eventType || eventType === 'ALL' || eventType === 'MEETING' || eventType === 'COACHING') {
+      coachingEvents = await this.fetchCoachingCalendarEvents(tenantId, {
+        startDate,
+        endDate,
+        userId,
+        role,
+        search,
+      });
+    }
 
-    const allEvents = [...schoolEvents, ...homeworkEvents, ...coachingEvents];
+    const allEvents = [...hydratedSchoolEvents, ...homeworkEvents, ...coachingEvents];
     allEvents.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     return allEvents;
   }
@@ -411,7 +528,7 @@ export class CalendarService {
       throw new NotFoundException('رویداد مورد نظر یافت نشد');
     }
 
-    return event;
+    return this.hydrateEvent(event);
   }
 
   async updateEvent(
@@ -427,34 +544,65 @@ export class CalendarService {
       throw new NotFoundException('رویداد مورد نظر یافت نشد');
     }
 
-    let nextTags: string[] | undefined;
-    const categoryKey =
-      dto.categoryKey ||
-      (dto.eventType && !VALID_PRISMA_EVENT_TYPES.includes(dto.eventType)
-        ? dto.eventType
-        : undefined);
+    const customTypes = await this.getEventTypes(tenantId);
 
-    if (dto.tags || categoryKey) {
-      const base = dto.tags || (existing.tags as string[]) || [];
-      nextTags = [...base];
-      if (categoryKey) {
-        nextTags = nextTags.filter((t) => !String(t).startsWith('categoryKey:'));
-        nextTags.push(`categoryKey:${categoryKey}`);
+    // Identify target type code
+    let selectedTypeCode = dto.type || dto.eventType || dto.categoryKey;
+    if (!selectedTypeCode && Array.isArray(dto.tags)) {
+      const typeTag = dto.tags.find((t) => typeof t === 'string' && t.startsWith('type:'));
+      if (typeTag) {
+        selectedTypeCode = typeTag.replace('type:', '');
+      } else {
+        const catTag = dto.tags.find((t) => typeof t === 'string' && t.startsWith('categoryKey:'));
+        if (catTag) selectedTypeCode = catTag.replace('categoryKey:', '');
       }
     }
 
+    let nextTags: string[] | undefined;
     let finalEventType: any = undefined;
-    if (dto.eventType) {
-      if (VALID_PRISMA_EVENT_TYPES.includes(dto.eventType)) {
+
+    if (
+      dto.tags !== undefined ||
+      dto.type !== undefined ||
+      dto.eventType !== undefined ||
+      dto.categoryKey !== undefined ||
+      dto.baseType !== undefined
+    ) {
+      const base = dto.tags !== undefined ? dto.tags : ((existing.tags as string[]) || []);
+      let cleanedTags = base.filter(
+        (t) => !String(t).startsWith('type:') && !String(t).startsWith('categoryKey:'),
+      );
+
+      if (selectedTypeCode) {
+        if (!VALID_PRISMA_EVENT_TYPES.includes(selectedTypeCode)) {
+          // Custom type
+          cleanedTags.push(`type:${selectedTypeCode}`);
+          cleanedTags.push(`categoryKey:${selectedTypeCode}`);
+
+          const matchingType = customTypes.find((t) => t.code === selectedTypeCode);
+          if (dto.baseType && VALID_PRISMA_EVENT_TYPES.includes(dto.baseType)) {
+            finalEventType = dto.baseType;
+          } else if (dto.eventType && VALID_PRISMA_EVENT_TYPES.includes(dto.eventType)) {
+            finalEventType = dto.eventType;
+          } else if (matchingType?.baseType && VALID_PRISMA_EVENT_TYPES.includes(matchingType.baseType)) {
+            finalEventType = matchingType.baseType;
+          } else {
+            finalEventType = 'ACADEMIC';
+          }
+        } else {
+          // Standard type (e.g. EXAM, SPORTS, etc.)
+          finalEventType = selectedTypeCode;
+        }
+      } else if (dto.eventType && VALID_PRISMA_EVENT_TYPES.includes(dto.eventType)) {
         finalEventType = dto.eventType;
-      } else {
-        finalEventType = 'ACADEMIC';
       }
+
+      nextTags = cleanedTags;
     }
 
     let nextWorkflowModules = dto.workflowModules;
     if (
-      (finalEventType === 'STARTUP_WEEKEND' || categoryKey === 'STARTUP_WEEKEND') &&
+      (finalEventType === 'STARTUP_WEEKEND' || selectedTypeCode === 'STARTUP_WEEKEND') &&
       (!existing.workflowModules ||
         (Array.isArray(existing.workflowModules) && (existing.workflowModules as any).length === 0)) &&
       (!nextWorkflowModules ||
@@ -463,7 +611,7 @@ export class CalendarService {
       nextWorkflowModules = DEFAULT_STARTUP_WEEKEND_MODULES as any;
     }
 
-    return this.prisma.schoolEvent.update({
+    const updated = await this.prisma.schoolEvent.update({
       where: { id: eventId },
       data: {
         ...(dto.title ? { title: dto.title } : {}),
@@ -476,7 +624,7 @@ export class CalendarService {
         ...(dto.targetClassIds ? { targetClassIds: dto.targetClassIds } : {}),
         ...(dto.location !== undefined ? { location: dto.location } : {}),
         ...(dto.coverUrl !== undefined ? { coverUrl: dto.coverUrl } : {}),
-        ...(nextTags ? { tags: nextTags } : {}),
+        ...(nextTags !== undefined ? { tags: nextTags } : {}),
         ...(nextWorkflowModules !== undefined
           ? { workflowModules: nextWorkflowModules as any }
           : {}),
@@ -487,6 +635,8 @@ export class CalendarService {
         },
       },
     });
+
+    return this.hydrateEvent(updated);
   }
 
   async listRoadmapEvents(
@@ -507,12 +657,16 @@ export class CalendarService {
         conditions.push({
           OR: [
             { eventType: eventType as any },
+            { tags: { has: `type:${eventType}` } },
             { tags: { has: `categoryKey:${eventType}` } },
           ],
         });
       } else {
         conditions.push({
-          tags: { has: `categoryKey:${eventType}` },
+          OR: [
+            { tags: { has: `type:${eventType}` } },
+            { tags: { has: `categoryKey:${eventType}` } },
+          ],
         });
       }
     }
@@ -542,7 +696,7 @@ export class CalendarService {
 
     let schoolEvents: any[] = [];
     if (!eventType || eventType !== 'HOMEWORK') {
-      schoolEvents = await this.prisma.schoolEvent.findMany({
+      const rawSchoolEvents = await this.prisma.schoolEvent.findMany({
         where,
         include: {
           createdBy: {
@@ -551,6 +705,7 @@ export class CalendarService {
         },
         orderBy: { startDate: 'asc' },
       });
+      schoolEvents = rawSchoolEvents.map((ev) => this.hydrateEvent(ev));
     }
 
     let homeworkEvents: any[] = [];
@@ -648,7 +803,7 @@ export class CalendarService {
       where: { id: eventId },
       data: { deletedAt: null },
     });
-    return { message: 'رویداد با موفقیت بازگردانده شد', data: restored };
+    return { message: 'رویداد با موفقیت بازگردانده شد', data: this.hydrateEvent(restored) };
   }
 
   async getEventTypes(tenantId: string) {
@@ -673,7 +828,14 @@ export class CalendarService {
 
       const settings = (tenant?.settings as Record<string, any>) || {};
       if (Array.isArray(settings.eventTypes) && settings.eventTypes.length > 0) {
-        return settings.eventTypes;
+        const existingCodes = new Set(settings.eventTypes.map((t: any) => t.code));
+        const merged = [...settings.eventTypes];
+        for (const def of defaultTypes) {
+          if (!existingCodes.has(def.code)) {
+            merged.push(def);
+          }
+        }
+        return merged;
       }
     } catch {
       // Fallback to default types
@@ -683,15 +845,33 @@ export class CalendarService {
   }
 
   async updateEventTypes(tenantId: string, eventTypes: any[]) {
+    if (!tenantId) {
+      throw new BadRequestException('شناسه مدرسه (tenantId) نامعتبر است');
+    }
+
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: tenantId },
       select: { settings: true },
     });
 
+    if (!tenant) {
+      throw new NotFoundException('مدرسه مورد نظر یافت نشد');
+    }
+
+    const sanitized = (eventTypes || [])
+      .map((t) => ({
+        code: String(t.code || '').trim(),
+        titleFa: String(t.titleFa || '').trim(),
+        color: String(t.color || 'emerald').trim(),
+        baseType: String(t.baseType || 'ACADEMIC').trim(),
+        isDefault: Boolean(t.isDefault),
+      }))
+      .filter((t) => t.code && t.titleFa);
+
     const currentSettings = (tenant?.settings as Record<string, any>) || {};
     const updatedSettings = {
       ...currentSettings,
-      eventTypes,
+      eventTypes: sanitized,
     };
 
     await this.prisma.tenant.update({
@@ -699,7 +879,7 @@ export class CalendarService {
       data: { settings: updatedSettings },
     });
 
-    return { success: true, eventTypes };
+    return { success: true, eventTypes: sanitized };
   }
 
   private static readonly DEFAULT_EVENT_CATEGORIES = [

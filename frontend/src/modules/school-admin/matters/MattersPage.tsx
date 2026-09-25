@@ -13,6 +13,7 @@ import {
   Award,
   AlertTriangle,
   HeartHandshake,
+  Scale,
   Plus,
   Trash2,
   Search,
@@ -258,8 +259,8 @@ export const MattersPage: React.FC = () => {
       <div className="bg-white dark:bg-[#151C28] rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-[#242F42] shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] px-4 py-3 sm:px-5 sm:py-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-black shadow-2xs shrink-0">
-              <ShieldAlert className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary dark:text-primary border border-primary/25 flex items-center justify-center font-black shadow-2xs shrink-0">
+              <Scale className="w-5 h-5" />
             </div>
             <div className="flex flex-wrap items-center gap-2 min-w-0">
               <h1 className="text-lg sm:text-2xl font-black text-ink-darker dark:text-white truncate">

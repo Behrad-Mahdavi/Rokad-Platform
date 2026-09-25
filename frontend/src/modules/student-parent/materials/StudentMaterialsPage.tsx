@@ -437,7 +437,7 @@ export const StudentMaterialsPage: React.FC = () => {
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             {/* Theme Icon matching schedule/homework */}
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black shadow-2xs shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary dark:text-primary border border-primary/25 flex items-center justify-center font-black shadow-2xs shrink-0">
               <BookOpen className="w-5 h-5" />
             </div>
             <h1 className="text-lg sm:text-2xl font-black text-ink-darker dark:text-white truncate">

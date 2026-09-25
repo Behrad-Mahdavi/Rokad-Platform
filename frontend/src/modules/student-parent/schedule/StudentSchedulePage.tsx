@@ -184,7 +184,7 @@ export const StudentSchedulePage: React.FC = () => {
         {/* Top Row: Title & Action Button side-by-side on all viewports */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black shadow-2xs shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary dark:text-primary border border-primary/25 flex items-center justify-center font-black shadow-2xs shrink-0">
               <CalendarDays className="w-5 h-5" />
             </div>
             <div className="flex flex-wrap items-center gap-2 min-w-0">

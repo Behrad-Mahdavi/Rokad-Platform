@@ -23,6 +23,7 @@ import {
   CreateTenantHolidayDto,
   CreateOfficialHolidayDto,
 } from './dto/create-holiday.dto';
+import { UpdateEventTypesDto } from './dto/update-event-types.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
@@ -60,7 +61,7 @@ export class CalendarController {
   async updateEventTypes(
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentTenant('id') tenantId: string,
-    @Body() dto: { eventTypes: any[] },
+    @Body() dto: UpdateEventTypesDto,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
     return this.calendarService.updateEventTypes(effectiveTenantId, dto?.eventTypes || []);
@@ -102,6 +103,8 @@ export class CalendarController {
         audience,
         userId,
         role,
+        eventType,
+        search,
       );
     }
     return this.calendarService.listRoadmapEvents(

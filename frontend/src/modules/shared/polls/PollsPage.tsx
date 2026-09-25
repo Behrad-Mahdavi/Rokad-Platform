@@ -34,6 +34,7 @@ import {
   BarChart3,
   Calendar,
   Lock,
+  Clock,
   ChevronLeft,
   ChevronRight,
   Trash2,
@@ -52,6 +53,11 @@ import {
   Meh,
   Frown,
   Angry,
+  Search,
+  Filter,
+  HelpCircle,
+  User,
+  Eye,
 } from 'lucide-react';
 
 type QuestionType = PorscadQuestionType;
@@ -81,6 +87,7 @@ interface Poll {
   porscadFormPublicId?: string | null;
   options: PollOption[];
   _count?: { votes: number };
+  createdBy?: { firstName?: string; lastName?: string; role?: string };
 }
 
 interface QuestionDraft {
@@ -221,7 +228,7 @@ function emptyDraft(): QuestionDraft {
   };
 }
 
-type PollFilter = 'ACTIVE' | 'ENDED' | 'ARCHIVED';
+type PollFilter = 'ACTIVE' | 'SCHEDULED' | 'ENDED';
 type PollStatusAction = 'close' | 'open' | 'archive' | 'unarchive';
 
 export const PollsPage: React.FC = () => {
@@ -243,6 +250,7 @@ export const PollsPage: React.FC = () => {
     }
   });
   const [activeFilter, setActiveFilter] = useState<PollFilter>('ACTIVE');
+  const [searchQuery, setSearchQuery] = useState('');
   const [statusAction, setStatusAction] = useState<{
     poll: Poll;
     action: PollStatusAction;
@@ -331,29 +339,43 @@ export const PollsPage: React.FC = () => {
   }, []);
 
   const now = new Date();
-  const filteredPolls = polls.filter((p) => {
-    const archived = !!p.isArchived;
-    const ended = p.isClosed || new Date(p.endDate) < now;
-    if (activeFilter === 'ARCHIVED') return archived;
-    if (archived) return false;
-    if (activeFilter === 'ENDED') return ended;
-    return !ended;
-  });
 
   const filterCounts = useMemo(() => {
     let active = 0;
+    let scheduled = 0;
     let ended = 0;
-    let archived = 0;
     for (const p of polls) {
-      if (p.isArchived) {
-        archived += 1;
-        continue;
+      if (p.isArchived || p.isClosed || new Date(p.endDate) < now) {
+        ended += 1;
+      } else if (new Date(p.startDate) > now) {
+        scheduled += 1;
+      } else {
+        active += 1;
       }
-      if (p.isClosed || new Date(p.endDate) < now) ended += 1;
-      else active += 1;
     }
-    return { active, ended, archived };
+    return { active, scheduled, ended };
   }, [polls, now]);
+
+  const filteredPolls = useMemo(() => {
+    return polls.filter((p) => {
+      const isEnded = !!p.isArchived || !!p.isClosed || new Date(p.endDate) < now;
+      const isScheduled = !isEnded && new Date(p.startDate) > now;
+      const isActive = !isEnded && !isScheduled;
+
+      if (activeFilter === 'ACTIVE' && !isActive) return false;
+      if (activeFilter === 'SCHEDULED' && !isScheduled) return false;
+      if (activeFilter === 'ENDED' && !isEnded) return false;
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.trim().toLowerCase();
+        const titleMatch = (p.title || '').toLowerCase().includes(q);
+        const descMatch = (p.description || '').toLowerCase().includes(q);
+        if (!titleMatch && !descMatch) return false;
+      }
+
+      return true;
+    });
+  }, [polls, activeFilter, searchQuery, now]);
 
   const syncPorscadState = async (
     poll: Poll,
@@ -1631,90 +1653,134 @@ export const PollsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12 animate-in fade-in duration-300">
-      <ResponsivePageHeader
-        title="نظرسنجی‌ها"
-        subtitle="فرم‌های پرس‌کاد، مهلت و وضعیت پاسخ‌ها در یک جا"
-        icon={<Vote className="h-5 w-5 text-primary" />}
-        actions={
-          canCreate ? (
+    <div className="space-y-4 sm:space-y-5 pb-12 max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 animate-in fade-in duration-300">
+      {/* 1. Header Master Panel */}
+      <div className="bg-white dark:bg-[#151C28] rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-[#242F42] shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] p-4 sm:p-5">
+        <div className="flex items-center justify-between gap-3">
+          {/* Title and Icon */}
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-primary/10 text-primary dark:text-primary border border-primary/25 flex items-center justify-center font-black shadow-2xs shrink-0">
+              <Vote className="w-5 h-5 sm:w-6 sm:h-6" />
+            </div>
+            <div className="flex items-center gap-2 min-w-0">
+              <h1 className="text-lg sm:text-2xl font-black text-ink-darker dark:text-white truncate">
+                نظرسنجی‌ها
+              </h1>
+              {filterCounts.active > 0 && (
+                <span className="min-w-[20px] h-[20px] px-1.5 rounded-full bg-rose-500 text-white text-[11px] font-black flex items-center justify-center leading-none animate-pulse shadow-xs select-none">
+                  {toPersianDigits(filterCounts.active)}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Action Button */}
+          {canCreate && (
             <Button
               onClick={openCreate}
-              className="w-full sm:w-auto flex items-center justify-center gap-1.5 shadow-xs font-medium text-xs h-9 sm:h-10"
+              className="h-9 sm:h-10 px-4 rounded-xl font-black text-xs sm:text-sm bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-black shadow-[2px_2px_0_#1F413D] dark:shadow-[2px_2px_0_#0B0F17] flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>افزودن نظرسنجی</span>
+              <span>افزودن نظرسنجی جدید</span>
             </Button>
-          ) : undefined
-        }
-      />
-
-      <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-3">
-        <button
-          onClick={() => setActiveFilter('ACTIVE')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all min-h-[40px] ${
-            activeFilter === 'ACTIVE'
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-muted-foreground hover:bg-surface hover:text-foreground'
-          }`}
-        >
-          <BarChart3 className="w-4 h-4" />
-          <span>فعال</span>
-          <span className="text-[11px] font-black opacity-80">
-            ({toPersianDigits(filterCounts.active)})
-          </span>
-        </button>
-        <button
-          onClick={() => setActiveFilter('ENDED')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all min-h-[40px] ${
-            activeFilter === 'ENDED'
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-muted-foreground hover:bg-surface hover:text-foreground'
-          }`}
-        >
-          <Calendar className="w-4 h-4" />
-          <span>پایان‌یافته</span>
-          <span className="text-[11px] font-black opacity-80">
-            ({toPersianDigits(filterCounts.ended)})
-          </span>
-        </button>
-        <button
-          onClick={() => setActiveFilter('ARCHIVED')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all min-h-[40px] ${
-            activeFilter === 'ARCHIVED'
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-muted-foreground hover:bg-surface hover:text-foreground'
-          }`}
-        >
-          <Lock className="w-4 h-4" />
-          <span>آرشیو</span>
-          <span className="text-[11px] font-black opacity-80">
-            ({toPersianDigits(filterCounts.archived)})
-          </span>
-        </button>
+          )}
+        </div>
       </div>
 
+      {/* 2. Fixed Tabs & Search Toolbar */}
+      <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-[#242F42] shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        {/* Fixed Segmented Tabs: فعال، برنامه‌ریزی شده، پایان‌یافته */}
+        <div className="inline-flex items-center p-1 rounded-xl bg-gray-100/90 dark:bg-gray-800/90 border border-gray-200/70 dark:border-gray-700/70 w-full sm:w-auto">
+          {/* Tab 1: فعال */}
+          <button
+            type="button"
+            onClick={() => setActiveFilter('ACTIVE')}
+            className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-black transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
+              activeFilter === 'ACTIVE'
+                ? 'bg-white dark:bg-[#151C28] text-primary-dark dark:text-primary border border-primary/25 dark:border-gray-700 shadow-[1.5px_1.5px_0_#59BBAF] dark:shadow-[1.5px_1.5px_0_#0B0F17]'
+                : 'text-gray-600 dark:text-gray-400 hover:text-ink-darker dark:hover:text-white font-bold'
+            }`}
+          >
+            فعال
+          </button>
+
+          {/* Tab 2: برنامه‌ریزی شده */}
+          <button
+            type="button"
+            onClick={() => setActiveFilter('SCHEDULED')}
+            className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-black transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
+              activeFilter === 'SCHEDULED'
+                ? 'bg-white dark:bg-[#151C28] text-primary-dark dark:text-primary border border-primary/25 dark:border-gray-700 shadow-[1.5px_1.5px_0_#59BBAF] dark:shadow-[1.5px_1.5px_0_#0B0F17]'
+                : 'text-gray-600 dark:text-gray-400 hover:text-ink-darker dark:hover:text-white font-bold'
+            }`}
+          >
+            برنامه‌ریزی شده
+          </button>
+
+          {/* Tab 3: پایان‌یافته */}
+          <button
+            type="button"
+            onClick={() => setActiveFilter('ENDED')}
+            className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-black transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
+              activeFilter === 'ENDED'
+                ? 'bg-white dark:bg-[#151C28] text-primary-dark dark:text-primary border border-primary/25 dark:border-gray-700 shadow-[1.5px_1.5px_0_#59BBAF] dark:shadow-[1.5px_1.5px_0_#0B0F17]'
+                : 'text-gray-600 dark:text-gray-400 hover:text-ink-darker dark:hover:text-white font-bold'
+            }`}
+          >
+            پایان‌یافته
+          </button>
+        </div>
+
+        {/* Quick Search */}
+        <div className="relative min-w-[220px] sm:min-w-[280px]">
+          <Search className="w-4 h-4 text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="جستجو در نظرسنجی‌ها..."
+            className="w-full h-10 pr-9 pl-3 rounded-xl border border-gray-200 dark:border-[#242F42] bg-gray-50 dark:bg-[#1C2536] text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all placeholder:text-muted-foreground"
+          />
+        </div>
+      </div>
+
+      {/* 3. Poll Cards Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Skeleton className="h-48 rounded-2xl" />
-          <Skeleton className="h-48 rounded-2xl" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+          <Skeleton className="h-56 rounded-2xl" />
+          <Skeleton className="h-56 rounded-2xl" />
         </div>
       ) : filteredPolls.length === 0 ? (
-        <div className="text-center py-16 bg-surface/20 rounded-2xl border border-dashed border-border/60">
-          <Vote className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-40" />
-          <h3 className="text-base font-semibold text-foreground">
-            نظرسنجی‌ای در این بخش نیست
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            {activeFilter === 'ACTIVE'
-              ? 'اولین نظرسنجی را بسازید تا در پرس‌کاد منتشر شود.'
-              : activeFilter === 'ENDED'
-                ? 'نظرسنجی پایان‌یافته‌ای ثبت نشده است.'
-                : 'نظرسنجی در آرشیو نیست.'}
+        /* Empty State */
+        <div className="text-center py-16 px-4 bg-white dark:bg-[#151C28] rounded-2xl border-[1.5px] border-dashed border-gray-200 dark:border-gray-800 space-y-3">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-sm bg-primary/10 text-primary">
+            <Vote className="w-8 h-8 stroke-[2]" />
+          </div>
+          <h4 className="text-base sm:text-lg font-black text-ink-darker dark:text-white">
+            نظرسنجی یا فرمی در این بخش یافت نشد
+          </h4>
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+            {searchQuery
+              ? 'هیچ فرمی با عبارت جستجو شده همخوانی ندارد. لطفاً عبارت دیگری را امتحان کنید.'
+              : activeFilter === 'ACTIVE'
+              ? 'در حال حاضر نظرسنجی فعالی برای پاسخ‌دهی وجود ندارد.'
+              : activeFilter === 'SCHEDULED'
+              ? 'در حال حاضر نظرسنجی برنامه‌ریزی‌شده‌ای در سیستم ثبت نشده است.'
+              : 'هنوز نظرسنجی پایان‌یافته‌ای در سامانه ثبت نشده است.'}
           </p>
+          {searchQuery && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSearchQuery('')}
+              className="text-xs font-bold rounded-xl mt-2"
+            >
+              پاک کردن جستجو
+            </Button>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 items-start">
           {filteredPolls.map((poll) => {
             const questions = legacyQuestionsFromPoll(poll);
             const archived = !!poll.isArchived;
@@ -1724,174 +1790,249 @@ export const PollsPage: React.FC = () => {
             const isFuture = new Date(poll.startDate) > now;
             const linked = !!poll.porscadFormId;
             const totalVotes = poll._count?.votes ?? 0;
-            const canReopen =
-              manuallyClosed && !archived && !dateEnded;
+            const canReopen = manuallyClosed && !archived && !dateEnded;
+
+            const audienceConfig = {
+              ALL: {
+                label: 'عمومی (همه)',
+                className: 'bg-primary/10 text-primary-dark dark:text-primary border-primary/25',
+              },
+              STUDENTS: {
+                label: 'دانش‌آموزان',
+                className: 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-800',
+              },
+              PARENTS: {
+                label: 'اولیا',
+                className: 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800',
+              },
+              TEACHERS: {
+                label: 'معلمان',
+                className: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800',
+              },
+              STAFF: {
+                label: 'کادر مدرسه',
+                className: 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-800',
+              },
+            }[poll.targetAudience] || {
+              label: 'عمومی',
+              className: 'bg-primary/10 text-primary-dark dark:text-primary border-primary/25',
+            };
+
+            const statusInfo = (() => {
+              if (archived) {
+                return {
+                  label: 'آرشیو شده',
+                  className: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-700',
+                  dotColor: 'bg-gray-400',
+                  isLive: false,
+                };
+              }
+              if (manuallyClosed) {
+                return {
+                  label: 'بسته‌شده',
+                  className: 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800',
+                  dotColor: 'bg-amber-500',
+                  isLive: false,
+                };
+              }
+              if (dateEnded) {
+                return {
+                  label: 'پایان‌یافته',
+                  className: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-700',
+                  dotColor: 'bg-gray-400',
+                  isLive: false,
+                };
+              }
+              if (isFuture) {
+                return {
+                  label: 'برنامه‌ریزی شده',
+                  className: 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-800',
+                  dotColor: 'bg-sky-500',
+                  isLive: false,
+                };
+              }
+              return {
+                label: 'در حال برگزاری',
+                className: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800',
+                dotColor: 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]',
+                isLive: true,
+              };
+            })();
+
+            const creatorName = poll.createdBy
+              ? `${poll.createdBy.firstName || ''} ${poll.createdBy.lastName || ''}`.trim() || 'مدیر مدرسه'
+              : 'مدیریت مدرسه';
+
+            const questionsCount = questions.length || poll.options?.length || 0;
 
             return (
-              <Card
+              <div
                 key={poll.id}
-                className="overflow-hidden flex flex-col justify-between"
+                className="p-5 rounded-2xl bg-white dark:bg-[#151C28] border-[1.5px] border-gray-200/90 dark:border-[#242F42] hover:border-primary/60 dark:hover:border-primary/60 shadow-xs hover:shadow-[3px_3px_0_#59BBAF] dark:hover:shadow-[3px_3px_0_#1F413D] transition-all group select-none relative z-0"
               >
-                <div>
-                  <CardHeader className="pb-3 border-b border-border/40 bg-surface/30">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-1.5 flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge
-                            variant={
-                              archived
-                                ? 'neutral'
-                                : isClosed
-                                  ? 'warning'
-                                  : isFuture
-                                    ? 'warning'
-                                    : 'success'
-                            }
-                          >
-                            {archived
-                              ? 'آرشیو'
-                              : manuallyClosed
-                                ? 'بسته‌شده'
-                                : dateEnded
-                                  ? 'پایان‌یافته'
-                                  : isFuture
-                                    ? 'آینده'
-                                    : 'در حال اجرا'}
-                          </Badge>
-                          <Badge variant="college">
-                            {AUDIENCE_LABEL[poll.targetAudience] || poll.targetAudience}
-                          </Badge>
-                          {poll.isMandatory ? (
-                            <Badge variant="warning">الزامی (تکلیفی)</Badge>
-                          ) : (
-                            <Badge variant="neutral">اختیاری</Badge>
-                          )}
-                          {poll.isAnonymous && (
-                            <Badge variant="neutral">ناشناس</Badge>
-                          )}
-                          {linked && (
-                            <Badge variant="male">پرس‌کاد</Badge>
-                          )}
-                        </div>
-                        <CardTitle className="text-lg font-bold text-foreground mt-2 leading-relaxed">
-                          {poll.title}
-                        </CardTitle>
+                <div className="space-y-3">
+                  {/* Top Row: Category Badge (Right) & Status Badge (Left) */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                      <span className={`text-[11px] px-2.5 py-1 rounded-lg font-black border ${audienceConfig.className}`}>
+                        {audienceConfig.label}
+                      </span>
+
+                      {poll.isAnonymous && (
+                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40">
+                          <Lock className="w-2.5 h-2.5" />
+                          <span>ناشناس</span>
+                        </span>
+                      )}
+
+                      {poll.isMandatory && (
+                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md font-bold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40">
+                          <AlertCircle className="w-2.5 h-2.5" />
+                          <span>الزامی</span>
+                        </span>
+                      )}
+
+                      {linked && (
+                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md font-black bg-primary/10 text-primary border border-primary/20">
+                          <Sparkles className="w-2.5 h-2.5" />
+                          <span>پرس‌کاد</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <span
+                      className={`relative z-0 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border transition-colors select-none shrink-0 ${statusInfo.className}`}
+                    >
+                      <span className="relative flex h-2 w-2">
+                        {statusInfo.isLive && (
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                        )}
+                        <span className={`relative inline-flex rounded-full h-2 w-2 ${statusInfo.dotColor}`} />
+                      </span>
+                      <span>{statusInfo.label}</span>
+                    </span>
+                  </div>
+
+                  {/* Title */}
+                  <div>
+                    <h3 className="font-black text-base text-ink-darker dark:text-white leading-snug group-hover:text-primary transition-colors line-clamp-2">
+                      {poll.title}
+                    </h3>
+                  </div>
+
+                  {/* Creator & Questions Metadata (Matching Lesson/Teacher Row) */}
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground dark:text-slate-400 font-medium">
+                    <div className="flex items-center gap-1.5 font-bold text-ink-darker dark:text-slate-200">
+                      <User className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span>{creatorName}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <HelpCircle className="w-3.5 h-3.5 text-sec shrink-0" />
+                      <span>{toPersianDigits(questionsCount)} سوال</span>
+                    </div>
+                  </div>
+
+                  {/* Timing & Metrics Matrix Box (Exact Exam & Homework Card Box) */}
+                  <div className="bg-gray-50/80 dark:bg-[#1C2536] rounded-xl p-3 border border-gray-100 dark:border-[#242F42] space-y-2 text-xs">
+                    {/* Date Range */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 text-ink-darker dark:text-slate-200 font-bold">
+                        <Calendar className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span>شروع: {formatJalaliDisplay(poll.startDate, false)}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-muted-foreground dark:text-slate-400 font-medium">
+                        <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span>مهلت: {formatJalaliDisplay(poll.endDate, false)}</span>
                       </div>
                     </div>
-                  </CardHeader>
 
-                  <CardContent className="pt-4 space-y-3">
-                    {poll.description && (
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {poll.description}
-                      </p>
-                    )}
-
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground bg-surface/40 p-2.5 rounded-xl border border-border/40">
-                      <span className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-primary/70" />
-                        مهلت: {formatJalaliDisplay(poll.endDate, true) || toPersianDigits(gregorianToJalaliStr(poll.endDate))}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <ListChecks className="w-3.5 h-3.5 text-primary/70" />
-                        {toPersianDigits(questions.length || poll.options.length)} سوال
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5 text-primary/70" />
-                        {toPersianDigits(totalVotes)} پاسخ
-                      </span>
+                    {/* Participation & Status Row */}
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-200/50 dark:border-gray-800">
+                      <div className="flex items-center gap-1.5 text-muted-foreground dark:text-slate-400">
+                        <Users className="w-3.5 h-3.5 text-muted-foreground dark:text-slate-400 shrink-0" />
+                        <span>مشارکت: <strong className="text-ink-darker dark:text-white font-mono">{toPersianDigits(totalVotes)}</strong> پاسخ</span>
+                      </div>
+                      <div className="flex items-center gap-1 font-bold text-xs text-primary">
+                        <span>{isFuture ? 'در انتظار آغاز' : isClosed ? 'پایان مهلت' : 'در حال دریافت'}</span>
+                      </div>
                     </div>
+                  </div>
 
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {archived || isClosed || isFuture ? null : (
+                  {/* Footer Action Row */}
+                  {(!isFuture || isAdmin) && (
+                    <div className="flex items-center justify-between gap-2">
+                    {!isFuture && (
+                      !archived && !isClosed ? (
                         <Button
-                          size="sm"
                           onClick={() => openPoll(poll)}
-                          className="gap-1.5 text-xs"
+                          className="flex-1 text-xs flex items-center justify-center gap-1.5 h-9 sm:h-10 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-[2px_2px_0_#1F413D] dark:shadow-[2px_2px_0_#0F172A] cursor-pointer"
                         >
-                          <Send className="w-3.5 h-3.5" />
-                          شرکت در نظرسنجی
+                          <Send className="w-4 h-4 shrink-0" />
+                          <span>شرکت در نظرسنجی</span>
                         </Button>
-                      )}
-                      {isAdmin && (
+                      ) : (
                         <Button
-                          size="sm"
                           variant="outline"
                           onClick={() => openAnalytics(poll)}
-                          className="gap-1.5 text-xs"
+                          className="flex-1 text-xs flex items-center justify-center gap-1.5 h-9 sm:h-10 rounded-xl font-bold bg-white dark:bg-[#1C2536] border-gray-200 dark:border-[#242F42] text-foreground dark:text-white hover:bg-gray-50 dark:hover:bg-[#242F42] shadow-2xs transition-colors cursor-pointer"
                         >
-                          <BarChart3 className="w-3.5 h-3.5" />
-                          آنالیتیکس
+                          <BarChart3 className="w-4 h-4 text-primary shrink-0" />
+                          <span>مشاهده نتایج و آمار</span>
                         </Button>
-                      )}
-                      {isAdmin && !archived && !isClosed && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            setStatusAction({ poll, action: 'close' })
-                          }
-                          className="gap-1.5 text-xs"
-                        >
-                          <Lock className="w-3.5 h-3.5" />
-                          بستن
-                        </Button>
-                      )}
-                      {isAdmin && canReopen && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            setStatusAction({ poll, action: 'open' })
-                          }
-                          className="gap-1.5 text-xs"
-                        >
-                          <RefreshCw className="w-3.5 h-3.5" />
-                          بازگشایی
-                        </Button>
-                      )}
-                      {isAdmin && !archived && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            setStatusAction({ poll, action: 'archive' })
-                          }
-                          className="gap-1.5 text-xs"
-                        >
-                          <Lock className="w-3.5 h-3.5" />
-                          آرشیو
-                        </Button>
-                      )}
-                      {isAdmin && archived && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            setStatusAction({ poll, action: 'unarchive' })
-                          }
-                          className="gap-1.5 text-xs"
-                        >
-                          <RefreshCw className="w-3.5 h-3.5" />
-                          فعال‌سازی
-                        </Button>
-                      )}
-                      {isAdmin && (
-                        <Button
-                          size="sm"
-                          variant="outline"
+                      )
+                    )}
+
+                    {/* Admin Tools */}
+                    {isAdmin && (
+                      <div className={`flex items-center gap-1 shrink-0 ${isFuture ? 'mr-auto' : ''}`}>
+                        {!archived && !isClosed && !isFuture && (
+                          <button
+                            type="button"
+                            onClick={() => openAnalytics(poll)}
+                            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-white dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors shadow-2xs cursor-pointer"
+                            title="مشاهده نتایج و آمار"
+                          >
+                            <BarChart3 className="w-4 h-4 text-primary" />
+                          </button>
+                        )}
+
+                        {!archived && !isClosed && !isFuture && (
+                          <button
+                            type="button"
+                            onClick={() => setStatusAction({ poll, action: 'close' })}
+                            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-white dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] text-muted-foreground hover:text-amber-600 hover:border-amber-400 transition-colors shadow-2xs cursor-pointer"
+                            title="بستن موقت نظرسنجی"
+                          >
+                            <Lock className="w-4 h-4" />
+                          </button>
+                        )}
+
+                        {canReopen && (
+                          <button
+                            type="button"
+                            onClick={() => setStatusAction({ poll, action: 'open' })}
+                            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-white dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] text-muted-foreground hover:text-emerald-600 hover:border-emerald-400 transition-colors shadow-2xs cursor-pointer"
+                            title="بازگشایی مجدد"
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
                           onClick={() => setDeleteTarget(poll)}
-                          className="gap-1.5 text-xs text-destructive border-destructive/30 hover:border-destructive/60"
+                          className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-white dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] text-muted-foreground hover:text-rose-600 hover:border-rose-400 transition-colors shadow-2xs cursor-pointer"
+                          title="حذف نظرسنجی"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          حذف
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </div>
-              </Card>
-            );
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
           })}
         </div>
       )}

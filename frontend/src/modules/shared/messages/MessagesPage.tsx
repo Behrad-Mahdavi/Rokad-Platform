@@ -26,6 +26,7 @@ import {
   X,
   ChevronDown,
   Check,
+  RotateCcw,
 } from 'lucide-react';
 
 interface PriorityOption {
@@ -76,6 +77,17 @@ export const MessagesPage: React.FC = () => {
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [isPriorityDropdownOpen, setIsPriorityDropdownOpen] = useState(false);
   const priorityDropdownRef = useRef<HTMLDivElement>(null);
+
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const hasActiveFilters =
+    searchQuery.trim().length > 0 || priorityFilter !== 'ALL' || unreadOnly;
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setPriorityFilter('ALL');
+    setUnreadOnly(false);
+  };
 
   const selectedPriorityOpt = useMemo(
     () => PRIORITY_OPTIONS.find((opt) => opt.value === priorityFilter) || PRIORITY_OPTIONS[0],
@@ -233,11 +245,11 @@ export const MessagesPage: React.FC = () => {
   return (
     <div className="space-y-4 sm:space-y-5 pb-12 max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 animate-in fade-in duration-300">
       {/* 1. Header & Controls Master Panel */}
-      <div className="bg-white dark:bg-[#151C28] rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-gray-800 shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] p-4 sm:p-5 space-y-4">
+      <div className="bg-white dark:bg-[#151C28] rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-gray-800 shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] p-4 sm:p-5">
         {/* Top Row: Title & Action Buttons (Side by side on all viewports) */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black shadow-2xs shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary dark:text-primary border border-primary/25 flex items-center justify-center font-black shadow-2xs shrink-0">
               <MessageSquare className="w-5 h-5" />
             </div>
             <div className="flex items-center gap-2 min-w-0">
@@ -263,46 +275,54 @@ export const MessagesPage: React.FC = () => {
               aria-label="بروزرسانی پیام‌ها"
             >
               <RefreshCw
-                className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : 'text-gray-500 hover:text-primary'
-                  }`}
+                className={`w-4 h-4 ${
+                  loading ? 'animate-spin text-primary' : 'text-gray-500 hover:text-primary'
+                }`}
               />
             </button>
 
+            {/* Filter Toggle Button (Top Left of Header Box) */}
             <button
               type="button"
-              onClick={() => {
-                setReplyRecipient(null);
-                setIsComposeOpen(true);
-              }}
-              className="h-10 px-3.5 sm:px-4 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs sm:text-sm border-[1.5px] border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] hover:shadow-[2.5px_2.5px_0_#438C83] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer inline-flex items-center gap-1.5 sm:gap-2 shrink-0"
+              onClick={() => setIsFilterOpen((prev) => !prev)}
+              className={`relative cursor-pointer select-none flex items-center justify-center w-10 h-10 rounded-xl border-[1.5px] transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] shrink-0 ${
+                isFilterOpen || hasActiveFilters
+                  ? 'bg-primary text-white border-primary-dark shadow-[2px_2px_0_#438C83]'
+                  : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground dark:text-slate-300 border-gray-200 dark:border-[#242F42] hover:bg-gray-100 dark:hover:bg-[#253248] shadow-[1.5px_1.5px_0_rgba(0,0,0,0.05)] dark:shadow-[1.5px_1.5px_0_#0B0F17]'
+              }`}
+              title={isFilterOpen ? 'بستن فیلترها' : 'نمایش فیلترها'}
+              aria-label={isFilterOpen ? 'بستن فیلترها' : 'نمایش فیلترها'}
             >
-              <Plus className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              <span>ارسال پیام جدید</span>
+              <Filter className="w-4 h-4 shrink-0" />
+              {hasActiveFilters && (
+                <span className="absolute top-1.5 left-1.5 w-2 h-2 rounded-full bg-girl ring-2 ring-white dark:ring-[#151C28]" />
+              )}
             </button>
           </div>
         </div>
 
         {/* Subtle Divider */}
-        <div className="border-t border-gray-100 dark:border-gray-800/80" />
+        <div className="border-t border-gray-100 dark:border-gray-800/80 my-3.5 sm:my-4" />
 
-        {/* Bottom Row: Segmented View Switcher & Filters */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          {/* Segmented View Tabs */}
+        {/* Middle Row: Segmented View Switcher */}
+        <div className="flex items-center justify-start">
           <div className="inline-flex items-center p-1 rounded-xl bg-gray-100/90 dark:bg-gray-800/90 border border-gray-200/70 dark:border-gray-700/70 w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setActiveTab('inbox')}
-              className={`flex-1 sm:flex-initial px-3.5 sm:px-4 py-2 rounded-lg text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${activeTab === 'inbox'
-                ? 'bg-white dark:bg-[#151C28] text-primary-dark dark:text-primary border border-primary/25 dark:border-gray-700 shadow-[1.5px_1.5px_0_#59BBAF] dark:shadow-[1.5px_1.5px_0_#0B0F17]'
-                : 'text-gray-600 dark:text-gray-400 hover:text-ink-darker dark:hover:text-white font-bold'
-                }`}
+              className={`flex-1 sm:flex-initial px-3.5 sm:px-4 py-2 rounded-lg text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
+                activeTab === 'inbox'
+                  ? 'bg-white dark:bg-[#151C28] text-primary-dark dark:text-primary border border-primary/25 dark:border-gray-700 shadow-[1.5px_1.5px_0_#59BBAF] dark:shadow-[1.5px_1.5px_0_#0B0F17]'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-ink-darker dark:hover:text-white font-bold'
+              }`}
             >
               <Inbox className="w-3.5 h-3.5" />
               <span>صندوق ورودی</span>
               {unreadCount > 0 && (
                 <span
-                  className={`min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black flex items-center justify-center leading-none ${activeTab === 'inbox' ? 'bg-primary text-white' : 'bg-girl text-white'
-                    }`}
+                  className={`min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black flex items-center justify-center leading-none ${
+                    activeTab === 'inbox' ? 'bg-primary text-white' : 'bg-girl text-white'
+                  }`}
                 >
                   <span className="inline-block transform -translate-y-[0.5px]">
                     {toPersianDigits(unreadCount)}
@@ -314,112 +334,163 @@ export const MessagesPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveTab('sent')}
-              className={`flex-1 sm:flex-initial px-3.5 sm:px-4 py-2 rounded-lg text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${activeTab === 'sent'
+              className={`flex-1 sm:flex-initial px-3.5 sm:px-4 py-2 rounded-lg text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
+                activeTab === 'sent'
                   ? 'bg-white dark:bg-[#151C28] text-primary-dark dark:text-primary border border-primary/25 dark:border-gray-700 shadow-[1.5px_1.5px_0_#59BBAF] dark:shadow-[1.5px_1.5px_0_#0B0F17]'
                   : 'text-gray-600 dark:text-gray-400 hover:text-ink-darker dark:hover:text-white font-bold'
-                }`}
+              }`}
             >
               <Send className="w-3.5 h-3.5" />
               <span>پیام‌های ارسالی</span>
             </button>
           </div>
+        </div>
 
-          {/* Search & Filters Group */}
-          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-            {/* Search Input with Clear Button */}
-            <div className="relative flex-1 sm:w-60 min-w-[160px]">
-              <Search className="w-3.5 h-3.5 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="جستجو در پیام‌ها..."
-                className="w-full h-10 pr-9 pl-8 text-xs rounded-xl border-[1.5px] border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-ink-darker dark:text-white outline-none focus:border-primary focus:bg-white dark:focus:bg-gray-900 transition-colors shadow-2xs font-medium"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0.5 rounded-md cursor-pointer"
-                  title="پاک کردن جستجو"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Priority Filter Custom Dropdown */}
-            <div className="relative shrink-0" ref={priorityDropdownRef}>
-              <button
-                type="button"
-                onClick={() => setIsPriorityDropdownOpen((prev) => !prev)}
-                className={`h-10 px-3.5 rounded-xl text-xs font-bold border-[1.5px] transition-all duration-150 cursor-pointer select-none flex items-center justify-between gap-2.5 shadow-2xs min-w-[130px] ${isPriorityDropdownOpen
-                    ? 'border-primary ring-2 ring-primary/20 dark:ring-primary/30 bg-white dark:bg-[#1C2536] text-ink-darker dark:text-white'
-                    : priorityFilter !== 'ALL'
-                      ? 'border-primary/60 bg-primary/10 text-primary dark:text-primary'
-                      : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-ink-normal dark:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
-                  }`}
-                aria-expanded={isPriorityDropdownOpen}
-                aria-haspopup="listbox"
-              >
-                <div className="flex items-center gap-2.5 truncate min-w-0">
-                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 transition-all ${selectedPriorityOpt.dotColor}`} />
-                  <span className="truncate">{selectedPriorityOpt.label}</span>
-                </div>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 text-gray-400 shrink-0 transition-transform duration-200 ${isPriorityDropdownOpen ? 'rotate-180 text-primary' : ''
-                    }`}
-                />
-              </button>
-
-              {isPriorityDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1.5 z-50 w-44 bg-white dark:bg-[#151C28] rounded-xl border border-gray-200 dark:border-[#242F42] shadow-xl p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
-                  {PRIORITY_OPTIONS.map((opt) => {
-                    const isSelected = opt.value === priorityFilter;
-                    return (
+        {/* Collapsible Filter & Search Panel with smooth grid-height + opacity motion */}
+        <div
+          className={`grid transition-all duration-300 ease-in-out ${
+            isFilterOpen
+              ? 'grid-rows-[1fr] opacity-100 translate-y-0 mt-3.5'
+              : 'grid-rows-[0fr] opacity-0 -translate-y-2 pointer-events-none mt-0'
+          }`}
+        >
+          <div className={`min-h-0 ${isFilterOpen ? 'overflow-visible' : 'overflow-hidden'}`}>
+            <div className="bg-gray-50/80 dark:bg-[#1C2536] rounded-2xl border border-gray-200/80 dark:border-[#242F42] p-3.5 sm:p-4 shadow-xs">
+              <div className="flex flex-col md:flex-row md:items-center gap-3 justify-between">
+                <div className="flex items-center gap-2.5 flex-1 flex-wrap sm:flex-nowrap">
+                  {/* Search Input with Clear Button */}
+                  <div className="relative flex-1 min-w-[180px]">
+                    <Search className="w-3.5 h-3.5 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="جستجو در پیام‌ها..."
+                      className="w-full h-10 pr-9 pl-8 text-xs rounded-xl border-[1.5px] border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-ink-darker dark:text-white outline-none focus:border-primary transition-colors shadow-2xs font-medium"
+                    />
+                    {searchQuery && (
                       <button
-                        key={opt.value}
                         type="button"
-                        onClick={() => {
-                          setPriorityFilter(opt.value);
-                          setIsPriorityDropdownOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer text-right ${isSelected
-                            ? 'bg-primary/10 text-primary dark:text-primary font-black'
-                            : 'text-ink-darker dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1C2536]'
-                          }`}
+                        onClick={() => setSearchQuery('')}
+                        className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0.5 rounded-md cursor-pointer"
+                        title="پاک کردن جستجو"
                       >
-                        <div className="flex items-center gap-2.5">
-                          <span className={`w-2.5 h-2.5 rounded-full shrink-0 transition-all ${opt.dotColor}`} />
-                          <span>{opt.label}</span>
-                        </div>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+                        <X className="w-3.5 h-3.5" />
                       </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                    )}
+                  </div>
 
-            {/* Unread Only Toggle */}
-            {activeTab === 'inbox' && (
-              <button
-                type="button"
-                onClick={() => setUnreadOnly(!unreadOnly)}
-                className={`h-10 px-3 rounded-xl text-xs font-black border-[1.5px] transition-all cursor-pointer shrink-0 active:translate-x-[1px] active:translate-y-[1px] flex items-center gap-1.5 ${unreadOnly
-                    ? 'bg-primary/10 border-primary text-primary-dark dark:text-primary shadow-2xs'
-                    : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-primary/40'
-                  }`}
-              >
-                <div
-                  className={`w-2 h-2 rounded-full transition-colors ${unreadOnly ? 'bg-primary ring-2 ring-primary/30' : 'bg-gray-300 dark:bg-gray-600'
-                    }`}
-                />
-                <span>خوانده‌نشده</span>
-              </button>
-            )}
+                  {/* Priority Filter Custom Dropdown */}
+                  <div className="relative shrink-0" ref={priorityDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsPriorityDropdownOpen((prev) => !prev)}
+                      className={`h-10 px-3.5 rounded-xl text-xs font-bold border-[1.5px] transition-all duration-150 cursor-pointer select-none flex items-center justify-between gap-2.5 shadow-2xs min-w-[130px] ${
+                        isPriorityDropdownOpen
+                          ? 'border-primary ring-2 ring-primary/20 dark:ring-primary/30 bg-white dark:bg-[#1C2536] text-ink-darker dark:text-white'
+                          : priorityFilter !== 'ALL'
+                          ? 'border-primary/60 bg-primary/10 text-primary dark:text-primary'
+                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-ink-normal dark:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
+                      }`}
+                      aria-expanded={isPriorityDropdownOpen}
+                      aria-haspopup="listbox"
+                    >
+                      <div className="flex items-center gap-2.5 truncate min-w-0">
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full shrink-0 transition-all ${selectedPriorityOpt.dotColor}`}
+                        />
+                        <span className="truncate">{selectedPriorityOpt.label}</span>
+                      </div>
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 text-gray-400 shrink-0 transition-transform duration-200 ${
+                          isPriorityDropdownOpen ? 'rotate-180 text-primary' : ''
+                        }`}
+                      />
+                    </button>
+
+                    {isPriorityDropdownOpen && (
+                      <div className="absolute top-full left-0 mt-1.5 z-50 w-44 bg-white dark:bg-[#151C28] rounded-xl border border-gray-200 dark:border-[#242F42] shadow-xl p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
+                        {PRIORITY_OPTIONS.map((opt) => {
+                          const isSelected = opt.value === priorityFilter;
+                          return (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => {
+                                setPriorityFilter(opt.value);
+                                setIsPriorityDropdownOpen(false);
+                              }}
+                              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer text-right ${
+                                isSelected
+                                  ? 'bg-primary/10 text-primary dark:text-primary font-black'
+                                  : 'text-ink-darker dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1C2536]'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5">
+                                <span
+                                  className={`w-2.5 h-2.5 rounded-full shrink-0 transition-all ${opt.dotColor}`}
+                                />
+                                <span>{opt.label}</span>
+                              </div>
+                              {isSelected && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Unread Only Toggle (Inbox) */}
+                  {activeTab === 'inbox' && (
+                    <button
+                      type="button"
+                      onClick={() => setUnreadOnly(!unreadOnly)}
+                      className={`h-10 px-3.5 rounded-xl text-xs font-black border-[1.5px] transition-all cursor-pointer shrink-0 active:translate-x-[1px] active:translate-y-[1px] flex items-center gap-1.5 ${
+                        unreadOnly
+                          ? 'bg-primary text-white border-primary shadow-2xs'
+                          : 'bg-white dark:bg-[#151C28] border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-primary/40'
+                      }`}
+                    >
+                      <div
+                        className={`w-2 h-2 rounded-full transition-colors ${
+                          unreadOnly ? 'bg-white ring-2 ring-white/30' : 'bg-gray-300 dark:bg-gray-600'
+                        }`}
+                      />
+                      <span>خوانده‌نشده</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Reset Filters */}
+                {hasActiveFilters && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={resetFilters}
+                    className="text-xs h-10 gap-1.5 text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl shrink-0"
+                    title="پاک کردن تمام فیلترها"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>بازنشانی فیلترها</span>
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Bottom Full-Width Compose Button */}
+        <button
+          type="button"
+          onClick={() => {
+            setReplyRecipient(null);
+            setIsComposeOpen(true);
+          }}
+          className="w-full h-11 sm:h-12 mt-3.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs sm:text-sm border-[1.5px] border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] hover:shadow-[2.5px_2.5px_0_#438C83] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer flex items-center justify-center gap-2 group shrink-0"
+        >
+          <Plus className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform" />
+          <span>ارسال پیام جدید</span>
+        </button>
       </div>
 
       {/* 2. Messages List */}

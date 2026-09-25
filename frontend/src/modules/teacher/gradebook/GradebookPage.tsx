@@ -33,9 +33,10 @@ import {
   Check,
   X,
   ExternalLink,
-  ChevronRight,
   TrendingUp,
   Percent,
+  Scale,
+  Plus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -130,7 +131,24 @@ export const GradebookPage: React.FC = () => {
   const [dossierStudentId, setDossierStudentId] = useState<string | null>(null);
   const [dossierData, setDossierData] = useState<any>(null);
   const [isLoadingDossier, setIsLoadingDossier] = useState<boolean>(false);
-  const [dossierActiveTab, setDossierActiveTab] = useState<'ORAL' | 'HOMEWORK' | 'ATTENDANCE' | 'QUICK_GRADE'>('ORAL');
+  const [dossierActiveTab, setDossierActiveTab] = useState<'ORAL' | 'HOMEWORK' | 'ATTENDANCE' | 'MATTERS' | 'QUICK_GRADE'>('ORAL');
+  const [isRecordingMatter, setIsRecordingMatter] = useState<boolean>(false);
+  const [isSubmittingMatter, setIsSubmittingMatter] = useState<boolean>(false);
+  const [matterForm, setMatterForm] = useState<{
+    type: 'POSITIVE' | 'NEGATIVE';
+    title: string;
+    points: number;
+    description: string;
+    actionTaken: string;
+    notifiedParents: boolean;
+  }>({
+    type: 'POSITIVE',
+    title: '',
+    points: 2,
+    description: '',
+    actionTaken: '',
+    notifiedParents: true,
+  });
 
   // ─────────────────────────────────────────────────────────────────────────
   // 1. Initial Load: Fetch Lessons and Classrooms
@@ -331,6 +349,58 @@ export const GradebookPage: React.FC = () => {
       toast.error('خطا در دریافت پرونده تحصیلی دانش‌آموز');
     } finally {
       setIsLoadingDossier(false);
+    }
+  };
+
+  const handleRecordMatterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!matterForm.title.trim()) {
+      toast.error('عنوان مورد انضباطی یا تشویقی الزامی است');
+      return;
+    }
+    const studentIdToUse = dossierData?.student?.id || dossierStudentId;
+    if (!studentIdToUse) return;
+
+    try {
+      setIsSubmittingMatter(true);
+      await apiClient.post('/matters', {
+        studentId: studentIdToUse,
+        type: matterForm.type,
+        title: matterForm.title.trim(),
+        description: matterForm.description.trim(),
+        points: Number(matterForm.points),
+        actionTaken: matterForm.actionTaken.trim() || undefined,
+        notifiedParents: matterForm.notifiedParents,
+      });
+
+      toast.success(
+        matterForm.type === 'POSITIVE'
+          ? 'مورد تشویقی با موفقیت ثبت شد و اعلان ارسال گردید'
+          : 'مورد انضباطی ثبت شد و به اولیا و دانش‌آموز اطلاع‌رسانی گردید'
+      );
+
+      setMatterForm({
+        type: 'POSITIVE',
+        title: '',
+        points: 2,
+        description: '',
+        actionTaken: '',
+        notifiedParents: true,
+      });
+      setIsRecordingMatter(false);
+
+      if (dossierStudentId) {
+        const res: any = await apiClient.get(
+          `/gradebook/student/${dossierStudentId}/dossier?classroomId=${selectedClassroom?.id}&lessonId=${selectedLesson?.id}`,
+        );
+        const raw = res?.data || res;
+        setDossierData(raw?.data || raw);
+      }
+    } catch (err: any) {
+      console.error('Failed to submit matter:', err);
+      toast.error('خطا در ثبت مورد انضباطی یا تشویقی');
+    } finally {
+      setIsSubmittingMatter(false);
     }
   };
 
@@ -1340,8 +1410,19 @@ export const GradebookPage: React.FC = () => {
                       </span>
                     </div>
 
-                    <div className="bg-white dark:bg-card p-2 rounded-xl border border-black/10">
-                      <span className="text-[10px] font-bold text-muted-foreground block">برآیند انضباطی</span>
+                    <div
+                      onClick={() => setDossierActiveTab('MATTERS')}
+                      className={`p-2 rounded-xl border transition-all cursor-pointer select-none ${
+                        dossierActiveTab === 'MATTERS'
+                          ? 'bg-primary/10 border-primary shadow-[1px_1px_0px_#000]'
+                          : 'bg-white dark:bg-card border-black/10 hover:border-primary/50'
+                      }`}
+                      title="مشاهده موارد انضباطی و تشویقی"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-muted-foreground block">برآیند انضباطی</span>
+                        <Scale className="w-3 h-3 text-primary" />
+                      </div>
                       <span className="text-sm font-black text-emerald-600">
                         {toPersianDigits(dossierData.kpis?.positiveRewardsCount || 0)} تشویق
                       </span>
@@ -1352,41 +1433,62 @@ export const GradebookPage: React.FC = () => {
                   </div>
 
                   {/* Modal Navigation Tabs */}
-                  <div className="grid grid-cols-3 gap-1.5 bg-neutral-100 dark:bg-neutral-900 p-1 rounded-xl border border-black/20 text-xs font-black">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-neutral-100 dark:bg-neutral-900 p-1 rounded-xl border border-black/20 text-xs font-black">
                     <button
                       type="button"
                       onClick={() => setDossierActiveTab('ORAL')}
-                      className={`py-2 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${dossierActiveTab === 'ORAL'
+                      className={`py-2 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                        dossierActiveTab === 'ORAL'
                           ? 'bg-white dark:bg-card text-foreground border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
                           : 'text-muted-foreground hover:text-foreground'
-                        }`}
+                      }`}
                     >
                       <Award className="w-3.5 h-3.5 text-amber-500" />
-                      پرسش کلاسی و جلسات
+                      پرسش کلاسی
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setDossierActiveTab('HOMEWORK')}
-                      className={`py-2 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${dossierActiveTab === 'HOMEWORK'
+                      className={`py-2 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                        dossierActiveTab === 'HOMEWORK'
                           ? 'bg-white dark:bg-card text-foreground border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
                           : 'text-muted-foreground hover:text-foreground'
-                        }`}
+                      }`}
                     >
                       <FileCheck className="w-3.5 h-3.5 text-sky-500" />
-                      ارزشیابی تکالیف
+                      تکالیف
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setDossierActiveTab('ATTENDANCE')}
-                      className={`py-2 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${dossierActiveTab === 'ATTENDANCE'
+                      className={`py-2 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                        dossierActiveTab === 'ATTENDANCE'
                           ? 'bg-white dark:bg-card text-foreground border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
                           : 'text-muted-foreground hover:text-foreground'
-                        }`}
+                      }`}
                     >
                       <Clock className="w-3.5 h-3.5 text-emerald-500" />
-                      حضور و غیاب و انضباط
+                      حضور و غیاب
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDossierActiveTab('MATTERS')}
+                      className={`py-2 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                        dossierActiveTab === 'MATTERS'
+                          ? 'bg-white dark:bg-card text-foreground border-2 border-black shadow-[1.5px_1.5px_0px_#000]'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <Scale className="w-3.5 h-3.5 text-primary" />
+                      انضباطی و تشویقی
+                      {(dossierData.matters?.length || 0) > 0 && (
+                        <span className="bg-primary/20 text-primary text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                          {toPersianDigits(dossierData.matters.length)}
+                        </span>
+                      )}
                     </button>
                   </div>
 
@@ -1502,6 +1604,256 @@ export const GradebookPage: React.FC = () => {
                           </Badge>
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {/* Tab 4: Disciplinary & Commendation Matters */}
+                  {dossierActiveTab === 'MATTERS' && (
+                    <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1">
+                      {/* Top Action & Stats Bar */}
+                      <div className="flex items-center justify-between bg-neutral-50 dark:bg-neutral-900 border-2 border-black/20 p-2.5 rounded-xl">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1 text-xs font-black text-emerald-600 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-lg border border-emerald-300 dark:border-emerald-800">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            {toPersianDigits(dossierData.kpis?.matterPositiveCount || 0)} مورد تشویقی
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-xs font-black text-rose-600 bg-rose-100 dark:bg-rose-950/60 px-2 py-0.5 rounded-lg border border-rose-300 dark:border-rose-800">
+                            <ShieldAlert className="w-3.5 h-3.5" />
+                            {toPersianDigits(dossierData.kpis?.matterNegativeCount || 0)} مورد انضباطی
+                          </span>
+                        </div>
+
+                        <Button
+                          size="sm"
+                          type="button"
+                          onClick={() => setIsRecordingMatter(!isRecordingMatter)}
+                          className="h-7 px-2.5 text-[11px] font-black bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-black shadow-[1px_1px_0px_#000] flex items-center gap-1"
+                        >
+                          <Plus className="w-3 h-3" />
+                          {isRecordingMatter ? 'انصراف' : 'ثبت مورد جدید'}
+                        </Button>
+                      </div>
+
+                      {/* Inline Form to Record New Matter */}
+                      {isRecordingMatter && (
+                        <form
+                          onSubmit={handleRecordMatterSubmit}
+                          className="bg-primary/5 border-2 border-primary/40 rounded-xl p-3 space-y-2.5 animate-in fade-in duration-200"
+                        >
+                          <div className="flex items-center justify-between border-b border-primary/20 pb-2">
+                            <span className="text-xs font-black text-foreground flex items-center gap-1.5">
+                              <Scale className="w-4 h-4 text-primary" />
+                              ثبت مورد جدید برای {dossierData.student.name}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setMatterForm((prev) => ({
+                                    ...prev,
+                                    type: 'POSITIVE',
+                                    points: prev.points < 0 ? Math.abs(prev.points) : prev.points || 2,
+                                  }))
+                                }
+                                className={`px-2 py-0.5 text-[11px] font-black rounded-md border transition-all ${
+                                  matterForm.type === 'POSITIVE'
+                                    ? 'bg-emerald-500 text-white border-emerald-600 shadow-xs'
+                                    : 'bg-white dark:bg-card text-muted-foreground border-black/20 hover:text-emerald-600'
+                                }`}
+                              >
+                                🌟 تشویقی
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setMatterForm((prev) => ({
+                                    ...prev,
+                                    type: 'NEGATIVE',
+                                    points: prev.points > 0 ? -prev.points : prev.points || -2,
+                                  }))
+                                }
+                                className={`px-2 py-0.5 text-[11px] font-black rounded-md border transition-all ${
+                                  matterForm.type === 'NEGATIVE'
+                                    ? 'bg-rose-500 text-white border-rose-600 shadow-xs'
+                                    : 'bg-white dark:bg-card text-muted-foreground border-black/20 hover:text-rose-600'
+                                }`}
+                              >
+                                ⚠️ انضباطی
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div className="sm:col-span-2">
+                              <label className="text-[10px] font-bold text-muted-foreground block mb-1">
+                                عنوان مورد *
+                              </label>
+                              <Input
+                                value={matterForm.title}
+                                onChange={(e) =>
+                                  setMatterForm((prev) => ({ ...prev, title: e.target.value }))
+                                }
+                                placeholder={
+                                  matterForm.type === 'POSITIVE'
+                                    ? 'مثال: پیشرفت عالی در آزمون، مشارکت فعال در کلاس'
+                                    : 'مثال: عدم رعایت نظم، تاخیر مکرر در تحویل تکالیف'
+                                }
+                                className="h-8 text-xs font-bold border-2 border-black"
+                                required
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] font-bold text-muted-foreground block mb-1">
+                                امتیاز انضباطی
+                              </label>
+                              <Input
+                                type="number"
+                                value={matterForm.points}
+                                onChange={(e) =>
+                                  setMatterForm((prev) => ({
+                                    ...prev,
+                                    points: Number(e.target.value),
+                                  }))
+                                }
+                                className="h-8 text-xs font-bold border-2 border-black text-center"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="text-[10px] font-bold text-muted-foreground block mb-1">
+                              توضیحات و جزئیات (اختیاری)
+                            </label>
+                            <Input
+                              value={matterForm.description}
+                              onChange={(e) =>
+                                setMatterForm((prev) => ({ ...prev, description: e.target.value }))
+                              }
+                              placeholder="توضیحات تکمیلی..."
+                              className="h-8 text-xs border-2 border-black"
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between pt-1">
+                            <label className="flex items-center gap-1.5 text-[11px] font-bold text-foreground cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={matterForm.notifiedParents}
+                                onChange={(e) =>
+                                  setMatterForm((prev) => ({
+                                    ...prev,
+                                    notifiedParents: e.target.checked,
+                                  }))
+                                }
+                                className="rounded border-black accent-primary"
+                              />
+                              ارسال آنی نوتیفیکیشن به اولیا و دانش‌آموز
+                            </label>
+
+                            <div className="flex items-center gap-1.5">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setIsRecordingMatter(false)}
+                                className="h-7 text-xs border border-black"
+                              >
+                                انصراف
+                              </Button>
+                              <Button
+                                type="submit"
+                                size="sm"
+                                disabled={isSubmittingMatter}
+                                className="h-7 text-xs font-black bg-emerald-500 hover:bg-emerald-600 text-black border-2 border-black shadow-[1px_1px_0px_#000]"
+                              >
+                                {isSubmittingMatter ? (
+                                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  'ثبت و اطلاع‌رسانی'
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        </form>
+                      )}
+
+                      {/* Matters List */}
+                      {dossierData.matters?.length === 0 ? (
+                        <div className="py-8 text-center bg-neutral-50 dark:bg-neutral-900 border-2 border-dashed border-black/20 rounded-xl space-y-2">
+                          <Scale className="w-8 h-8 text-muted-foreground mx-auto stroke-1" />
+                          <div className="text-xs font-black text-foreground">
+                            هیچ مورد انضباطی یا تشویقی در سامانه برای این دانش‌آموز ثبت نشده است.
+                          </div>
+                          <p className="text-[11px] text-muted-foreground max-w-sm mx-auto">
+                            با کلیک روی «ثبت مورد جدید» می‌توانید تشویق‌ها و تذکرات رفتاری را به صورت لحظه‌ای ثبت نمایید.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {dossierData.matters.map((m: any) => {
+                            const isPositive = m.type === 'POSITIVE';
+                            return (
+                              <div
+                                key={m.id}
+                                className={`border-2 p-2.5 rounded-xl space-y-1.5 transition-all ${
+                                  isPositive
+                                    ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-500/30'
+                                    : 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-500/30'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between flex-wrap gap-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <Badge
+                                      variant={isPositive ? 'ecosystem' : 'female'}
+                                      className="text-[10px] font-black px-2 py-0.5"
+                                    >
+                                      {isPositive ? '🌟 تشویقی' : '⚠️ انضباطی'}
+                                    </Badge>
+                                    <span className="font-black text-foreground text-xs">
+                                      {m.title}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`text-[11px] font-black px-2 py-0.5 rounded border ${
+                                        isPositive
+                                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                          : 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-900/40 dark:text-rose-300'
+                                      }`}
+                                    >
+                                      {m.points > 0 ? `+${toPersianDigits(m.points)}` : toPersianDigits(m.points)} امتیاز
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground font-bold">
+                                      {formatJalaliDisplay(m.reportedAt, true)}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {m.description && (
+                                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                    {m.description}
+                                  </p>
+                                )}
+
+                                <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-black/10">
+                                  <span>
+                                    ثبت‌شده توسط:{' '}
+                                    <strong className="text-foreground">{m.reportedBy || 'کادر آموزشی'}</strong>
+                                  </span>
+                                  {m.notifiedParents && (
+                                    <span className="inline-flex items-center gap-1 text-emerald-600 font-bold">
+                                      <CheckCircle2 className="w-3 h-3" />
+                                      نوتیفیکیشن و پیامک ارسال شد
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
                 </>

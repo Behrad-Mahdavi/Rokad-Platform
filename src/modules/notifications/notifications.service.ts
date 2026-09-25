@@ -742,6 +742,29 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
             createdAt: req.updatedAt.toISOString(),
           });
         });
+        // 7. Recent Disciplinary & Commendations for Student
+        const recentStudentMatters = await this.prisma.disciplinaryMatter.findMany({
+          where: { tenantId, studentId: student.id },
+          take: 3,
+          orderBy: { reportedAt: 'desc' },
+        });
+
+        recentStudentMatters.forEach((m) => {
+          const isPos = m.type === 'POSITIVE';
+          notifications.push({
+            id: `matter-student-${m.id}`,
+            title: isPos ? '🌟 ثبت مورد تشویقی جدید' : '⚠️ مورد انضباطی در پرونده',
+            desc: isPos
+              ? `تشویق با عنوان «${m.title}» (${m.points > 0 ? `+${toPersianDigits(m.points)}` : toPersianDigits(m.points)} امتیاز) در کارنامه شما ثبت شد.`
+              : `مورد انضباطی «${m.title}» (${toPersianDigits(m.points)} امتیاز) در پرونده رفتاری شما ثبت گردید.`,
+            time: 'انضباطی/تشویقی',
+            read: readIds.has(`matter-student-${m.id}`),
+            type: 'MATTER',
+            badge: isPos ? 'success' : 'destructive',
+            targetUrl: '/app/student/matters',
+            createdAt: m.reportedAt.toISOString(),
+          });
+        });
       }
     }
 
@@ -768,8 +791,8 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       });
 
       if (parent) {
-        parent.studentLinks.forEach((link) => {
-          const childName = `${link.student?.user?.firstName || ''} ${link.student?.user?.lastName || ''}`;
+        for (const link of parent.studentLinks) {
+          const childName = `${link.student?.user?.firstName || ''} ${link.student?.user?.lastName || ''}`.trim() || 'فرزند شما';
 
           // Recent attendance record of child
           link.student?.studentAttendances?.forEach((att) => {
@@ -794,7 +817,35 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
               createdAt: att.createdAt.toISOString(),
             });
           });
-        });
+
+          // Recent matters for child (notifiedParents = true)
+          const childMatters = await this.prisma.disciplinaryMatter.findMany({
+            where: {
+              tenantId,
+              studentId: link.studentId,
+              notifiedParents: true,
+            },
+            take: 2,
+            orderBy: { reportedAt: 'desc' },
+          });
+
+          childMatters.forEach((m) => {
+            const isPos = m.type === 'POSITIVE';
+            notifications.push({
+              id: `parent-matter-${m.id}`,
+              title: isPos ? `🌟 تشویق فرزند: ${childName}` : `⚠️ گزارش انضباطی فرزند: ${childName}`,
+              desc: isPos
+                ? `مورد تشویقی «${m.title}» (${m.points > 0 ? `+${toPersianDigits(m.points)}` : toPersianDigits(m.points)} امتیاز) برای ${childName} ثبت گردید.`
+                : `مورد انضباطی «${m.title}» (${toPersianDigits(m.points)} امتیاز) برای ${childName} به اولیا گزارش شد.`,
+              time: 'انضباطی/تشویقی',
+              read: readIds.has(`parent-matter-${m.id}`),
+              type: 'MATTER',
+              badge: isPos ? 'success' : 'destructive',
+              targetUrl: '/app/student/matters',
+              createdAt: m.reportedAt.toISOString(),
+            });
+          });
+        }
 
         // Tuition reminder
         notifications.push({

@@ -12,6 +12,7 @@ import {
   TrendingUp,
   User,
   ShieldCheck,
+  Scale,
   Search,
   X,
 } from 'lucide-react';
@@ -132,175 +133,119 @@ export const StudentMattersPage: React.FC = () => {
       {/* 1. Header Master Panel */}
       <div className="bg-white dark:bg-[#151C28] rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-[#242F42] shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] px-4 py-3 sm:px-5 sm:py-3.5">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-black shadow-2xs shrink-0">
-            <ShieldCheck className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary dark:text-primary border border-primary/25 flex items-center justify-center font-black shadow-2xs shrink-0">
+            <Scale className="w-5 h-5" />
           </div>
           <h1 className="text-lg sm:text-xl font-black text-ink-darker dark:text-white truncate">
-            {isParent ? 'کارنامه انضباطی و تشویقی فرزند' : 'پرونده انضباطی و تشویقی من'}
+            موارد انضباطی و تشویقی
           </h1>
         </div>
       </div>
 
-      {/* 2. Hero KPI Cards (Commendations & Disciplinary side-by-side) */}
+      {/* 2. Hero KPI Tabs (Commendations & Disciplinary as clickable tabs) */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
           <Skeleton className="h-20 sm:h-24 rounded-2xl" />
           <Skeleton className="h-20 sm:h-24 rounded-2xl" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          {/* Commendations */}
-          <div className="p-4 rounded-2xl bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-[#242F42] shadow-xs flex items-center gap-3.5 hover:-translate-y-0.5 hover:border-emerald-500/40 transition-all">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <Award className="w-5 h-5" />
-            </div>
-            <div className="space-y-0.5 min-w-0">
-              <span className="text-xs font-bold text-muted-foreground block truncate">تشویق و تقدیر</span>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400">
-                  {toPersianDigits(data?.positiveCount || 0)}
-                </span>
-                <span className="text-[11px] text-emerald-600/80 font-bold">مورد</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Warnings & Disciplinary */}
-          <div className="p-4 rounded-2xl bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-[#242F42] shadow-xs flex items-center gap-3.5 hover:-translate-y-0.5 hover:border-rose-500/40 transition-all">
-            <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-5 h-5" />
-            </div>
-            <div className="space-y-0.5 min-w-0">
-              <span className="text-xs font-bold text-muted-foreground block truncate">تذکرات و انضباطی</span>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-lg sm:text-xl font-black text-rose-600 dark:text-rose-400">
-                  {toPersianDigits(data?.negativeCount || 0)}
-                </span>
-                <span className="text-[11px] text-rose-600/80 font-bold">مورد</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Two Option Tabs & Search Below */}
-      <div className="space-y-3">
-        {/* Two Tabs like options */}
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-          {/* Option: Commendations */}
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+          {/* Tab 1: موارد تشویقی */}
           <button
             type="button"
             onClick={() => setActiveFilter('POSITIVE')}
-            className={`p-3 sm:p-3.5 rounded-2xl border transition-all text-right flex items-center justify-between gap-3 cursor-pointer select-none ${
+            className={`p-3 sm:p-4 rounded-2xl border transition-all text-right flex items-center gap-2.5 sm:gap-3.5 cursor-pointer select-none min-w-0 ${
               activeFilter === 'POSITIVE'
-                ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-500 shadow-[2px_2px_0_#064e3b] dark:shadow-[2px_2px_0_#064e3b]'
-                : 'bg-white dark:bg-[#151C28] border-gray-200/80 dark:border-[#242F42] hover:border-emerald-300 dark:hover:border-emerald-800/60 shadow-xs'
+                ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border-2 border-emerald-500 shadow-[2px_2px_0_#064e3b] dark:shadow-[2px_2px_0_#064e3b] -translate-y-0.5'
+                : 'bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-[#242F42] hover:border-emerald-300 dark:hover:border-emerald-800/60 shadow-xs opacity-75 hover:opacity-100 hover:-translate-y-0.5'
             }`}
           >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                  activeFilter === 'POSITIVE'
-                    ? 'bg-emerald-500 text-white shadow-xs'
-                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                }`}
-              >
-                <Award className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <span
-                  className={`text-xs sm:text-sm font-black block truncate ${
-                    activeFilter === 'POSITIVE'
-                      ? 'text-emerald-900 dark:text-emerald-200'
-                      : 'text-ink-darker dark:text-white'
-                  }`}
-                >
-                  موارد تشویقی
-                </span>
-                <span className="text-[11px] text-muted-foreground block truncate">
-                  تقدیرها و امتیازات مثبت
-                </span>
-              </div>
-            </div>
-
-            <span
-              className={`text-xs sm:text-sm font-black px-2.5 py-0.5 rounded-full shrink-0 ${
+            <div
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
                 activeFilter === 'POSITIVE'
-                  ? 'bg-emerald-500 text-white'
-                  : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400'
+                  ? 'bg-emerald-500 text-white shadow-xs'
+                  : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
               }`}
             >
-              {toPersianDigits(data?.positiveCount || 0)}
-            </span>
+              <Award className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
+            </div>
+            <div className="space-y-0.5 min-w-0">
+              <span
+                className={`text-xs font-bold block truncate transition-colors ${
+                  activeFilter === 'POSITIVE'
+                    ? 'text-emerald-950 dark:text-emerald-200 font-black'
+                    : 'text-muted-foreground'
+                }`}
+              >
+                موارد تشویقی
+              </span>
+              <div className="flex items-baseline gap-1 sm:gap-1.5">
+                <span className="text-base sm:text-xl font-black text-emerald-600 dark:text-emerald-400">
+                  {toPersianDigits(data?.positiveCount || 0)}
+                </span>
+                <span className="text-[10px] sm:text-[11px] text-emerald-600/80 font-bold">مورد</span>
+              </div>
+            </div>
           </button>
 
-          {/* Option: Disciplinary */}
+          {/* Tab 2: موارد انضباطی */}
           <button
             type="button"
             onClick={() => setActiveFilter('DISCIPLINARY')}
-            className={`p-3 sm:p-3.5 rounded-2xl border transition-all text-right flex items-center justify-between gap-3 cursor-pointer select-none ${
+            className={`p-3 sm:p-4 rounded-2xl border transition-all text-right flex items-center gap-2.5 sm:gap-3.5 cursor-pointer select-none min-w-0 ${
               activeFilter === 'DISCIPLINARY'
-                ? 'bg-rose-50/80 dark:bg-rose-950/40 border-rose-500 shadow-[2px_2px_0_#881337] dark:shadow-[2px_2px_0_#881337]'
-                : 'bg-white dark:bg-[#151C28] border-gray-200/80 dark:border-[#242F42] hover:border-rose-300 dark:hover:border-rose-800/60 shadow-xs'
+                ? 'bg-rose-50/80 dark:bg-rose-950/40 border-2 border-rose-500 shadow-[2px_2px_0_#881337] dark:shadow-[2px_2px_0_#881337] -translate-y-0.5'
+                : 'bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-[#242F42] hover:border-rose-300 dark:hover:border-rose-800/60 shadow-xs opacity-75 hover:opacity-100 hover:-translate-y-0.5'
             }`}
           >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                  activeFilter === 'DISCIPLINARY'
-                    ? 'bg-rose-500 text-white shadow-xs'
-                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                }`}
-              >
-                <AlertTriangle className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <span
-                  className={`text-xs sm:text-sm font-black block truncate ${
-                    activeFilter === 'DISCIPLINARY'
-                      ? 'text-rose-900 dark:text-rose-200'
-                      : 'text-ink-darker dark:text-white'
-                  }`}
-                >
-                  موارد انضباطی
-                </span>
-                <span className="text-[11px] text-muted-foreground block truncate">
-                  تذکرات و پرونده رفتاری
-                </span>
-              </div>
-            </div>
-
-            <span
-              className={`text-xs sm:text-sm font-black px-2.5 py-0.5 rounded-full shrink-0 ${
+            <div
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
                 activeFilter === 'DISCIPLINARY'
-                  ? 'bg-rose-500 text-white'
-                  : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400'
+                  ? 'bg-rose-500 text-white shadow-xs'
+                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
               }`}
             >
-              {toPersianDigits(data?.negativeCount || 0)}
-            </span>
+              <AlertTriangle className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
+            </div>
+            <div className="space-y-0.5 min-w-0">
+              <span
+                className={`text-xs font-bold block truncate transition-colors ${
+                  activeFilter === 'DISCIPLINARY'
+                    ? 'text-rose-950 dark:text-rose-200 font-black'
+                    : 'text-muted-foreground'
+                }`}
+              >
+                موارد انضباطی
+              </span>
+              <div className="flex items-baseline gap-1 sm:gap-1.5">
+                <span className="text-base sm:text-xl font-black text-rose-600 dark:text-rose-400">
+                  {toPersianDigits(data?.negativeCount || 0)}
+                </span>
+                <span className="text-[10px] sm:text-[11px] text-rose-600/80 font-bold">مورد</span>
+              </div>
+            </div>
           </button>
         </div>
+      )}
 
-        {/* Search below options */}
-        <div className="relative w-full">
-          <Search className="w-4 h-4 text-muted-foreground absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="جستجو در عنوان، توضیحات یا اقدامات مدرسه..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-10 py-2.5 text-xs sm:text-sm rounded-xl bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-[#242F42] shadow-xs focus:outline-none focus:border-primary transition-all text-ink-darker dark:text-white"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-ink-darker dark:hover:text-white"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
+      {/* 3. Search below tabs */}
+      <div className="relative w-full">
+        <Search className="w-4 h-4 text-muted-foreground absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        <input
+          type="text"
+          placeholder="جستجو در عنوان یا اقدامات مدرسه..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-9 pr-10 py-2.5 text-xs sm:text-sm rounded-xl bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-[#242F42] shadow-xs focus:outline-none focus:border-primary transition-all text-ink-darker dark:text-white"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-ink-darker dark:hover:text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* 4. Matters Timeline / Card List */}
@@ -331,14 +276,14 @@ export const StudentMattersPage: React.FC = () => {
                 ? 'موردی با این عبارت یافت نشد'
                 : activeFilter === 'DISCIPLINARY'
                 ? 'پرونده انضباطی کاملاً پاک و درخشان است!'
-                : 'هنوز تشویقی برای این دوره ثبت نشده است'}
+                : 'هنوز موردی در بخش تشویقی‌ها ثبت نشده است'}
             </h4>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 max-w-md mx-auto leading-relaxed">
               {searchQuery
                 ? 'عبارت جستجو را تغییر دهید یا پاک کنید.'
                 : activeFilter === 'DISCIPLINARY'
-                ? 'خوشبختانه هیچ تذکر یا مورد انضباطی در پرونده ثبت نگردیده است. با آرزوی تداوم موفقیت!'
-                : 'با تلاش و فعالیت‌های مستمر در کلاس و آزمون‌ها، تشویقی‌های خود را ثبت کنید.'}
+                ? 'خوشبختانه هیچ تذکر یا مورد انضباطی ثبت نشده است. با آرزوی تداوم نظم و موفقیت‌های شما!'
+                : 'با مشارکت فعال در کلاس، انجام منظم تکالیف و پیشرفت در آزمون‌ها، نخستین امتیازهای تشویقی خود را کسب کنید.'}
             </p>
           </div>
         ) : (
