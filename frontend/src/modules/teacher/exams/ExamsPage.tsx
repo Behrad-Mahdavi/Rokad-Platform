@@ -618,7 +618,7 @@ export const ExamsPage: React.FC = () => {
           {lessons.length === 0 && (
             <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg">
               <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
-              <span>هیچ درسی به حساب کاربری شما تخصیص نیافته است. لطفاً جهت تخصیص درس با مدیریت مدرسه تماس بگیرید.</span>
+              <span>هیچ درسی به حساب کاربری شما تخصیص نیافته است. لطفاً جهت تخصیص درس با راهبری مدرسه تماس بگیرید.</span>
             </div>
           )}
 

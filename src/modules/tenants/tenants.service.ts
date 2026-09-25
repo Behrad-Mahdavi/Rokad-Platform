@@ -105,4 +105,54 @@ export class TenantsService {
       await this.redisService.del(key);
     }
   }
+
+  /**
+   * Get home banner configuration strictly isolated per tenant
+   */
+  async getBanners(tenantId: string) {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { settings: true },
+    });
+    const settings = (tenant?.settings as any) || {};
+    return {
+      slides: settings.homeBanners?.slides || null,
+      bannerTypes: settings.homeBanners?.bannerTypes || null,
+    };
+  }
+
+  /**
+   * Update home banner configuration for the current tenant in PostgreSQL
+   */
+  async updateBanners(
+    tenantId: string,
+    data: { slides?: any[]; bannerTypes?: any[] },
+  ) {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { settings: true },
+    });
+    const currentSettings = (tenant?.settings as any) || {};
+    const updatedSettings = {
+      ...currentSettings,
+      homeBanners: {
+        ...(currentSettings.homeBanners || {}),
+        ...(data.slides !== undefined ? { slides: data.slides } : {}),
+        ...(data.bannerTypes !== undefined ? { bannerTypes: data.bannerTypes } : {}),
+      },
+    };
+
+    const updated = await this.prisma.tenant.update({
+      where: { id: tenantId },
+      data: { settings: updatedSettings },
+      select: { id: true, settings: true },
+    });
+
+    await this.invalidateTenantCache({ id: tenantId } as any);
+    return {
+      slides: (updated.settings as any)?.homeBanners?.slides || [],
+      bannerTypes: (updated.settings as any)?.homeBanners?.bannerTypes || [],
+    };
+  }
 }
+

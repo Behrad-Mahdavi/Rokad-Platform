@@ -128,7 +128,7 @@ export const SuperAppHomePage: React.FC = () => {
       case 'SUPER_ADMIN':
         return 'سوپرادمین کلان';
       case 'SCHOOL_ADMIN':
-        return 'مدیریت';
+        return 'راهبر';
       case 'STAFF':
         return 'کادر اجرایی';
       case 'TEACHER':
@@ -363,7 +363,7 @@ export const SuperAppHomePage: React.FC = () => {
           },
           {
             id: 'tenants',
-            title: 'مدیریت مدارس',
+            title: 'راهبری مدارس',
             href: '/app/super-admin/tenants',
             icon: Building2,
             iconBg: 'bg-ecosystem-light dark:bg-[#163330]',

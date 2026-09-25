@@ -108,7 +108,7 @@ export const MessageDetailModal: React.FC<Props> = ({
     switch (role) {
       case 'SUPER_ADMIN':
       case 'SCHOOL_ADMIN':
-        return 'مدیریت مجتمع آموزشی';
+        return 'راهبری مجتمع آموزشی';
       case 'TEACHER':
         return 'استاد / دبیر';
       case 'STUDENT':

@@ -90,7 +90,7 @@ export const PasswordRevealModal: React.FC<PasswordRevealModalProps> = ({
   const handleReveal = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!masterKey.trim()) {
-      setError('لطفاً کلید امنیتی مستر مدیر را وارد نمایید');
+      setError('لطفاً کلید امنیتی مستر راهبر را وارد نمایید');
       return;
     }
 
@@ -151,7 +151,7 @@ export const PasswordRevealModal: React.FC<PasswordRevealModalProps> = ({
       case 'COACH':
         return 'کوچ و مشاور';
       case 'SCHOOL_ADMIN':
-        return 'مدیر مدرسه';
+        return 'راهبر مدرسه';
       default:
         return role;
     }
@@ -171,7 +171,7 @@ export const PasswordRevealModal: React.FC<PasswordRevealModalProps> = ({
                 گاوصندوق رمز عبور
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                رمزگشایی امن کلمه عبور با کلید مستر مدیر
+                رمزگشایی امن کلمه عبور با کلید مستر راهبر
               </p>
             </div>
           </div>
@@ -210,7 +210,7 @@ export const PasswordRevealModal: React.FC<PasswordRevealModalProps> = ({
             <form onSubmit={handleReveal} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                  کلید مستر امنیتی مدیر <span className="text-rose-500">*</span>
+                  کلید مستر امنیتی راهبر <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">

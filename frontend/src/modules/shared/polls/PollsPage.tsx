@@ -1860,8 +1860,8 @@ export const PollsPage: React.FC = () => {
             })();
 
             const creatorName = poll.createdBy
-              ? `${poll.createdBy.firstName || ''} ${poll.createdBy.lastName || ''}`.trim() || 'مدیر مدرسه'
-              : 'مدیریت مدرسه';
+              ? `${poll.createdBy.firstName || ''} ${poll.createdBy.lastName || ''}`.trim() || 'راهبر مدرسه'
+              : 'راهبری مدرسه';
 
             const questionsCount = questions.length || poll.options?.length || 0;
 

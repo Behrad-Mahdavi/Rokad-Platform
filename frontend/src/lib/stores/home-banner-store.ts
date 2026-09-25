@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { apiClient } from '../api/client';
 
 export type BannerTheme = 'ecosystem' | 'college' | 'club' | 'male';
 
@@ -29,8 +29,15 @@ export interface HomeBannerSlide {
 }
 
 interface HomeBannerState {
+  currentTenantId: string | null;
+  isLoading: boolean;
+  isSaving: boolean;
   slides: HomeBannerSlide[];
   bannerTypes: BannerTypeConfig[];
+
+  initForTenant: (tenantId?: string | null) => Promise<void>;
+  saveToBackend: () => Promise<boolean>;
+
   addSlide: (slide: Omit<HomeBannerSlide, 'id'>) => boolean;
   updateSlide: (id: string, updates: Partial<HomeBannerSlide>) => void;
   deleteSlide: (id: string) => void;
@@ -130,91 +137,210 @@ export const DEFAULT_HOME_BANNER_SLIDES: HomeBannerSlide[] = [
   },
 ];
 
-export const useHomeBannerStore = create<HomeBannerState>()(
-  persist(
-    (set, get) => ({
+const getTenantStorageKey = (tenantId?: string | null) =>
+  tenantId ? `rokad_banners_tenant_${tenantId}` : 'rokad_banners_global';
+
+const saveTenantCache = (
+  tenantId: string | null,
+  slides: HomeBannerSlide[],
+  bannerTypes: BannerTypeConfig[]
+) => {
+  if (typeof window === 'undefined') return;
+  try {
+    const key = getTenantStorageKey(tenantId);
+    localStorage.setItem(key, JSON.stringify({ slides, bannerTypes }));
+  } catch (err) {
+    console.error('Failed to save banner tenant cache', err);
+  }
+};
+
+const loadTenantCache = (
+  tenantId: string | null
+): { slides: HomeBannerSlide[]; bannerTypes: BannerTypeConfig[] } | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const key = getTenantStorageKey(tenantId);
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error('Failed to parse banner tenant cache', err);
+    return null;
+  }
+};
+
+export const useHomeBannerStore = create<HomeBannerState>()((set, get) => ({
+  currentTenantId: null,
+  isLoading: false,
+  isSaving: false,
+  slides: DEFAULT_HOME_BANNER_SLIDES,
+  bannerTypes: DEFAULT_BANNER_TYPES,
+
+  initForTenant: async (tenantId) => {
+    const effectiveTenantId = tenantId || null;
+    // Don't re-initialize if tenant has not changed and slides are already loaded
+    if (get().currentTenantId === effectiveTenantId && get().slides.length > 0) {
+      return;
+    }
+
+    set({ currentTenantId: effectiveTenantId, isLoading: true });
+
+    // Step 1: Immediately restore from tenant-specific local cache for zero delay
+    const cached = loadTenantCache(effectiveTenantId);
+    if (cached?.slides && cached.slides.length > 0) {
+      set({
+        slides: cached.slides,
+        bannerTypes: cached.bannerTypes?.length > 0 ? cached.bannerTypes : DEFAULT_BANNER_TYPES,
+      });
+    } else {
+      set({
+        slides: DEFAULT_HOME_BANNER_SLIDES,
+        bannerTypes: DEFAULT_BANNER_TYPES,
+      });
+    }
+
+    // Step 2: Fetch latest tenant banners from database
+    try {
+      const res = await apiClient.get('/tenants/my-school/banners');
+      const data = res.data;
+      if (data?.slides && Array.isArray(data.slides) && data.slides.length > 0) {
+        const slides = data.slides;
+        const bannerTypes =
+          data.bannerTypes && Array.isArray(data.bannerTypes) && data.bannerTypes.length > 0
+            ? data.bannerTypes
+            : DEFAULT_BANNER_TYPES;
+
+        set({ slides, bannerTypes });
+        saveTenantCache(effectiveTenantId, slides, bannerTypes);
+      }
+    } catch (err) {
+      // Backend request might fail if offline or not authenticated yet; local cache is used
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  saveToBackend: async () => {
+    const { currentTenantId, slides, bannerTypes } = get();
+    set({ isSaving: true });
+    try {
+      await apiClient.patch('/tenants/my-school/banners', {
+        slides,
+        bannerTypes,
+      });
+      saveTenantCache(currentTenantId, slides, bannerTypes);
+      set({ isSaving: false });
+      return true;
+    } catch (err) {
+      console.error('Failed to sync banners to backend', err);
+      // Still cache locally
+      saveTenantCache(currentTenantId, slides, bannerTypes);
+      set({ isSaving: false });
+      return false;
+    }
+  },
+
+  addSlide: (slideData) => {
+    const { slides, currentTenantId, bannerTypes } = get();
+    if (slides.length >= 3) {
+      return false;
+    }
+
+    const newSlide: HomeBannerSlide = {
+      ...slideData,
+      id: `banner-slide-${Date.now()}`,
+      active: slideData.active !== undefined ? slideData.active : true,
+    };
+
+    const newSlides = [...slides, newSlide];
+    set({ slides: newSlides });
+    saveTenantCache(currentTenantId, newSlides, bannerTypes);
+    get().saveToBackend();
+    return true;
+  },
+
+  updateSlide: (id, updates) => {
+    const { slides, currentTenantId, bannerTypes } = get();
+    const newSlides = slides.map((slide) =>
+      slide.id === id ? { ...slide, ...updates } : slide
+    );
+    set({ slides: newSlides });
+    saveTenantCache(currentTenantId, newSlides, bannerTypes);
+    get().saveToBackend();
+  },
+
+  deleteSlide: (id) => {
+    const { slides, currentTenantId, bannerTypes } = get();
+    const newSlides = slides.filter((slide) => slide.id !== id);
+    set({ slides: newSlides });
+    saveTenantCache(currentTenantId, newSlides, bannerTypes);
+    get().saveToBackend();
+  },
+
+  reorderSlides: (newSlides) => {
+    const { currentTenantId, bannerTypes } = get();
+    const sliced = newSlides.slice(0, 3);
+    set({ slides: sliced });
+    saveTenantCache(currentTenantId, sliced, bannerTypes);
+    get().saveToBackend();
+  },
+
+  toggleSlideActive: (id) => {
+    const { slides, currentTenantId, bannerTypes } = get();
+    const newSlides = slides.map((slide) =>
+      slide.id === id ? { ...slide, active: !slide.active } : slide
+    );
+    set({ slides: newSlides });
+    saveTenantCache(currentTenantId, newSlides, bannerTypes);
+    get().saveToBackend();
+  },
+
+  resetToDefaults: () => {
+    const { currentTenantId } = get();
+    set({
       slides: DEFAULT_HOME_BANNER_SLIDES,
       bannerTypes: DEFAULT_BANNER_TYPES,
+    });
+    saveTenantCache(currentTenantId, DEFAULT_HOME_BANNER_SLIDES, DEFAULT_BANNER_TYPES);
+    get().saveToBackend();
+  },
 
-      addSlide: (slideData) => {
-        const { slides } = get();
-        if (slides.length >= 3) {
-          return false;
-        }
+  // Types Management
+  addBannerType: (typeData) => {
+    const { bannerTypes, currentTenantId, slides } = get();
+    const newType: BannerTypeConfig = {
+      ...typeData,
+      id: `TYPE_${Date.now()}`,
+    };
+    const newTypes = [...bannerTypes, newType];
+    set({ bannerTypes: newTypes });
+    saveTenantCache(currentTenantId, slides, newTypes);
+    get().saveToBackend();
+    return newType;
+  },
 
-        const newSlide: HomeBannerSlide = {
-          ...slideData,
-          id: `banner-slide-${Date.now()}`,
-          active: slideData.active !== undefined ? slideData.active : true,
-        };
+  updateBannerType: (id, updates) => {
+    const { bannerTypes, currentTenantId, slides } = get();
+    const newTypes = bannerTypes.map((t) =>
+      t.id === id ? { ...t, ...updates } : t
+    );
+    set({ bannerTypes: newTypes });
+    saveTenantCache(currentTenantId, slides, newTypes);
+    get().saveToBackend();
+  },
 
-        set({ slides: [...slides, newSlide] });
-        return true;
-      },
+  deleteBannerType: (id) => {
+    const { bannerTypes, currentTenantId, slides } = get();
+    const newTypes = bannerTypes.filter((t) => t.id !== id);
+    set({ bannerTypes: newTypes });
+    saveTenantCache(currentTenantId, slides, newTypes);
+    get().saveToBackend();
+  },
 
-      updateSlide: (id, updates) => {
-        set({
-          slides: get().slides.map((slide) =>
-            slide.id === id ? { ...slide, ...updates } : slide
-          ),
-        });
-      },
-
-      deleteSlide: (id) => {
-        set({
-          slides: get().slides.filter((slide) => slide.id !== id),
-        });
-      },
-
-      reorderSlides: (slides) => {
-        set({ slides: slides.slice(0, 3) });
-      },
-
-      toggleSlideActive: (id) => {
-        set({
-          slides: get().slides.map((slide) =>
-            slide.id === id ? { ...slide, active: !slide.active } : slide
-          ),
-        });
-      },
-
-      resetToDefaults: () => {
-        set({
-          slides: DEFAULT_HOME_BANNER_SLIDES,
-          bannerTypes: DEFAULT_BANNER_TYPES,
-        });
-      },
-
-      // Types Management
-      addBannerType: (typeData) => {
-        const newType: BannerTypeConfig = {
-          ...typeData,
-          id: `TYPE_${Date.now()}`,
-        };
-        set({ bannerTypes: [...get().bannerTypes, newType] });
-        return newType;
-      },
-
-      updateBannerType: (id, updates) => {
-        set({
-          bannerTypes: get().bannerTypes.map((t) =>
-            t.id === id ? { ...t, ...updates } : t
-          ),
-        });
-      },
-
-      deleteBannerType: (id) => {
-        set({
-          bannerTypes: get().bannerTypes.filter((t) => t.id !== id),
-        });
-      },
-
-      resetBannerTypes: () => {
-        set({ bannerTypes: DEFAULT_BANNER_TYPES });
-      },
-    }),
-    {
-      name: 'rokad_home_banners_v2',
-    }
-  )
-);
+  resetBannerTypes: () => {
+    const { currentTenantId, slides } = get();
+    set({ bannerTypes: DEFAULT_BANNER_TYPES });
+    saveTenantCache(currentTenantId, slides, DEFAULT_BANNER_TYPES);
+    get().saveToBackend();
+  },
+}));

@@ -52,7 +52,7 @@ export class TenantsController {
   @ApiBearerAuth()
   @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @Patch('my-school')
-  @ApiOperation({ summary: 'ویرایش تنظیمات و مشخصات مدرسه جاری (مدیر مدرسه)' })
+  @ApiOperation({ summary: 'ویرایش تنظیمات و مشخصات مدرسه جاری (راهبر مدرسه)' })
   async updateMySchool(
     @CurrentTenant('id') tenantId: string,
     @Body() dto: UpdateTenantDto,
@@ -61,6 +61,32 @@ export class TenantsController {
       throw new ForbiddenException('کانتکست مدرسه برای این کاربر مشخص نیست');
     }
     return this.tenantsService.update(tenantId, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
+  @Get('my-school/banners')
+  @ApiOperation({ summary: 'دریافت بنرهای اسلایدر اختصاصی مدرسه جاری' })
+  async getSchoolBanners(@CurrentTenant('id') tenantId: string) {
+    if (!tenantId) {
+      throw new ForbiddenException('کانتکست مدرسه برای این کاربر مشخص نیست');
+    }
+    return this.tenantsService.getBanners(tenantId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @Patch('my-school/banners')
+  @ApiOperation({ summary: 'ویرایش بنرهای اسلایدر اختصاصی مدرسه جاری (راهبر مدرسه)' })
+  async updateSchoolBanners(
+    @CurrentTenant('id') tenantId: string,
+    @Body() body: { slides?: any[]; bannerTypes?: any[] },
+  ) {
+    if (!tenantId) {
+      throw new ForbiddenException('کانتکست مدرسه برای این کاربر مشخص نیست');
+    }
+    return this.tenantsService.updateBanners(tenantId, body);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

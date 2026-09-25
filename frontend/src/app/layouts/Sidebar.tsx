@@ -113,10 +113,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       case 'STAFF':
         return [
           {
-            section: 'مدیریت هنرستان',
+            section: 'راهبری هنرستان',
             items: [
-              { title: 'داشبورد مدیریت', href: '/app/admin/dashboard', icon: LayoutDashboard },
-              { title: 'مدیریت باشگاه کسب‌وکار رُکاد', href: '/app/admin/club', icon: Award },
+              { title: 'داشبورد راهبری', href: '/app/admin/dashboard', icon: LayoutDashboard },
+              { title: 'باشگاه کسب‌وکار رُکاد', href: '/app/admin/club', icon: Award },
               { title: 'پروفایل رسمی مدرسه', href: '/app/admin/profile', icon: School },
               { title: 'ساختار سال و کلاس‌ها', href: '/app/admin/academic', icon: BookOpen },
               { title: 'برنامه هفتگی کلاس‌ها', href: '/app/admin/schedule', icon: CalendarDays },

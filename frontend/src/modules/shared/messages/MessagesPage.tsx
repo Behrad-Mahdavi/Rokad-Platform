@@ -216,7 +216,7 @@ export const MessagesPage: React.FC = () => {
       case 'SCHOOL_ADMIN':
         return (
           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-club-light dark:bg-[#2A173E] text-club dark:text-[#C084FC] border border-club/30">
-            مدیریت
+            راهبری
           </span>
         );
       case 'TEACHER':

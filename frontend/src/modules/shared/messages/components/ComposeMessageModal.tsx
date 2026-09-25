@@ -392,7 +392,7 @@ export const ComposeMessageModal: React.FC<Props> = ({
       case 'STAFF':
         return (
           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-club-light dark:bg-[#2A173E] text-club dark:text-[#C084FC] border border-club/30">
-            مدیریت
+            راهبری
           </span>
         );
       case 'TEACHER':
@@ -604,7 +604,7 @@ export const ComposeMessageModal: React.FC<Props> = ({
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[11px]">
                 {[
                   { key: 'ALL', label: 'همه افراد' },
-                  { key: 'ADMIN', label: 'مدیر و معاون' },
+                  { key: 'ADMIN', label: 'راهبر و معاون' },
                   { key: 'TEACHER', label: 'مربیان و اساتید' },
                   ...(!isStudentOrParent || userRole === 'STUDENT'
                     ? [{ key: 'STUDENT', label: 'دانش‌آموزان' }]

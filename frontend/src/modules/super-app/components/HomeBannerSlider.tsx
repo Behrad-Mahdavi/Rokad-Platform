@@ -32,6 +32,12 @@ export const HomeBannerSlider: React.FC<HomeBannerSliderProps> = ({ onOpenSettin
   const user = useAuthStore((state) => state.user);
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF'].includes(user?.role || '');
 
+  const initForTenant = useHomeBannerStore((state) => state.initForTenant);
+
+  useEffect(() => {
+    initForTenant(user?.tenantId);
+  }, [user?.tenantId, initForTenant]);
+
   const storedSlides = useHomeBannerStore((state) => state.slides);
   const activeSlides = useMemo(() => {
     const list = storedSlides.filter((s) => s.active);
@@ -222,7 +228,7 @@ export const HomeBannerSlider: React.FC<HomeBannerSliderProps> = ({ onOpenSettin
                   onOpenSettings();
                 }}
                 className="flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-white/85 hover:bg-white dark:bg-gray-800/85 dark:hover:bg-gray-800 text-ink-darker dark:text-gray-100 border border-gray-300 dark:border-gray-700 shadow-2xs transition-all hover:scale-105 active:scale-95 cursor-pointer"
-                title="تنظیمات اسلایدر بنر برای مدیر"
+                title="تنظیمات اسلایدر بنر برای راهبر"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
                 <span className="hidden sm:inline">تنظیمات بنر</span>

@@ -12,6 +12,7 @@ import {
   BannerTheme,
   BannerTypeConfig,
 } from '../../../lib/stores/home-banner-store';
+import { useAuthStore } from '../../../lib/auth/auth-store';
 import {
   Plus,
   Trash2,
@@ -56,7 +57,10 @@ export const BannerSettingsModal: React.FC<BannerSettingsModalProps> = ({ isOpen
     addBannerType,
     updateBannerType,
     deleteBannerType,
+    initForTenant,
   } = useHomeBannerStore();
+
+  const user = useAuthStore((state) => state.user);
 
   // Active Main Tab: SLIDES or TYPES
   const [activeTab, setActiveTab] = useState<'SLIDES' | 'TYPES'>('SLIDES');
@@ -131,9 +135,11 @@ export const BannerSettingsModal: React.FC<BannerSettingsModalProps> = ({ isOpen
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Fetch school events
+  // Fetch school events and initialize tenant banners
   useEffect(() => {
     if (!isOpen) return;
+
+    initForTenant(user?.tenantId);
 
     const fetchEvents = async () => {
       try {
@@ -150,7 +156,7 @@ export const BannerSettingsModal: React.FC<BannerSettingsModalProps> = ({ isOpen
     };
 
     fetchEvents();
-  }, [isOpen]);
+  }, [isOpen, user?.tenantId, initForTenant]);
 
   // Helper to render type icon
   const renderIconByName = (iconName: string, className = 'w-4 h-4') => {

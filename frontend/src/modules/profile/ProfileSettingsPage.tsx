@@ -140,7 +140,7 @@ export const ProfileSettingsPage: React.FC = () => {
       case 'SUPER_ADMIN':
         return 'سوپرادمین';
       case 'SCHOOL_ADMIN':
-        return 'مدیریت';
+        return 'راهبر';
       case 'TEACHER':
         return 'مربی';
       case 'STUDENT':

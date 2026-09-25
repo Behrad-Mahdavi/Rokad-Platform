@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
@@ -14,6 +15,7 @@ import { ClassesService } from './classes.service';
 import {
   CreateLessonDto,
   CreateClassroomDto,
+  UpdateClassroomDto,
   EnrollStudentDto,
   CreateScheduleDto,
 } from './dto/create-lesson.dto';
@@ -108,6 +110,20 @@ export class ClassesController {
   ) {
     const effectiveTenantId = tenantId || userTenantId;
     return this.classesService.createClassroom(effectiveTenantId, dto);
+  }
+
+  @Patch('classrooms/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.CLASSROOM_WRITE)
+  @ApiOperation({ summary: 'ویرایش اطلاعات کلاس درس' })
+  async updateClassroom(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') classroomId: string,
+    @Body() dto: UpdateClassroomDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.classesService.updateClassroom(effectiveTenantId, classroomId, dto);
   }
 
   // 3. Class Enrollment

@@ -10,6 +10,7 @@ import { Role } from '../../common/constants';
 import {
   CreateLessonDto,
   CreateClassroomDto,
+  UpdateClassroomDto,
   EnrollStudentDto,
   CreateScheduleDto,
 } from './dto/create-lesson.dto';
@@ -334,6 +335,51 @@ export class ClassesService {
         code: dto.code,
         capacity: dto.capacity || 30,
         roomNumber: dto.roomNumber,
+      },
+      include: {
+        level: true,
+        field: true,
+      },
+    });
+  }
+
+  async updateClassroom(tenantId: string, classroomId: string, dto: UpdateClassroomDto) {
+    const classroom = await this.prisma.classroom.findFirst({
+      where: { id: classroomId, tenantId },
+    });
+    if (!classroom) {
+      throw new NotFoundException('کلاس مورد نظر یافت نشد');
+    }
+
+    if ((dto.name && dto.name !== classroom.name) || (dto.code && dto.code !== classroom.code)) {
+      const targetYearId = dto.academicYearId || classroom.academicYearId;
+      const targetName = dto.name || classroom.name;
+      const targetCode = dto.code || classroom.code;
+
+      const existing = await this.prisma.classroom.findFirst({
+        where: {
+          tenantId,
+          academicYearId: targetYearId,
+          id: { not: classroomId },
+          OR: [{ name: targetName }, { code: targetCode }],
+        },
+      });
+      if (existing) {
+        throw new ConflictException('کلاسی با این نام یا کد در این سال تحصیلی قبلاً ثبت شده است');
+      }
+    }
+
+    return this.prisma.classroom.update({
+      where: { id: classroomId },
+      data: {
+        ...(dto.name ? { name: dto.name.trim() } : {}),
+        ...(dto.code ? { code: dto.code.trim() } : {}),
+        ...(dto.capacity !== undefined ? { capacity: Number(dto.capacity) } : {}),
+        ...(dto.roomNumber !== undefined ? { roomNumber: dto.roomNumber ? dto.roomNumber.trim() : null } : {}),
+        ...(dto.levelId ? { levelId: dto.levelId } : {}),
+        ...(dto.fieldId !== undefined ? { fieldId: dto.fieldId && dto.fieldId.trim() !== '' ? dto.fieldId : null } : {}),
+        ...(dto.academicYearId ? { academicYearId: dto.academicYearId } : {}),
+        ...(dto.mentorId !== undefined ? { mentorId: dto.mentorId || null } : {}),
       },
       include: {
         level: true,

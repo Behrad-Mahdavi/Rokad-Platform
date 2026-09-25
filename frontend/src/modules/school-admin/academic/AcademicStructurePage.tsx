@@ -29,6 +29,7 @@ import {
   CheckCircle,
   Building,
   AlertCircle,
+  Edit3,
 } from 'lucide-react';
 import { ResponsivePageHeader } from '@/components/ui/ResponsivePageHeader';
 
@@ -45,11 +46,23 @@ export const AcademicStructurePage: React.FC = () => {
   // Modals
   const [isYearModalOpen, setIsYearModalOpen] = useState(false);
   const [isClassModalOpen, setIsClassModalOpen] = useState(false);
+  const [isEditClassModalOpen, setIsEditClassModalOpen] = useState(false);
+  const [editingClassId, setEditingClassId] = useState<string | null>(null);
   const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
 
   // Forms
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [editClassForm, setEditClassForm] = useState({
+    name: '',
+    code: '',
+    capacity: 30,
+    academicYearId: '',
+    levelId: '',
+    fieldId: '',
+    roomNumber: '',
+  });
 
   const [yearForm, setYearForm] = useState({
     name: 'سال تحصیلی ۱۴۰۵-۱۴۰۶',
@@ -191,6 +204,47 @@ export const AcademicStructurePage: React.FC = () => {
     }
   };
 
+  const handleOpenEditClass = (classroom: any) => {
+    setEditingClassId(classroom.id);
+    setEditClassForm({
+      name: classroom.name || '',
+      code: classroom.code || '',
+      capacity: classroom.capacity || 30,
+      academicYearId: classroom.academicYearId || '',
+      levelId: classroom.levelId || '',
+      fieldId: classroom.fieldId || '',
+      roomNumber: classroom.roomNumber || '',
+    });
+    setError(null);
+    setIsEditClassModalOpen(true);
+  };
+
+  const handleEditClassLevelChange = (lvlId: string) => {
+    const matchingFields = fields.filter((f) => f.levelId === lvlId);
+    setEditClassForm((prev) => ({
+      ...prev,
+      levelId: lvlId,
+      fieldId: matchingFields[0]?.id || '',
+    }));
+  };
+
+  const handleUpdateClass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingClassId) return;
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await apiClient.patch(`/classes/classrooms/${editingClassId}`, editClassForm);
+      setIsEditClassModalOpen(false);
+      setEditingClassId(null);
+      fetchData();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err.message || 'خطا در ویرایش کلاس درس.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleCreateLesson = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -303,12 +357,26 @@ export const AcademicStructurePage: React.FC = () => {
           isLoading={isLoading}
           emptyMessage="هنوز کلاسی ثبت نشده است. از دکمه «ایجاد کلاس درس جدید» استفاده کنید."
           primaryField={(c) => (
-            <div>
-              <div className="font-bold text-ink-darker text-sm">{c.name}</div>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="font-mono text-[11px] bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">{c.code}</span>
-                {c.roomNumber && <span className="text-[11px] text-gray-400">اتاق {c.roomNumber}</span>}
+            <div className="flex items-center justify-between w-full">
+              <div>
+                <div className="font-bold text-ink-darker text-sm">{c.name}</div>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="font-mono text-[11px] bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">{c.code}</span>
+                  {c.roomNumber && <span className="text-[11px] text-gray-400">اتاق {c.roomNumber}</span>}
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenEditClass(c);
+                }}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all border border-primary/20 shrink-0 cursor-pointer shadow-2xs"
+                title="ویرایش اطلاعات کلاس"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>ویرایش</span>
+              </button>
             </div>
           )}
           secondaryField={(c) => (
@@ -368,6 +436,23 @@ export const AcademicStructurePage: React.FC = () => {
             {
               header: 'وضعیت',
               cell: () => <Badge variant="success">فعال</Badge>,
+            },
+            {
+              header: 'عملیات',
+              cell: (c) => (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenEditClass(c);
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all border border-primary/20 cursor-pointer shadow-2xs"
+                  title="ویرایش کلاس"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>ویرایش</span>
+                </button>
+              ),
             },
           ]}
         />
@@ -788,6 +873,137 @@ export const AcademicStructurePage: React.FC = () => {
             </Button>
             <Button type="submit" variant="primary" isLoading={isSubmitting}>
               ایجاد کلاس
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* 2.5 Modal: Edit Classroom */}
+      <Modal
+        isOpen={isEditClassModalOpen}
+        onClose={() => {
+          setIsEditClassModalOpen(false);
+          setEditingClassId(null);
+          setError(null);
+        }}
+        title="ویرایش کلاس درس"
+        description="تغییر مشخصات، کد کلاسی، ظرفیت یا مکان کلاس"
+        maxWidth="md"
+      >
+        {error && (
+          <div className="mb-4 flex items-center space-x-2 space-x-reverse rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleUpdateClass} className="space-y-4">
+          <Input
+            label="نام کلاس"
+            placeholder="مثال: کلاس دهم ریاضی ۱"
+            value={editClassForm.name}
+            onChange={(e) => setEditClassForm({ ...editClassForm, name: e.target.value })}
+            required
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="کد یکتای کلاس"
+              placeholder="مثال: CLS-10-M1"
+              value={editClassForm.code}
+              onChange={(e) => setEditClassForm({ ...editClassForm, code: e.target.value })}
+              required
+            />
+            <Input
+              label="ظرفیت دانش‌آموزان"
+              type="number"
+              value={editClassForm.capacity}
+              onChange={(e) => setEditClassForm({ ...editClassForm, capacity: Number(e.target.value) })}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+                پایه تحصیلی <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={editClassForm.levelId}
+                onChange={(e) => handleEditClassLevelChange(e.target.value)}
+                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                required
+              >
+                {levels.map((lvl) => (
+                  <option key={lvl.id} value={lvl.id}>
+                    پایه {lvl.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+                رشته تحصیلی <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={editClassForm.fieldId}
+                onChange={(e) => setEditClassForm({ ...editClassForm, fieldId: e.target.value })}
+                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                required
+              >
+                {(fields.filter((f) => f.levelId === editClassForm.levelId).length > 0
+                  ? fields.filter((f) => f.levelId === editClassForm.levelId)
+                  : fields
+                ).map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+                سال تحصیلی
+              </label>
+              <select
+                value={editClassForm.academicYearId}
+                onChange={(e) => setEditClassForm({ ...editClassForm, academicYearId: e.target.value })}
+                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                {academicYears.map((y) => (
+                  <option key={y.id} value={y.id}>
+                    {y.name} {y.isCurrent ? '(جاری)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <Input
+              label="شماره یا نام اتاق فیزیکی (اختیاری)"
+              placeholder="مثال: اتاق ۱۰۱ یا کارگاه کامپیوتر"
+              value={editClassForm.roomNumber}
+              onChange={(e) => setEditClassForm({ ...editClassForm, roomNumber: e.target.value })}
+            />
+          </div>
+
+          <div className="flex justify-end space-x-2 space-x-reverse pt-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setIsEditClassModalOpen(false);
+                setEditingClassId(null);
+                setError(null);
+              }}
+            >
+              انصراف
+            </Button>
+            <Button type="submit" variant="primary" isLoading={isSubmitting}>
+              ذخیره تغییرات
             </Button>
           </div>
         </form>

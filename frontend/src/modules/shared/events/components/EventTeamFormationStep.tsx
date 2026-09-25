@@ -351,7 +351,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
     if (!currentTeam) return;
 
     if (currentTeam.isApprovedByAdmin && !isManager) {
-      toast.error('این ترکیب تیم توسط مدیر تایید نهایی شده و قابل ویرایش نیست.');
+      toast.error('این ترکیب تیم توسط راهبر تایید نهایی شده و قابل ویرایش نیست.');
       return;
     }
 
@@ -389,9 +389,9 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
     }));
 
     if (nextState) {
-      toast.success(`ترکیب تیم ایده شماره ${toPersianDigits(currentTeam.ideaNumber)} توسط مدیر تایید نهایی و برای زیرمجموعه‌ها قفل شد.`);
+      toast.success(`ترکیب تیم ایده شماره ${toPersianDigits(currentTeam.ideaNumber)} توسط راهبر تایید نهایی و برای زیرمجموعه‌ها قفل شد.`);
     } else {
-      toast.info(`تاییدیه ترکیب تیم ایده شماره ${toPersianDigits(currentTeam.ideaNumber)} توسط مدیر بازگشایی شد.`);
+      toast.info(`تاییدیه ترکیب تیم ایده شماره ${toPersianDigits(currentTeam.ideaNumber)} توسط راهبر بازگشایی شد.`);
     }
   };
 
@@ -455,7 +455,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
         {isManager && (
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-primary/20 bg-primary/10 text-primary text-xs font-bold shadow-2xs">
             <ShieldCheck className="w-4 h-4 text-primary" />
-            <span>پنل مدیر: امکان ویرایش اعضا و تایید نهایی برای شما فعال است</span>
+            <span>پنل راهبر: امکان ویرایش اعضا و تایید نهایی برای شما فعال است</span>
           </div>
         )}
       </div>
@@ -468,7 +468,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
             در انتظار مشخص‌سازی ایده‌های برگزیده رویداد (گام سوم)
           </h3>
           <p className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
-            بخش تشکیل تیم صرفاً برای ایده‌های منتخب پس از پایان نظرسنجی فعال می‌شود. پس از اتمام رای‌گیری و تعیین ایده‌های برتر توسط مدیر، ایده‌های برگزیده جهت تیم‌سازی در این بخش قرار خواهند گرفت.
+            بخش تشکیل تیم صرفاً برای ایده‌های منتخب پس از پایان نظرسنجی فعال می‌شود. پس از اتمام رای‌گیری و تعیین ایده‌های برتر توسط راهبر، ایده‌های برگزیده جهت تیم‌سازی در این بخش قرار خواهند گرفت.
           </p>
         </div>
       ) : (
@@ -623,7 +623,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                       {team.isApprovedByAdmin ? (
                         <>
                           <Unlock className="w-3.5 h-3.5" />
-                          <span>لغو تایید نهایی مدیر</span>
+                          <span>لغو تایید نهایی راهبر</span>
                         </>
                       ) : (
                         <>
