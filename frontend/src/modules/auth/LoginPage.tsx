@@ -34,38 +34,74 @@ interface DemoAccountConfig {
 }
 
 const DEMO_PRESET_MAP: Record<string, DemoAccountConfig> = {
+  '09101654176': {
+    slug: 'rokad-boys',
+    phone: '09101654176',
+    firstName: 'امیرحسین',
+    lastName: 'امیریان (راهبر پسرانه)',
+    role: 'SCHOOL_ADMIN',
+    tenantName: 'هنرستان پسرانه رُکاد',
+    theme: 'male',
+  },
+  '09021600933': {
+    slug: 'rokad-boys',
+    phone: '09021600933',
+    firstName: 'عماد',
+    lastName: 'پورحسنی (معاون پسرانه)',
+    role: 'STAFF',
+    tenantName: 'هنرستان پسرانه رُکاد',
+    theme: 'male',
+  },
+  '09307966319': {
+    slug: 'rokad-girls',
+    phone: '09307966319',
+    firstName: 'رویا',
+    lastName: 'دولت‌آبادی (راهبر دخترانه)',
+    role: 'SCHOOL_ADMIN',
+    tenantName: 'هنرستان دخترانه رُکاد',
+    theme: 'female',
+  },
+  '09150747096': {
+    slug: 'rokad-girls',
+    phone: '09150747096',
+    firstName: 'مبینا',
+    lastName: 'فلاح (معاون دخترانه)',
+    role: 'STAFF',
+    tenantName: 'هنرستان دخترانه رُکاد',
+    theme: 'female',
+  },
   '09121111111': {
     slug: 'rokad-boys',
-    phone: '09121111111',
-    firstName: 'مهندس',
-    lastName: 'مدیر (هنرستان پسرانه)',
+    phone: '09101654176',
+    firstName: 'امیرحسین',
+    lastName: 'امیریان (راهبر پسرانه)',
     role: 'SCHOOL_ADMIN',
     tenantName: 'هنرستان پسرانه رُکاد',
     theme: 'male',
   },
   '09121111119': {
     slug: 'rokad-boys',
-    phone: '09121111119',
-    firstName: 'محمدرضا',
-    lastName: 'کاظمی (معاون پسرانه)',
+    phone: '09021600933',
+    firstName: 'عماد',
+    lastName: 'پورحسنی (معاون پسرانه)',
     role: 'STAFF',
     tenantName: 'هنرستان پسرانه رُکاد',
     theme: 'male',
   },
   '09121111112': {
     slug: 'rokad-girls',
-    phone: '09121111112',
-    firstName: 'خانم',
-    lastName: 'مدیر (هنرستان دخترانه)',
+    phone: '09307966319',
+    firstName: 'رویا',
+    lastName: 'دولت‌آبادی (راهبر دخترانه)',
     role: 'SCHOOL_ADMIN',
     tenantName: 'هنرستان دخترانه رُکاد',
     theme: 'female',
   },
   '09122221112': {
     slug: 'rokad-girls',
-    phone: '09122221112',
-    firstName: 'مریم',
-    lastName: 'سلیمانی (معاون دخترانه)',
+    phone: '09150747096',
+    firstName: 'مبینا',
+    lastName: 'فلاح (معاون دخترانه)',
     role: 'STAFF',
     tenantName: 'هنرستان دخترانه رُکاد',
     theme: 'female',
@@ -370,56 +406,56 @@ export const LoginPage: React.FC = () => {
               <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09129990001</div>
             </button>
 
-            {/* Admin Boys */}
+            {/* Admin Boys - راهبر پسرانه */}
             <button
               type="button"
-              onClick={() => selectPreset('rokad-boys', '09121111111', 'RokadBoysPass2026!')}
+              onClick={() => selectPreset('rokad-boys', '09101654176', 'RokadBoysPass2026!')}
               className="p-2.5 min-h-[44px] rounded-xl bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] text-right border border-gray-200 dark:border-gray-700 transition-colors flex flex-col justify-center"
             >
               <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
                 <Shield className="h-3.5 w-3.5 text-sec dark:text-indigo-400 shrink-0" />
-                <span>مدیر پسرانه</span>
+                <span>راهبر پسرانه</span>
               </div>
-              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09121111111</div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09101654176</div>
             </button>
 
-            {/* Admin Girls */}
+            {/* Admin Girls - راهبر دخترانه */}
             <button
               type="button"
-              onClick={() => selectPreset('rokad-girls', '09121111112', 'RokadGirlsPass2026!')}
+              onClick={() => selectPreset('rokad-girls', '09307966319', 'RokadGirlsPass2026!')}
               className="p-2.5 min-h-[44px] rounded-xl bg-gray-50 dark:bg-[#1C2536] hover:bg-gray-100 dark:hover:bg-[#242F42] text-right border border-gray-200 dark:border-gray-700 transition-colors flex flex-col justify-center"
             >
               <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
                 <Shield className="h-3.5 w-3.5 text-girl dark:text-pink-400 shrink-0" />
-                <span>مدیر دخترانه</span>
+                <span>راهبر دخترانه</span>
               </div>
-              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09121111112</div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09307966319</div>
             </button>
 
-            {/* Vice Admin Boys */}
+            {/* Vice Admin Boys - معاون پسرانه */}
             <button
               type="button"
-              onClick={() => selectPreset('rokad-boys', '09121111119', 'RokadBoysPass2026!')}
+              onClick={() => selectPreset('rokad-boys', '09021600933', 'RokadBoysPass2026!')}
               className="p-2.5 min-h-[44px] rounded-xl bg-sec/5 dark:bg-sec/15 hover:bg-sec/10 dark:hover:bg-sec/25 text-right border border-sec/30 transition-colors flex flex-col justify-center"
             >
               <div className="font-bold text-sec dark:text-indigo-400 flex items-center gap-1.5">
                 <ShieldCheck className="h-3.5 w-3.5 text-sec dark:text-indigo-400 shrink-0" />
                 <span>معاون پسرانه</span>
               </div>
-              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09121111119</div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09021600933</div>
             </button>
 
-            {/* Vice Admin Girls */}
+            {/* Vice Admin Girls - معاون دخترانه */}
             <button
               type="button"
-              onClick={() => selectPreset('rokad-girls', '09122221112', 'RokadGirlsPass2026!')}
+              onClick={() => selectPreset('rokad-girls', '09150747096', 'RokadGirlsPass2026!')}
               className="p-2.5 min-h-[44px] rounded-xl bg-pink-50 dark:bg-pink-950/20 hover:bg-pink-100 dark:hover:bg-pink-950/40 text-right border border-pink-200 dark:border-pink-800 transition-colors flex flex-col justify-center"
             >
               <div className="font-bold text-pink-700 dark:text-pink-300 flex items-center gap-1.5">
                 <ShieldCheck className="h-3.5 w-3.5 text-girl dark:text-pink-400 shrink-0" />
                 <span>معاون دخترانه</span>
               </div>
-              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09122221112</div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09150747096</div>
             </button>
 
             {/* SuperAdmin */}
