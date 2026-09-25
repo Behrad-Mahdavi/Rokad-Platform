@@ -87,15 +87,6 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@nestjs/core",
-      "@prisma/client",
-      "@prisma/engines",
-      "argon2",
-      "prisma"
-    ]
-  },
   "jest": {
     "moduleFileExtensions": [
       "js",
