@@ -122,7 +122,7 @@ export class RecordTeacherAttendanceDto {
   @IsOptional()
   entryTime?: string;
 
-  @ApiPropertyOptional({ description: 'ساعت خروج', example: '13:35' })
+  @ApiPropertyOptional({ description: 'ساعت خروج', example: '13:50' })
   @IsString()
   @IsOptional()
   exitTime?: string;

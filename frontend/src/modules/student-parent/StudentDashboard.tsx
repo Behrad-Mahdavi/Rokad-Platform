@@ -228,7 +228,7 @@ export const StudentDashboard: React.FC = () => {
         {isScheduleLoading ? (
           <div className="py-8 text-center text-xs text-gray-400">در حال دریافت برنامه...</div>
         ) : todaySchedules.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {todaySchedules.map((item: any) => (
               <div
                 key={item.id}
@@ -236,8 +236,13 @@ export const StudentDashboard: React.FC = () => {
               >
                 <div>
                   <div className="flex items-center justify-between gap-1 mb-1.5">
-                    <span className="font-bold text-[11px] text-primary">
-                      زنگ {toPersianDigits(item.periodNumber)}
+                    <span className="font-bold text-[11px] text-primary flex items-center gap-1">
+                      <span>زنگ {toPersianDigits(item.periodNumber)}</span>
+                      {item.periodNumber >= 5 && (
+                        <span className="text-[9px] bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 px-1 py-0.5 rounded font-extrabold">
+                          فوق
+                        </span>
+                      )}
                     </span>
                     <span className="font-mono text-[10px] text-gray-500 dark:text-gray-400 dir-ltr bg-white dark:bg-gray-800 px-1.5 py-0.5 rounded border border-gray-100 dark:border-gray-700">
                       {toPersianDigits(item.startTime)} - {toPersianDigits(item.endTime)}

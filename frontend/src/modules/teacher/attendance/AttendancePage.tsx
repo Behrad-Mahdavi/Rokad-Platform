@@ -1499,8 +1499,8 @@ export const AttendancePage: React.FC = () => {
                     <span className="text-[10px] sm:text-[11px] font-black text-muted-foreground block mb-1.5">
                       انتخاب زنگ:
                     </span>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                      {[1, 2, 3, 4].map((pNum) => (
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                      {[1, 2, 3, 4, 5, 6].map((pNum) => (
                         <button
                           key={pNum}
                           type="button"
@@ -1511,9 +1511,13 @@ export const AttendancePage: React.FC = () => {
                               periodNumber: pNum,
                             })
                           }
-                          className="py-1.5 text-[11px] font-black bg-neutral-100 dark:bg-neutral-800 hover:bg-amber-400 hover:text-black border-2 border-black rounded-lg shadow-[1px_1px_0px_#000] transition-all text-center"
+                          className={`py-1 text-[11px] font-black border-2 border-black rounded-lg shadow-[1px_1px_0px_#000] transition-all text-center ${
+                            pNum >= 5
+                              ? 'bg-purple-100 dark:bg-purple-950/70 text-purple-900 dark:text-purple-200 hover:bg-amber-400 hover:text-black'
+                              : 'bg-neutral-100 dark:bg-neutral-800 hover:bg-amber-400 hover:text-black'
+                          }`}
                         >
-                          زنگ {toPersianDigits(pNum)}
+                          {pNum >= 5 ? `زنگ ${toPersianDigits(pNum)} (فوق)` : `زنگ ${toPersianDigits(pNum)}`}
                         </button>
                       ))}
                     </div>

@@ -44,19 +44,8 @@ export const DAYS: DayDef[] = [
   { key: 'THURSDAY', label: 'پنج‌شنبه', dayIndex: 4 },
 ];
 
-export const PERIOD_LABELS: Record<number, string> = {
-  1: 'زنگ اول',
-  2: 'زنگ دوم',
-  3: 'زنگ سوم',
-  4: 'زنگ چهارم',
-};
-
-export const STANDARD_PERIODS = [
-  { number: 1, label: 'زنگ اول', startTime: '07:30', endTime: '09:00' },
-  { number: 2, label: 'زنگ دوم', startTime: '09:20', endTime: '10:40' },
-  { number: 3, label: 'زنگ سوم', startTime: '11:00', endTime: '12:10' },
-  { number: 4, label: 'زنگ چهارم', startTime: '12:30', endTime: '13:35' },
-];
+import { OFFICIAL_PERIODS, PERIOD_LABELS } from '../../../lib/constants/periods';
+export { PERIOD_LABELS };
 
 export interface StudentScheduleItem {
   id: string;
@@ -320,6 +309,12 @@ export const StudentSchedulePage: React.FC = () => {
                         <Badge variant="default" className="font-bold text-xs py-0.5">
                           {periodLabel}
                         </Badge>
+
+                        {slot.periodNumber >= 5 && (
+                          <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-300/50">
+                            فوق برنامه (عصر)
+                          </span>
+                        )}
 
                         <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-gray-50 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] text-xs font-bold text-foreground dark:text-slate-300">
                           <Clock className="w-3.5 h-3.5 text-primary shrink-0" />

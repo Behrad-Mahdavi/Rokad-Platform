@@ -1,12 +1,14 @@
 import { toPersianDigits } from '../../../utils/jalali';
 import { DayDef, StudentScheduleItem } from './StudentSchedulePage';
 import { ROKAD_LOGO_BASE64 } from '../../../assets/logoRokadBase64';
+import { OFFICIAL_PERIODS, PeriodDefinition } from '../../../lib/constants/periods';
 
 interface GeneratePdfOptions {
   title?: string;
   classroomName?: string;
   teacherName?: string;
   studentName?: string;
+  academicYear?: string;
   isTeacher?: boolean;
   schedules: any[];
   days: DayDef[];
@@ -17,17 +19,12 @@ export function generateSchedulePdf({
   title = 'برنامه هفتگی',
   classroomName = 'کلاس درس',
   teacherName,
+  academicYear = '۱۴۰۵-۱۴۰۶',
   isTeacher = false,
   schedules,
   days,
 }: GeneratePdfOptions) {
-  const PERIOD_CONFIG = [
-    { number: 1, label: 'زنگ اول', time: '۰۷:۳۰ تا ۰۹:۰۰' },
-    { number: 2, label: 'زنگ دوم', time: '۰۹:۲۰ تا ۱۰:۴۰' },
-    { number: 3, label: 'زنگ سوم', time: '۱۱:۰۰ تا ۱۲:۱۰' },
-    { number: 4, label: 'زنگ چهارم', time: '۱۲:۳۰ تا ۱۳:۳۵' },
-  ];
-  const periods = [1, 2, 3, 4];
+  const periods = OFFICIAL_PERIODS;
   const targetLabel = isTeacher ? (teacherName || 'برنامه تدریس') : classroomName;
 
   // Build matrix rows with strict fixed heights so cells never vary in size
@@ -35,11 +32,15 @@ export function generateSchedulePdf({
     .map((day) => {
       const daySlots = schedules.filter((s) => s.dayOfWeek === day.key);
       const cellsHtml = periods
-        .map((periodNum) => {
+        .map((period) => {
+          const periodNum = period.number;
           const slot = daySlots.find((s) => s.periodNumber === periodNum);
+          const isExtra = period.isExtracurricular;
+          const extraClass = isExtra ? ' extra-slot' : '';
+
           if (!slot) {
             return `
-              <td class="slot-cell">
+              <td class="slot-cell${extraClass}">
                 <div class="cell-content empty-content">—</div>
               </td>
             `;
@@ -76,16 +77,12 @@ export function generateSchedulePdf({
             ? (slot.classroom?.name || '')
             : (slot.teacher?.user ? `${slot.teacher.user.firstName} ${slot.teacher.user.lastName}` : '');
 
-          const timeDisplay = (slot.startTime && slot.endTime)
-            ? `${toPersianDigits(slot.startTime)} تا ${toPersianDigits(slot.endTime)}`
-            : (PERIOD_CONFIG.find((p) => p.number === periodNum)?.time || '');
-
           return `
             <td class="slot-cell">
               <div class="cell-content">
                 <div class="lesson-name">${slot.lesson?.name || '—'}</div>
                 ${subLabel ? `<div class="teacher-name">${subLabel}</div>` : ''}
-                <div class="slot-time">${timeDisplay}</div>
+                <div class="slot-time">${toPersianDigits(slot.startTime)} تا ${toPersianDigits(slot.endTime)}</div>
               </div>
             </td>
           `;
@@ -222,29 +219,41 @@ export function generateSchedulePdf({
       font-family: 'IRANSansXFaNum', 'IRANSansX', 'Vazirmatn', sans-serif !important;
     }
     .schedule-table thead th.day-col {
-      width: 12%;
+      width: 10%;
       background-color: #161D3F;
     }
-    .schedule-table thead th.period-col {
-      width: 22%;
+    .schedule-table thead th.extra-col {
+      background-color: #1E1B4B !important;
+      border-color: #1E1B4B !important;
     }
-    .period-head-title {
-      font-size: 11pt;
-      font-weight: 800;
-    }
-    .period-head-time {
-      font-size: 8.5pt;
-      font-weight: 500;
-      opacity: 0.9;
-      margin-top: 2px;
+    .period-time-badge {
+      display: block;
+      font-size: 7pt;
+      font-weight: 600;
+      color: #E0E7FF;
+      margin-top: 1px;
       font-family: 'IRANSansXFaNum', 'IRANSansX', 'Vazirmatn', sans-serif !important;
+      letter-spacing: -0.2px;
+    }
+    .extra-tag-pill {
+      display: inline-block;
+      font-size: 6pt;
+      background: #FDE68A;
+      color: #78350F;
+      padding: 0.5px 4px;
+      border-radius: 9999px;
+      font-weight: 900;
+      margin-top: 1.5px;
+    }
+    .slot-cell.extra-slot {
+      background-color: #FAF5FF !important;
     }
 
-    /* Strict 25mm height per day row so all cells are permanently proportionate */
+    /* Strict 24mm height per day row so all cells are permanently proportionate */
     .day-row {
-      height: 25mm !important;
-      max-height: 25mm !important;
-      min-height: 25mm !important;
+      height: 24mm !important;
+      max-height: 24mm !important;
+      min-height: 24mm !important;
     }
     .schedule-table td, .schedule-table th {
       border: 1px solid #CBD5E1;
@@ -261,10 +270,10 @@ export function generateSchedulePdf({
       font-weight: 900;
       font-size: 11pt;
       border: 1.5px solid #202A5A !important;
-      width: 12% !important;
+      width: 10% !important;
     }
     .day-content {
-      height: 25mm;
+      height: 24mm;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -272,18 +281,18 @@ export function generateSchedulePdf({
     }
     .slot-cell {
       background-color: #FFFFFF;
-      width: 22% !important;
-      height: 25mm !important;
-      max-height: 25mm !important;
+      width: 15% !important;
+      height: 24mm !important;
+      max-height: 24mm !important;
     }
     .cell-content {
-      height: 25mm;
-      max-height: 25mm;
+      height: 24mm;
+      max-height: 24mm;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 2px 4px;
+      padding: 1px 3px;
       box-sizing: border-box;
       text-align: center;
       width: 100%;
@@ -295,7 +304,7 @@ export function generateSchedulePdf({
     }
     .lesson-name {
       font-weight: 900;
-      font-size: 9.5pt;
+      font-size: 8.5pt;
       color: #202A5A;
       margin-bottom: 2px;
       line-height: 1.25;
@@ -305,7 +314,7 @@ export function generateSchedulePdf({
       max-width: 100%;
     }
     .teacher-name {
-      font-size: 8.5pt;
+      font-size: 7.5pt;
       color: #475569;
       font-weight: 700;
       font-family: 'IRANSansXFaNum', 'IRANSansX', 'Vazirmatn', sans-serif !important;
@@ -315,18 +324,18 @@ export function generateSchedulePdf({
       max-width: 100%;
     }
     .slot-time {
-      font-size: 7.5pt;
+      font-size: 7pt;
       color: #64748B;
-      margin-top: 2px;
+      margin-top: 1.5px;
       font-weight: 600;
       font-family: 'IRANSansXFaNum', 'IRANSansX', 'Vazirmatn', sans-serif !important;
       white-space: nowrap;
     }
 
-    /* Split cell: 2 equal halves inside the fixed height */
+    /* Split cell: 2 equal halves inside the fixed 24mm height */
     .split-content {
-      height: 25mm;
-      max-height: 25mm;
+      height: 24mm;
+      max-height: 24mm;
       display: flex;
       flex-direction: column;
       justify-content: space-evenly;
@@ -340,12 +349,12 @@ export function generateSchedulePdf({
       line-height: 1.15;
     }
     .split-half .lesson-name {
-      font-size: 8pt;
+      font-size: 7.5pt;
       margin-bottom: 1px;
       line-height: 1.15;
     }
     .split-half .teacher-name {
-      font-size: 7pt;
+      font-size: 6.5pt;
       line-height: 1.1;
     }
     .split-divider {
@@ -376,7 +385,7 @@ export function generateSchedulePdf({
             ${targetLabel ? `<span class="class-badge">${targetLabel}</span>` : ''}
           </div>
           <div class="year-label">
-            سال تحصیلی: <strong>${toPersianDigits('۱۴۰۵-۱۴۰۶')}</strong>
+            سال تحصیلی: <strong>${toPersianDigits(academicYear)}</strong>
           </div>
         </td>
         <td style="width: 25%; text-align: left; vertical-align: middle;">
@@ -387,34 +396,31 @@ export function generateSchedulePdf({
       </tr>
     </table>
 
-    <!-- Timetable Grid: Strictly proportionate 4-period matrix with fixed column widths and heights -->
+    <!-- Timetable Grid: Strictly proportionate 6x6 matrix with fixed column widths and heights -->
     <table class="schedule-table">
       <colgroup>
-        <col style="width: 12%;" />
-        <col style="width: 22%;" />
-        <col style="width: 22%;" />
-        <col style="width: 22%;" />
-        <col style="width: 22%;" />
+        <col style="width: 10%;" />
+        <col style="width: 15%;" />
+        <col style="width: 15%;" />
+        <col style="width: 15%;" />
+        <col style="width: 15%;" />
+        <col style="width: 15%;" />
+        <col style="width: 15%;" />
       </colgroup>
       <thead>
         <tr>
           <th class="day-col">روز / زنگ</th>
-          <th class="period-col">
-            <div class="period-head-title">زنگ اول</div>
-            <div class="period-head-time">۰۷:۳۰ تا ۰۹:۰۰</div>
-          </th>
-          <th class="period-col">
-            <div class="period-head-title">زنگ دوم</div>
-            <div class="period-head-time">۰۹:۲۰ تا ۱۰:۴۰</div>
-          </th>
-          <th class="period-col">
-            <div class="period-head-title">زنگ سوم</div>
-            <div class="period-head-time">۱۱:۰۰ تا ۱۲:۱۰</div>
-          </th>
-          <th class="period-col">
-            <div class="period-head-title">زنگ چهارم</div>
-            <div class="period-head-time">۱۲:۳۰ تا ۱۳:۳۵</div>
-          </th>
+          ${periods
+            .map(
+              (p) => `
+            <th class="period-col${p.isExtracurricular ? ' extra-col' : ''}">
+              <div>${p.label}</div>
+              <span class="period-time-badge">${toPersianDigits(p.defaultStart)} تا ${toPersianDigits(p.defaultEnd)}</span>
+              ${p.isExtracurricular ? '<span class="extra-tag-pill">فوق برنامه</span>' : ''}
+            </th>
+          `,
+            )
+            .join('')}
         </tr>
       </thead>
       <tbody>
