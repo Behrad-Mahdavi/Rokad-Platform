@@ -1,16 +1,22 @@
 import React, { useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
-import { RefreshCw, Sparkles, ArrowUpCircle, Info } from 'lucide-react';
+import { RefreshCw, Sparkles, ArrowUpCircle, X } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useAppVersionCheck } from '../../lib/hooks/useAppVersionCheck';
 import { toPersianDigits } from '../../lib/utils';
-import { Badge } from '../ui/Badge';
 
 export const PwaUpdatePrompt: React.FC = () => {
-  const [snoozedUntil, setSnoozedUntil] = useState<number>(0);
+  const [snoozedUntil, setSnoozedUntil] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem('rokad_pwa_update_snooze');
+      return stored ? parseInt(stored, 10) : 0;
+    } catch {
+      return 0;
+    }
+  });
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
 
-  // ۱. بررسی نسخه از طریق هوک ۵ دقیقه‌ای و فوکوس تب
+  // ۱. بررسی نسخه از طریق هوک نسخه سرور
   const {
     hasUpdate: hasApiVersionUpdate,
     serverVersion,
@@ -18,13 +24,12 @@ export const PwaUpdatePrompt: React.FC = () => {
     updateApp,
   } = useAppVersionCheck();
 
-  // ۲. بررسی از طریق مرورگر و بایت‌کد سرویس‌ورکر Workbox
+  // ۲. بررسی از طریق سرویس‌ورکر Workbox
   const {
     needRefresh: [needSwRefresh, setNeedSwRefresh],
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(swUrl, r) {
-      // بررسی دوره‌ای هر ۳۰ دقیقه برای سرویس‌ورکر
       if (r) {
         setInterval(() => {
           r.update();
@@ -36,8 +41,15 @@ export const PwaUpdatePrompt: React.FC = () => {
     },
   });
 
+  // در حالت توسعه (Dev)، پاپ‌آپ آپدیت نمایش داده نمی‌شود
+  if (import.meta.env.DEV) {
+    return null;
+  }
+
   // آیا آپدیت جدید کشف شده است؟
-  const isUpdateDetected = hasApiVersionUpdate || needSwRefresh;
+  // آپدیت زمانی معتبر است که یا SW اعلام نیاز کند یا سرور نسخه‌ای واقعاً متفاوت برگرداند
+  const isVersionMismatch = serverVersion && serverVersion !== currentVersion;
+  const isUpdateDetected = isVersionMismatch || needSwRefresh || (hasApiVersionUpdate && isVersionMismatch);
 
   // آیا کاربر موقتاً به تعویق انداخته است؟
   const isSnoozed = Date.now() < snoozedUntil;
@@ -55,17 +67,19 @@ export const PwaUpdatePrompt: React.FC = () => {
     }
   };
 
-  // به تعویق انداختن موقت (۱۰ دقیقه)
+  // به تعویق انداختن موقت (۲ ساعت) و ذخیره در حافظه محلی
   const handleSnooze = () => {
-    setSnoozedUntil(Date.now() + 10 * 60 * 1000);
+    const until = Date.now() + 2 * 60 * 60 * 1000;
+    setSnoozedUntil(until);
+    try {
+      localStorage.setItem('rokad_pwa_update_snooze', until.toString());
+    } catch {}
     setNeedSwRefresh(false);
   };
 
   if (!isUpdateDetected || isSnoozed) {
     return null;
   }
-
-  const targetVersion = serverVersion || currentVersion;
 
   return (
     <aside
@@ -74,16 +88,24 @@ export const PwaUpdatePrompt: React.FC = () => {
       aria-label="اطلاعیه انتشار نسخه جدید رُکاد"
       className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-6 md:right-auto md:w-[420px] z-[9999] animate-in fade-in slide-in-from-bottom-6 duration-300"
     >
-      <div className="rounded-2xl border-2 border-primary/50 bg-[#151C28] text-white p-5 shadow-[4px_4px_0_#59BBAF] ring-1 ring-white/10 flex flex-col gap-3.5">
-        
+      <div className="rounded-2xl border-2 border-primary/50 bg-[#151C28] text-white p-5 shadow-[4px_4px_0_#59BBAF] ring-1 ring-white/10 flex flex-col gap-3.5 relative">
+        {/* دکمه بستن سریع */}
+        <button
+          onClick={handleSnooze}
+          aria-label="بستن اعلان آپدیت"
+          className="absolute top-3.5 left-3.5 w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
         {/* هدر اعلان نسخه جدید */}
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-3 pl-6">
           <div className="p-2.5 rounded-xl bg-primary/20 text-primary border border-primary/40 shrink-0">
             <ArrowUpCircle className="w-6 h-6 animate-pulse text-primary" />
           </div>
 
           <div className="space-y-1 flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
               <h4 className="text-sm font-black text-white flex items-center gap-1.5">
                 <span>نسخه جدیدی از رُکاد آماده است</span>
                 <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
@@ -91,7 +113,7 @@ export const PwaUpdatePrompt: React.FC = () => {
             </div>
 
             <p className="text-xs text-gray-300 leading-relaxed">
-              تغییرات، امکانات جدید و بهینه‌سازی‌های فنی منتشر شده است. لطفاً برای عملکرد بی‌نقص سیستم، برنامه را به‌روزرسانی فرمایید.
+              تغییرات و بهینه‌سازی‌های فنی جدید منتشر شده است. لطفاً برای دریافت آخرین امکانات، برنامه را به‌روزرسانی فرمایید.
             </p>
 
             {/* بج‌های شماره نسخه */}
@@ -131,10 +153,9 @@ export const PwaUpdatePrompt: React.FC = () => {
             onClick={handleSnooze}
             className="min-h-[44px] px-3.5 text-xs text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
           >
-            یادآوری ۱۰ دقیقه بعد
+            بعداً
           </Button>
         </div>
-
       </div>
     </aside>
   );

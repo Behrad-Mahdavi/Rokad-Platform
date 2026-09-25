@@ -21,6 +21,12 @@ export function useAppVersionCheck() {
   const lastCheckTimeRef = useRef<number>(0);
 
   const checkForUpdate = useCallback(async () => {
+    // In dev mode, disable version checking to prevent false update prompts
+    if (import.meta.env.DEV) {
+      setHasUpdate(false);
+      return;
+    }
+
     try {
       setIsChecking(true);
       lastCheckTimeRef.current = Date.now();
@@ -40,7 +46,8 @@ export function useAppVersionCheck() {
         setServerVersion(remoteVersion);
         setServerBuildTime(res.data.buildTime || null);
 
-        if (remoteVersion !== CURRENT_APP_VERSION) {
+        // Only flag update if remote is valid and strictly different from current version
+        if (remoteVersion && remoteVersion !== CURRENT_APP_VERSION) {
           console.info(
             `[Version Check] New version detected: ${remoteVersion} (Current: ${CURRENT_APP_VERSION})`,
           );
@@ -91,14 +98,14 @@ export function useAppVersionCheck() {
   // ۳. متد فورس‌آپدیت: به‌روزرسانی Service Worker و ریفرش اجباری برنامه
   const updateApp = useCallback(async () => {
     try {
-      // ارسال پیام SKIP_WAITING به سرویس ورکر فعال
+      // غیرفعال‌سازی سرویس‌ورکرهای قبلی برای پاکسازی کامل کدهای قدیمی
       if ('serviceWorker' in navigator) {
         const registrations = await navigator.serviceWorker.getRegistrations();
         for (const registration of registrations) {
           if (registration.waiting) {
             registration.waiting.postMessage({ type: 'SKIP_WAITING' });
           }
-          await registration.update();
+          await registration.unregister();
         }
       }
 
@@ -110,8 +117,10 @@ export function useAppVersionCheck() {
     } catch (e) {
       console.error('[Version Check] Error during cache cleanup:', e);
     } finally {
-      // رفرش بدون کش برای دریافت آخرین فایل‌های HTML و JS
-      window.location.reload();
+      // رفرش با باطل کردن کش
+      const url = new URL(window.location.href);
+      url.searchParams.set('_v', Date.now().toString());
+      window.location.href = url.toString();
     }
   }, []);
 
