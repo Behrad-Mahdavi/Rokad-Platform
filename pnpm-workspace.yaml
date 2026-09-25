@@ -1,6 +1,8 @@
 packages:
   - '.'
 
+dangerouslyAllowAllBuilds: true
+
 allowBuilds:
   '@nestjs/core': true
   '@prisma/client': true
