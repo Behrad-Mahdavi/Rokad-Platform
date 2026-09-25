@@ -102,11 +102,11 @@ async function bootstrap() {
     customSiteTitle: 'Rokad School API Docs',
   });
 
-  const port = process.env.PORT || 4000;
-  await app.listen(port);
+  const port = process.env.PORT || 3000;
+  await app.listen(port, '0.0.0.0');
 
-  logger.log(`🚀 سرور پلتفرم رکاد با موفقیت راه‌اندازی شد: http://localhost:${port}/api/v1`);
-  logger.log(`📚 مستندات Swagger API در دسترس است: http://localhost:${port}/api/docs`);
+  logger.log(`🚀 سرور پلتفرم رکاد با موفقیت راه‌اندازی شد: http://0.0.0.0:${port}/api/v1`);
+  logger.log(`📚 مستندات Swagger API در دسترس است: http://0.0.0.0:${port}/api/docs`);
 }
 
 bootstrap();

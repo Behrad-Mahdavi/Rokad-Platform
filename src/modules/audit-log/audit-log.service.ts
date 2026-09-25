@@ -11,7 +11,7 @@ import { CreateAuditLogDto } from './dto/create-audit-log.dto';
 @Injectable()
 export class AuditLogService implements OnModuleInit {
   private readonly logger = new Logger(AuditLogService.name);
-  private readonly anchorLogPath = path.resolve(process.cwd(), 'logs/audit-anchors.log');
+  private anchorLogPath = path.resolve(process.cwd(), 'logs/audit-anchors.log');
 
   constructor(
     private readonly prisma: PrismaService,
@@ -26,8 +26,15 @@ export class AuditLogService implements OnModuleInit {
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
-    } catch (err: any) {
-      this.logger.error(`Failed to initialize audit anchor ledger directory: ${err.message}`);
+    } catch {
+      // Fallback to /tmp for read-only containers or when /app/logs is omitted
+      this.anchorLogPath = '/tmp/audit-anchors.log';
+      try {
+        const tmpDir = path.dirname(this.anchorLogPath);
+        if (!fs.existsSync(tmpDir)) {
+          fs.mkdirSync(tmpDir, { recursive: true });
+        }
+      } catch {}
     }
   }
 
