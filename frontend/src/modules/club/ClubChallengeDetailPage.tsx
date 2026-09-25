@@ -29,6 +29,7 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { UnderDevelopmentOverlay } from '../../components/ui/UnderDevelopmentOverlay';
 
 export const ClubChallengeDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -164,7 +165,15 @@ export const ClubChallengeDetailPage: React.FC = () => {
   const isGraded = submission?.status === 'GRADED';
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-16 animate-in fade-in duration-300" data-theme="club">
+    <UnderDevelopmentOverlay
+      title="چالش باشگاه کسب‌وکار رُکاد"
+      subtitle={challenge.title}
+      description="این چالش و سیستم ارسال پروژه در حال آماده‌سازی و بازطراحی است و به زودی فعال خواهد شد."
+      badgeText="چالش باشگاه • در حال توسعه"
+      icon={Trophy}
+      accentColor="purple"
+    >
+      <div className="max-w-4xl mx-auto space-y-6 pb-16 animate-in fade-in duration-300" data-theme="club">
       {/* Top Breadcrumb & Navigation */}
       <div className="flex items-center gap-3">
         <button
@@ -505,6 +514,7 @@ export const ClubChallengeDetailPage: React.FC = () => {
           </Card>
         </div>
       </div>
-    </div>
+      </div>
+    </UnderDevelopmentOverlay>
   );
 };

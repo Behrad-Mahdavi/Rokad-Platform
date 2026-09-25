@@ -5,36 +5,17 @@ import { apiClient } from '../../lib/api/client';
 import { toPersianDigits } from '../../lib/utils';
 import { Bell, User } from 'lucide-react';
 import rokadLogoWhite from '../../assets/logo-rokad-white.png';
-
-interface NotificationItem {
-  id: string;
-  read: boolean;
-}
+import { useNotificationStore } from '../../lib/notifications/notification-store';
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-
-  // Notification count
-  const [unreadCount, setUnreadCount] = useState<number>(0);
-
-  const fetchUnreadCount = async () => {
-    try {
-      const res = await apiClient.get<NotificationItem[]>('/notifications');
-      const list = res.data || [];
-      if (Array.isArray(list)) {
-        const count = list.filter((n) => !n.read).length;
-        setUnreadCount(count);
-      }
-    } catch {
-      // quiet fallback
-    }
-  };
+  const { unreadCount, fetchUnreadCount } = useNotificationStore();
 
   useEffect(() => {
     if (user) {
       fetchUnreadCount();
-      const timer = setInterval(fetchUnreadCount, 30000);
+      const timer = setInterval(fetchUnreadCount, 20000);
 
       // Sync fresh profile from server (including avatarUrl)
       apiClient

@@ -32,12 +32,17 @@ interface NotificationItem {
   createdAt?: string;
 }
 
+import { useNotificationStore } from '../../lib/notifications/notification-store';
+
 export const NotificationsPage: React.FC = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [filter, setFilter] = useState<'ALL' | 'UNREAD'>('ALL');
+
+  const { markAllRead: storeMarkAllRead, markAsRead: storeMarkAsRead, isRead, setUnreadCount } =
+    useNotificationStore();
 
   // Push notifications hook
   const {
@@ -55,8 +60,13 @@ export const NotificationsPage: React.FC = () => {
     try {
       setIsLoading(true);
       const res = await apiClient.get<NotificationItem[]>('/notifications');
-      const list = res.data || [];
+      const list = (res.data || []).map((n) => ({
+        ...n,
+        read: isRead(n.id, n.read),
+      }));
       setNotifications(Array.isArray(list) ? list : []);
+      const unread = list.filter((n) => !n.read).length;
+      setUnreadCount(unread);
     } catch (err) {
       console.error('Failed to load notifications', err);
     } finally {
@@ -72,11 +82,13 @@ export const NotificationsPage: React.FC = () => {
 
   const markAllAsRead = async () => {
     try {
-      const ids = notifications.filter((n) => !n.read).map((n) => n.id);
+      const ids = notifications.map((n) => n.id);
+      storeMarkAllRead();
+      ids.forEach((id) => storeMarkAsRead(id));
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       if (ids.length > 0) {
         await apiClient.post('/notifications/mark-all-read', { notificationIds: ids });
       }
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     } catch (err) {
       console.error('Failed to mark all as read', err);
     }
@@ -85,6 +97,7 @@ export const NotificationsPage: React.FC = () => {
   const handleNotificationClick = async (notif: NotificationItem) => {
     try {
       if (!notif.read) {
+        storeMarkAsRead(notif.id);
         apiClient.patch(`/notifications/${notif.id}/read`).catch(() => {});
         setNotifications((prev) =>
           prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n))

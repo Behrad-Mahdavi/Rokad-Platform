@@ -53,281 +53,8 @@ const PERSIAN_DAY_NAMES = [
   'جمعه',
 ];
 
-// Rich Sample Data for Demo & Testing
-const SAMPLE_STUDENT_COACHING = {
-  link: {
-    coach: {
-      firstName: 'دکتر علیرضا',
-      lastName: 'سلیمانی',
-      avatarUrl: '',
-      title: 'مشاور ارشد هدایت تحصیلی و کنکور',
-      phone: '۰۹۱۲۳۴۵۶۷۸۹',
-      office: 'اتاق مشاوره و هدایت تحصیلی (طبقه ۲)',
-    },
-    slotDayOfWeek: 2, // دوشنبه
-    slotStartTime: '۱۰:۲۰',
-    slotEndTime: '۱۰:۴۰',
-  },
-  stats: {
-    totalSessions: 8,
-    attendedSessions: 7,
-    attendanceRate: 88,
-    upcomingSessions: 4,
-    activeGoalsCount: 3,
-  },
-  nextSession: {
-    id: 's-next',
-    scheduledDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-    durationMinutes: 20,
-    agenda: 'بررسی کارنامه آزمون جامع مرحله دوم و تحلیل روند تراز هفتگی',
-    location: 'اتاق مشاوره ۲ / حضوری',
-  },
-  activeGoals: [
-    { id: 'g1', title: 'افزایش ساعت مطالعه هفتگی به ۴۰ ساعت', progress: 80, targetDate: '۱۴۰۵/۰۷/۱۵' },
-    { id: 'g2', title: 'تحلیل تست‌های نشان‌دار فیزیک پایه', progress: 65, targetDate: '۱۴۰۵/۰۷/۱۰' },
-    { id: 'g3', title: 'آزمون‌های زمان‌دار ادبیات و عربی عمومی', progress: 90, targetDate: '۱۴۰۵/۰۷/۰۵' },
-  ],
-  pastSessions: [
-    {
-      id: 'ps-1',
-      scheduledDate: new Date(Date.now() - 11 * 24 * 60 * 60 * 1000).toISOString(),
-      attendanceStatus: 'PRESENT',
-      sessionType: 'REGULAR',
-      coachNotes: 'پیشرفت قابل توجه در تست‌زنی ریاضی. تمرکز دانش‌آموز در کلاس‌ها عالی است.',
-      actionItems: 'تکمیل دفتر برنامه‌ریزی تا جلسه بعد و خلاصه‌نویسی فصل اول شیمی.',
-    },
-    {
-      id: 'ps-2',
-      scheduledDate: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
-      attendanceStatus: 'PRESENT',
-      sessionType: 'REGULAR',
-      coachNotes: 'تعیین اهداف ماهانه و هماهنگی ساعات خواب و استراحت هفتگی.',
-      actionItems: 'تنظیم روتین صبحگاهی مطالعه و ارسال گزارش هفتگی.',
-    },
-    {
-      id: 'ps-3',
-      scheduledDate: new Date(Date.now() - 39 * 24 * 60 * 60 * 1000).toISOString(),
-      attendanceStatus: 'EXCUSED',
-      sessionType: 'EXTRA',
-      coachNotes: 'به علت کسالت دانش‌آموز جلسه با هماهنگی قبلی موجه ثبت شد.',
-      actionItems: 'مطالعه جزوه فصل تابع پس از بهبودی.',
-    },
-  ],
-  extraRequests: [
-    {
-      id: 'req-1',
-      reason: 'نیاز به راهنمایی فوری جهت انتخاب اولویت مباحث کنکور آزمایشی',
-      preferredDate: 'چهارشنبه بعدازظهر',
-      status: 'APPROVED',
-      coachResponse: 'با درخواست موافقت شد. چهارشنبه ساعت ۱۵:۰۰ هماهنگ شد.',
-      scheduledDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'req-2',
-      reason: 'مشاوره پیرامون کنترل استرس و تمرکز در جلسات آزمون',
-      preferredDate: 'هفته آینده هر روز صبح',
-      status: 'PENDING',
-      coachResponse: null,
-    },
-  ],
-};
-
-const SAMPLE_COACH_DATA = {
-  stats: {
-    assignedStudentsCount: 18,
-    todaySessionsCount: 4,
-    pendingRequestsCount: 2,
-    completionRate: 94,
-  },
-  todaySessions: [
-    {
-      id: 'ts-1',
-      scheduledDate: new Date(new Date().setHours(9, 30, 0, 0)).toISOString(),
-      durationMinutes: 20,
-      sessionType: 'REGULAR',
-      attendanceStatus: 'PRESENT',
-      coachNotes: 'دانش‌آموز آماده و مسلط، افزایش تمرکز در مطالعه دروس تحلیلی مشهود بود.',
-      actionItems: 'افزایش تست‌های هندسه تحلیلی به ۲۰ تست در روز',
-      student: {
-        id: 'st-1',
-        firstName: 'امیرعلی',
-        lastName: 'رستمی',
-        studentProfile: { studentCode: '۴۰۵۱۰۱' },
-        classroomName: 'پایه دوازدهم تجربی - فارابی',
-      },
-    },
-    {
-      id: 'ts-2',
-      scheduledDate: new Date(new Date().setHours(10, 20, 0, 0)).toISOString(),
-      durationMinutes: 20,
-      sessionType: 'REGULAR',
-      attendanceStatus: 'PENDING',
-      coachNotes: '',
-      actionItems: '',
-      student: {
-        id: 'st-2',
-        firstName: 'سینا',
-        lastName: 'محمدی',
-        studentProfile: { studentCode: '۴۰۵۱۰۲' },
-        classroomName: 'پایه دوازدهم ریاضی - خوارزمی',
-      },
-    },
-    {
-      id: 'ts-3',
-      scheduledDate: new Date(new Date().setHours(11, 0, 0, 0)).toISOString(),
-      durationMinutes: 20,
-      sessionType: 'EXTRA',
-      attendanceStatus: 'PENDING',
-      coachNotes: '',
-      actionItems: '',
-      student: {
-        id: 'st-3',
-        firstName: 'پارسا',
-        lastName: 'کریمی',
-        studentProfile: { studentCode: '۴۰۵۱۰۵' },
-        classroomName: 'پایه دوازدهم ریاضی - خوارزمی',
-      },
-    },
-    {
-      id: 'ts-4',
-      scheduledDate: new Date(new Date().setHours(11, 40, 0, 0)).toISOString(),
-      durationMinutes: 20,
-      sessionType: 'REGULAR',
-      attendanceStatus: 'PENDING',
-      coachNotes: '',
-      actionItems: '',
-      student: {
-        id: 'st-4',
-        firstName: 'علی‌رضا',
-        lastName: 'صادقی',
-        studentProfile: { studentCode: '۴۰۵۱۰۹' },
-        classroomName: 'پایه یازدهم تجربی - رازی',
-      },
-    },
-  ],
-  myStudents: [
-    {
-      id: 'ms-1',
-      slotDayOfWeek: 0,
-      slotStartTime: '۰۹:۳۰',
-      slotEndTime: '۰۹:۵۰',
-      lastSessionDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      student: {
-        id: 'st-1',
-        firstName: 'امیرعلی',
-        lastName: 'رستمی',
-        studentProfile: {
-          studentCode: '۴۰۵۱۰۱',
-          enrollments: [{ classroom: { name: 'پایه دوازدهم تجربی - فارابی' } }],
-        },
-      },
-    },
-    {
-      id: 'ms-2',
-      slotDayOfWeek: 0,
-      slotStartTime: '۱۰:۲۰',
-      slotEndTime: '۱۰:۴۰',
-      lastSessionDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      student: {
-        id: 'st-2',
-        firstName: 'سینا',
-        lastName: 'محمدی',
-        studentProfile: {
-          studentCode: '۴۰۵۱۰۲',
-          enrollments: [{ classroom: { name: 'پایه دوازدهم ریاضی - خوارزمی' } }],
-        },
-      },
-    },
-    {
-      id: 'ms-3',
-      slotDayOfWeek: 1,
-      slotStartTime: '۱۱:۰۰',
-      slotEndTime: '۱۱:۲۰',
-      lastSessionDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-      student: {
-        id: 'st-3',
-        firstName: 'پارسا',
-        lastName: 'کریمی',
-        studentProfile: {
-          studentCode: '۴۰۵۱۰۵',
-          enrollments: [{ classroom: { name: 'پایه دوازدهم ریاضی - خوارزمی' } }],
-        },
-      },
-    },
-    {
-      id: 'ms-4',
-      slotDayOfWeek: 2,
-      slotStartTime: '۱۰:۲۰',
-      slotEndTime: '۱۰:۴۰',
-      lastSessionDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      student: {
-        id: 'st-4',
-        firstName: 'علی‌رضا',
-        lastName: 'صادقی',
-        studentProfile: {
-          studentCode: '۴۰۵۱۰۹',
-          enrollments: [{ classroom: { name: 'پایه یازدهم تجربی - رازی' } }],
-        },
-      },
-    },
-    {
-      id: 'ms-5',
-      slotDayOfWeek: 3,
-      slotStartTime: '۰۹:۳۰',
-      slotEndTime: '۰۹:۵۰',
-      lastSessionDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      student: {
-        id: 'st-5',
-        firstName: 'محمدمهدی',
-        lastName: 'حسینی',
-        studentProfile: {
-          studentCode: '۴۰۵۱۱۴',
-          enrollments: [{ classroom: { name: 'پایه دوازدهم انسانی - بوعلی' } }],
-        },
-      },
-    },
-    {
-      id: 'ms-6',
-      slotDayOfWeek: 4,
-      slotStartTime: '۱۱:۲۰',
-      slotEndTime: '۱۱:۴۰',
-      lastSessionDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      student: {
-        id: 'st-6',
-        firstName: 'دانیال',
-        lastName: 'مرادی',
-        studentProfile: {
-          studentCode: '۴۰۵۱۲۱',
-          enrollments: [{ classroom: { name: 'پایه یازدهم ریاضی - خیام' } }],
-        },
-      },
-    },
-  ],
-  pendingExtraRequests: [
-    {
-      id: 'req-c1',
-      student: {
-        id: 'st-2',
-        firstName: 'سینا',
-        lastName: 'محمدی',
-      },
-      reason: 'افت تراز در درس فیزیک و نیاز به مشاوره تغییر شیوه مطالعه و حل تست',
-      preferredDate: 'چهارشنبه بعد از ساعت ۱۲',
-      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'req-c2',
-      student: {
-        id: 'st-6',
-        firstName: 'دانیال',
-        lastName: 'مرادی',
-      },
-      reason: 'مشاوره جهت برنامه‌ریزی تعطیلات پایان ماه و دور اول جمع‌بندی مباحث',
-      preferredDate: 'پنج‌شنبه صبح',
-      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-  ],
-};
+const SAMPLE_STUDENT_COACHING: any = null;
+const SAMPLE_COACH_DATA: any = null;
 
 export const CoachingPage: React.FC = () => {
   const currentUser = useAuthStore((s) => s.user);
@@ -397,30 +124,50 @@ export const CoachingPage: React.FC = () => {
     fetchContext();
   }, []);
 
-  // Merge server data with test data to ensure rich demo
+  // Use strictly authentic server data (isolated by tenant)
   const contextData = useMemo(() => {
+    if (!rawContextData) return null;
+
     if (isStudent) {
-      if (rawContextData?.link?.coach) {
-        return {
-          ...rawContextData,
-          stats: rawContextData.stats || SAMPLE_STUDENT_COACHING.stats,
-          activeGoals: rawContextData.activeGoals?.length ? rawContextData.activeGoals : SAMPLE_STUDENT_COACHING.activeGoals,
-          pastSessions: rawContextData.pastSessions?.length ? rawContextData.pastSessions : SAMPLE_STUDENT_COACHING.pastSessions,
-          extraRequests: rawContextData.extraRequests?.length ? rawContextData.extraRequests : SAMPLE_STUDENT_COACHING.extraRequests,
-        };
-      }
-      return SAMPLE_STUDENT_COACHING;
+      return {
+        role: 'STUDENT',
+        link: rawContextData.link || null,
+        nextSession: rawContextData.nextSession || null,
+        upcomingSessions: rawContextData.upcomingSessions || [],
+        pastSessions: rawContextData.pastSessions || [],
+        extraRequests: rawContextData.extraRequests || [],
+        activeGoals: rawContextData.activeGoals || [],
+        stats: rawContextData.stats || {
+          totalPast: 0,
+          attended: 0,
+          absent: 0,
+          excused: 0,
+          attendanceRate: 0,
+        },
+      };
     } else {
-      if (rawContextData?.myStudents?.length || rawContextData?.todaySessions?.length) {
-        return {
-          ...SAMPLE_COACH_DATA,
-          ...rawContextData,
-          todaySessions: rawContextData.todaySessions?.length ? rawContextData.todaySessions : SAMPLE_COACH_DATA.todaySessions,
-          myStudents: rawContextData.myStudents?.length ? rawContextData.myStudents : SAMPLE_COACH_DATA.myStudents,
-          pendingExtraRequests: rawContextData.pendingExtraRequests?.length ? rawContextData.pendingExtraRequests : SAMPLE_COACH_DATA.pendingExtraRequests,
-        };
-      }
-      return SAMPLE_COACH_DATA;
+      const todaySessions = rawContextData.todaySessions || [];
+      const myStudents = rawContextData.myStudents || [];
+      const pendingExtraRequests = rawContextData.pendingExtraRequests || [];
+      const assignedCount = myStudents.length;
+      const todayCount = todaySessions.length;
+      const pendingCount = pendingExtraRequests.length;
+
+      return {
+        stats: rawContextData.stats || {
+          assignedStudentsCount: assignedCount,
+          todaySessionsCount: todayCount,
+          pendingRequestsCount: pendingCount,
+          completionRate: todayCount > 0
+            ? Math.round(
+                (todaySessions.filter((s: any) => s.attendanceStatus === 'PRESENT').length / todayCount) * 100,
+              )
+            : 100,
+        },
+        todaySessions,
+        myStudents,
+        pendingExtraRequests,
+      };
     }
   }, [isStudent, rawContextData]);
 
@@ -439,15 +186,9 @@ export const CoachingPage: React.FC = () => {
       if (students.length > 0) setAssignStudentId(students[0].id);
       setIsAssignModalOpen(true);
     } catch {
-      // Fallback mock coaches and students
-      setAvailableCoaches([
-        { id: 'c1', firstName: 'دکتر علیرضا', lastName: 'سلیمانی', role: 'مشاور ارشد' },
-        { id: 'c2', firstName: 'استاد مریم', lastName: 'تهرانی', role: 'روانشناس تحصیلی' },
-      ]);
-      setUnassignedStudents([
-        { id: 'st-x1', firstName: 'آرمان', lastName: 'نیک‌روش', studentProfile: { enrollments: [{ classroom: { name: 'پایه یازدهم' } }] } },
-      ]);
-      setIsAssignModalOpen(true);
+      toast.error('خطا در دریافت لیست مربیان یا دانش‌آموزان');
+      setAvailableCoaches([]);
+      setUnassignedStudents([]);
     }
   };
 
@@ -796,9 +537,9 @@ export const CoachingPage: React.FC = () => {
               </span>
             </div>
 
-            {contextData?.pastSessions?.length > 0 ? (
+            {(contextData?.pastSessions?.length || 0) > 0 ? (
               <div className="space-y-3">
-                {contextData.pastSessions.map((s: any) => {
+                {contextData?.pastSessions?.map((s: any) => {
                   const jalaliDate = formatJalaliDisplay(s.scheduledDate, true);
                   const isPresent = s.attendanceStatus === 'PRESENT';
                   const isExcused = s.attendanceStatus === 'EXCUSED';
@@ -875,9 +616,9 @@ export const CoachingPage: React.FC = () => {
               </h3>
             </div>
 
-            {contextData?.extraRequests?.length > 0 ? (
+            {(contextData?.extraRequests?.length || 0) > 0 ? (
               <div className="grid grid-cols-1 gap-3">
-                {contextData.extraRequests.map((req: any) => {
+                {contextData?.extraRequests?.map((req: any) => {
                   const isApproved = req.status === 'APPROVED';
                   const isPending = req.status === 'PENDING';
 
@@ -1008,117 +749,123 @@ export const CoachingPage: React.FC = () => {
 
           {/* TAB 1: TODAY'S SESSIONS */}
           {activeTab === 'today' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
-              {contextData?.todaySessions?.map((session: any) => {
-                const time = new Date(session.scheduledDate).toLocaleTimeString('fa-IR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                });
-                const isPresent = session.attendanceStatus === 'PRESENT';
-                const isAbsent = session.attendanceStatus === 'ABSENT';
-                const isExcused = session.attendanceStatus === 'EXCUSED';
+            (contextData?.todaySessions?.length || 0) === 0 ? (
+              <div className="p-12 text-center text-xs text-muted-foreground bg-white dark:bg-[#151C28] rounded-2xl border border-dashed border-gray-200 dark:border-[#242F42]">
+                جلسه کوچینگی برای امروز زمان‌بندی نشده است.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
+                {contextData?.todaySessions?.map((session: any) => {
+                  const time = new Date(session.scheduledDate).toLocaleTimeString('fa-IR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  });
+                  const isPresent = session.attendanceStatus === 'PRESENT';
+                  const isAbsent = session.attendanceStatus === 'ABSENT';
+                  const isExcused = session.attendanceStatus === 'EXCUSED';
 
-                return (
-                  <Card
-                    key={session.id}
-                    className="p-4 border border-gray-200/80 dark:border-[#242F42] bg-white dark:bg-[#151C28] rounded-2xl shadow-xs flex flex-col justify-between space-y-3.5 hover:border-primary/50 transition-colors"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-2.5">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>ساعت {time} ({toPersianDigits(session.durationMinutes)} دقیقه)</span>
-                        </span>
-                        {session.sessionType === 'EXTRA' && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-300">
-                            فوق‌العاده
+                  return (
+                    <Card
+                      key={session.id}
+                      className="p-4 border border-gray-200/80 dark:border-[#242F42] bg-white dark:bg-[#151C28] rounded-2xl shadow-xs flex flex-col justify-between space-y-3.5 hover:border-primary/50 transition-colors"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-2.5">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>ساعت {time} ({toPersianDigits(session.durationMinutes)} دقیقه)</span>
                           </span>
+                          {session.sessionType === 'EXTRA' && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-300">
+                              فوق‌العاده
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-base shrink-0">
+                            {session.student.firstName?.[0] || 'د'}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-sm sm:text-base text-ink-darker dark:text-white">
+                              {session.student.firstName} {session.student.lastName}
+                            </h4>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {session.student.classroomName || 'پایه دوازدهم'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {session.coachNotes && (
+                          <div className="mt-2.5 p-2.5 rounded-xl bg-gray-50 dark:bg-[#1C2536] border border-gray-200/70 dark:border-[#242F42] text-xs text-muted-foreground leading-relaxed">
+                            <span className="font-bold text-ink-darker dark:text-white">یادداشت جلسه: </span>
+                            {session.coachNotes}
+                          </div>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-base shrink-0">
-                          {session.student.firstName?.[0] || 'د'}
+                      <div className="pt-3 border-t border-gray-100 dark:border-[#242F42] flex flex-wrap items-center justify-between gap-2">
+                        {/* Attendance Buttons */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleMarkAttendance(session.id, 'PRESENT')}
+                            className={`h-8 px-2.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${isPresent
+                                ? 'bg-emerald-600 text-white border-emerald-600'
+                                : 'bg-white dark:bg-[#1C2536] text-muted-foreground border-gray-200 dark:border-gray-700 hover:border-emerald-500'
+                              }`}
+                          >
+                            حاضر
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMarkAttendance(session.id, 'ABSENT')}
+                            className={`h-8 px-2.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${isAbsent
+                                ? 'bg-rose-600 text-white border-rose-600'
+                                : 'bg-white dark:bg-[#1C2536] text-muted-foreground border-gray-200 dark:border-gray-700 hover:border-rose-500'
+                              }`}
+                          >
+                            غایب
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMarkAttendance(session.id, 'EXCUSED')}
+                            className={`h-8 px-2.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${isExcused
+                                ? 'bg-amber-600 text-white border-amber-600'
+                                : 'bg-white dark:bg-[#1C2536] text-muted-foreground border-gray-200 dark:border-gray-700 hover:border-amber-500'
+                              }`}
+                          >
+                            موجه
+                          </button>
                         </div>
-                        <div>
-                          <h4 className="font-bold text-sm sm:text-base text-ink-darker dark:text-white">
-                            {session.student.firstName} {session.student.lastName}
-                          </h4>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {session.student.classroomName || 'پایه دوازدهم'}
-                          </p>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenNotes(session)}
+                            className="h-8 text-xs gap-1 font-bold rounded-lg"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-primary" />
+                            <span>یادداشت</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openDossier(session.student.id)}
+                            className="h-8 text-xs gap-1 font-bold rounded-lg text-purple-700 dark:text-purple-300"
+                          >
+                            <Compass className="w-3.5 h-3.5" />
+                            <span>پرونده</span>
+                          </Button>
                         </div>
                       </div>
-
-                      {session.coachNotes && (
-                        <div className="mt-2.5 p-2.5 rounded-xl bg-gray-50 dark:bg-[#1C2536] border border-gray-200/70 dark:border-[#242F42] text-xs text-muted-foreground leading-relaxed">
-                          <span className="font-bold text-ink-darker dark:text-white">یادداشت جلسه: </span>
-                          {session.coachNotes}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="pt-3 border-t border-gray-100 dark:border-[#242F42] flex flex-wrap items-center justify-between gap-2">
-                      {/* Attendance Buttons */}
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => handleMarkAttendance(session.id, 'PRESENT')}
-                          className={`h-8 px-2.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${isPresent
-                              ? 'bg-emerald-600 text-white border-emerald-600'
-                              : 'bg-white dark:bg-[#1C2536] text-muted-foreground border-gray-200 dark:border-gray-700 hover:border-emerald-500'
-                            }`}
-                        >
-                          حاضر
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleMarkAttendance(session.id, 'ABSENT')}
-                          className={`h-8 px-2.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${isAbsent
-                              ? 'bg-rose-600 text-white border-rose-600'
-                              : 'bg-white dark:bg-[#1C2536] text-muted-foreground border-gray-200 dark:border-gray-700 hover:border-rose-500'
-                            }`}
-                        >
-                          غایب
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleMarkAttendance(session.id, 'EXCUSED')}
-                          className={`h-8 px-2.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${isExcused
-                              ? 'bg-amber-600 text-white border-amber-600'
-                              : 'bg-white dark:bg-[#1C2536] text-muted-foreground border-gray-200 dark:border-gray-700 hover:border-amber-500'
-                            }`}
-                        >
-                          موجه
-                        </button>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-1.5">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOpenNotes(session)}
-                          className="h-8 text-xs gap-1 font-bold rounded-lg"
-                        >
-                          <FileText className="w-3.5 h-3.5 text-primary" />
-                          <span>یادداشت</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openDossier(session.student.id)}
-                          className="h-8 text-xs gap-1 font-bold rounded-lg text-purple-700 dark:text-purple-300"
-                        >
-                          <Compass className="w-3.5 h-3.5" />
-                          <span>پرونده</span>
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )
           )}
 
           {/* TAB 2: MY STUDENTS DIRECTORY */}
@@ -1136,7 +883,12 @@ export const CoachingPage: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {filteredMyStudents.length === 0 ? (
+                <div className="p-12 text-center text-xs text-muted-foreground bg-white dark:bg-[#151C28] rounded-2xl border border-dashed border-gray-200 dark:border-[#242F42]">
+                  دانش‌آموزی در لیست کوچینگ یافت نشد.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                 {filteredMyStudents.map((link: any) => (
                   <Card
                     key={link.id}
@@ -1178,19 +930,20 @@ export const CoachingPage: React.FC = () => {
                     </div>
                   </Card>
                 ))}
-              </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* TAB 3: EXTRA SESSIONS QUEUE */}
           {activeTab === 'extra-requests' && (
             <div className="space-y-3">
-              {contextData?.pendingExtraRequests?.length === 0 ? (
+              {(contextData?.pendingExtraRequests?.length || 0) === 0 ? (
                 <div className="p-12 text-center text-xs text-muted-foreground bg-white dark:bg-[#151C28] rounded-2xl border border-dashed border-gray-200 dark:border-[#242F42]">
                   درخواستی در صف انتظار وجود ندارد.
                 </div>
               ) : (
-                contextData.pendingExtraRequests.map((req: any) => (
+                contextData?.pendingExtraRequests?.map((req: any) => (
                   <Card
                     key={req.id}
                     className="p-4 border border-gray-200/80 dark:border-[#242F42] bg-white dark:bg-[#151C28] rounded-2xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"

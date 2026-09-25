@@ -16,8 +16,10 @@ import {
   PlusCircle, 
   ShieldCheck, 
   Send, 
-  Users
+  Users,
+  Sparkles,
 } from 'lucide-react';
+import { UnderDevelopmentOverlay } from '../../components/ui/UnderDevelopmentOverlay';
 
 export const KaPlatformPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -100,7 +102,15 @@ export const KaPlatformPage: React.FC = () => {
   const pendingClaimsCount = adminClaims.filter(c => c.status === 'PENDING' || c.status === 'APPROVED').length;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <UnderDevelopmentOverlay
+      title="پلتفرم شایستگی‌های کا"
+      subtitle="Ka Competency & Rewards Platform"
+      description="سامانه هوشمند ارزشیابی شایستگی‌ها، کسب توکن «کا»، تابلوی افتخارات و فروشگاه پاداش‌ها در مرحله توسعه نهایی است و به زودی رونمایی می‌شود."
+      badgeText="پلتفرم کا • در حال توسعه"
+      icon={Sparkles}
+      accentColor="amber"
+    >
+      <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* بنر اصلی و هویت بصری پلتفرم کا */}
       <KaHeaderBanner
         score={currentStudentStats.score}
@@ -274,6 +284,7 @@ export const KaPlatformPage: React.FC = () => {
           </>
         )}
       </div>
-    </div>
+      </div>
+    </UnderDevelopmentOverlay>
   );
 };
