@@ -266,12 +266,12 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
 
   if (visibleTeams.length === 0) {
     return (
-      <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] dark:border-[#242F42] bg-white p-8 sm:p-12 text-center dark:border-zinc-700 dark:bg-zinc-900 space-y-3">
+      <div className="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] p-8 sm:p-12 text-center shadow-2xs space-y-3">
         <AlertCircle className="w-12 h-12 mx-auto text-amber-500 mb-2" />
-        <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
+        <h3 className="text-lg font-black text-ink-darker dark:text-white">
           تیمی برای تعریف تسک یافت نشد
         </h3>
-        <p className="text-xs font-bold text-zinc-500 max-w-md mx-auto leading-relaxed">
+        <p className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
           ابتدا ایده‌ها را ثبت، رای‌گیری را تکمیل و تیم‌ها را در مرحله تشکیل تیم بسازید؛ سپس
           برای هر تیم تسک و امتیاز تعریف کنید.
         </p>
@@ -282,30 +282,26 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
-        <div className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-5 mb-5">
+      <div className="rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-gray-800 bg-white dark:bg-[#151C28] shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] p-5 sm:p-7 space-y-2">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-cyan-500 text-white text-xs font-black mb-2 shadow-[2px_2px_0px_0px_#202A5A]">
-              <ListChecks className="w-4 h-4" />
-              <span>مرحله تعریف تسک تیم‌ها</span>
-            </div>
-            <h2 className="text-xl md:text-2xl font-black text-zinc-900 dark:text-zinc-100">
-              تسک‌های {eventTitle}
+            <h2 className="text-lg md:text-xl font-black text-ink-darker dark:text-white flex items-center gap-2">
+              <ListChecks className="w-5 h-5 text-primary shrink-0" />
+              <span>گام ششم: مدیریت تسک‌ها</span>
             </h2>
-            <p className="text-xs md:text-sm font-bold text-zinc-500 dark:text-zinc-400 mt-1">
-              هر تیم در سکشن جداگانه نمایش داده می‌شود. دانش‌آموز فقط تیم خودش را می‌بیند؛
-              مدیر به همه تیم‌ها دسترسی دارد.
+            <p className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 mt-3">
+              وظایف و فعالیت‌های عملیاتی تیم خود را پیگیری، مدیریت و تکمیل کنید.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             {isManager && (
               <>
-                <Button variant="sec" size="sm" onClick={() => setIsBulkOpen(true)}>
-                  <Copy className="w-3.5 h-3.5" />
+                <Button variant="outline" size="sm" onClick={() => setIsBulkOpen(true)} className="gap-1.5 text-xs font-bold">
+                  <Copy className="w-3.5 h-3.5 text-primary" />
                   افزودن گروهی تسک
                 </Button>
-                <Button variant="primary" size="sm" onClick={() => openAddTask()}>
+                <Button variant="primary" size="sm" onClick={() => openAddTask()} className="gap-1.5 text-xs font-bold">
                   <Plus className="w-3.5 h-3.5" />
                   تسک جدید
                 </Button>
@@ -315,8 +311,8 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
         </div>
 
         {isManager && (
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-cyan-600 bg-cyan-50 text-cyan-900 dark:bg-cyan-950 dark:text-cyan-200 text-xs font-black">
-            <ShieldCheck className="w-4 h-4" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-primary/20 bg-primary/10 text-primary text-xs font-bold shadow-2xs">
+            <ShieldCheck className="w-4 h-4 text-primary" />
             <span>پنل مدیر: افزودن، ویرایش، حذف و تیک زدن تسک‌های همه تیم‌ها فعال است</span>
           </div>
         )}
@@ -329,50 +325,50 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
           const score = teamTaskScore(entry);
           const tasks = entry?.tasks || [];
           const doneCount = tasks.filter((t) => t.completed).length;
-          const style = TEAM_SECTION_STYLES[teamIndex % TEAM_SECTION_STYLES.length];
           const isActive = team.key === activeTeamKey;
 
           return (
             <section
               key={team.key}
-              className={`rounded-2xl border-[1.5px] p-5 shadow-[2.75px_2.75px_0_#202A5A] transition-all dark:shadow-[2.75px_2.75px_0_#59BBAF] ${style} ${
-                isActive ? 'ring-2 ring-zinc-900 dark:ring-zinc-100' : ''
+              className={`rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] p-5 sm:p-6 shadow-2xs hover:shadow-xs transition-all ${
+                isActive ? 'ring-2 ring-primary/40 border-primary/40' : ''
               }`}
             >
               {/* Team section header */}
-              <div className="flex flex-wrap items-start justify-between gap-3 mb-4 pb-3 border-b-2 border-zinc-900/10 dark:border-zinc-100/10">
+              <div className="flex flex-wrap items-start justify-between gap-3 mb-4 pb-3 border-b border-gray-100 dark:border-gray-800/80">
                 <div className="flex items-start gap-3 min-w-0">
-                  <span className="flex-shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-xl border-2 border-zinc-900 bg-white dark:bg-zinc-900 dark:border-zinc-100 text-xs font-black shadow-[2px_2px_0px_0px_#202A5A]">
+                  <span className="flex-shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-xl border border-primary/20 bg-primary/10 text-primary text-xs font-bold shadow-2xs">
                     {toPersianDigits(teamIndex + 1)}
                   </span>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-zinc-700 dark:text-zinc-300 flex-shrink-0" />
-                      <h3 className="text-sm md:text-base font-black text-zinc-900 dark:text-zinc-100 truncate">
+                      <Users className="w-4 h-4 text-primary flex-shrink-0" />
+                      <h3 className="text-sm md:text-base font-black text-ink-darker dark:text-white truncate">
                         {team.label}
                       </h3>
                     </div>
-                    <p className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 mt-0.5 truncate">
+                    <p className="text-xs font-medium text-gray-400 mt-0.5 truncate">
                       {team.memberNames.join('، ')}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-3 py-1 rounded-lg border-2 border-zinc-900 bg-white dark:bg-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100 text-[11px] font-black shadow-[1px_1px_0px_0px_#202A5A]">
+                  <span className="px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-[#1C2536] text-ink-darker dark:text-white text-xs font-bold">
                     {toPersianDigits(doneCount)}/{toPersianDigits(tasks.length)} تسک
                   </span>
-                  <span className="px-3 py-1 rounded-lg border-2 border-zinc-900 bg-amber-400 text-zinc-950 text-[11px] font-black shadow-[1px_1px_0px_0px_#202A5A] inline-flex items-center gap-1">
-                    <Trophy className="w-3 h-3" />
+                  <span className="px-2.5 py-1 rounded-lg border border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold inline-flex items-center gap-1 shadow-2xs">
+                    <Trophy className="w-3 h-3 text-amber-500" />
                     {toPersianDigits(score)} امتیاز
                   </span>
                   {isManager && (
                     <Button
-                      variant="sec"
+                      variant="outline"
                       size="sm"
                       onClick={() => openAddTask(team.key)}
+                      className="gap-1 text-xs font-bold"
                     >
-                      <Plus className="w-3.5 h-3.5" />
+                      <Plus className="w-3.5 h-3.5 text-primary" />
                       افزودن
                     </Button>
                   )}
@@ -380,12 +376,12 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
               </div>
 
               {tasks.length === 0 ? (
-                <div className="rounded-xl border-2 border-dashed border-zinc-400/70 bg-white/70 dark:bg-zinc-900/50 dark:border-zinc-700 p-6 text-center space-y-1">
-                  <ListChecks className="w-8 h-8 mx-auto text-cyan-500 mb-1" />
-                  <p className="text-xs font-black text-zinc-700 dark:text-zinc-200">
+                <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1C2536]/30 p-6 text-center space-y-1">
+                  <ListChecks className="w-8 h-8 mx-auto text-primary/60 mb-1" />
+                  <p className="text-xs font-bold text-ink-darker dark:text-white">
                     هنوز تسکی برای این تیم تعریف نشده
                   </p>
-                  <p className="text-[11px] font-bold text-zinc-500">
+                  <p className="text-xs font-medium text-gray-400">
                     {isManager
                       ? 'با «افزودن» یا «افزودن گروهی» لیست تسک‌ها را بسازید.'
                       : 'منتظر تعریف تسک توسط مدیر رویداد باشید.'}
@@ -396,10 +392,10 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
                   {tasks.map((task, index) => (
                     <li
                       key={task.id}
-                      className={`flex items-center gap-3 rounded-xl border-2 p-3 transition-all ${
+                      className={`flex items-center gap-3 rounded-xl border p-3 transition-all ${
                         task.completed
-                          ? 'border-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/40'
-                          : 'border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800/60'
+                          ? 'border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/20'
+                          : 'border-gray-200/80 dark:border-gray-800 bg-gray-50/70 dark:bg-[#1C2536]/40 shadow-2xs'
                       }`}
                     >
                       <button
@@ -413,10 +409,10 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
                               : 'تیک زدن (اعطای امتیاز)'
                             : 'فقط مدیر می‌تواند تیک بزند'
                         }
-                        className={`flex-shrink-0 w-8 h-8 rounded-lg border-2 flex items-center justify-center transition-all ${
+                        className={`flex-shrink-0 w-7 h-7 rounded-lg border flex items-center justify-center transition-all ${
                           task.completed
-                            ? 'border-emerald-700 bg-emerald-500 text-white'
-                            : 'border-zinc-400 bg-white text-zinc-400 dark:bg-zinc-900 dark:border-zinc-600'
+                            ? 'border-emerald-500 bg-emerald-500 text-white'
+                            : 'border-gray-300 bg-white text-gray-300 dark:bg-[#1C2536] dark:border-gray-600'
                         } ${isManager ? 'cursor-pointer hover:scale-105' : 'cursor-not-allowed opacity-70'}`}
                       >
                         {task.completed ? (
@@ -428,14 +424,14 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black text-zinc-400">
-                            #{toPersianDigits(index + 1)}
+                          <span className="text-xs font-bold text-gray-400">
+                            {toPersianDigits(index + 1)}.
                           </span>
                           <span
-                            className={`text-xs font-black truncate ${
+                            className={`text-xs font-bold truncate ${
                               task.completed
-                                ? 'text-emerald-800 dark:text-emerald-300 line-through decoration-emerald-500/60'
-                                : 'text-zinc-900 dark:text-zinc-100'
+                                ? 'text-emerald-700 dark:text-emerald-300 line-through decoration-emerald-500/60'
+                                : 'text-ink-darker dark:text-white'
                             }`}
                           >
                             {task.title}
@@ -443,7 +439,7 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
                         </div>
                       </div>
 
-                      <span className="flex-shrink-0 px-2.5 py-1 rounded-lg border-2 border-zinc-900 bg-amber-400 text-zinc-950 text-[11px] font-black shadow-[1px_1px_0px_0px_#202A5A]">
+                      <span className="flex-shrink-0 px-2 py-0.5 rounded-lg border border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold">
                         {toPersianDigits(task.points)} امتیاز
                       </span>
 
@@ -452,7 +448,7 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
                           <button
                             type="button"
                             onClick={() => openEditTask(task, team.key)}
-                            className="p-2 min-w-[40px] min-h-[40px] rounded-lg border-2 border-zinc-900 bg-indigo-100 text-indigo-900 hover:bg-indigo-200 dark:bg-indigo-950 dark:text-indigo-200"
+                            className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors"
                             title="ویرایش تسک"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
@@ -460,7 +456,7 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
                           <button
                             type="button"
                             onClick={() => handleDeleteTask(task.id, team.key)}
-                            className="p-2 min-w-[40px] min-h-[40px] rounded-lg border-2 border-zinc-900 bg-rose-100 text-rose-900 hover:bg-rose-200 dark:bg-rose-950 dark:text-rose-200"
+                            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
                             title="حذف تسک"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -488,7 +484,7 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-xs font-bold text-ink-darker dark:text-white mb-1.5">
               عنوان تسک
             </label>
             <input
@@ -496,12 +492,12 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
               value={taskForm.title}
               onChange={(e) => setTaskForm((p) => ({ ...p, title: e.target.value }))}
               placeholder="مثلا: طراحی صفحه اصلی لندینگ"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs md:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-ink-darker dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 text-xs md:text-sm font-medium focus:border-primary focus:outline-none transition-all"
               autoFocus
             />
           </div>
           <div>
-            <label className="block text-xs font-black text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-xs font-bold text-ink-darker dark:text-white mb-1.5">
               امتیاز تسک
             </label>
             <input
@@ -509,14 +505,14 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
               min={0}
               value={taskForm.points}
               onChange={(e) => setTaskForm((p) => ({ ...p, points: e.target.value }))}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs md:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-ink-darker dark:text-white text-xs md:text-sm font-medium focus:border-primary focus:outline-none transition-all"
             />
           </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" size="md" onClick={() => setIsAddOpen(false)}>
+          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <Button variant="outline" size="md" onClick={() => setIsAddOpen(false)} className="text-xs font-bold">
               انصراف
             </Button>
-            <Button variant="primary" size="md" onClick={handleSaveTask}>
+            <Button variant="primary" size="md" onClick={handleSaveTask} className="text-xs font-bold">
               {editingTaskId ? 'ذخیره تغییرات' : 'افزودن تسک'}
             </Button>
           </div>
@@ -532,16 +528,16 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
         maxWidth="lg"
       >
         <div className="space-y-4">
-          <label className="flex items-center gap-2 text-xs font-black text-zinc-800 dark:text-zinc-200 cursor-pointer">
+          <label className="flex items-center gap-2 text-xs font-bold text-ink-darker dark:text-white cursor-pointer">
             <input
               type="checkbox"
               checked={applyBulkToAll}
               onChange={(e) => setApplyBulkToAll(e.target.checked)}
-              className="w-4 h-4 accent-cyan-600"
+              className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
             />
             اعمال روی همه تیم‌ها
             {!applyBulkToAll && (
-              <span className="text-zinc-500 font-bold">
+              <span className="text-gray-400 font-medium">
                 (تیم فعال: {activeTeam?.label || '—'})
               </span>
             )}
@@ -551,9 +547,9 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
             {bulkForm.map((row, index) => (
               <div
                 key={index}
-                className="flex items-center gap-2 rounded-xl border-2 border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 p-2"
+                className="flex items-center gap-2 rounded-xl border border-gray-200/80 dark:border-gray-800 bg-gray-50/70 dark:bg-[#1C2536]/50 p-2 shadow-2xs"
               >
-                <span className="text-[10px] font-black text-zinc-400 w-5 text-center">
+                <span className="text-[10px] font-bold text-gray-400 w-5 text-center">
                   {toPersianDigits(index + 1)}
                 </span>
                 <input
@@ -561,20 +557,20 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
                   value={row.title}
                   onChange={(e) => handleBulkRowChange(index, { title: e.target.value })}
                   placeholder={`عنوان تسک ${toPersianDigits(index + 1)}`}
-                  className="flex-1 min-w-0 px-2.5 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium focus:border-primary focus:outline-none transition-all"
+                  className="flex-1 min-w-0 px-2.5 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-ink-darker dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 text-xs font-medium focus:border-primary focus:outline-none transition-all"
                 />
                 <input
                   type="number"
                   min={0}
                   value={row.points}
                   onChange={(e) => handleBulkRowChange(index, { points: e.target.value })}
-                  className="w-16 px-2 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium text-center focus:border-primary focus:outline-none transition-all"
+                  className="w-16 px-2 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-ink-darker dark:text-white text-xs font-medium text-center focus:border-primary focus:outline-none transition-all"
                   title="امتیاز"
                 />
                 <button
                   type="button"
                   onClick={() => handleRemoveBulkRow(index)}
-                  className="p-2 min-w-[36px] min-h-[36px] rounded-lg border border-rose-300 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950"
+                  className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
                   title="حذف ردیف"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -583,16 +579,16 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
             ))}
           </div>
 
-          <Button variant="sec" size="sm" onClick={handleAddBulkRow}>
-            <Plus className="w-3.5 h-3.5" />
+          <Button variant="outline" size="sm" onClick={handleAddBulkRow} className="gap-1 text-xs font-bold">
+            <Plus className="w-3.5 h-3.5 text-primary" />
             ردیف دیگر
           </Button>
 
-          <div className="flex justify-end gap-2 pt-2 border-t-2 border-zinc-100 dark:border-zinc-800">
-            <Button variant="outline" size="md" onClick={() => setIsBulkOpen(false)}>
+          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <Button variant="outline" size="md" onClick={() => setIsBulkOpen(false)} className="text-xs font-bold">
               انصراف
             </Button>
-            <Button variant="primary" size="md" onClick={handleSaveBulk}>
+            <Button variant="primary" size="md" onClick={handleSaveBulk} className="text-xs font-bold">
               ثبت تسک‌ها
             </Button>
           </div>

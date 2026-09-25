@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '../../../../components/ui/Button';
 import { Modal } from '../../../../components/ui/Modal';
 import { toast } from '../../../../components/ui/toast/toast';
@@ -26,9 +26,11 @@ import {
   AlertCircle,
   Crown,
   Briefcase,
+  ChevronDown,
   UserX,
   Plus,
   Check,
+  X,
 } from 'lucide-react';
 
 export interface TeamMember {
@@ -56,7 +58,7 @@ interface EventTeamFormationStepProps {
 }
 
 // Default Fallback Database Students List (names only — no class labels)
-const FALLBACK_DB_STUDENTS = [
+export const FALLBACK_DB_STUDENTS = [
   // هنرستان پسرانه - شبکه و نرم‌افزار
   { id: 'std_101', name: 'امیرعلی رضایی' },
   { id: 'std_102', name: 'محمدحسین علیزاده' },
@@ -93,6 +95,14 @@ const FALLBACK_DB_STUDENTS = [
   { id: 'std_304', name: 'نازنین زارع' },
   { id: 'std_305', name: 'غزل اکبریان' },
 ];
+
+const TEAM_ROLES = [
+  'ایده‌پرداز',
+  'برنامه‌نویس',
+  'گرافیست',
+  'ارائه‌دهنده',
+  'نیروی اجرایی',
+] as const;
 
 export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
   eventId,
@@ -139,9 +149,17 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
         topWinningOptions.some((o) => o.text && o.text.includes(idea.title))
     );
 
-    if (matched.length > 0) return matched;
-    return ideas.slice(0, topCount);
-  }, [eventId, ideas]);
+    const baseList = matched.length > 0 ? matched : ideas.slice(0, topCount);
+
+    // Sort: user's own idea first (if exists), then remaining ideas sorted by ideaNumber
+    return [...baseList].sort((a, b) => {
+      const aIsOwn = !!currentUser && isOwnedByUser(a.authorName, currentUser);
+      const bIsOwn = !!currentUser && isOwnedByUser(b.authorName, currentUser);
+      if (aIsOwn && !bIsOwn) return -1;
+      if (!aIsOwn && bIsOwn) return 1;
+      return (a.ideaNumber || 0) - (b.ideaNumber || 0);
+    });
+  }, [eventId, ideas, currentUser]);
 
   // Teams state per idea
   const teamsStorageKey = `rokad_event_teams_${eventId}`;
@@ -186,8 +204,25 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
   // Modal State for Adding/Editing Member
   const [activeIdeaIdForModal, setActiveIdeaIdForModal] = useState<string | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState('');
-  const [memberRole, setMemberRole] = useState('عضو تیم / توسعه‌دهنده');
+  const [memberRole, setMemberRole] = useState<string>('ایده‌پرداز');
+  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
+  const roleDropdownRef = useRef<HTMLDivElement>(null);
   const [customStudentName, setCustomStudentName] = useState('');
+
+  // Close custom dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (roleDropdownRef.current && !roleDropdownRef.current.contains(event.target as Node)) {
+        setIsRoleDropdownOpen(false);
+      }
+    };
+    if (isRoleDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isRoleDropdownOpen]);
 
   // Identify all assigned student names/IDs across ALL teams to enforce unique assignment!
   const assignedStudentMap = useMemo(() => {
@@ -247,7 +282,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
     const newMember: TeamMember = {
       id: candidateId,
       name: candidateName,
-      roleInTeam: memberRole || 'عضو تیم',
+      roleInTeam: memberRole || 'ایده‌پرداز',
       addedBy: currentUserName,
       addedAt: new Date().toISOString(),
     };
@@ -276,7 +311,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
     const existingAssignment = assignedStudentMap[candidateId] || assignedStudentMap[candidateName.toLowerCase()];
     if (existingAssignment && existingAssignment.ideaId !== idea.id) {
       toast.error(
-        `خطا: «${candidateName}» قبلاً عضو تیم ایده #${toPersianDigits(existingAssignment.ideaNumber)} (${existingAssignment.ideaTitle}) شده است و نمی‌تواند همزمان عضو دو تیم باشد!`
+        `خطا: «${candidateName}» قبلاً عضو تیم ایده شماره ${toPersianDigits(existingAssignment.ideaNumber)} (${existingAssignment.ideaTitle}) شده است و نمی‌تواند همزمان عضو دو تیم باشد!`
       );
       return;
     }
@@ -292,7 +327,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
     const newMember: TeamMember = {
       id: candidateId,
       name: candidateName,
-      roleInTeam: memberRole || 'عضو تیم',
+      roleInTeam: memberRole || 'ایده‌پرداز',
       addedBy: currentUserName,
       addedAt: new Date().toISOString(),
     };
@@ -354,36 +389,72 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
     }));
 
     if (nextState) {
-      toast.success(`ترکیب تیم ایده #${toPersianDigits(currentTeam.ideaNumber)} توسط مدیر تایید نهایی و برای زیرمجموعه‌ها قفل شد.`);
+      toast.success(`ترکیب تیم ایده شماره ${toPersianDigits(currentTeam.ideaNumber)} توسط مدیر تایید نهایی و برای زیرمجموعه‌ها قفل شد.`);
     } else {
-      toast.info(`تاییدیه ترکیب تیم ایده #${toPersianDigits(currentTeam.ideaNumber)} توسط مدیر بازگشایی شد.`);
+      toast.info(`تاییدیه ترکیب تیم ایده شماره ${toPersianDigits(currentTeam.ideaNumber)} توسط مدیر بازگشایی شد.`);
     }
   };
+
+  const allTeamsApproved =
+    winningIdeas.length > 0 && winningIdeas.every((idea) => teamsMap[idea.id]?.isApprovedByAdmin);
+
+  // Check if current user's team is approved by admin
+  const isCurrentUserTeamApproved = useMemo(() => {
+    if (isManager) {
+      return allTeamsApproved;
+    }
+    if (!currentUser) return false;
+    for (const idea of winningIdeas) {
+      const team = getIdeaTeam(idea);
+      const isLeader = isOwnedByUser(idea.authorName, currentUser);
+      const isMember = team.members.some(
+        (m) =>
+          isOwnedByUser(m.name, currentUser) ||
+          m.name.trim().toLowerCase() === currentUserName.toLowerCase() ||
+          (currentUser?.id && m.id === currentUser.id)
+      );
+      if (isLeader || isMember) {
+        return !!team.isApprovedByAdmin;
+      }
+    }
+    return false;
+  }, [isManager, allTeamsApproved, currentUser, winningIdeas, teamsMap, currentUserName]);
 
   return (
     <div className="space-y-8">
       {/* Header Container */}
-      <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 md:p-8 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-5 mb-5">
+      <div className="rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-gray-800 bg-white dark:bg-[#151C28] shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] p-5 sm:p-7 space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-amber-400 text-zinc-950 text-xs font-black mb-2 shadow-[2px_2px_0px_0px_#202A5A]">
-              <Users className="w-4 h-4" />
-              <span>گام چهارم: تشکیل تیم و انتخاب اعضاء</span>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h2 className="text-lg md:text-xl font-black text-ink-darker dark:text-white flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary shrink-0" />
+                <span>گام چهارم: تشکیل تیم</span>
+              </h2>
+
+              {winningIdeas.length > 0 && (
+                isCurrentUserTeamApproved ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-2xs">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>تایید شده</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400 shadow-2xs">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                    <span>در انتظار تایید</span>
+                  </span>
+                )
+              )}
             </div>
-            <h2 className="text-xl md:text-2xl font-black text-zinc-900 dark:text-zinc-100">
-              اعضای تیم ایده‌های منتخب رویداد
-            </h2>
-            <p className="text-xs md:text-sm font-bold text-zinc-500 dark:text-zinc-400 mt-1">
-              صاحب ایده می‌تواند اعضای تیم خود را از لیست دیتابیس انتخاب کند. هر فرد فقط می‌تواند عضو ۱ تیم باشد. تایید نهایی توسط مدیر انجام می‌گیرد.
+            <p className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 mt-3">
+              اعضای تیم ایده خود را مشخص و ترکیب تیم را نهایی کنید.
             </p>
           </div>
-
-
         </div>
 
         {isManager && (
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-indigo-600 bg-indigo-50 text-indigo-900 dark:bg-indigo-950 dark:text-indigo-200 text-xs font-black">
-            <ShieldCheck className="w-4 h-4 text-indigo-600" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-primary/20 bg-primary/10 text-primary text-xs font-bold shadow-2xs">
+            <ShieldCheck className="w-4 h-4 text-primary" />
             <span>پنل مدیر: امکان ویرایش اعضا و تایید نهایی برای شما فعال است</span>
           </div>
         )}
@@ -391,12 +462,12 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
 
       {/* Ideas Teams List Grid (ONLY FOR WINNING IDEAS FROM STEP 3) */}
       {winningIdeas.length === 0 ? (
-        <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] dark:border-[#242F42] bg-white p-8 sm:p-12 text-center dark:border-zinc-700 dark:bg-zinc-900 space-y-3">
+        <div className="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] p-8 sm:p-12 text-center shadow-2xs space-y-3">
           <AlertCircle className="w-12 h-12 mx-auto text-amber-500 mb-2" />
-          <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
+          <h3 className="text-lg font-black text-ink-darker dark:text-white">
             در انتظار مشخص‌سازی ایده‌های برگزیده رویداد (گام سوم)
           </h3>
-          <p className="text-xs md:text-sm font-bold text-zinc-500 max-w-md mx-auto leading-relaxed">
+          <p className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
             بخش تشکیل تیم صرفاً برای ایده‌های منتخب پس از پایان نظرسنجی فعال می‌شود. پس از اتمام رای‌گیری و تعیین ایده‌های برتر توسط مدیر، ایده‌های برگزیده جهت تیم‌سازی در این بخش قرار خواهند گرفت.
           </p>
         </div>
@@ -404,61 +475,67 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {winningIdeas.map((idea) => {
             const team = getIdeaTeam(idea);
-            const isLeader = !!currentUser && isOwnedByUser(idea.authorName, currentUser);
+            const isLeader = !isManager && !!currentUser && isOwnedByUser(idea.authorName, currentUser);
             const canEditTeam = isManager || (isLeader && !team.isApprovedByAdmin);
 
             return (
               <div
                 key={idea.id}
-                className={`rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] flex flex-col justify-between space-y-6 ${
-                  team.isApprovedByAdmin ? 'ring-2 ring-emerald-500' : ''
+                className={`group relative rounded-2xl border-[1.5px] p-5 sm:p-6 transition-all duration-200 flex flex-col justify-between space-y-5 ${
+                  team.isApprovedByAdmin
+                    ? 'border-emerald-500/50 bg-white dark:bg-[#151C28] shadow-[2px_2px_0_#10B981] dark:shadow-[2px_2px_0_#065F46]'
+                    : isLeader
+                    ? 'border-primary/50 bg-white dark:bg-[#151C28] shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#1F413D]'
+                    : 'border-gray-200/90 dark:border-gray-800 bg-white dark:bg-[#151C28] shadow-2xs hover:shadow-xs hover:border-gray-300 dark:hover:border-gray-700'
                 }`}
               >
                 <div className="space-y-4">
-                  {/* Top Bar: Idea Number & Approval Status Badge */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 rounded-lg border-2 border-zinc-900 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black text-xs shadow-[1px_1px_0px_0px_#202A5A]">
-                        ایده #{toPersianDigits(idea.ideaNumber || 1)}
+                  {/* Top Bar: Idea Number, Title & Status */}
+                  <div className="flex flex-wrap items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="px-2.5 py-1 rounded-xl border border-primary/20 bg-primary/10 text-primary font-bold text-xs shrink-0 shadow-2xs">
+                        ایده شماره {toPersianDigits(idea.ideaNumber || 1)}
                       </span>
-                      <h3 className="text-base font-black text-zinc-900 dark:text-zinc-50 truncate max-w-[220px]">
+                      <h3 className="text-base sm:text-lg font-black text-ink-darker dark:text-white truncate">
                         {idea.title}
                       </h3>
                     </div>
 
-                    {/* Admin Approval Badge / Toggle */}
-                    {team.isApprovedByAdmin ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black border-2 border-emerald-600 bg-emerald-100 text-emerald-950 dark:bg-emerald-950 dark:text-emerald-200">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>تایید نهایی مدیر</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black border border-amber-600 bg-amber-50 text-amber-900 dark:bg-amber-950 dark:text-amber-200">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                        <span>در انتظار تایید مدیر</span>
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {isLeader && (
+                        <span className="px-2.5 py-1 rounded-xl bg-primary/10 text-primary text-xs font-bold border border-primary/20 shadow-2xs">
+                          تیم شما
+                        </span>
+                      )}
+
+                      {team.isApprovedByAdmin && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-2xs">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>تایید شده</span>
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Leader Info */}
-                  <div className="p-3 rounded-xl border-2 border-amber-400 bg-amber-50/70 dark:bg-amber-950/40 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg border-2 border-zinc-900 bg-amber-400 text-zinc-950 flex items-center justify-center font-black">
+                  <div className="p-3.5 rounded-xl border border-amber-200/80 dark:border-amber-900/60 bg-gradient-to-r from-amber-50/80 to-amber-50/30 dark:from-amber-950/30 dark:to-transparent flex items-center justify-between shadow-2xs">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl border border-amber-400/40 bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold shadow-2xs shrink-0">
                         <Crown className="w-4 h-4" />
                       </div>
                       <div>
-                        <div className="text-[10px] font-black text-amber-900 dark:text-amber-300">
-                          سرپرست / صاحب ایده:
+                        <div className="text-[11px] font-bold text-amber-800/80 dark:text-amber-400/80">
+                          سرگروه / صاحب ایده:
                         </div>
-                        <div className="text-xs font-black text-zinc-900 dark:text-zinc-100">
+                        <div className="text-xs sm:text-sm font-black text-ink-darker dark:text-white mt-0.5">
                           {idea.authorName}
                         </div>
                       </div>
                     </div>
 
                     {isLeader && (
-                      <span className="px-2 py-0.5 rounded bg-amber-400 text-zinc-950 text-[10px] font-black border border-zinc-900">
-                        شما سرپرست هستید
+                      <span className="px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-300 text-xs font-black border border-amber-500/30 shadow-2xs">
+                        شما سرگروه هستید
                       </span>
                     )}
                   </div>
@@ -468,7 +545,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="text-xs font-black text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
                         <Users className="w-4 h-4 text-primary" />
-                        <span>اعضای ثبت‌شده تیم ({toPersianDigits(team.members.length + 1)} نفر شامل سرپرست):</span>
+                        <span>اعضای تیم ({toPersianDigits(team.members.length + 1)} نفر شامل سرگروه):</span>
                       </h4>
 
                       {canEditTeam && (
@@ -479,16 +556,16 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                             setSelectedStudentId('');
                             setCustomStudentName('');
                           }}
-                          className="gap-1 text-[11px] font-bold py-1 px-2.5"
+                          className="gap-1.5 text-xs font-bold py-1 px-3 rounded-xl h-8"
                         >
-                          <UserPlus className="w-3 h-3 text-indigo-600" />
-                          <span>افزودن عضو جدید</span>
+                          <UserPlus className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>افزودن عضو</span>
                         </Button>
                       )}
                     </div>
 
                     {team.members.length === 0 ? (
-                      <div className="p-4 rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-800 text-center text-xs font-bold text-zinc-400">
+                      <div className="p-4 rounded-xl border border-dashed border-gray-200 dark:border-gray-800 text-center text-xs font-bold text-gray-400 bg-gray-50/50 dark:bg-[#1C2536]/30">
                         هنوز عضوی به این تیم اضافه نشده است.
                       </div>
                     ) : (
@@ -496,17 +573,17 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                         {team.members.map((member) => (
                           <div
                             key={member.id}
-                            className="p-3 rounded-xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800/80 flex items-center justify-between shadow-[2px_2px_0px_0px_#202A5A]"
+                            className="p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/80 dark:bg-[#1C2536]/60 flex items-center justify-between shadow-2xs hover:border-gray-300 dark:hover:border-gray-700 transition-all"
                           >
                             <div className="flex items-center gap-2.5">
-                              <div className="w-7 h-7 rounded-lg border border-zinc-900 bg-indigo-200 dark:bg-indigo-900 text-indigo-950 dark:text-indigo-100 flex items-center justify-center font-black text-xs">
+                              <div className="w-7 h-7 rounded-lg border border-primary/20 bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
                                 {member.name.slice(0, 1)}
                               </div>
                               <div>
-                                <div className="text-xs font-black text-zinc-900 dark:text-zinc-100">
+                                <div className="text-xs font-bold text-ink-darker dark:text-white">
                                   {member.name}
                                 </div>
-                                <div className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400">
+                                <div className="text-xs font-medium text-gray-400">
                                   <span>نقش: {member.roleInTeam}</span>
                                 </div>
                               </div>
@@ -517,7 +594,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                               <button
                                 type="button"
                                 onClick={() => handleRemoveMember(idea.id, member.id, member.name)}
-                                className="p-1.5 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950 transition-colors"
+                                className="p-1.5 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
                                 title="حذف از ترکیب تیم"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -532,15 +609,15 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
 
                 {/* Manager Final Approval Control */}
                 {isManager && (
-                  <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3">
-                    <div className="text-[11px] font-bold text-zinc-500">
+                  <div className="pt-4 border-t border-gray-100 dark:border-gray-800/80 flex items-center justify-between gap-3">
+                    <div className="text-xs font-bold text-gray-500 dark:text-gray-400">
                       کنترل ادمین: تایید ترکیب تیم
                     </div>
                     <Button
                       onClick={() => handleToggleAdminApproval(idea.id)}
                       variant={team.isApprovedByAdmin ? 'outline' : 'primary'}
-                      className={`gap-2 text-xs font-black ${
-                        team.isApprovedByAdmin ? 'text-rose-600 hover:bg-rose-50' : 'bg-emerald-500 text-zinc-950 hover:bg-emerald-400'
+                      className={`gap-2 text-xs font-bold rounded-xl h-9 px-4 ${
+                        team.isApprovedByAdmin ? 'text-rose-500 hover:bg-rose-50 border-rose-300 dark:border-rose-800' : 'bg-emerald-500 hover:bg-emerald-600 text-white'
                       }`}
                     >
                       {team.isApprovedByAdmin ? (
@@ -578,62 +655,107 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
         return (
           <Modal
             isOpen={!!activeIdeaIdForModal}
-            onClose={() => setActiveIdeaIdForModal(null)}
-            title={`افزودن عضو جدید به تیم «${targetIdea.title}»`}
+            onClose={() => {
+              setActiveIdeaIdForModal(null);
+              setIsRoleDropdownOpen(false);
+            }}
+            title={`افزودن عضو به تیم «${targetIdea.title}»`}
           >
-            <div className="space-y-5">
+            <div className="space-y-4 pt-1">
               {/* Role & Search Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800/60 shadow-[2px_2px_0px_0px_#202A5A]">
-                <div>
-                  <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1.5 flex items-center gap-1.5">
-                    <Briefcase className="w-3.5 h-3.5 text-amber-500" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-3.5 sm:p-4 rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gray-50/70 dark:bg-[#1C2536]/40 shadow-2xs">
+                {/* Role Dropdown */}
+                <div ref={roleDropdownRef} className="relative">
+                  <label className="block text-xs font-bold text-ink-darker dark:text-white mb-1.5 flex items-center gap-1.5">
+                    <Briefcase className="w-3.5 h-3.5 text-primary" />
                     <span>نقش عضو انتخابی:</span>
                   </label>
-                  <select
-                    value={memberRole}
-                    onChange={(e) => setMemberRole(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
+                  <button
+                    type="button"
+                    onClick={() => setIsRoleDropdownOpen((prev) => !prev)}
+                    className="w-full h-10 flex items-center justify-between px-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-ink-darker dark:text-white text-xs font-bold focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-2xs cursor-pointer select-none hover:border-gray-300 dark:hover:border-gray-600"
                   >
-                    <option value="عضو تیم / توسعه‌دهنده">عضو تیم / توسعه‌دهنده</option>
-                    <option value="برنامه‌نویس و کدنویس">برنامه‌نویس و کدنویس</option>
-                    <option value="طراح UI/UX و گرافیک">طراح UI/UX و گرافیک</option>
-                    <option value="مدیر ارائه‌کننده (Pitcher)">مدیر ارائه‌کننده (Pitcher)</option>
-                    <option value="مستندساز و محتوا">مستندساز و محتوا</option>
-                    <option value="تسهیل‌گر و مشاور">تسهیل‌گر و مشاور</option>
-                  </select>
+                    <span className="truncate">{memberRole}</span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 ${
+                        isRoleDropdownOpen ? 'rotate-180 text-primary' : ''
+                      }`}
+                    />
+                  </button>
+
+                  {isRoleDropdownOpen && (
+                    <div className="absolute top-full right-0 left-0 mt-1.5 z-50 rounded-2xl border border-gray-200 dark:border-gray-700/80 bg-white dark:bg-[#151C28] shadow-xl dark:shadow-[0_12px_28px_rgba(0,0,0,0.6)] p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-100">
+                      {TEAM_ROLES.map((role) => {
+                        const isSelected = memberRole === role;
+                        return (
+                          <button
+                            key={role}
+                            type="button"
+                            onClick={() => {
+                              setMemberRole(role);
+                              setIsRoleDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all text-right cursor-pointer ${
+                              isSelected
+                                ? 'bg-primary/10 text-primary font-black shadow-2xs'
+                                : 'text-ink-darker dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-[#1C2536] hover:text-primary'
+                            }`}
+                          >
+                            <span>{role}</span>
+                            {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
+                {/* Search Input */}
                 <div>
-                  <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1.5 flex items-center gap-1.5">
+                  <label className="block text-xs font-bold text-ink-darker dark:text-white mb-1.5 flex items-center gap-1.5">
                     <Search className="w-3.5 h-3.5 text-primary" />
                     <span>جستجوی دانش‌آموز:</span>
                   </label>
                   <div className="relative">
-                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                     <input
                       type="text"
                       placeholder="نام دانش‌آموز..."
                       value={searchStudentQuery}
                       onChange={(e) => setSearchStudentQuery(e.target.value)}
-                      className="w-full pr-9 pl-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
+                      className="w-full h-10 pr-9 pl-8 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-ink-darker dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 text-xs font-medium focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-2xs"
                     />
+                    {searchStudentQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchStudentQuery('')}
+                        className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-md"
+                        title="پاک کردن جستجو"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* Students Cards List */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs font-black text-zinc-700 dark:text-zinc-300">
-                  <span>لیست دانش‌آموزان دیتابیس مدرسه ({toPersianDigits(filteredStudents.length)} نفر):</span>
-                  <span className="text-[11px] text-zinc-500 font-bold">
-                    اعضای فعلی تیم: {toPersianDigits(currentTeam.members.length)} نفر
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between text-xs font-bold text-ink-darker dark:text-white px-0.5">
+                  <span className="flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-primary" />
+                    <span>لیست دانش‌آموزان</span>
+                  </span>
+                  <span className="text-[11px] font-medium text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-md">
+                    {toPersianDigits(filteredStudents.length)} نفر
                   </span>
                 </div>
 
-                <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+                <div className="max-h-64 sm:max-h-72 overflow-y-auto space-y-2 pr-1 pl-0.5">
                   {filteredStudents.length === 0 ? (
-                    <div className="p-6 text-center text-xs font-bold text-zinc-500 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-xl">
-                      دانش‌آموزی با این مشخصات یافت نشد.
+                    <div className="p-8 text-center text-xs font-medium text-gray-400 border border-dashed border-gray-200 dark:border-gray-700 rounded-2xl bg-gray-50/40 dark:bg-[#1C2536]/20 space-y-1.5">
+                      <Search className="w-6 h-6 mx-auto text-gray-300 dark:text-gray-600" />
+                      <p>دانش‌آموزی با این مشخصات یافت نشد.</p>
                     </div>
                   ) : (
                     filteredStudents.map((std) => {
@@ -646,60 +768,66 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                       return (
                         <div
                           key={std.id}
-                          className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
+                          className={`flex items-center justify-between p-3 rounded-2xl border transition-all duration-150 ${
                             isMemberOfThisTeam
-                              ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/40 opacity-75'
+                              ? 'border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20'
                               : isAssignedToOtherTeam
-                              ? 'border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800/40 opacity-60'
-                              : 'border-zinc-900 bg-white dark:bg-zinc-900 shadow-[2px_2px_0px_0px_#202A5A]'
+                              ? 'border-gray-200/60 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 opacity-60'
+                              : 'border-gray-200/90 dark:border-gray-800 bg-white dark:bg-[#151C28] shadow-2xs hover:shadow-xs hover:border-primary/40'
                           }`}
                         >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center font-black text-xs ${
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`w-9 h-9 rounded-xl border flex items-center justify-center font-black text-xs shrink-0 shadow-2xs transition-colors ${
                               isMemberOfThisTeam
-                                ? 'border-emerald-700 bg-emerald-400 text-zinc-950'
-                                : 'border-zinc-900 bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
+                                ? 'border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                                : isAssignedToOtherTeam
+                                ? 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-400'
+                                : 'border-primary/20 bg-primary/10 text-primary dark:bg-primary/20'
                             }`}>
-                              {isMemberOfThisTeam ? <UserCheck className="w-4 h-4" /> : <User className="w-4 h-4" />}
+                              {isMemberOfThisTeam ? (
+                                <UserCheck className="w-4 h-4" />
+                              ) : (
+                                <span>{std.name.trim().slice(0, 1)}</span>
+                              )}
                             </div>
 
-                            <div>
-                              <h5 className="text-xs font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                                <span>{std.name}</span>
+                            <div className="min-w-0">
+                              <h5 className="text-xs sm:text-sm font-bold text-ink-darker dark:text-white truncate">
+                                {std.name}
                               </h5>
                               {isMemberOfThisTeam && (
-                                <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 mt-0.5 flex items-center gap-1">
+                                <p className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 mt-0.5 flex items-center gap-1">
                                   <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
-                                  <span>قبلاً به این تیم اضافه شده است</span>
+                                  <span>به ترکیب تیم افزوده شده است</span>
                                 </p>
                               )}
                               {isAssignedToOtherTeam && (
-                                <p className="text-[10px] font-bold text-rose-600 dark:text-rose-400 mt-0.5">
+                                <p className="text-[10px] font-medium text-rose-500 dark:text-rose-400 mt-0.5 truncate">
                                   عضو تیم ایده #{toPersianDigits(assignment.ideaNumber)} ({assignment.ideaTitle})
                                 </p>
                               )}
                             </div>
                           </div>
 
-                          <div>
+                          <div className="shrink-0 mr-2">
                             {isMemberOfThisTeam ? (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-emerald-600 bg-emerald-200 text-emerald-900 text-xs font-black">
-                                <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-bold shadow-2xs">
+                                <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                                 <span>افزوده شد</span>
                               </span>
                             ) : isAssignedToOtherTeam ? (
-                              <span className="px-3 py-1 rounded-lg border border-zinc-400 bg-zinc-200 text-zinc-600 text-xs font-bold">
+                              <span className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800/80 text-gray-400 dark:text-gray-500 text-xs font-bold">
                                 غیرقابل انتخاب
                               </span>
                             ) : (
-                              <Button
-                                variant="primary"
+                              <button
+                                type="button"
                                 onClick={() => handleAddMemberDirectly(targetIdea, std)}
-                                className="text-xs font-black bg-emerald-400 text-zinc-950 px-3 py-1 inline-flex items-center gap-1"
+                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary text-primary hover:text-white dark:bg-primary/20 dark:hover:bg-primary dark:hover:text-white text-xs font-bold transition-all shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer shrink-0"
                               >
                                 <Plus className="w-3.5 h-3.5" />
                                 <span>افزودن</span>
-                              </Button>
+                              </button>
                             )}
                           </div>
                         </div>
@@ -709,41 +837,41 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                 </div>
               </div>
 
-              {/* Manual Name Entry Section */}
-              <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800">
-                <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1.5">
-                  افزودن دستی نام دانش‌آموز (در صورت عدم وجود در دیتابیس):
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="مثلاً: علی رضایی"
-                    value={customStudentName}
-                    onChange={(e) => setCustomStudentName(e.target.value)}
-                    className="flex-1 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
-                  />
-                  <Button
-                    variant="outline"
-                    disabled={!customStudentName.trim()}
-                    onClick={() => handleAddMember(targetIdea)}
-                    className="text-xs font-black px-4"
-                  >
-                    + افزودن دستی
-                  </Button>
+              {/* Manual Name Entry Section (Admin Only) */}
+              {isManager && (
+                <div className="pt-3 border-t border-gray-100 dark:border-gray-800 space-y-1.5">
+                  <label className="block text-xs font-bold text-ink-darker dark:text-white flex items-center gap-1.5">
+                    <Plus className="w-3.5 h-3.5 text-primary" />
+                    <span>افزودن دستی نام دانش‌آموز:</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="نام و نام خانوادگی دانش‌آموز..."
+                      value={customStudentName}
+                      onChange={(e) => setCustomStudentName(e.target.value)}
+                      className="flex-1 px-3.5 h-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-ink-darker dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 text-xs font-medium focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-2xs"
+                    />
+                    <Button
+                      variant="outline"
+                      disabled={!customStudentName.trim()}
+                      onClick={() => handleAddMember(targetIdea)}
+                      className="text-xs font-bold px-4 h-10 rounded-xl shrink-0"
+                    >
+                      + افزودن دستی
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Modal Action Footer */}
-              <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-                <span className="text-xs font-bold text-zinc-500">
-                  پس از انجام افزودن‌ها، دکمه بستن را بزنید.
-                </span>
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end">
                 <Button
                   variant="primary"
                   onClick={() => setActiveIdeaIdForModal(null)}
-                  className="text-xs font-black px-6"
+                  className="text-xs font-bold px-8 h-10 rounded-xl"
                 >
-                  تایید و بستن
+                  تأیید
                 </Button>
               </div>
             </div>

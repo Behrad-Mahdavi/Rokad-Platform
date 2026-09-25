@@ -49,6 +49,7 @@ import {
   ArrowUpDown,
   ChevronDown,
   Check,
+  ArrowUp,
 } from 'lucide-react';
 import { INITIAL_SAMPLE_EVENTS } from './constants/sample-events';
 import {
@@ -63,7 +64,7 @@ export interface SchoolEventItem {
   id: string;
   title: string;
   description: string;
-  eventType: 'ACADEMIC' | 'HOLIDAY' | 'EXAM' | 'MEETING' | 'CULTURAL' | 'SPORTS' | 'EXCURSION' | 'STARTUP_WEEKEND';
+  eventType: 'ACADEMIC' | 'HOLIDAY' | 'EXAM' | 'MEETING' | 'CULTURAL' | 'SPORTS' | 'EXCURSION' | 'STARTUP_WEEKEND' | 'ENTERTAINMENT';
   categoryKey?: string;
   startDate: string;
   endDate: string;
@@ -71,6 +72,7 @@ export interface SchoolEventItem {
   targetAudience: 'ALL' | 'STUDENTS' | 'TEACHERS' | 'PARENTS' | 'STAFF' | 'SPECIFIC_CLASSES';
   location?: string;
   coverUrl?: string;
+  attachments?: any[];
   tags?: string[];
   workflowModules?: { key: string; step: number; enabled?: boolean }[];
   createdAt?: string;
@@ -103,7 +105,7 @@ export const EVENT_CATEGORIES: EventCategoryConfig[] = [
   },
   {
     key: 'STARTUP_WEEKEND',
-    label: 'استارت‌آپ ویکند',
+    label: 'رویداد استارتاپی',
     icon: Rocket,
     colorClass: 'text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800/60',
     activeClass: 'bg-amber-500 text-white border-amber-500 shadow-sm',
@@ -111,7 +113,7 @@ export const EVENT_CATEGORIES: EventCategoryConfig[] = [
   },
   {
     key: 'ACADEMIC',
-    label: 'آموزشی و مهارت',
+    label: 'کارگاه آموزشی',
     icon: BookOpen,
     colorClass: 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/60',
     activeClass: 'bg-blue-600 text-white border-blue-600 shadow-sm',
@@ -119,39 +121,39 @@ export const EVENT_CATEGORIES: EventCategoryConfig[] = [
   },
   {
     key: 'CULTURAL',
-    label: 'فرهنگی و جشن‌ها',
+    label: 'فرهنگی و هنری',
     icon: PartyPopper,
     colorClass: 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800/60',
     activeClass: 'bg-purple-600 text-white border-purple-600 shadow-sm',
     badgeClass: 'bg-purple-50 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800',
   },
   {
-    key: 'SPORTS',
-    label: 'مسابقات و ورزش',
-    icon: Trophy,
-    colorClass: 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60',
-    activeClass: 'bg-emerald-600 text-white border-emerald-600 shadow-sm',
-    badgeClass: 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
-  },
-  {
-    key: 'EXAM',
-    label: 'آزمون‌ها و سنجش',
-    icon: Flame,
-    colorClass: 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60',
-    activeClass: 'bg-amber-500 text-white border-amber-500 shadow-sm',
-    badgeClass: 'bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+    key: 'ENTERTAINMENT',
+    label: 'بازی و سرگرمی',
+    icon: Sparkles,
+    colorClass: 'text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/60',
+    activeClass: 'bg-rose-600 text-white border-rose-600 shadow-sm',
+    badgeClass: 'bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800',
   },
   {
     key: 'EXCURSION',
-    label: 'اردو و بازدید علمی',
+    label: 'اردو و بازدید',
     icon: CompassIcon,
     colorClass: 'text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/40 border-cyan-200 dark:border-cyan-800/60',
     activeClass: 'bg-cyan-600 text-white border-cyan-600 shadow-sm',
     badgeClass: 'bg-cyan-50 dark:bg-cyan-950/50 text-cyan-800 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800',
   },
   {
+    key: 'SPORTS',
+    label: 'ورزشی',
+    icon: Trophy,
+    colorClass: 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60',
+    activeClass: 'bg-emerald-600 text-white border-emerald-600 shadow-sm',
+    badgeClass: 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+  },
+  {
     key: 'MEETING',
-    label: 'جلسات و شورا',
+    label: 'جلسه و همایش',
     icon: Users,
     colorClass: 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800/60',
     activeClass: 'bg-indigo-600 text-white border-indigo-600 shadow-sm',
@@ -160,12 +162,10 @@ export const EVENT_CATEGORIES: EventCategoryConfig[] = [
 ];
 
 const AUDIENCE_MAP: Record<string, string> = {
-  ALL: 'عمومی (کلیه اعضا)',
-  STUDENTS: 'ویژه دانش‌آموزان',
-  TEACHERS: 'کادر آموزشی و مربیان',
-  PARENTS: 'اولیاء گرامی',
-  STAFF: 'کادر اجرایی مدرسه',
-  SPECIFIC_CLASSES: 'کلاس‌های منتخب',
+  ALL: 'عمومی',
+  STUDENTS: 'ویژه دانش آموزان',
+  PARENTS: 'ویژه والدین',
+  TEACHERS: 'ویژه مربیان',
 };
 
 const PERSIAN_MONTH_NAMES = [
@@ -182,16 +182,16 @@ interface FilterOption {
 const STATUS_OPTIONS: FilterOption[] = [
   { value: 'ALL', label: 'همه وضعیت‌ها' },
   { value: 'UPCOMING', label: 'فقط پیش‌رو', colorDot: 'bg-cyan-500' },
-  { value: 'LIVE', label: 'در حال برگزاری', colorDot: 'bg-emerald-500' },
+  { value: 'LIVE', label: 'در حال برگزاری', colorDot: 'bg-rose-500' },
   { value: 'COMPLETED', label: 'برگزار شده', colorDot: 'bg-slate-400' },
 ];
 
 const AUDIENCE_OPTIONS: FilterOption[] = [
   { value: 'ALL', label: 'همه مخاطبین' },
-  { value: 'STUDENTS', label: 'صرفاً دانش‌آموزان', colorDot: 'bg-blue-500' },
-  { value: 'TEACHERS', label: 'کادر آموزشی و مربیان', colorDot: 'bg-purple-500' },
-  { value: 'PARENTS', label: 'اولیاء گرامی', colorDot: 'bg-amber-500' },
-  { value: 'STAFF', label: 'کادر اجرایی', colorDot: 'bg-emerald-500' },
+  { value: 'AUDIENCE_ALL', label: 'عمومی', colorDot: 'bg-emerald-500' },
+  { value: 'STUDENTS', label: 'ویژه دانش آموزان', colorDot: 'bg-blue-500' },
+  { value: 'PARENTS', label: 'ویژه والدین', colorDot: 'bg-amber-500' },
+  { value: 'TEACHERS', label: 'ویژه مربیان', colorDot: 'bg-purple-500' },
 ];
 
 const SORT_OPTIONS: FilterOption[] = [
@@ -253,11 +253,10 @@ const CustomFilterDropdown: React.FC<CustomFilterDropdownProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`w-full flex items-center justify-between text-xs sm:text-[13px] font-bold h-11 px-3.5 rounded-xl border transition-all duration-150 cursor-pointer select-none text-right ${
-          isOpen
+        className={`w-full flex items-center justify-between text-xs sm:text-[13px] font-bold h-11 px-3.5 rounded-xl border transition-all duration-150 cursor-pointer select-none text-right ${isOpen
             ? 'border-primary ring-2 ring-primary/20 dark:ring-primary/30 bg-white dark:bg-[#1C2536] text-ink-darker dark:text-white shadow-xs'
             : 'bg-[#FAFAFA] dark:bg-[#1C2536] border-gray-200 dark:border-[#242F42] text-ink-darker dark:text-white hover:border-gray-300 dark:hover:border-gray-600'
-        }`}
+          }`}
       >
         <div className="flex items-center gap-2 truncate min-w-0">
           {selectedOption?.colorDot && (
@@ -266,9 +265,8 @@ const CustomFilterDropdown: React.FC<CustomFilterDropdownProps> = ({
           <span className="truncate">{selectedOption?.label || label}</span>
         </div>
         <ChevronDown
-          className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-primary' : ''
-          }`}
+          className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180 text-primary' : ''
+            }`}
         />
       </button>
 
@@ -284,11 +282,10 @@ const CustomFilterDropdown: React.FC<CustomFilterDropdownProps> = ({
                   onChange(opt.value);
                   setIsOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs sm:text-[13px] transition-colors cursor-pointer text-right ${
-                  isSelected
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs sm:text-[13px] transition-colors cursor-pointer text-right ${isSelected
                     ? 'bg-primary/10 text-primary dark:text-primary font-black'
                     : 'text-ink-darker dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-[#1C2536] font-bold'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-2 truncate min-w-0">
                   {opt.colorDot && (
@@ -320,6 +317,15 @@ export const EventsRoadmapPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'roadmap' | 'grid'>('roadmap');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 250);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const hasActiveFilters =
     statusFilter !== 'ALL' ||
@@ -369,10 +375,33 @@ export const EventsRoadmapPage: React.FC = () => {
       if (res && Array.isArray(res.data)) {
         loadedEvents = res.data;
       }
-      const hasStartup = loadedEvents.some(
+
+      // Filter: Only include events created for/in the events module (7 approved categories)
+      // Exclude exams, homework deadlines, holidays, etc.
+      const validEventCategories = new Set([
+        'STARTUP_WEEKEND',
+        'ACADEMIC',
+        'CULTURAL',
+        'ENTERTAINMENT',
+        'EXCURSION',
+        'SPORTS',
+        'MEETING',
+      ]);
+
+      const eventsOnly = loadedEvents.filter((e: any) => {
+        if (e.eventType === 'HOMEWORK' || e.type === 'HOMEWORK') return false;
+        if (e.eventType === 'EXAM' || e.type === 'EXAM') return false;
+        if (e.eventType === 'HOLIDAY' || e.type === 'HOLIDAY') return false;
+        return (
+          validEventCategories.has(e.eventType) ||
+          e.tags?.some((t: string) => t.startsWith('categoryKey:') || t === 'source:events')
+        );
+      });
+
+      const hasStartup = eventsOnly.some(
         (e: any) => e.eventType === 'STARTUP_WEEKEND' || e.id === 'evt_startup_weekend_2026'
       );
-      let combined = loadedEvents;
+      let combined = eventsOnly;
       if (!hasStartup) {
         let startupEventToInclude = INITIAL_SAMPLE_EVENTS.find((s) => s.id === 'evt_startup_weekend_2026');
         try {
@@ -382,13 +411,13 @@ export const EventsRoadmapPage: React.FC = () => {
             const foundCached = Array.isArray(parsed) ? parsed.find((p: any) => p.id === 'evt_startup_weekend_2026' || p.eventType === 'STARTUP_WEEKEND') : null;
             if (foundCached) startupEventToInclude = foundCached;
           }
-        } catch {}
-        combined = startupEventToInclude ? [startupEventToInclude, ...loadedEvents] : [...INITIAL_SAMPLE_EVENTS, ...loadedEvents];
+        } catch { }
+        combined = startupEventToInclude ? [startupEventToInclude, ...eventsOnly] : [...INITIAL_SAMPLE_EVENTS, ...eventsOnly];
       }
       setEvents(combined);
       try {
         localStorage.setItem('rokad_calendar_events', JSON.stringify(combined));
-      } catch {}
+      } catch { }
     } catch (err) {
       console.error('Failed to load roadmap events', err);
       try {
@@ -403,7 +432,7 @@ export const EventsRoadmapPage: React.FC = () => {
             return;
           }
         }
-      } catch {}
+      } catch { }
       setEvents(INITIAL_SAMPLE_EVENTS);
     } finally {
       setIsLoading(false);
@@ -431,8 +460,8 @@ export const EventsRoadmapPage: React.FC = () => {
       return {
         key: 'LIVE',
         label: 'در حال برگزاری',
-        dotColor: 'bg-emerald-500 animate-pulse',
-        badgeClass: 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800 shadow-sm animate-pulse',
+        dotColor: 'bg-rose-500 animate-pulse',
+        badgeClass: 'bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-300 dark:border-rose-800 shadow-sm animate-pulse',
       };
     } else {
       return {
@@ -466,7 +495,9 @@ export const EventsRoadmapPage: React.FC = () => {
     return events
       .filter((ev) => {
         const matchCat = selectedCategory === 'ALL' || ev.eventType === selectedCategory;
-        const matchAudience = audienceFilter === 'ALL' || ev.targetAudience === audienceFilter;
+        const matchAudience =
+          audienceFilter === 'ALL' ||
+          (audienceFilter === 'AUDIENCE_ALL' ? ev.targetAudience === 'ALL' : ev.targetAudience === audienceFilter);
 
         let matchStatus = true;
         if (statusFilter !== 'ALL') {
@@ -524,6 +555,54 @@ export const EventsRoadmapPage: React.FC = () => {
     return groups;
   }, [filteredEvents]);
 
+  const { currentYear, currentMonthIndex } = useMemo(() => {
+    if (!todayJalaliStr) return { currentYear: '', currentMonthIndex: 0 };
+    const parts = todayJalaliStr.split('-');
+    return {
+      currentYear: parts[0] || '',
+      currentMonthIndex: parseInt(parts[1], 10) || 0,
+    };
+  }, [todayJalaliStr]);
+
+  const hasAutoScrolledRef = useRef(false);
+
+  // Reset auto-scroll flag when key filters change
+  useEffect(() => {
+    hasAutoScrolledRef.current = false;
+  }, [selectedCategory, statusFilter, audienceFilter]);
+
+  // Scroll to current month on initial load or when roadmap is ready
+  useEffect(() => {
+    if (isLoading || roadmapGroups.length === 0 || hasAutoScrolledRef.current) return;
+
+    // Find the current month group
+    const currentGroup = roadmapGroups.find(
+      (g) => g.year === currentYear && g.monthIndex === currentMonthIndex
+    );
+
+    // If current month exists in roadmap, target it; otherwise target closest upcoming/past month
+    const targetGroup =
+      currentGroup ||
+      roadmapGroups.find(
+        (g) =>
+          Number(g.year) > Number(currentYear) ||
+          (g.year === currentYear && g.monthIndex >= currentMonthIndex)
+      ) ||
+      roadmapGroups[0];
+
+    if (targetGroup) {
+      const targetId = `month-group-${targetGroup.year}-${targetGroup.monthIndex}`;
+      const timer = setTimeout(() => {
+        const el = document.getElementById(targetId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          hasAutoScrolledRef.current = true;
+        }
+      }, 250);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, roadmapGroups, currentYear, currentMonthIndex]);
+
   // Open Create Modal
   const handleOpenCreate = () => {
     setIsEditing(false);
@@ -545,6 +624,15 @@ export const EventsRoadmapPage: React.FC = () => {
     setWorkflowModulesState(DEFAULT_WORKFLOW_MODULES);
     setFormError(null);
     setIsModalOpen(true);
+  };
+
+  const handleNavigateToEvent = (eventId: string) => {
+    const mainContainer = document.querySelector('main');
+    if (mainContainer) {
+      mainContainer.scrollTop = 0;
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    navigate(`/app/events/${eventId}`);
   };
 
   // Open Edit Modal
@@ -580,8 +668,8 @@ export const EventsRoadmapPage: React.FC = () => {
       Array.isArray(ev.workflowModules) && ev.workflowModules.length > 0
         ? normalizeWorkflowModules(ev.workflowModules)
         : ev.eventType === 'STARTUP_WEEKEND'
-        ? DEFAULT_WORKFLOW_MODULES
-        : []
+          ? DEFAULT_WORKFLOW_MODULES
+          : []
     );
 
     setFormError(null);
@@ -643,6 +731,13 @@ export const EventsRoadmapPage: React.FC = () => {
         ? form.tags.split(/[,،]+/).map((t) => t.trim()).filter(Boolean)
         : [];
 
+      if (!tagsArray.includes(`categoryKey:${form.eventType}`)) {
+        tagsArray.push(`categoryKey:${form.eventType}`);
+      }
+      if (!tagsArray.includes('source:events')) {
+        tagsArray.push('source:events');
+      }
+
       const activeWorkflowModules = renumberWorkflowModules(
         workflowModulesState.filter((m) => m.enabled !== false)
       );
@@ -682,10 +777,10 @@ export const EventsRoadmapPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-4 pb-16">
       {/* 1. Main Header Box (Includes Title, Filter Button, Search, Create Button & Category Tabs) */}
-      <div className="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] p-4 sm:p-5 shadow-sm space-y-4">
-        {/* Row 1: Title & Top-Left Actions (Filter Button + View Switcher) */}
+      <div className="bg-white dark:bg-[#151C28] rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-gray-800 shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] p-4 sm:p-5 space-y-4">
+        {/* Row 1: Title & Top-Left Filter Button */}
         <div className="flex items-center justify-between gap-3">
           {/* Right: Title & Icon */}
           <div className="flex items-center gap-2.5">
@@ -694,170 +789,151 @@ export const EventsRoadmapPage: React.FC = () => {
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white tracking-tight">
-                نقشۀ رویدادها
+                رویدادها
               </h1>
             </div>
           </div>
 
-          {/* Left: Top Actions (Filter Button moved here, plus View Switcher) */}
-          <div className="flex items-center gap-2">
-            {/* View Mode Switcher: Timeline vs Grid */}
-            <div className="flex items-center p-1 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200/60 dark:border-gray-700/60 shrink-0">
-              <button
-                type="button"
-                onClick={() => setViewMode('roadmap')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  viewMode === 'roadmap'
-                    ? 'bg-white dark:bg-[#151C28] text-primary shadow-sm border border-primary/20 dark:border-gray-700'
-                    : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
-                }`}
-                title="نمایش تایم‌لاین"
-              >
-                <Layers className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">تایم‌لاین</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('grid')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  viewMode === 'grid'
-                    ? 'bg-white dark:bg-[#151C28] text-primary shadow-sm border border-primary/20 dark:border-gray-700'
-                    : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
-                }`}
-                title="نمایش شبکه کارت‌ها"
-              >
-                <LayoutGrid className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">شبکه کارت‌ها</span>
-              </button>
-            </div>
-
-            {/* Filter Toggle Button (Moved to top-left of header box) */}
-            <button
-              type="button"
-              onClick={() => setIsFilterOpen((prev) => !prev)}
-              className={`relative cursor-pointer select-none flex items-center justify-center w-10 h-10 rounded-xl border-[1.5px] transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] shrink-0 ${
-                isFilterOpen || hasActiveFilters
-                  ? 'bg-primary text-white border-primary-dark shadow-[2px_2px_0_#438C83]'
-                  : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground dark:text-slate-300 border-gray-200 dark:border-[#242F42] hover:bg-gray-100 dark:hover:bg-[#253248] shadow-[2px_2px_0_#CBD5E1] dark:shadow-[2px_2px_0_#0F172A]'
+          {/* Left: Filter Toggle Button (Top-left of header box) */}
+          <button
+            type="button"
+            onClick={() => setIsFilterOpen((prev) => !prev)}
+            className={`relative cursor-pointer select-none flex items-center justify-center w-10 h-10 rounded-xl border-[1.5px] transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] shrink-0 ${isFilterOpen || hasActiveFilters
+                ? 'bg-primary text-white border-primary-dark shadow-[2px_2px_0_#438C83]'
+                : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground dark:text-slate-300 border-gray-200 dark:border-[#242F42] hover:bg-gray-100 dark:hover:bg-[#253248] shadow-[2px_2px_0_#CBD5E1] dark:shadow-[2px_2px_0_#0F172A]'
               }`}
-              title={isFilterOpen ? 'بستن فیلترها' : 'نمایش فیلترها'}
-              aria-label={isFilterOpen ? 'بستن فیلترها' : 'نمایش فیلترها'}
-            >
-              <Filter className="w-4 h-4 shrink-0" />
-              {hasActiveFilters && (
-                <span className="absolute top-1.5 left-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#151C28]" />
-              )}
-            </button>
-          </div>
+            title={isFilterOpen ? 'بستن فیلترها' : 'نمایش فیلترها'}
+            aria-label={isFilterOpen ? 'بستن فیلترها' : 'نمایش فیلترها'}
+          >
+            <Filter className="w-4 h-4 shrink-0" />
+            {hasActiveFilters && (
+              <span className="absolute top-1.5 left-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#151C28]" />
+            )}
+          </button>
         </div>
 
-        {/* Row 2: Expanded Search Box & Large Create Event Button */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          {/* Expanded Search Box */}
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="جستجو در نام، توضیحات، مکان یا برچسب‌های رویدادها..."
-              className="w-full h-11 pr-10 pl-9 text-xs sm:text-[13px] rounded-xl border-[1.5px] border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-ink-darker dark:text-white outline-none focus:border-primary focus:bg-white dark:focus:bg-gray-900 transition-colors shadow-2xs font-medium"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0.5 rounded-md cursor-pointer"
-                title="پاک کردن جستجو"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-
-          {/* Create Event Button (Staff / Admin only - Large width matching toolbar) */}
-          {isManager && (
+        {/* Row 2: Large Create Event Button (Staff / Admin only) */}
+        {isManager && (
+          <div>
             <Button
               onClick={handleOpenCreate}
               variant="primary"
-              className="h-11 px-6 min-w-[200px] sm:w-auto w-full rounded-xl text-xs sm:text-sm font-bold rokad-btn-primary shrink-0 gap-2 shadow-ecosystem justify-center"
+              className="h-11 w-full rounded-xl text-xs sm:text-sm font-bold rokad-btn-primary shrink-0 gap-2 shadow-ecosystem justify-center"
             >
               <Plus className="w-4 h-4 shrink-0" />
               <span>رویداد جدید</span>
             </Button>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Row 3: Event Category Tabs (Moved inside top box) */}
+        {/* Row 3: Event Category Tabs (Inside top box) */}
         <div className="pt-3 border-t border-gray-100 dark:border-gray-800/80">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {EVENT_CATEGORIES.map((cat) => {
-              const isSelected = selectedCategory === cat.key;
-              const Icon = cat.icon;
-              const count =
-                cat.key === 'ALL'
-                  ? events.length
-                  : events.filter((e) => e.eventType === cat.key).length;
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-none flex-1 min-w-0">
+              {EVENT_CATEGORIES.map((cat) => {
+                const isSelected = selectedCategory === cat.key;
+                const Icon = cat.icon;
+                const count =
+                  cat.key === 'ALL'
+                    ? events.length
+                    : events.filter((e) => e.eventType === cat.key).length;
 
-              return (
-                <button
-                  key={cat.key}
-                  type="button"
-                  onClick={() => setSelectedCategory(cat.key)}
-                  className={`min-h-[38px] flex items-center gap-2 whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs sm:text-[13px] font-bold border transition-all duration-150 cursor-pointer select-none active:scale-98 ${
-                    isSelected
-                      ? cat.activeClass
-                      : 'bg-white dark:bg-[#1C2536] text-gray-600 dark:text-gray-300 border-gray-200/80 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
-                  }`}
-                >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  <span>{cat.label}</span>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-                      isSelected
-                        ? 'bg-white/20 text-white'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
-                    }`}
+                return (
+                  <button
+                    key={cat.key}
+                    type="button"
+                    onClick={() => setSelectedCategory(cat.key)}
+                    className={`min-h-[38px] flex items-center gap-2 whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs sm:text-[13px] font-bold border transition-all duration-150 cursor-pointer select-none active:scale-98 ${isSelected
+                        ? cat.activeClass
+                        : 'bg-white dark:bg-[#1C2536] text-gray-600 dark:text-gray-300 border-gray-200/80 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
+                      }`}
                   >
-                    {toPersianDigits(count)}
-                  </span>
-                </button>
-              );
-            })}
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span>{cat.label}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${isSelected
+                          ? 'bg-white/20 text-white'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                        }`}
+                    >
+                      {toPersianDigits(count)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {roadmapGroups.some((g) => g.year === currentYear && g.monthIndex === currentMonthIndex) && (
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById(`month-group-${currentYear}-${currentMonthIndex}`);
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+                className="hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-all cursor-pointer shrink-0 shadow-2xs"
+                title="پرش مستقیم به رویدادهای ماه جاری"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>ماه جاری</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Collapsible Filter Panel (Directly inside top box beneath tabs) */}
+        {/* Collapsible Filter Panel (Includes Search Box and Filter Dropdowns) */}
         <div
-          className={`grid transition-all duration-300 ease-in-out ${
-            isFilterOpen
-              ? 'grid-rows-[1fr] opacity-100 translate-y-0 pt-2 border-t border-gray-100 dark:border-gray-800/80'
-              : 'grid-rows-[0fr] opacity-0 -translate-y-2 pointer-events-none'
-          }`}
+          className={`grid transition-all duration-300 ease-in-out ${isFilterOpen
+              ? 'grid-rows-[1fr] opacity-100 translate-y-0 !mt-3 pt-0'
+              : 'grid-rows-[0fr] opacity-0 -translate-y-2 pointer-events-none !mt-0 pt-0'
+            }`}
         >
-          <div className={`min-h-0 ${isFilterOpen ? 'overflow-visible' : 'overflow-hidden'}`}>
+          <div className={`min-h-0 transition-all duration-300 ${isFilterOpen ? 'overflow-visible' : 'overflow-hidden'}`}>
             <div className="bg-gray-50/70 dark:bg-[#1C2536]/80 rounded-xl border border-gray-200/80 dark:border-[#242F42] p-4 shadow-xs space-y-4 relative overflow-visible">
-              {/* Filter Dropdowns Grid: 3 Balanced Columns */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 relative z-20">
+              {/* Search Box inside Filter Panel */}
+              <div className="relative w-full">
+                <Search className="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="جستجو در عنوان، توضیحات، مکان یا برچسب‌های رویدادها..."
+                  className="w-full h-11 pr-10 pl-9 text-xs sm:text-[13px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-ink-darker dark:text-white outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-medium shadow-2xs"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0.5 rounded-md cursor-pointer"
+                    title="پاک کردن جستجو"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Filter Dropdowns Grid: 3 Columns for Managers, 2 Columns for Regular Users */}
+              <div className={`grid grid-cols-1 ${isManager ? 'sm:grid-cols-2 md:grid-cols-3' : 'sm:grid-cols-2'} gap-3.5 relative z-20`}>
                 {/* Status Filter */}
                 <CustomFilterDropdown
                   label="وضعیت برگزاری:"
                   labelIcon={Clock}
-                  iconColorClass="text-cyan-500"
+                  iconColorClass="text-rose-500"
                   options={STATUS_OPTIONS}
                   value={statusFilter}
                   onChange={(val) => setStatusFilter(val as any)}
                 />
 
-                {/* Target Audience Filter */}
-                <CustomFilterDropdown
-                  label="مخاطبین هدف:"
-                  labelIcon={Users}
-                  iconColorClass="text-purple-500"
-                  options={AUDIENCE_OPTIONS}
-                  value={audienceFilter}
-                  onChange={setAudienceFilter}
-                />
+                {/* Target Audience Filter - Principals & Staff Only */}
+                {isManager && (
+                  <CustomFilterDropdown
+                    label="مخاطبین هدف:"
+                    labelIcon={Users}
+                    iconColorClass="text-purple-500"
+                    options={AUDIENCE_OPTIONS}
+                    value={audienceFilter}
+                    onChange={setAudienceFilter}
+                  />
+                )}
 
                 {/* Sort Order Filter */}
                 <CustomFilterDropdown
@@ -924,161 +1000,169 @@ export const EventsRoadmapPage: React.FC = () => {
       ) : viewMode === 'roadmap' ? (
         /* ================= ANNUAL ROADMAP TIMELINE VIEW ================= */
         <div className="space-y-10 sm:space-y-12">
-          {roadmapGroups.map((group) => (
-            <div key={`${group.year}-${group.monthIndex}`} className="space-y-5">
-              {/* Month Header Banner */}
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 rounded-xl bg-primary text-white px-4 py-2 font-black text-sm shadow-sm border border-primary/30">
-                  <Flag className="w-4 h-4" />
-                  <span>{group.monthName}</span>
-                  <span className="text-xs opacity-80">{toPersianDigits(group.year)}</span>
+          {roadmapGroups.map((group) => {
+            const isCurrentMonth = group.year === currentYear && group.monthIndex === currentMonthIndex;
+            return (
+              <div
+                key={`${group.year}-${group.monthIndex}`}
+                id={`month-group-${group.year}-${group.monthIndex}`}
+                className="space-y-5 scroll-mt-24 sm:scroll-mt-28"
+              >
+                {/* Month Header Banner */}
+                <div className="flex items-center gap-4">
+                  <div
+                    className={`flex items-center gap-2 rounded-xl px-4 py-2 font-black text-sm shadow-sm border transition-all ${isCurrentMonth
+                        ? 'bg-primary text-white border-primary-dark ring-2 ring-primary/30 shadow-md'
+                        : 'bg-primary text-white border-primary/30'
+                      }`}
+                  >
+                    <Flag className="w-4 h-4" />
+                    <span>{group.monthName}</span>
+                    <span className="text-xs opacity-80">{toPersianDigits(group.year)}</span>
+                    {isCurrentMonth && (
+                      <span className="mr-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-white text-primary shadow-xs">
+                        ماه جاری
+                      </span>
+                    )}
+                  </div>
+                  <div className="h-0.5 flex-1 bg-gradient-to-l from-transparent via-gray-200 dark:via-gray-800 to-transparent" />
+                  <span className="text-xs font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-[#1C2536] px-3 py-1 rounded-full border border-gray-200/60 dark:border-gray-700/60">
+                    {toPersianDigits(group.events.length)} رویداد
+                  </span>
                 </div>
-                <div className="h-0.5 flex-1 bg-gradient-to-l from-transparent via-gray-200 dark:via-gray-800 to-transparent" />
-                <span className="text-xs font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-[#1C2536] px-3 py-1 rounded-full border border-gray-200/60 dark:border-gray-700/60">
-                  {toPersianDigits(group.events.length)} رویداد
-                </span>
-              </div>
 
-              {/* Spine & Events Container */}
-              <div className="relative mr-4 sm:mr-6 space-y-5 border-r-2 border-primary/20 dark:border-primary/25 pr-6 sm:pr-8">
-                {group.events.map((ev) => {
-                  const status = getEventStatus(ev.startDate, ev.endDate);
-                  const jalaliStartFormatted = formatJalaliDisplay(ev.startDate, true);
-                  const sTime = new Date(ev.startDate).toLocaleTimeString('fa-IR', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  });
-                  const categoryMeta = EVENT_CATEGORIES.find((c) => c.key === ev.eventType) || EVENT_CATEGORIES[0];
-                  const CategoryIcon = categoryMeta.icon;
+                {/* Spine & Events Container */}
+                <div className="relative mr-4 sm:mr-6 space-y-5 border-r-2 border-primary/20 dark:border-primary/25 pr-6 sm:pr-8">
+                  {group.events.map((ev) => {
+                    const status = getEventStatus(ev.startDate, ev.endDate);
+                    const jalaliStartFormatted = formatJalaliDisplay(ev.startDate, true);
+                    const sTime = new Date(ev.startDate).toLocaleTimeString('fa-IR', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    });
+                    const categoryMeta =
+                      EVENT_CATEGORIES.find((c) => c.key === ev.eventType) ||
+                      EVENT_CATEGORIES[1];
+                    const CategoryIcon = categoryMeta.icon;
 
-                  return (
-                    <div
-                      key={ev.id}
-                      onClick={() => navigate(`/app/events/${ev.id}`)}
-                      className="group relative cursor-pointer"
-                    >
-                      {/* Timeline Node Dot */}
-                      <div className="absolute -right-[31px] sm:-right-[39px] top-6 h-4 w-4 rounded-full border-2 border-white dark:border-[#0B0F17] bg-primary shadow-sm transition-transform duration-200 group-hover:scale-125" />
+                    return (
+                      <div
+                        key={ev.id}
+                        onClick={() => handleNavigateToEvent(ev.id)}
+                        className="group relative cursor-pointer"
+                      >
+                        {/* Timeline Node Dot */}
+                        <div className="absolute -right-[28px] sm:-right-[36px] top-6 h-4 w-4 rounded-full border-2 border-white dark:border-[#0B0F17] bg-primary shadow-sm transition-transform duration-200 group-hover:scale-125 z-10" />
 
-                      {/* Event Card */}
-                      <div className="overflow-hidden rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-                        <div className="flex flex-col lg:flex-row">
-                          {/* Left Cover visual */}
-                          {ev.coverUrl ? (
-                            <div className="h-44 w-full lg:h-auto lg:w-64 flex-shrink-0 overflow-hidden bg-gray-100 dark:bg-gray-800 relative">
-                              <img
-                                src={ev.coverUrl}
-                                alt={ev.title}
-                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent lg:hidden" />
-                            </div>
-                          ) : (
-                            <div className="flex h-32 w-full lg:h-auto lg:w-48 flex-shrink-0 items-center justify-center bg-gradient-to-br from-primary/10 via-indigo-500/10 to-teal-500/10 dark:from-primary/20 dark:to-indigo-900/30">
-                              <CategoryIcon className="w-10 h-10 text-primary/70 transition-transform duration-300 group-hover:scale-110" />
-                            </div>
-                          )}
+                        {/* Event Card */}
+                        <div className="overflow-hidden rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+                          <div className="flex flex-col lg:flex-row">
+                            {/* Left Cover visual */}
+                            {ev.coverUrl ? (
+                              <div className="h-44 w-full lg:h-auto lg:w-64 flex-shrink-0 overflow-hidden bg-gray-100 dark:bg-gray-800 relative">
+                                <img
+                                  src={ev.coverUrl}
+                                  alt={ev.title}
+                                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent lg:hidden" />
+                              </div>
+                            ) : (
+                              <div className="flex h-32 w-full lg:h-auto lg:w-48 flex-shrink-0 items-center justify-center bg-gradient-to-br from-primary/10 via-indigo-500/10 to-teal-500/10 dark:from-primary/20 dark:to-indigo-900/30">
+                                <CategoryIcon className="w-10 h-10 text-primary/70 transition-transform duration-300 group-hover:scale-110" />
+                              </div>
+                            )}
 
-                          {/* Event Body */}
-                          <div className="flex-1 p-5 sm:p-6 flex flex-col justify-between">
-                            <div>
-                              <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  {/* Status badge */}
-                                  <span
-                                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${status.badgeClass}`}
-                                  >
-                                    <span className={`w-1.5 h-1.5 rounded-full ${status.dotColor}`} />
-                                    <span>{status.label}</span>
-                                  </span>
+                            {/* Event Body */}
+                            <div className="flex-1 p-5 sm:p-6 flex flex-col justify-between">
+                              <div>
+                                <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    {/* Status badge */}
+                                    <span
+                                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${status.badgeClass}`}
+                                    >
+                                      <span className={`w-1.5 h-1.5 rounded-full ${status.dotColor}`} />
+                                      <span>{status.label}</span>
+                                    </span>
 
-                                  {/* Category badge */}
-                                  <span
-                                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${categoryMeta.badgeClass}`}
-                                  >
-                                    <CategoryIcon className="w-3 h-3" />
-                                    <span>{categoryMeta.label}</span>
-                                  </span>
+                                    {/* Category badge */}
+                                    <span
+                                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${categoryMeta.badgeClass}`}
+                                    >
+                                      <CategoryIcon className="w-3 h-3" />
+                                      <span>{categoryMeta.label}</span>
+                                    </span>
 
-                                  {/* Audience */}
-                                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-500 dark:text-gray-400">
-                                    <Users className="w-3 h-3 text-gray-400" />
-                                    <span>{AUDIENCE_MAP[ev.targetAudience] || ev.targetAudience}</span>
-                                  </span>
+                                    {/* Audience */}
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                                      <Users className="w-3 h-3 text-gray-400" />
+                                      <span>{AUDIENCE_MAP[ev.targetAudience] || ev.targetAudience}</span>
+                                    </span>
+                                  </div>
+
+                                  {/* Admin Action Buttons */}
+                                  {isManager && (
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        type="button"
+                                        title="ویرایش رویداد"
+                                        onClick={(e) => handleOpenEdit(ev, e)}
+                                        className="min-h-[34px] min-w-[34px] flex items-center justify-center rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-zinc-800 dark:hover:text-white transition-colors"
+                                      >
+                                        <Edit3 className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        title="حذف رویداد"
+                                        onClick={(e) => handleDeleteEvent(ev, e)}
+                                        className="min-h-[34px] min-w-[34px] flex items-center justify-center rounded-lg p-1.5 text-rose-500 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/40 transition-colors"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
 
-                                {/* Admin Action Buttons */}
-                                {isManager && (
-                                  <div className="flex items-center gap-1">
-                                    <button
-                                      type="button"
-                                      title="ویرایش رویداد"
-                                      onClick={(e) => handleOpenEdit(ev, e)}
-                                      className="min-h-[34px] min-w-[34px] flex items-center justify-center rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-zinc-800 dark:hover:text-white transition-colors"
-                                    >
-                                      <Edit3 className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      title="حذف رویداد"
-                                      onClick={(e) => handleDeleteEvent(ev, e)}
-                                      className="min-h-[34px] min-w-[34px] flex items-center justify-center rounded-lg p-1.5 text-rose-500 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/40 transition-colors"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                )}
+                                <h3 className="text-base sm:text-lg font-black text-ink-darker dark:text-white group-hover:text-primary transition-colors">
+                                  {ev.title}
+                                </h3>
                               </div>
 
-                              <h3 className="text-base sm:text-lg font-black text-ink-darker dark:text-white group-hover:text-primary transition-colors">
-                                {ev.title}
-                              </h3>
-
-                              <p className="mt-1.5 text-xs sm:text-sm text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed font-medium">
-                                {ev.description}
-                              </p>
-                            </div>
-
-                            {/* Event Metadata Footer */}
-                            <div className="mt-4 pt-3.5 border-t border-gray-100 dark:border-gray-800/80 flex flex-wrap items-center justify-between gap-3">
-                              <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs font-bold text-gray-600 dark:text-gray-300">
-                                <span className="flex items-center gap-1.5 text-ink-darker dark:text-gray-200">
-                                  <CalendarDays className="w-3.5 h-3.5 text-primary shrink-0" />
-                                  <span>{jalaliStartFormatted}</span>
-                                </span>
-                                <span className="flex items-center gap-1 text-gray-500">
-                                  <Clock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                                  <span>ساعت {sTime}</span>
-                                </span>
-                                {ev.location && (
+                              {/* Event Metadata Footer */}
+                              <div className="mt-3.5 pt-3 border-t border-gray-100 dark:border-gray-800/80 flex items-center justify-between gap-3">
+                                <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs font-bold text-gray-600 dark:text-gray-300">
+                                  <span className="flex items-center gap-1.5 text-ink-darker dark:text-gray-200">
+                                    <CalendarDays className="w-3.5 h-3.5 text-primary shrink-0" />
+                                    <span>{jalaliStartFormatted}</span>
+                                  </span>
                                   <span className="flex items-center gap-1 text-gray-500">
-                                    <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                                    <span>{ev.location}</span>
+                                    <Clock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                    <span>ساعت {sTime}</span>
                                   </span>
-                                )}
-                              </div>
+                                  {ev.location && (
+                                    <span className="flex items-center gap-1 text-gray-500">
+                                      <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                                      <span>{ev.location}</span>
+                                    </span>
+                                  )}
+                                </div>
 
-                              <div className="flex items-center gap-1.5 text-xs font-bold text-primary group-hover:underline">
-                                {ev.eventType === 'STARTUP_WEEKEND' ? (
-                                  <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-black">
-                                    <Rocket className="w-3.5 h-3.5" />
-                                    <span>ورود به مراحل استارت‌آپ ویکند</span>
-                                  </span>
-                                ) : (
+                                <div className="mr-auto shrink-0 flex items-center gap-1.5 text-xs font-bold text-primary group-hover:underline">
                                   <span>جزئیات برنامه</span>
-                                )}
-                                <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
+                                  <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         /* ================= GRID VIEW ================= */
@@ -1090,13 +1174,15 @@ export const EventsRoadmapPage: React.FC = () => {
               hour: '2-digit',
               minute: '2-digit',
             });
-            const categoryMeta = EVENT_CATEGORIES.find((c) => c.key === ev.eventType) || EVENT_CATEGORIES[0];
+            const categoryMeta =
+              EVENT_CATEGORIES.find((c) => c.key === ev.eventType) ||
+              EVENT_CATEGORIES[1];
             const CategoryIcon = categoryMeta.icon;
 
             return (
               <div
                 key={ev.id}
-                onClick={() => navigate(`/app/events/${ev.id}`)}
+                onClick={() => handleNavigateToEvent(ev.id)}
                 className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
               >
                 <div>
@@ -1146,9 +1232,6 @@ export const EventsRoadmapPage: React.FC = () => {
                     <h3 className="text-base font-black text-ink-darker dark:text-white group-hover:text-primary transition-colors line-clamp-1">
                       {ev.title}
                     </h3>
-                    <p className="mt-1.5 text-xs text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed font-medium">
-                      {ev.description}
-                    </p>
                   </div>
                 </div>
 
@@ -1170,15 +1253,10 @@ export const EventsRoadmapPage: React.FC = () => {
                         <span className="truncate">{ev.location}</span>
                       </div>
                     )}
-                    {ev.eventType === 'STARTUP_WEEKEND' && (
-                      <div className="pt-2 flex items-center justify-between text-xs font-black text-amber-600 dark:text-amber-400 border-t border-amber-100 dark:border-amber-950/60 mt-1">
-                        <span className="flex items-center gap-1.5">
-                          <Rocket className="w-3.5 h-3.5" />
-                          <span>ورود به مراحل استارت‌آپ ویکند</span>
-                        </span>
-                        <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
-                      </div>
-                    )}
+                    <div className="pt-2 flex items-center justify-between text-xs font-bold text-primary border-t border-gray-100 dark:border-gray-800 mt-1 group-hover:underline">
+                      <span>جزئیات برنامه</span>
+                      <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1227,14 +1305,13 @@ export const EventsRoadmapPage: React.FC = () => {
                 onChange={(e) => setForm({ ...form, eventType: e.target.value as any })}
                 className="w-full min-h-[42px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-[#1C2536] text-xs sm:text-sm font-bold text-ink-darker dark:text-white focus:border-primary focus:outline-none"
               >
-                <option value="STARTUP_WEEKEND">استارت‌آپ ویکند</option>
-                <option value="ACADEMIC">آموزشی و مهارت</option>
-                <option value="CULTURAL">فرهنگی و آیین‌ها</option>
-                <option value="SPORTS">مسابقات و ورزش</option>
-                <option value="EXAM">آزمون و ارزشیابی</option>
-                <option value="EXCURSION">اردو و بازدید علمی</option>
-                <option value="MEETING">جلسه و نشست</option>
-                <option value="HOLIDAY">تعطیلی و مناسبت</option>
+                <option value="STARTUP_WEEKEND">رویداد استارتاپی</option>
+                <option value="ACADEMIC">کارگاه آموزشی</option>
+                <option value="CULTURAL">فرهنگی و هنری</option>
+                <option value="ENTERTAINMENT">بازی و سرگرمی</option>
+                <option value="EXCURSION">اردو و بازدید</option>
+                <option value="SPORTS">ورزشی</option>
+                <option value="MEETING">جلسه و همایش</option>
               </select>
             </div>
 
@@ -1247,11 +1324,10 @@ export const EventsRoadmapPage: React.FC = () => {
                 onChange={(e) => setForm({ ...form, targetAudience: e.target.value as any })}
                 className="w-full min-h-[42px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-[#1C2536] text-xs sm:text-sm font-bold text-ink-darker dark:text-white focus:border-primary focus:outline-none"
               >
-                <option value="ALL">عمومی (کلیه مخاطبین)</option>
-                <option value="STUDENTS">صرفاً دانش‌آموزان</option>
-                <option value="TEACHERS">صرفاً مربیان و اساتید</option>
-                <option value="PARENTS">صرفاً اولیاء گرامی</option>
-                <option value="STAFF">صرفاً کادر اجرایی</option>
+                <option value="ALL">عمومی</option>
+                <option value="STUDENTS">ویژه دانش آموزان</option>
+                <option value="PARENTS">ویژه والدین</option>
+                <option value="TEACHERS">ویژه مربیان</option>
               </select>
             </div>
           </div>
@@ -1398,11 +1474,10 @@ export const EventsRoadmapPage: React.FC = () => {
                 return (
                   <div
                     key={mod.key}
-                    className={`flex items-center gap-2.5 rounded-xl border p-2.5 transition-all ${
-                      checked
+                    className={`flex items-center gap-2.5 rounded-xl border p-2.5 transition-all ${checked
                         ? 'border-primary/40 bg-white dark:bg-[#151C28] shadow-xs'
                         : 'border-gray-200/80 dark:border-gray-800 bg-white/50 dark:bg-[#151C28]/40'
-                    }`}
+                      }`}
                   >
                     <label className="flex items-center gap-2.5 flex-1 cursor-pointer min-w-0">
                       <input
@@ -1435,11 +1510,10 @@ export const EventsRoadmapPage: React.FC = () => {
                         className="w-4 h-4 accent-primary rounded flex-shrink-0 cursor-pointer"
                       />
                       <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                          checked
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${checked
                             ? 'bg-primary/10 text-primary'
                             : 'bg-gray-100 dark:bg-gray-800 text-gray-400'
-                        }`}
+                          }`}
                       >
                         <Icon className="w-4 h-4 shrink-0" />
                       </div>
@@ -1526,6 +1600,20 @@ export const EventsRoadmapPage: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Scroll to Top Floating Button (Bottom-Left above mobile bottom bar) */}
+      <button
+        type="button"
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className={`fixed bottom-20 sm:bottom-8 left-4 sm:left-6 z-40 w-11 h-11 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white dark:bg-[#151C28] text-primary border-[1.5px] border-primary-dark/30 dark:border-primary/40 shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] hover:bg-primary hover:text-white dark:hover:bg-primary dark:hover:text-white hover:border-primary flex items-center justify-center cursor-pointer transition-all duration-300 active:translate-x-[1px] active:translate-y-[1px] ${showScrollTop
+            ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto'
+            : 'opacity-0 translate-y-4 scale-90 pointer-events-none'
+          }`}
+        title="بازگشت به بالای صفحه"
+        aria-label="بازگشت به بالای صفحه"
+      >
+        <ArrowUp className="w-5 h-5 sm:w-6 sm:h-6" />
+      </button>
     </div>
   );
 };

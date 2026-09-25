@@ -516,37 +516,32 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
   return (
     <div className="space-y-6">
       {/* Top Banner: Module Title & Countdown Timer */}
-      <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-5 md:p-6 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
+      <div className="rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-gray-800 bg-white dark:bg-[#151C28] shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] p-5 sm:p-7 space-y-2">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="p-2 rounded-xl bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
-                <FileUp className="w-6 h-6" />
-              </span>
-              <h2 className="text-lg md:text-xl font-black text-zinc-900 dark:text-zinc-100">
-                ارائه و تحویل فایل‌های نهایی پروژه تیم‌ها
-              </h2>
-            </div>
-            <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400">
-              سرتیم‌های گرامی فایل پیچ‌دک، اسلاید ارائه (PDF/PPTX) یا پروژه نهایی (ZIP) را در مهلت
-              مقرر بارگذاری نمایند.
+          <div>
+            <h2 className="text-lg md:text-xl font-black text-ink-darker dark:text-white flex items-center gap-2">
+              <FileUp className="w-5 h-5 text-primary shrink-0" />
+              <span>گام هفتم: تحویل فایل ارائه</span>
+            </h2>
+            <p className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 mt-3">
+              فایل پیچ‌دک، اسلاید ارائه یا مستندات پروژه نهایی تیم را بارگذاری نمایید.
             </p>
           </div>
 
           {/* Countdown & Status Box */}
           <div className="flex flex-wrap items-center gap-3">
             <div
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-2 shadow-xs ${
+              className={`flex items-center gap-3 px-4 py-2 rounded-xl border shadow-2xs ${
                 locked
-                  ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200'
+                  ? 'border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300'
                   : timeRemaining.days === 0 && timeRemaining.hours < 3
-                  ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 animate-pulse'
-                  : 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200'
+                  ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 animate-pulse'
+                  : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
               }`}
             >
               <Timer className="w-5 h-5 shrink-0" />
               <div className="text-right">
-                <div className="text-[10px] font-bold opacity-80">
+                <div className="text-xs font-medium opacity-80">
                   {locked
                     ? 'وضعیت مهلت ارسال:'
                     : config.isManuallyOpened
@@ -578,7 +573,7 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
                   variant="primary"
                   size="sm"
                   onClick={openSettingsModal}
-                  className="gap-1.5 font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+                  className="gap-1.5 font-bold text-xs"
                 >
                   <Settings2 className="w-4 h-4" />
                   <span>تنظیم فرمت‌ها و مهلت</span>
@@ -589,7 +584,7 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
                     variant="outline"
                     size="sm"
                     onClick={handleToggleManualOpen}
-                    className="gap-1.5 font-bold text-xs border-emerald-500 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300"
+                    className="gap-1.5 font-bold text-xs text-emerald-600 border-emerald-500/30 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
                   >
                     <Unlock className="w-4 h-4" />
                     <span>بازگشایی مجدد</span>
@@ -599,7 +594,7 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
                     variant="outline"
                     size="sm"
                     onClick={handleToggleManualLock}
-                    className="gap-1.5 font-bold text-xs border-rose-500 text-rose-700 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300"
+                    className="gap-1.5 font-bold text-xs text-rose-600 border-rose-500/30 hover:bg-rose-50 dark:hover:bg-rose-950/30"
                   >
                     <Lock className="w-4 h-4" />
                     <span>قفل دستی</span>
@@ -612,36 +607,36 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
 
         {/* Manager Format & Limits Summary Bar */}
         {isManager && (
-          <div className="mt-3.5 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="mt-3.5 pt-3 border-t border-gray-100 dark:border-gray-800 flex flex-wrap items-center justify-between gap-2 text-xs">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="font-bold text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
-                <FileType className="w-3.5 h-3.5 text-indigo-500" />
+              <span className="font-bold text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                <FileType className="w-3.5 h-3.5 text-primary" />
                 فرمت‌های مجاز فایل:
               </span>
               {(config.allowedFormats || []).length > 0 ? (
                 (config.allowedFormats || []).map((fmt) => (
                   <span
                     key={fmt}
-                    className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 font-mono font-black text-[11px] border border-indigo-200 dark:border-indigo-800"
+                    className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary font-mono font-bold text-xs border border-primary/20"
                   >
                     {fmt.toUpperCase()}
                   </span>
                 ))
               ) : (
-                <span className="text-zinc-400">همه فرمت‌ها مجاز</span>
+                <span className="text-gray-400">همه فرمت‌ها مجاز</span>
               )}
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 font-bold text-[11px] border border-amber-200 dark:border-amber-800 flex items-center gap-1">
-                <HardDrive className="w-3 h-3 text-amber-600" />
+              <span className="px-2.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs border border-amber-500/20 flex items-center gap-1">
+                <HardDrive className="w-3 h-3 text-amber-500" />
                 حداکثر حجم: {toPersianDigits(config.maxFileSizeMb || 50)} مگابایت
               </span>
 
               <button
                 type="button"
                 onClick={openSettingsModal}
-                className="text-[11px] text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 font-bold underline"
+                className="text-xs text-primary hover:underline font-bold"
               >
                 تغییر تنظیمات
               </button>
@@ -651,26 +646,26 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
 
         {/* Manager Stats Bar */}
         {isManager && (
-          <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800 text-center">
-            <div className="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700">
-              <div className="text-[11px] text-zinc-500 font-bold">کل تیم‌ها</div>
-              <div className="text-base font-black text-zinc-900 dark:text-zinc-100 mt-0.5">
+          <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 text-center">
+            <div className="p-3 rounded-xl bg-gray-50/70 dark:bg-[#1C2536]/50 border border-gray-200/80 dark:border-gray-800">
+              <div className="text-xs text-gray-400 font-medium">کل تیم‌ها</div>
+              <div className="text-base font-black text-ink-darker dark:text-white mt-0.5">
                 {toPersianDigits(totalTeamsCount)} تیم
               </div>
             </div>
-            <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
-              <div className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold">
+            <div className="p-3 rounded-xl bg-emerald-500/10 dark:bg-emerald-950/20 border border-emerald-500/20">
+              <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
                 فایل ارسال کرده‌اند
               </div>
-              <div className="text-base font-black text-emerald-800 dark:text-emerald-300 mt-0.5">
+              <div className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
                 {toPersianDigits(submittedCount)} تیم
               </div>
             </div>
-            <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800">
-              <div className="text-[11px] text-amber-700 dark:text-amber-400 font-bold">
+            <div className="p-3 rounded-xl bg-amber-500/10 dark:bg-amber-950/20 border border-amber-500/20">
+              <div className="text-xs text-amber-600 dark:text-amber-400 font-medium">
                 در انتظار ارسال
               </div>
-              <div className="text-base font-black text-amber-800 dark:text-amber-300 mt-0.5">
+              <div className="text-base font-black text-amber-600 dark:text-amber-400 mt-0.5">
                 {toPersianDigits(pendingCount)} تیم
               </div>
             </div>
@@ -682,67 +677,67 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
       {!isManager && (
         <div className="space-y-6">
           {!myTeamInfo ? (
-            <div className="rounded-2xl border-2 border-dashed border-amber-400 bg-amber-50/60 dark:bg-amber-950/20 p-6 text-center space-y-3">
+            <div className="rounded-2xl border border-dashed border-amber-500/30 bg-amber-500/10 dark:bg-amber-950/20 p-6 text-center space-y-3">
               <Users className="w-10 h-10 text-amber-500 mx-auto" />
-              <h3 className="text-base font-black text-amber-900 dark:text-amber-200">
+              <h3 className="text-base font-black text-ink-darker dark:text-white">
                 شما هنوز در هیچ تیمی عضو نشده‌اید
               </h3>
-              <p className="text-xs text-amber-800 dark:text-amber-300 max-w-md mx-auto">
+              <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto">
                 برای تحویل فایل ارائه، ابتدا در مرحله ۴ (تشکیل تیم) به یکی از ایده‌ها بپیوندید یا تیم
                 خود را ایجاد کنید.
               </p>
             </div>
           ) : !isCaptainOfMyTeam ? (
             /* Member View (Non-Captain) */
-            <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-5 md:p-6 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] space-y-4">
+            <div className="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] p-5 md:p-6 shadow-2xs space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-indigo-600" />
-                  <h3 className="font-black text-zinc-900 dark:text-zinc-100">
+                  <Users className="w-5 h-5 text-primary" />
+                  <h3 className="font-black text-ink-darker dark:text-white">
                     تیم: {myTeamInfo.label}
                   </h3>
                 </div>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-[#1C2536] text-gray-600 dark:text-gray-300">
                   عضو تیم
                 </span>
               </div>
 
-              <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-xs text-blue-900 dark:text-blue-200 space-y-1">
-                <div className="font-black flex items-center gap-1.5">
+              <div className="p-4 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 text-xs text-ink-darker dark:text-white space-y-1">
+                <div className="font-bold flex items-center gap-1.5">
                   <Crown className="w-4 h-4 text-amber-500" />
                   <span>
                     سرتیم شما:{' '}
                     {myTeamInfo.team?.leaderName || myTeamInfo.idea?.authorName || 'نامشخص'}
                   </span>
                 </div>
-                <p className="text-blue-700 dark:text-blue-300 text-[11px] pt-1">
+                <p className="text-gray-500 dark:text-gray-400 text-[11px] pt-1">
                   طبق قوانین رویداد، بارگذاری و ویرایش فایل ارائه نهایی تنها توسط سرتیم انجام می‌شود.
                 </p>
               </div>
 
               {/* Status of Team's Deliverable */}
               {config.submissions[myTeamInfo.key] ? (
-                <div className="p-4 rounded-xl border border-emerald-300 bg-emerald-50/60 dark:border-emerald-800 dark:bg-emerald-950/30 space-y-3">
+                <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 dark:bg-emerald-950/20 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                      <span className="text-xs font-black text-emerald-900 dark:text-emerald-200">
+                      <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
                         فایل توسط سرتیم بارگذاری شده است
                       </span>
                     </div>
-                    <span className="text-[10px] text-zinc-500 font-mono">
+                    <span className="text-[10px] text-gray-400 font-mono">
                       نسخه {toPersianDigits(config.submissions[myTeamInfo.key].version)}
                     </span>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-lg bg-white dark:bg-[#1E293B] border border-zinc-200 dark:border-zinc-700">
+                  <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-gray-800 shadow-2xs">
                     <div className="flex items-center gap-2.5">
                       {getFileIcon(config.submissions[myTeamInfo.key].fileName)}
                       <div>
-                        <div className="text-xs font-black text-zinc-900 dark:text-zinc-100">
+                        <div className="text-xs font-bold text-ink-darker dark:text-white">
                           {config.submissions[myTeamInfo.key].fileName}
                         </div>
-                        <div className="text-[10px] text-zinc-500">
+                        <div className="text-[10px] text-gray-400">
                           حجم:{' '}
                           {toPersianDigits(
                             formatFileSize(config.submissions[myTeamInfo.key].fileSize),
@@ -757,15 +752,15 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
                       onClick={() =>
                         downloadSubmissionFile(config.submissions[myTeamInfo.key])
                       }
-                      className="gap-1 text-xs"
+                      className="gap-1 text-xs font-bold"
                     >
-                      <Download className="w-3.5 h-3.5" />
+                      <Download className="w-3.5 h-3.5 text-primary" />
                       <span>دانلود فایل</span>
                     </Button>
                   </div>
 
                   {config.submissions[myTeamInfo.key].presentationUrl && (
-                    <div className="text-xs text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
+                    <div className="text-xs text-primary flex items-center gap-1.5">
                       <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                       <span>لینک ارائه آنلاین: </span>
                       <a
@@ -780,7 +775,7 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
                   )}
                 </div>
               ) : (
-                <div className="p-4 rounded-xl border border-amber-300 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/30 text-xs text-amber-900 dark:text-amber-200 flex items-center gap-2">
+                <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/10 text-xs text-amber-800 dark:text-amber-200 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
                   <span>
                     سرتیم شما هنوز فایلی ارسال نکرده است. لطفاً با سرتیم خود جهت تحویل قبل از اتمام مهلت هماهنگ کنید.
@@ -790,15 +785,15 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
             </div>
           ) : (
             /* Team Captain Upload Form */
-            <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-5 md:p-6 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] space-y-5">
+            <div className="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] p-5 md:p-6 shadow-2xs space-y-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Crown className="w-5 h-5 text-amber-500" />
-                  <h3 className="font-black text-zinc-900 dark:text-zinc-100">
+                  <h3 className="font-black text-ink-darker dark:text-white">
                     پنل تحویل پروژه - تیم {myTeamInfo.label}
                   </h3>
                 </div>
-                <span className="text-xs font-black px-3 py-1 rounded-lg bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 border border-amber-300">
+                <span className="text-xs font-bold px-3 py-1 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
                   شما سرتیم هستید
                 </span>
               </div>

@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Hash,
   Eye,
+  FileText,
 } from 'lucide-react';
 
 interface EventIdeasListStepProps {
@@ -44,15 +45,17 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
   });
 
   const filteredIdeas = useMemo(() => {
-    return ideas.filter((item) => {
-      const q = searchQuery.toLowerCase();
-      const matchSearch =
-        item.title.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q) ||
-        item.authorName.toLowerCase().includes(q) ||
-        (item.ideaNumber && String(item.ideaNumber).includes(q));
-      return matchSearch;
-    });
+    return ideas
+      .filter((item) => {
+        const q = searchQuery.toLowerCase();
+        const matchSearch =
+          item.title.toLowerCase().includes(q) ||
+          item.description.toLowerCase().includes(q) ||
+          item.authorName.toLowerCase().includes(q) ||
+          (item.ideaNumber && String(item.ideaNumber).includes(q));
+        return matchSearch;
+      })
+      .sort((a, b) => (a.ideaNumber || 0) - (b.ideaNumber || 0));
   }, [ideas, searchQuery]);
 
   const handleOpenEditModal = (idea: EventIdea, e?: React.MouseEvent) => {
@@ -89,44 +92,45 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
   return (
     <div className="space-y-6">
       {/* Header & Controls */}
-      <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-5 mb-5">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-indigo-400 text-zinc-950 text-xs font-black mb-2 shadow-[2px_2px_0px_0px_#202A5A]">
-              <Sparkles className="w-4 h-4" />
+      <div className="rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-gray-800 bg-white dark:bg-[#151C28] shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] p-5 sm:p-7 space-y-2">
+        <div>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-lg md:text-xl font-black text-ink-darker dark:text-white flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary shrink-0" />
               <span>گام دوم: تالار ایده‌ها</span>
-            </div>
-            <h2 className="text-xl md:text-2xl font-black text-zinc-900 dark:text-zinc-100">
-              ایده‌های ثبت‌شده ({toPersianDigits(ideas.length)} ایده)
             </h2>
-            <p className="text-xs md:text-sm font-bold text-zinc-500 dark:text-zinc-400 mt-1">
-              در این مرحله دانش‌آموزان ایده‌ها را مشاهده می‌کنند. ادمین امکان ویرایش تمام فیلدهای هر ایده را دارد.
-            </p>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-primary/20 bg-primary/10 text-primary text-xs font-bold shadow-2xs">
+              <Lightbulb className="w-3.5 h-3.5" />
+              <span>{toPersianDigits(ideas.length)} ایده ثبت‌شده</span>
+            </div>
           </div>
-
-
+          <p className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 mt-3">
+            ایده‌های ارسال‌شده توسط شرکت‌کنندگان را مرور و بررسی کنید.
+          </p>
         </div>
 
         {/* Search Bar */}
         <div className="relative">
-          <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+          <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           <input
             type="text"
             placeholder="جستجو در اسم ایده، شماره ایده یا نام دانش‌آموز..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pr-10 pl-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs md:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
+            className="w-full pr-10 pl-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-xs sm:text-[13px] font-medium text-ink-darker dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-2xs"
           />
         </div>
       </div>
 
       {/* Ideas Cards Grid */}
       {filteredIdeas.length === 0 ? (
-        <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] dark:border-[#242F42] bg-white p-8 sm:p-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
-          <Lightbulb className="w-12 h-12 mx-auto text-amber-500 mb-3" />
-          <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">ایده‌ای یافت نشد</h3>
-          <p className="text-xs font-bold text-zinc-500 mt-1">
-            هنوز ایده‌ای ثبت نشده است.
+        <div className="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] p-8 sm:p-12 text-center shadow-2xs space-y-3">
+          <div className="w-12 h-12 mx-auto rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-500 shadow-2xs">
+            <Lightbulb className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-black text-ink-darker dark:text-white">ایده‌ای یافت نشد</h3>
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+            هنوز ایده‌ای با مشخصات جستجو شده ثبت نشده است.
           </p>
         </div>
       ) : (
@@ -143,32 +147,31 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
             return (
               <div
                 key={idea.id}
-                className={`group flex flex-col justify-between rounded-2xl border-[1.5px] border-[#EAEAEA] p-5 shadow-[2.75px_2.75px_0_#202A5A] transition-all hover:-translate-y-1 dark:border-[#242F42] ${
+                className={`group flex flex-col justify-between rounded-2xl border transition-all duration-200 p-5 shadow-2xs hover:shadow-xs ${
                   isCurrentUserIdea
-                    ? 'bg-amber-50/60 dark:bg-amber-950/30 ring-2 ring-amber-400'
-                    : 'bg-white dark:bg-zinc-900'
+                    ? 'border-primary/40 bg-primary/5 dark:bg-primary/10 ring-2 ring-primary/20'
+                    : 'border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] hover:border-gray-300 dark:hover:border-gray-700'
                 }`}
               >
-                <div>
-                  {/* Top Bar: Idea Number & Admin Edit */}
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="px-3 py-1 rounded-lg border-2 border-zinc-900 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black text-xs shadow-[1px_1px_0px_0px_#202A5A]">
-                      ایده #{toPersianDigits(idea.ideaNumber || 1)}
+                <div className="space-y-3.5">
+                  {/* Top Bar: Idea Number & Author Name */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="px-3 py-1.5 rounded-xl border border-primary/30 bg-primary/10 dark:bg-primary/20 text-primary font-black text-xs sm:text-sm shadow-2xs">
+                      ایده شماره {toPersianDigits(idea.ideaNumber || 1)}
                     </span>
 
-                    <div className="flex items-center gap-1.5">
-                      {isCurrentUserIdea && (
-                        <span className="px-2 py-0.5 rounded-md border border-amber-600 bg-amber-400 text-zinc-950 text-[10px] font-black">
-                          ایده شما
-                        </span>
-                      )}
+                    <div className="flex items-center gap-2">
+                      <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-xs font-bold text-ink-darker dark:text-white shadow-2xs">
+                        <User className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span>{idea.authorName}</span>
+                      </div>
 
                       {/* Admin Edit Button */}
                       {isManager && (
                         <button
                           type="button"
                           onClick={(e) => handleOpenEditModal(idea, e)}
-                          className="p-2 min-w-[40px] min-h-[40px] rounded-lg border-2 border-zinc-900 bg-indigo-100 text-indigo-900 hover:bg-indigo-200 dark:bg-indigo-950 dark:text-indigo-200 text-xs font-black shadow-[1px_1px_0px_0px_#202A5A]"
+                          className="p-1.5 w-8 h-8 rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:text-indigo-300 text-xs font-bold shadow-2xs flex items-center justify-center transition-all cursor-pointer"
                           title="ادیت کامل فیلدهای ایده توسط ادمین"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
@@ -177,37 +180,32 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
                     </div>
                   </div>
 
-                  {/* Title */}
-                  <h3 className="text-base font-black text-zinc-900 dark:text-zinc-50 leading-snug line-clamp-2 mb-2">
-                    {idea.title}
-                  </h3>
+                  {/* Title Box & User Idea Badge */}
+                  <div className="p-3.5 sm:p-4 rounded-xl border border-gray-200/80 dark:border-gray-700/80 bg-gray-50/70 dark:bg-[#1C2536]/60 flex items-center justify-between gap-3 shadow-2xs">
+                    <div className="flex-1 min-w-[130px]">
+                      <h3 className="text-lg sm:text-xl font-black text-black dark:text-white leading-tight">
+                        {idea.title}
+                      </h3>
+                    </div>
 
-                  {/* Description preview */}
-                  <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400 line-clamp-4 leading-relaxed mb-4 whitespace-pre-line">
-                    {idea.description}
-                  </p>
+                    {isCurrentUserIdea && (
+                      <span className="shrink-0 px-2.5 py-1 rounded-full border border-primary/30 bg-primary/15 text-primary text-xs font-bold">
+                        ایده شما
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <div>
-                  {/* Author & Date Footer */}
-                  <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-[11px] font-bold text-zinc-500 dark:text-zinc-400 mb-4">
-                    <div className="flex items-center gap-1.5 truncate">
-                      <User className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                      <span className="truncate">{idea.authorName}</span>
-                    </div>
-                  </div>
-
-                  {/* Action Button: View Details Only for Students */}
-                  <div className="grid grid-cols-1 gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setSelectedIdeaDetail(idea)}
-                      className="text-xs font-bold py-2 gap-1.5"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>مشاهده جزئیات کامل</span>
-                    </Button>
-                  </div>
+                {/* Action Button: View Idea Description */}
+                <div className="pt-2">
+                  <Button
+                    variant="primary"
+                    onClick={() => setSelectedIdeaDetail(idea)}
+                    className="w-full text-xs sm:text-sm font-bold py-2.5 gap-2 rounded-xl cursor-pointer shadow-sm"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>مشاهده شرح ایده</span>
+                  </Button>
                 </div>
               </div>
             );
@@ -222,54 +220,68 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
         title="مشخصات و جزئیات کامل ایده"
       >
         {selectedIdeaDetail && (
-          <div className="space-y-5">
-            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
-              <span className="px-3 py-1 rounded-xl text-xs font-black border-2 border-zinc-900 bg-amber-400 text-zinc-950">
-                ایده #{toPersianDigits(selectedIdeaDetail.ideaNumber || 1)}
+          <div className="space-y-4">
+            {/* Top Bar: Idea Number & Author Badge */}
+            <div className="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-gray-100 dark:border-gray-800">
+              <span className="px-3.5 py-1.5 rounded-xl border border-primary/30 bg-primary/10 dark:bg-primary/20 text-primary font-black text-xs sm:text-sm shadow-2xs">
+                ایده شماره {toPersianDigits(selectedIdeaDetail.ideaNumber || 1)}
               </span>
 
-              {isManager && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const ideaToEdit = selectedIdeaDetail;
-                    setSelectedIdeaDetail(null);
-                    handleOpenEditModal(ideaToEdit);
-                  }}
-                  className="text-xs font-bold gap-1.5"
-                >
-                  <Edit3 className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>ادیت ادمین</span>
-                </Button>
-              )}
+              <div className="flex items-center gap-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-xs font-bold text-ink-darker dark:text-white shadow-2xs">
+                  <User className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <span>{selectedIdeaDetail.authorName}</span>
+                </div>
+
+                {isManager && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const ideaToEdit = selectedIdeaDetail;
+                      setSelectedIdeaDetail(null);
+                      handleOpenEditModal(ideaToEdit);
+                    }}
+                    className="text-xs font-bold gap-1.5 px-3 py-1.5 rounded-xl"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-primary" />
+                    <span>ادیت ادمین</span>
+                  </Button>
+                )}
+              </div>
             </div>
 
-            <div>
-              <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-50 mb-2">
+            {/* Title Card */}
+            <div className="p-3.5 sm:p-4 rounded-2xl border border-gray-200/80 dark:border-gray-700/80 bg-gray-50/70 dark:bg-[#1C2536]/60 shadow-2xs">
+              <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 flex items-center gap-1.5">
+                <Lightbulb className="w-4 h-4 text-primary" />
+                <span>عنوان ایده:</span>
+              </div>
+              <h3 className="text-base sm:text-lg font-black text-black dark:text-white leading-snug px-0.5">
                 {selectedIdeaDetail.title}
               </h3>
-              <p className="text-xs font-bold text-zinc-500">
-                دانش‌آموز: {selectedIdeaDetail.authorName}
-              </p>
             </div>
 
-            <div className="rounded-xl border-2 border-zinc-900 bg-zinc-50 p-4 dark:border-zinc-300 dark:bg-zinc-800/60">
-              <h4 className="text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1 flex items-center gap-1.5">
-                <Lightbulb className="w-4 h-4 text-amber-500" />
+            {/* Description Card */}
+            <div className="p-3.5 sm:p-4 rounded-2xl border border-gray-200/80 dark:border-gray-700/80 bg-gray-50/70 dark:bg-[#1C2536]/60 shadow-2xs">
+              <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-primary" />
                 <span>شرح کامل ایده:</span>
-              </h4>
-              <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-line">
+              </div>
+              <p className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap px-0.5">
                 {selectedIdeaDetail.description}
               </p>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+            {/* Footer Action */}
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
               <Button
-                variant="outline"
+                type="button"
+                variant="primary"
                 onClick={() => setSelectedIdeaDetail(null)}
-                className="font-bold"
+                className="font-bold px-7 py-2.5 rounded-xl shadow-sm text-xs sm:text-sm cursor-pointer"
               >
-                بستن
+                <span>بستن</span>
               </Button>
             </div>
           </div>
@@ -299,20 +311,20 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
                   required
                   value={editForm.ideaNumber}
                   onChange={(e) => setEditForm({ ...editForm, ideaNumber: Number(e.target.value) })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-darker dark:text-white text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1">
-                  اسم دانش‌آموز:
+                  نام ایده‌پرداز:
                 </label>
                 <input
                   type="text"
                   required
                   value={editForm.authorName}
                   onChange={(e) => setEditForm({ ...editForm, authorName: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-darker dark:text-white text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
                 />
               </div>
             </div>
@@ -326,7 +338,7 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
                 required
                 value={editForm.title}
                 onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-darker dark:text-white text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
               />
             </div>
 
@@ -339,7 +351,7 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
                 rows={4}
                 value={editForm.description}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-darker dark:text-white text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
               />
             </div>
 

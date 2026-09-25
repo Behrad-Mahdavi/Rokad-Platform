@@ -1,3 +1,11 @@
+export interface EventAttachmentItem {
+  id?: string;
+  name: string;
+  url: string;
+  size?: string;
+  type?: 'pdf' | 'doc' | 'image' | 'archive' | 'other';
+}
+
 export interface SchoolEventItem {
   id: string;
   title: string;
@@ -10,6 +18,7 @@ export interface SchoolEventItem {
   targetAudience: 'ALL' | 'STUDENTS' | 'TEACHERS' | 'PARENTS' | 'STAFF' | 'SPECIFIC_CLASSES';
   location?: string;
   coverUrl?: string;
+  attachments?: EventAttachmentItem[];
   tags: string[];
   workflowModules?: { key: string; step: number; enabled?: boolean }[];
   createdAt: string;
@@ -57,6 +66,22 @@ export const INITIAL_SAMPLE_EVENTS: SchoolEventItem[] = [
     targetAudience: 'ALL',
     location: 'سالن همایش و آمفی‌تئاتر هنرستان',
     tags: ['استارت‌آپ ویکند', 'ایده‌پردازی', 'تیم‌سازی', 'نوآوری'],
+    attachments: [
+      {
+        id: 'att_handbook',
+        name: 'شیوه‌نامه اجرایی و قوانین داوری رویداد.pdf',
+        url: '#',
+        size: '۱.۴ مگابایت',
+        type: 'pdf',
+      },
+      {
+        id: 'att_schedule',
+        name: 'برنامه زمان‌بندی و منتورینگ تیم‌ها.pdf',
+        url: '#',
+        size: '۶۲۰ کیلوبایت',
+        type: 'pdf',
+      },
+    ],
     workflowModules: [
       { key: 'IDEA_SUBMISSION', step: 1, enabled: true },
       { key: 'IDEA_HALL', step: 2, enabled: true },

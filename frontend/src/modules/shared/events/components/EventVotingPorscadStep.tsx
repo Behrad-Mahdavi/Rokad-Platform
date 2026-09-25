@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../../../../components/ui/Button';
+import { Modal } from '../../../../components/ui/Modal';
 import { toast } from '../../../../components/ui/toast/toast';
 import { EventIdea } from './EventIdeaSubmissionStep';
 import { toPersianDigits } from '../../../../utils/jalali';
@@ -9,7 +10,6 @@ import {
   Star,
   Award,
   Vote,
-  Sparkles,
   Trophy,
   CheckCircle2,
   MessageSquare,
@@ -22,7 +22,6 @@ import {
   Crown,
   Lock,
   RotateCcw,
-  Users,
   Settings2,
   PlusCircle,
   Layers,
@@ -212,6 +211,10 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
 
   // Student Option Toggle for Voting (Selection only, does NOT auto-submit)
   const handleToggleOption = (optionId: string) => {
+    if (isManager) {
+      toast.info('حالت ناظر: امکان رأی‌دهی فقط برای دانش‌آموزان است.');
+      return;
+    }
     if (!porscadPoll || porscadPoll.isClosed || hasVoted) return;
 
     const maxAllowed = porscadPoll.settings?.maxSelections || 1;
@@ -233,6 +236,10 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
 
   // Submit Votes to Porscad on Button Click (Single submission per student)
   const handleVoteSubmit = async () => {
+    if (isManager) {
+      toast.error('مدیر و عوامل اجرایی امکان شرکت در رای‌گیری را ندارند.');
+      return;
+    }
     if (!porscadPoll) return;
     if (porscadPoll.isClosed) {
       toast.error('نظرسنجی به پایان رسیده است.');
@@ -260,7 +267,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
         setHasVoted(true);
         localStorage.setItem(userVoteStorageKey, 'true');
         localStorage.setItem(selectedOptionsKey, JSON.stringify(selectedOptionIds));
-        toast.success(res.message || 'رای شما با موفقیت در پرس‌کاد ثبت شد.');
+        toast.success('رأی شما با موفقیت ثبت شد.');
       } else {
         toast.error(res.message || 'خطا در ثبت رای');
       }
@@ -268,6 +275,9 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
       setIsSubmittingVote(false);
     }
   };
+
+  // Vote Confirmation Modal State
+  const [isVoteConfirmModalOpen, setIsVoteConfirmModalOpen] = useState(false);
 
   // Finish Poll Modal State & Top Winners Count
   const [isFinishModalOpen, setIsFinishModalOpen] = useState(false);
@@ -379,18 +389,15 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Header Card */}
-      <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-5 mb-5">
+      <div className="rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-gray-800 bg-white dark:bg-[#151C28] shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] p-5 sm:p-7 space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-amber-400 text-zinc-950 text-xs font-black mb-2 shadow-[2px_2px_0px_0px_#202A5A]">
-              <Vote className="w-4 h-4" />
-              <span>گام سوم: وب‌سرویس پرس‌کاد و رای‌گیری ایده‌ها</span>
-            </div>
-            <h2 className="text-xl md:text-2xl font-black text-zinc-900 dark:text-zinc-100">
-              نظرسنجی، داوری و تعیین ایده برگزیده رویداد
+            <h2 className="text-lg md:text-xl font-black text-ink-darker dark:text-white flex items-center gap-2">
+              <Vote className="w-5 h-5 text-primary shrink-0" />
+              <span>گام سوم: رأی‌گیری ایده‌ها</span>
             </h2>
-            <p className="text-xs md:text-sm font-bold text-zinc-500 dark:text-zinc-400 mt-1">
-              مدیر ایده‌های منتخب را در فرم پرس‌کاد قرار داده و دانش‌آموزان به‌صورت زنده رای می‌دهند.
+            <p className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 mt-3">
+              با شرکت در نظرسنجی و ثبت آراء، ایده‌های برتر رویداد را انتخاب کنید.
             </p>
           </div>
 
@@ -399,7 +406,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               <Button
                 variant="outline"
                 onClick={() => setIsBuildingMode(!isBuildingMode)}
-                className="gap-2 text-xs font-bold"
+                className="gap-2 text-xs font-bold rounded-xl"
               >
                 <Sliders className="w-4 h-4 text-primary" />
                 <span>{isBuildingMode ? 'مشاهده نظرسنجی فعال' : 'ویرایش فرم پرس‌کاد'}</span>
@@ -409,8 +416,8 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               <Button
                 variant="outline"
                 onClick={handleToggleShowVoteCounts}
-                className={`gap-2 text-xs font-bold ${
-                  porscadPoll?.showVoteCounts ? 'bg-emerald-100 text-emerald-950' : 'bg-zinc-50 dark:bg-zinc-800'
+                className={`gap-2 text-xs font-bold rounded-xl ${
+                  porscadPoll?.showVoteCounts ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' : ''
                 }`}
               >
                 {porscadPoll?.showVoteCounts ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
@@ -426,12 +433,12 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
 
         {/* Action controls (Refresh Analytics / Finish Poll) — manager only */}
         {isManager && porscadPoll?.isPublished && (
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               onClick={handleRefreshAnalytics}
               disabled={isRefreshingAnalytics}
-              className="gap-2 text-xs font-bold"
+              className="gap-2 text-xs font-bold rounded-xl"
             >
               <RefreshCw className={`w-3.5 h-3.5 text-primary ${isRefreshingAnalytics ? 'animate-spin' : ''}`} />
               <span>بروزرسانی آنلاین آمار</span>
@@ -439,14 +446,14 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
 
             {porscadPoll.isClosed ? (
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-emerald-700 bg-emerald-100 text-emerald-900 text-xs font-black">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 text-xs font-bold shadow-2xs">
                   <Lock className="w-3.5 h-3.5" />
                   <span>فرم بسته شد</span>
                 </span>
                 {isManager && (
                   <button
                     onClick={handleReopenAssessment}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border-2 border-zinc-900 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-black shadow-[2px_2px_0px_0px_#202A5A]"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 text-ink-darker dark:text-gray-200 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span>بازگشایی فرم</span>
@@ -456,11 +463,11 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
             ) : (
               isManager && (
                 <Button
-                  variant="outline"
+                  variant="primary"
                   onClick={handleOpenFinishModal}
-                  className="gap-2 text-xs font-black bg-amber-300 hover:bg-amber-400 text-zinc-950"
+                  className="gap-2 text-xs font-bold rounded-xl shadow-sm"
                 >
-                  <Trophy className="w-4 h-4 text-zinc-950" />
+                  <Trophy className="w-4 h-4" />
                   <span>اتمام نظرسنجی و انتخاب ایده‌های برتر</span>
                 </Button>
               )
@@ -475,20 +482,18 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
         (isManager || porscadPoll.isResultsPublic !== false) && (
         <div className="space-y-6">
           {/* Status Announcement Banner */}
-          <div className="p-4 md:p-5 rounded-2xl border-[1.5px] border-[#EAEAEA] bg-amber-300 text-zinc-950 shadow-[4px_4px_0px_0px_#202A5A] flex flex-wrap items-center justify-between gap-3">
+          <div className="p-4 sm:p-5 rounded-2xl border border-amber-300/80 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl border-2 border-zinc-900 bg-white flex items-center justify-center font-black shadow-[2px_2px_0px_0px_#202A5A]">
-                <Trophy className="w-5 h-5 text-amber-600 fill-amber-400" />
+              <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/60 border border-amber-300 dark:border-amber-700 flex items-center justify-center text-amber-600 dark:text-amber-300 shadow-2xs">
+                <Trophy className="w-5 h-5 fill-amber-400" />
               </div>
               <div>
-                <h4 className="text-sm md:text-base font-black">
-                  نظرسنجی به پایان رسید و ایده‌های برگزیده به شرح زیر است:
-                </h4>
-                <p className="text-xs font-bold text-zinc-800 mt-0.5">
-                  {isManager
-                    ? `رتبه‌بندی ${toPersianDigits(winningOptions.length)} ایده برتر بر اساس مجموع آرای ثبت‌شده در پرس‌کاد`
-                    : `تعداد ${toPersianDigits(winningOptions.length)} ایده برگزیده رویداد مشخص شده‌اند.`}
+                <p className="text-xs font-bold text-amber-800/90 dark:text-amber-300/90 mb-0.5">
+                  رأی‌گیری به پایان رسید؛
                 </p>
+                <h4 className="text-sm md:text-base font-black text-amber-950 dark:text-amber-100">
+                  تعداد {toPersianDigits(winningOptions.length)} ایده برگزیده مشخص شدند:
+                </h4>
               </div>
             </div>
 
@@ -496,7 +501,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               <Button
                 variant={porscadPoll.isResultsPublic ? 'outline' : 'primary'}
                 onClick={handleTogglePublishResults}
-                className="gap-2 text-xs font-black bg-white text-zinc-950"
+                className="gap-2 text-xs font-bold rounded-xl"
               >
                 {porscadPoll.isResultsPublic ? (
                   <>
@@ -513,105 +518,58 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
             )}
           </div>
 
-
-
           {/* Top Winners Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {winningOptions.map((opt, rankIdx) => {
+            {winningOptions.map((opt) => {
               const matchingIdea = ideas.find((i) => i.id === opt.ideaId || i.id === opt.id);
-              const isFirstPlace = rankIdx === 0;
-              const isSecondPlace = rankIdx === 1;
-              const isThirdPlace = rankIdx === 2;
-
-              const cardContainerStyle = isManager
-                ? isFirstPlace
-                  ? 'border-amber-500 bg-gradient-to-b from-amber-50/90 via-amber-100/30 to-white dark:from-amber-950/40 dark:via-zinc-900 dark:to-zinc-900 shadow-[6px_6px_0px_0px_#f59e0b] ring-2 ring-amber-400'
-                  : isSecondPlace
-                  ? 'border-slate-400 bg-gradient-to-b from-slate-100/80 via-slate-50 to-white dark:from-zinc-800/60 dark:via-zinc-900 dark:to-zinc-900 shadow-[6px_6px_0px_0px_#64748b]'
-                  : isThirdPlace
-                  ? 'border-amber-800 bg-gradient-to-b from-amber-100/60 via-orange-50 to-white dark:from-amber-950/30 dark:via-zinc-900 dark:to-zinc-900 shadow-[6px_6px_0px_0px_#92400e]'
-                  : 'border-zinc-900 bg-white dark:bg-zinc-900 shadow-[2.75px_2.75px_0_#202A5A]'
-                : 'border-zinc-900 bg-white dark:bg-zinc-900 shadow-[2.75px_2.75px_0_#202A5A]';
-
-              const rankBadgeBg = isFirstPlace
-                ? 'bg-amber-400 text-zinc-950 border-zinc-900 shadow-[2px_2px_0px_0px_#202A5A]'
-                : isSecondPlace
-                ? 'bg-slate-200 text-zinc-950 border-zinc-900 shadow-[2px_2px_0px_0px_#202A5A]'
-                : isThirdPlace
-                ? 'bg-amber-800 text-white border-zinc-900 shadow-[2px_2px_0px_0px_#202A5A]'
-                : 'bg-indigo-100 text-indigo-950 border-zinc-900';
-
-              const rankTitle = isFirstPlace
-                ? 'رتبه اول (ایده برتر طلایی)'
-                : isSecondPlace
-                ? 'رتبه دوم (نقره‌ای)'
-                : isThirdPlace
-                ? 'رتبه سوم (برنزی)'
-                : `رتبه ${toPersianDigits(rankIdx + 1)} برگزیده`;
+              const authorName = matchingIdea?.authorName || opt.authorName || '';
 
               return (
                 <div
                   key={opt.id}
-                  className={`relative flex flex-col justify-between rounded-2xl border-[1.5px] p-6 transition-all ${cardContainerStyle}`}
+                  className="group relative flex flex-col justify-between rounded-2xl border-[1.5px] border-amber-400/80 dark:border-amber-600/70 bg-white dark:bg-[#151C28] hover:border-amber-400 shadow-[2px_2px_0_#f59e0b] dark:shadow-[2px_2px_0_#b45309] hover:shadow-[3px_3px_0_#f59e0b] dark:hover:shadow-[3px_3px_0_#f59e0b] p-5 transition-all duration-200 hover:-translate-y-0.5 space-y-4"
                 >
-                  <div className="space-y-4">
-                    {/* Rank Badge & Manager Stats */}
-                    <div className="flex items-center justify-between">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border-2 font-black text-xs ${
-                        isManager ? rankBadgeBg : 'bg-amber-400 text-zinc-950 border-zinc-900 shadow-[2px_2px_0px_0px_#202A5A]'
-                      }`}>
-                        {isFirstPlace ? (
-                          <Trophy className="w-3.5 h-3.5 text-amber-950 shrink-0" />
-                        ) : isSecondPlace ? (
-                          <Medal className="w-3.5 h-3.5 text-zinc-900 shrink-0" />
-                        ) : isThirdPlace ? (
-                          <Medal className="w-3.5 h-3.5 text-amber-200 shrink-0" />
-                        ) : (
-                          <Award className="w-3.5 h-3.5 shrink-0" />
-                        )}
-                        <span>
-                          {porscadPoll.displayOrder === 'IGNORE_RANK' || porscadPoll.displayOrder === 'RANDOM'
-                            ? 'ایده برگزیده رویداد'
-                            : isManager
-                            ? rankTitle
-                            : 'ایده برگزیده رویداد'}
-                        </span>
+                  <div className="space-y-3.5">
+                    {/* Top Row: Badge & Stats */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border font-bold text-xs bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700 shadow-2xs">
+                        <Trophy className="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0" />
+                        <span>ایده برگزیده رویداد</span>
                       </span>
+
                       {showVoteStats && (
-                        <div className="text-left">
-                          <span className="text-lg font-black text-zinc-900 dark:text-zinc-100">
-                            ٪{toPersianDigits(opt.percentage || 0)}
-                          </span>
-                          <span className="block text-[10px] font-bold text-zinc-500">
-                            {toPersianDigits(opt.voteCount)} رای
-                          </span>
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 text-xs font-black text-ink-darker dark:text-white border border-gray-200/80 dark:border-gray-700">
+                          <span>{toPersianDigits(opt.voteCount)} رای</span>
+                          <span className="text-primary font-black">٪{toPersianDigits(opt.percentage || 0)}</span>
                         </div>
                       )}
                     </div>
 
-                    {/* Idea Details */}
-                    <div>
-                      <h4 className="text-base font-black text-zinc-900 dark:text-zinc-100 leading-snug">
+                    {/* Idea Name (Right) and Author Name (Left) on the Same Line */}
+                    <div className="flex items-center justify-between gap-3 pt-0.5">
+                      <h4 className="text-base sm:text-lg font-black text-ink-darker dark:text-white leading-snug truncate group-hover:text-primary transition-colors">
                         {matchingIdea ? matchingIdea.title : opt.text}
                       </h4>
-                      <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 mt-1">
-                        طراح / سرگروه: <strong className="text-zinc-800 dark:text-zinc-200">{matchingIdea?.authorName || opt.authorName || 'دانش‌آموز'}</strong>
-                      </p>
+
+                      {authorName && (
+                        <span className="shrink-0 text-xs font-bold text-gray-500 dark:text-gray-400 bg-gray-100/90 dark:bg-[#1C2536] px-2.5 py-1 rounded-lg border border-gray-200/70 dark:border-gray-700/70 truncate max-w-[170px]">
+                          {authorName}
+                        </span>
+                      )}
                     </div>
 
+                    {/* Description */}
                     {matchingIdea?.description && (
-                      <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400 line-clamp-3 leading-relaxed">
+                      <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400 line-clamp-3 leading-relaxed p-3 rounded-xl bg-gray-50/80 dark:bg-[#1C2536]/60 border border-gray-100 dark:border-gray-800/80">
                         {matchingIdea.description}
                       </p>
                     )}
 
-                    {/* Manager Progress Bar */}
+                    {/* Progress Bar (Stats view) */}
                     {showVoteStats && (
-                      <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-2.5 rounded-full overflow-hidden border border-zinc-300 dark:border-zinc-700">
+                      <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-700">
                         <div
-                          className={`h-full rounded-full transition-all duration-700 ${
-                            isFirstPlace ? 'bg-amber-400' : isSecondPlace ? 'bg-slate-400' : 'bg-amber-700'
-                          }`}
+                          className="h-full rounded-full transition-all duration-700 bg-primary"
                           style={{ width: `${opt.percentage || 0}%` }}
                         />
                       </div>
@@ -626,163 +584,163 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
 
       {/* ================= PORSCAD VOTING & FORM BUILDER ================= */}
       {isBuildingMode && isManager ? (
-            <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 md:p-8 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] space-y-6">
-              <div className="border-b-2 border-zinc-900/10 pb-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-indigo-400 text-zinc-950 text-xs font-black mb-2 shadow-[2px_2px_0px_0px_#202A5A]">
-                  <Sliders className="w-4 h-4" />
-                  <span>پنل مدیریت: طراحی دستی و انتشار فرم در پرس‌کاد</span>
-                </div>
-                <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-100">
-                  ویرایش فرم موجود و اعمال روی پرس‌کاد
-                </h3>
-                <p className="text-xs md:text-sm font-medium text-zinc-600 dark:text-zinc-400 mt-1">
-                  نوع سوال، تعداد انتخاب مجاز و ایده‌های منتخب را تعیین کنید. اگر فرم قبلاً ساخته شده باشد همان فرم ویرایش می‌شود.
-                </p>
+        <div className="rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-gray-800 bg-white dark:bg-[#151C28] shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] p-5 sm:p-7 space-y-6">
+          <div className="border-b border-gray-100 dark:border-gray-800 pb-4">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-primary/20 bg-primary/10 text-primary text-xs font-bold mb-2 shadow-2xs">
+              <Sliders className="w-4 h-4" />
+              <span>پنل مدیریت: طراحی دستی و انتشار فرم در پرس‌کاد</span>
+            </div>
+            <h3 className="text-lg md:text-xl font-black text-ink-darker dark:text-white">
+              ویرایش فرم موجود و اعمال روی پرس‌کاد
+            </h3>
+            <p className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">
+              نوع سوال، تعداد انتخاب مجاز و ایده‌های منتخب را تعیین کنید. اگر فرم قبلاً ساخته شده باشد همان فرم ویرایش می‌شود.
+            </p>
+          </div>
+
+          <form onSubmit={handleCreateAndPublishForm} className="space-y-6">
+            <div className="p-3.5 rounded-xl border border-primary/25 bg-primary/5 dark:bg-primary/10 text-primary text-xs font-bold shadow-2xs">
+              {porscadPoll?.formId
+                ? 'فرم موجود ویرایش و دوباره روی پرس‌کاد اعمال می‌شود (فرم جدید ساخته نمی‌شود).'
+                : 'پس از ثبت ایده‌ها، فرم را یک‌بار در پرس‌کاد منتشر کنید؛ در بازدیدهای بعدی فقط ویرایش می‌شود.'}
+            </div>
+            {/* Form Title & Description */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-ink-normal dark:text-gray-200 mb-1.5">
+                  نام و عنوان کلی فرم در پرس‌کاد (Form Title):
+                </label>
+                <input
+                  type="text"
+                  value={builderFormTitle}
+                  onChange={(e) => setBuilderFormTitle(e.target.value)}
+                  required
+                  className="w-full rounded-xl px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-ink-darker dark:text-white text-xs md:text-sm font-medium focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-2xs"
+                  placeholder="مثال: نظرسنجی ایده‌های هکاتون"
+                />
               </div>
 
-              <form onSubmit={handleCreateAndPublishForm} className="space-y-6">
-              <div className="p-3 rounded-xl border-2 border-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-300 text-xs font-bold">
-                {porscadPoll?.formId
-                  ? 'فرم موجود ویرایش و دوباره روی پرس‌کاد اعمال می‌شود (فرم جدید ساخته نمی‌شود).'
-                  : 'پس از ثبت ایده‌ها، فرم را یک‌بار در پرس‌کاد منتشر کنید؛ در بازدیدهای بعدی فقط ویرایش می‌شود.'}
+              <div>
+                <label className="block text-xs font-bold text-ink-normal dark:text-gray-200 mb-1.5">
+                  توضیحات فرم در پرس‌کاد (Form Description):
+                </label>
+                <input
+                  type="text"
+                  value={builderFormDescription}
+                  onChange={(e) => setBuilderFormDescription(e.target.value)}
+                  className="w-full rounded-xl px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-ink-darker dark:text-white text-xs md:text-sm font-medium focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-2xs"
+                  placeholder="مثال: فرم داوری و انتخاب بهترین طرح‌های نوآورانه"
+                />
               </div>
-                {/* Form Title & Description */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-2">
-                      نام و عنوان کلی فرم در پرس‌کاد (Form Title):
-                    </label>
-                    <input
-                      type="text"
-                      value={builderFormTitle}
-                      onChange={(e) => setBuilderFormTitle(e.target.value)}
-                      required
-                      className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs md:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
-                      placeholder="مثال: نظرسنجی ایده‌های هکاتون"
-                    />
-                  </div>
+            </div>
 
-                  <div>
-                    <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-2">
-                      توضیحات فرم در پرس‌کاد (Form Description):
-                    </label>
-                    <input
-                      type="text"
-                      value={builderFormDescription}
-                      onChange={(e) => setBuilderFormDescription(e.target.value)}
-                      className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs md:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
-                      placeholder="مثال: فرم داوری و انتخاب بهترین طرح‌های نوآورانه"
-                    />
-                  </div>
+            {/* Question Title */}
+            <div>
+              <label className="block text-xs font-bold text-ink-normal dark:text-gray-200 mb-1.5">
+                متن و عنوان سوال در پرس‌کاد (Question Title):
+              </label>
+              <input
+                type="text"
+                value={builderQuestionTitle}
+                onChange={(e) => setBuilderQuestionTitle(e.target.value)}
+                required
+                className="w-full rounded-xl px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-ink-darker dark:text-white text-xs md:text-sm font-medium focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-2xs"
+                placeholder="مثال: کدام ایده بیشترین نوآوری را دارد؟"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Question Type */}
+              <div>
+                <label className="block text-xs font-bold text-ink-normal dark:text-gray-200 mb-1.5">
+                  نوع سوال پرس‌کاد (Question Type):
+                </label>
+                <select
+                  value={builderQuestionType}
+                  onChange={(e) => setBuilderQuestionType(e.target.value as any)}
+                  className="w-full rounded-xl px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-ink-darker dark:text-white text-xs font-medium focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-2xs"
+                >
+                  <option className="bg-white dark:bg-[#151C28] text-ink-darker dark:text-white" value="choice">چندگزینه‌ای / دکمه‌ای (Choice)</option>
+                  <option className="bg-white dark:bg-[#151C28] text-ink-darker dark:text-white" value="dropdown">منوی کشویی (Dropdown)</option>
+                  <option className="bg-white dark:bg-[#151C28] text-ink-darker dark:text-white" value="rating">امتیازدهی ۵ ستاره‌ای (Rating)</option>
+                  <option className="bg-white dark:bg-[#151C28] text-ink-darker dark:text-white" value="opinion_scale">طیف لیکرت و مقیاس نظری (Opinion Scale)</option>
+                  <option className="bg-white dark:bg-[#151C28] text-ink-darker dark:text-white" value="yes_no">تایید / عدم تایید (Yes / No)</option>
+                </select>
+              </div>
+
+              {/* Max Selections */}
+              <div>
+                <label className="block text-xs font-bold text-ink-normal dark:text-gray-200 mb-1.5">
+                  حداکثر تعداد انتخاب مجاز هر کاربر (max_selections):
+                </label>
+                <select
+                  value={builderMaxSelections}
+                  onChange={(e) => setBuilderMaxSelections(Number(e.target.value))}
+                  className="w-full rounded-xl px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-ink-darker dark:text-white text-xs font-medium focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-2xs"
+                >
+                  <option className="bg-white dark:bg-[#151C28] text-ink-darker dark:text-white" value={1}>۱ انتخاب (تک گزینه‌ای - هر کاربر فقط به یک ایده رای می‌دهد)</option>
+                  <option className="bg-white dark:bg-[#151C28] text-ink-darker dark:text-white" value={2}>۲ انتخاب (امکان رای به ۲ ایده)</option>
+                  <option className="bg-white dark:bg-[#151C28] text-ink-darker dark:text-white" value={3}>۳ انتخاب (امکان رای به ۳ ایده برتر)</option>
+                  <option className="bg-white dark:bg-[#151C28] text-ink-darker dark:text-white" value={5}>۵ انتخاب (انتخاب تا ۵ ایده)</option>
+                  <option className="bg-white dark:bg-[#151C28] text-ink-darker dark:text-white" value={ideas.length || 10}>نامحدود (تمام ایده‌های تیک خورده)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Ideas Selection Checkboxes */}
+            <div className="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-gray-50/70 dark:bg-[#1C2536]/60 p-4 sm:p-5 shadow-2xs space-y-4">
+              <div className="flex items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 pb-3">
+                <div className="flex items-center gap-2">
+                  <CheckSquare className="w-4 h-4 text-primary" />
+                  <h4 className="text-xs md:text-sm font-bold text-ink-darker dark:text-white">
+                    انتخاب دستی ایده‌ها برای قرار گرفتن در فرم نظرسنجی ({toPersianDigits(builderSelectedIdeaIds.length)} از {toPersianDigits(ideas.length)} ایده انتخاب شده):
+                  </h4>
                 </div>
 
-                {/* Question Title */}
-                <div>
-                  <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-2">
-                    متن و عنوان سوال در پرس‌کاد (Question Title):
-                  </label>
-                  <input
-                    type="text"
-                    value={builderQuestionTitle}
-                    onChange={(e) => setBuilderQuestionTitle(e.target.value)}
-                    required
-                    className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs md:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
-                    placeholder="مثال: کدام ایده بیشترین نوآوری را دارد؟"
-                  />
+                <button
+                  type="button"
+                  onClick={handleSelectAllBuilderIdeas}
+                  className="text-xs font-bold text-primary hover:underline cursor-pointer"
+                >
+                  {builderSelectedIdeaIds.length === ideas.length ? 'عدم انتخاب همه' : 'انتخاب همه ایده‌ها'}
+                </button>
+              </div>
+
+              {ideas.length === 0 ? (
+                <div className="p-6 text-center text-xs font-medium text-gray-500">
+                  هنوز هیچ ایده‌ای در گام اول ثبت نشده است. ابتدا به دانش‌آموزان اجازه دهید ایده‌ها را ثبت کنند.
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {/* Question Type */}
-                  <div>
-                    <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-2">
-                      نوع سوال پرس‌کاد (Question Type):
-                    </label>
-                    <select
-                      value={builderQuestionType}
-                      onChange={(e) => setBuilderQuestionType(e.target.value as any)}
-                      className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
-                    >
-                      <option value="choice">چندگزینه‌ای / دکمه‌ای (Choice)</option>
-                      <option value="dropdown">منوی کشویی (Dropdown)</option>
-                      <option value="rating">امتیازدهی ۵ ستاره‌ای (Rating)</option>
-                      <option value="opinion_scale">طیف لیکرت و مقیاس نظری (Opinion Scale)</option>
-                      <option value="yes_no">تایید / عدم تایید (Yes / No)</option>
-                    </select>
-                  </div>
-
-                  {/* Max Selections */}
-                  <div>
-                    <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-2">
-                      حداکثر تعداد انتخاب مجاز هر کاربر (max_selections):
-                    </label>
-                    <select
-                      value={builderMaxSelections}
-                      onChange={(e) => setBuilderMaxSelections(Number(e.target.value))}
-                      className="w-full rounded-xl px-3 py-2.5 border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
-                    >
-                      <option value={1}>۱ انتخاب (تک گزینه‌ای - هر کاربر فقط به یک ایده رای می‌دهد)</option>
-                      <option value={2}>۲ انتخاب (امکان رای به ۲ ایده)</option>
-                      <option value={3}>۳ انتخاب (امکان رای به ۳ ایده برتر)</option>
-                      <option value={5}>۵ انتخاب (انتخاب تا ۵ ایده)</option>
-                      <option value={ideas.length || 10}>نامحدود (تمام ایده‌های تیک خورده)</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Ideas Selection Checkboxes */}
-                <div className="rounded-2xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800/40 p-5 shadow-[3px_3px_0px_0px_#202A5A]">
-                  <div className="flex items-center justify-between gap-2 border-b border-zinc-300 dark:border-zinc-700 pb-3 mb-4">
-                    <div className="flex items-center gap-2">
-                      <CheckSquare className="w-5 h-5 text-primary" />
-                      <h4 className="text-xs md:text-sm font-black text-zinc-900 dark:text-zinc-100">
-                        انتخاب دستی ایده‌ها برای قرار گرفتن در فرم نظرسنجی ({toPersianDigits(builderSelectedIdeaIds.length)} از {toPersianDigits(ideas.length)} ایده انتخاب شده):
-                      </h4>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleSelectAllBuilderIdeas}
-                      className="text-xs font-black text-primary hover:underline"
-                    >
-                      {builderSelectedIdeaIds.length === ideas.length ? 'عدم انتخاب همه' : 'انتخاب همه ایده‌ها'}
-                    </button>
-                  </div>
-
-                  {ideas.length === 0 ? (
-                    <div className="p-6 text-center text-xs font-bold text-zinc-500">
-                      هنوز هیچ ایده‌ای در گام اول ثبت نشده است. ابتدا به دانش‌آموزان اجازه دهید ایده‌ها را ثبت کنند.
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1">
-                      {ideas.map((idea) => {
-                        const isChecked = builderSelectedIdeaIds.includes(idea.id);
-                        return (
-                          <div
-                            key={idea.id}
-                            onClick={() => handleToggleBuilderIdea(idea.id)}
-                            className={`cursor-pointer flex items-start gap-3 p-3.5 rounded-xl border-2 transition-all ${
-                              isChecked
-                                ? 'border-zinc-900 bg-amber-100 dark:bg-amber-950/50 shadow-[2px_2px_0px_0px_#202A5A]'
-                                : 'border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-zinc-500'
-                            }`}
-                          >
-                            <div className="mt-0.5">
-                              {isChecked ? (
-                                <CheckSquare className="w-5 h-5 text-zinc-950 fill-amber-400" />
-                              ) : (
-                                <Square className="w-5 h-5 text-zinc-400" />
-                              )}
-                            </div>
-                            <div className="overflow-hidden">
-                              <h5 className="text-xs font-black text-zinc-900 dark:text-zinc-100 line-clamp-1">
-                                {idea.title}
-                              </h5>
-                              <p className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 mt-0.5">
-                                طراح / رئیس ایده: {idea.authorName} ({idea.authorRole})
-                              </p>
-                            </div>
-                          </div>
-                        );
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1">
+                  {ideas.map((idea) => {
+                    const isChecked = builderSelectedIdeaIds.includes(idea.id);
+                    return (
+                      <div
+                        key={idea.id}
+                        onClick={() => handleToggleBuilderIdea(idea.id)}
+                        className={`cursor-pointer flex items-start gap-3 p-3.5 rounded-xl border transition-all select-none ${
+                          isChecked
+                            ? 'border-primary/40 bg-primary/10 dark:bg-primary/15 shadow-2xs ring-1 ring-primary/25'
+                            : 'border-gray-200/80 dark:border-gray-700 bg-white dark:bg-[#151C28] hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="mt-0.5">
+                          {isChecked ? (
+                            <CheckSquare className="w-4 h-4 text-primary" />
+                          ) : (
+                            <Square className="w-4 h-4 text-gray-400" />
+                          )}
+                        </div>
+                        <div className="overflow-hidden">
+                          <h5 className="text-xs font-bold text-ink-darker dark:text-white line-clamp-1">
+                            {idea.title}
+                          </h5>
+                          <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400 mt-0.5">
+                            طراح / رئیس ایده: {idea.authorName} ({idea.authorRole})
+                          </p>
+                        </div>
+                      </div>
+                    );
                       })}
                     </div>
                   )}
@@ -822,187 +780,156 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
             /* 2. ACTIVE PUBLISHED POLL VIEW FOR STUDENTS & ADMIN */
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
-                <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 md:p-8 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
-                  {/* Meta */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-4 mb-5">
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 rounded-lg border-2 border-zinc-900 bg-primary/20 text-primary font-black text-xs">
-                        فرم رسمی پرس‌کاد ({isMultiSelect ? `تا ${toPersianDigits(maxSelections)} انتخاب` : 'تک انتخابی'})
-                      </span>
-                      <span className="text-xs font-bold text-zinc-500">
-                        شناسه: <code className="font-mono text-[11px]">{porscadPoll.formPublicId || porscadPoll.formId}</code>
-                      </span>
-                    </div>
-                    {isManager && (
-                      <div className="flex items-center gap-1.5 text-xs font-black text-zinc-700 dark:text-zinc-300">
-                        <Users className="w-4 h-4 text-primary" />
-                        <span className="text-xs font-black text-zinc-700 dark:text-zinc-300">
-                          مجموع کل آرا: {toPersianDigits(porscadPoll.totalVotes)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Title */}
-                  <div className="mb-6">
-                    <h3 className="text-lg md:text-xl font-black text-zinc-900 dark:text-zinc-100 mb-2">
+                <div className="rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-gray-800 bg-white dark:bg-[#151C28] shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] p-5 sm:p-7 space-y-5">
+                  {/* Title & Selection Info */}
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h3 className="text-base sm:text-lg font-black text-ink-darker dark:text-white">
                       {porscadPoll.questionTitle || porscadPoll.title}
                     </h3>
-                    <p className="text-xs md:text-sm font-medium text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                      {porscadPoll.description}
-                    </p>
-                    {isMultiSelect && (
-                      <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-300 text-xs font-bold">
-                        <span>انتخاب‌های فعلی شما: <strong>{toPersianDigits(selectedOptionIds.length)}</strong> از <strong>{toPersianDigits(maxSelections)}</strong> مجاز</span>
+                    {isMultiSelect && !hasVoted && !isManager && (
+                      <div className="mr-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-primary/25 bg-primary/5 dark:bg-primary/10 text-primary text-xs font-bold">
+                        <span>انتخاب‌های فعلی شما: <strong>{toPersianDigits(selectedOptionIds.length)}</strong> از <strong>{toPersianDigits(maxSelections)}</strong> انتخاب</span>
+                      </div>
+                    )}
+                    {isManager && (
+                      <div className="mr-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs font-bold shadow-2xs">
+                        <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                        <span>حالت ناظر: امکان رأی‌دهی فقط برای دانش‌آموزان است</span>
                       </div>
                     )}
                   </div>
 
                   {/* Has Voted Status Banner */}
-                  {hasVoted && (
-                    <div className="mb-5 flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border-2 border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-200">
-                      <div className="flex items-center gap-2 text-xs font-black">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                        <span>رای شما در پرس‌کاد با موفقیت ثبت شد (هر دانش‌آموز فقط یک‌بار مجاز به ثبت رای است).</span>
+                  {hasVoted && !isManager && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 shadow-2xs">
+                      <div className="flex items-center gap-2 text-xs font-bold">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                        <span>رأی شما با موفقیت ثبت شد.</span>
                       </div>
-                      {isManager && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            localStorage.removeItem(userVoteStorageKey);
-                            localStorage.removeItem(selectedOptionsKey);
-                            setHasVoted(false);
-                            setSelectedOptionIds([]);
-                            toast.info('رای آزمایشی برای مدیر ریست شد.');
-                          }}
-                          className="text-[11px] font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 underline"
-                        >
-                          ریست رای آزمایشی (مخصوص تست مدیر)
-                        </button>
-                      )}
                     </div>
                   )}
 
                   {/* Options Cards Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-3.5">
                     {porscadPoll.options.map((option, idx) => {
                       const isSelected = selectedOptionIds.includes(option.id) || selectedOptionIds.includes(option.ideaId || '');
                       const winningIds = porscadPoll.winningOptionIds || (porscadPoll.winningOptionId ? [porscadPoll.winningOptionId] : []);
                       const isWinner = porscadPoll.isClosed && (winningIds.includes(option.id) || winningIds.includes(option.ideaId || ''));
                       const matchingIdea = ideas.find((i) => i.id === option.ideaId || i.id === option.id);
-                      const isInteractive = !porscadPoll.isClosed && !hasVoted;
+                      const isInteractive = !porscadPoll.isClosed && !hasVoted && !isManager;
+                      const authorName = matchingIdea?.authorName || option.authorName || '';
 
                       return (
                         <div
                           key={option.id}
                           onClick={() => isInteractive && handleToggleOption(option.id)}
-                          className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border-[1.5px] transition-all ${
+                          className={`group relative overflow-hidden rounded-2xl border transition-all duration-200 ${
                             isWinner
-                              ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/40 shadow-[4px_4px_0px_0px_#f59e0b]'
-                              : isSelected
-                              ? 'border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/40 shadow-[4px_4px_0px_0px_#059669]'
-                              : porscadPoll.isClosed || hasVoted
-                              ? 'border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/40 opacity-90'
-                              : 'cursor-pointer border-zinc-900 bg-white hover:bg-zinc-50 dark:border-zinc-200 dark:bg-zinc-900 shadow-[3px_3px_0px_0px_#202A5A]'
-                          } p-4 md:p-5`}
+                              ? 'border-amber-400/80 bg-amber-50/60 dark:bg-amber-950/30 shadow-2xs ring-1 ring-amber-400/30'
+                              : isSelected && !isManager
+                              ? 'border-primary bg-primary/8 dark:bg-primary/15 shadow-2xs ring-2 ring-primary/25'
+                              : porscadPoll.isClosed || hasVoted || isManager
+                              ? 'border-gray-200 dark:border-gray-800 bg-gray-50/60 dark:bg-[#1C2536]/40'
+                              : 'cursor-pointer border-gray-200/90 dark:border-gray-800 bg-white dark:bg-[#151C28] hover:border-primary/50 hover:shadow-xs shadow-2xs hover:-translate-y-0.5'
+                          } p-3.5 sm:p-4 select-none`}
                         >
                           {/* Fill Progress Bar (only if vote counts shown) */}
                           {showVoteStats && (hasVoted || porscadPoll.isClosed) && (
                             <div
                               className={`absolute inset-y-0 right-0 transition-all duration-700 ${
                                 isWinner
-                                  ? 'bg-amber-400/25 dark:bg-amber-400/20'
-                                  : isSelected
-                                  ? 'bg-emerald-500/20 dark:bg-emerald-500/25'
-                                  : 'bg-primary/10 dark:bg-primary/20'
+                                  ? 'bg-amber-400/20 dark:bg-amber-400/15'
+                                  : isSelected && !isManager
+                                  ? 'bg-emerald-500/15 dark:bg-emerald-500/20'
+                                  : 'bg-primary/10 dark:bg-primary/15'
                               }`}
                               style={{ width: `${option.percentage || 0}%` }}
                             />
                           )}
 
-                          <div className="relative z-10 space-y-3">
-                            {/* Card Top: Selection Indicator & Winner Badge */}
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2">
-                                {(!porscadPoll.isClosed || isManager) && (
-                                  <span className="w-7 h-7 rounded-lg border-2 border-zinc-900 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 flex items-center justify-center font-black text-xs shadow-[1px_1px_0px_0px_#202A5A]">
-                                    {toPersianDigits(idx + 1)}
-                                  </span>
-                                )}
-                                {isWinner && (
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-amber-600 bg-amber-400 text-zinc-950 text-xs font-black shadow-[1px_1px_0px_0px_#202A5A]">
-                                    <Trophy className="w-3.5 h-3.5" />
-                                    <span>ایده برگزیده</span>
-                                  </span>
-                                )}
-                              </div>
+                          <div className="relative z-10 flex items-center justify-between gap-3">
+                            {/* Right Side: Number Badge + Idea Title */}
+                            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                              {(!porscadPoll.isClosed || isManager) && (
+                                <span
+                                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 border shadow-2xs transition-all ${
+                                    isSelected && !isManager
+                                      ? 'bg-primary text-white border-primary shadow-xs scale-105'
+                                      : 'bg-gray-100 dark:bg-[#1C2536] border-gray-200 dark:border-gray-700 text-ink-darker dark:text-gray-200 group-hover:border-primary/40'
+                                  }`}
+                                >
+                                  {toPersianDigits(idx + 1)}
+                                </span>
+                              )}
 
-                              <div
-                                className={`w-6 h-6 ${isMultiSelect ? 'rounded-lg' : 'rounded-full'} border-2 flex items-center justify-center transition-all flex-shrink-0 ${
-                                  isWinner
-                                    ? 'border-amber-600 bg-amber-400 text-zinc-950 shadow-[1px_1px_0px_0px_#202A5A]'
-                                    : isSelected
-                                    ? 'border-emerald-600 bg-emerald-500 text-white'
-                                    : 'border-zinc-900 bg-white dark:border-zinc-300 dark:bg-zinc-800'
-                                }`}
-                              >
-                                {isWinner ? (
-                                  <Crown className="w-3.5 h-3.5 fill-zinc-950" />
-                                ) : isSelected ? (
-                                  <Check className="w-3.5 h-3.5" />
-                                ) : (
-                                  <span className="text-[10px] font-black text-zinc-400">•</span>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Title & Description */}
-                            <div>
-                              <h4 className="text-sm md:text-base font-black text-zinc-900 dark:text-zinc-100 leading-snug line-clamp-2">
+                              <h4 className="text-sm sm:text-base font-black text-zinc-900 dark:text-zinc-100 leading-snug truncate group-hover:text-primary transition-colors">
                                 {matchingIdea ? matchingIdea.title : option.text}
                               </h4>
-                              {matchingIdea?.description && (
-                                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2 line-clamp-3 leading-relaxed">
-                                  {matchingIdea.description}
-                                </p>
+                            </div>
+
+                            {/* Left Side: Author Chip + Winner Badge + Vote Stats + Selection Checkbox */}
+                            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+                              {authorName && (
+                                <span className="text-xs font-bold text-gray-500 dark:text-gray-400 bg-gray-100/80 dark:bg-[#1C2536] px-2.5 py-1 rounded-lg border border-gray-200/60 dark:border-gray-700/60 truncate max-w-[120px] sm:max-w-[170px]">
+                                  {authorName}
+                                </span>
+                              )}
+
+                              {isWinner && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 text-[11px] font-bold shadow-2xs">
+                                  <Trophy className="w-3 h-3 text-amber-600" />
+                                  <span>برگزیده</span>
+                                </span>
+                              )}
+
+                              {showVoteStats && (hasVoted || porscadPoll.isClosed) && (
+                                <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-[11px] font-black text-ink-darker dark:text-white border border-gray-200/80 dark:border-gray-700">
+                                  <span>{toPersianDigits(option.voteCount)} رای</span>
+                                  <span className="text-primary font-black">٪{toPersianDigits(option.percentage || 0)}</span>
+                                </div>
+                              )}
+
+                              {!isManager && (
+                                <div
+                                  className={`w-6 h-6 ${isMultiSelect ? 'rounded-lg' : 'rounded-full'} border flex items-center justify-center transition-all shrink-0 ${
+                                    isWinner
+                                      ? 'border-amber-400 bg-amber-400 text-white shadow-2xs'
+                                      : isSelected
+                                      ? 'border-primary bg-primary text-white shadow-2xs scale-105'
+                                      : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1C2536] group-hover:border-primary/60'
+                                  }`}
+                                >
+                                  {isWinner ? (
+                                    <Crown className="w-3.5 h-3.5 fill-white" />
+                                  ) : isSelected ? (
+                                    <Check className="w-3.5 h-3.5 text-white stroke-[2.5]" />
+                                  ) : null}
+                                </div>
                               )}
                             </div>
-                          </div>
-
-                          {/* Card Footer: Author & Vote count (Vote Count Admin Only) */}
-                          <div className="relative z-10 mt-4 pt-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs font-bold">
-                            <span className="text-zinc-500 dark:text-zinc-400 truncate max-w-[140px]">
-                              طراح: <strong className="text-zinc-800 dark:text-zinc-200">{matchingIdea?.authorName || option.authorName || 'دانش‌آموز'}</strong>
-                            </span>
-
-                            {showVoteStats && (hasVoted || porscadPoll.isClosed) && (
-                              <div className="flex items-center gap-2 font-black text-zinc-900 dark:text-zinc-100">
-                                <span>{toPersianDigits(option.voteCount)} رای</span>
-                                <span className="text-primary font-black">٪{toPersianDigits(option.percentage || 0)}</span>
-                              </div>
-                            )}
                           </div>
                         </div>
                       );
                     })}
                   </div>
 
-                  {/* Manual Submit Button for All Question Types */}
-                  {!hasVoted && !porscadPoll.isClosed && (
-                    <div className="mt-6 pt-4 border-t-2 border-zinc-900/10 flex flex-wrap items-center justify-between gap-3">
-                      <span className="text-xs font-bold text-zinc-500">
-                        {isMultiSelect
-                          ? `حداکثر ${toPersianDigits(maxSelections)} گزینه را انتخاب کرده و دکمه «ثبت نهایی رای» را بزنید.`
-                          : 'ایده مورد نظر خود را با کلیک روی کارت انتخاب کرده و دکمه «ثبت نهایی رای» را بزنید.'}
-                      </span>
+                  {/* Manual Submit Button */}
+                  {!hasVoted && !porscadPoll.isClosed && !isManager && (
+                    <div className="pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end">
                       <Button
                         variant="primary"
                         disabled={isSubmittingVote || selectedOptionIds.length === 0}
-                        onClick={handleVoteSubmit}
+                        onClick={() => {
+                          if (selectedOptionIds.length === 0) {
+                            toast.error('لطفاً ابتدا حداقل یک ایده را برای رای‌دهی انتخاب کنید.');
+                            return;
+                          }
+                          setIsVoteConfirmModalOpen(true);
+                        }}
                         className="gap-2 text-xs font-black px-6 py-2.5"
                       >
                         <Send className="w-4 h-4" />
-                        <span>{isSubmittingVote ? 'در حال ارسال به پرس‌کاد...' : `ثبت نهایی رای در پرس‌کاد (${toPersianDigits(selectedOptionIds.length)} ایده)`}</span>
+                        <span>{isSubmittingVote ? 'در حال ثبت...' : 'ثبت نهایی رأی'}</span>
                       </Button>
                     </div>
                   )}
@@ -1012,15 +939,15 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               {/* Right Sidebar: Real-Time Analytics from Porscad (Admin Only) */}
               {isManager && (
                 <div className="space-y-6">
-                  <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-5 md:p-6 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
-                    <div className="flex items-center justify-between border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-4 mb-4">
+                  <div className="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] p-5 md:p-6 shadow-2xs">
+                    <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800/80 pb-4 mb-4">
                       <div className="flex items-center gap-2">
                         <BarChart3 className="w-5 h-5 text-primary" />
-                        <h3 className="text-base font-black text-zinc-900 dark:text-zinc-100">
+                        <h3 className="text-base font-black text-ink-darker dark:text-white">
                           آمار و تحلیل زنده پرس‌کاد (ویژه ادمین)
                         </h3>
                       </div>
-                      <span className="text-[11px] font-bold text-zinc-500">آنالیتیکس آنلاین</span>
+                      <span className="text-[11px] font-bold text-gray-400">آنالیتیکس آنلاین</span>
                     </div>
 
                     <div className="space-y-3">
@@ -1031,20 +958,20 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                           return (
                             <div
                               key={opt.id}
-                              className="p-3 rounded-xl border-2 border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40 space-y-1.5"
+                              className="p-3 rounded-xl border border-gray-200/80 dark:border-gray-800 bg-gray-50/70 dark:bg-[#1C2536]/50 space-y-1.5"
                             >
-                              <div className="flex items-center justify-between text-xs font-black">
+                              <div className="flex items-center justify-between text-xs font-bold">
                                 <div className="flex items-center gap-2">
                                   <span
                                     className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black border ${
                                       rank === 0
-                                        ? 'bg-amber-400 text-zinc-950 border-zinc-900'
-                                        : 'bg-zinc-200 text-zinc-700 border-zinc-400 dark:bg-zinc-700 dark:text-zinc-200'
+                                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                                        : 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700'
                                     }`}
                                   >
                                     {toPersianDigits(rank + 1)}
                                   </span>
-                                  <span className="text-zinc-900 dark:text-zinc-100 line-clamp-1 max-w-[140px]">
+                                  <span className="text-ink-darker dark:text-white line-clamp-1 max-w-[140px]">
                                     {matching ? matching.title : opt.text}
                                   </span>
                                 </div>
@@ -1055,11 +982,11 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                           )}
                               </div>
 
-                              <div className="w-full bg-zinc-200 dark:bg-zinc-700 h-2 rounded-full overflow-hidden">
+                              <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
                                 {showVoteStats && (
                                   <div
                                     className={`h-full rounded-full transition-all duration-500 ${
-                                      rank === 0 ? 'bg-amber-400' : 'bg-primary'
+                                      rank === 0 ? 'bg-amber-500' : 'bg-primary'
                                     }`}
                                     style={{ width: `${opt.percentage || 0}%` }}
                                   />
@@ -1070,9 +997,9 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                         })}
                     </div>
 
-                    <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs font-bold text-zinc-600 dark:text-zinc-400">
+                    <div className="mt-5 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs font-bold text-gray-500 dark:text-gray-400">
                       <span>تعداد کل ایده‌های فرم:</span>
-                      <span className="font-black text-zinc-900 dark:text-zinc-100">{toPersianDigits(porscadPoll.options.length)} ایده</span>
+                      <span className="font-black text-ink-darker dark:text-white">{toPersianDigits(porscadPoll.options.length)} ایده</span>
                       {showVoteStats && (
                         <span className="font-black text-primary">مجموع آرا: {toPersianDigits(porscadPoll.totalVotes)}</span>
                       )}
@@ -1082,74 +1009,21 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               )}
             </div>
           ) : (
-            /* 3. AWAITING POLL CREATION BY ADMIN (FOR STUDENTS) - SHOW REGISTERED IDEAS IN CARDS */
-            <div className="space-y-6">
-              <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 md:p-8 text-center shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] space-y-3">
-                <div className="w-14 h-14 mx-auto rounded-2xl border-2 border-zinc-900 bg-amber-300 flex items-center justify-center shadow-[2px_2px_0px_0px_#202A5A]">
-                  <Clock className="w-7 h-7 text-zinc-950 animate-spin" />
-                </div>
-                <h3 className="text-lg md:text-xl font-black text-zinc-900 dark:text-zinc-100">
-                  در انتظار ایجاد و انتشار فرم نظرسنجی توسط مدیر رویداد
-                </h3>
-                <p className="text-xs md:text-sm font-medium text-zinc-600 dark:text-zinc-400 max-w-md mx-auto leading-relaxed">
-                  ایده‌های زیر تاکنون برای این رویداد ثبت شده‌اند. پس از انتشار فرم رسمی در پرس‌کاد، می‌توانید در همین بخش به طرح‌های منتخب رای دهید.
-                </p>
+            /* 3. AWAITING POLL CREATION BY ADMIN (FOR STUDENTS) */
+            <div className="rounded-2xl border border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#151C28] p-6 md:p-8 text-center shadow-2xs space-y-3">
+              <div className="w-14 h-14 mx-auto rounded-2xl border border-amber-500/20 bg-amber-500/10 flex items-center justify-center shadow-2xs">
+                <Clock className="w-7 h-7 text-amber-500 animate-spin" />
               </div>
-
-              {/* Registered Ideas Card Showcase in Porscad Tab */}
-              <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-6 md:p-8 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] space-y-5">
-                <div className="flex items-center justify-between border-b-2 border-zinc-900/10 pb-4">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-amber-500" />
-                    <h4 className="text-sm md:text-base font-black text-zinc-900 dark:text-zinc-100">
-                      کارت‌های ایده‌های ثبت‌شده رویداد ({toPersianDigits(ideas.length)} ایده به ترتیب ثبت):
-                    </h4>
-                  </div>
-                  <span className="text-xs font-black text-primary">ویترین ایده‌ها</span>
-                </div>
-
-                {ideas.length === 0 ? (
-                  <div className="p-8 text-center text-xs font-bold text-zinc-500 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-xl">
-                    هنوز ایده‌ای در گام اول ثبت نشده است.
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {ideas.map((idea, idx) => (
-                      <div
-                        key={idea.id}
-                        className="flex flex-col justify-between rounded-2xl border-2 border-zinc-900 bg-zinc-50 dark:bg-zinc-800/60 p-4 shadow-[3px_3px_0px_0px_#202A5A] space-y-3"
-                      >
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="w-6 h-6 rounded-lg border-2 border-zinc-900 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 flex items-center justify-center font-black text-xs">
-                              {toPersianDigits(idx + 1)}
-                            </span>
-                          </div>
-
-                          <h5 className="text-sm font-black text-zinc-900 dark:text-zinc-100 line-clamp-2 leading-snug">
-                            {idea.title}
-                          </h5>
-
-                          <p className="text-xs text-zinc-600 dark:text-zinc-400 line-clamp-3 leading-relaxed">
-                            {idea.description}
-                          </p>
-                        </div>
-
-                        <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700 text-[11px] font-bold text-zinc-500 dark:text-zinc-400">
-                          طراح: <strong className="text-zinc-800 dark:text-zinc-200">{idea.authorName}</strong> ({idea.authorRole})
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <h3 className="text-lg md:text-xl font-black text-ink-darker dark:text-white">
+                در انتظار ایجاد و انتشار فرم نظرسنجی توسط مدیر رویداد
+              </h3>
             </div>
           )}
       {/* ================= FINISH POLL & SELECT TOP N WINNERS MODAL ================= */}
       {isFinishModalOpen && porscadPoll && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-zinc-950/70 p-0 sm:p-4 backdrop-blur-sm overflow-y-auto overscroll-contain">
-          <div className="w-full max-w-xl rounded-t-3xl sm:rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-5 sm:p-6 shadow-[4px_4px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] space-y-5 animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150 max-h-[88vh] overflow-y-auto overscroll-contain pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-            <div className="flex items-center justify-between border-b-2 border-zinc-900/10 dark:border-zinc-100/10 pb-4">
+          <div className="w-full max-w-xl rounded-t-3xl sm:rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#151C28] p-5 sm:p-6 shadow-xl space-y-5 animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150 max-h-[88vh] overflow-y-auto overscroll-contain pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800/80 pb-4">
               <div className="flex items-center gap-2 min-w-0">
                 <Trophy className="w-6 h-6 text-amber-500 fill-amber-400 flex-shrink-0" />
                 <div className="min-w-0">
@@ -1172,8 +1046,8 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
 
             <form onSubmit={handleConfirmFinishAssessment} className="space-y-5">
               {/* Explanation Note */}
-              <div className="p-4 rounded-xl border-2 border-amber-600 bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 text-xs font-bold leading-relaxed space-y-1">
-                <div className="flex items-center gap-1.5 font-black text-amber-900 dark:text-amber-300">
+              <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs font-bold leading-relaxed space-y-1">
+                <div className="flex items-center gap-1.5 font-black text-amber-800 dark:text-amber-300">
                   <Lock className="w-4 h-4" />
                   <span>توقف رای‌گیری و بررسی اختصاصی مدیر</span>
                 </div>
@@ -1184,7 +1058,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
 
               {/* Display Order Selection */}
               <div>
-                <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-2">
+                <label className="block text-xs font-bold text-ink-darker dark:text-white mb-2">
                   ترتیب نمایش تیم‌ها / ایده‌های برتر:
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -1198,10 +1072,10 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                       key={opt.key}
                       type="button"
                       onClick={() => setFinishDisplayOrder(opt.key as typeof finishDisplayOrder)}
-                      className={`py-2 px-2 rounded-xl text-xs font-black border-2 transition-all ${
+                      className={`py-2 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                         finishDisplayOrder === opt.key
-                          ? 'border-zinc-900 bg-indigo-400 text-zinc-950 shadow-[2px_2px_0px_0px_#202A5A]'
-                          : 'border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-zinc-500'
+                          ? 'border-primary bg-primary text-white shadow-2xs'
+                          : 'border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-[#1C2536] text-ink-darker dark:text-white hover:border-gray-300 dark:hover:border-gray-600'
                       }`}
                     >
                       {opt.label}
@@ -1211,16 +1085,16 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               </div>
 
               {/* Show vote counts to audience checkbox */}
-              <label className="flex items-start gap-2.5 p-3 rounded-xl border-2 border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 cursor-pointer">
+              <label className="flex items-start gap-2.5 p-3 rounded-xl border border-gray-200/80 dark:border-gray-800 bg-gray-50/70 dark:bg-[#1C2536]/50 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={finishShowVoteCounts}
                   onChange={(e) => setFinishShowVoteCounts(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded border-zinc-900 text-primary focus:ring-primary"
+                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                 />
-                <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                <span className="text-xs font-bold text-ink-darker dark:text-white leading-relaxed">
                   نمایش تعداد و درصد رای‌ها به مخاطب (دانش‌آموزان)
-                  <span className="block text-[11px] font-bold text-zinc-500 mt-0.5">
+                  <span className="block text-[11px] font-medium text-gray-400 mt-0.5">
                     به‌صورت پیش‌فرض خاموش است؛ فقط با تیک شما برای مخاطب نمایش داده می‌شود.
                   </span>
                 </span>
@@ -1228,7 +1102,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
 
               {/* Number of Top Ideas Selection */}
               <div>
-                <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-2">
+                <label className="block text-xs font-bold text-ink-darker dark:text-white mb-2">
                   تعداد ایده‌های برتر جهت رتبه‌بندی و نمایش در سکوی افتخار (Top N Winners):
                 </label>
 
@@ -1241,10 +1115,10 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                         key={num}
                         type="button"
                         onClick={() => setFinishTopWinnersCount(num)}
-                        className={`py-2 px-1 rounded-xl text-xs font-black border-2 transition-all ${
+                        className={`py-2 px-1 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                           isSelected
-                            ? 'border-zinc-900 bg-amber-400 text-zinc-950 shadow-[2px_2px_0px_0px_#202A5A]'
-                            : 'border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-zinc-500'
+                            ? 'border-primary bg-primary text-white shadow-2xs'
+                            : 'border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-[#1C2536] text-ink-darker dark:text-white hover:border-gray-300 dark:hover:border-gray-600'
                         }`}
                       >
                         {label}
@@ -1254,7 +1128,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400">یا انتخاب تعداد دلخواه:</span>
+                  <span className="text-xs font-bold text-gray-500 dark:text-gray-400">یا انتخاب تعداد دلخواه:</span>
                   <input
                     type="number"
                     min={1}
@@ -1270,20 +1144,20 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                         );
                       }
                     }}
-                    className="w-24 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-center text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
+                    className="w-24 px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1C2536] text-ink-darker dark:text-white text-center text-xs font-medium focus:border-primary focus:outline-none transition-all"
                   />
-                  <span className="text-xs font-bold text-zinc-500">
+                  <span className="text-xs font-medium text-gray-400">
                     از مجموع {toPersianDigits(porscadPoll.options.length)} ایده فرم
                   </span>
                 </div>
               </div>
 
               {/* Current Ranking Preview */}
-              <div className="rounded-xl border-2 border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 p-3.5 space-y-2">
-                <div className="flex items-center justify-between text-xs font-black text-zinc-700 dark:text-zinc-300">
+              <div className="rounded-xl border border-gray-200/80 dark:border-gray-800 bg-gray-50/70 dark:bg-[#1C2536]/50 p-3.5 space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-ink-darker dark:text-white">
                   <span>پیش‌نمایش رتبه‌بندی فعلی ({toPersianDigits(finishTopWinnersCount)} ایده برتر):</span>
                   {finishShowVoteCounts && (
-                    <span className="text-[11px] text-zinc-500">مجموع آرا: {toPersianDigits(porscadPoll.totalVotes)}</span>
+                    <span className="text-[11px] text-gray-400">مجموع آرا: {toPersianDigits(porscadPoll.totalVotes)}</span>
                   )}
                 </div>
 
@@ -1296,35 +1170,35 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                       return (
                         <div
                           key={opt.id}
-                          className="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-xs"
+                          className="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-[#151C28] border border-gray-200/70 dark:border-gray-700/70 text-xs"
                         >
                           <div className="flex items-center gap-2">
                             <span
                               className={`w-5 h-5 rounded-md flex items-center justify-center font-black text-[10px] border ${
                                 rIdx === 0
-                                  ? 'bg-amber-400 text-zinc-950 border-zinc-900'
+                                  ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
                                   : rIdx === 1
-                                  ? 'bg-zinc-200 text-zinc-900 border-zinc-900'
+                                  ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-700'
                                   : rIdx === 2
-                                  ? 'bg-amber-700 text-white border-zinc-900'
-                                  : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200'
+                                  ? 'bg-amber-800/15 text-amber-700 dark:text-amber-300 border-amber-800/30'
+                                  : 'bg-gray-50 text-gray-500 dark:bg-gray-800/50 dark:text-gray-400 border-transparent'
                               }`}
                             >
                               {toPersianDigits(rIdx + 1)}
                             </span>
-                            <span className="font-black text-zinc-900 dark:text-zinc-100 line-clamp-1 max-w-[220px]">
+                            <span className="font-bold text-ink-darker dark:text-white line-clamp-1 max-w-[220px]">
                               {matching ? matching.title : opt.text}
                             </span>
-                            <span className="text-[10px] text-zinc-400 font-bold hidden sm:inline">
+                            <span className="text-[10px] text-gray-400 font-medium hidden sm:inline">
                               ({matching?.authorName || opt.authorName})
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-2 font-black">
+                          <div className="flex items-center gap-2 font-bold">
                             {finishShowVoteCounts && (
                               <>
-                                <span className="text-zinc-700 dark:text-zinc-300">{toPersianDigits(opt.voteCount)} رای</span>
-                                <span className="text-amber-600 dark:text-amber-400">٪{toPersianDigits(opt.percentage || 0)}</span>
+                                <span className="text-gray-600 dark:text-gray-400">{toPersianDigits(opt.voteCount)} رای</span>
+                                <span className="text-primary">٪{toPersianDigits(opt.percentage || 0)}</span>
                               </>
                             )}
                           </div>
@@ -1335,7 +1209,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+              <div className="flex items-center justify-end gap-3 pt-2 border-t border-gray-100 dark:border-gray-800">
                 <Button
                   type="button"
                   variant="outline"
@@ -1347,7 +1221,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                 <Button
                   type="submit"
                   variant="primary"
-                  className="text-xs font-black gap-2 bg-amber-400 hover:bg-amber-500 text-zinc-950"
+                  className="text-xs font-bold gap-2"
                 >
                   <Lock className="w-4 h-4" />
                   <span>تایید، بستن فرم و نمایش {toPersianDigits(finishTopWinnersCount)} ایده برتر</span>
@@ -1357,6 +1231,83 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
           </div>
         </div>
       )}
+
+      {/* VOTE CONFIRMATION MODAL */}
+      <Modal
+        isOpen={isVoteConfirmModalOpen}
+        onClose={() => !isSubmittingVote && setIsVoteConfirmModalOpen(false)}
+        title="تأیید نهایی ثبت رأی"
+        maxWidth="md"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 p-3.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-amber-800 dark:text-amber-200">
+            <Vote className="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <p className="text-xs sm:text-sm font-bold leading-relaxed">
+              آیا از ثبت نهایی رأی خود اطمینان دارید؟
+            </p>
+          </div>
+
+          <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+            توجه داشته باشید که هر شرکت‌کننده فقط یک‌بار مجاز به ثبت رأی است و پس از تأیید، امکان تغییر یا بازپس‌گیری آراء وجود نخواهد داشت.
+          </p>
+
+          {/* Selected Ideas List */}
+          <div className="space-y-2">
+            <span className="text-xs font-bold text-gray-600 dark:text-gray-300">
+              ایده‌های انتخابی شما ({toPersianDigits(selectedOptionIds.length)} ایده):
+            </span>
+            <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+              {selectedOptionIds.map((optId) => {
+                const opt = porscadPoll?.options.find((o) => o.id === optId || o.ideaId === optId);
+                const matchingIdea = ideas.find((i) => i.id === opt?.ideaId || i.id === optId);
+                const title = matchingIdea ? matchingIdea.title : opt?.text || 'ایده انتخابی';
+                const author = matchingIdea?.authorName || opt?.authorName;
+                return (
+                  <div
+                    key={optId}
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 dark:bg-[#1C2536] border border-gray-200/70 dark:border-gray-700/70 text-xs"
+                  >
+                    <span className="font-bold text-ink-darker dark:text-white truncate">
+                      {title}
+                    </span>
+                    {author && (
+                      <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 shrink-0">
+                        {author}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Modal Actions */}
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSubmittingVote}
+              onClick={() => setIsVoteConfirmModalOpen(false)}
+              className="font-bold text-xs"
+            >
+              انصراف
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              disabled={isSubmittingVote}
+              onClick={async () => {
+                await handleVoteSubmit();
+                setIsVoteConfirmModalOpen(false);
+              }}
+              className="gap-2 text-xs font-black px-6 py-2.5"
+            >
+              <Check className="w-4 h-4" />
+              <span>{isSubmittingVote ? 'در حال ثبت...' : 'بله، ثبت نهایی رأی'}</span>
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
