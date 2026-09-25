@@ -4,6 +4,7 @@ import {
   ConflictException,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
   ServiceUnavailableException,
   HttpException,
   Logger,
@@ -311,6 +312,43 @@ export class AuthService {
       if (isValid) {
         authenticatedUser = candidate;
         break;
+      }
+    }
+
+    // If not matched in the scoped tenant (e.g. cross-school leader entering the other school's password),
+    // search across all other active tenants for this identifier and password!
+    if (!authenticatedUser && tenantId) {
+      try {
+        const otherTenantCandidates = await this.prisma.user.findMany({
+          where: {
+            tenantId: { not: tenantId },
+            status: 'ACTIVE',
+            OR: [
+              { username: cleanIdentifier },
+              { username: `p${cleanIdentifier}` },
+              { username: `p_${cleanIdentifier}` },
+              ...(strippedPIdentifier ? [{ username: strippedPIdentifier }] : []),
+              ...(strippedZeroIdentifier ? [{ username: strippedZeroIdentifier }, { username: `p${strippedZeroIdentifier}` }] : []),
+              { phone: cleanIdentifier },
+              { email: rawIdentifier.toLowerCase() },
+              { email: cleanIdentifier.toLowerCase() },
+            ],
+          },
+          include: {
+            tenant: true,
+          },
+        });
+
+        for (const candidate of otherTenantCandidates) {
+          if (candidate.status !== 'ACTIVE') continue;
+          const isValid = await argon2.verify(candidate.passwordHash, dto.password);
+          if (isValid) {
+            authenticatedUser = candidate;
+            break;
+          }
+        }
+      } catch (crossErr: any) {
+        this.logger.warn(`[AuthService] Cross-tenant user search skipped: ${crossErr.message}`);
       }
     }
 
@@ -818,13 +856,114 @@ export class AuthService {
         firstName: true,
         lastName: true,
         avatarUrl: true,
-        role: true,
-        email: true,
         phone: true,
         username: true,
         tenantId: true,
       },
     });
     return updated;
+  }
+
+  /**
+   * Get all schools where the user's phone or national ID has an active account
+   */
+  async getUserSchools(phone?: string) {
+    if (!phone) return [];
+    const users = await this.prisma.user.findMany({
+      where: {
+        phone,
+        status: 'ACTIVE',
+      },
+      include: {
+        tenant: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return users.map((u) => ({
+      tenantId: u.tenant.id,
+      tenantName: u.tenant.name,
+      tenantSlug: u.tenant.slug,
+      theme: u.tenant.theme,
+      role: u.role,
+      isPlatformAdmin: u.isPlatformAdmin,
+    }));
+  }
+
+  /**
+   * Switch the current user's active school context without requiring re-entering password
+   */
+  async switchSchool(
+    userId: string,
+    targetTenantSlug: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!currentUser || !currentUser.phone) {
+      throw new BadRequestException('کاربر جاری فاقد شماره همراه معتبر است');
+    }
+
+    const targetTenant = await this.prisma.tenant.findUnique({
+      where: { slug: targetTenantSlug },
+    });
+    if (!targetTenant) {
+      throw new NotFoundException('مدرسه مقصد یافت نشد');
+    }
+
+    const targetUser = await this.prisma.user.findFirst({
+      where: {
+        tenantId: targetTenant.id,
+        phone: currentUser.phone,
+        status: 'ACTIVE',
+      },
+      include: {
+        tenant: true,
+      },
+    });
+
+    if (!targetUser) {
+      throw new ForbiddenException('حساب کاربری فعالی برای شما در مدرسه مقصد یافت نشد');
+    }
+
+    // Issue tokens for target tenant
+    const tokens = await this.createTokenPair(
+      targetUser.id,
+      targetUser.tenantId,
+      targetUser.role,
+      targetUser.isPlatformAdmin,
+      ipAddress,
+      userAgent,
+    );
+
+    await this.sessionService.createSession(
+      targetUser.id,
+      targetUser.tenantId,
+      tokens.refreshToken,
+      ipAddress,
+      userAgent,
+    );
+
+    return {
+      message: `انتقال به ${targetTenant.name} با موفقیت انجام شد`,
+      tenant: {
+        id: targetTenant.id,
+        name: targetTenant.name,
+        slug: targetTenant.slug,
+        theme: targetTenant.theme,
+      },
+      user: {
+        id: targetUser.id,
+        firstName: targetUser.firstName,
+        lastName: targetUser.lastName,
+        phone: targetUser.phone,
+        email: targetUser.email,
+        role: targetUser.role,
+        isPlatformAdmin: targetUser.isPlatformAdmin,
+      },
+      ...tokens,
+    };
   }
 }

@@ -121,6 +121,27 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Get('my-schools')
+  @ApiOperation({ summary: 'لیست مدارسی که کاربر جاری در آن‌ها حساب کاربری دارد' })
+  async getMySchools(@CurrentUser('phone') phone: string) {
+    return this.authService.getUserSchools(phone);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('switch-school')
+  @ApiOperation({ summary: 'تغییر شعبه/مدرسه برای راهبرانی که به چند مرکز دسترسی دارند' })
+  async switchSchool(
+    @CurrentUser('id') userId: string,
+    @Body('targetTenantSlug') targetTenantSlug: string,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.authService.switchSchool(userId, targetTenantSlug, ip, userAgent);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Patch('profile')
   @ApiOperation({ summary: 'ویرایش اطلاعات نمایه کاربر (تصویر، نام و ...)' })
   async updateProfile(

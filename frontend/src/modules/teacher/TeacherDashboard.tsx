@@ -13,7 +13,7 @@ import {
   ArrowUpRight,
   Award,
 } from 'lucide-react';
-import { toPersianDigits } from '../../lib/utils';
+import { toPersianDigits, cleanUserFullName } from '../../lib/utils';
 
 const getPersianDayKey = (): string => {
   const dayIndex = new Date().getDay(); // 0 is Sunday, 6 is Saturday
@@ -89,7 +89,7 @@ export const TeacherDashboard: React.FC = () => {
           </div>
           <div>
             <h1 className="text-base sm:text-lg font-black text-ink-darker dark:text-white">
-              درود، {user?.firstName} {user?.lastName}
+              درود، {cleanUserFullName(user?.firstName, user?.lastName)}
             </h1>
             <div className="flex items-center gap-2 mt-1">
               <Badge variant="male" className="text-[11px]">مربی تخصصی</Badge>

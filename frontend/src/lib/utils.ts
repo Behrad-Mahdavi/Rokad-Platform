@@ -58,3 +58,12 @@ export function formatToJalali(
   const monthStr = toPersianDigits(j.jm.toString().padStart(2, '0'));
   return `${yearStr}/${monthStr}/${dayStr.padStart(2, '۰')}`;
 }
+
+/**
+ * Clean user full name by removing any parenthesized roles or titles (e.g. "علیرضا عزیزپور (راهبر ارشد)" -> "علیرضا عزیزپور")
+ */
+export function cleanUserFullName(firstName?: string | null, lastName?: string | null): string {
+  const full = [firstName || '', lastName || ''].filter(Boolean).join(' ');
+  return full.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+}
+

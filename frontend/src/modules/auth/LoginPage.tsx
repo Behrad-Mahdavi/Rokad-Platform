@@ -34,6 +34,26 @@ interface DemoAccountConfig {
 }
 
 const DEMO_PRESET_MAP: Record<string, DemoAccountConfig> = {
+  '09154489820': {
+    slug: 'rokad-boys',
+    phone: '09154489820',
+    firstName: 'علیرضا',
+    lastName: 'عزیزپور (راهبر ارشد)',
+    role: 'SCHOOL_ADMIN',
+    tenantName: 'هنرستان‌های رُکاد',
+    theme: 'male',
+    isPlatformAdmin: true,
+  },
+  '09151257100': {
+    slug: 'rokad-boys',
+    phone: '09151257100',
+    firstName: 'حامد',
+    lastName: 'آرون (راهبر ارشد)',
+    role: 'SCHOOL_ADMIN',
+    tenantName: 'هنرستان‌های رُکاد',
+    theme: 'male',
+    isPlatformAdmin: true,
+  },
   '09101654176': {
     slug: 'rokad-boys',
     phone: '09101654176',
@@ -349,6 +369,34 @@ export const LoginPage: React.FC = () => {
           </div>
         )}
 
+        {/* انتخاب شعبه و مدرسه جهت ورود */}
+        <div className="mb-4 p-1 rounded-xl bg-gray-100 dark:bg-gray-800/70 border border-gray-200 dark:border-gray-700 flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setTenantSlug('rokad-boys')}
+            className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              tenantSlug === 'rokad-boys'
+                ? 'bg-white dark:bg-[#1A2234] text-sec dark:text-indigo-400 shadow-sm border border-sec/30 font-black'
+                : 'text-gray-500 hover:text-ink-darker dark:text-gray-400'
+            }`}
+          >
+            <School className="w-4 h-4 text-sec" />
+            <span>هنرستان پسرانه</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setTenantSlug('rokad-girls')}
+            className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              tenantSlug === 'rokad-girls'
+                ? 'bg-white dark:bg-[#1A2234] text-girl dark:text-pink-400 shadow-sm border border-girl/30 font-black'
+                : 'text-gray-500 hover:text-ink-darker dark:text-gray-400'
+            }`}
+          >
+            <School className="w-4 h-4 text-girl dark:text-pink-400" />
+            <span>هنرستان دخترانه</span>
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <Input
             label="نام کاربری یا شماره همراه"
@@ -378,7 +426,57 @@ export const LoginPage: React.FC = () => {
             ورود سریع آزمایشی:
           </p>
           <div className="grid grid-cols-2 gap-2 text-xs">
+            {/* Senior Leader Alireza Boys */}
+            <button
+              type="button"
+              onClick={() => selectPreset('rokad-boys', '09154489820', 'b09154489820')}
+              className="p-2.5 min-h-[44px] rounded-xl bg-sec/10 hover:bg-sec/20 text-right border border-sec/30 transition-colors flex flex-col justify-center"
+            >
+              <div className="font-bold text-sec dark:text-indigo-400 flex items-center gap-1.5">
+                <Crown className="h-3.5 w-3.5 text-sec shrink-0" />
+                <span>عزیزپور (راهبر ارشد پسرانه)</span>
+              </div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09154489820</div>
+            </button>
 
+            {/* Senior Leader Alireza Girls */}
+            <button
+              type="button"
+              onClick={() => selectPreset('rokad-girls', '09154489820', 'g09154489820')}
+              className="p-2.5 min-h-[44px] rounded-xl bg-girl/10 hover:bg-girl/20 text-right border border-girl/30 transition-colors flex flex-col justify-center"
+            >
+              <div className="font-bold text-girl dark:text-pink-400 flex items-center gap-1.5">
+                <Crown className="h-3.5 w-3.5 text-girl shrink-0" />
+                <span>عزیزپور (راهبر ارشد دخترانه)</span>
+              </div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09154489820</div>
+            </button>
+
+            {/* Senior Leader Hamed Boys */}
+            <button
+              type="button"
+              onClick={() => selectPreset('rokad-boys', '09151257100', 'b09151257100')}
+              className="p-2.5 min-h-[44px] rounded-xl bg-sec/10 hover:bg-sec/20 text-right border border-sec/30 transition-colors flex flex-col justify-center"
+            >
+              <div className="font-bold text-sec dark:text-indigo-400 flex items-center gap-1.5">
+                <Crown className="h-3.5 w-3.5 text-sec shrink-0" />
+                <span>آرون (راهبر ارشد پسرانه)</span>
+              </div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09151257100</div>
+            </button>
+
+            {/* Senior Leader Hamed Girls */}
+            <button
+              type="button"
+              onClick={() => selectPreset('rokad-girls', '09151257100', 'g09151257100')}
+              className="p-2.5 min-h-[44px] rounded-xl bg-girl/10 hover:bg-girl/20 text-right border border-girl/30 transition-colors flex flex-col justify-center"
+            >
+              <div className="font-bold text-girl dark:text-pink-400 flex items-center gap-1.5">
+                <Crown className="h-3.5 w-3.5 text-girl shrink-0" />
+                <span>آرون (راهبر ارشد دخترانه)</span>
+              </div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">09151257100</div>
+            </button>
 
             {/* Teacher */}
             <button

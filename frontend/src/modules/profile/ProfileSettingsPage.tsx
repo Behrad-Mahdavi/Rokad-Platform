@@ -19,7 +19,7 @@ import {
   School,
 } from 'lucide-react';
 import { SecuritySection } from './components/SecuritySection';
-import { toPersianDigits } from '../../lib/utils';
+import { toPersianDigits, cleanUserFullName } from '../../lib/utils';
 import { useCuriosityStore } from '../../lib/ui/curiosity-store';
 
 export const ProfileSettingsPage: React.FC = () => {
@@ -259,7 +259,7 @@ export const ProfileSettingsPage: React.FC = () => {
           <div className="flex-1 min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg sm:text-xl font-black text-ink-darker dark:text-white tracking-tight">
-                {user ? `${user.firstName} ${user.lastName}` : 'کاربر مهمان'}
+                {user ? cleanUserFullName(user.firstName, user.lastName) : 'کاربر مهمان'}
               </h2>
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-extrabold bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300 border border-primary/20">
                 {getRoleLabel(user?.role)}

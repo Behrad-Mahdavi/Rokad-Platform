@@ -4,6 +4,7 @@ import { useAuthStore } from '../../lib/auth/auth-store';
 import { useTenantStore } from '../../lib/auth/tenant-store';
 import { apiClient } from '../../lib/api/client';
 import { Card } from '../../components/ui/Card';
+import { cleanUserFullName } from '../../lib/utils';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import {
@@ -90,7 +91,7 @@ export const SchoolAdminDashboard: React.FC = () => {
           </div>
           <div>
             <h1 className="text-base sm:text-lg font-black text-ink-darker dark:text-white">
-              درود، {user?.firstName} {user?.lastName}
+              درود، {cleanUserFullName(user?.firstName, user?.lastName)}
             </h1>
             <div className="flex items-center gap-2 mt-1">
               <Badge variant="default" className="text-[11px]">مدیریت هنرستان</Badge>

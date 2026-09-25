@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../lib/auth/auth-store';
 import { useTenantStore } from '../../lib/auth/tenant-store';
 import { apiClient } from '../../lib/api/client';
-import { formatToJalali, toPersianDigits } from '../../lib/utils';
+import { formatToJalali, toPersianDigits, cleanUserFullName } from '../../lib/utils';
 import { HomeBannerSlider } from './components/HomeBannerSlider';
 import { BannerSettingsModal } from './components/BannerSettingsModal';
 import {
@@ -763,7 +763,7 @@ export const SuperAppHomePage: React.FC = () => {
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-white shrink-0 shadow-xs ring-2 ring-white/30 animate-pulse" />
             <span className="font-black text-base sm:text-lg lg:text-xl text-white tracking-tight truncate">
-              درود، {user?.firstName} {user?.lastName}
+              درود، {cleanUserFullName(user?.firstName, user?.lastName)}
             </span>
           </div>
 

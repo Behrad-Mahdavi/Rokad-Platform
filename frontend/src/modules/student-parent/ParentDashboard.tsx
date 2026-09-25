@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../../lib/auth/auth-store';
 import { apiClient } from '../../lib/api/client';
-import { toPersianDigits } from '../../lib/utils';
+import { toPersianDigits, cleanUserFullName } from '../../lib/utils';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -57,7 +57,7 @@ export const ParentDashboard: React.FC = () => {
   const student = primaryLink?.student;
   const studentUser = student?.user;
   const childFullName = studentUser 
-    ? `${studentUser.firstName} ${studentUser.lastName}`.trim() 
+    ? cleanUserFullName(studentUser.firstName, studentUser.lastName)
     : (isLoadingChildren ? 'در حال دریافت اطلاعات...' : 'فرزند ثبت‌شده');
   const classroomName = student?.enrollments?.[0]?.classroom?.name;
   const studentCode = student?.studentCode || student?.nationalCode;
@@ -82,7 +82,7 @@ export const ParentDashboard: React.FC = () => {
           </div>
           <div>
             <h1 className="text-base sm:text-lg font-black text-ink-darker dark:text-white">
-              پرتال اولیاء: {user?.firstName} {user?.lastName}
+              پرتال اولیاء: {cleanUserFullName(user?.firstName, user?.lastName)}
             </h1>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <Badge variant="female" className="text-[11px] flex items-center gap-1">

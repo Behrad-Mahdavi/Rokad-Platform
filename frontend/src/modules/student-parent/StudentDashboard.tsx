@@ -27,7 +27,7 @@ import {
   BookOpen,
   ChevronLeft,
 } from 'lucide-react';
-import { toPersianDigits, formatToJalali } from '../../lib/utils';
+import { toPersianDigits, formatToJalali, cleanUserFullName } from '../../lib/utils';
 
 const getPersianDayKey = (): string => {
   const dayIndex = new Date().getDay(); // 0 is Sunday, 6 is Saturday
@@ -247,7 +247,7 @@ export const StudentDashboard: React.FC = () => {
               </div>
 
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                {user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'دانش‌آموز'}
+                {user ? cleanUserFullName(user.firstName, user.lastName) || 'دانش‌آموز' : 'دانش‌آموز'}
                 {scheduleData?.classroom ? ` • کلاس ${scheduleData.classroom.name}` : ''}
                 {scheduleData?.classroom?.field?.name ? ` (${scheduleData.classroom.field.name})` : ''}
               </p>
@@ -340,7 +340,7 @@ export const StudentDashboard: React.FC = () => {
                   <div className="flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400 mt-2 pt-1.5 border-t border-gray-100 dark:border-gray-800">
                     <User className="w-3 h-3 text-primary shrink-0" />
                     <span className="truncate">
-                      {slot.teacher?.user ? `${slot.teacher.user.firstName} ${slot.teacher.user.lastName}` : 'دبیر'}
+                      {slot.teacher?.user ? cleanUserFullName(slot.teacher.user.firstName, slot.teacher.user.lastName) : 'دبیر'}
                     </span>
                   </div>
                 </div>
