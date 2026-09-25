@@ -4,15 +4,18 @@ import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 import fs from 'fs';
 
-// Read version from root package.json for synchronized build-time injection
-let appVersion = '0.7.14';
+// Read version from package.json for synchronized build-time injection
+let appVersion = '1.0.0';
 try {
-  const rootPkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../package.json'), 'utf-8'));
-  if (rootPkg.version) {
-    appVersion = rootPkg.version;
+  const localPkgPath = path.resolve(__dirname, 'package.json');
+  const rootPkgPath = path.resolve(__dirname, '../package.json');
+  const targetPath = fs.existsSync(localPkgPath) ? localPkgPath : rootPkgPath;
+  const pkg = JSON.parse(fs.readFileSync(targetPath, 'utf-8'));
+  if (pkg.version) {
+    appVersion = pkg.version;
   }
 } catch (e) {
-  console.warn('[Vite Config] Could not read root package.json, using fallback version');
+  console.warn('[Vite Config] Could not read package.json, using fallback version 1.0.0');
 }
 
 const buildTime = new Date().toISOString();
