@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { apiClient } from '../../../lib/api/client';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
@@ -41,10 +41,12 @@ import {
   Calendar,
   Edit3,
   Save,
+  KeyRound,
 } from 'lucide-react';
 import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import { useTenantStore } from '../../../lib/auth/tenant-store';
 import { toPersianDigits, formatToJalali } from '../../../lib/utils';
+import { PasswordRevealModal, TargetMember } from '../vault/PasswordRevealModal';
 
 import { read, utils, writeFile } from 'xlsx';
 
@@ -128,6 +130,7 @@ export const MembersPage: React.FC = () => {
   const [dossierTab, setDossierTab] = useState<'IDENTITY' | 'FATHER' | 'MOTHER' | 'CONTACT'>('IDENTITY');
   const [isEditingDossier, setIsEditingDossier] = useState(false);
   const [dossierEditForm, setDossierEditForm] = useState<any>({});
+  const [vaultTarget, setVaultTarget] = useState<TargetMember | null>(null);
 
   const [isTeacherModalOpen, setIsTeacherModalOpen] = useState(false);
   const [isEditLessonsModalOpen, setIsEditLessonsModalOpen] = useState(false);
@@ -543,6 +546,18 @@ export const MembersPage: React.FC = () => {
           description="ثبت پرونده تحصیلی، اطلاعات اولیاء، پرونده‌های الکترونیکی و ورود دسته‌جمعی"
           actions={
             <div className="flex items-center space-x-2 space-x-reverse w-full sm:w-auto">
+              <Link to="/app/admin/vault">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  className="w-full sm:w-auto text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30 font-bold"
+                >
+                  <KeyRound className="h-4 w-4 ml-1.5 text-amber-600 dark:text-amber-400" />
+                  <span>گاوصندوق رمزها</span>
+                </Button>
+              </Link>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -725,17 +740,29 @@ export const MembersPage: React.FC = () => {
             },
             {
               key: 'actions',
-              header: 'پرونده الکترونیکی',
+              header: 'عملیات',
               mobilePriority: 'primary',
               render: (s) => (
-                <button
-                  type="button"
-                  onClick={() => handleOpenDossier(s)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-2xs border border-primary/20 cursor-pointer"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>مشاهده پرونده</span>
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenDossier(s)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-2xs border border-primary/20 cursor-pointer"
+                    title="مشاهده پرونده الکترونیکی"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>پرونده</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVaultTarget(s)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white transition-all shadow-2xs border border-amber-500/20 cursor-pointer"
+                    title="مشاهده رمز عبور در گاوصندوق"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    <span>رمز</span>
+                  </button>
+                </div>
               ),
             },
           ]}
@@ -832,20 +859,58 @@ export const MembersPage: React.FC = () => {
               mobilePriority: 'detail',
               render: () => <Badge variant="male">دبیر فعال</Badge>,
             },
+            {
+              key: 'actions',
+              header: 'عملیات',
+              mobilePriority: 'primary',
+              render: (t) => (
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleOpenEditLessons(t)}
+                    className="text-xs text-primary hover:text-primary-dark h-8 px-2"
+                    title="ویرایش دروس"
+                  >
+                    <BookOpen className="h-3.5 w-3.5 ms-1" />
+                    <span>دروس</span>
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => setVaultTarget(t)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white transition-all shadow-2xs border border-amber-500/20 cursor-pointer"
+                    title="مشاهده رمز عبور در گاوصندوق"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    <span>رمز</span>
+                  </button>
+                </div>
+              ),
+            },
           ]}
           keyExtractor={(t) => t.id}
           isLoading={isLoading}
           emptyMessage="هنوز دبیری ثبت نشده است."
           cardActions={(t) => (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleOpenEditLessons(t)}
-              className="text-xs text-primary hover:text-primary-dark h-8 px-2.5"
-            >
-              <BookOpen className="h-3.5 w-3.5 ms-1" />
-              ویرایش دروس
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleOpenEditLessons(t)}
+                className="text-xs text-primary hover:text-primary-dark h-8 px-2.5"
+              >
+                <BookOpen className="h-3.5 w-3.5 ms-1" />
+                ویرایش دروس
+              </Button>
+              <button
+                type="button"
+                onClick={() => setVaultTarget(t)}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white transition-all shadow-2xs border border-amber-500/20 cursor-pointer"
+              >
+                <KeyRound className="w-3.5 h-3.5" />
+                <span>رمز عبور</span>
+              </button>
+            </div>
           )}
         />
       )}
@@ -2161,6 +2226,13 @@ export const MembersPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Password Reveal Modal */}
+      <PasswordRevealModal
+        isOpen={!!vaultTarget}
+        onClose={() => setVaultTarget(null)}
+        targetMember={vaultTarget}
+      />
     </div>
   );
 };

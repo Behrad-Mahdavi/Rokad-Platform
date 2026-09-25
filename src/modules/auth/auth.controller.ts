@@ -24,6 +24,12 @@ import {
   StepUpVerifyDto,
   VerifyTwoFactorDto,
 } from './dto/security.dto';
+import {
+  RevealPasswordDto,
+  SetupVaultKeyDto,
+  BackfillVaultDto,
+} from './dto/password-vault.dto';
+import { PasswordVaultService } from './password-vault.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { StepUpGuard } from '../../common/guards/step-up.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -40,6 +46,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly twoFactorService: TwoFactorService,
     private readonly sessionService: SessionService,
+    private readonly passwordVaultService: PasswordVaultService,
   ) {}
 
   @Public()
@@ -248,5 +255,73 @@ export class AuthController {
     @Param('sessionId') sessionId: string,
   ) {
     return this.sessionService.revokeSession(targetUserId, sessionId);
+  }
+
+  // ==========================================
+  // PASSWORD VAULT (ZERO-KNOWLEDGE ENVELOPE ENCRYPTION)
+  // ==========================================
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @ApiBearerAuth()
+  @Post('vault/reveal-password')
+  @ApiOperation({ summary: 'بازیابی و مشاهده رمز عبور کاربر با استفاده از کلید مستر مدیر' })
+  async revealPassword(
+    @CurrentUser('id') adminUserId: string,
+    @Body() dto: RevealPasswordDto,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.passwordVaultService.revealPassword(
+      adminUserId,
+      dto.targetUserId,
+      dto.masterKey,
+      ip,
+      userAgent,
+      dto.reason,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @ApiBearerAuth()
+  @Post('vault/setup-key')
+  @ApiOperation({ summary: 'تنظیم یا تغییر کلید مستر گاوصندوق رمزهای مدرسه' })
+  async setupMasterKey(
+    @CurrentTenant('id') tenantId: string,
+    @CurrentUser('isPlatformAdmin') isPlatformAdmin: boolean,
+    @Body() dto: SetupVaultKeyDto,
+  ) {
+    return this.passwordVaultService.setupMasterKey(
+      tenantId,
+      dto.newMasterKey,
+      dto.currentMasterKey,
+      isPlatformAdmin,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @ApiBearerAuth()
+  @Post('vault/backfill')
+  @ApiOperation({ summary: 'رمزنگاری و ثبت رمزهای اعضای قبلی در گاوصندوق' })
+  async backfillPasswords(
+    @CurrentTenant('id') tenantId: string,
+    @CurrentUser('isPlatformAdmin') isPlatformAdmin: boolean,
+    @Body() dto: BackfillVaultDto,
+  ) {
+    const targetTenantId = (isPlatformAdmin && dto.tenantId) ? dto.tenantId : tenantId;
+    return this.passwordVaultService.backfillTenantPasswords(targetTenantId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @ApiBearerAuth()
+  @Get('vault/status')
+  @ApiOperation({ summary: 'استعلام وضعیت گاوصندوق رمزها و درصد پوشش اعضا' })
+  async getVaultStatus(
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    return this.passwordVaultService.getVaultStatus(tenantId);
   }
 }

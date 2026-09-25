@@ -252,6 +252,13 @@ model Tenant {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
+  // Password Vault (Zero-Knowledge Envelope Encryption)
+  vaultPublicKey           String?   @db.Text
+  vaultEncryptedPrivateKey String?   @db.Text
+  vaultKeySalt             String?
+  vaultKeyHash             String?
+  vaultKeyUpdatedAt        DateTime?
+
   // Multi-Campus / Multi-Branch Hierarchy
   parentTenantId String?
   parentTenant   Tenant?  @relation("TenantHierarchy", fields: [parentTenantId], references: [id], onDelete: SetNull)
@@ -379,6 +386,7 @@ model User {
   nationalIdBlindIndex String?
   username             String?
   passwordHash         String
+  encryptedPassword    String?    @db.Text
   firstName            String
   lastName             String
   gender               Gender?

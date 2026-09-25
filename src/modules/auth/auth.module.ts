@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { TwoFactorService } from './two-factor.service';
 import { SessionService } from './session.service';
+import { PasswordVaultService } from './password-vault.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { StepUpGuard } from '../../common/guards/step-up.guard';
@@ -32,6 +33,7 @@ import { StepUpGuard } from '../../common/guards/step-up.guard';
     AuthService,
     TwoFactorService,
     SessionService,
+    PasswordVaultService,
     JwtStrategy,
     JwtAuthGuard,
     StepUpGuard,
@@ -40,6 +42,7 @@ import { StepUpGuard } from '../../common/guards/step-up.guard';
     AuthService,
     TwoFactorService,
     SessionService,
+    PasswordVaultService,
     JwtAuthGuard,
     StepUpGuard,
     JwtModule,

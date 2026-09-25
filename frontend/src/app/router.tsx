@@ -54,6 +54,7 @@ import { ParentFeesPage } from '../modules/student-parent/fees/ParentFeesPage';
 
 // Newly Integrated Modules
 import { SchoolProfilePage } from '../modules/school-admin/profile/SchoolProfilePage';
+import { PasswordVaultPage } from '../modules/school-admin/vault/PasswordVaultPage';
 import { MattersPage } from '../modules/school-admin/matters/MattersPage';
 import { PollsPage } from '../modules/shared/polls/PollsPage';
 import { ParentVisitsPage } from '../modules/student-parent/visits/ParentVisitsPage';
@@ -140,6 +141,7 @@ export const router = createBrowserRouter([
               { path: 'academic', element: <AcademicStructurePage /> },
               { path: 'schedule', element: <ClassSchedulePage /> },
               { path: 'members', element: <MembersPage /> },
+              { path: 'vault', element: <PasswordVaultPage /> },
               { path: 'roles', element: <RoleBuilderPage /> },
               { path: 'profile', element: <SchoolProfilePage /> },
               { path: 'matters', element: <MattersPage /> },

@@ -33,6 +33,7 @@ import {
   CalendarRange,
   Scale,
   Briefcase,
+  KeyRound,
 } from 'lucide-react';
 import { CoinStackIcon } from '../../components/icons/CustomNavIcons';
 import { UserRole } from '../../types/auth';
@@ -119,6 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               { title: 'برنامه هفتگی کلاس‌ها', href: '/app/admin/schedule', icon: CalendarDays },
               { title: 'دانش‌آموزان', href: '/app/admin/members?tab=students', icon: GraduationCap },
               { title: 'کادر آموزشی', href: '/app/admin/members?tab=staff', icon: Briefcase },
+              { title: 'گاوصندوق رمز عبور', href: '/app/admin/vault', icon: KeyRound },
               { title: 'سازنده نقش‌ها و دسترسی‌ها', href: '/app/admin/roles', icon: ShieldCheck },
               { title: 'انضباطی/تشویقی', href: '/app/admin/matters', icon: Scale },
             ],

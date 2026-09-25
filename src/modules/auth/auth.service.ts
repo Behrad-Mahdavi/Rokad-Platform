@@ -20,6 +20,7 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ChangePasswordDto, VerifyTwoFactorDto } from './dto/security.dto';
 import { TwoFactorService } from './two-factor.service';
 import { SessionService } from './session.service';
+import { PasswordVaultService } from './password-vault.service';
 import { BruteForceService } from '../../common/redis/brute-force.service';
 import { EncryptionService } from '../../common/crypto/encryption.service';
 import { Role, TenantType } from '../../common/constants';
@@ -38,6 +39,7 @@ export class AuthService {
     private readonly sessionService: SessionService,
     private readonly bruteForceService: BruteForceService,
     private readonly encryptionService: EncryptionService,
+    private readonly passwordVaultService: PasswordVaultService,
   ) {}
 
   /**
@@ -85,6 +87,22 @@ export class AuthService {
 
       return { tenant, user };
     });
+
+    // Initialize Vault and encrypt initial admin password
+    try {
+      const encryptedPassword = await this.passwordVaultService.encryptPasswordForTenant(
+        result.tenant.id,
+        dto.adminPassword,
+      );
+      if (encryptedPassword) {
+        await this.prisma.user.update({
+          where: { id: result.user.id },
+          data: { encryptedPassword },
+        });
+      }
+    } catch (vaultErr: any) {
+      this.logger.warn(`Failed to encrypt initial admin password into vault: ${vaultErr.message}`);
+    }
 
     // Issue initial token pair
     const tokens = await this.createTokenPair(
@@ -524,9 +542,17 @@ export class AuthService {
     }
 
     const passwordHash = await argon2.hash(dto.newPassword);
+    const encryptedPassword = await this.passwordVaultService.encryptPasswordForTenant(
+      user.tenantId,
+      dto.newPassword,
+    );
+
     await this.prisma.user.update({
       where: { id: userId },
-      data: { passwordHash },
+      data: {
+        passwordHash,
+        encryptedPassword: encryptedPassword || undefined,
+      },
     });
 
     // Requirement 4: Revoke all other active sessions!

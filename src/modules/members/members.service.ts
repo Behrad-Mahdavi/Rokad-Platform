@@ -22,6 +22,7 @@ import {
   normalizeNationalCode,
   deriveStudentCode,
 } from '../../common/utils/credential.util';
+import { PasswordVaultService } from '../auth/password-vault.service';
 
 /**
  * تبدیل تاریخ تولد شمسی یا میلادی به شیء معتبر Date
@@ -92,6 +93,7 @@ export class MembersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly passwordVaultService: PasswordVaultService,
   ) {}
 
   // 1. Students
@@ -235,6 +237,10 @@ export class MembersService {
         }
 
         const passwordHash = await argon2.hash(creds.finalPassword);
+        const encryptedPassword = await this.passwordVaultService.encryptPasswordForTenant(
+          tenantId,
+          creds.finalPassword,
+        );
 
         await this.prisma.$transaction(async (tx) => {
           // بررسی عدم تکراری بودن کاربر
@@ -278,6 +284,7 @@ export class MembersService {
               nationalId: creds.nationalId || undefined,
               avatarUrl: avatarUrl || undefined,
               passwordHash,
+              encryptedPassword: encryptedPassword || undefined,
               role: Role.STUDENT as any,
               status: 'ACTIVE',
             },
@@ -468,6 +475,10 @@ export class MembersService {
     }
 
     const passwordHash = await argon2.hash(creds.finalPassword);
+    const encryptedPassword = await this.passwordVaultService.encryptPasswordForTenant(
+      tenantId,
+      creds.finalPassword,
+    );
 
     const createdResult = await this.prisma.$transaction(async (tx) => {
       // 1. Create base User
@@ -482,6 +493,7 @@ export class MembersService {
           nationalId: creds.nationalId,
           avatarUrl: dto.avatarUrl || undefined,
           passwordHash,
+          encryptedPassword: encryptedPassword || undefined,
           role: Role.STUDENT as any,
           status: 'ACTIVE',
         },
@@ -738,6 +750,10 @@ export class MembersService {
     });
 
     const passwordHash = await argon2.hash(creds.finalPassword);
+    const encryptedPassword = await this.passwordVaultService.encryptPasswordForTenant(
+      tenantId,
+      creds.finalPassword,
+    );
 
     const createdTeacherResult = await this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
@@ -750,6 +766,7 @@ export class MembersService {
           nationalId: creds.nationalId,
           email: dto.email,
           passwordHash,
+          encryptedPassword: encryptedPassword || undefined,
           role: Role.TEACHER as any,
           status: 'ACTIVE',
         },
@@ -887,6 +904,10 @@ export class MembersService {
     });
 
     const passwordHash = await argon2.hash(creds.finalPassword);
+    const encryptedPassword = await this.passwordVaultService.encryptPasswordForTenant(
+      tenantId,
+      creds.finalPassword,
+    );
 
     return this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
@@ -898,6 +919,7 @@ export class MembersService {
           username: creds.username !== dto.phone ? creds.username : undefined,
           nationalId: creds.nationalId,
           passwordHash,
+          encryptedPassword: encryptedPassword || undefined,
           role: Role.STAFF as any,
           status: 'ACTIVE',
         },
@@ -942,6 +964,10 @@ export class MembersService {
     });
 
     const passwordHash = await argon2.hash(creds.finalPassword);
+    const encryptedPassword = await this.passwordVaultService.encryptPasswordForTenant(
+      tenantId,
+      creds.finalPassword,
+    );
 
     return this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
@@ -953,6 +979,7 @@ export class MembersService {
           username: creds.username !== dto.phone ? creds.username : undefined,
           nationalId: creds.nationalId,
           passwordHash,
+          encryptedPassword: encryptedPassword || undefined,
           role: Role.STAFF as any,
           status: 'ACTIVE',
         },
@@ -1004,6 +1031,10 @@ export class MembersService {
     });
 
     const passwordHash = await argon2.hash(creds.finalPassword);
+    const encryptedPassword = await this.passwordVaultService.encryptPasswordForTenant(
+      tenantId,
+      creds.finalPassword,
+    );
 
     return this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
@@ -1015,6 +1046,7 @@ export class MembersService {
           username: creds.username !== dto.phone ? creds.username : undefined,
           nationalId: creds.nationalId,
           passwordHash,
+          encryptedPassword: encryptedPassword || undefined,
           role: Role.PARENT as any,
           status: 'ACTIVE',
         },
@@ -1144,6 +1176,10 @@ export class MembersService {
     });
 
     const parentPasswordHash = await argon2.hash(parentCreds.finalPassword);
+    const parentEncryptedPassword = await this.passwordVaultService.encryptPasswordForTenant(
+      tenantId,
+      parentCreds.finalPassword,
+    );
 
     // نام والد: ترجیحاً نام پدر یا مادر، در غیر این صورت «ولی دانش‌آموز (نام فرزند)»
     const rawFullName = (dto.fatherFullName || dto.motherFullName || studentProfile.fatherFullName || studentProfile.motherFullName || '').trim();
@@ -1187,6 +1223,7 @@ export class MembersService {
         data: {
           username: parentCreds.username,
           passwordHash: parentPasswordHash,
+          encryptedPassword: parentEncryptedPassword || undefined,
           ...(updatePhone ? { phone: updatePhone } : {}),
           ...(rawFullName ? { firstName: pFirstName, lastName: pLastName } : {}),
         },
@@ -1235,6 +1272,7 @@ export class MembersService {
         where: { id: parentUser.id },
         data: {
           passwordHash: parentPasswordHash,
+          encryptedPassword: parentEncryptedPassword || undefined,
         },
       });
     } else {
@@ -1256,6 +1294,7 @@ export class MembersService {
           phone: createPhone,
           username: parentCreds.username,
           passwordHash: parentPasswordHash,
+          encryptedPassword: parentEncryptedPassword || undefined,
           role: Role.PARENT as any,
           status: 'ACTIVE',
         },
