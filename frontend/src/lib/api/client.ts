@@ -95,7 +95,8 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
-    if (currentTenant?.slug && !config.headers['x-tenant-slug']) {
+    const isLoginRequest = config.url?.includes('/auth/login');
+    if (!isLoginRequest && currentTenant?.slug && !config.headers['x-tenant-slug']) {
       config.headers['x-tenant-slug'] = currentTenant.slug;
     }
 

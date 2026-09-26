@@ -67,3 +67,14 @@ export function cleanUserFullName(firstName?: string | null, lastName?: string |
   return full.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
 }
 
+/**
+ * Convert Persian and Arabic digits to standard English digits
+ */
+export function toEnglishDigits(str: string | number | null | undefined): string {
+  if (str === null || str === undefined) return '';
+  return str
+    .toString()
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 1776))
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 1632));
+}
+

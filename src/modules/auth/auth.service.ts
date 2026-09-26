@@ -299,29 +299,30 @@ export class AuthService {
       };
     }
 
-    if (!candidateUsers || candidateUsers.length === 0) {
-      await this.bruteForceService.recordFailedAttempt(cleanIdentifier || rawIdentifier, ipAddress);
-      throw new UnauthorizedException('اطلاعات ورود (نام کاربری یا رمز عبور) اشتباه است');
-    }
-
     // Verify Password across candidate users (e.g. distinguishing Student vs Parent entering the same national ID)
     let authenticatedUser: any = null;
+    const cleanPassword = normalizePersianDigits(dto.password || '');
+
     for (const candidate of candidateUsers) {
       if (candidate.status !== 'ACTIVE') continue;
-      const isValid = await argon2.verify(candidate.passwordHash, dto.password);
+      let isValid = false;
+      try {
+        isValid = (await argon2.verify(candidate.passwordHash, dto.password)) ||
+                  (cleanPassword !== dto.password ? await argon2.verify(candidate.passwordHash, cleanPassword) : false);
+      } catch (e) {}
       if (isValid) {
         authenticatedUser = candidate;
         break;
       }
     }
 
-    // If not matched in the scoped tenant (e.g. cross-school leader entering the other school's password),
+    // If not matched or candidateUsers was empty in the scoped tenant,
     // search across all other active tenants for this identifier and password!
-    if (!authenticatedUser && tenantId) {
+    if (!authenticatedUser) {
       try {
         const otherTenantCandidates = await this.prisma.user.findMany({
           where: {
-            tenantId: { not: tenantId },
+            ...(tenantId ? { tenantId: { not: tenantId } } : {}),
             status: 'ACTIVE',
             OR: [
               { username: cleanIdentifier },
@@ -329,9 +330,21 @@ export class AuthService {
               { username: `p_${cleanIdentifier}` },
               ...(strippedPIdentifier ? [{ username: strippedPIdentifier }] : []),
               ...(strippedZeroIdentifier ? [{ username: strippedZeroIdentifier }, { username: `p${strippedZeroIdentifier}` }] : []),
+              ...(strippedZeroPIdentifier ? [{ username: strippedZeroPIdentifier }, { username: `p${strippedZeroPIdentifier}` }] : []),
+              ...(paddedTenIdentifier ? [{ username: paddedTenIdentifier }, { username: `p${paddedTenIdentifier}` }] : []),
+              { nationalId: cleanIdentifier },
+              ...(strippedPIdentifier ? [{ nationalId: strippedPIdentifier }] : []),
+              ...(strippedZeroIdentifier ? [{ nationalId: strippedZeroIdentifier }] : []),
+              ...(paddedTenIdentifier ? [{ nationalId: paddedTenIdentifier }] : []),
+              ...(nationalBlind ? [{ nationalIdBlindIndex: nationalBlind }] : []),
+              ...(strippedNationalBlind ? [{ nationalIdBlindIndex: strippedNationalBlind }] : []),
               { phone: cleanIdentifier },
               { email: rawIdentifier.toLowerCase() },
               { email: cleanIdentifier.toLowerCase() },
+              { studentProfile: { nationalCode: cleanIdentifier } },
+              ...(strippedZeroIdentifier ? [{ studentProfile: { nationalCode: strippedZeroIdentifier } }] : []),
+              ...(paddedTenIdentifier ? [{ studentProfile: { nationalCode: paddedTenIdentifier } }] : []),
+              ...(nationalBlind ? [{ studentProfile: { nationalCodeBlindIndex: nationalBlind } }] : []),
             ],
           },
           include: {
@@ -341,7 +354,11 @@ export class AuthService {
 
         for (const candidate of otherTenantCandidates) {
           if (candidate.status !== 'ACTIVE') continue;
-          const isValid = await argon2.verify(candidate.passwordHash, dto.password);
+          let isValid = false;
+          try {
+            isValid = (await argon2.verify(candidate.passwordHash, dto.password)) ||
+                      (cleanPassword !== dto.password ? await argon2.verify(candidate.passwordHash, cleanPassword) : false);
+          } catch (e) {}
           if (isValid) {
             authenticatedUser = candidate;
             break;

@@ -8,6 +8,7 @@ import { Input } from '../../components/ui/Input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import { AlertCircle } from 'lucide-react';
 import { TwoFactorVerificationModal } from './components/TwoFactorVerificationModal';
+import { toEnglishDigits } from '../../lib/utils';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -76,7 +77,10 @@ export const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!identifier.trim() || !password.trim()) {
+    const cleanId = toEnglishDigits(identifier).trim();
+    const cleanPass = toEnglishDigits(password).trim();
+
+    if (!cleanId || !cleanPass) {
       setError('لطفاً نام کاربری/شماره همراه و رمز عبور را وارد کنید.');
       return;
     }
@@ -86,8 +90,8 @@ export const LoginPage: React.FC = () => {
 
     try {
       const res: any = await apiClient.post('/auth/login', {
-        identifier: identifier.trim(),
-        password: password.trim(),
+        identifier: cleanId,
+        password: cleanPass,
       });
 
       const responsePayload = res?.data || res;
