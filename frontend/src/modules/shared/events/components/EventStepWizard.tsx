@@ -13,6 +13,7 @@ import { toPersianDigits } from '../../../../utils/jalali';
 import { EVENT_MODULE_REGISTRY, WorkflowModuleEntry, renumberWorkflowModules } from '../constants/event-modules';
 import { parseJsonArray } from '../constants/event-access';
 import { getInitialIdeasForEvent } from '../constants/initial-ideas';
+import { apiClient } from '../../../../lib/api/client';
 import {
   CheckCircle2,
   Lock,
@@ -153,33 +154,45 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
 
   const firstStep = STEPS_CONFIG[0]?.step ?? 1;
 
-  const handleToggleIdeaLock = () => {
-    setIsIdeaSubmissionLocked((prev) => {
-      const next = !prev;
-      localStorage.setItem(lockKey, String(next));
-      if (next) {
-        toast.info('ثبت ایده قفل شد.');
-      } else {
-        toast.info('ثبت ایده مجدداً بازگشایی شد.');
-      }
-      return next;
-    });
+  const handleToggleIdeaLock = async () => {
+    const next = !isIdeaSubmissionLocked;
+    setIsIdeaSubmissionLocked(next);
+    localStorage.setItem(lockKey, String(next));
+    if (next) {
+      toast.info('ثبت ایده قفل شد.');
+    } else {
+      toast.info('ثبت ایده مجدداً بازگشایی شد.');
+    }
+
+    try {
+      await apiClient.patch(`/calendar/events/${eventId}/wizard-steps`, {
+        isIdeaSubmissionLocked: next,
+      });
+    } catch (err: any) {
+      console.error('Failed to sync idea lock state to server:', err);
+    }
   };
 
-  const handleToggleStepUnlock = (stepNum: number, e: React.MouseEvent) => {
+  const handleToggleStepUnlock = async (stepNum: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    setUnlockedSteps((prev) => {
-      let next: number[];
-      if (prev.includes(stepNum)) {
-        next = prev.filter((s) => s !== stepNum);
-        toast.info(`مرحله ${toPersianDigits(stepNum)} برای دانش‌آموزان قفل شد.`);
-      } else {
-        next = [...prev, stepNum];
-        toast.success(`مرحله ${toPersianDigits(stepNum)} برای دانش‌آموزان بازگشایی شد.`);
-      }
-      localStorage.setItem(unlockedStepsKey, JSON.stringify(next));
-      return next;
-    });
+    let next: number[];
+    if (unlockedSteps.includes(stepNum)) {
+      next = unlockedSteps.filter((s) => s !== stepNum);
+      toast.info(`مرحله ${toPersianDigits(stepNum)} برای دانش‌آموزان قفل شد.`);
+    } else {
+      next = [...unlockedSteps, stepNum];
+      toast.success(`مرحله ${toPersianDigits(stepNum)} برای دانش‌آموزان بازگشایی شد.`);
+    }
+    setUnlockedSteps(next);
+    localStorage.setItem(unlockedStepsKey, JSON.stringify(next));
+
+    try {
+      await apiClient.patch(`/calendar/events/${eventId}/wizard-steps`, {
+        unlockedSteps: next,
+      });
+    } catch (err: any) {
+      console.error('Failed to sync step unlock to server:', err);
+    }
   };
 
   const handleStepClick = (stepNum: number) => {
@@ -219,22 +232,105 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
     }
   }, [ideas, storageKey]);
 
+  // Live Server Sync with fallback & periodic polling
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchServerWizardData = async () => {
+      try {
+        const res = await apiClient.get(`/calendar/events/${eventId}/wizard-data`);
+        if (!isMounted || !res.data) return;
+
+        if (Array.isArray(res.data.ideas) && res.data.ideas.length > 0) {
+          setIdeas((prev) => {
+            const serverIds = new Set(res.data.ideas.map((i: EventIdea) => i.id));
+            const pendingLocal = prev.filter((i) => !serverIds.has(i.id) && i.id.startsWith('idea_'));
+            return [...pendingLocal, ...res.data.ideas];
+          });
+        }
+
+        if (Array.isArray(res.data.unlockedSteps) && res.data.unlockedSteps.length > 0) {
+          setUnlockedSteps(res.data.unlockedSteps);
+          localStorage.setItem(unlockedStepsKey, JSON.stringify(res.data.unlockedSteps));
+        }
+
+        if (typeof res.data.isIdeaSubmissionLocked === 'boolean') {
+          setIsIdeaSubmissionLocked(res.data.isIdeaSubmissionLocked);
+          localStorage.setItem(lockKey, String(res.data.isIdeaSubmissionLocked));
+        }
+      } catch (err) {
+        // Fallback to local storage silently
+      }
+    };
+
+    fetchServerWizardData();
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchServerWizardData();
+      }
+    }, 8000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [eventId]);
+
   const goToStepByKey = (key: string) => {
     const target = STEPS_CONFIG.find((s) => s.key === key);
     if (target) handleStepClick(target.step);
   };
 
-  const handleIdeaSubmitted = (newIdea: EventIdea) => {
+  const handleIdeaSubmitted = async (newIdea: EventIdea) => {
     const updatedIdeas = [newIdea, ...ideas];
     setIdeas(updatedIdeas);
+
+    try {
+      const res = await apiClient.post(`/calendar/events/${eventId}/ideas`, {
+        title: newIdea.title,
+        description: newIdea.description,
+        authorName: newIdea.authorName,
+        category: newIdea.category,
+        goals: newIdea.goals,
+        suggestedMaterials: newIdea.suggestedMaterials,
+        attachmentUrl: newIdea.attachmentUrl,
+      });
+      if (res.data?.idea) {
+        setIdeas((prev) =>
+          prev.map((i) => (i.id === newIdea.id ? res.data.idea : i))
+        );
+      }
+      if (Array.isArray(res.data?.ideas)) {
+        setIdeas(res.data.ideas);
+      }
+    } catch (err: any) {
+      console.error('Failed to sync idea to server:', err);
+    }
   };
 
-  const handleUpdateIdea = (updatedIdea: EventIdea) => {
+  const handleUpdateIdea = async (updatedIdea: EventIdea) => {
     setIdeas((prev) => prev.map((item) => (item.id === updatedIdea.id ? updatedIdea : item)));
+    try {
+      await apiClient.patch(`/calendar/events/${eventId}/ideas/${updatedIdea.id}`, {
+        title: updatedIdea.title,
+        description: updatedIdea.description,
+        status: updatedIdea.status,
+        ideaNumber: updatedIdea.ideaNumber,
+        authorName: updatedIdea.authorName,
+      });
+    } catch (err: any) {
+      console.error('Failed to sync idea update to server:', err);
+    }
   };
 
-  const handleDeleteIdea = (ideaId: string) => {
+  const handleDeleteIdea = async (ideaId: string) => {
     setIdeas((prev) => prev.filter((item) => item.id !== ideaId));
+    try {
+      await apiClient.delete(`/calendar/events/${eventId}/ideas/${ideaId}`);
+    } catch (err: any) {
+      console.error('Failed to delete idea from server:', err);
+    }
   };
 
   return (

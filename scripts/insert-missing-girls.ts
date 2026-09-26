@@ -59,6 +59,18 @@ const studentsToInsert: StudentInfo[] = [
     fatherPhone: '09155589428',
     motherPhone: '09158135911',
   },
+  {
+    firstName: 'محیا',
+    lastName: 'تقوی‌فرد',
+    rawNationalCode: '0950289493',
+    username: '950289493',
+    classCode: '101',
+    gradeLevel: 'دهم',
+    gradeCode: 'G_GRADE_10',
+    studentPhone: undefined,
+    fatherPhone: undefined,
+    motherPhone: undefined,
+  },
 ];
 
 async function main() {

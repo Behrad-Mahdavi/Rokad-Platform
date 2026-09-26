@@ -1,6 +1,21 @@
-import { EventIdea } from '../components/EventIdeaSubmissionStep';
+export interface BackendEventIdea {
+  id: string;
+  eventId: string;
+  ideaNumber: number;
+  title: string;
+  description: string;
+  authorName: string;
+  authorRole?: string;
+  authorUserId?: string;
+  createdAt: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  category?: string;
+  goals?: string;
+  suggestedMaterials?: string;
+  attachmentUrl?: string;
+}
 
-export const EVENT_609775C5_IDEAS: EventIdea[] = [
+export const EVENT_609775C5_INITIAL_IDEAS: BackendEventIdea[] = [
   {
     id: 'idea_609775c5_1',
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
@@ -61,7 +76,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 6,
     title: 'رفع استرس',
-    description: 'راهکارها و ابزارهای دیجیتال برای مدیریت و کاهش اضطراب و استرس تحصیلی.',
+    description: 'راهکارهای هوشمند روانشناختی و تکنیک‌های کاهش اضطراب تحصیلی.',
     authorName: 'باران اکبریان',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T08:25:00.000Z',
@@ -72,7 +87,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 7,
     title: 'Modify',
-    description: 'ابزار هوشمند بهینه‌سازی، ویرایش و بازطراحی فرایندهای دیجیتال.',
+    description: 'پلتفرم بهینه‌سازی و شخصی‌سازی ابزارهای کاربردی متناسب با نیاز کاربر.',
     authorName: 'آترین زارع مهرجردی',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T08:30:00.000Z',
@@ -83,7 +98,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 8,
     title: 'پزشک همراه',
-    description: 'سامانه مشاوره فوری، پایش علائم و مراقبت‌های اولیه پزشکی.',
+    description: 'دستیار هوشمند پیگیری سلامت روزانه و یادآوری دستورات پزشکی.',
     authorName: 'پانیسا نسائی زهان',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T08:35:00.000Z',
@@ -94,8 +109,8 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 9,
     title: 'هم‌مسیر',
-    description: 'پلتفرم اشتراک مسیر ایمن برای رفت‌وآمد روزانه دانش‌آموزان.',
-    authorName: 'الیسا ولیزاده',
+    description: 'سامانه هوشمند اشتراک سفر و هم‌پیمایی ایمن بین دانش‌آموزان و هم‌محله‌ای‌ها.',
+    authorName: 'الیسا ولی‌زاده',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T08:40:00.000Z',
     status: 'APPROVED',
@@ -104,8 +119,8 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     id: 'idea_609775c5_10',
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 10,
-    title: 'پلتفرم دِرسشو',
-    description: 'شبکه تعاملی اشتراک خلاصه دروس و آموزش‌های مبحثی همتایان.',
+    title: 'پلتفرم دِرس‌شو',
+    description: 'سامانه تعاملی طراحی و سفارش آنلاین لباس و استایل متناسب با فرم بدنی.',
     authorName: 'محدثه کاظمی',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T08:45:00.000Z',
@@ -116,7 +131,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 11,
     title: 'محیط هوشمند',
-    description: 'سیستم هوشمندسازی مدیریت کلاس‌ها و فضاهای آموزشی با اینترنت اشیاء.',
+    description: 'مدیریت مصرف انرژی و پایش شرایط محیطی در فضاهای آموزشی و کاری.',
     authorName: 'فرناز رجب‌زاده',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T08:50:00.000Z',
@@ -127,7 +142,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 12,
     title: 'کتاب‌یار',
-    description: 'کتابخانه مجازی هوشمند، امانت و مبادله کتاب و معرفی منابع تحصیلی.',
+    description: 'پلتفرم امانت و تبادل کتاب‌های درسی و غیردرسی بین اعضای مدرسه.',
     authorName: 'مهسا انصاریان',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T08:55:00.000Z',
@@ -138,7 +153,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 13,
     title: 'gps مادربزرگ',
-    description: 'ابزار ردیابی ایمن و پایش موقعیت مکانی سالمندان و یادآوری نیازهای روزمره.',
+    description: 'سامانه ردیابی ایمن و مراقبت ویژه سالمندان دارای آلزایمر و کودکان.',
     authorName: 'فاطمه محمدپور',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T09:00:00.000Z',
@@ -149,7 +164,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 14,
     title: 'سطل هوشمند',
-    description: 'سطل تفکیک خودکار و هوشمند پسماند و زباله در مدارس و اماکن عمومی.',
+    description: 'تفکیک خودکار زباله خشک و تر از مبدأ به همراه سیستم پاداش‌دهی بازیافت.',
     authorName: 'نازنین‌زهرا جهانی قره‌سو',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T09:05:00.000Z',
@@ -160,7 +175,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 15,
     title: 'stay on',
-    description: 'اپلیکیشن تقویت تمرکز و بازدهی مطالعاتی و مدیریت زمان پیشرفته.',
+    description: 'ابزار کنترل زمان و تمرکز برای جلوگیری از پرش ذهنی هنگام مطالعه آنلاین.',
     authorName: 'ساجده خداشاهی',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T09:10:00.000Z',
@@ -171,7 +186,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 16,
     title: 'برنامه‌ریزی',
-    description: 'دستیار دیجیتال برنامه‌ریزی درسی، زمان‌بندی مرور و هدف‌گذاری تحصیلی.',
+    description: 'دستیار هوش مصنوعی برنامه‌ریزی روزانه و زمان‌بندی مرور دروس.',
     authorName: 'حدیثه نوروززاده',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T09:15:00.000Z',
@@ -182,7 +197,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 17,
     title: 'فوت سایکل',
-    description: 'سامانه بازچرخانی، کاهش اسراف مواد غذایی و بازیافت پسماند ارگانیک.',
+    description: 'شبکه تبادل و اهدای لباس و تجهیزات ورزشی دست‌دوم باکیفیت.',
     authorName: 'حنانه رجب‌پور',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T09:20:00.000Z',
@@ -193,7 +208,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 18,
     title: 'یونیگو',
-    description: 'پلتفرم راهنمای جامع دانشگاه، انتخاب رشته و هدایت مسیر شغلی.',
+    description: 'راهنمای جامع دانشجویان تازه‌وارد و انتخاب رشته و دانشگاه هوشمند.',
     authorName: 'زینب غفاریان',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T09:25:00.000Z',
@@ -204,7 +219,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 19,
     title: 'اسرتفای',
-    description: 'سامانه ارزیابی مهارت‌ها، سنجش شایستگی‌ها و پایش سلامت روان دانش‌آموزان.',
+    description: 'سامانه صدور و اعتبارسنجی مدارک مهارتی و گواهینامه‌های دوره‌ها.',
     authorName: 'فاطمه الهی',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T09:30:00.000Z',
@@ -215,7 +230,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 20,
     title: 'هدایت تحصیلی',
-    description: 'آزمون‌های رغبت‌سنجی و شخصیت‌شناسی برای هدایت تحصیلی و شغلی اختصاصی.',
+    description: 'تست‌های شخصیت‌شناسی شغلی و مشاور هوشمند انتخاب رشته پایه نهم.',
     authorName: 'مریم زمانی',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T09:35:00.000Z',
@@ -226,7 +241,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 21,
     title: 'قدم به قدم',
-    description: 'مسیر گام‌به‌گام یادگیری مهارت‌های عملی و پروژه‌محور کامپیوتر و شبکه.',
+    description: 'راهنمای گام‌به‌گام یادگیری مهارت‌های عملی و فنی با ویدیو و تمرین.',
     authorName: 'نوشین جبلی',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T09:40:00.000Z',
@@ -237,7 +252,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 22,
     title: 'ریتمینو',
-    description: 'فضای خلاقانه تلفیق موسیقی، ریتم و انگیزش در یادگیری دروس فنی.',
+    description: 'آموزش موسیقی و گیمیفیکیشن نوازندگی سازهای سنتی و مدرن.',
     authorName: 'نازنین‌زهرا نظام‌پرور',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T09:45:00.000Z',
@@ -248,7 +263,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 23,
     title: 'بازیافت نوین',
-    description: 'پلتفرم بازی‌وارسازی و تشویقی بازیافت پسماند خشک با پاداش‌های آموزشی.',
+    description: 'سامانه جمع‌آوری پسماندهای الکترونیکی و تفکیک قطعات قابل استفاده مجدد.',
     authorName: 'نیایش مظاهری',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T09:50:00.000Z',
@@ -259,7 +274,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 24,
     title: 'همراهیار',
-    description: 'شبکه داوطلبانه همیاری و پشتیبانی آموزشی و رفع اشکال بین دانش‌آموزان.',
+    description: 'شبکه داوطلبانه کمک درسی و مشاوره‌ای دانش‌آموزان ممتاز به دانش‌آموزان نیازمند حمایت.',
     authorName: 'ضحا صنوبری',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T09:55:00.000Z',
@@ -270,7 +285,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 25,
     title: 'چهره‌جو',
-    description: 'سیستم هوشمند تشخیص چهره برای ثبت حضور و غیاب دقیق و هوشمند.',
+    description: 'سامانه هوشمند تشخیص چهره برای ثبت حضور و غیاب سریع کارگاه‌ها.',
     authorName: 'یاسمین رحمانی',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T10:00:00.000Z',
@@ -281,7 +296,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 26,
     title: 'هم‌صنف',
-    description: 'فضای گفت‌وگو و تعامل گروهی بین هم‌کلاسی‌ها پیرامون پروژه‌ها.',
+    description: 'شبکه صنفی و بازارچه آثار دستی و پروژه‌های هنرجویان هنرستان.',
     authorName: 'گیتا میرمصطفایی',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T10:05:00.000Z',
@@ -292,7 +307,7 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     eventId: '609775c5-ad77-43bb-8065-1aafc5bad547',
     ideaNumber: 27,
     title: 'رفیق باهوش',
-    description: 'دستیار مبتنی بر هوش مصنوعی برای پاسخ به سوالات درسی و رفع اشکال.',
+    description: 'بات چت‌بات هوش مصنوعی محاوره‌ای برای پاسخ به سوالات کتب درسی.',
     authorName: 'اسما فیضی',
     authorRole: 'دانش‌آموز',
     createdAt: '2026-09-26T10:10:00.000Z',
@@ -321,54 +336,6 @@ export const EVENT_609775C5_IDEAS: EventIdea[] = [
     status: 'APPROVED',
   },
 ];
-
-export const EVENT_PRELOADED_IDEAS: Record<string, EventIdea[]> = {
-  '609775c5-ad77-43bb-8065-1aafc5bad547': EVENT_609775C5_IDEAS,
-};
-
-export function getInitialIdeasForEvent(eventId: string): EventIdea[] {
-  return EVENT_PRELOADED_IDEAS[eventId] || [];
-}
-
-export function getInitialPollForEvent(eventId: string, ideas: EventIdea[]) {
-  const currentIdeas = ideas && ideas.length > 0 ? ideas : getInitialIdeasForEvent(eventId);
-  const options = currentIdeas.map((i) => ({
-    id: i.id,
-    ideaId: i.id,
-    text: i.title,
-    authorName: i.authorName,
-    voteCount: 0,
-    percentage: 0,
-  }));
-
-  return {
-    formId: `poll_${eventId.substring(0, 8)}`,
-    questionId: `q_${eventId.substring(0, 8)}`,
-    title: 'رأی‌گیری ایده‌های برتر رویداد',
-    questionTitle: 'کدام یک از ایده‌های زیر بیشترین ارزش نوآوری و کاربرد را در این رویداد دارد؟',
-    description: 'فرم رسمی داوری و رأی‌گیری ایده‌های منتخب رویداد',
-    selectedIdeaIds: currentIdeas.map((i) => i.id),
-    options,
-    settings: {
-      questionType: 'choice' as const,
-      maxSelections: 3,
-      displayMode: 'buttons' as const,
-      required: true,
-      allowChangeVote: false,
-    },
-    totalVotes: 0,
-    totalRespondents: 0,
-    isPublished: true,
-    isClosed: false,
-    isResultsPublic: true,
-    showVoteCounts: true,
-    displayOrder: 'RANK_VOTES' as const,
-    syncStatus: 'LOCAL_SYNCED' as const,
-    createdAt: new Date().toISOString(),
-  };
-}
-
-export const WINNING_IDEA_NUMBERS_609775C5 = [3, 4, 5, 19, 22, 26, 29];
 
 export const EVENT_609775C5_INITIAL_TEAMS: Record<string, any> = {
   'idea_609775c5_3': {
@@ -483,3 +450,16 @@ export const EVENT_609775C5_INITIAL_TEAMS: Record<string, any> = {
   },
 };
 
+export function getInitialBackendIdeas(eventId: string): BackendEventIdea[] {
+  if (eventId === '609775c5-ad77-43bb-8065-1aafc5bad547') {
+    return EVENT_609775C5_INITIAL_IDEAS;
+  }
+  return [];
+}
+
+export function getInitialBackendTeams(eventId: string): Record<string, any> {
+  if (eventId === '609775c5-ad77-43bb-8065-1aafc5bad547') {
+    return EVENT_609775C5_INITIAL_TEAMS;
+  }
+  return {};
+}

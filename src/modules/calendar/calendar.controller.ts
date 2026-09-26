@@ -24,6 +24,13 @@ import {
   CreateOfficialHolidayDto,
 } from './dto/create-holiday.dto';
 import { UpdateEventTypesDto } from './dto/update-event-types.dto';
+import {
+  SubmitEventIdeaDto,
+  UpdateEventIdeaDto,
+  UpdateEventWizardStepsDto,
+  UpdateEventTeamsDto,
+  SubmitEventVoteDto,
+} from './dto/event-wizard.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
@@ -126,6 +133,101 @@ export class CalendarController {
   ) {
     const effectiveTenantId = tenantId || userTenantId;
     return this.calendarService.getEventById(effectiveTenantId, eventId);
+  }
+
+  // ==========================================
+  // ویزارد و جریان کار رویداد (همگام‌سازی زنده ایده‌ها، قفل‌ها و تیم‌ها)
+  // ==========================================
+
+  @Get('events/:id/wizard-data')
+  @ApiOperation({ summary: 'دریافت داده‌های زنده ویزارد رویداد (ایده‌ها، قفل مراحل و تیم‌ها)' })
+  async getEventWizardData(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') eventId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.calendarService.getEventWizardData(effectiveTenantId, eventId);
+  }
+
+  @Post('events/:id/ideas')
+  @ApiOperation({ summary: 'ثبت ایده جدید برای رویداد توسط دانش‌آموز یا مدیر' })
+  async submitEventIdea(
+    @CurrentUser() user: any,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') eventId: string,
+    @Body() dto: SubmitEventIdeaDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.calendarService.submitEventIdea(effectiveTenantId, eventId, user, dto);
+  }
+
+  @Patch('events/:id/ideas/:ideaId')
+  @ApiOperation({ summary: 'ویرایش ایده ثبت‌شده توسط نویسنده یا مدیر' })
+  async updateEventIdea(
+    @CurrentUser() user: any,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') eventId: string,
+    @Param('ideaId') ideaId: string,
+    @Body() dto: UpdateEventIdeaDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.calendarService.updateEventIdea(effectiveTenantId, eventId, user, ideaId, dto);
+  }
+
+  @Delete('events/:id/ideas/:ideaId')
+  @ApiOperation({ summary: 'حذف ایده ثبت‌شده توسط نویسنده یا مدیر' })
+  async deleteEventIdea(
+    @CurrentUser() user: any,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') eventId: string,
+    @Param('ideaId') ideaId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.calendarService.deleteEventIdea(effectiveTenantId, eventId, user, ideaId);
+  }
+
+  @Patch('events/:id/wizard-steps')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
+  @ApiOperation({ summary: 'مدیریت قفل مراحل رویداد و وضعیت ثبت ایده توسط مدیر' })
+  async updateEventWizardSteps(
+    @CurrentUser() user: any,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') eventId: string,
+    @Body() dto: UpdateEventWizardStepsDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.calendarService.updateEventWizardSteps(effectiveTenantId, eventId, user, dto);
+  }
+
+  @Put('events/:id/teams')
+  @ApiOperation({ summary: 'ذخیره و همگام‌سازی ترکیب تیم‌ها در سرور' })
+  async updateEventTeams(
+    @CurrentUser() user: any,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') eventId: string,
+    @Body() dto: UpdateEventTeamsDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.calendarService.updateEventTeams(effectiveTenantId, eventId, user, dto.teams);
+  }
+
+  @Post('events/:id/vote')
+  @ApiOperation({ summary: 'ثبت رأی دانش‌آموز در سرور' })
+  async submitEventVote(
+    @CurrentUser() user: any,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') eventId: string,
+    @Body() dto: SubmitEventVoteDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.calendarService.submitEventVote(effectiveTenantId, eventId, user, dto.selectedOptionIds);
   }
 
   // ==========================================

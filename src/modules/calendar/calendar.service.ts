@@ -3,10 +3,19 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateEventDto, UpdateEventDto } from './dto/create-event.dto';
 import { Role } from '../../common/constants';
+import { getInitialBackendIdeas, getInitialBackendTeams } from './constants/initial-event-ideas';
+import {
+  SubmitEventIdeaDto,
+  UpdateEventIdeaDto,
+  UpdateEventWizardStepsDto,
+  UpdateEventTeamsDto,
+  SubmitEventVoteDto,
+} from './dto/event-wizard.dto';
 
 const VALID_PRISMA_EVENT_TYPES: string[] = [
   'ACADEMIC',
@@ -59,8 +68,17 @@ export class CalendarService {
       resolvedType = customKey;
     }
 
+    let workflowModules = event.workflowModules;
+    let wizardData = undefined;
+    if (workflowModules && typeof workflowModules === 'object' && !Array.isArray(workflowModules)) {
+      wizardData = (workflowModules as any).wizardData;
+      workflowModules = (workflowModules as any).modules || [];
+    }
+
     return {
       ...event,
+      workflowModules,
+      wizardData,
       type: resolvedType,
       eventType: resolvedType,
       baseEventType: event.eventType,
@@ -965,5 +983,308 @@ export class CalendarService {
     const next = existing.filter((c) => c.key !== key);
     await this.saveEventCategories(tenantId, next);
     return { message: 'دسته‌بندی با موفقیت حذف شد' };
+  }
+
+  // ==========================================
+  // مدیریت داده‌های زنده ویزارد رویداد (ایده‌ها، قفل‌ها، تیم‌ها)
+  // ==========================================
+
+  private parseWorkflowModules(raw: any, eventId: string): { modules: any[]; wizardData: any } {
+    let modules: any[] = [];
+    let wizardData: any = null;
+
+    if (Array.isArray(raw)) {
+      modules = raw;
+    } else if (raw && typeof raw === 'object') {
+      modules = Array.isArray(raw.modules) ? raw.modules : [];
+      wizardData = raw.wizardData || null;
+    }
+
+    if (!wizardData) {
+      const initialIdeas = getInitialBackendIdeas(eventId);
+      wizardData = {
+        unlockedSteps: [1, 2, 3, 4, 5, 6, 7, 8],
+        isIdeaSubmissionLocked: false,
+        ideas: initialIdeas,
+        teams: getInitialBackendTeams(eventId),
+        poll: null,
+      };
+    } else {
+      if (!Array.isArray(wizardData.unlockedSteps) || wizardData.unlockedSteps.length === 0) {
+        wizardData.unlockedSteps = [1, 2, 3, 4, 5, 6, 7, 8];
+      }
+      if (!Array.isArray(wizardData.ideas) || wizardData.ideas.length === 0) {
+        wizardData.ideas = getInitialBackendIdeas(eventId);
+      }
+      if (!wizardData.teams || Object.keys(wizardData.teams).length === 0) {
+        wizardData.teams = getInitialBackendTeams(eventId);
+      }
+    }
+
+    return { modules, wizardData };
+  }
+
+  async getEventWizardData(tenantId: string, eventId: string) {
+    const event = await this.prisma.schoolEvent.findFirst({
+      where: { id: eventId, tenantId, deletedAt: null },
+      select: { id: true, title: true, workflowModules: true },
+    });
+    if (!event) throw new NotFoundException('رویداد مورد نظر یافت نشد');
+
+    const { modules, wizardData } = this.parseWorkflowModules(event.workflowModules, eventId);
+    return {
+      eventId: event.id,
+      eventTitle: event.title,
+      modules,
+      ...wizardData,
+    };
+  }
+
+  async submitEventIdea(tenantId: string, eventId: string, user: any, dto: SubmitEventIdeaDto) {
+    const event = await this.prisma.schoolEvent.findFirst({
+      where: { id: eventId, tenantId, deletedAt: null },
+    });
+    if (!event) throw new NotFoundException('رویداد مورد نظر یافت نشد');
+
+    const { modules, wizardData } = this.parseWorkflowModules(event.workflowModules, eventId);
+
+    const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(user.role);
+    if (wizardData.isIdeaSubmissionLocked && !isManager) {
+      throw new BadRequestException('مهلت ثبت ایده به پایان رسیده و قفل شده است');
+    }
+
+    const currentIdeas = Array.isArray(wizardData.ideas) ? wizardData.ideas : [];
+    const maxNumber = currentIdeas.reduce((max: number, i: any) => Math.max(max, Number(i.ideaNumber) || 0), 0);
+    const assignedNumber = maxNumber + 1;
+
+    const authorFullName = dto.authorName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || 'دانش‌آموز';
+    const authorRoleName = user.role === 'STUDENT' ? 'دانش‌آموز' : 'مدیر رویداد';
+
+    const newIdea = {
+      id: `idea_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      eventId,
+      ideaNumber: assignedNumber,
+      title: dto.title.trim(),
+      description: dto.description.trim(),
+      authorName: authorFullName,
+      authorRole: authorRoleName,
+      authorUserId: user.id,
+      createdAt: new Date().toISOString(),
+      status: 'APPROVED',
+      category: dto.category,
+      goals: dto.goals,
+      suggestedMaterials: dto.suggestedMaterials,
+      attachmentUrl: dto.attachmentUrl,
+    };
+
+    const updatedIdeas = [newIdea, ...currentIdeas];
+    wizardData.ideas = updatedIdeas;
+
+    await this.prisma.schoolEvent.update({
+      where: { id: eventId },
+      data: {
+        workflowModules: {
+          modules,
+          wizardData,
+        },
+      },
+    });
+
+    return {
+      message: 'ایده با موفقیت ثبت شد',
+      idea: newIdea,
+      ideas: updatedIdeas,
+    };
+  }
+
+  async updateEventIdea(tenantId: string, eventId: string, user: any, ideaId: string, dto: UpdateEventIdeaDto) {
+    const event = await this.prisma.schoolEvent.findFirst({
+      where: { id: eventId, tenantId, deletedAt: null },
+    });
+    if (!event) throw new NotFoundException('رویداد مورد نظر یافت نشد');
+
+    const { modules, wizardData } = this.parseWorkflowModules(event.workflowModules, eventId);
+    const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(user.role);
+
+    const ideaIndex = (wizardData.ideas || []).findIndex((i: any) => i.id === ideaId);
+    if (ideaIndex === -1) throw new NotFoundException('ایده یافت نشد');
+
+    const existingIdea = wizardData.ideas[ideaIndex];
+    if (!isManager && existingIdea.authorUserId && existingIdea.authorUserId !== user.id) {
+      throw new ForbiddenException('شما دسترسی ویرایش این ایده را ندارید');
+    }
+
+    const updatedIdea = {
+      ...existingIdea,
+      ...(dto.title !== undefined ? { title: dto.title.trim() } : {}),
+      ...(dto.description !== undefined ? { description: dto.description.trim() } : {}),
+      ...(dto.status !== undefined && isManager ? { status: dto.status } : {}),
+      ...(dto.ideaNumber !== undefined && isManager ? { ideaNumber: dto.ideaNumber } : {}),
+      ...(dto.authorName !== undefined ? { authorName: dto.authorName.trim() } : {}),
+    };
+
+    wizardData.ideas[ideaIndex] = updatedIdea;
+
+    await this.prisma.schoolEvent.update({
+      where: { id: eventId },
+      data: {
+        workflowModules: {
+          modules,
+          wizardData,
+        },
+      },
+    });
+
+    return {
+      message: 'ایده با موفقیت به‌روزرسانی شد',
+      idea: updatedIdea,
+      ideas: wizardData.ideas,
+    };
+  }
+
+  async deleteEventIdea(tenantId: string, eventId: string, user: any, ideaId: string) {
+    const event = await this.prisma.schoolEvent.findFirst({
+      where: { id: eventId, tenantId, deletedAt: null },
+    });
+    if (!event) throw new NotFoundException('رویداد مورد نظر یافت نشد');
+
+    const { modules, wizardData } = this.parseWorkflowModules(event.workflowModules, eventId);
+    const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(user.role);
+
+    const existingIdea = (wizardData.ideas || []).find((i: any) => i.id === ideaId);
+    if (!existingIdea) throw new NotFoundException('ایده یافت نشد');
+
+    if (!isManager && existingIdea.authorUserId && existingIdea.authorUserId !== user.id) {
+      throw new ForbiddenException('شما دسترسی حذف این ایده را ندارید');
+    }
+
+    wizardData.ideas = (wizardData.ideas || []).filter((i: any) => i.id !== ideaId);
+
+    await this.prisma.schoolEvent.update({
+      where: { id: eventId },
+      data: {
+        workflowModules: {
+          modules,
+          wizardData,
+        },
+      },
+    });
+
+    return { message: 'ایده با موفقیت حذف شد', ideas: wizardData.ideas };
+  }
+
+  async updateEventWizardSteps(tenantId: string, eventId: string, user: any, dto: UpdateEventWizardStepsDto) {
+    const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(user.role);
+    if (!isManager) throw new ForbiddenException('فقط مدیر رویداد می‌تواند قفل مراحل را تغییر دهد');
+
+    const event = await this.prisma.schoolEvent.findFirst({
+      where: { id: eventId, tenantId, deletedAt: null },
+    });
+    if (!event) throw new NotFoundException('رویداد مورد نظر یافت نشد');
+
+    const { modules, wizardData } = this.parseWorkflowModules(event.workflowModules, eventId);
+
+    if (dto.unlockedSteps !== undefined) {
+      wizardData.unlockedSteps = dto.unlockedSteps;
+    }
+    if (dto.isIdeaSubmissionLocked !== undefined) {
+      wizardData.isIdeaSubmissionLocked = dto.isIdeaSubmissionLocked;
+    }
+
+    await this.prisma.schoolEvent.update({
+      where: { id: eventId },
+      data: {
+        workflowModules: {
+          modules,
+          wizardData,
+        },
+      },
+    });
+
+    return {
+      message: 'تنظیمات مراحل رویداد با موفقیت ذخیره شد',
+      unlockedSteps: wizardData.unlockedSteps,
+      isIdeaSubmissionLocked: wizardData.isIdeaSubmissionLocked,
+    };
+  }
+
+  async updateEventTeams(tenantId: string, eventId: string, user: any, teams: Record<string, any>) {
+    const event = await this.prisma.schoolEvent.findFirst({
+      where: { id: eventId, tenantId, deletedAt: null },
+    });
+    if (!event) throw new NotFoundException('رویداد مورد نظر یافت نشد');
+
+    const { modules, wizardData } = this.parseWorkflowModules(event.workflowModules, eventId);
+    wizardData.teams = { ...(wizardData.teams || {}), ...teams };
+
+    await this.prisma.schoolEvent.update({
+      where: { id: eventId },
+      data: {
+        workflowModules: {
+          modules,
+          wizardData,
+        },
+      },
+    });
+
+    return { message: 'ترکیب تیم‌ها با موفقیت در سرور ذخیره شد', teams: wizardData.teams };
+  }
+
+  async submitEventVote(tenantId: string, eventId: string, user: any, selectedOptionIds: string[]) {
+    const event = await this.prisma.schoolEvent.findFirst({
+      where: { id: eventId, tenantId, deletedAt: null },
+    });
+    if (!event) throw new NotFoundException('رویداد مورد نظر یافت نشد');
+
+    const { modules, wizardData } = this.parseWorkflowModules(event.workflowModules, eventId);
+    if (!wizardData.poll) {
+      throw new BadRequestException('فرم نظرسنجی برای این رویداد هنوز تعریف نشده است');
+    }
+    if (wizardData.poll.isClosed) {
+      throw new BadRequestException('مهلت رأی‌گیری به پایان رسیده است');
+    }
+
+    if (!wizardData.pollVotes) {
+      wizardData.pollVotes = {};
+    }
+
+    const voterId = user.id;
+    if (wizardData.pollVotes[voterId]) {
+      throw new BadRequestException('شما قبلاً در این نظرسنجی رأی ثبت کرده‌اید');
+    }
+
+    wizardData.pollVotes[voterId] = {
+      selectedOptionIds,
+      votedAt: new Date().toISOString(),
+    };
+
+    if (Array.isArray(wizardData.poll.options)) {
+      wizardData.poll.options = wizardData.poll.options.map((opt: any) => {
+        const count = selectedOptionIds.includes(opt.id) ? (opt.voteCount || 0) + 1 : (opt.voteCount || 0);
+        return { ...opt, voteCount: count };
+      });
+      const total = wizardData.poll.options.reduce((sum: number, o: any) => sum + (o.voteCount || 0), 0);
+      wizardData.poll.totalVotes = total;
+      wizardData.poll.totalRespondents = Object.keys(wizardData.pollVotes).length;
+      wizardData.poll.options = wizardData.poll.options.map((opt: any) => ({
+        ...opt,
+        percentage: total > 0 ? Math.round(((opt.voteCount || 0) / total) * 100) : 0,
+      }));
+    }
+
+    await this.prisma.schoolEvent.update({
+      where: { id: eventId },
+      data: {
+        workflowModules: {
+          modules,
+          wizardData,
+        },
+      },
+    });
+
+    return {
+      message: 'رأی شما با موفقیت در سرور ثبت شد',
+      poll: wizardData.poll,
+    };
   }
 }

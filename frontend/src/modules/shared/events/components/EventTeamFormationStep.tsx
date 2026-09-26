@@ -9,6 +9,11 @@ import { EventIdea } from './EventIdeaSubmissionStep';
 import { porscadClient } from '../../../../lib/porscad/porscad-client';
 import { isOwnedByUser } from '../constants/event-access';
 import {
+  EVENT_609775C5_IDEAS,
+  EVENT_609775C5_INITIAL_TEAMS,
+  WINNING_IDEA_NUMBERS_609775C5,
+} from '../constants/initial-ideas';
+import {
   Users,
   User,
   UserPlus,
@@ -117,11 +122,66 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
   const [dbStudents, setDbStudents] = useState<Array<{ id: string; name: string }>>(FALLBACK_DB_STUDENTS);
   const [searchStudentQuery, setSearchStudentQuery] = useState('');
 
+  // Teams state per idea
+  const teamsStorageKey = `rokad_event_teams_${eventId}`;
+  const [teamsMap, setTeamsMap] = useState<Record<string, IdeaTeam>>(() => {
+    let initial: Record<string, IdeaTeam> = {};
+    if (eventId === '609775c5-ad77-43bb-8065-1aafc5bad547') {
+      initial = { ...EVENT_609775C5_INITIAL_TEAMS };
+    }
+    try {
+      const saved = localStorage.getItem(teamsStorageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...initial, ...parsed };
+      }
+    } catch (e) {
+      console.error('Failed to parse teams state', e);
+    }
+    return initial;
+  });
+
   // Filter ideas to show top winning ideas if poll is closed, or all approved ideas if poll is open
   const winningIdeas = useMemo(() => {
+    // 1. Deduplicate ideas by ideaNumber or title
+    const dedupMap = new Map<number | string, EventIdea>();
+    for (const idea of ideas) {
+      const key = idea.ideaNumber ?? idea.title;
+      if (!dedupMap.has(key)) {
+        dedupMap.set(key, idea);
+      } else {
+        const existing = dedupMap.get(key)!;
+        if (idea.id.startsWith('idea_609775c5_') || (teamsMap[idea.id]?.members?.length || 0) > (teamsMap[existing.id]?.members?.length || 0)) {
+          dedupMap.set(key, idea);
+        }
+      }
+    }
+    const baseList = Array.from(dedupMap.values());
+
+    // 2. If this is the specific girls event, strictly show ONLY the 7 winning teams!
+    if (eventId === '609775c5-ad77-43bb-8065-1aafc5bad547') {
+      const targetWinningNumbers = new Set(WINNING_IDEA_NUMBERS_609775C5);
+      const filtered = baseList.filter((i) => i.ideaNumber && targetWinningNumbers.has(i.ideaNumber));
+
+      for (const winNum of WINNING_IDEA_NUMBERS_609775C5) {
+        if (!filtered.some((i) => i.ideaNumber === winNum)) {
+          const fallback = EVENT_609775C5_IDEAS.find((i) => i.ideaNumber === winNum);
+          if (fallback) filtered.push(fallback);
+        }
+      }
+
+      const normalized = filtered.map((idea) => {
+        if (idea.ideaNumber === 29) {
+          return { ...idea, authorName: 'محیا تقوی‌فرد' };
+        }
+        return idea;
+      });
+
+      return normalized.sort((a, b) => (a.ideaNumber || 0) - (b.ideaNumber || 0));
+    }
+
     const poll = porscadClient.getLocalPollData(eventId);
     if (!poll || !poll.isClosed) {
-      const baseList = ideas;
       return [...baseList].sort((a, b) => {
         const aIsOwn = !!currentUser && isOwnedByUser(a.authorName, currentUser);
         const bIsOwn = !!currentUser && isOwnedByUser(b.authorName, currentUser);
@@ -150,44 +210,50 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
       winningIdeaIds.add(wId);
     }
 
-    const matched = ideas.filter(
+    const matched = baseList.filter(
       (idea) =>
         winningIdeaIds.has(idea.id) ||
         topWinningOptions.some((o) => o.text && o.text.includes(idea.title))
     );
 
-    const baseList = matched.length > 0 ? matched : ideas.slice(0, topCount);
+    const finalList = matched.length > 0 ? matched : baseList.slice(0, topCount);
 
     // Sort: user's own idea first (if exists), then remaining ideas sorted by ideaNumber
-    return [...baseList].sort((a, b) => {
+    return [...finalList].sort((a, b) => {
       const aIsOwn = !!currentUser && isOwnedByUser(a.authorName, currentUser);
       const bIsOwn = !!currentUser && isOwnedByUser(b.authorName, currentUser);
       if (aIsOwn && !bIsOwn) return -1;
       if (!aIsOwn && bIsOwn) return 1;
       return (a.ideaNumber || 0) - (b.ideaNumber || 0);
     });
-  }, [eventId, ideas, currentUser]);
+  }, [eventId, ideas, currentUser, teamsMap]);
 
-  // Teams state per idea
-  const teamsStorageKey = `rokad_event_teams_${eventId}`;
-  const [teamsMap, setTeamsMap] = useState<Record<string, IdeaTeam>>(() => {
-    try {
-      const saved = localStorage.getItem(teamsStorageKey);
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error('Failed to parse teams state', e);
-    }
-    return {};
-  });
-
-  // Save teams state to localStorage
+  // Save teams state to localStorage & sync to server
   useEffect(() => {
     try {
       localStorage.setItem(teamsStorageKey, JSON.stringify(teamsMap));
+      if (Object.keys(teamsMap).length > 0) {
+        apiClient.put(`/calendar/events/${eventId}/teams`, { teams: teamsMap }).catch(() => {});
+      }
     } catch (e) {
       console.error('Failed to save teams state', e);
     }
-  }, [teamsMap, teamsStorageKey]);
+  }, [teamsMap, teamsStorageKey, eventId]);
+
+  // Load teams from server on mount
+  useEffect(() => {
+    const fetchServerTeams = async () => {
+      try {
+        const res = await apiClient.get(`/calendar/events/${eventId}/wizard-data`);
+        if (res.data?.teams && typeof res.data.teams === 'object' && Object.keys(res.data.teams).length > 0) {
+          setTeamsMap((prev) => ({ ...res.data.teams, ...prev }));
+        }
+      } catch (err) {
+        // offline fallback
+      }
+    };
+    fetchServerTeams();
+  }, [eventId]);
 
   // Fetch DB students from API (name only)
   useEffect(() => {
@@ -247,12 +313,38 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
 
   // Get or initialize Team object for an idea
   const getIdeaTeam = (idea: EventIdea): IdeaTeam => {
-    if (teamsMap[idea.id]) return teamsMap[idea.id];
+    const numKey = `idea_609775c5_${idea.ideaNumber}`;
+    let resolvedTeam: IdeaTeam | null = null;
+
+    if (teamsMap[idea.id] && teamsMap[idea.id].members && teamsMap[idea.id].members.length > 0) {
+      resolvedTeam = teamsMap[idea.id];
+    } else if (teamsMap[numKey] && teamsMap[numKey].members && teamsMap[numKey].members.length > 0) {
+      resolvedTeam = teamsMap[numKey];
+    } else {
+      const matchByNum = Object.values(teamsMap).find(
+        (t) => t.ideaNumber === idea.ideaNumber && t.members && t.members.length > 0
+      );
+      if (matchByNum) {
+        resolvedTeam = matchByNum;
+      } else if (eventId === '609775c5-ad77-43bb-8065-1aafc5bad547' && EVENT_609775C5_INITIAL_TEAMS[numKey]) {
+        resolvedTeam = EVENT_609775C5_INITIAL_TEAMS[numKey];
+      } else if (teamsMap[idea.id]) {
+        resolvedTeam = teamsMap[idea.id];
+      }
+    }
+
+    if (resolvedTeam) {
+      if (idea.ideaNumber === 29 && resolvedTeam.leaderName !== 'محیا تقوی‌فرد') {
+        return { ...resolvedTeam, leaderName: 'محیا تقوی‌فرد' };
+      }
+      return resolvedTeam;
+    }
+
     return {
       ideaId: idea.id,
       ideaNumber: idea.ideaNumber || 1,
       ideaTitle: idea.title,
-      leaderName: idea.authorName,
+      leaderName: idea.ideaNumber === 29 ? 'محیا تقوی‌فرد' : idea.authorName,
       members: [],
       isApprovedByAdmin: false,
     };
