@@ -117,11 +117,18 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
   const [dbStudents, setDbStudents] = useState<Array<{ id: string; name: string }>>(FALLBACK_DB_STUDENTS);
   const [searchStudentQuery, setSearchStudentQuery] = useState('');
 
-  // Filter ideas to show ONLY the top winning ideas specified from Porscad Poll (Step 3)
+  // Filter ideas to show top winning ideas if poll is closed, or all approved ideas if poll is open
   const winningIdeas = useMemo(() => {
     const poll = porscadClient.getLocalPollData(eventId);
     if (!poll || !poll.isClosed) {
-      return []; // empty until poll is finished and top winning ideas are selected!
+      const baseList = ideas;
+      return [...baseList].sort((a, b) => {
+        const aIsOwn = !!currentUser && isOwnedByUser(a.authorName, currentUser);
+        const bIsOwn = !!currentUser && isOwnedByUser(b.authorName, currentUser);
+        if (aIsOwn && !bIsOwn) return -1;
+        if (!aIsOwn && bIsOwn) return 1;
+        return (a.ideaNumber || 0) - (b.ideaNumber || 0);
+      });
     }
 
     const winningOptionIds =

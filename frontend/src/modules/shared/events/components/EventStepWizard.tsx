@@ -12,6 +12,7 @@ import { toast } from '../../../../components/ui/toast/toast';
 import { toPersianDigits } from '../../../../utils/jalali';
 import { EVENT_MODULE_REGISTRY, WorkflowModuleEntry, renumberWorkflowModules } from '../constants/event-modules';
 import { parseJsonArray } from '../constants/event-access';
+import { getInitialIdeasForEvent } from '../constants/initial-ideas';
 import {
   CheckCircle2,
   Lock,
@@ -90,15 +91,17 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
 
   const stepNumbers = useMemo(() => new Set(STEPS_CONFIG.map((s) => s.step)), [STEPS_CONFIG]);
 
-  // Step Unlocking state for students
+  // Step Unlocking state for students (all steps unlocked by default)
   const unlockedStepsKey = `rokad_event_unlocked_steps_${eventId}`;
   const [unlockedSteps, setUnlockedSteps] = useState<number[]>(() => {
-    const fallback = STEPS_CONFIG.length > 0 ? [STEPS_CONFIG[0].step] : [1];
+    const allSteps = STEPS_CONFIG.map((s) => s.step);
     try {
-      return parseJsonArray<number>(localStorage.getItem(unlockedStepsKey), fallback);
+      const saved = parseJsonArray<number>(localStorage.getItem(unlockedStepsKey), allSteps);
+      if (saved && saved.length > 0) return saved;
     } catch {
-      return fallback;
+      return allSteps;
     }
+    return allSteps;
   });
 
   const [currentStep, setCurrentStep] = useState<number>(() => {
@@ -188,16 +191,23 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
   };
 
   const [ideas, setIdeas] = useState<EventIdea[]>(() => {
+    const preloaded = getInitialIdeasForEvent(eventId);
     try {
-      const parsed = parseJsonArray<EventIdea>(
-        localStorage.getItem(storageKey),
-        DEFAULT_EVENT_IDEAS.map((item) => ({ ...item, eventId })),
-      );
-      if (parsed.length > 0 || localStorage.getItem(storageKey) === '[]') return parsed;
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          const parsedIds = new Set(parsed.map((item: EventIdea) => item.id || item.ideaNumber));
+          const missingPreloaded = preloaded.filter(
+            (p) => !parsedIds.has(p.id) && !parsedIds.has(p.ideaNumber)
+          );
+          return [...parsed, ...missingPreloaded];
+        }
+      }
     } catch (e) {
       console.error('Failed to parse saved ideas', e);
     }
-    return DEFAULT_EVENT_IDEAS.map((item) => ({ ...item, eventId }));
+    return preloaded.length > 0 ? preloaded : DEFAULT_EVENT_IDEAS.map((item) => ({ ...item, eventId }));
   });
 
   // Save to localStorage on change

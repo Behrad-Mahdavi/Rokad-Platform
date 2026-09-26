@@ -464,13 +464,19 @@ async function main() {
     const fullName = String(row['نام و نام خانوداگی دانش آموز'] || '').trim();
     let rawNationalCode = normalizePersianDigits(row['کد ملی']).replace(/\D/g, '').trim();
 
-    // اصلاح کد ملی بهار بذرافشان و یسنا خاکسار طبق دستور کاربر
+    // اصلاح کد ملی دانش‌آموزانی که در اکسل خالی بودند طبق دستور کاربر
     if (fullName.includes('بذرافشان')) {
       rawNationalCode = '970001150';
       console.log(`   ✏️ تنظیم کد ملی صحیح برای «بهار بذرافشان»: 970001150`);
     } else if (fullName.includes('خاکسار')) {
       rawNationalCode = '970007795';
       console.log(`   ✏️ تنظیم کد ملی صحیح برای «یسنا خاکسار»: 970007795`);
+    } else if (fullName.includes('جبلی')) {
+      rawNationalCode = '0950022225';
+      console.log(`   ✏️ تنظیم کد ملی صحیح برای «نوشین جبلی»: 0950022225`);
+    } else if (fullName.includes('حبیبی')) {
+      rawNationalCode = '970346395';
+      console.log(`   ✏️ تنظیم کد ملی صحیح برای «محدثه حبیبی»: 970346395`);
     }
 
     if (!rawNationalCode) {

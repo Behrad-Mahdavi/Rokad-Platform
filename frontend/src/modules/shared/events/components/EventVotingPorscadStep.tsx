@@ -5,6 +5,7 @@ import { toast } from '../../../../components/ui/toast/toast';
 import { EventIdea } from './EventIdeaSubmissionStep';
 import { toPersianDigits } from '../../../../utils/jalali';
 import { porscadClient, PorscadPollData, PorscadQuestionSettings } from '../../../../lib/porscad/porscad-client';
+import { getInitialPollForEvent } from '../constants/initial-ideas';
 import { useAuthStore } from '../../../../lib/auth/auth-store';
 import {
   Star,
@@ -55,9 +56,13 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
   const currentUser = useAuthStore((s) => s.user);
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(currentUser?.role || '');
 
-  const [porscadPoll, setPorscadPoll] = useState<PorscadPollData | null>(() =>
-    porscadClient.getLocalPollData(eventId)
-  );
+  const [porscadPoll, setPorscadPoll] = useState<PorscadPollData | null>(() => {
+    const existing = porscadClient.getLocalPollData(eventId);
+    if (existing) return existing;
+    const initialPoll = getInitialPollForEvent(eventId, ideas) as unknown as PorscadPollData;
+    porscadClient.saveLocalPollData(eventId, initialPoll);
+    return initialPoll;
+  });
   const [isRefreshingAnalytics, setIsRefreshingAnalytics] = useState(false);
 
   // Voting state with single submission per student
@@ -79,10 +84,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
   const [isSubmittingVote, setIsSubmittingVote] = useState(false);
 
   // Admin Custom Form Builder State
-  const [isBuildingMode, setIsBuildingMode] = useState<boolean>(() => {
-    const existing = porscadClient.getLocalPollData(eventId);
-    return !existing || !existing.isPublished;
-  });
+  const [isBuildingMode, setIsBuildingMode] = useState<boolean>(false);
   const [builderFormTitle, setBuilderFormTitle] = useState(
     `نظرسنجی ایده‌های رویداد: ${eventTitle}`
   );
@@ -93,7 +95,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
     `کدام یک از ایده‌های زیر بیشترین ارزش نوآوری و کاربرد را در رویداد «${eventTitle}» دارد؟`
   );
   const [builderQuestionType, setBuilderQuestionType] = useState<PorscadQuestionSettings['questionType']>('choice');
-  const [builderMaxSelections, setBuilderMaxSelections] = useState<number>(1);
+  const [builderMaxSelections, setBuilderMaxSelections] = useState<number>(3);
   const [builderSelectedIdeaIds, setBuilderSelectedIdeaIds] = useState<string[]>(() => ideas.map((i) => i.id));
   const [isCreatingForm, setIsCreatingForm] = useState(false);
 
@@ -110,18 +112,18 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
   useEffect(() => {
     const loadPoll = async () => {
       let poll = porscadClient.getLocalPollData(eventId);
-      if (poll) {
+      if (!poll) {
+        poll = getInitialPollForEvent(eventId, ideas) as unknown as PorscadPollData;
+        porscadClient.saveLocalPollData(eventId, poll);
+      } else {
         try {
           const live = await porscadClient.fetchLiveAnalytics(eventId);
           if (live) poll = live;
         } catch {
-          toast.error('دریافت نتایج آنلاین از پرس‌کاد ناموفق بود؛ آمار محلی نمایش داده می‌شود.');
+          // offline fallback
         }
       }
       setPorscadPoll(poll);
-      if (!poll || !poll.isPublished) {
-        setIsBuildingMode(true);
-      }
     };
     loadPoll();
   }, [eventId]);
