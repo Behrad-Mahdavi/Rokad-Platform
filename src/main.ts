@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import * as cookieParser from 'cookie-parser';
+import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 import { RedisIoAdapter } from './common/adapters/redis-io.adapter';
 
@@ -13,7 +14,7 @@ async function bootstrap() {
     cors: {
       origin: true,
       credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
       allowedHeaders: [
         'Content-Type',
         'Authorization',
@@ -22,6 +23,15 @@ async function bootstrap() {
         'x-app-version',
         'X-App-Version',
         'Accept',
+        'Range',
+        'range',
+        'Origin',
+      ],
+      exposedHeaders: [
+        'Content-Range',
+        'Accept-Ranges',
+        'Content-Length',
+        'Content-Type',
       ],
     },
   });
@@ -30,6 +40,8 @@ async function bootstrap() {
   app.use(
     helmet({
       contentSecurityPolicy: false, // Disabled for Swagger UI compatibility in development
+      crossOriginResourcePolicy: { policy: 'cross-origin' }, // Critical for media streaming across domains
+      crossOriginEmbedderPolicy: false,
       hsts: {
         maxAge: 31536000,
         includeSubDomains: true,
@@ -46,6 +58,8 @@ async function bootstrap() {
   );
 
   app.use(cookieParser());
+  app.use(json({ limit: '150mb' }));
+  app.use(urlencoded({ extended: true, limit: '150mb' }));
 
   // Global Prefix (exclude root '/' for status/landing)
   app.setGlobalPrefix('api/v1', { exclude: ['/'] });

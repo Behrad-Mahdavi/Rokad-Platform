@@ -243,7 +243,7 @@ export const router = createBrowserRouter([
               { path: 'chat', element: <Navigate to="/app" replace /> },
               { path: 'messages', element: <MessagesPage /> },
               {
-                element: <RoleGuard allowedRoles={['SUPER_ADMIN', 'SCHOOL_ADMIN']} />,
+                element: <RoleGuard allowedRoles={['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF']} />,
                 children: [
                   { path: 'sms', element: <SmsCenterPage /> },
                 ],

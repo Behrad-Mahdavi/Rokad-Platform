@@ -30,13 +30,13 @@ import { CurrentTenant } from '../../common/decorators/current-tenant.decorator'
 @ApiTags('SMS Management')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+@Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
 @Controller('sms')
 export class SmsController {
   constructor(private readonly smsService: SmsService) {}
 
   @Get('config')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @ApiOperation({ summary: 'دریافت تنظیمات وب‌سرویس و درگاه‌های پیامک' })
   async getGatewayConfig(
     @CurrentTenant('id') tenantId: string,
@@ -47,7 +47,7 @@ export class SmsController {
   }
 
   @Post('config')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @ApiOperation({ summary: 'به‌روزرسانی تنظیمات درگاه پیامک و سوییچ به آموت یا کاوه نگار' })
   async updateGatewayConfig(
     @CurrentTenant('id') tenantId: string,
@@ -60,7 +60,7 @@ export class SmsController {
 
   @Post('manual-send')
   @HttpCode(HttpStatus.OK)
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @ApiOperation({ summary: 'ارسال دستی پیامک (فردی، نقشی/گروهی، کلاسی یا شماره مستقیم)' })
   async sendManualSms(
     @CurrentTenant('id') tenantId: string,
@@ -73,7 +73,7 @@ export class SmsController {
   }
 
   @Get('logs')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @ApiOperation({ summary: 'دریافت تاریخچه و لاگ پیامک‌های ارسالی' })
   async getSmsLogs(
     @CurrentTenant('id') tenantId: string,
@@ -94,7 +94,7 @@ export class SmsController {
   }
 
   @Get('stats')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @ApiOperation({ summary: 'آمار و وضعیت تجمیعی پیامک‌های ارسالی' })
   async getSmsStats(
     @CurrentTenant('id') tenantId: string,
@@ -105,7 +105,7 @@ export class SmsController {
   }
 
   @Get('templates')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @ApiOperation({ summary: 'دریافت لیست الگوها و وضعیت اتوماسیون‌های پیامکی' })
   async getTemplates(
     @CurrentTenant('id') tenantId: string,
@@ -116,7 +116,7 @@ export class SmsController {
   }
 
   @Post('templates')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @ApiOperation({ summary: 'ثبت یا به‌روزرسانی قالب و تنظیمات اتوماسیون پیامک' })
   async upsertTemplate(
     @CurrentTenant('id') tenantId: string,
@@ -128,7 +128,7 @@ export class SmsController {
   }
 
   @Post('trigger/cheques')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @ApiOperation({ summary: 'اجرای دستی اتوماسیون یادآوری سررسید چک‌های صیادی' })
   async triggerCheques(
     @CurrentTenant('id') tenantId: string,
@@ -139,7 +139,7 @@ export class SmsController {
   }
 
   @Post('trigger/birthdays')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @ApiOperation({ summary: 'اجرای دستی اتوماسیون پیامک تبریک تولد امروز' })
   async triggerBirthdays(
     @CurrentTenant('id') tenantId: string,
@@ -153,7 +153,7 @@ export class SmsController {
   // Quick Templates Endpoints
   // ==========================================
   @Get('quick-templates')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @ApiOperation({ summary: 'دریافت لیست الگوهای سریع پیامک' })
   async getQuickTemplates(
     @CurrentTenant('id') tenantId: string,
@@ -164,7 +164,7 @@ export class SmsController {
   }
 
   @Post('quick-templates')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @ApiOperation({ summary: 'افزودن یک الگوی سریع جدید به درگاه' })
   async createQuickTemplate(
     @CurrentTenant('id') tenantId: string,
@@ -176,7 +176,7 @@ export class SmsController {
   }
 
   @Patch('quick-templates/:id')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @ApiOperation({ summary: 'ویرایش الگوی سریع پیامک' })
   async updateQuickTemplate(
     @CurrentTenant('id') tenantId: string,
@@ -189,7 +189,7 @@ export class SmsController {
   }
 
   @Delete('quick-templates/:id')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @ApiOperation({ summary: 'حذف یک الگوی سریع' })
   async deleteQuickTemplate(
     @CurrentTenant('id') tenantId: string,
@@ -201,7 +201,7 @@ export class SmsController {
   }
 
   @Get(['recipients', 'directory'])
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
   @ApiOperation({ summary: 'دریافت مخاطبان دفترچه تلفن مدرسه بر اساس نقش جهت ارسال پیامک' })
   async getRecipients(
     @CurrentTenant('id') tenantId: string,

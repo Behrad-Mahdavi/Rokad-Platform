@@ -14,6 +14,7 @@ import {
   MessageTargetAudience,
   MessageTargetType,
 } from '../types';
+import { getFullMediaUrl } from '../../../../lib/api/media-url';
 import {
   Send,
   Paperclip,
@@ -34,6 +35,8 @@ import {
   CheckCircle2,
   ChevronDown,
   Reply,
+  Video,
+  Film,
 } from 'lucide-react';
 
 interface Props {
@@ -177,6 +180,7 @@ export const ComposeMessageModal: React.FC<Props> = ({
   const [loadingAllowed, setLoadingAllowed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   // High-level Recipient Mode: Individual vs Group
   const [recipientMode, setRecipientMode] = useState<'INDIVIDUAL' | 'GROUP'>('INDIVIDUAL');
@@ -254,47 +258,91 @@ export const ComposeMessageModal: React.FC<Props> = ({
     if (!files || files.length === 0) return;
 
     const file = files[0];
-    if (file.size > 20 * 1024 * 1024) {
-      toast.error('حداکثر حجم مجاز هر فایل ۲۰ مگابایت می‌باشد');
+    const isVideo = file.type.startsWith('video/') || /\.(mp4|mov|webm|mkv|avi)$/i.test(file.name);
+    const maxSizeBytes = isVideo ? 150 * 1024 * 1024 : 50 * 1024 * 1024;
+
+    if (file.size > maxSizeBytes) {
+      toast.error(
+        isVideo
+          ? 'حداکثر حجم مجاز هر ویدیو ۱۵۰ مگابایت می‌باشد'
+          : 'حداکثر حجم مجاز هر فایل ۵۰ مگابایت می‌باشد',
+      );
       return;
     }
 
     try {
       setUploadingFile(true);
+      setUploadProgress(0);
       const formData = new FormData();
       formData.append('file', file);
       formData.append('moduleName', 'messages');
 
       let fileUrl = '';
       try {
-        const uploadRes = await apiClient.post('/storage/upload', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
+        const uploadRes: any = await apiClient.post('/storage/upload', formData, {
+          headers: { 'Content-Type': undefined },
+          timeout: 10 * 60 * 1000, // 10 minutes timeout for large files/videos
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              setUploadProgress(percent);
+            }
+          },
         });
-        const uploadData = uploadRes.data?.data || uploadRes.data;
-        fileUrl = uploadData?.fileUrl || uploadData?.url;
-      } catch {
-        // Fallback: convert small file to base64 Data URL
-        fileUrl = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(file);
-        });
+        const uploadData = uploadRes?.data?.data || uploadRes?.data || uploadRes;
+        const rawUrl =
+          uploadData?.fileUrl ||
+          uploadData?.url ||
+          uploadRes?.fileUrl ||
+          uploadRes?.url ||
+          '';
+
+        if (!rawUrl) {
+          throw new Error('سرور آدرس فایل را بازنگرداند');
+        }
+        fileUrl = getFullMediaUrl(rawUrl);
+      } catch (err: any) {
+        // Only fallback to base64 for small non-video files (< 2MB)
+        if (file.size < 2 * 1024 * 1024 && !isVideo) {
+          fileUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(file);
+          });
+        } else {
+          const serverMsg =
+            err?.response?.data?.message ||
+            (err?.code === 'ECONNABORTED'
+              ? 'زمان بارگذاری به پایان رسید (کندی اینترنت). لطفاً دوباره امتحان کنید.'
+              : err?.response?.status === 413
+                ? 'حجم فایل بیشتر از سقف مجاز سرور است.'
+                : err?.message || 'خطا در بارگذاری فایل در سرور');
+          throw new Error(typeof serverMsg === 'string' ? serverMsg : JSON.stringify(serverMsg));
+        }
       }
+
+      const isImage = file.type.startsWith('image/');
+      const attType = isVideo ? 'video' : isImage ? 'image' : 'file';
 
       setAttachments((prev) => [
         ...prev,
         {
           name: file.name,
           url: fileUrl,
-          type: file.type.startsWith('image/') ? 'image' : 'file',
+          type: attType,
           size: file.size,
         },
       ]);
-      toast.success(`فایل ${file.name} با موفقیت پیوست شد`);
+      toast.success(
+        isVideo
+          ? `ویدیوی ${file.name} با موفقیت پیوست شد`
+          : `فایل ${file.name} با موفقیت پیوست شد`,
+      );
     } catch (err: any) {
-      toast.error('خطا در آپلود فایل پیوست');
+      toast.error(err?.message || 'خطا در آپلود فایل پیوست در سرور');
     } finally {
       setUploadingFile(false);
+      setUploadProgress(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -830,7 +878,7 @@ export const ComposeMessageModal: React.FC<Props> = ({
           <div className="flex items-center justify-between">
             <label className="text-xs font-black text-ink-darker dark:text-white flex items-center gap-1.5">
               <Paperclip className="w-3.5 h-3.5 text-primary" />
-              <span>پیوست‌ها (فایل، عکس، اسناد):</span>
+              <span>پیوست‌ها (فایل، عکس، اسناد، ویدیو):</span>
             </label>
 
             <button
@@ -840,14 +888,20 @@ export const ComposeMessageModal: React.FC<Props> = ({
               className="text-xs font-bold text-primary hover:text-primary-dark flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[1.5px] border-primary/30 hover:bg-primary/5 transition-colors cursor-pointer"
             >
               <UploadCloud className="w-3.5 h-3.5" />
-              <span>{uploadingFile ? 'در حال آپلود...' : 'افزودن پیوست'}</span>
+              <span>
+                {uploadingFile
+                  ? uploadProgress !== null
+                    ? `در حال آپلود... (${toPersianDigits(uploadProgress)}٪)`
+                    : 'در حال آپلود...'
+                  : 'افزودن پیوست یا ویدیو'}
+              </span>
             </button>
             <input
               ref={fileInputRef}
               type="file"
               onChange={handleFileUpload}
               className="hidden"
-              accept="image/*,.pdf,.docx,.xlsx,.zip"
+              accept="image/*,video/*,.mp4,.mov,.webm,.mkv,.avi,.pdf,.docx,.xlsx,.zip"
             />
           </div>
 
@@ -865,6 +919,10 @@ export const ComposeMessageModal: React.FC<Props> = ({
                         alt={att.name}
                         className="w-8 h-8 rounded-lg object-cover border border-gray-200"
                       />
+                    ) : att.type === 'video' ? (
+                      <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-200 dark:border-indigo-800">
+                        <Video className="w-4 h-4" />
+                      </div>
                     ) : (
                       <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
                         <FileText className="w-4 h-4" />
@@ -876,7 +934,9 @@ export const ComposeMessageModal: React.FC<Props> = ({
                       </p>
                       {att.size && (
                         <p className="text-[10px] text-gray-400 font-mono">
-                          {toPersianDigits((att.size / 1024).toFixed(0))} کیلوبایت
+                          {att.size > 1024 * 1024
+                            ? `${toPersianDigits((att.size / (1024 * 1024)).toFixed(1))} مگابایت`
+                            : `${toPersianDigits((att.size / 1024).toFixed(0))} کیلوبایت`}
                         </p>
                       )}
                     </div>
