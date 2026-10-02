@@ -395,7 +395,7 @@ export const StudentSchedulePage: React.FC = () => {
                                 : 'bg-gray-50/40 dark:bg-[#1C2536]/40 border-gray-200 dark:border-[#242F42] opacity-75'
                             }`}>
                               <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-primary dark:text-primary-light block">هفته اول</span>
+                                <span className="text-[10px] font-bold text-primary dark:text-primary-light block">هفته فرد</span>
                                 {currentWeekInfo.activeWeek === 1 && (
                                   <span className="text-[9.5px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-300">
                                     درس این هفته
@@ -425,7 +425,7 @@ export const StudentSchedulePage: React.FC = () => {
                                 : 'bg-gray-50/40 dark:bg-[#1C2536]/40 border-gray-200 dark:border-[#242F42] opacity-75'
                             }`}>
                               <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 block">هفته دوم</span>
+                                <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 block">هفته زوج</span>
                                 {currentWeekInfo.activeWeek === 2 && (
                                   <span className="text-[9.5px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-300">
                                     درس این هفته
@@ -475,7 +475,7 @@ export const StudentSchedulePage: React.FC = () => {
                             {/* Part 1 Actions */}
                             <div className="space-y-1">
                               <span className="text-[10px] font-bold text-primary dark:text-primary-light block">
-                                دسترسی سریع هفته اول ({slot.lesson?.name}):
+                                دسترسی سریع هفته فرد ({slot.lesson?.name}):
                               </span>
                               <div className="grid grid-cols-3 gap-2">
                                 <Button
@@ -528,7 +528,7 @@ export const StudentSchedulePage: React.FC = () => {
                             {/* Part 2 Actions */}
                             <div className="space-y-1 pt-1 border-t border-dashed border-gray-200 dark:border-[#242F42]">
                               <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 block">
-                                دسترسی سریع هفته دوم ({slot.secondLesson?.name}):
+                                دسترسی سریع هفته زوج ({slot.secondLesson?.name}):
                               </span>
                               <div className="grid grid-cols-3 gap-2">
                                 <Button

@@ -303,17 +303,17 @@ export class CreateScheduleDto {
   @IsBoolean()
   allowTeacherConflict?: boolean;
 
-  @ApiPropertyOptional({ description: 'آیا اسلات به صورت یک هفته در میان (هفته اول و دوم) باشد؟' })
+  @ApiPropertyOptional({ description: 'آیا اسلات به صورت یک هفته در میان (هفته فرد و زوج) باشد؟' })
   @IsOptional()
   @IsBoolean()
   isSplitPeriod?: boolean;
 
-  @ApiPropertyOptional({ description: 'شناسه درس هفته دوم در صورت یک هفته در میان بودن' })
+  @ApiPropertyOptional({ description: 'شناسه درس هفته زوج در صورت یک هفته در میان بودن' })
   @IsOptional()
   @IsString()
   secondLessonId?: string;
 
-  @ApiPropertyOptional({ description: 'شناسه دبیر هفته دوم در صورت یک هفته در میان بودن' })
+  @ApiPropertyOptional({ description: 'شناسه دبیر هفته زوج در صورت یک هفته در میان بودن' })
   @IsOptional()
   @IsString()
   secondTeacherId?: string;

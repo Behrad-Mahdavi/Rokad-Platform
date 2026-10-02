@@ -170,8 +170,8 @@ export function getCurrentJalaliYearMonth(): { year: number; month: number; day:
 
 export interface JalaliWeekInfo {
   weekNumber: number;
-  activeWeek: 1 | 2; // 1: هفته اول (هفته فرد سال), 2: هفته دوم (هفته زوج سال)
-  weekLabel: string; // "هفته اول" یا "هفته دوم"
+  activeWeek: 1 | 2; // 1: هفته فرد (هفته اول), 2: هفته زوج (هفته دوم)
+  weekLabel: string; // "هفته فرد" یا "هفته زوج"
   dayOfYear: number;
   jy: number;
   jm: number;
@@ -179,8 +179,8 @@ export interface JalaliWeekInfo {
 }
 
 /**
- * محاسبه دقیق هفته جاری شمسی و تعیین تناوب هفته اول / هفته دوم
- * این متد به صورت خودکار هر شنبه تغییر می‌کند (یک هفته هفته اول، هفته بعد هفته دوم)
+ * محاسبه دقیق هفته جاری شمسی و تعیین تناوب هفته فرد / هفته زوج
+ * این متد به صورت خودکار هر شنبه تغییر می‌کند (یک هفته هفته فرد، هفته بعد هفته زوج)
  */
 export function getCurrentJalaliWeekInfo(dateInput: Date | string = new Date()): JalaliWeekInfo {
   const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
@@ -194,7 +194,7 @@ export function getCurrentJalaliWeekInfo(dateInput: Date | string = new Date()):
 
   const weekNumber = Math.floor((dayOfYear - 1 + dowFarvardin1) / 7) + 1;
   const activeWeek: 1 | 2 = weekNumber % 2 === 1 ? 1 : 2;
-  const weekLabel = activeWeek === 1 ? 'هفته اول' : 'هفته دوم';
+  const weekLabel = activeWeek === 1 ? 'هفته فرد' : 'هفته زوج';
 
   return {
     weekNumber,

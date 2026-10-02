@@ -297,7 +297,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
       return;
     }
     if (form.isSplitPeriod && (!form.secondLessonId || !form.secondTeacherId)) {
-      setError('در حالت یک هفته در میان، لطفاً درس و دبیر هفته دوم (هفته زوج) را نیز انتخاب نمایید.');
+      setError('در حالت یک هفته در میان، لطفاً درس و دبیر هفته زوج را نیز انتخاب نمایید.');
       return;
     }
 
@@ -613,7 +613,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                                         {type1.label}
                                       </span>
                                       <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-white text-primary border border-primary/20 shrink-0">
-                                        هفته اول
+                                        هفته فرد
                                       </span>
                                     </div>
                                   </div>
@@ -636,7 +636,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                                         {type2.label}
                                       </span>
                                       <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-white text-purple-700 border border-purple-200 shrink-0">
-                                        هفته دوم
+                                        هفته زوج
                                       </span>
                                     </div>
                                   </div>
@@ -810,7 +810,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                                           {item.lesson?.name}
                                         </span>
                                         <span className="text-[8px] bg-white text-primary px-1 rounded font-bold border border-primary/20 shrink-0">
-                                          هفته اول
+                                          هفته فرد
                                         </span>
                                       </div>
                                       <div>
@@ -827,7 +827,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                                           {item.secondLesson?.name || '—'}
                                         </span>
                                         <span className="text-[8px] bg-white text-purple-700 px-1 rounded font-bold border border-purple-200 shrink-0">
-                                          هفته دوم
+                                          هفته زوج
                                         </span>
                                       </div>
                                       <div>
@@ -868,7 +868,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                               </span>
                             ) : (
                               <span className="text-[9px] text-gray-400 font-medium">
-                                ترتیب: هفته اول ⬅ هفته دوم
+                                ترتیب: هفته فرد ⬅ هفته زوج
                               </span>
                             )}
 
@@ -1095,7 +1095,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                 <div className="bg-primary-50/20 border border-primary/25 rounded-2xl p-3.5 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-primary text-white text-[11px] font-bold">
-                      هفته اول
+                      هفته فرد
                     </span>
                   </div>
 
@@ -1150,7 +1150,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                     type="button"
                     onClick={handleSwapSplitOrder}
                     className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-300 bg-white hover:bg-gray-100 hover:text-primary transition-all text-xs font-bold shadow-xs active:scale-95"
-                    title="جابجایی درس و دبیر هفته اول و هفته دوم"
+                    title="جابجایی درس و دبیر هفته فرد و هفته زوج"
                   >
                     <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
                     <span>جابجایی هفته‌ها</span>
@@ -1161,7 +1161,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                 <div className="bg-purple-50/30 border border-purple-200/80 rounded-2xl p-3.5 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-purple-700 text-white text-[11px] font-bold">
-                      هفته دوم
+                      هفته زوج
                     </span>
                   </div>
 

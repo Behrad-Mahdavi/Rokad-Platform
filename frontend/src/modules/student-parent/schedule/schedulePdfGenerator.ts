@@ -59,13 +59,13 @@ export function generateSchedulePdf({
                   <div class="split-half">
                     <div class="lesson-name">${slot.lesson?.name || '—'}</div>
                     ${subLabel1 ? `<div class="teacher-name">${subLabel1}</div>` : ''}
-                    <span class="split-tag">هفته اول</span>
+                    <span class="split-tag">هفته فرد</span>
                   </div>
                   <div class="split-divider"></div>
                   <div class="split-half">
                     <div class="lesson-name">${slot.secondLesson?.name || '—'}</div>
                     ${subLabel2 ? `<div class="teacher-name">${subLabel2}</div>` : ''}
-                    <span class="split-tag">هفته دوم</span>
+                    <span class="split-tag">هفته زوج</span>
                   </div>
                 </div>
               </td>
