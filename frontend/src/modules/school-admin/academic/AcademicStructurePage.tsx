@@ -330,8 +330,7 @@ export const AcademicStructurePage: React.FC = () => {
     const isMod =
       lesson.isModular ??
       ['NON_TECHNICAL_COMPETENCY', 'BASIC_COMPETENCY', 'TECHNICAL_MODULAR_COMPETENCY'].includes(lesson.type);
-    const pCount = lesson.podmanCount || lesson.podmans?.length || 5;
-    const titles = Array.from({ length: pCount }).map((_, idx) => {
+    const titles = [0, 1, 2, 3, 4].map((idx) => {
       const existingP = lesson.podmans?.find((p: any) => p.number === idx + 1);
       return existingP?.title || `پودمان ${idx + 1}`;
     });
@@ -347,7 +346,7 @@ export const AcademicStructurePage: React.FC = () => {
       fieldId: lesson.fieldId || '',
       type: lesson.type || 'GENERAL',
       isModular: isMod,
-      podmanCount: pCount,
+      podmanCount: 5,
       podmanTitles: titles,
       teacherIds: currentTeacherIds,
     });
@@ -1573,42 +1572,15 @@ export const AcademicStructurePage: React.FC = () => {
             </div>
           </div>
 
-          {/* تنظیمات پودمان */}
+          {/* پودمان‌ها */}
           {editLessonForm.isModular && (
             <div className="bg-gray-50/60 dark:bg-[#151C28] rounded-xl border border-gray-200 dark:border-gray-700 p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-xs text-ink-darker dark:text-white">
-                  عناوین پودمان‌ها
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-gray-500">تعداد:</span>
-                  <select
-                    value={editLessonForm.podmanCount}
-                    onChange={(e) => {
-                      const count = Number(e.target.value);
-                      const newTitles = Array.from({ length: count }).map((_, idx) => {
-                        return editLessonForm.podmanTitles[idx] || `پودمان ${idx + 1}`;
-                      });
-                      setEditLessonForm({
-                        ...editLessonForm,
-                        podmanCount: count,
-                        podmanTitles: newTitles,
-                      });
-                    }}
-                    className="h-7 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1C2536] text-xs px-2 font-bold"
-                  >
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                      <option key={n} value={n}>
-                        {n} پودمان
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
+              <span className="font-bold text-xs text-ink-darker dark:text-white">
+                عناوین ۵ پودمان
+              </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {Array.from({ length: editLessonForm.podmanCount }).map((_, idx) => (
-                  <div key={idx} className="flex items-center gap-1.5">
+                {[0, 1, 2, 3, 4].map((idx) => (
+                  <div key={idx} className={`flex items-center gap-1.5 ${idx === 4 ? 'sm:col-span-2' : ''}`}>
                     <span className="text-[11px] font-bold text-gray-500 w-14 shrink-0 text-center font-mono">
                       پودمان {idx + 1}:
                     </span>
