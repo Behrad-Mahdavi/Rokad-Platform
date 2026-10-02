@@ -406,11 +406,6 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
       <ResponsivePageHeader
         icon={CalendarDays}
         title={isStudent ? 'برنامه هفتگی کلاس من' : 'برنامه هفتگی و ساعات درسی'}
-        description={
-          canManageSchedule
-            ? 'تنظیم ساعات ۶ زنگ درسی روزانه (شنبه تا پنج‌شنبه)، تخصیص درس و دبیر و بررسی تداخل'
-            : 'مشاهده ساعات ۶ زنگ درسی روزانه، اسامی دروس و مربیان مدرس'
-        }
         badge={
           isStudent ? (
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 text-[11px] font-bold">
@@ -428,27 +423,27 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
           <div className="flex flex-wrap items-center gap-2">
             {isStudent ? (
               selectedClassroom ? (
-                <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 text-primary px-2.5 py-1.5 rounded-xl text-xs font-bold">
-                  <Building2 className="h-3.5 w-3.5 text-primary" />
+                <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 text-primary px-3 py-2 rounded-xl text-xs font-bold h-10">
+                  <Building2 className="h-4 w-4 text-primary" />
                   <span>کلاس شما: {selectedClassroom.name}</span>
                 </div>
               ) : null
             ) : isParent && classrooms.length <= 1 ? (
               selectedClassroom ? (
-                <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 text-primary px-2.5 py-1.5 rounded-xl text-xs font-bold">
-                  <Building2 className="h-3.5 w-3.5 text-primary" />
+                <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 text-primary px-3 py-2 rounded-xl text-xs font-bold h-10">
+                  <Building2 className="h-4 w-4 text-primary" />
                   <span>کلاس فرزند شما: {selectedClassroom.name}</span>
                 </div>
               ) : null
             ) : classrooms.length > 0 ? (
               <div className="flex items-center space-x-2 space-x-reverse">
-                <label className="text-xs font-bold text-ink-dark">
+                <label className="text-xs font-bold text-ink-dark whitespace-nowrap">
                   {isParent ? 'کلاس فرزند:' : 'کلاس درس:'}
                 </label>
                 <select
                   value={selectedClassroomId}
                   onChange={(e) => setSelectedClassroomId(e.target.value)}
-                  className="h-8.5 rounded-lg border border-gray-300 bg-gray-50 px-2.5 text-xs font-bold text-ink-dark focus:outline-none focus:ring-2 focus:ring-primary min-w-[160px]"
+                  className="h-10 rounded-xl border border-gray-300 bg-white dark:bg-[#151C28] dark:border-[#242F42] px-3.5 py-2 text-xs sm:text-sm font-bold text-ink-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-primary min-w-[180px] shadow-2xs cursor-pointer"
                 >
                   {classrooms.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -464,9 +459,9 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                 variant="primary"
                 size="sm"
                 onClick={handleDownloadPdf}
-                className="flex items-center gap-1.5 text-xs shadow-xs"
+                className="h-10 px-3.5 sm:px-4 rounded-xl flex items-center gap-1.5 text-xs sm:text-sm font-bold shadow-xs"
               >
-                <FileDown className="h-3.5 w-3.5" />
+                <FileDown className="h-4 w-4" />
                 <span>دانلود PDF</span>
               </Button>
             )}
@@ -508,11 +503,6 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
               <Badge variant="college">{selectedClassroom.field.name}</Badge>
             ) : (
               <Badge variant="neutral">عمومی</Badge>
-            )}
-            {selectedClassroom.roomNumber && (
-              <span className="text-xs text-gray-500 bg-white px-2.5 py-1 rounded border border-gray-200">
-                مکان: {selectedClassroom.roomNumber}
-              </span>
             )}
           </div>
 
@@ -726,11 +716,6 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span className="font-bold text-xs text-ink-darker">{period.label}</span>
-                    {period.isExtracurricular && (
-                      <span className="text-[9px] font-black bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 px-1.5 py-0.5 rounded border border-amber-300/80 dark:border-amber-400/40">
-                        فوق برنامه
-                      </span>
-                    )}
                   </div>
                   <div className="font-mono text-[10px] text-gray-500 mt-0.5 dir-ltr">
                     {toPersianDigits(period.defaultStart)} - {toPersianDigits(period.defaultEnd)}
