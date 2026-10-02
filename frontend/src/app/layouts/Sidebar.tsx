@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import {
@@ -56,6 +56,7 @@ export interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   const { isOpen, close } = useSidebarStore();
   const location = useLocation();
+  const navigate = useNavigate();
 
   useScrollLock(isOpen);
 
@@ -300,7 +301,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
 
   const renderFooterBanner = () => (
     <div className="rounded-xl bg-gray-50 dark:bg-[#161D2A] p-2.5 border border-gray-200 dark:border-gray-800 text-center select-none">
-      <div className="flex items-center justify-center space-x-1.5 space-x-reverse text-gray-600 dark:text-gray-300 font-bold text-xs">
+      <div
+        onClick={() => navigate('/app')}
+        className="flex items-center justify-center space-x-1.5 space-x-reverse text-gray-600 dark:text-gray-300 font-bold text-xs cursor-pointer hover:text-primary transition-colors active:scale-95"
+      >
         <img src="/logo.svg" alt="رکاد" className="h-4 w-4 rounded-md object-cover inline-block shrink-0" />
         <span>سامانه یکپارچه رکاد</span>
       </div>
@@ -347,7 +351,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       >
         {/* Drawer Header */}
         <div className="pt-[calc(1rem+env(safe-area-inset-top,0px))] px-4 pb-4 border-b border-[#EAEAEA] dark:border-gray-800 flex items-center justify-between bg-gray-50/70 dark:bg-[#161D2A] shrink-0">
-          <div className="flex items-center gap-2.5">
+          <div
+            onClick={() => {
+              navigate('/app');
+              close();
+            }}
+            className="flex items-center gap-2.5 cursor-pointer active:scale-95 transition-transform"
+          >
             <img
               src="/logo.svg"
               alt="رکاد"
