@@ -209,7 +209,7 @@ export const TeacherSchedulePage: React.FC = () => {
               {/* Active Jalali Week Indicator */}
               <span className="inline-flex items-center gap-1 bg-primary/10 dark:bg-primary-950/50 text-primary dark:text-primary-light px-2.5 py-1 rounded-xl text-xs font-black border border-primary/25 shrink-0">
                 <Layers className="w-3.5 h-3.5" />
-                <span>هفته جاری: {currentWeekInfo.weekLabel}</span>
+                <span>{currentWeekInfo.weekLabel}</span>
               </span>
             </div>
           </div>
@@ -219,11 +219,12 @@ export const TeacherSchedulePage: React.FC = () => {
             <button
               type="button"
               onClick={handleDownloadPdf}
-              className="h-10 px-3.5 sm:px-4 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs sm:text-sm border-[1.5px] border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] hover:shadow-[2.5px_2.5px_0_#438C83] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer inline-flex items-center gap-1.5 sm:gap-2 shrink-0"
+              className="h-10 w-10 sm:w-auto px-0 sm:px-4 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs sm:text-sm border-[1.5px] border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] hover:shadow-[2.5px_2.5px_0_#438C83] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer inline-flex items-center justify-center gap-1.5 sm:gap-2 shrink-0"
               title="دریافت نسخه رسمی و چاپ هفتگی تدریس به صورت PDF"
+              aria-label="دانلود نسخه PDF"
             >
               <FileDown className="w-4 h-4 shrink-0" />
-              <span>دانلود (PDF)</span>
+              <span className="hidden sm:inline">دانلود (PDF)</span>
             </button>
           </div>
         </div>
@@ -340,7 +341,7 @@ export const TeacherSchedulePage: React.FC = () => {
                         {slot.isSplitPeriod && (
                           <span className="inline-flex items-center gap-1 bg-primary/10 text-primary dark:text-primary-light border border-primary/25 px-2 py-0.5 rounded-md text-[11px] font-bold">
                             <Layers className="w-3 h-3" />
-                            <span>یک هفته در میان ({currentWeekInfo.weekLabel})</span>
+                            <span>یک هفته در میان</span>
                           </span>
                         )}
 
