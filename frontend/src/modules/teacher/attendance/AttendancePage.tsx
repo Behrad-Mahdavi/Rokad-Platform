@@ -1663,7 +1663,14 @@ export const AttendancePage: React.FC = () => {
                       min="0"
                       max="20"
                       value={modalOralGrade}
-                      onChange={(e) => setModalOralGrade(e.target.value)}
+                      onChange={(e) => {
+                        const v = parseFloat(e.target.value);
+                        if (e.target.value === '' || e.target.value === '-') {
+                          setModalOralGrade('');
+                        } else if (!isNaN(v)) {
+                          setModalOralGrade(String(Math.min(20, Math.max(0, v))));
+                        }
+                      }}
                       placeholder="نمره مورد نظر را وارد کنید (مثلاً ۱۹.۵)"
                       className="rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] font-bold h-10 text-center text-sm"
                     />
