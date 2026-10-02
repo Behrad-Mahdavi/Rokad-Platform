@@ -9,6 +9,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { Role } from '../../common/constants';
 import {
   CreateLessonDto,
+  UpdateLessonDto,
   CreateClassroomDto,
   UpdateClassroomDto,
   EnrollStudentDto,
@@ -65,6 +66,12 @@ export class ClassesService {
                 user: true,
               },
             },
+          },
+        },
+        _count: {
+          select: {
+            lessonPlans: true,
+            podmans: true,
           },
         },
       },
@@ -164,12 +171,37 @@ export class ClassesService {
           });
         }
 
+        if (dto.teacherIds && Array.isArray(dto.teacherIds) && dto.teacherIds.length > 0) {
+          await tx.teacherLesson.createMany({
+            data: dto.teacherIds.map((teacherId) => ({
+              tenantId,
+              lessonId: lesson.id,
+              teacherId,
+            })),
+          });
+        }
+
         return tx.lesson.findUnique({
           where: { id: lesson.id },
           include: {
             level: true,
             field: true,
             podmans: { orderBy: { number: 'asc' } },
+            teacherLessons: {
+              include: {
+                teacher: {
+                  include: {
+                    user: true,
+                  },
+                },
+              },
+            },
+            _count: {
+              select: {
+                lessonPlans: true,
+                podmans: true,
+              },
+            },
           },
         });
       },
@@ -178,6 +210,174 @@ export class ClassesService {
         maxWait: 5000,
       },
     );
+  }
+
+  async updateLesson(tenantId: string, id: string, dto: UpdateLessonDto) {
+    const existing = await this.prisma.lesson.findFirst({
+      where: { id, tenantId },
+      include: { podmans: true, teacherLessons: true },
+    });
+    if (!existing) {
+      throw new NotFoundException('درس مورد نظر یافت نشد');
+    }
+
+    if (dto.code && dto.code !== existing.code) {
+      const duplicate = await this.prisma.lesson.findFirst({
+        where: { tenantId, code: dto.code, NOT: { id } },
+      });
+      if (duplicate) {
+        throw new ConflictException(`درسی با کد '${dto.code}' قبلاً در این مدرسه ثبت شده است`);
+      }
+    }
+
+    const sanitizedFieldId =
+      dto.fieldId !== undefined
+        ? dto.fieldId && dto.fieldId.trim() !== ''
+          ? dto.fieldId.trim()
+          : null
+        : undefined;
+
+    const unitCount =
+      dto.unitCount !== undefined && dto.unitCount !== null
+        ? Number(dto.unitCount)
+        : (dto as any).units !== undefined
+        ? Number((dto as any).units)
+        : undefined;
+
+    const isModular =
+      dto.isModular !== undefined
+        ? Boolean(dto.isModular)
+        : dto.type !== undefined
+        ? ['NON_TECHNICAL_COMPETENCY', 'BASIC_COMPETENCY', 'TECHNICAL_MODULAR_COMPETENCY'].includes(
+            dto.type as string,
+          )
+        : existing.isModular;
+
+    const podmanCount =
+      dto.podmanCount !== undefined
+        ? Math.max(1, Number(dto.podmanCount) || 5)
+        : existing.podmanCount;
+
+    return this.prisma.$transaction(
+      async (tx) => {
+        // 1. Update basic lesson properties
+        const updateData: any = {};
+        if (dto.name !== undefined) updateData.name = dto.name;
+        if (dto.code !== undefined) updateData.code = dto.code;
+        if (dto.levelId !== undefined && dto.levelId.trim() !== '') updateData.levelId = dto.levelId;
+        if (sanitizedFieldId !== undefined) updateData.fieldId = sanitizedFieldId;
+        if (unitCount !== undefined) updateData.unitCount = unitCount > 0 ? unitCount : 1;
+        if (dto.type !== undefined) updateData.type = dto.type;
+        if (dto.description !== undefined) updateData.description = dto.description;
+        updateData.isModular = isModular;
+        updateData.podmanCount = isModular ? podmanCount : 5;
+
+        await tx.lesson.update({
+          where: { id },
+          data: updateData,
+        });
+
+        // 2. Update teachers if teacherIds is provided
+        if (dto.teacherIds !== undefined && Array.isArray(dto.teacherIds)) {
+          await tx.teacherLesson.deleteMany({
+            where: { lessonId: id, tenantId },
+          });
+
+          if (dto.teacherIds.length > 0) {
+            await tx.teacherLesson.createMany({
+              data: dto.teacherIds.map((teacherId) => ({
+                tenantId,
+                lessonId: id,
+                teacherId,
+              })),
+            });
+          }
+        }
+
+        // 3. Update or sync podmans
+        if (isModular) {
+          const currentPodmans = await tx.podman.findMany({
+            where: { lessonId: id, tenantId },
+            orderBy: { number: 'asc' },
+          });
+
+          const targetCount = podmanCount;
+          for (let i = 1; i <= targetCount; i++) {
+            const customTitle =
+              dto.podmanTitles && dto.podmanTitles[i - 1]?.trim()
+                ? dto.podmanTitles[i - 1]?.trim()
+                : undefined;
+            const existingPodman = currentPodmans.find((p) => p.number === i);
+
+            if (existingPodman) {
+              if (customTitle) {
+                await tx.podman.update({
+                  where: { id: existingPodman.id },
+                  data: { title: customTitle },
+                });
+              }
+            } else {
+              await tx.podman.create({
+                data: {
+                  tenantId,
+                  lessonId: id,
+                  number: i,
+                  title: customTitle || `پودمان ${i}`,
+                },
+              });
+            }
+          }
+
+          if (currentPodmans.length > targetCount) {
+            const extraIds = currentPodmans.slice(targetCount).map((p) => p.id);
+            await tx.podman.deleteMany({
+              where: { id: { in: extraIds } },
+            });
+          }
+        }
+
+        return tx.lesson.findUnique({
+          where: { id },
+          include: {
+            level: true,
+            field: true,
+            podmans: { orderBy: { number: 'asc' } },
+            teacherLessons: {
+              include: {
+                teacher: {
+                  include: {
+                    user: true,
+                  },
+                },
+              },
+            },
+            _count: {
+              select: {
+                lessonPlans: true,
+                podmans: true,
+              },
+            },
+          },
+        });
+      },
+      {
+        timeout: 15000,
+        maxWait: 5000,
+      },
+    );
+  }
+
+  async deleteLesson(tenantId: string, id: string) {
+    const existing = await this.prisma.lesson.findFirst({
+      where: { id, tenantId },
+    });
+    if (!existing) {
+      throw new NotFoundException('درس مورد نظر یافت نشد');
+    }
+
+    return this.prisma.lesson.delete({
+      where: { id },
+    });
   }
 
   // 2. Classrooms

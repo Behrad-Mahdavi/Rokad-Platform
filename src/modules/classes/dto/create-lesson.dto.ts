@@ -84,6 +84,70 @@ export class CreateLessonDto {
   @ApiPropertyOptional({ description: 'عناوین پودمان‌ها (اختیاری)', type: [String] })
   @IsOptional()
   podmanTitles?: string[];
+
+  @ApiPropertyOptional({ description: 'شناسه دبیران مدرس درس', type: [String] })
+  @IsOptional()
+  teacherIds?: string[];
+}
+
+export class UpdateLessonDto {
+  @ApiPropertyOptional({ description: 'شناسه مقطع تحصیلی' })
+  @IsString()
+  @IsOptional()
+  levelId?: string;
+
+  @ApiPropertyOptional({ description: 'شناسه رشته تحصیلی' })
+  @IsString()
+  @IsOptional()
+  fieldId?: string;
+
+  @ApiPropertyOptional({ description: 'نام درس یا کتاب', example: 'حسابان ۱' })
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @ApiPropertyOptional({ description: 'کد یکتای درس در مدرسه', example: 'CALC-10' })
+  @IsString()
+  @IsOptional()
+  code?: string;
+
+  @ApiPropertyOptional({ description: 'تعداد واحد یا ضریب درس', default: 1 })
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  unitCount?: number;
+
+  @ApiPropertyOptional({
+    description: 'نوع درس (GENERAL, NON_TECHNICAL_COMPETENCY, BASIC_COMPETENCY, TECHNICAL_MODULAR_COMPETENCY, TECHNICAL_PRACTICAL_COMPETENCY, SPECIALIZED, PRACTICAL, OPTIONAL)',
+    enum: LessonType,
+  })
+  @IsEnum(LessonType)
+  @IsOptional()
+  type?: LessonType;
+
+  @ApiPropertyOptional({ description: 'توضیحات یا سرفصل درس' })
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @ApiPropertyOptional({ description: 'آیا درس به صورت پودمانی است؟' })
+  @IsBoolean()
+  @IsOptional()
+  isModular?: boolean;
+
+  @ApiPropertyOptional({ description: 'تعداد پودمان‌های درس', default: 5 })
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  podmanCount?: number;
+
+  @ApiPropertyOptional({ description: 'عناوین پودمان‌ها (اختیاری)', type: [String] })
+  @IsOptional()
+  podmanTitles?: string[];
+
+  @ApiPropertyOptional({ description: 'شناسه دبیران مدرس درس', type: [String] })
+  @IsOptional()
+  teacherIds?: string[];
 }
 
 export class CreateClassroomDto {

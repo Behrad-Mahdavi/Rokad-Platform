@@ -14,6 +14,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ClassesService } from './classes.service';
 import {
   CreateLessonDto,
+  UpdateLessonDto,
   CreateClassroomDto,
   UpdateClassroomDto,
   EnrollStudentDto,
@@ -62,6 +63,33 @@ export class ClassesController {
   ) {
     const effectiveTenantId = tenantId || userTenantId;
     return this.classesService.createLesson(effectiveTenantId, dto);
+  }
+
+  @Patch('lessons/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.LESSON_WRITE)
+  @ApiOperation({ summary: 'ویرایش اطلاعات درس' })
+  async updateLesson(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') lessonId: string,
+    @Body() dto: UpdateLessonDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.classesService.updateLesson(effectiveTenantId, lessonId, dto);
+  }
+
+  @Delete('lessons/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.LESSON_WRITE)
+  @ApiOperation({ summary: 'حذف درس از مدرسه' })
+  async deleteLesson(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') lessonId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.classesService.deleteLesson(effectiveTenantId, lessonId);
   }
 
   // 2. Classrooms

@@ -51,8 +51,12 @@ export const AcademicStructurePage: React.FC = () => {
   const [isEditClassModalOpen, setIsEditClassModalOpen] = useState(false);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
   const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
+  const [isEditLessonModalOpen, setIsEditLessonModalOpen] = useState(false);
+  const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
   const [deleteConfirmClass, setDeleteConfirmClass] = useState<any | null>(null);
   const [isDeletingClass, setIsDeletingClass] = useState(false);
+  const [deleteConfirmLesson, setDeleteConfirmLesson] = useState<any | null>(null);
+  const [isDeletingLesson, setIsDeletingLesson] = useState(false);
 
   // Forms
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -95,6 +99,20 @@ export const AcademicStructurePage: React.FC = () => {
     isModular: true,
     podmanCount: 5,
     podmanTitles: ['پودمان ۱', 'پودمان ۲', 'پودمان ۳', 'پودمان ۴', 'پودمان ۵'],
+    teacherIds: [] as string[],
+  });
+
+  const [editLessonForm, setEditLessonForm] = useState({
+    name: '',
+    code: '',
+    units: 3,
+    levelId: '',
+    fieldId: '',
+    type: 'TECHNICAL_MODULAR_COMPETENCY',
+    isModular: true,
+    podmanCount: 5,
+    podmanTitles: ['پودمان ۱', 'پودمان ۲', 'پودمان ۳', 'پودمان ۴', 'پودمان ۵'],
+    teacherIds: [] as string[],
   });
 
   const [lessonFilterLevel, setLessonFilterLevel] = useState<string>('ALL');
@@ -284,6 +302,7 @@ export const AcademicStructurePage: React.FC = () => {
         isModular: lessonForm.isModular,
         podmanCount: lessonForm.isModular ? Number(lessonForm.podmanCount) || 5 : undefined,
         podmanTitles: lessonForm.isModular ? lessonForm.podmanTitles : undefined,
+        teacherIds: lessonForm.teacherIds,
       });
       setIsLessonModalOpen(false);
       setLessonForm((prev) => ({
@@ -295,12 +314,105 @@ export const AcademicStructurePage: React.FC = () => {
         isModular: true,
         podmanCount: 5,
         podmanTitles: ['پودمان ۱', 'پودمان ۲', 'پودمان ۳', 'پودمان ۴', 'پودمان ۵'],
+        teacherIds: [],
       }));
+      toast.success('درس با موفقیت ثبت شد.');
       fetchData();
     } catch (err: any) {
-      setError(err.message || 'خطا در ثبت درس.');
+      setError(err?.response?.data?.message || err.message || 'خطا در ثبت درس.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenEditLesson = (lesson: any) => {
+    setEditingLessonId(lesson.id);
+    const isMod =
+      lesson.isModular ??
+      ['NON_TECHNICAL_COMPETENCY', 'BASIC_COMPETENCY', 'TECHNICAL_MODULAR_COMPETENCY'].includes(lesson.type);
+    const pCount = lesson.podmanCount || lesson.podmans?.length || 5;
+    const titles = Array.from({ length: pCount }).map((_, idx) => {
+      const existingP = lesson.podmans?.find((p: any) => p.number === idx + 1);
+      return existingP?.title || `پودمان ${idx + 1}`;
+    });
+
+    const currentTeacherIds =
+      lesson.teacherLessons?.map((tl: any) => tl.teacherId || tl.teacher?.id).filter(Boolean) || [];
+
+    setEditLessonForm({
+      name: lesson.name || '',
+      code: lesson.code || '',
+      units: lesson.unitCount || lesson.units || 1,
+      levelId: lesson.levelId || '',
+      fieldId: lesson.fieldId || '',
+      type: lesson.type || 'GENERAL',
+      isModular: isMod,
+      podmanCount: pCount,
+      podmanTitles: titles,
+      teacherIds: currentTeacherIds,
+    });
+    setError(null);
+    setIsEditLessonModalOpen(true);
+  };
+
+  const handleEditLessonLevelChange = (lvlId: string) => {
+    const matchingFields = fields.filter((f) => f.levelId === lvlId);
+    setEditLessonForm((prev) => ({
+      ...prev,
+      levelId: lvlId,
+      fieldId: matchingFields[0]?.id || '',
+    }));
+  };
+
+  const handleUpdateLesson = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLessonId) return;
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await apiClient.patch(`/classes/lessons/${editingLessonId}`, {
+        name: editLessonForm.name,
+        code: editLessonForm.code,
+        unitCount: Number(editLessonForm.units) || 1,
+        levelId: editLessonForm.levelId || undefined,
+        fieldId:
+          editLessonForm.fieldId && editLessonForm.fieldId.trim() !== ''
+            ? editLessonForm.fieldId
+            : undefined,
+        type: editLessonForm.type,
+        isModular: editLessonForm.isModular,
+        podmanCount: editLessonForm.isModular ? Number(editLessonForm.podmanCount) || 5 : undefined,
+        podmanTitles: editLessonForm.isModular ? editLessonForm.podmanTitles : undefined,
+        teacherIds: editLessonForm.teacherIds,
+      });
+      setIsEditLessonModalOpen(false);
+      setEditingLessonId(null);
+      toast.success('اطلاعات درس با موفقیت به‌روزرسانی شد.');
+      fetchData();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err.message || 'خطا در ویرایش درس.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleConfirmDeleteLesson = async () => {
+    if (!deleteConfirmLesson) return;
+    setIsDeletingLesson(true);
+    try {
+      await apiClient.delete(`/classes/lessons/${deleteConfirmLesson.id}`);
+      setLessons((prev) => prev.filter((l) => l.id !== deleteConfirmLesson.id));
+      toast.success('درس با موفقیت حذف شد.');
+      setDeleteConfirmLesson(null);
+      if (isEditLessonModalOpen && editingLessonId === deleteConfirmLesson.id) {
+        setIsEditLessonModalOpen(false);
+        setEditingLessonId(null);
+      }
+      fetchData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err.message || 'خطا در حذف درس.');
+    } finally {
+      setIsDeletingLesson(false);
     }
   };
 
@@ -609,13 +721,27 @@ export const AcademicStructurePage: React.FC = () => {
               </div>
             )}
             secondaryField={(l) => (
-              <div className="flex items-center gap-1 flex-wrap">
-                {l.level?.name && <Badge variant="default" className="text-[11px]">پایه {l.level.name}</Badge>}
-                {l.field?.name ? (
-                  <Badge variant="college" className="text-[11px]">{l.field.name}</Badge>
-                ) : (
-                  <Badge variant="neutral" className="text-[11px]">عمومی</Badge>
-                )}
+              <div className="flex items-center justify-between gap-1 flex-wrap w-full">
+                <div className="flex items-center gap-1 flex-wrap">
+                  {l.level?.name && <Badge variant="default" className="text-[11px]">پایه {l.level.name}</Badge>}
+                  {l.field?.name ? (
+                    <Badge variant="college" className="text-[11px]">{l.field.name}</Badge>
+                  ) : (
+                    <Badge variant="neutral" className="text-[11px]">عمومی</Badge>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenEditLesson(l);
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all border border-primary/20 shrink-0 cursor-pointer shadow-2xs"
+                  title="ویرایش درس"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>ویرایش</span>
+                </button>
               </div>
             )}
             columns={[
@@ -707,12 +833,36 @@ export const AcademicStructurePage: React.FC = () => {
               },
               {
                 header: 'تعداد سرفصل‌ها',
-                cell: (l) => <span className="text-xs text-gray-500">{l._count?.lessonPlans || l._count?.topics || 0} مبحث</span>,
+                cell: (l) => (
+                  <span className="text-xs text-gray-500">
+                    {l.isModular
+                      ? `${l.podmanCount || l.podmans?.length || 5} پودمان`
+                      : `${l._count?.lessonPlans || l._count?.topics || 0} مبحث`}
+                  </span>
+                ),
                 mobileDetail: true,
               },
               {
                 header: 'وضعیت',
                 cell: () => <Badge variant="default">فعال</Badge>,
+              },
+              {
+                header: 'عملیات',
+                mobilePriority: 'hidden',
+                cell: (l) => (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenEditLesson(l);
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all border border-primary/20 cursor-pointer shadow-2xs"
+                    title="ویرایش درس"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>ویرایش</span>
+                  </button>
+                ),
               },
             ]}
           />
@@ -1308,6 +1458,54 @@ export const AcademicStructurePage: React.FC = () => {
             </div>
           )}
 
+          {/* انتخاب دبیران مدرس درس */}
+          <div className="w-full text-right space-y-1.5">
+            <label className="block text-xs sm:text-[13px] font-bold text-ink-normal/80 dark:text-gray-300 text-right">
+              دبیران مدرس این درس ({lessonForm.teacherIds.length} دبیر انتخاب شده)
+            </label>
+            <div className="max-h-36 overflow-y-auto p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-[#151C28] space-y-1">
+              {teachers.length === 0 ? (
+                <div className="text-xs text-gray-400 py-2 text-center">دبیری در سامانه ثبت نشده است.</div>
+              ) : (
+                teachers.map((t) => {
+                  const isSelected = lessonForm.teacherIds.includes(t.id);
+                  return (
+                    <label
+                      key={t.id}
+                      className={`flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer transition-colors ${
+                        isSelected
+                          ? 'bg-primary/10 text-primary font-bold border border-primary/30'
+                          : 'hover:bg-white dark:hover:bg-[#1C2536] text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {
+                            setLessonForm((prev) => ({
+                              ...prev,
+                              teacherIds: isSelected
+                                ? prev.teacherIds.filter((id) => id !== t.id)
+                                : [...prev.teacherIds, t.id],
+                            }));
+                          }}
+                          className="rounded text-primary focus:ring-primary h-4 w-4"
+                        />
+                        <span>
+                          {t.user?.firstName} {t.user?.lastName}
+                        </span>
+                      </div>
+                      {t.specialization && (
+                        <span className="text-[10px] text-gray-400 font-normal">{t.specialization}</span>
+                      )}
+                    </label>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
           <div className="flex justify-end space-x-2 space-x-reverse pt-2">
             <Button
               type="button"
@@ -1324,6 +1522,319 @@ export const AcademicStructurePage: React.FC = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* 4. Modal: Edit Lesson */}
+      <Modal
+        isOpen={isEditLessonModalOpen}
+        onClose={() => {
+          setIsEditLessonModalOpen(false);
+          setEditingLessonId(null);
+          setError(null);
+        }}
+        title="ویرایش مشخصات درس"
+        description="تغییر عنوان، کد، پایه، رشته، دبیران، نوع درس، تعداد واحد و سرفصل‌ها/پودمان‌ها"
+        maxWidth="lg"
+      >
+        {error && (
+          <div className="mb-4 flex items-center space-x-2 space-x-reverse rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleUpdateLesson} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-ink-normal dark:text-gray-300 mb-1.5 text-right">
+                پایه تحصیلی <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={editLessonForm.levelId}
+                onChange={(e) => handleEditLessonLevelChange(e.target.value)}
+                className="flex h-11 w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3.5 py-2 text-sm text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                required
+              >
+                {levels.map((lvl) => (
+                  <option key={lvl.id} value={lvl.id} className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">
+                    پایه {lvl.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-ink-normal dark:text-gray-300 mb-1.5 text-right">
+                رشته تحصیلی <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={editLessonForm.fieldId}
+                onChange={(e) => setEditLessonForm({ ...editLessonForm, fieldId: e.target.value })}
+                className="flex h-11 w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3.5 py-2 text-sm text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+              >
+                {(fields.filter((f) => f.levelId === editLessonForm.levelId).length > 0
+                  ? fields.filter((f) => f.levelId === editLessonForm.levelId)
+                  : fields
+                ).map((f) => (
+                  <option key={f.id} value={f.id} className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">
+                    {f.name}
+                  </option>
+                ))}
+                <option value="" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">عمومی (مشترک بین تمام رشته‌ها)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="نام درس"
+              placeholder="مثال: کارگاه شبکه و نرم‌افزار یا ریاضی ۱"
+              value={editLessonForm.name}
+              onChange={(e) => setEditLessonForm({ ...editLessonForm, name: e.target.value })}
+              required
+            />
+            <Input
+              label="کد درس"
+              placeholder="مثال: NET-101"
+              value={editLessonForm.code}
+              onChange={(e) => setEditLessonForm({ ...editLessonForm, code: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-ink-normal dark:text-gray-300 mb-1.5 text-right">
+                نوع درس
+              </label>
+              <select
+                value={editLessonForm.type}
+                onChange={(e) => {
+                  const newType = e.target.value;
+                  const isMod = ['NON_TECHNICAL_COMPETENCY', 'BASIC_COMPETENCY', 'TECHNICAL_MODULAR_COMPETENCY'].includes(newType);
+                  setEditLessonForm({
+                    ...editLessonForm,
+                    type: newType,
+                    isModular: isMod,
+                  });
+                }}
+                className="flex h-11 w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3.5 py-2 text-sm text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-medium"
+              >
+                <option value="GENERAL" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۱- عمومی</option>
+                <option value="NON_TECHNICAL_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۲- شایستگی‌های غیرفنی (پودمانی)</option>
+                <option value="BASIC_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۳- شایستگی‌های پایه (پودمانی)</option>
+                <option value="TECHNICAL_MODULAR_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۴- شایستگی‌های فنی / پودمانی</option>
+                <option value="TECHNICAL_PRACTICAL_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۵- شایستگی‌های فنی / عملی</option>
+                <option value="SPECIALIZED" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۶- تخصصی</option>
+                <option value="PRACTICAL" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۷- کارگاهی</option>
+                <option value="OPTIONAL" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۸- انتخابی</option>
+              </select>
+            </div>
+
+            <Input
+              label="تعداد واحد / ساعت هفتگی"
+              type="number"
+              value={editLessonForm.units}
+              onChange={(e) => setEditLessonForm({ ...editLessonForm, units: Number(e.target.value) })}
+              required
+            />
+          </div>
+
+          {/* انتخاب دبیران مدرس درس */}
+          <div className="w-full text-right space-y-1.5">
+            <label className="block text-xs sm:text-[13px] font-bold text-ink-normal/80 dark:text-gray-300 text-right">
+              دبیران مدرس این درس ({editLessonForm.teacherIds.length} دبیر انتخاب شده)
+            </label>
+            <div className="max-h-36 overflow-y-auto p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-[#151C28] space-y-1">
+              {teachers.length === 0 ? (
+                <div className="text-xs text-gray-400 py-2 text-center">دبیری در سامانه ثبت نشده است.</div>
+              ) : (
+                teachers.map((t) => {
+                  const isSelected = editLessonForm.teacherIds.includes(t.id);
+                  return (
+                    <label
+                      key={t.id}
+                      className={`flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer transition-colors ${
+                        isSelected
+                          ? 'bg-primary/10 text-primary font-bold border border-primary/30'
+                          : 'hover:bg-white dark:hover:bg-[#1C2536] text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {
+                            setEditLessonForm((prev) => ({
+                              ...prev,
+                              teacherIds: isSelected
+                                ? prev.teacherIds.filter((id) => id !== t.id)
+                                : [...prev.teacherIds, t.id],
+                            }));
+                          }}
+                          className="rounded text-primary focus:ring-primary h-4 w-4"
+                        />
+                        <span>
+                          {t.user?.firstName} {t.user?.lastName}
+                        </span>
+                      </div>
+                      {t.specialization && (
+                        <span className="text-[10px] text-gray-400 font-normal">{t.specialization}</span>
+                      )}
+                    </label>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* تنظیمات پودمان / سرفصل‌ها */}
+          {editLessonForm.isModular ? (
+            <div className="bg-white dark:bg-[#151C28] rounded-2xl border border-purple-200 dark:border-purple-900/50 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-sm text-ink-darker dark:text-white">
+                    پودمان‌های این درس
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                    {editLessonForm.podmanCount} پودمان
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">تعداد پودمان:</span>
+                  <select
+                    value={editLessonForm.podmanCount}
+                    onChange={(e) => {
+                      const count = Number(e.target.value);
+                      const newTitles = Array.from({ length: count }).map((_, idx) => {
+                        return editLessonForm.podmanTitles[idx] || `پودمان ${idx + 1}`;
+                      });
+                      setEditLessonForm({
+                        ...editLessonForm,
+                        podmanCount: count,
+                        podmanTitles: newTitles,
+                      });
+                    }}
+                    className="h-8 rounded-lg border border-purple-200 dark:border-purple-800 bg-white dark:bg-[#1C2536] text-xs font-bold px-2 text-purple-800 dark:text-purple-300"
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                      <option key={n} value={n}>
+                        {n} پودمان
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                عناوین پودمان‌ها و سرفصل‌های تدریس:
+              </p>
+
+              <div className="pt-2 border-t border-purple-100 dark:border-purple-900/40 space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+                  {Array.from({ length: editLessonForm.podmanCount }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-2 bg-white dark:bg-[#1C2536] px-2.5 py-1.5 rounded-xl border border-purple-200/80 dark:border-purple-900/60 min-w-0 w-full overflow-hidden"
+                    >
+                      <span className="text-[11px] font-bold text-purple-700 dark:text-purple-400 w-16 shrink-0 text-center font-mono">
+                        پودمان {idx + 1}:
+                      </span>
+                      <input
+                        type="text"
+                        value={editLessonForm.podmanTitles[idx] || `پودمان ${idx + 1}`}
+                        onChange={(e) => {
+                          const newTitles = [...editLessonForm.podmanTitles];
+                          newTitles[idx] = e.target.value;
+                          setEditLessonForm({ ...editLessonForm, podmanTitles: newTitles });
+                        }}
+                        placeholder={`عنوان پودمان ${idx + 1}`}
+                        className="flex-1 min-w-0 w-full h-8 text-xs px-2.5 rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-500 font-medium bg-gray-50/50 dark:bg-[#151C28] text-gray-800 dark:text-white focus:bg-white dark:focus:bg-[#1C2536] transition-colors"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50/60 dark:bg-[#1C2536]/40 p-3 text-center text-xs text-gray-500 dark:text-gray-400">
+              <span className="font-semibold text-gray-700 dark:text-gray-300">این درس غیرپودمانی است: </span>
+              ارزشیابی نمرات به صورت کلاسی/ترمی یا کتبی و عملی سالانه ثبت شده و نیازی به پودمان‌بندی ندارد.
+            </div>
+          )}
+
+          <div className="flex items-center justify-between gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+            <button
+              type="button"
+              className="h-10 w-10 flex items-center justify-center rounded-xl text-rose-600 hover:text-white hover:bg-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 transition-all shrink-0 cursor-pointer shadow-2xs"
+              title="حذف درس"
+              onClick={() => {
+                const currentLesson = lessons.find((l) => l.id === editingLessonId);
+                if (currentLesson) {
+                  setDeleteConfirmLesson(currentLesson);
+                }
+              }}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setIsEditLessonModalOpen(false);
+                  setEditingLessonId(null);
+                  setError(null);
+                }}
+                className="h-10 px-3.5 text-xs sm:text-sm"
+              >
+                انصراف
+              </Button>
+              <Button type="submit" variant="primary" isLoading={isSubmitting} className="h-10 px-4 text-xs sm:text-sm font-bold">
+                ذخیره تغییرات درس
+              </Button>
+            </div>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete Lesson Confirmation Modal */}
+      <Modal
+        isOpen={!!deleteConfirmLesson}
+        onClose={() => !isDeletingLesson && setDeleteConfirmLesson(null)}
+        title="حذف درس از چارت آموزشی"
+        description="آیا از حذف این درس اطمینان دارید؟ این عملیات غیرقابل بازگشت است."
+        maxWidth="sm"
+      >
+        <div className="space-y-4">
+          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-sm">
+            <p className="font-bold mb-1">نام درس: {deleteConfirmLesson?.name}</p>
+            <p className="text-xs text-rose-600 leading-relaxed">
+              با حذف این درس، ارتباطات مربوط به برنامه‌های درسی و دبیران این درس حذف خواهند شد.
+            </p>
+          </div>
+
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={isDeletingLesson}
+              onClick={() => setDeleteConfirmLesson(null)}
+              className="w-full sm:w-auto"
+            >
+              انصراف
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              className="bg-rose-600 hover:bg-rose-700 text-white w-full sm:w-auto"
+              isLoading={isDeletingLesson}
+              onClick={handleConfirmDeleteLesson}
+            >
+              <Trash2 className="w-4 h-4 ml-1.5" />
+              <span>بله، حذف شود</span>
+            </Button>
+          </div>
+        </div>
       </Modal>
 
       {/* Delete Classroom Confirmation Modal */}
