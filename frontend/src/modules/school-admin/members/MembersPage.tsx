@@ -1007,15 +1007,6 @@ export const MembersPage: React.FC = () => {
                 <KeyRound className="w-3.5 h-3.5" />
                 <span>رمز</span>
               </button>
-              <button
-                type="button"
-                onClick={() => handleOpenDeleteTeacher(t)}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white transition-all shadow-2xs border border-red-500/20 cursor-pointer"
-                title="حذف دبیر از کادر آموزشی"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>حذف</span>
-              </button>
             </div>
           )}
           columns={[
