@@ -69,6 +69,23 @@ export class AttendanceController {
     );
   }
 
+  @Get('classroom/:classroomId/summary')
+  @RequirePermissions(AppPermission.ATTENDANCE_READ)
+  @ApiOperation({ summary: 'خلاصه آمار حضور و غیاب دانش‌آموزان یک کلاس برای دفتر نمرات' })
+  async getClassroomAttendanceSummary(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('classroomId') classroomId: string,
+    @Query('lessonId') lessonId?: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.attendanceService.getClassroomAttendanceSummary(
+      effectiveTenantId,
+      classroomId,
+      lessonId,
+    );
+  }
+
   @Get('student/:studentId')
   @RequirePermissions(AppPermission.ATTENDANCE_READ)
   @ApiOperation({ summary: 'مشاهده سوابق و تاریخچه کامل حضور و غیاب یک دانش‌آموز' })

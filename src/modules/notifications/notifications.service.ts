@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { OnEvent } from '@nestjs/event-emitter';
 import * as webpush from 'web-push';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../../common/redis/redis.service';
@@ -28,6 +29,19 @@ export interface SystemNotification {
   createdAt: string;
 }
 
+export interface BroadcastNotification {
+  id: string;
+  tenantId: string;
+  senderId: string;
+  senderName: string;
+  title: string;
+  desc: string;
+  targetRole: string; // 'ALL' | Role
+  badge: 'default' | 'success' | 'warning' | 'destructive' | 'neutral' | 'college' | 'male' | 'female';
+  targetUrl: string;
+  createdAt: string;
+}
+
 @Injectable()
 export class NotificationsService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(NotificationsService.name);
@@ -35,12 +49,17 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
   // Fallback in-memory read store when Redis is offline
   private readonly inMemoryReadStore = new Map<string, Set<string>>();
 
+  // In-memory store for recent broadcast announcements
+  private readonly broadcastStore: BroadcastNotification[] = [];
+
   // Background timer for 24-hour homework reminders
   private reminderTimer: ReturnType<typeof setInterval> | null = null;
+  private initialHwTimeout: ReturnType<typeof setTimeout> | null = null;
   private readonly remindedHomeworkSet = new Set<string>();
 
   // Background timer for 24-hour coaching session reminders
   private coachingReminderTimer: ReturnType<typeof setInterval> | null = null;
+  private initialCoachingTimeout: ReturnType<typeof setTimeout> | null = null;
   private readonly remindedCoachingSet = new Set<string>();
 
   constructor(
@@ -73,9 +92,17 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleDestroy() {
+    if (this.initialHwTimeout) {
+      clearTimeout(this.initialHwTimeout);
+      this.initialHwTimeout = null;
+    }
     if (this.reminderTimer) {
       clearInterval(this.reminderTimer);
       this.reminderTimer = null;
+    }
+    if (this.initialCoachingTimeout) {
+      clearTimeout(this.initialCoachingTimeout);
+      this.initialCoachingTimeout = null;
     }
     if (this.coachingReminderTimer) {
       clearInterval(this.coachingReminderTimer);
@@ -88,7 +115,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
    */
   private scheduleHomeworkReminders() {
     // Initial run after 15 seconds
-    setTimeout(() => {
+    this.initialHwTimeout = setTimeout(() => {
       this.checkAndSendHomeworkReminders().catch((err) => {
         this.logger.error(`Initial homework reminder check failed: ${err.message}`);
       });
@@ -190,7 +217,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
    */
   private scheduleCoachingReminders() {
     // Initial run after 20 seconds
-    setTimeout(() => {
+    this.initialCoachingTimeout = setTimeout(() => {
       this.checkAndSendCoachingReminders().catch((err) => {
         this.logger.error(`Initial coaching reminder check failed: ${err.message}`);
       });
@@ -350,8 +377,46 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
     try {
       const readIds = await this.getReadIds(user.id);
       const notifications: SystemNotification[] = [];
-
       const role = user?.role as Role;
+
+      // 0. Active Broadcast Announcements (from Memory & Redis)
+      try {
+        const activeBroadcasts = [...this.broadcastStore];
+        const client = this.redis.getClient();
+        if (client && client.status === 'ready') {
+          const rawItems = await client.lrange(`notifications:broadcasts:${tenantId}`, 0, 30);
+          for (const raw of rawItems) {
+            try {
+              const parsed = JSON.parse(raw);
+              if (!activeBroadcasts.some((b) => b.id === parsed.id)) {
+                activeBroadcasts.push(parsed);
+              }
+            } catch {}
+          }
+        }
+
+        const relevantBroadcasts = activeBroadcasts.filter(
+          (b) =>
+            (!b.tenantId || b.tenantId === tenantId) &&
+            (b.targetRole === 'ALL' || b.targetRole === role),
+        );
+
+        relevantBroadcasts.forEach((b) => {
+          notifications.push({
+            id: b.id,
+            title: b.title,
+            desc: b.desc,
+            time: 'اطلاعیه عمومی',
+            read: readIds.has(b.id),
+            type: 'ANNOUNCEMENT',
+            badge: (b.badge as any) || 'college',
+            targetUrl: b.targetUrl || '/app',
+            createdAt: b.createdAt,
+          });
+        });
+      } catch (err: any) {
+        this.logger.debug(`Broadcast retrieval error: ${err.message}`);
+      }
 
     // 1. Notifications for SUPER_ADMIN
     if (role === Role.SUPER_ADMIN) {
@@ -1076,13 +1141,13 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       badge?: string;
       tag?: string;
     },
-  ) {
+  ): Promise<{ sent: number; failed: number; totalSubscriptions: number; errors: string[] }> {
     const subscriptions = await this.prisma.pushSubscription.findMany({
       where: { userId },
     });
 
     if (!subscriptions.length) {
-      return { sent: 0, failed: 0 };
+      return { sent: 0, failed: 0, totalSubscriptions: 0, errors: [] };
     }
 
     const jsonPayload = JSON.stringify({
@@ -1096,6 +1161,8 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
 
     let sent = 0;
     let failed = 0;
+    const errors: string[] = [];
+    const proxy = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || undefined;
 
     await Promise.allSettled(
       subscriptions.map(async (sub) => {
@@ -1112,19 +1179,23 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
             {
               TTL: 60 * 60 * 24, // 24 hours
               urgency: 'high',
+              proxy,
             },
           );
 
-          // 6-second timeout per subscription to guard against network stalls
+          // 12-second timeout per subscription (supports slow FCM routes and Iran network latency)
           const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Push Gateway Timeout')), 6000),
+            setTimeout(() => reject(new Error('Push Gateway Timeout (12s)')), 12000),
           );
 
           await Promise.race([pushPromise, timeoutPromise]);
           sent++;
         } catch (err: any) {
           failed++;
-          this.logger.warn(`Push delivery failed for sub ${sub.id}: ${err.message} (status: ${err.statusCode})`);
+          const errDetail = `${err.message || 'Push Error'} (status: ${err.statusCode || 'N/A'})`;
+          errors.push(errDetail);
+          this.logger.warn(`Push delivery failed for user ${userId} / sub ${sub.id}: ${errDetail}`);
+
           // 404 or 410 means subscription has expired or unsubscribed
           if (err.statusCode === 404 || err.statusCode === 410) {
             this.logger.log(`Cleaning up expired subscription: ${sub.id}`);
@@ -1134,26 +1205,333 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       }),
     );
 
-    return { sent, failed };
+    return { sent, failed, totalSubscriptions: subscriptions.length, errors };
   }
 
   /**
-   * Send test push notification to verify device receipt (non-blocking)
+   * Send test push notification with honest diagnostic result
    */
   async sendTestPush(userId: string) {
-    // Run push in background so client gets instant HTTP response without 30s timeout
-    this.sendPushToUser(userId, {
+    const subscriptions = await this.prisma.pushSubscription.findMany({
+      where: { userId },
+    });
+
+    if (!subscriptions.length) {
+      return {
+        sent: 0,
+        failed: 0,
+        hasSubscription: false,
+        message:
+          'هیچ دستگاه یا مرورگری برای حساب کاربری شما ثبت نشده است. لطفاً ابتدا در بنر بالای صفحه، روی دکمه «فعال‌سازی» کلیک کرده و دسترسی اعلان را در مرورگر مجاز فرمایید.',
+      };
+    }
+
+    const res = await this.sendPushToUser(userId, {
       title: 'سامانه هوشمند رکاد',
       body: 'این یک پیام آزمایشی است. اعلان‌های برخط در دستگاه شما با موفقیت فعال شد! 🎉',
       url: '/app',
       tag: 'test-notification',
-    }).catch((err) => {
-      this.logger.error(`Error sending test push to ${userId}: ${err.message}`);
+    });
+
+    if (res.sent > 0) {
+      return {
+        sent: res.sent,
+        failed: res.failed,
+        hasSubscription: true,
+        message: `اعلان تستی با موفقیت به ${toPersianDigits(res.sent)} دستگاه فعال شما تحویل شد! 🎉`,
+      };
+    } else {
+      return {
+        sent: 0,
+        failed: res.failed,
+        hasSubscription: true,
+        message: `ارسال اعلان تستی به سرور پوش انجام نشد (${toPersianDigits(res.failed)} اشتراک ناموفق). علت رایج: اختلال موقت در ارتباط با سرورهای اعلان گوگل (FCM) یا انقضای کلید دستگاه.`,
+        errors: res.errors,
+      };
+    }
+  }
+
+  /**
+   * Broadcast or send targeted notification to school users
+   */
+  async sendBroadcast(
+    tenantId: string,
+    sender: any,
+    dto: {
+      title: string;
+      body: string;
+      targetRole?: string; // 'ALL' | 'TEACHER' | 'STUDENT' | 'PARENT' | 'STAFF'
+      targetUrl?: string;
+      badge?: 'default' | 'success' | 'warning' | 'destructive' | 'neutral' | 'college';
+    },
+  ) {
+    if (!dto.title || !dto.body) {
+      throw new BadRequestException('عنوان و متن اعلان الزامی است');
+    }
+
+    const targetRole = dto.targetRole || 'ALL';
+    const broadcastId = `announcement-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const senderName = `${sender.firstName || ''} ${sender.lastName || ''}`.trim() || 'مدیریت مجتمع';
+
+    const item: BroadcastNotification = {
+      id: broadcastId,
+      tenantId,
+      senderId: sender.id,
+      senderName,
+      title: dto.title,
+      desc: dto.body,
+      targetRole,
+      badge: dto.badge || 'college',
+      targetUrl: dto.targetUrl || '/app',
+      createdAt: new Date().toISOString(),
+    };
+
+    // Keep last 100 in memory
+    this.broadcastStore.unshift(item);
+    if (this.broadcastStore.length > 100) {
+      this.broadcastStore.pop();
+    }
+
+    // Also persist in Redis if available
+    try {
+      const client = this.redis.getClient();
+      if (client && client.status === 'ready') {
+        const key = `notifications:broadcasts:${tenantId}`;
+        await client.lpush(key, JSON.stringify(item));
+        await client.ltrim(key, 0, 99);
+        await client.expire(key, 86400 * 30); // 30 days
+      }
+    } catch (err: any) {
+      this.logger.debug(`Redis broadcast save fallback: ${err.message}`);
+    }
+
+    // Find recipient users
+    const userWhere: any = { tenantId, status: 'ACTIVE' };
+    if (targetRole !== 'ALL') {
+      userWhere.role = targetRole;
+    }
+
+    const recipients = await this.prisma.user.findMany({
+      where: userWhere,
+      select: { id: true },
+    });
+
+    let delivered = 0;
+    // Dispatch push asynchronously
+    (async () => {
+      for (const u of recipients) {
+        try {
+          const res = await this.sendPushToUser(u.id, {
+            title: dto.title,
+            body: dto.body,
+            url: dto.targetUrl || '/app',
+            tag: broadcastId,
+          });
+          delivered += res.sent;
+        } catch {}
+      }
+      this.logger.log(`Broadcast ${broadcastId} delivered to ${delivered} push subscriptions across ${recipients.length} users.`);
+    })().catch((err) => {
+      this.logger.error(`Error in broadcast push delivery: ${err.message}`);
     });
 
     return {
-      sent: 1,
-      message: 'سیگنال اعلان تستی به دستگاه شما ارسال گردید.',
+      success: true,
+      broadcastId,
+      targetUsersCount: recipients.length,
+      message: `اعلان با موفقیت ثبت شد و به ${toPersianDigits(recipients.length)} کاربر ارسال می‌گردد.`,
     };
+  }
+
+  // ==========================================
+  // Real-Time Event Handlers for WebPush
+  // ==========================================
+
+  @OnEvent('homework.created', { async: true })
+  async handleHomeworkCreated(event: {
+    tenantId: string;
+    homeworkId: string;
+    classroomId: string;
+    title: string;
+  }) {
+    try {
+      if (!event.classroomId) return;
+      const enrollments = await this.prisma.classEnrollment.findMany({
+        where: { classroomId: event.classroomId, status: 'ACTIVE' },
+        include: { student: { select: { userId: true } } },
+      });
+
+      for (const e of enrollments) {
+        if (e.student?.userId) {
+          await this.sendPushToUser(e.student.userId, {
+            title: `📚 تکلیف جدید: ${event.title}`,
+            body: 'تکلیف جدیدی برای کلاس شما در سامانه ثبت شد. جهت ارسال پاسخ کلیک کنید.',
+            url: `/app/student/homework?homeworkId=${event.homeworkId}&action=submit`,
+            tag: `hw-new-${event.homeworkId}`,
+          });
+        }
+      }
+    } catch (err: any) {
+      this.logger.error(`Error handling homework.created push: ${err.message}`);
+    }
+  }
+
+  @OnEvent('homework.graded', { async: true })
+  async handleHomeworkGraded(event: {
+    tenantId: string;
+    studentId: string;
+    homeworkTitle?: string;
+    score: number;
+  }) {
+    try {
+      if (!event.studentId) return;
+      const student = await this.prisma.studentProfile.findUnique({
+        where: { id: event.studentId },
+        select: { userId: true },
+      });
+      if (student?.userId) {
+        await this.sendPushToUser(student.userId, {
+          title: '📝 نمره تکلیف ثبت شد',
+          body: `نمره شما برای تکلیف «${event.homeworkTitle || 'ارائه‌شده'}» ثبت گردید: ${toPersianDigits(event.score)}`,
+          url: '/app/student/homework',
+          tag: `hw-grade-${event.studentId}`,
+        });
+      }
+    } catch (err: any) {
+      this.logger.error(`Error handling homework.graded push: ${err.message}`);
+    }
+  }
+
+  @OnEvent('attendance.student_absence', { async: true })
+  async handleStudentAbsence(event: {
+    tenantId: string;
+    studentId: string;
+    studentName?: string;
+    date: string;
+    periodNumber?: number;
+    status: string;
+  }) {
+    try {
+      if (!event.studentId) return;
+      const student = await this.prisma.studentProfile.findUnique({
+        where: { id: event.studentId },
+        include: {
+          user: { select: { id: true, firstName: true, lastName: true } },
+          parentLinks: { include: { parent: { select: { userId: true } } } },
+        },
+      });
+      if (!student) return;
+
+      const studentName = event.studentName || `${student.user?.firstName || ''} ${student.user?.lastName || ''}`.trim();
+      const statusTitle = event.status === 'TARDY' ? 'تاخیر کلاسی' : 'غیبت در کلاس';
+      const periodText = event.periodNumber ? ` زنگ ${toPersianDigits(event.periodNumber)}` : '';
+
+      // Push to student
+      if (student.userId) {
+        await this.sendPushToUser(student.userId, {
+          title: `⚠️ ثبت ${statusTitle}`,
+          body: `وضعیت «${statusTitle}» در تاریخ ${event.date}${periodText} در سامانه ثبت گردید.`,
+          url: '/app/student/attendance',
+          tag: `att-${student.id}-${event.date}`,
+        });
+      }
+
+      // Push to parents
+      for (const p of student.parentLinks || []) {
+        if (p.parent?.userId) {
+          await this.sendPushToUser(p.parent.userId, {
+            title: `⚠️ گزارش ${statusTitle} فرزند: ${studentName}`,
+            body: `وضعیت «${statusTitle}» برای دانش‌آموز «${studentName}» در تاریخ ${event.date}${periodText} ثبت شد.`,
+            url: '/app/parent/attendance',
+            tag: `att-parent-${student.id}-${event.date}`,
+          });
+        }
+      }
+    } catch (err: any) {
+      this.logger.error(`Error handling attendance.student_absence push: ${err.message}`);
+    }
+  }
+
+  @OnEvent('parent_visit.booked', { async: true })
+  async handleParentVisitBooked(event: {
+    tenantId: string;
+    bookingId: string;
+    teacherId: string;
+    parentId?: string;
+  }) {
+    try {
+      if (!event.teacherId) return;
+      const teacher = await this.prisma.teacherProfile.findUnique({
+        where: { id: event.teacherId },
+        select: { userId: true },
+      });
+      if (teacher?.userId) {
+        await this.sendPushToUser(teacher.userId, {
+          title: '🤝 رزرو وقت ملاقات جدید با اولیا',
+          body: 'یک جلسه ملاقات اولیا با شما در سامانه رزرو گردید. جهت مشاهده زمان کلیک فرمایید.',
+          url: '/app/teacher/visits',
+          tag: `visit-${event.bookingId}`,
+        });
+      }
+    } catch (err: any) {
+      this.logger.error(`Error handling parent_visit.booked push: ${err.message}`);
+    }
+  }
+
+  @OnEvent('chat.message_created', { async: true })
+  async handleChatMessageCreated(event: {
+    tenantId: string;
+    channelId: string;
+    senderId: string;
+    senderName: string;
+    content: string;
+  }) {
+    try {
+      if (!event.channelId) return;
+      const members = await this.prisma.chatChannelMember.findMany({
+        where: {
+          channelId: event.channelId,
+          userId: { not: event.senderId },
+        },
+        select: { userId: true },
+      });
+
+      const preview =
+        event.content.length > 70 ? `${event.content.slice(0, 70)}...` : event.content;
+
+      for (const m of members) {
+        await this.sendPushToUser(m.userId, {
+          title: `💬 پیام از ${event.senderName}`,
+          body: preview,
+          url: `/app/chat?channelId=${event.channelId}`,
+          tag: `chat-${event.channelId}`,
+        });
+      }
+    } catch (err: any) {
+      this.logger.error(`Error handling chat.message_created push: ${err.message}`);
+    }
+  }
+
+  @OnEvent('notification.send', { async: true })
+  async handleGenericNotificationSend(event: {
+    tenantId: string;
+    targetUserId: string;
+    title: string;
+    body: string;
+    type?: string;
+    badge?: string;
+    targetUrl?: string;
+  }) {
+    try {
+      if (!event.targetUserId) return;
+      await this.sendPushToUser(event.targetUserId, {
+        title: event.title,
+        body: event.body,
+        url: event.targetUrl || '/app',
+        tag: `notif-${Date.now()}`,
+      });
+    } catch (err: any) {
+      this.logger.error(`Error handling notification.send push: ${err.message}`);
+    }
   }
 }

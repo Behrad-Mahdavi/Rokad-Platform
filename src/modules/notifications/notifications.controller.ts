@@ -86,4 +86,22 @@ export class NotificationsController {
     const result = await this.notificationsService.sendTestPush(userId);
     return { success: true, ...result };
   }
+
+  @Post('send')
+  @ApiOperation({ summary: 'ارسال اعلان سیستمی و پوش نوتیفیکیشن به کاربران یا نقش‌های مختلف' })
+  async sendBroadcast(
+    @CurrentTenant('id') tenantId: string,
+    @CurrentUser() user: any,
+    @Body()
+    dto: {
+      title: string;
+      body: string;
+      targetRole?: string;
+      targetUrl?: string;
+      badge?: 'default' | 'success' | 'warning' | 'destructive' | 'neutral' | 'college';
+    },
+  ) {
+    const effectiveTenantId = tenantId || user?.tenantId;
+    return this.notificationsService.sendBroadcast(effectiveTenantId, user, dto);
+  }
 }
