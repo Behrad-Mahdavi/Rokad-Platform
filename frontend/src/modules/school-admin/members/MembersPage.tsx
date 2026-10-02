@@ -665,15 +665,16 @@ export const MembersPage: React.FC = () => {
           title="مدیریت دانش‌آموزان"
           description="ثبت پرونده تحصیلی، اطلاعات اولیاء، پرونده‌های الکترونیکی و ورود دسته‌جمعی"
           actions={
-            <div className="grid grid-cols-3 sm:flex items-center gap-2 w-full sm:w-auto">
-              <Link to="/app/admin/vault" className="w-full sm:w-auto">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Link to="/app/admin/vault" className="shrink-0">
                 <Button
                   variant="outline"
                   size="sm"
                   type="button"
-                  className="w-full sm:w-auto text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30 font-bold px-2 sm:px-3 text-xs justify-center"
+                  className="text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30 font-bold px-2.5 sm:px-3 text-xs justify-center h-9"
+                  title="گاوصندوق رمزها"
                 >
-                  <KeyRound className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-1 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <KeyRound className="h-3.5 w-3.5 ml-1 text-amber-600 dark:text-amber-400 shrink-0" />
                   <span>رمز ها</span>
                 </Button>
               </Link>
@@ -689,9 +690,10 @@ export const MembersPage: React.FC = () => {
                   setExcelRows([]);
                   setError(null);
                 }}
-                className="w-full sm:w-auto text-emerald-700 border-emerald-300 hover:bg-emerald-50 font-bold px-2 sm:px-3 text-xs justify-center"
+                className="shrink-0 text-emerald-700 border-emerald-300 hover:bg-emerald-50 font-bold px-2.5 sm:px-3 text-xs justify-center h-9"
+                title="ورود گروهی اطلاعات با اکسل"
               >
-                <FileSpreadsheet className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-1 text-emerald-600 shrink-0" />
+                <FileSpreadsheet className="h-3.5 w-3.5 ml-1 text-emerald-600 shrink-0" />
                 <span>اکسل</span>
               </Button>
 
@@ -699,9 +701,9 @@ export const MembersPage: React.FC = () => {
                 variant="primary"
                 size="sm"
                 onClick={() => setIsStudentModalOpen(true)}
-                className="w-full sm:w-auto px-2 sm:px-3 text-xs justify-center font-bold"
+                className="flex-1 sm:flex-initial px-4 sm:px-5 text-xs sm:text-sm justify-center font-black h-9 shadow-sm"
               >
-                <UserPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-1 shrink-0" />
+                <UserPlus className="h-4 w-4 ml-1.5 shrink-0" />
                 <span>ثبت دانش‌آموز</span>
               </Button>
             </div>
@@ -795,11 +797,58 @@ export const MembersPage: React.FC = () => {
       {activeTab === 'STUDENTS' && (
         <MobileDataTable
           data={filteredStudents}
+          primaryField={(s) => (
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold text-xs text-ink-dark">
+                {s.user?.avatarUrl ? (
+                  <img src={s.user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  s.user?.firstName?.[0] || 'د'
+                )}
+              </div>
+              <div>
+                <div className="font-bold text-ink-darker dark:text-white text-sm">
+                  {s.user?.firstName} {s.user?.lastName}
+                </div>
+                <div className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                  <span>پایه:</span>
+                  <span className="font-bold text-primary">{s.enrollments?.[0]?.classroom?.level?.name || s.gradeLevel || 'دهم'}</span>
+                  {s.fatherName && (
+                    <>
+                      <span className="text-gray-300 dark:text-gray-600">•</span>
+                      <span>فرزند: {s.fatherName}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          cardActions={(s) => (
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => handleOpenDossier(s)}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-2xs border border-primary/20 cursor-pointer"
+                title="مشاهده و ویرایش پرونده الکترونیکی"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>پرونده</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setVaultTarget(s)}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white transition-all shadow-2xs border border-amber-500/20 cursor-pointer"
+                title="مشاهده رمز عبور در گاوصندوق"
+              >
+                <KeyRound className="w-3.5 h-3.5" />
+                <span>رمز</span>
+              </button>
+            </div>
+          )}
           columns={[
             {
               key: 'name',
               header: 'نام و نام خانوادگی',
-              mobilePriority: 'primary',
               render: (s) => (
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold text-xs text-ink-dark">
@@ -815,7 +864,7 @@ export const MembersPage: React.FC = () => {
                     </div>
                     <div className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1">
                       <span>پایه:</span>
-                      <span className="font-bold text-primary">{s.gradeLevel || 'دهم'}</span>
+                      <span className="font-bold text-primary">{s.enrollments?.[0]?.classroom?.level?.name || s.gradeLevel || 'دهم'}</span>
                       {s.fatherName && (
                         <>
                           <span className="text-gray-300 dark:text-gray-600">•</span>
@@ -830,7 +879,7 @@ export const MembersPage: React.FC = () => {
             {
               key: 'classroom',
               header: 'کلاس درس',
-              mobilePriority: 'primary',
+              mobilePriority: 'secondary',
               render: (s) => (
                 <span className="text-xs bg-primary/10 text-primary-dark dark:text-primary-light px-2.5 py-0.5 rounded-full font-bold">
                   {s.enrollments?.[0]?.classroom?.name || s.classroom?.name || 'کلاس عمومی'}
@@ -866,14 +915,14 @@ export const MembersPage: React.FC = () => {
             {
               key: 'actions',
               header: 'عملیات',
-              mobilePriority: 'primary',
+              mobilePriority: 'hidden',
               render: (s) => (
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => handleOpenDossier(s)}
                     className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all shadow-2xs border border-primary/20 cursor-pointer"
-                    title="مشاهده پرونده الکترونیکی"
+                    title="مشاهده و ویرایش پرونده الکترونیکی"
                   >
                     <Eye className="w-3.5 h-3.5" />
                     <span>پرونده</span>
