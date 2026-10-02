@@ -137,7 +137,7 @@ export const FeesPage: React.FC = () => {
           apiClient.get('/members/students'),
           apiClient.get('/academic/years'),
           apiClient.get('/academic/levels').catch(() => ({ data: [] })),
-          apiClient.get('/classes').catch(() => ({ data: [] })),
+          apiClient.get('/classes/classrooms').catch(() => ({ data: [] })),
         ]);
 
       setContracts(contractsRes.data || []);

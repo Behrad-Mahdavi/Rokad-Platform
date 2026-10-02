@@ -14,8 +14,15 @@ interface MobileBottomNavProps {
   role?: string;
 }
 
-export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
+export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ role }) => {
   const location = useLocation();
+
+  const isManagerOrAdmin = role === 'SUPER_ADMIN' || role === 'SCHOOL_ADMIN' || role === 'STAFF';
+  const clubHref = isManagerOrAdmin
+    ? '/app/admin/club'
+    : role === 'TEACHER'
+      ? '/app/teacher/club-approvals'
+      : '/app/club';
 
   const isHomeActive =
     location.pathname === '/app' ||
@@ -63,7 +70,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = () => {
 
       {/* 2. Second on Right: باشگاه (ستاره) */}
       <NavLink
-        to="/app/club"
+        to={clubHref}
         className={({ isActive }) =>
           twMerge(
             clsx(

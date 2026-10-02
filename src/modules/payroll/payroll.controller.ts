@@ -279,8 +279,9 @@ export class PayrollController {
     @Res() res: Response,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
-    const y = parseInt(year, 10);
-    const m = parseInt(month, 10);
+    const now = new Date();
+    const y = parseInt(year, 10) || now.getFullYear();
+    const m = parseInt(month, 10) || (now.getMonth() + 1);
     const buffer = await this.exportService.generateMonthlyExcel(effectiveTenantId, y, m);
 
     res.setHeader(

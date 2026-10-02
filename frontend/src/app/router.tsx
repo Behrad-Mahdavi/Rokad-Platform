@@ -108,6 +108,7 @@ export const router = createBrowserRouter([
   {
     path: '/app',
     children: [
+      { index: true, element: <DashboardRedirect /> },
       { path: 'dashboard', element: <DashboardRedirect /> },
       // 2.1 Persona 1: Super Admin
       {

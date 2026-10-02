@@ -147,7 +147,8 @@ export class TenantMiddleware implements NestMiddleware {
           where: { customDomain: identifier.value },
         });
       }
-    } catch (dbErr) {
+    } catch (dbErr: any) {
+      this.logger.error(`Error resolving tenant from DB for ${identifier.type}=${identifier.value}: ${dbErr?.message}`);
       // Offline / dev fallback tenant
       return {
         id: 'tenant-rokad-boys',

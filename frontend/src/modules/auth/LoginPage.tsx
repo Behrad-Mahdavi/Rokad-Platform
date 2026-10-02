@@ -9,6 +9,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../..
 import { AlertCircle } from 'lucide-react';
 import { TwoFactorVerificationModal } from './components/TwoFactorVerificationModal';
 import { toEnglishDigits } from '../../lib/utils';
+import { getDashboardPath } from '../../app/routes/DashboardRedirect';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -49,7 +50,7 @@ export const LoginPage: React.FC = () => {
 
     login({ ...user, tenantId: effectiveTenantId }, accessToken, refreshToken);
     setIs2FAModalOpen(false);
-    navigate('/app');
+    navigate(getDashboardPath(user.role), { replace: true });
   };
 
   const applyLoginSuccess = (res: any) => {
@@ -72,7 +73,7 @@ export const LoginPage: React.FC = () => {
     });
 
     login({ ...user, tenantId: effectiveTenantId }, accessToken, refreshToken);
-    navigate('/app');
+    navigate(getDashboardPath(user.role), { replace: true });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

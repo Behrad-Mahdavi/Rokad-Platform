@@ -241,7 +241,7 @@ export class AuthService {
         },
       });
     } catch (dbErr: any) {
-      this.logger.warn(`[AuthService] Database unreachable (${dbErr.message}). Activating Development Fallback.`);
+      this.logger.error(`[AuthService] Database query in login failed: ${dbErr.message}`, dbErr.stack);
       
       // Determine dev role based on identifier or tenant
       let devRole = 'SCHOOL_ADMIN';
@@ -921,6 +921,10 @@ export class AuthService {
     });
     if (!currentUser || !currentUser.phone) {
       throw new BadRequestException('کاربر جاری فاقد شماره همراه معتبر است');
+    }
+
+    if (!targetTenantSlug) {
+      throw new BadRequestException('شناسه یا اسلاگ مدرسه مقصد الزامی است');
     }
 
     const targetTenant = await this.prisma.tenant.findUnique({

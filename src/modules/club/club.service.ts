@@ -568,6 +568,13 @@ export class ClubService {
   }
 
   async updateMemberStatus(studentId: string, tenantId: string, adminUserId: string, dto: UpdateClubMembershipDto) {
+    const student = await this.prisma.user.findFirst({
+      where: { id: studentId, tenantId },
+    });
+    if (!student) {
+      throw new NotFoundException('دانش‌آموز مورد نظر یافت نشد');
+    }
+
     const existing = await this.prisma.clubMembership.findUnique({
       where: { userId: studentId },
     });
@@ -602,6 +609,18 @@ export class ClubService {
   }
 
   async toggleStudentMilestone(studentId: string, milestoneId: string, tenantId: string, adminUserId: string) {
+    const [student, milestone] = await Promise.all([
+      this.prisma.user.findFirst({ where: { id: studentId, tenantId } }),
+      this.prisma.clubRoadmapMilestone.findFirst({ where: { id: milestoneId, tenantId } }),
+    ]);
+
+    if (!student) {
+      throw new NotFoundException('دانش‌آموز مورد نظر یافت نشد');
+    }
+    if (!milestone) {
+      throw new NotFoundException('مایلستون مورد نظر یافت نشد');
+    }
+
     const existing = await this.prisma.clubStudentMilestoneProgress.findUnique({
       where: {
         tenantId_studentId_milestoneId: {
@@ -680,6 +699,13 @@ export class ClubService {
   }
 
   async updateMilestone(id: string, tenantId: string, dto: UpdateClubMilestoneDto) {
+    const existing = await this.prisma.clubRoadmapMilestone.findFirst({
+      where: { id, tenantId },
+    });
+    if (!existing) {
+      throw new NotFoundException('مایلستون مورد نظر یافت نشد');
+    }
+
     return this.prisma.clubRoadmapMilestone.update({
       where: { id },
       data: dto,
@@ -687,6 +713,13 @@ export class ClubService {
   }
 
   async deleteMilestone(id: string, tenantId: string) {
+    const existing = await this.prisma.clubRoadmapMilestone.findFirst({
+      where: { id, tenantId },
+    });
+    if (!existing) {
+      throw new NotFoundException('مایلستون مورد نظر یافت نشد');
+    }
+
     return this.prisma.clubRoadmapMilestone.delete({
       where: { id },
     });
@@ -726,6 +759,13 @@ export class ClubService {
   }
 
   async updateChallenge(id: string, tenantId: string, dto: UpdateClubChallengeDto) {
+    const existing = await this.prisma.clubChallenge.findFirst({
+      where: { id, tenantId },
+    });
+    if (!existing) {
+      throw new NotFoundException('چالش مورد نظر یافت نشد');
+    }
+
     return this.prisma.clubChallenge.update({
       where: { id },
       data: dto,
@@ -733,6 +773,13 @@ export class ClubService {
   }
 
   async deleteChallenge(id: string, tenantId: string) {
+    const existing = await this.prisma.clubChallenge.findFirst({
+      where: { id, tenantId },
+    });
+    if (!existing) {
+      throw new NotFoundException('چالش مورد نظر یافت نشد');
+    }
+
     return this.prisma.clubChallenge.delete({
       where: { id },
     });

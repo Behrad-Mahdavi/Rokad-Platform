@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { RedisService } from '../../../common/redis/redis.service';
 import {
@@ -149,6 +149,9 @@ export class SaasPlatformOpsService {
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: tenantId },
     });
+    if (!tenant) {
+      throw new NotFoundException('مرکز آموزشی مورد نظر یافت نشد');
+    }
 
     const currentSettings = (tenant?.settings as any) || {};
     const updatedSettings = {

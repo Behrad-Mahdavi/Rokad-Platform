@@ -1,5 +1,5 @@
 import React from 'react';
-import { Smartphone, Wifi, Battery, MessageSquare, ShieldCheck } from 'lucide-react';
+import { Smartphone, Wifi, Battery, MessageSquare, ShieldCheck, Calculator, Coins } from 'lucide-react';
 import { toPersianDigits } from '../../../lib/utils';
 
 interface SmsLivePhonePreviewProps {
@@ -8,6 +8,11 @@ interface SmsLivePhonePreviewProps {
   targetDescription?: string;
   smsParts?: number;
   charCount?: number;
+  singleCostTomans?: number;
+  totalCostTomans?: number;
+  estimatedRecipients?: number;
+  creditAfterSendTomans?: number;
+  isConfigLoading?: boolean;
 }
 
 export const SmsLivePhonePreview: React.FC<SmsLivePhonePreviewProps> = ({
@@ -16,6 +21,11 @@ export const SmsLivePhonePreview: React.FC<SmsLivePhonePreviewProps> = ({
   targetDescription = 'اولیای محترم دانش‌آموز',
   smsParts = 1,
   charCount = 0,
+  singleCostTomans = 0,
+  totalCostTomans = 0,
+  estimatedRecipients = 0,
+  creditAfterSendTomans = 0,
+  isConfigLoading = false,
 }) => {
   return (
     <div className="sticky top-6 flex flex-col items-center">
@@ -87,13 +97,23 @@ export const SmsLivePhonePreview: React.FC<SmsLivePhonePreviewProps> = ({
           </div>
 
           {/* SMS Counter & Tech Stats Bar inside phone */}
-          <div className="p-2.5 bg-white dark:bg-[#1C2536] border-t border-gray-200 dark:border-gray-800 flex items-center justify-between text-[11px] font-bold text-gray-600 dark:text-gray-300">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span>{toPersianDigits(charCount)} کاراکتر</span>
+          <div className="p-2.5 bg-white dark:bg-[#1C2536] border-t border-gray-200 dark:border-gray-800 space-y-1.5 text-[11px] font-bold text-gray-600 dark:text-gray-300">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-primary" />
+                <span>{toPersianDigits(charCount)} کاراکتر</span>
+              </div>
+              <div className="px-2 py-0.5 rounded-lg bg-ecosystem-light dark:bg-ecosystem-darker/60 text-primary-darker dark:text-primary border border-primary/30 font-mono text-[10px] font-bold">
+                {toPersianDigits(smsParts)} پارت
+              </div>
             </div>
-            <div className="px-2 py-0.5 rounded-md bg-[#59BBAF]/15 text-[#1F413D] dark:text-[#59BBAF] font-mono text-[10px]">
-              {toPersianDigits(smsParts)} پارت پیامک
+
+            {/* Amoot Real-time Cost Estimation */}
+            <div className="pt-1.5 border-t border-dashed border-gray-200 dark:border-gray-700/80 flex items-center justify-between text-[10px]">
+              <span className="text-gray-500 dark:text-gray-400">کسر از حساب:</span>
+              <span className="font-mono font-black text-sec dark:text-white">
+                {isConfigLoading ? '...' : `${toPersianDigits(singleCostTomans.toLocaleString())} تومان`}
+              </span>
             </div>
           </div>
 
@@ -104,9 +124,53 @@ export const SmsLivePhonePreview: React.FC<SmsLivePhonePreviewProps> = ({
         </div>
       </div>
 
-      <div className="mt-3 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 font-medium">
+      {/* Floating Real-time Billing Breakdown under Phone (Neo-Brutalist Rokad Card) */}
+      <div className="mt-3.5 w-full max-w-[310px] sm:max-w-[330px] rokad-card p-3.5 rounded-2xl bg-white dark:bg-[#151C28] border-[1.5px] border-[#202A5A]/20 dark:border-primary/40 shadow-[2.75px_2.75px_0_#202A5A] dark:shadow-[2.75px_2.75px_0_#59BBAF] space-y-2 text-xs">
+        <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex items-center gap-1.5 font-black text-sec dark:text-white">
+            <Calculator className="w-3.5 h-3.5 text-primary" />
+            <span>برآورد هزینه</span>
+          </div>
+          <span className="font-mono text-[11px] text-gray-500 dark:text-gray-400">
+            {toPersianDigits(estimatedRecipients)} مخاطب
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-gray-500 dark:text-gray-400">هزینه هر پیامک:</span>
+          <span className="font-mono font-bold text-sec dark:text-white">
+            {isConfigLoading ? '...' : `${toPersianDigits(singleCostTomans.toLocaleString())} تومان`}
+          </span>
+        </div>
+
+        <div className="pt-1.5 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between font-bold">
+          <span className="text-sec dark:text-white">کل کسر از شارژ:</span>
+          <span className="font-mono text-sm font-black text-primary-darker dark:text-primary">
+            {isConfigLoading ? '...' : `${toPersianDigits(totalCostTomans.toLocaleString())} تومان`}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between text-[11px]">
+          <span className="text-gray-500 dark:text-gray-400">مانده پس از ارسال:</span>
+          <span className="font-mono font-medium">
+            {isConfigLoading ? (
+              <span className="text-gray-400">...</span>
+            ) : creditAfterSendTomans < 0 ? (
+              <span className="text-red-500 font-bold">
+                {toPersianDigits(Math.abs(creditAfterSendTomans).toLocaleString())}- ت (کسری)
+              </span>
+            ) : (
+              <span className="text-sec dark:text-gray-300">
+                {toPersianDigits(creditAfterSendTomans.toLocaleString())} تومان
+              </span>
+            )}
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-2.5 flex items-center gap-1.5 text-[11px] text-gray-400 font-medium">
         <Smartphone className="w-3.5 h-3.5 text-primary" />
-        <span>پیش‌نمایش لحظه‌ای در گوشی تلفن همراه مخاطب</span>
+        <span>پیش‌نمایش در موبایل</span>
       </div>
     </div>
   );

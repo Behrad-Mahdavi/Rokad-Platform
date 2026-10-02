@@ -30,7 +30,21 @@ export function getDateVariants(dateStr: string): string[] {
   return Array.from(new Set(variants));
 }
 
-export function getDayOfWeekFromDate(dateStr: string): DayOfWeek {
+export function getDayOfWeekFromDate(dateStr?: string): DayOfWeek {
+  if (!dateStr || typeof dateStr !== 'string') {
+    const today = new Date();
+    const day = today.getDay();
+    const map: Record<number, DayOfWeek> = {
+      6: DayOfWeek.SATURDAY,
+      0: DayOfWeek.SUNDAY,
+      1: DayOfWeek.MONDAY,
+      2: DayOfWeek.TUESDAY,
+      3: DayOfWeek.WEDNESDAY,
+      4: DayOfWeek.THURSDAY,
+      5: DayOfWeek.FRIDAY,
+    };
+    return map[day] || DayOfWeek.SATURDAY;
+  }
   let gDate: Date;
   const parts = dateStr.split('-').map(Number);
   if (parts.length === 3 && parts[0] > 1300 && parts[0] < 1500) {

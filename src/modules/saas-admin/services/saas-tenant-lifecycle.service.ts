@@ -301,6 +301,13 @@ export class SaasTenantLifecycleService {
 
   // 4. Update Status with Instant Cache Purge
   async updateStatus(tenantId: string, status: any) {
+    const existing = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+    });
+    if (!existing) {
+      throw new NotFoundException('مرکز آموزشی مورد نظر یافت نشد');
+    }
+
     const tenant = await this.prisma.tenant.update({
       where: { id: tenantId },
       data: { status },

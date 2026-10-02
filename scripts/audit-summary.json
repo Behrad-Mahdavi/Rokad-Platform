@@ -1,0 +1,2842 @@
+[
+  {
+    "method": "GET",
+    "path": "/",
+    "testedUrl": "/api/v1/",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"Cannot GET /api/v1/\",\"timestamp\":\"2026-10-02T10:12:02.052Z\",\"path\":\"/api/v1/\",\"tenant"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/version",
+    "testedUrl": "/api/v1/version",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"version\":\"1.0.0\",\"buildTime\":\"2026-10-02T10:03:58.367Z\",\"environment\":\"development\"},\"message\":\"عملیات با مو"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/storage/upload",
+    "testedUrl": "/api/v1/storage/upload",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"فایلی برای آپلود انتخاب نشده است\",\"timestamp\":\"2026-10-02T10:12:03.148Z\",\"path\":\"/a"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/storage/presigned-upload",
+    "testedUrl": "/api/v1/storage/presigned-upload",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"moduleName should not be empty\",\"moduleN"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/storage/files/{moduleName}/{filename}",
+    "testedUrl": "/api/v1/storage/files/homework/test.pdf",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"فایل مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:12:03.994Z\",\"path\":\"/api/v1/storag"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/storage/files/{tenantId}/{moduleName}/{filename}",
+    "testedUrl": "/api/v1/storage/files/00000000-0000-0000-0000-000000000000/homework/test.pdf",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"فایل مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:12:03.997Z\",\"path\":\"/api/v1/storag"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/audit-logs",
+    "testedUrl": "/api/v1/audit-logs",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"items\":[{\"id\":\"da9003ba-d41e-4525-b094-2c157d80a27d\",\"tenantId\":\"74998976-c69b-4166-9bfb-47723d966f1e\",\"user"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/audit-logs/verify",
+    "testedUrl": "/api/v1/audit-logs/verify",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"isValid\":false,\"error\":\"BROKEN_CHAIN_LINK\",\"brokenAtLogId\":\"ccd47146-c752-47bd-970c-89dfd35f4207\",\"expectedP"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/audit-logs/anchor/trigger",
+    "testedUrl": "/api/v1/audit-logs/anchor/trigger",
+    "status": 201,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":201,\"data\":{\"success\":false,\"message\":\"سرویس لنگر Telegram پیکربندی نشده است. متغیرهای محیطی TELEGRAM_AUDIT_BOT_TOKEN و T"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/feature-flags/my-school",
+    "testedUrl": "/api/v1/feature-flags/my-school",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"id\":\"3dd443c9-2806-44d7-9c29-b42fb9e5a293\",\"key\":\"academic_homework\",\"name\":\"مدیریت و تصحیح تکالیف\",\"descri"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/feature-flags/my-school/toggle",
+    "testedUrl": "/api/v1/feature-flags/my-school/toggle",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"flagKey should not be empty\",\"flagKey mu"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/feature-flags/tenants/{tenantId}",
+    "testedUrl": "/api/v1/feature-flags/tenants/00000000-0000-0000-0000-000000000000",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"id\":\"3dd443c9-2806-44d7-9c29-b42fb9e5a293\",\"key\":\"academic_homework\",\"name\":\"مدیریت و تصحیح تکالیف\",\"descri"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/feature-flags/tenants/{tenantId}/set",
+    "testedUrl": "/api/v1/feature-flags/tenants/00000000-0000-0000-0000-000000000000/set",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"flagKey should not be empty\",\"flagKey mu"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tenants/info/{slug}",
+    "testedUrl": "/api/v1/tenants/info/rokad-boys",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"id\":\"d51697c7-85cd-423f-a526-b567590638f1\",\"name\":\"هنرستان فنی و حرفه‌ای پسرانه رکاد\",\"slug\":\"rokad-boys\",\"t"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tenants/my-school",
+    "testedUrl": "/api/v1/tenants/my-school",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"id\":\"74998976-c69b-4166-9bfb-47723d966f1e\",\"type\":\"PLATFORM\",\"name\":\"مرکز مدیریت پلتفرم رکاد\",\"slug\":\"platfo"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/tenants/my-school",
+    "testedUrl": "/api/v1/tenants/my-school",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"id\":\"74998976-c69b-4166-9bfb-47723d966f1e\",\"type\":\"PLATFORM\",\"name\":\"مرکز مدیریت پلتفرم رکاد\",\"slug\":\"platfo"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tenants/my-school/banners",
+    "testedUrl": "/api/v1/tenants/my-school/banners",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"slides\":null,\"bannerTypes\":null},\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:12"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/tenants/my-school/banners",
+    "testedUrl": "/api/v1/tenants/my-school/banners",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"slides\":[],\"bannerTypes\":[]},\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:12:21."
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/tenants/{id}/status",
+    "testedUrl": "/api/v1/tenants/00000000-0000-0000-0000-000000000000/status",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"مرکز آموزشی مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:12:22.349Z\",\"path\":\"/api/v1"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tenants/all",
+    "testedUrl": "/api/v1/tenants/all",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"id\":\"73273142-a313-4dd8-9478-92dfd8ad946d\",\"type\":\"SCHOOL\",\"name\":\"هنرستان فنی و حرفه‌ای دخترانه رکاد\",\"slu"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/register-school",
+    "testedUrl": "/api/v1/auth/register-school",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"schoolName should not be empty\",\"schoolN"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "testedUrl": "/api/v1/auth/login",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"identifier should not be empty\",\"identif"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/2fa/verify-login",
+    "testedUrl": "/api/v1/auth/2fa/verify-login",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"tempToken should not be empty\",\"tempToke"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/refresh",
+    "testedUrl": "/api/v1/auth/refresh",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"refreshToken should not be empty\",\"refre"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/logout",
+    "testedUrl": "/api/v1/auth/logout",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"refreshToken should not be empty\",\"refre"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/me",
+    "testedUrl": "/api/v1/auth/me",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"user\":{\"id\":\"a6ef96e5-fbd0-4a8f-bf47-aab4a2aa9324\",\"tenantId\":\"74998976-c69b-4166-9bfb-47723d966f1e\",\"userna"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/my-schools",
+    "testedUrl": "/api/v1/auth/my-schools",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"tenantId\":\"74998976-c69b-4166-9bfb-47723d966f1e\",\"tenantName\":\"مرکز مدیریت پلتفرم رکاد\",\"tenantSlug\":\"platf"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/switch-school",
+    "testedUrl": "/api/v1/auth/switch-school",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"شناسه یا اسلاگ مدرسه مقصد الزامی است\",\"timestamp\":\"2026-10-02T10:12:27.880Z\",\"path\""
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/auth/profile",
+    "testedUrl": "/api/v1/auth/profile",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"id\":\"a6ef96e5-fbd0-4a8f-bf47-aab4a2aa9324\",\"firstName\":\"مدیر کل\",\"lastName\":\"پلتفرم رُکاد\",\"avatarUrl\":null,"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/2fa/setup",
+    "testedUrl": "/api/v1/auth/2fa/setup",
+    "status": 201,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":201,\"data\":{\"success\":true,\"secret\":\"EOJ6J3RFU5EKQ5NITVHWPW6Y3ISDEDC7\",\"qrCodeUrl\":\"data:image/png;base64,iVBORw0KGgoAAAA"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/2fa/enable",
+    "testedUrl": "/api/v1/auth/2fa/enable",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"کد احراز هویت باید ۶ رقم باشد\",\"code sho"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/2fa/disable",
+    "testedUrl": "/api/v1/auth/2fa/disable",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"password should not be empty\",\"password "
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/2fa/step-up",
+    "testedUrl": "/api/v1/auth/2fa/step-up",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"code should not be empty\",\"code must be "
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/change-password",
+    "testedUrl": "/api/v1/auth/change-password",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"oldPassword should not be empty\",\"oldPas"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/sessions",
+    "testedUrl": "/api/v1/auth/sessions",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"id\":\"5d77a256-7bfb-4953-b5a9-6713c806fbd8\",\"ipAddress\":\"127.0.0.1\",\"browser\":\"مرورگر نامشخص\",\"os\":\"نامشخص\","
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/auth/sessions/{id}",
+    "testedUrl": "/api/v1/auth/sessions/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"نشست مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:12:37.870Z\",\"path\":\"/api/v1/auth/s"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/sessions/revoke-others",
+    "testedUrl": "/api/v1/auth/sessions/revoke-others",
+    "status": 201,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":201,\"data\":{\"success\":true,\"revokedCount\":18,\"message\":\"تمام نشست‌های فعال در سایر دستگاه‌ها با موفقیت خاتمه یافتند\"},\"me"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/admin/users/{userId}/sessions",
+    "testedUrl": "/api/v1/auth/admin/users/{userId}/sessions",
+    "status": 403,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":403,\"error\":\"Internal Server Error\",\"message\":\"برای دسترسی به این بخش حساس، فعال‌سازی احراز هویت دومرحله‌ای (2FA) در حسا"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/auth/admin/users/{userId}/sessions/{sessionId}",
+    "testedUrl": "/api/v1/auth/admin/users/{userId}/sessions/{sessionId}",
+    "status": 403,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":403,\"error\":\"Internal Server Error\",\"message\":\"برای دسترسی به این بخش حساس، فعال‌سازی احراز هویت دومرحله‌ای (2FA) در حسا"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/vault/reveal-password",
+    "testedUrl": "/api/v1/auth/vault/reveal-password",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"شناسه کاربر الزامی است\",\"شناسه کاربر نام"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/vault/setup-key",
+    "testedUrl": "/api/v1/auth/vault/setup-key",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"کلید مستر باید حداقل ۸ کاراکتر باشد\",\"کل"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/vault/backfill",
+    "testedUrl": "/api/v1/auth/vault/backfill",
+    "status": 0,
+    "ok": false,
+    "response": "Timeout"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/vault/status",
+    "testedUrl": "/api/v1/auth/vault/status",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"isInitialized\":true,\"keyUpdatedAt\":\"2026-10-02T10:12:47.570Z\",\"totalUsers\":1,\"encryptedUsers\":0,\"coveragePer"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/health",
+    "testedUrl": "/api/v1/health",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"status\":\"healthy\",\"timestamp\":\"2026-10-02T10:12:52.275Z\",\"uptimeSeconds\":535,\"version\":\"1.0.0\",\"services\":{\""
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/rbac/permissions",
+    "testedUrl": "/api/v1/rbac/permissions",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"categories\":[{\"key\":\"ERP_ACADEMIC\",\"nameFa\":\"آموزشی و ساختار مدرسه (ERP)\",\"descriptionFa\":\"مدیریت دروس، پایه"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/rbac/roles",
+    "testedUrl": "/api/v1/rbac/roles",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:12:55.030Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/rbac/roles",
+    "testedUrl": "/api/v1/rbac/roles",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"name should not be empty\",\"name must be "
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/rbac/roles/{id}",
+    "testedUrl": "/api/v1/rbac/roles/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"نقش مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:12:57.293Z\",\"path\":\"/api/v1/rbac/ro"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/rbac/roles/{id}",
+    "testedUrl": "/api/v1/rbac/roles/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"نقش مورد نظر در این مدرسه یافت نشد\",\"timestamp\":\"2026-10-02T10:12:58.961Z\",\"path\":\"/a"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/rbac/roles/{id}/restore",
+    "testedUrl": "/api/v1/rbac/roles/00000000-0000-0000-0000-000000000000/restore",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"نقش حذف‌شده مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:13:00.251Z\",\"path\":\"/api/v1"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/rbac/members",
+    "testedUrl": "/api/v1/rbac/members",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"id\":\"a6ef96e5-fbd0-4a8f-bf47-aab4a2aa9324\",\"firstName\":\"مدیر کل\",\"lastName\":\"پلتفرم رُکاد\",\"fullName\":\"مدیر"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/rbac/members/{userId}/detail",
+    "testedUrl": "/api/v1/rbac/members/{userId}/detail",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"کاربر مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:13:03.869Z\",\"path\":\"/api/v1/rbac/"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/rbac/members/{userId}/roles",
+    "testedUrl": "/api/v1/rbac/members/{userId}/roles",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"each value in schoolRoleIds must be a st"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/rbac/members/{userId}/overrides",
+    "testedUrl": "/api/v1/rbac/members/{userId}/overrides",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"permissionCode should not be empty\",\"per"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/rbac/members/{userId}/overrides/{permissionCode}",
+    "testedUrl": "/api/v1/rbac/members/{userId}/overrides/{permissionCode}",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"message\":\"اوررایدی برای این پرمیشن وجود نداشت\"},\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/rbac/members/{userId}/overrides/{permissionCode}/restore",
+    "testedUrl": "/api/v1/rbac/members/{userId}/overrides/{permissionCode}/restore",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"اورراید حذف‌شده یافت نشد\",\"timestamp\":\"2026-10-02T10:13:08.715Z\",\"path\":\"/api/v1/rbac"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/rbac/my-permissions",
+    "testedUrl": "/api/v1/rbac/my-permissions",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[\"academic.year.read\",\"academic.year.write\",\"academic.level.write\",\"academic.field.write\",\"lesson.read\",\"lesso"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/academic/dashboard-stats",
+    "testedUrl": "/api/v1/academic/dashboard-stats",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"studentsCount\":0,\"maxStudents\":150,\"teachersCount\":0,\"maxTeachers\":40,\"classroomsCount\":0,\"classrooms\":[],\"l"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/academic/years",
+    "testedUrl": "/api/v1/academic/years",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:13:15.027Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/academic/years",
+    "testedUrl": "/api/v1/academic/years",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"name should not be empty\",\"name must be "
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/academic/terms",
+    "testedUrl": "/api/v1/academic/terms",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"academicYearId should not be empty\",\"aca"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/academic/levels",
+    "testedUrl": "/api/v1/academic/levels",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:13:18.195Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/academic/levels",
+    "testedUrl": "/api/v1/academic/levels",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"name should not be empty\",\"name must be "
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/academic/fields",
+    "testedUrl": "/api/v1/academic/fields",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:13:20.557Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/academic/fields",
+    "testedUrl": "/api/v1/academic/fields",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"levelId should not be empty\",\"levelId mu"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/classes/lessons",
+    "testedUrl": "/api/v1/classes/lessons",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:13:22.819Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/classes/lessons",
+    "testedUrl": "/api/v1/classes/lessons",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"name should not be empty\",\"name must be "
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/classes/classrooms",
+    "testedUrl": "/api/v1/classes/classrooms",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:13:25.106Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/classes/classrooms",
+    "testedUrl": "/api/v1/classes/classrooms",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"name should not be empty\",\"name must be "
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/classes/my-schedule",
+    "testedUrl": "/api/v1/classes/my-schedule",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"این متد فقط برای نقش‌های دانش‌آموز، والد یا دبیر معتبر است\",\"timestamp\":\"2026-10-02"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/classes/classrooms/{id}",
+    "testedUrl": "/api/v1/classes/classrooms/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"کلاس درس مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:13:28.557Z\",\"path\":\"/api/v1/cl"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/classes/classrooms/{id}",
+    "testedUrl": "/api/v1/classes/classrooms/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"کلاس مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:13:29.707Z\",\"path\":\"/api/v1/classe"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/classes/enroll",
+    "testedUrl": "/api/v1/classes/enroll",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"studentId should not be empty\",\"studentI"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/classes/classrooms/{id}/students",
+    "testedUrl": "/api/v1/classes/classrooms/00000000-0000-0000-0000-000000000000/students",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:13:31.940Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/classes/schedules",
+    "testedUrl": "/api/v1/classes/schedules",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"classroomId should not be empty\",\"classr"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/classes/classrooms/{id}/schedule",
+    "testedUrl": "/api/v1/classes/classrooms/00000000-0000-0000-0000-000000000000/schedule",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:13:34.307Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/classes/teachers/{teacherId}/schedule",
+    "testedUrl": "/api/v1/classes/teachers/00000000-0000-0000-0000-000000000000/schedule",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:13:35.619Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/classes/schedules/{id}",
+    "testedUrl": "/api/v1/classes/schedules/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"برنامه کلاسی مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:13:36.988Z\",\"path\":\"/api/v"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/members/students/bulk-excel",
+    "testedUrl": "/api/v1/members/students/bulk-excel",
+    "status": 201,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":201,\"data\":{\"total\":0,\"success\":0,\"failed\":0,\"errors\":[]},\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/members/students",
+    "testedUrl": "/api/v1/members/students",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:13:39.718Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/members/students",
+    "testedUrl": "/api/v1/members/students",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"firstName should not be empty\",\"firstNam"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/members/students/{id}",
+    "testedUrl": "/api/v1/members/students/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"پروفایل دانش‌آموز یافت نشد\",\"timestamp\":\"2026-10-02T10:13:41.745Z\",\"path\":\"/api/v1/me"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/members/teachers",
+    "testedUrl": "/api/v1/members/teachers",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:13:43.021Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/members/teachers",
+    "testedUrl": "/api/v1/members/teachers",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"firstName should not be empty\",\"firstNam"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/members/teachers/{id}/lessons",
+    "testedUrl": "/api/v1/members/teachers/00000000-0000-0000-0000-000000000000/lessons",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"lessonIds should not be empty\",\"each val"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/members/coaches",
+    "testedUrl": "/api/v1/members/coaches",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:13:45.890Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/members/coaches",
+    "testedUrl": "/api/v1/members/coaches",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"firstName should not be empty\",\"firstNam"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/members/staff",
+    "testedUrl": "/api/v1/members/staff",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:13:47.964Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/members/staff",
+    "testedUrl": "/api/v1/members/staff",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"firstName should not be empty\",\"firstNam"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/members/parents",
+    "testedUrl": "/api/v1/members/parents",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:13:50.130Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/members/parents",
+    "testedUrl": "/api/v1/members/parents",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"firstName should not be empty\",\"firstNam"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/members/link-parent-student",
+    "testedUrl": "/api/v1/members/link-parent-student",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"parentId should not be empty\",\"parentId "
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/members/my-children",
+    "testedUrl": "/api/v1/members/my-children",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"پروفایل والد یافت نشد\",\"timestamp\":\"2026-10-02T10:13:53.238Z\",\"path\":\"/api/v1/members"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users",
+    "testedUrl": "/api/v1/users",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"id\":\"a6ef96e5-fbd0-4a8f-bf47-aab4a2aa9324\",\"firstName\":\"مدیر کل\",\"lastName\":\"پلتفرم رُکاد\",\"username\":\"supe"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/profiles/school",
+    "testedUrl": "/api/v1/profiles/school",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"id\":\"47d36e1a-87d1-4496-a5fb-7b0597fea8be\",\"tenantId\":\"d51697c7-85cd-423f-a526-b567590638f1\",\"motto\":\"تربیت "
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/profiles/school",
+    "testedUrl": "/api/v1/profiles/school",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"id\":\"6f8b93f7-8cc7-4072-ae4c-97365da80502\",\"tenantId\":\"74998976-c69b-4166-9bfb-47723d966f1e\",\"motto\":\"پرورش "
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/profiles/blogs",
+    "testedUrl": "/api/v1/profiles/blogs",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:13:57.957Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/profiles/blogs",
+    "testedUrl": "/api/v1/profiles/blogs",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"title should not be empty\",\"title must b"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/profiles/blogs/{slug}",
+    "testedUrl": "/api/v1/profiles/blogs/rokad-boys",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"مقاله مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:13:59.197Z\",\"path\":\"/api/v1/profi"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/profiles/blogs/{id}",
+    "testedUrl": "/api/v1/profiles/blogs/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"مقاله مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:14:00.591Z\",\"path\":\"/api/v1/profi"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/media",
+    "testedUrl": "/api/v1/media",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:14:01.927Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/media",
+    "testedUrl": "/api/v1/media",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"title should not be empty\",\"title must b"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/media/{id}/like",
+    "testedUrl": "/api/v1/media/00000000-0000-0000-0000-000000000000/like",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"پست مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:14:04.056Z\",\"path\":\"/api/v1/media/0"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/media/{id}/comments",
+    "testedUrl": "/api/v1/media/00000000-0000-0000-0000-000000000000/comments",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"content should not be empty\",\"content mu"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/media/comments/{commentId}",
+    "testedUrl": "/api/v1/media/comments/{commentId}",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"نظر مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:14:06.287Z\",\"path\":\"/api/v1/media/c"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/media/comments/{commentId}/restore",
+    "testedUrl": "/api/v1/media/comments/{commentId}/restore",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"دیدگاه حذف‌شده مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:14:07.607Z\",\"path\":\"/api"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/media/{id}",
+    "testedUrl": "/api/v1/media/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"مقاله مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:14:08.831Z\",\"path\":\"/api/v1/media"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/media/{id}/restore",
+    "testedUrl": "/api/v1/media/00000000-0000-0000-0000-000000000000/restore",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"مقاله حذف‌شده مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:14:10.152Z\",\"path\":\"/api/"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/attendance/students/bulk",
+    "testedUrl": "/api/v1/attendance/students/bulk",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"classroomId should not be empty\",\"classr"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/attendance/classroom/{classroomId}",
+    "testedUrl": "/api/v1/attendance/classroom/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"کلاس درس مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:14:12.400Z\",\"path\":\"/api/v1/at"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/attendance/student/{studentId}",
+    "testedUrl": "/api/v1/attendance/student/00000000-0000-0000-0000-000000000000",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:14:13.779Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/attendance/student-history",
+    "testedUrl": "/api/v1/attendance/student-history",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"دانش‌آموز یافت نشد\",\"timestamp\":\"2026-10-02T10:14:15.084Z\",\"path\":\"/api/v1/attendance"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/attendance/my-attendance",
+    "testedUrl": "/api/v1/attendance/my-attendance",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:14:15.980Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/attendance/teacher-daily-schedule",
+    "testedUrl": "/api/v1/attendance/teacher-daily-schedule",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"dayOfWeek\":\"FRIDAY\",\"schedules\":[]},\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/attendance/daily-stats",
+    "testedUrl": "/api/v1/attendance/daily-stats",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"totalEnrolled\":0,\"totalRecords\":0,\"present\":0,\"absent\":0,\"tardy\":0,\"excused\":0,\"expelled\":0},\"message\":\"عملی"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/attendance/teachers",
+    "testedUrl": "/api/v1/attendance/teachers",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"teacherId should not be empty\",\"teacherI"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/attendance/teachers",
+    "testedUrl": "/api/v1/attendance/teachers",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:14:21.346Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/homework/upload",
+    "testedUrl": "/api/v1/homework/upload",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"فایلی برای آپلود انتخاب نشده است\",\"timestamp\":\"2026-10-02T10:14:22.237Z\",\"path\":\"/a"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/homework",
+    "testedUrl": "/api/v1/homework",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:14:23.538Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/homework",
+    "testedUrl": "/api/v1/homework",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"classroomId should not be empty\",\"classr"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/homework/classroom/{classroomId}",
+    "testedUrl": "/api/v1/homework/classroom/00000000-0000-0000-0000-000000000000",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:14:25.859Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/homework/{id}",
+    "testedUrl": "/api/v1/homework/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"تکلیف مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:14:28.007Z\",\"path\":\"/api/v1/homew"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/homework/{id}",
+    "testedUrl": "/api/v1/homework/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"تکلیف مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:14:29.167Z\",\"path\":\"/api/v1/homew"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/homework/{id}/submissions",
+    "testedUrl": "/api/v1/homework/00000000-0000-0000-0000-000000000000/submissions",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"تکلیف یافت نشد\",\"timestamp\":\"2026-10-02T10:14:30.212Z\",\"path\":\"/api/v1/homework/00000"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/homework/{id}/submit",
+    "testedUrl": "/api/v1/homework/00000000-0000-0000-0000-000000000000/submit",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"تکلیف یافت نشد\",\"timestamp\":\"2026-10-02T10:14:31.868Z\",\"path\":\"/api/v1/homework/00000"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/homework/submissions/{submissionId}/grade",
+    "testedUrl": "/api/v1/homework/submissions/00000000-0000-0000-0000-000000000000/grade",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"score must not be less than 0\",\"score mu"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/calendar/event-types",
+    "testedUrl": "/api/v1/calendar/event-types",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"code\":\"STARTUP_WEEKEND\",\"titleFa\":\"استارت‌آپ ویکند\",\"color\":\"violet\",\"baseType\":\"STARTUP_WEEKEND\",\"isDefaul"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/calendar/event-types",
+    "testedUrl": "/api/v1/calendar/event-types",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"eventTypes must be an array\"],\"timestamp"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/calendar/events",
+    "testedUrl": "/api/v1/calendar/events",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"title should not be empty\",\"title must b"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/calendar/events",
+    "testedUrl": "/api/v1/calendar/events",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:14:39.833Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/calendar/events/{id}",
+    "testedUrl": "/api/v1/calendar/events/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"رویداد مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:14:41.215Z\",\"path\":\"/api/v1/cale"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/calendar/events/{id}",
+    "testedUrl": "/api/v1/calendar/events/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"رویداد مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:14:42.645Z\",\"path\":\"/api/v1/cale"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/calendar/events/{id}",
+    "testedUrl": "/api/v1/calendar/events/00000000-0000-0000-0000-000000000000",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"message\":\"رویداد با موفقیت حذف گردید\"},\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/calendar/events/{id}/wizard-data",
+    "testedUrl": "/api/v1/calendar/events/00000000-0000-0000-0000-000000000000/wizard-data",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"رویداد مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:14:46.441Z\",\"path\":\"/api/v1/cale"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/calendar/events/{id}/ideas",
+    "testedUrl": "/api/v1/calendar/events/00000000-0000-0000-0000-000000000000/ideas",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"عنوان ایده الزامی است\",\"title must be a "
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/calendar/events/{id}/ideas/{ideaId}",
+    "testedUrl": "/api/v1/calendar/events/00000000-0000-0000-0000-000000000000/ideas/{ideaId}",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"رویداد مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:14:48.843Z\",\"path\":\"/api/v1/cale"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/calendar/events/{id}/ideas/{ideaId}",
+    "testedUrl": "/api/v1/calendar/events/00000000-0000-0000-0000-000000000000/ideas/{ideaId}",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"رویداد مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:14:50.028Z\",\"path\":\"/api/v1/cale"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/calendar/events/{id}/wizard-steps",
+    "testedUrl": "/api/v1/calendar/events/00000000-0000-0000-0000-000000000000/wizard-steps",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"رویداد مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:14:51.825Z\",\"path\":\"/api/v1/cale"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/calendar/events/{id}/teams",
+    "testedUrl": "/api/v1/calendar/events/00000000-0000-0000-0000-000000000000/teams",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"property teams should not exist\"],\"times"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/calendar/events/{id}/vote",
+    "testedUrl": "/api/v1/calendar/events/00000000-0000-0000-0000-000000000000/vote",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"selectedOptionIds must be an array\"],\"ti"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/calendar/event-categories",
+    "testedUrl": "/api/v1/calendar/event-categories",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"key\":\"STARTUP_WEEKEND\",\"icon\":\"Rocket\",\"color\":\"\",\"label\":\"استارت‌آپ ویکند\",\"removable\":true},{\"key\":\"ACADE"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/calendar/event-categories",
+    "testedUrl": "/api/v1/calendar/event-categories",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"category should not be empty\",\"category "
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/calendar/event-categories/{key}",
+    "testedUrl": "/api/v1/calendar/event-categories/{key}",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"دسته‌بندی مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:14:59.342Z\",\"path\":\"/api/v1/c"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/calendar/event-categories/{key}",
+    "testedUrl": "/api/v1/calendar/event-categories/{key}",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"دسته‌بندی مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:15:00.482Z\",\"path\":\"/api/v1/c"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/calendar/announcements",
+    "testedUrl": "/api/v1/calendar/announcements",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:15:02.382Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/calendar/events/{id}/restore",
+    "testedUrl": "/api/v1/calendar/events/00000000-0000-0000-0000-000000000000/restore",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"رویداد حذف‌شده مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:15:03.625Z\",\"path\":\"/api"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/calendar/is-working-day",
+    "testedUrl": "/api/v1/calendar/is-working-day",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"پارامتر date الزامی است\",\"timestamp\":\"2026-10-02T10:15:04.540Z\",\"path\":\"/api/v1/cal"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/calendar/tenant-holidays",
+    "testedUrl": "/api/v1/calendar/tenant-holidays",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"فرمت تاریخ شمسی معتبر نیست (مثال: ۱۴۰۴-۰"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/calendar/tenant-holidays",
+    "testedUrl": "/api/v1/calendar/tenant-holidays",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:15:09.724Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/calendar/tenant-holidays/{id}",
+    "testedUrl": "/api/v1/calendar/tenant-holidays/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"تعطیلی مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:15:10.927Z\",\"path\":\"/api/v1/cale"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/calendar/official-holidays",
+    "testedUrl": "/api/v1/calendar/official-holidays",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"فرمت تاریخ شمسی معتبر نیست (مثال: ۱۴۰۴-۰"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/calendar/official-holidays",
+    "testedUrl": "/api/v1/calendar/official-holidays",
+    "status": 0,
+    "ok": false,
+    "response": "Timeout"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/calendar/official-holidays/{id}",
+    "testedUrl": "/api/v1/calendar/official-holidays/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"تعطیل رسمی مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:15:17.895Z\",\"path\":\"/api/v1/"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/calendar/holidays-in-range",
+    "testedUrl": "/api/v1/calendar/holidays-in-range",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"پارامترهای startDate و endDate الزامی هستند\",\"timestamp\":\"2026-10-02T10:15:18.777Z\""
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/polls",
+    "testedUrl": "/api/v1/polls",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"title should not be empty\",\"title must b"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/polls",
+    "testedUrl": "/api/v1/polls",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:15:23.515Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/polls/{id}/status",
+    "testedUrl": "/api/v1/polls/00000000-0000-0000-0000-000000000000/status",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"action must be one of the following valu"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/polls/{id}",
+    "testedUrl": "/api/v1/polls/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"نظرسنجی یافت نشد\",\"timestamp\":\"2026-10-02T10:15:25.674Z\",\"path\":\"/api/v1/polls/000000"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/polls/{id}",
+    "testedUrl": "/api/v1/polls/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"نظرسنجی یافت نشد\",\"timestamp\":\"2026-10-02T10:15:27.555Z\",\"path\":\"/api/v1/polls/000000"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/polls/{id}/analytics",
+    "testedUrl": "/api/v1/polls/00000000-0000-0000-0000-000000000000/analytics",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"نظرسنجی یافت نشد\",\"timestamp\":\"2026-10-02T10:15:29.374Z\",\"path\":\"/api/v1/polls/000000"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/polls/{id}/answers",
+    "testedUrl": "/api/v1/polls/00000000-0000-0000-0000-000000000000/answers",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"answers should not be empty\",\"answers mu"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/polls/{id}/vote",
+    "testedUrl": "/api/v1/polls/00000000-0000-0000-0000-000000000000/vote",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"نظرسنجی یافت نشد\",\"timestamp\":\"2026-10-02T10:15:31.909Z\",\"path\":\"/api/v1/polls/000000"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/parent-visits/slots",
+    "testedUrl": "/api/v1/parent-visits/slots",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"date should not be empty\",\"date must be "
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/parent-visits/slots",
+    "testedUrl": "/api/v1/parent-visits/slots",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:15:35.555Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/parent-visits/slots/{id}",
+    "testedUrl": "/api/v1/parent-visits/slots/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"اسلات ملاقات یافت نشد\",\"timestamp\":\"2026-10-02T10:15:36.943Z\",\"path\":\"/api/v1/parent-"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/parent-visits/my-bookings",
+    "testedUrl": "/api/v1/parent-visits/my-bookings",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:15:38.320Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/parent-visits/book",
+    "testedUrl": "/api/v1/parent-visits/book",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"slotId should not be empty\",\"slotId must"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/parent-visits/bookings/{id}/cancel",
+    "testedUrl": "/api/v1/parent-visits/bookings/00000000-0000-0000-0000-000000000000/cancel",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"رزرو ملاقات یافت نشد\",\"timestamp\":\"2026-10-02T10:15:42.953Z\",\"path\":\"/api/v1/parent-v"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/matters",
+    "testedUrl": "/api/v1/matters",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"studentId should not be empty\",\"studentI"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/matters",
+    "testedUrl": "/api/v1/matters",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:15:45.155Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/matters/student/{studentId}",
+    "testedUrl": "/api/v1/matters/student/00000000-0000-0000-0000-000000000000",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"matters\":[],\"totalPoints\":0,\"positiveCount\":0,\"negativeCount\":0},\"message\":\"عملیات با موفقیت انجام شد\",\"meta"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/matters/my-matters",
+    "testedUrl": "/api/v1/matters/my-matters",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:15:49.642Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/matters/{id}",
+    "testedUrl": "/api/v1/matters/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"مورد انضباطی مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:15:51.683Z\",\"path\":\"/api/v"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications",
+    "testedUrl": "/api/v1/notifications",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"id\":\"sys-tenants-3\",\"title\":\"وضعیت سلامت پلتفرم ابری رکاد\",\"desc\":\"تعداد 3 شعبه فعال با بیش از 358 کاربر فع"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/notifications/{id}/read",
+    "testedUrl": "/api/v1/notifications/00000000-0000-0000-0000-000000000000/read",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"success\":true},\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:15:57.067Z\",\"tenantI"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/notifications/mark-all-read",
+    "testedUrl": "/api/v1/notifications/mark-all-read",
+    "status": 201,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":201,\"data\":{\"success\":true},\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:15:58.749Z\",\"tenantI"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications/push/public-key",
+    "testedUrl": "/api/v1/notifications/push/public-key",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"publicKey\":\"\"},\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:15:58.753Z\",\"tenantI"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/notifications/push/subscribe",
+    "testedUrl": "/api/v1/notifications/push/subscribe",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"آدرس endpoint اشتراک مرورگر معتبر نیست.\",\"timestamp\":\"2026-10-02T10:15:59.689Z\",\"pa"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/notifications/push/unsubscribe",
+    "testedUrl": "/api/v1/notifications/push/unsubscribe",
+    "status": 201,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":201,\"data\":{\"success\":true,\"message\":\"اشتراک اعلان با موفقیت لغو شد\"},\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"time"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/notifications/push/test",
+    "testedUrl": "/api/v1/notifications/push/test",
+    "status": 201,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":201,\"data\":{\"success\":true,\"sent\":1,\"message\":\"سیگنال اعلان تستی به دستگاه شما ارسال گردید.\"},\"message\":\"عملیات با موفقیت"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/lesson-plans",
+    "testedUrl": "/api/v1/lesson-plans",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"lessonId should not be empty\",\"lessonId "
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/lesson-plans",
+    "testedUrl": "/api/v1/lesson-plans",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:16:04.627Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/lesson-plans/{id}",
+    "testedUrl": "/api/v1/lesson-plans/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"طرح درس یافت نشد\",\"timestamp\":\"2026-10-02T10:16:06.956Z\",\"path\":\"/api/v1/lesson-plans"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/lesson-plans/{id}/sessions",
+    "testedUrl": "/api/v1/lesson-plans/00000000-0000-0000-0000-000000000000/sessions",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"sessionNumber must not be less than 1\",\""
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/lesson-plans/sessions/{sessionId}/status",
+    "testedUrl": "/api/v1/lesson-plans/sessions/{sessionId}/status",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"status must be one of the following valu"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/question-bank/categories",
+    "testedUrl": "/api/v1/question-bank/categories",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"lessonId should not be empty\",\"lessonId "
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/question-bank/categories",
+    "testedUrl": "/api/v1/question-bank/categories",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:16:12.795Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/question-bank/questions",
+    "testedUrl": "/api/v1/question-bank/questions",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"lessonId should not be empty\",\"lessonId "
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/question-bank/questions",
+    "testedUrl": "/api/v1/question-bank/questions",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:16:16.070Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/question-bank/questions/{id}",
+    "testedUrl": "/api/v1/question-bank/questions/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"سوال مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:16:18.060Z\",\"path\":\"/api/v1/questi"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/question-bank/questions/{id}",
+    "testedUrl": "/api/v1/question-bank/questions/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"سوال مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:16:19.966Z\",\"path\":\"/api/v1/questi"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/question-bank/categories/{id}",
+    "testedUrl": "/api/v1/question-bank/categories/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"سرفصل مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:16:21.227Z\",\"path\":\"/api/v1/quest"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/exams",
+    "testedUrl": "/api/v1/exams",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"lessonId should not be empty\",\"lessonId "
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/exams",
+    "testedUrl": "/api/v1/exams",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:16:25.524Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/exams/{id}/questions",
+    "testedUrl": "/api/v1/exams/00000000-0000-0000-0000-000000000000/questions",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"score must not be less than 0.1\",\"score "
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/exams/{id}/questions/import-bank",
+    "testedUrl": "/api/v1/exams/00000000-0000-0000-0000-000000000000/questions/import-bank",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"each value in questionIds must be a stri"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/exams/{id}/questions/bulk",
+    "testedUrl": "/api/v1/exams/00000000-0000-0000-0000-000000000000/questions/bulk",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"questions must be an array\"],\"timestamp\""
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/exams/{id}/participations",
+    "testedUrl": "/api/v1/exams/00000000-0000-0000-0000-000000000000/participations",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"آزمون یافت نشد\",\"timestamp\":\"2026-10-02T10:16:32.161Z\",\"path\":\"/api/v1/exams/00000000"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/exams/{id}/start",
+    "testedUrl": "/api/v1/exams/00000000-0000-0000-0000-000000000000/start",
+    "status": 403,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":403,\"error\":\"Forbidden\",\"message\":\"پروفایل دانش‌آموزی یافت نشد\",\"timestamp\":\"2026-10-02T10:16:33.537Z\",\"path\":\"/api/v1/e"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/exams/{id}/submit",
+    "testedUrl": "/api/v1/exams/00000000-0000-0000-0000-000000000000/submit",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"answers must be an array\"],\"timestamp\":\""
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/exams/participations/{id}/sheet",
+    "testedUrl": "/api/v1/exams/participations/00000000-0000-0000-0000-000000000000/sheet",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"برگه آزمون یافت نشد\",\"timestamp\":\"2026-10-02T10:16:35.558Z\",\"path\":\"/api/v1/exams/par"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/exams/participations/{id}/grade",
+    "testedUrl": "/api/v1/exams/participations/00000000-0000-0000-0000-000000000000/grade",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"grades must be an array\"],\"timestamp\":\"2"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/exams/{id}/publish-results",
+    "testedUrl": "/api/v1/exams/00000000-0000-0000-0000-000000000000/publish-results",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"آزمون یافت نشد\",\"timestamp\":\"2026-10-02T10:16:39.318Z\",\"path\":\"/api/v1/exams/00000000"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/exams/{id}/results",
+    "testedUrl": "/api/v1/exams/00000000-0000-0000-0000-000000000000/results",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"آزمون یافت نشد\",\"timestamp\":\"2026-10-02T10:16:41.178Z\",\"path\":\"/api/v1/exams/00000000"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/gradebook/bulk",
+    "testedUrl": "/api/v1/gradebook/bulk",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"classroomId should not be empty\",\"classr"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/gradebook/podman/bulk",
+    "testedUrl": "/api/v1/gradebook/podman/bulk",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"classroomId should not be empty\",\"classr"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/gradebook/classroom/{classroomId}",
+    "testedUrl": "/api/v1/gradebook/classroom/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"کلاس یافت نشد\",\"timestamp\":\"2026-10-02T10:16:45.292Z\",\"path\":\"/api/v1/gradebook/class"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/gradebook/classroom/{classroomId}/podman-matrix",
+    "testedUrl": "/api/v1/gradebook/classroom/00000000-0000-0000-0000-000000000000/podman-matrix",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"کلاس یافت نشد\",\"timestamp\":\"2026-10-02T10:16:46.692Z\",\"path\":\"/api/v1/gradebook/class"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/gradebook/student/{studentId}/report-card",
+    "testedUrl": "/api/v1/gradebook/student/00000000-0000-0000-0000-000000000000/report-card",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"دانش‌آموز یافت نشد\",\"timestamp\":\"2026-10-02T10:16:48.881Z\",\"path\":\"/api/v1/gradebook/"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/gradebook/student/{studentId}/dossier",
+    "testedUrl": "/api/v1/gradebook/student/00000000-0000-0000-0000-000000000000/dossier",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"دانش‌آموز یافت نشد\",\"timestamp\":\"2026-10-02T10:16:50.507Z\",\"path\":\"/api/v1/gradebook/"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/learning-materials",
+    "testedUrl": "/api/v1/learning-materials",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"lessonId should not be empty\",\"lessonId "
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/learning-materials",
+    "testedUrl": "/api/v1/learning-materials",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:16:53.435Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/learning-materials/{id}",
+    "testedUrl": "/api/v1/learning-materials/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"محتوای آموزشی یافت نشد\",\"timestamp\":\"2026-10-02T10:16:54.669Z\",\"path\":\"/api/v1/learni"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/learning-materials/{id}/download-url",
+    "testedUrl": "/api/v1/learning-materials/00000000-0000-0000-0000-000000000000/download-url",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"محتوای آموزشی مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:16:56.635Z\",\"path\":\"/api/"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/chat/channels/direct",
+    "testedUrl": "/api/v1/chat/channels/direct",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"recipientUserId should not be empty\",\"re"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/chat/channels/class",
+    "testedUrl": "/api/v1/chat/channels/class",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"classroomId should not be empty\",\"classr"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/chat/channels",
+    "testedUrl": "/api/v1/chat/channels",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:17:00.839Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/chat/messages",
+    "testedUrl": "/api/v1/chat/messages",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"channelId should not be empty\",\"channelI"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/chat/channels/{channelId}/messages",
+    "testedUrl": "/api/v1/chat/channels/{channelId}/messages",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"کانال گفتگو یافت نشد\",\"timestamp\":\"2026-10-02T10:17:02.916Z\",\"path\":\"/api/v1/chat/cha"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/finance/plans",
+    "testedUrl": "/api/v1/finance/plans",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"academicYearId should not be empty\",\"aca"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/plans",
+    "testedUrl": "/api/v1/finance/plans",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:17:05.937Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/plans/{id}/preview",
+    "testedUrl": "/api/v1/finance/plans/00000000-0000-0000-0000-000000000000/preview",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"طرح شهریه مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:17:07.179Z\",\"path\":\"/api/v1/f"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/finance/plans/{id}/apply",
+    "testedUrl": "/api/v1/finance/plans/00000000-0000-0000-0000-000000000000/apply",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"طرح شهریه مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:17:08.264Z\",\"path\":\"/api/v1/f"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/finance/contracts",
+    "testedUrl": "/api/v1/finance/contracts",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"academicYearId should not be empty\",\"aca"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/contracts",
+    "testedUrl": "/api/v1/finance/contracts",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:17:11.368Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/contracts/my-overview",
+    "testedUrl": "/api/v1/finance/contracts/my-overview",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:17:12.561Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/contracts/{id}",
+    "testedUrl": "/api/v1/finance/contracts/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"قرارداد شهریه مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:17:14.438Z\",\"path\":\"/api/"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/parent/children",
+    "testedUrl": "/api/v1/finance/parent/children",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"پروفایل اولیا برای این حساب کاربری یافت نشد\",\"timestamp\":\"2026-10-02T10:17:15.634Z\",\""
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/parent/overview",
+    "testedUrl": "/api/v1/finance/parent/overview",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"پروفایل اولیا برای این حساب کاربری یافت نشد\",\"timestamp\":\"2026-10-02T10:17:17.606Z\",\""
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/finance/payments/initiate",
+    "testedUrl": "/api/v1/finance/payments/initiate",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"installmentId should not be empty\",\"inst"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/payments/verify",
+    "testedUrl": "/api/v1/finance/payments/verify",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"تراکنش مالی با این شناسه مرجع یافت نشد\",\"timestamp\":\"2026-10-02T10:17:19.934Z\",\"path\""
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/finance/payments/verify",
+    "testedUrl": "/api/v1/finance/payments/verify",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"authority should not be empty\",\"authorit"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/finance/payments/offline",
+    "testedUrl": "/api/v1/finance/payments/offline",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"installmentId should not be empty\",\"inst"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/payments/receipts",
+    "testedUrl": "/api/v1/finance/payments/receipts",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:17:22.661Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/finance/payments/cash",
+    "testedUrl": "/api/v1/finance/payments/cash",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"contractId should not be empty\",\"contrac"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/finance/payments/cheque",
+    "testedUrl": "/api/v1/finance/payments/cheque",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"contractId should not be empty\",\"contrac"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/finance/payments/cheque/{id}/status",
+    "testedUrl": "/api/v1/finance/payments/cheque/00000000-0000-0000-0000-000000000000/status",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"status must be one of the following valu"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/payments/cheques",
+    "testedUrl": "/api/v1/finance/payments/cheques",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:17:27.747Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/payments/cheques/stats",
+    "testedUrl": "/api/v1/finance/payments/cheques/stats",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"totalCount\":0,\"totalAmount\":0,\"pendingCount\":0,\"pendingAmount\":0,\"cashedCount\":0,\"cashedAmount\":0,\"bouncedCo"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/fees/import/template/allocation",
+    "testedUrl": "/api/v1/finance/fees/import/template/allocation",
+    "status": 200,
+    "ok": true,
+    "response": "PK\u0003\u0004\u0014\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000�\u0001���\u0002\u0000\u0000�\u0002\u0000\u0000\u001a\u0000\u0000\u0000xl/_rels/workbook.xml.rels<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\r\n<Relationships xmlns=\"http://schemas."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/fees/import/template/payments",
+    "testedUrl": "/api/v1/finance/fees/import/template/payments",
+    "status": 200,
+    "ok": true,
+    "response": "PK\u0003\u0004\u0014\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000�\u0001���\u0002\u0000\u0000�\u0002\u0000\u0000\u001a\u0000\u0000\u0000xl/_rels/workbook.xml.rels<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\r\n<Relationships xmlns=\"http://schemas."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/finance/fees/import/allocation/preview",
+    "testedUrl": "/api/v1/finance/fees/import/allocation/preview",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"فایل اکسل بارگذاری نشده است\",\"timestamp\":\"2026-10-02T10:17:34.720Z\",\"path\":\"/api/v1"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/finance/fees/import/allocation/confirm",
+    "testedUrl": "/api/v1/finance/fees/import/allocation/confirm",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"academicYearId should not be empty\",\"aca"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/finance/fees/import/payments/preview",
+    "testedUrl": "/api/v1/finance/fees/import/payments/preview",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"فایل اکسل بارگذاری نشده است\",\"timestamp\":\"2026-10-02T10:17:38.058Z\",\"path\":\"/api/v1"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/finance/fees/import/payments/confirm",
+    "testedUrl": "/api/v1/finance/fees/import/payments/confirm",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"rows must be an array\"],\"timestamp\":\"202"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/finance/payroll/contracts",
+    "testedUrl": "/api/v1/finance/payroll/contracts",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"teacherId should not be empty\",\"teacherI"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/payroll/contracts",
+    "testedUrl": "/api/v1/finance/payroll/contracts",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:17:41.933Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/finance/payroll/contracts/{id}",
+    "testedUrl": "/api/v1/finance/payroll/contracts/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"قرارداد مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:17:44.930Z\",\"path\":\"/api/v1/fin"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/finance/payroll/calculate",
+    "testedUrl": "/api/v1/finance/payroll/calculate",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"year must not be greater than 1450\",\"yea"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/finance/payroll/slips/{id}/review",
+    "testedUrl": "/api/v1/finance/payroll/slips/00000000-0000-0000-0000-000000000000/review",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"finalAmount must not be less than 0\",\"fi"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/finance/payroll/slips/{id}/cancel",
+    "testedUrl": "/api/v1/finance/payroll/slips/00000000-0000-0000-0000-000000000000/cancel",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"cancelReason should not be empty\",\"cance"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/finance/payroll/finalize",
+    "testedUrl": "/api/v1/finance/payroll/finalize",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"year must not be greater than 1450\",\"yea"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/finance/payroll/adjustments",
+    "testedUrl": "/api/v1/finance/payroll/adjustments",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"teacherId should not be empty\",\"teacherI"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/payroll/adjustments",
+    "testedUrl": "/api/v1/finance/payroll/adjustments",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:17:53.334Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/finance/payroll/slips",
+    "testedUrl": "/api/v1/finance/payroll/slips",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"userId should not be empty\",\"userId must"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/payroll/slips",
+    "testedUrl": "/api/v1/finance/payroll/slips",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:17:55.653Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/payroll/slips/{id}",
+    "testedUrl": "/api/v1/finance/payroll/slips/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"فیش حقوقی مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:17:57.196Z\",\"path\":\"/api/v1/f"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/payroll/my-slips",
+    "testedUrl": "/api/v1/finance/payroll/my-slips",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:17:58.561Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/finance/payroll/slips/{id}/disburse",
+    "testedUrl": "/api/v1/finance/payroll/slips/00000000-0000-0000-0000-000000000000/disburse",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"paymentRefNumber should not be empty\",\"p"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/payroll/export/excel",
+    "testedUrl": "/api/v1/finance/payroll/export/excel",
+    "status": 200,
+    "ok": true,
+    "response": "PK\u0003\u0004\u0014\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000�\u0001���\u0002\u0000\u0000�\u0002\u0000\u0000\u001a\u0000\u0000\u0000xl/_rels/workbook.xml.rels<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\r\n<Relationships xmlns=\"http://schemas."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/payroll/export/print/{id}",
+    "testedUrl": "/api/v1/finance/payroll/export/print/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"فیش حقوقی مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:18:03.864Z\",\"path\":\"/api/v1/f"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/finance/payroll/profiles/{userId}",
+    "testedUrl": "/api/v1/finance/payroll/profiles/{userId}",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"contractType must be one of the followin"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/payroll/profiles/{userId}",
+    "testedUrl": "/api/v1/finance/payroll/profiles/{userId}",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"پروفایل حقوق و دستمزد برای این کاربر ثبت نشده است\",\"timestamp\":\"2026-10-02T10:18:06.2"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/finance/payroll/profiles",
+    "testedUrl": "/api/v1/finance/payroll/profiles",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:18:08.366Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/saas/tenants/provision",
+    "testedUrl": "/api/v1/saas/tenants/provision",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"name should not be empty\",\"name must be "
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/saas/tenants/impersonate",
+    "testedUrl": "/api/v1/saas/tenants/impersonate",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"tenantId should not be empty\",\"tenantId "
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/saas/tenants",
+    "testedUrl": "/api/v1/saas/tenants",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"id\":\"73273142-a313-4dd8-9478-92dfd8ad946d\",\"type\":\"SCHOOL\",\"name\":\"هنرستان فنی و حرفه‌ای دخترانه رکاد\",\"slu"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/saas/tenants/{id}/status",
+    "testedUrl": "/api/v1/saas/tenants/00000000-0000-0000-0000-000000000000/status",
+    "status": 0,
+    "ok": false,
+    "response": "Timeout"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/saas/subscriptions/plans",
+    "testedUrl": "/api/v1/saas/subscriptions/plans",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"id\":\"7976de12-e2d9-4e96-9e6d-322241723b5e\",\"code\":\"FREE_TRIAL\",\"name\":\"پلن آزمایشی ۱۴ روزه\",\"description\":\""
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/saas/subscriptions/plans",
+    "testedUrl": "/api/v1/saas/subscriptions/plans",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"code should not be empty\",\"code must be "
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/saas/subscriptions/plans/{idOrCode}",
+    "testedUrl": "/api/v1/saas/subscriptions/plans/{idOrCode}",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"پلن اشتراک مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:18:21.210Z\",\"path\":\"/api/v1/"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/saas/subscriptions/assign",
+    "testedUrl": "/api/v1/saas/subscriptions/assign",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"tenantId should not be empty\",\"tenantId "
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/saas/subscriptions/tenant/{tenantId}",
+    "testedUrl": "/api/v1/saas/subscriptions/tenant/00000000-0000-0000-0000-000000000000",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"subscription\":null,\"quotas\":{\"students\":{\"quotaType\":\"STUDENTS\",\"currentUsage\":0,\"maxAllowed\":100,\"isExceede"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/saas/roles/templates",
+    "testedUrl": "/api/v1/saas/roles/templates",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"code should not be empty\",\"code must be "
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/saas/roles/templates",
+    "testedUrl": "/api/v1/saas/roles/templates",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"id\":\"4da30f13-f202-4293-b4a5-cf9a6130b56a\",\"code\":\"ROLE_TPL_1790192260230\",\"name\":\"سرپرست فوق‌برنامه و کارگ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/saas/roles/templates/{id}",
+    "testedUrl": "/api/v1/saas/roles/templates/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"قالب نقش مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:18:30.750Z\",\"path\":\"/api/v1/sa"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/saas/roles/templates/{id}/distribute",
+    "testedUrl": "/api/v1/saas/roles/templates/00000000-0000-0000-0000-000000000000/distribute",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"قالب نقش مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:18:31.921Z\",\"path\":\"/api/v1/sa"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/saas/platform/metrics",
+    "testedUrl": "/api/v1/saas/platform/metrics",
+    "status": 0,
+    "ok": false,
+    "response": "Timeout"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/saas/platform/maintenance",
+    "testedUrl": "/api/v1/saas/platform/maintenance",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"enabled\":false,\"message\":\"سامانه رکاد در حال به‌روزرسانی زیرساخت است.\",\"updatedAt\":\"2026-09-23T19:37:40.876Z"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/saas/platform/maintenance",
+    "testedUrl": "/api/v1/saas/platform/maintenance",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"enabled must be a boolean value\"],\"times"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/saas/platform/branding/{tenantId}",
+    "testedUrl": "/api/v1/saas/platform/branding/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"مرکز آموزشی مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:18:39.007Z\",\"path\":\"/api/v1"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/saas/platform/audit-logs",
+    "testedUrl": "/api/v1/saas/platform/audit-logs",
+    "status": 0,
+    "ok": false,
+    "response": "Timeout"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/saas/platform/cache/purge",
+    "testedUrl": "/api/v1/saas/platform/cache/purge",
+    "status": 201,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":201,\"data\":{\"message\":\"تعداد 10 کلید از حافظه کش پاک‌سازی شد\",\"purgedKeysCount\":10},\"message\":\"عملیات با موفقیت انجام شد\""
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/coaching/my-context",
+    "testedUrl": "/api/v1/coaching/my-context",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"role\":\"ADMIN\",\"todaySessions\":[],\"myStudents\":[],\"pendingExtraRequests\":[]},\"message\":\"عملیات با موفقیت انجا"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/coaching/today",
+    "testedUrl": "/api/v1/coaching/today",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:18:48.596Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/coaching/students",
+    "testedUrl": "/api/v1/coaching/students",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:18:50.353Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/coaching/students/{id}/report",
+    "testedUrl": "/api/v1/coaching/students/00000000-0000-0000-0000-000000000000/report",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"دانش‌آموز مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:18:51.829Z\",\"path\":\"/api/v1/c"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/coaching/assign",
+    "testedUrl": "/api/v1/coaching/assign",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"studentId should not be empty\",\"studentI"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/coaching/sessions/{id}",
+    "testedUrl": "/api/v1/coaching/sessions/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"جلسه مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:18:54.048Z\",\"path\":\"/api/v1/coachi"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/coaching/extra-request",
+    "testedUrl": "/api/v1/coaching/extra-request",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"reason should not be empty\",\"reason must"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/coaching/extra-requests/{id}/respond",
+    "testedUrl": "/api/v1/coaching/extra-requests/00000000-0000-0000-0000-000000000000/respond",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"status must be one of the following valu"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/coaching/coaches",
+    "testedUrl": "/api/v1/coaching/coaches",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:18:59.012Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/coaching/students-directory",
+    "testedUrl": "/api/v1/coaching/students-directory",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:19:00.361Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/messages",
+    "testedUrl": "/api/v1/messages",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"عنوان پیام الزامی است\",\"title must be a "
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/messages/inbox",
+    "testedUrl": "/api/v1/messages/inbox",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"data\":[],\"meta\":{\"total\":0,\"page\":1,\"limit\":20,\"totalPages\":0,\"unreadCount\":0}}"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/messages/sent",
+    "testedUrl": "/api/v1/messages/sent",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"data\":[],\"meta\":{\"total\":0,\"page\":1,\"limit\":20,\"totalPages\":0}}"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/messages/recipients/allowed",
+    "testedUrl": "/api/v1/messages/recipients/allowed",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"canBroadcast\":true,\"canClassroom\":true,\"canIndividual\":true,\"classrooms\":[],\"users\":[]},\"message\":\"عملیات با"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/messages/{id}",
+    "testedUrl": "/api/v1/messages/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"پیام مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:19:10.204Z\",\"path\":\"/api/v1/messag"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/messages/{id}",
+    "testedUrl": "/api/v1/messages/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"پیام یافت نشد\",\"timestamp\":\"2026-10-02T10:19:11.710Z\",\"path\":\"/api/v1/messages/000000"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/messages/{id}/star",
+    "testedUrl": "/api/v1/messages/00000000-0000-0000-0000-000000000000/star",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"پیام در صندوق ورودی شما یافت نشد\",\"timestamp\":\"2026-10-02T10:19:12.848Z\",\"path\":\"/api"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/ka-admin/activities",
+    "testedUrl": "/api/v1/ka-admin/activities",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"name must be a string\"],\"timestamp\":\"202"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ka-admin/activities",
+    "testedUrl": "/api/v1/ka-admin/activities",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"id\":\"536d29c5-5adf-42ac-b023-8d15c6ff2545\",\"tenantId\":\"74998976-c69b-4166-9bfb-47723d966f1e\",\"parent\":\"فعال"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ka-admin/activity-submissions",
+    "testedUrl": "/api/v1/ka-admin/activity-submissions",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:19:18.970Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/ka-admin/activity-submissions/{id}/review",
+    "testedUrl": "/api/v1/ka-admin/activity-submissions/00000000-0000-0000-0000-000000000000/review",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"status must be one of the following valu"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/ka-admin/rewards",
+    "testedUrl": "/api/v1/ka-admin/rewards",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"name must be a string\",\"minToken must be"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ka-admin/rewards",
+    "testedUrl": "/api/v1/ka-admin/rewards",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"id\":\"d952ea6f-33d0-4a63-9777-d7dd3d8a8363\",\"tenantId\":\"74998976-c69b-4166-9bfb-47723d966f1e\",\"parent\":\"پادا"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ka-admin/reward-claims",
+    "testedUrl": "/api/v1/ka-admin/reward-claims",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:19:24.050Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/ka-admin/reward-claims/{id}/fulfill",
+    "testedUrl": "/api/v1/ka-admin/reward-claims/00000000-0000-0000-0000-000000000000/fulfill",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"status must be one of the following valu"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/ka-admin/direct-award",
+    "testedUrl": "/api/v1/ka-admin/direct-award",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"studentId must be a string\",\"activityId "
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ka-admin/students",
+    "testedUrl": "/api/v1/ka-admin/students",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:19:27.013Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ka-admin/students/{studentId}/history",
+    "testedUrl": "/api/v1/ka-admin/students/00000000-0000-0000-0000-000000000000/history",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"دانش‌آموز یافت نشد\",\"timestamp\":\"2026-10-02T10:19:28.327Z\",\"path\":\"/api/v1/ka-admin/s"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ka-admin/leaderboard",
+    "testedUrl": "/api/v1/ka-admin/leaderboard",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:19:29.611Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ka-student/activities",
+    "testedUrl": "/api/v1/ka-student/activities",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"id\":\"536d29c5-5adf-42ac-b023-8d15c6ff2545\",\"tenantId\":\"74998976-c69b-4166-9bfb-47723d966f1e\",\"parent\":\"فعال"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/ka-student/activity-submissions",
+    "testedUrl": "/api/v1/ka-student/activity-submissions",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"activityId must be a string\"],\"timestamp"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ka-student/activity-submissions",
+    "testedUrl": "/api/v1/ka-student/activity-submissions",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"Student profile not found\",\"timestamp\":\"2026-10-02T10:19:34.112Z\",\"path\":\"/api/v1/ka-"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ka-student/rewards",
+    "testedUrl": "/api/v1/ka-student/rewards",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"id\":\"d952ea6f-33d0-4a63-9777-d7dd3d8a8363\",\"tenantId\":\"74998976-c69b-4166-9bfb-47723d966f1e\",\"parent\":\"پادا"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/ka-student/reward-claims",
+    "testedUrl": "/api/v1/ka-student/reward-claims",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"rewardId must be a string\"],\"timestamp\":"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ka-student/reward-claims",
+    "testedUrl": "/api/v1/ka-student/reward-claims",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"Student profile not found\",\"timestamp\":\"2026-10-02T10:19:37.188Z\",\"path\":\"/api/v1/ka-"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ka-student/leaderboard",
+    "testedUrl": "/api/v1/ka-student/leaderboard",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[],\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:19:38.297Z\",\"tenantId\":\"d51697c7-8"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ka-student/students/{studentId}/summary",
+    "testedUrl": "/api/v1/ka-student/students/00000000-0000-0000-0000-000000000000/summary",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"دانش‌آموز یافت نشد\",\"timestamp\":\"2026-10-02T10:19:39.385Z\",\"path\":\"/api/v1/ka-student"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/sms/config",
+    "testedUrl": "/api/v1/sms/config",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"provider\":\"AMOOT\",\"amoot\":{\"apiKey\":\"8FBAE90F05E6ABE22310AEAD04925F74B16384BC\",\"senderLine\":\"\"},\"kavenegar\":"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/sms/config",
+    "testedUrl": "/api/v1/sms/config",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"provider should not be empty\",\"provider "
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/sms/manual-send",
+    "testedUrl": "/api/v1/sms/manual-send",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"targetType should not be empty\",\"targetT"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/sms/logs",
+    "testedUrl": "/api/v1/sms/logs",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"total\":0,\"page\":1,\"limit\":30,\"totalPages\":0,\"logs\":[]},\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timest"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/sms/stats",
+    "testedUrl": "/api/v1/sms/stats",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"total\":0,\"sent\":0,\"failed\":0,\"breakdown\":{\"autoAbsence\":0,\"autoChequeDue\":0,\"autoBirthday\":0,\"manual\":0},\"ac"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/sms/templates",
+    "testedUrl": "/api/v1/sms/templates",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"id\":\"default-AUTO_ABSENCE\",\"tenantId\":\"74998976-c69b-4166-9bfb-47723d966f1e\",\"type\":\"AUTO_ABSENCE\",\"title\":"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/sms/templates",
+    "testedUrl": "/api/v1/sms/templates",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"type should not be empty\",\"type must be "
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/sms/trigger/cheques",
+    "testedUrl": "/api/v1/sms/trigger/cheques",
+    "status": 201,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":201,\"data\":{\"checkedCount\":0,\"sentCount\":0},\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:19:5"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/sms/trigger/birthdays",
+    "testedUrl": "/api/v1/sms/trigger/birthdays",
+    "status": 201,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":201,\"data\":{\"matchedBirthdays\":0,\"sentCount\":0},\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/sms/quick-templates",
+    "testedUrl": "/api/v1/sms/quick-templates",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"id\":\"def-1\",\"title\":\"کلاس‌های آنلاین\",\"content\":\"با سلام و احترام؛ پیرو تصمیم شورای مدرسه، کلیه کلاس‌های آم"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/sms/quick-templates",
+    "testedUrl": "/api/v1/sms/quick-templates",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"title should not be empty\",\"title must b"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/sms/quick-templates/{id}",
+    "testedUrl": "/api/v1/sms/quick-templates/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"الگوی پیامک مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:20:00.661Z\",\"path\":\"/api/v1"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/sms/quick-templates/{id}",
+    "testedUrl": "/api/v1/sms/quick-templates/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"الگوی پیامک مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:20:01.844Z\",\"path\":\"/api/v1"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/sms/recipients",
+    "testedUrl": "/api/v1/sms/recipients",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"id\":\"a6ef96e5-fbd0-4a8f-bf47-aab4a2aa9324\",\"firstName\":\"مدیر کل\",\"lastName\":\"پلتفرم رُکاد\",\"phone\":\"0912000"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/sms/directory",
+    "testedUrl": "/api/v1/sms/directory",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":[{\"id\":\"a6ef96e5-fbd0-4a8f-bf47-aab4a2aa9324\",\"firstName\":\"مدیر کل\",\"lastName\":\"پلتفرم رُکاد\",\"phone\":\"0912000"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/club/my-status",
+    "testedUrl": "/api/v1/club/my-status",
+    "status": 0,
+    "ok": false,
+    "response": "Timeout"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/club/challenges",
+    "testedUrl": "/api/v1/club/challenges",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"activeCount\":0,\"canStartMore\":true,\"challenges\":[]},\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/club/challenges/{id}",
+    "testedUrl": "/api/v1/club/challenges/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"چالش مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:20:12.577Z\",\"path\":\"/api/v1/club/c"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/club/challenges/{id}/start",
+    "testedUrl": "/api/v1/club/challenges/00000000-0000-0000-0000-000000000000/start",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"چالش یافت نشد یا در دسترس نیست\",\"timestamp\":\"2026-10-02T10:20:14.130Z\",\"path\":\"/api/v"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/club/challenges/{id}/submit",
+    "testedUrl": "/api/v1/club/challenges/00000000-0000-0000-0000-000000000000/submit",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"هیچ چالش فعالی برای ارسال پاسخ یافت نشد.\",\"timestamp\":\"2026-10-02T10:20:15.835Z\",\"p"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/club/teacher/approvals",
+    "testedUrl": "/api/v1/club/teacher/approvals",
+    "status": 0,
+    "ok": false,
+    "response": "Timeout"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/club/teacher/approvals/{progressId}",
+    "testedUrl": "/api/v1/club/teacher/approvals/{progressId}",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"status must be one of the following valu"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/club/admin/members",
+    "testedUrl": "/api/v1/club/admin/members",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"members\":[],\"total\":0},\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:20:24.192Z\","
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/club/admin/members/{studentId}",
+    "testedUrl": "/api/v1/club/admin/members/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"دانش‌آموز مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:20:25.502Z\",\"path\":\"/api/v1/c"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/club/admin/members/{studentId}/milestones/{milestoneId}/toggle",
+    "testedUrl": "/api/v1/club/admin/members/00000000-0000-0000-0000-000000000000/milestones/{milestoneId}/toggle",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"دانش‌آموز مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:20:26.897Z\",\"path\":\"/api/v1/c"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/club/admin/milestones",
+    "testedUrl": "/api/v1/club/admin/milestones",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"milestones\":[],\"total\":0},\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:20:28.521"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/club/admin/milestones",
+    "testedUrl": "/api/v1/club/admin/milestones",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"title must be a string\",\"type must be on"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/club/admin/milestones/{id}",
+    "testedUrl": "/api/v1/club/admin/milestones/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"مایلستون مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:20:30.822Z\",\"path\":\"/api/v1/cl"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/club/admin/milestones/{id}",
+    "testedUrl": "/api/v1/club/admin/milestones/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"مایلستون مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:20:31.909Z\",\"path\":\"/api/v1/cl"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/club/admin/challenges",
+    "testedUrl": "/api/v1/club/admin/challenges",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"challenges\":[],\"total\":0},\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:20:33.354"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/club/admin/challenges",
+    "testedUrl": "/api/v1/club/admin/challenges",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"title must be a string\",\"description mus"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/club/admin/challenges/{id}",
+    "testedUrl": "/api/v1/club/admin/challenges/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"چالش مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:20:36.355Z\",\"path\":\"/api/v1/club/a"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/club/admin/challenges/{id}",
+    "testedUrl": "/api/v1/club/admin/challenges/00000000-0000-0000-0000-000000000000",
+    "status": 404,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":404,\"error\":\"Not Found\",\"message\":\"چالش مورد نظر یافت نشد\",\"timestamp\":\"2026-10-02T10:20:37.473Z\",\"path\":\"/api/v1/club/a"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/club/admin/submissions",
+    "testedUrl": "/api/v1/club/admin/submissions",
+    "status": 200,
+    "ok": true,
+    "response": "{\"success\":true,\"statusCode\":200,\"data\":{\"submissions\":[],\"total\":0},\"message\":\"عملیات با موفقیت انجام شد\",\"meta\":{\"timestamp\":\"2026-10-02T10:20:39.79"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/club/admin/submissions/{submissionId}/grade",
+    "testedUrl": "/api/v1/club/admin/submissions/00000000-0000-0000-0000-000000000000/grade",
+    "status": 400,
+    "ok": true,
+    "response": "{\"success\":false,\"statusCode\":400,\"error\":\"Bad Request\",\"message\":\"خطای اعتبارسنجی داده‌های ورودی\",\"errors\":[\"score must not be greater than 100\",\"sco"
+  }
+]

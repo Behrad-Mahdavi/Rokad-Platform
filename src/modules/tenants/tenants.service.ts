@@ -71,6 +71,7 @@ export class TenantsService {
   }
 
   async changeStatus(id: string, status: 'ACTIVE' | 'SUSPENDED' | 'PENDING_SETUP') {
+    await this.findById(id);
     const tenant = await this.prisma.tenant.update({
       where: { id },
       data: { status },

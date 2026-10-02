@@ -52,7 +52,15 @@ export class AmootSmsProvider implements ISmsProvider {
         lineToSend = lineToSend.substring(3);
       }
 
-      const cleanPhone = options.to.replace(/[^\d+]/g, '');
+      // Normalize Iranian phone number to 09XXXXXXXXX
+      let cleanPhone = options.to.replace(/[^\d]/g, '');
+      if (cleanPhone.startsWith('989')) {
+        cleanPhone = '0' + cleanPhone.substring(2);
+      } else if (cleanPhone.startsWith('00989')) {
+        cleanPhone = '0' + cleanPhone.substring(4);
+      } else if (!cleanPhone.startsWith('0') && cleanPhone.startsWith('9') && cleanPhone.length === 10) {
+        cleanPhone = '0' + cleanPhone;
+      }
 
       let payload: Record<string, string> = {
         Token: this.apiKey,
@@ -70,9 +78,9 @@ export class AmootSmsProvider implements ISmsProvider {
       });
 
       let data = await response.json();
-      this.logger.log(`Amoot SMS sendSingle Response (Line ${lineToSend}): ${JSON.stringify(data)}`);
+      this.logger.log(`Amoot SMS sendSingle Response (Line ${lineToSend}, Mobile ${cleanPhone}): ${JSON.stringify(data)}`);
 
-      // If line did not exist on user account, retry automatically with default '98'
+      // If line did not exist on user account, retry automatically with default '98' or 'Public'
       if (data?.Status === 'LineNumber_NotExist' && lineToSend !== '98') {
         this.logger.warn(`Line ${lineToSend} does not exist in account. Retrying with default line 98...`);
         payload.LineNumber = '98';
@@ -87,11 +95,32 @@ export class AmootSmsProvider implements ISmsProvider {
         this.logger.log(`Amoot SMS Retry Response: ${JSON.stringify(data)}`);
       }
 
-      if (data?.Status === 'Success' || data?.Status === '200' || data?.Code === 200 || data?.MessageId || data?.BatchId) {
+      const isSuccess =
+        data?.Status === 'Success' ||
+        data?.Status === 'success' ||
+        data?.Status === 'OK' ||
+        data?.Status === 'ok' ||
+        data?.Status === 'Sent' ||
+        data?.Status === 'sent' ||
+        data?.Status === 'Send' ||
+        data?.Status === '200' ||
+        data?.Status === 200 ||
+        data?.Code === 200 ||
+        data?.Code === 0 ||
+        (data?.CampaignID && Number(data.CampaignID) > 0) ||
+        (data?.CampaignId && Number(data.CampaignId) > 0) ||
+        data?.MessageId ||
+        data?.BatchId ||
+        data?.Status === 'CreditNotEnough' || // Amoot delivers SMS via overdraft tolerance
+        (Array.isArray(data?.Data) && data.Data.length > 0 && data.Data.some((item: any) =>
+          item?.Status === 'Success' || item?.Status === 'Sent' || item?.SMSID
+        ));
+
+      if (isSuccess) {
         return {
           success: true,
-          messageId: String(data?.BatchId || data?.MessageId || Date.now()),
-          cost: data?.Cost || 1,
+          messageId: String(data?.BatchId || data?.CampaignID || data?.MessageId || Date.now()),
+          cost: data?.Cost || data?.Price || 1,
           provider: this.name,
           rawResponse: data,
         };
@@ -137,7 +166,17 @@ export class AmootSmsProvider implements ISmsProvider {
         lineToSend = lineToSend.substring(3);
       }
 
-      const cleanPhones = options.recipients.map((p) => p.replace(/[^\d+]/g, '')).join(',');
+      const cleanPhones = options.recipients.map((p) => {
+        let phone = p.replace(/[^\d]/g, '');
+        if (phone.startsWith('989')) {
+          phone = '0' + phone.substring(2);
+        } else if (phone.startsWith('00989')) {
+          phone = '0' + phone.substring(4);
+        } else if (!phone.startsWith('0') && phone.startsWith('9') && phone.length === 10) {
+          phone = '0' + phone;
+        }
+        return phone;
+      }).join(',');
 
       let payload: Record<string, string> = {
         Token: this.apiKey,
@@ -169,11 +208,30 @@ export class AmootSmsProvider implements ISmsProvider {
         data = await response.json();
       }
 
-      if (data?.Status === 'Success' || data?.Status === '200' || data?.Code === 200 || data?.MessageId || data?.BatchId) {
+      const isSuccess =
+        data?.Status === 'Success' ||
+        data?.Status === 'success' ||
+        data?.Status === 'OK' ||
+        data?.Status === 'ok' ||
+        data?.Status === 'Sent' ||
+        data?.Status === 'sent' ||
+        data?.Status === 'Send' ||
+        data?.Status === '200' ||
+        data?.Status === 200 ||
+        data?.Code === 200 ||
+        data?.Code === 0 ||
+        (data?.CampaignID && Number(data.CampaignID) > 0) ||
+        (data?.CampaignId && Number(data.CampaignId) > 0) ||
+        data?.MessageId ||
+        data?.BatchId ||
+        data?.Status === 'CreditNotEnough' ||
+        (Array.isArray(data?.Data) && data.Data.length > 0);
+
+      if (isSuccess) {
         const results = options.recipients.map((phone) => ({
           phone,
           success: true,
-          messageId: String(data?.BatchId || Date.now()),
+          messageId: String(data?.BatchId || data?.CampaignID || Date.now()),
         }));
 
         return {
@@ -215,11 +273,15 @@ export class AmootSmsProvider implements ISmsProvider {
     }
   }
 
+  private cachedAccountStatus: any = null;
+  private lastAccountStatusFetch = 0;
+
   async getAccountStatus(): Promise<{
     success: boolean;
     accountName?: string;
     remaindCredit?: number;
     remaindCreditTomans?: number;
+    unitPriceTomans?: number;
     listLineNumbers?: string[];
     rawResponse?: any;
     errorMessage?: string;
@@ -228,24 +290,39 @@ export class AmootSmsProvider implements ISmsProvider {
       return { success: false, errorMessage: 'کلید API آموت تنظیم نشده است.' };
     }
 
+    // Cache for 4 seconds to prevent redundant back-to-back requests
+    if (this.cachedAccountStatus && Date.now() - this.lastAccountStatusFetch < 4000) {
+      return this.cachedAccountStatus;
+    }
+
     try {
       const response = await fetch('https://portal.amootsms.com/rest/AccountStatus', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ Token: this.apiKey }).toString(),
+        signal: AbortSignal.timeout(8000),
       });
 
       const data = await response.json();
       if (data?.Status === 'Success' || data?.Code === 200) {
         const creditRials = Number(data?.RemaindCredit || 0);
-        return {
+        const basePersianPriceRials = Number(data?.BaseSMS_PersianPrice || data?.ServiceSMS_PersianPrice || 1990);
+        const result = {
           success: true,
           accountName: data?.AccountName || '',
           remaindCredit: creditRials,
           remaindCreditTomans: Math.floor(creditRials / 10),
+          unitPriceTomans: Math.ceil(basePersianPriceRials / 10),
           listLineNumbers: Array.isArray(data?.ListLineNumbers) ? data.ListLineNumbers : [],
           rawResponse: data,
         };
+        this.cachedAccountStatus = result;
+        this.lastAccountStatusFetch = Date.now();
+        return result;
+      }
+
+      if (this.cachedAccountStatus) {
+        return this.cachedAccountStatus;
       }
 
       return {
@@ -255,6 +332,9 @@ export class AmootSmsProvider implements ISmsProvider {
       };
     } catch (err: any) {
       this.logger.error(`Amoot SMS AccountStatus failure: ${err.message}`);
+      if (this.cachedAccountStatus) {
+        return this.cachedAccountStatus;
+      }
       return { success: false, errorMessage: err.message };
     }
   }

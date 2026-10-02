@@ -538,7 +538,6 @@ export const MembersPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header & Actions */}
-      {/* Header & Actions */}
       {activeTab === 'STUDENTS' ? (
         <ResponsivePageHeader
           icon={GraduationCap}
