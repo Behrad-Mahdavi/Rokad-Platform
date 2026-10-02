@@ -382,8 +382,8 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
   // Official PDF Export
   const handleDownloadPdf = () => {
     generateSchedulePdf({
-      title: 'برنامه هفتگی کلاس درس',
-      classroomName: selectedClassroom?.name || 'کلاس درس',
+      title: 'برنامه هفتگی کلاس',
+      classroomName: selectedClassroom?.name || 'کلاس',
       academicYear: '۱۴۰۵-۱۴۰۶',
       schedules,
       days: DAYS,
@@ -438,7 +438,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
             ) : classrooms.length > 0 ? (
               <div className="flex items-center space-x-2 space-x-reverse">
                 <label className="text-xs font-bold text-ink-dark whitespace-nowrap">
-                  {isParent ? 'کلاس فرزند:' : 'کلاس درس:'}
+                  {isParent ? 'کلاس فرزند:' : 'کلاس:'}
                 </label>
                 <select
                   value={selectedClassroomId}
@@ -478,11 +478,11 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
           <h3 className="text-lg font-bold text-ink-darker">
             {isStudent
               ? 'شما هنوز به هیچ کلاسی تخصیص داده نشده‌اید'
-              : 'هیچ کلاس درسی یافت نشد'}
+              : 'هیچ کلاسی یافت نشد'}
           </h3>
           <p className="text-xs text-gray-500 max-w-md mx-auto mt-2 leading-relaxed">
             {isStudent
-              ? 'دانش‌آموز گرامی، کلاس درس شما هنوز توسط مسئولین آموزش و مدیریت هنرستان در سامانه ثبت نهایی نشده است. پس از تخصیص قطعی به کلاس، برنامه هفتگی زنگ‌های کلاسی به صورت اختصاصی در این صفحه نمایش داده خواهد شد.'
+              ? 'دانش‌آموز گرامی، کلاس شما هنوز توسط مسئولین آموزش و مدیریت هنرستان در سامانه ثبت نهایی نشده است. پس از تخصیص قطعی به کلاس، برنامه هفتگی زنگ‌های کلاسی به صورت اختصاصی در این صفحه نمایش داده خواهد شد.'
               : 'در حال حاضر هیچ کلاسی در این سال تحصیلی یا برای شما ثبت نشده است.'}
           </p>
         </div>
@@ -517,7 +517,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
 
       {/* Printable Heading (Only shows in print) */}
       <div className="hidden print:block text-center mb-6">
-        <h1 className="text-xl font-bold">برنامه هفتگی کلاس درس {selectedClassroom?.name}</h1>
+        <h1 className="text-xl font-bold">برنامه هفتگی کلاس {selectedClassroom?.name}</h1>
         <p className="text-sm text-gray-600 mt-1">
           پایه {selectedClassroom?.level?.name || '—'} | رشته {selectedClassroom?.field?.name || 'عمومی'}
         </p>
@@ -572,11 +572,6 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                       {period.number}
                     </span>
                     <span className="text-xs font-bold text-ink-darker">{period.label}</span>
-                    {period.isExtracurricular && (
-                      <span className="text-[10px] bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 px-1.5 py-0.5 rounded font-extrabold border border-amber-300/80 dark:border-amber-400/40">
-                        فوق برنامه (عصر)
-                      </span>
-                    )}
                   </div>
                   <span className="font-mono text-[10px] text-gray-500 dir-ltr bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
                     {item ? `${toPersianDigits(item.startTime)} - ${toPersianDigits(item.endTime)}` : `${toPersianDigits(period.defaultStart)} - ${toPersianDigits(period.defaultEnd)}`}
@@ -615,6 +610,12 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                                       </span>
                                     </div>
                                   </div>
+                                  {item.teacher?.user && (
+                                    <div className="flex items-center gap-1 text-[11px] text-muted-foreground font-bold">
+                                      <GraduationCap className="h-3.5 w-3.5 text-primary shrink-0" />
+                                      <span>استاد: {item.teacher.user.firstName} {item.teacher.user.lastName}</span>
+                                    </div>
+                                  )}
                                 </div>
 
                                 {/* Week 2 */}
@@ -632,13 +633,19 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                                       </span>
                                     </div>
                                   </div>
+                                  {item.secondTeacher?.user && (
+                                    <div className="flex items-center gap-1 text-[11px] text-muted-foreground font-bold">
+                                      <GraduationCap className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                                      <span>استاد: {item.secondTeacher.user.firstName} {item.secondTeacher.user.lastName}</span>
+                                    </div>
+                                  )}
                                 </div>
                               </>
                             );
                           })()}
                         </div>
                       ) : (
-                        <div>
+                        <div className="space-y-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-bold text-xs sm:text-sm text-ink-darker">
                               {item.lesson?.name}
@@ -654,6 +661,12 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                               );
                             })()}
                           </div>
+                          {item.teacher?.user && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground font-bold">
+                              <GraduationCap className="h-3.5 w-3.5 text-primary shrink-0" />
+                              <span>استاد: {item.teacher.user.firstName} {item.teacher.user.lastName}</span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
