@@ -110,6 +110,7 @@ export class PollsController {
   async submitAnswers(
     @CurrentUser('id') userId: string,
     @CurrentUser('tenantId') userTenantId: string,
+    @CurrentUser('role') role: string,
     @CurrentUser('firstName') firstName: string,
     @CurrentUser('lastName') lastName: string,
     @CurrentTenant('id') tenantId: string,
@@ -127,6 +128,7 @@ export class PollsController {
       userId,
       name,
       dto,
+      role,
     );
   }
 
@@ -135,11 +137,12 @@ export class PollsController {
   async castVote(
     @CurrentUser('id') userId: string,
     @CurrentUser('tenantId') userTenantId: string,
+    @CurrentUser('role') role: string,
     @CurrentTenant('id') tenantId: string,
     @Param('id') pollId: string,
     @Body() dto: CastVoteDto,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
-    return this.pollsService.castVote(effectiveTenantId, pollId, userId, dto);
+    return this.pollsService.castVote(effectiveTenantId, pollId, userId, dto, role);
   }
 }

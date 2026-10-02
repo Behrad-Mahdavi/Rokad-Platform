@@ -91,17 +91,53 @@ export class PollsService {
   }
 
   async createPoll(tenantId: string, createdById: string, dto: CreatePollDto) {
-    const questions = Array.isArray(dto.questions) ? dto.questions : [];
+    const rawQuestions = Array.isArray(dto.questions) ? dto.questions : [];
     const options = dto.options || [];
+
+    const questionIds =
+      (dto.porscadMeta?.questionIds as string[] | undefined) ||
+      (dto as { porscadQuestionIds?: string[] }).porscadQuestionIds ||
+      [];
+
+    const questions = rawQuestions.map((q, index) => {
+      let qOptions = Array.isArray(q.options) ? q.options.filter((o: any) => typeof o === 'string' && o.trim() !== '') : [];
+      if (q.type === 'likert' && qOptions.length < 2) {
+        qOptions = [
+          'کاملاً موافق',
+          'موافق',
+          'ممتنع / خنثی',
+          'مخالف',
+          'کاملاً مخالف',
+        ];
+      } else if (q.type === 'yes_no' && qOptions.length < 2) {
+        qOptions = ['بله', 'خیر'];
+      } else if (q.type === 'statement' || q.type === 'group') {
+        qOptions = [];
+      }
+
+      const porscadQId =
+        (q as any).porscadQuestionId ||
+        questionIds[index] ||
+        null;
+
+      return {
+        ...q,
+        options: qOptions,
+        maxSelections: q.maxSelections ?? (q.type === 'choice' ? 1 : undefined),
+        required: q.type === 'statement' || q.type === 'group' ? false : (q.required ?? true),
+        displayMode: q.displayMode ?? 'buttons',
+        porscadQuestionId: porscadQId,
+      };
+    });
 
     if (questions.length === 0) {
       if (options.length < 2 && dto.pollType !== 'RATING_SCALE') {
         throw new BadRequestException('نظرسنجی باید حداقل دارای ۲ گزینه باشد');
       }
     } else {
+      const MUST_HAVE_OPTIONS = new Set(['choice', 'picture_choice', 'dropdown', 'ranking', 'matrix']);
       for (const q of questions) {
-        const needsOptions = OPTION_TYPES.has(q.type);
-        if (needsOptions && (!q.options || q.options.length < 2)) {
+        if (MUST_HAVE_OPTIONS.has(q.type) && (!q.options || q.options.length < 2)) {
           throw new BadRequestException(
             `سوال «${q.title}» باید حداقل ۲ گزینه داشته باشد`,
           );
@@ -109,18 +145,10 @@ export class PollsService {
       }
     }
 
-    const questionIds =
-      (dto.porscadMeta?.questionIds as string[] | undefined) ||
-      (dto as { porscadQuestionIds?: string[] }).porscadQuestionIds ||
-      [];
-
-    const questionsJson = questions.map((q, index) => ({
-      ...q,
-      maxSelections: q.maxSelections ?? (q.type === 'choice' ? 1 : undefined),
-      required: q.required ?? true,
-      displayMode: q.displayMode ?? 'buttons',
-      porscadQuestionId: questionIds[index] || null,
-    }));
+    const start = dto.startDate ? new Date(dto.startDate) : new Date();
+    const end = dto.endDate ? new Date(dto.endDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const validStart = isNaN(start.getTime()) ? new Date() : start;
+    const validEnd = isNaN(end.getTime()) ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : end;
 
     try {
       const created = await this.prisma.poll.create({
@@ -131,11 +159,11 @@ export class PollsService {
           pollType: dto.pollType || 'SINGLE_CHOICE',
           targetAudience: dto.targetAudience || 'ALL',
           targetClassIds: dto.targetClassIds || [],
-          startDate: new Date(dto.startDate),
-          endDate: new Date(dto.endDate),
+          startDate: validStart,
+          endDate: validEnd,
           isAnonymous: dto.isAnonymous || false,
           createdById,
-          questions: questionsJson as any,
+          questions: questions as any,
           porscadFormId: dto.porscadFormId,
           porscadFormPublicId: dto.porscadFormPublicId,
           options: {
@@ -543,6 +571,7 @@ export class PollsService {
     userId: string,
     respondentName: string,
     dto: SubmitPollAnswersDto,
+    role?: string,
   ) {
     try {
       const poll = await this.prisma.poll.findFirst({
@@ -552,13 +581,22 @@ export class PollsService {
         throw new NotFoundException('نظرسنجی یافت نشد');
       }
 
+      if (poll.targetAudience !== 'ALL' && role) {
+        const aud = this.audienceForRole(role);
+        if (aud && poll.targetAudience !== aud) {
+          throw new BadRequestException(
+            `شما دسترسی لازم برای شرکت در این نظرسنجی را ندارید (مختص ${poll.targetAudience === 'STUDENTS' ? 'دانش‌آموزان' : poll.targetAudience === 'PARENTS' ? 'اولیا' : poll.targetAudience === 'TEACHERS' ? 'معلمان' : 'کادر مدرسه'})`,
+          );
+        }
+      }
+
       const now = new Date();
       if (poll.isArchived) {
         throw new BadRequestException('این نظرسنجی آرشیو شده و پذیرش پاسخ نیست');
       }
       if (now < poll.startDate || now > poll.endDate || poll.isClosed) {
         throw new BadRequestException(
-          'مهلت شرکت در این نظرسنجی به پایان رسیده یا هنوز آغاز نشده است',
+          'مهلت شرکت در این نظرسنجی به پایان رسیده یا نظرسنجی غیرفعال شده است',
         );
       }
 
@@ -585,7 +623,7 @@ export class PollsService {
             pollId,
             userId,
             selectedOptionIds,
-            ratingValue: typeof firstNumeric === 'number' ? firstNumeric : null,
+            ratingValue: typeof firstNumeric === 'number' && Number.isFinite(firstNumeric) ? Math.round(firstNumeric) : null,
             textResponse:
               typeof dto.answers?.comment === 'string'
                 ? dto.answers.comment
@@ -790,6 +828,7 @@ export class PollsService {
     pollId: string,
     userId: string,
     dto: CastVoteDto,
+    role?: string,
   ) {
     try {
       const poll = await this.prisma.poll.findFirst({
@@ -799,13 +838,22 @@ export class PollsService {
         throw new NotFoundException('نظرسنجی یافت نشد');
       }
 
+      if (poll.targetAudience !== 'ALL' && role) {
+        const aud = this.audienceForRole(role);
+        if (aud && poll.targetAudience !== aud) {
+          throw new BadRequestException(
+            `شما دسترسی لازم برای شرکت در این نظرسنجی را ندارید (مختص ${poll.targetAudience === 'STUDENTS' ? 'دانش‌آموزان' : poll.targetAudience === 'PARENTS' ? 'اولیا' : poll.targetAudience === 'TEACHERS' ? 'معلمان' : 'کادر مدرسه'})`,
+          );
+        }
+      }
+
       const now = new Date();
       if (poll.isArchived) {
         throw new BadRequestException('این نظرسنجی آرشیو شده و پذیرش رأی نیست');
       }
       if (now < poll.startDate || now > poll.endDate || poll.isClosed) {
         throw new BadRequestException(
-          'مهلت شرکت در این نظرسنجی به پایان رسیده یا هنوز آغاز نشده است',
+          'مهلت شرکت در این نظرسنجی به پایان رسیده یا نظرسنجی غیرفعال شده است',
         );
       }
 
@@ -823,7 +871,7 @@ export class PollsService {
             pollId,
             userId,
             selectedOptionIds: dto.selectedOptionIds || [],
-            ratingValue: dto.ratingValue,
+            ratingValue: typeof dto.ratingValue === 'number' && Number.isFinite(dto.ratingValue) ? Math.round(dto.ratingValue) : null,
             textResponse: dto.textResponse,
           },
         });

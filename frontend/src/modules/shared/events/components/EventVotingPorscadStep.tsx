@@ -181,9 +181,19 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
       };
 
       let resultPoll: PorscadPollData;
-      if (porscadPoll?.formId) {
-        resultPoll = await porscadClient.updateExistingPorscadForm(payload);
-        toast.success('فرم موجود با موفقیت ویرایش و روی پرس‌کاد اعمال شد!');
+      const isRemoteForm =
+        porscadPoll?.syncStatus === 'PORSCAD_CLOUD_SYNCED' &&
+        !!porscadPoll?.formId &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(porscadPoll.formId);
+
+      if (isRemoteForm) {
+        try {
+          resultPoll = await porscadClient.updateExistingPorscadForm(payload);
+          toast.success('فرم موجود با موفقیت ویرایش و روی پرس‌کاد اعمال شد!');
+        } catch {
+          resultPoll = await porscadClient.createCustomPorscadForm(payload);
+          toast.success('فرم نظرسنجی رویداد با موفقیت در پرس‌کاد ایجاد و برای دانش‌آموزان فعال شد!');
+        }
       } else {
         resultPoll = await porscadClient.createCustomPorscadForm(payload);
         toast.success('فرم نظرسنجی رویداد با موفقیت در پرس‌کاد ایجاد و برای دانش‌آموزان فعال شد!');

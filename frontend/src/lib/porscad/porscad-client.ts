@@ -562,8 +562,9 @@ export class PorscadService {
     maxSelections: number;
   }): Promise<PorscadPollData> {
     const existing = this.getLocalPollData(params.eventId);
-    if (!existing || !existing.formId) {
-      throw new Error('فرم موجودی برای ویرایش یافت نشد. ابتدا فرم را یک‌بار بسازید.');
+    const isUuid = existing?.formId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(existing.formId);
+    if (!existing || !existing.formId || !isUuid) {
+      return this.createCustomPorscadForm(params);
     }
 
     const token = this.getToken();
@@ -588,12 +589,8 @@ export class PorscadService {
     });
 
     if (!patchForm.ok) {
-      let errMsg = 'خطا در ویرایش فرم پرس‌کاد';
-      try {
-        const errJson = await patchForm.json();
-        errMsg = errJson.message || errJson.msg || errMsg;
-      } catch {}
-      throw new Error(`خطای ویرایش پرس‌کاد: ${errMsg}`);
+      // If remote form does not exist on Supabase, create a new one seamlessly
+      return this.createCustomPorscadForm(params);
     }
 
     if (existing.questionId && !existing.questionId.startsWith('porscad_q_') && !existing.questionId.startsWith('q_')) {

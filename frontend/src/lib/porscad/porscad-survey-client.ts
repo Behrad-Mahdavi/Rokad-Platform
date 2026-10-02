@@ -508,7 +508,8 @@ export class PorscadSurveyClient {
       // 2. Submit individual answers for each question
       let insertedCount = 0;
       for (let i = 0; i < params.questions.length; i++) {
-        const qid = params.questionIds[i];
+        const q = params.questions[i];
+        const qid = q?.porscadQuestionId || params.questionIds?.[i];
         if (!qid) continue;
 
         const raw = params.answersByIndex[String(i)];
