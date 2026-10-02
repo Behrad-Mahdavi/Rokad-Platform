@@ -686,7 +686,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                     className="w-full py-2.5 rounded-xl border border-dashed border-primary/40 bg-primary-50/10 hover:bg-primary-50/30 text-primary flex items-center justify-center gap-1.5 text-xs font-bold transition-colors"
                   >
                     <Plus className="h-4 w-4" />
-                    <span>تخصیص درس برای این زنگ</span>
+                    <span>تخصیص درس</span>
                   </button>
                 ) : (
                   <div className="py-2 text-center text-xs text-gray-400 bg-gray-50/50 rounded-xl border border-dashed border-gray-100">
@@ -921,10 +921,10 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
             setError(null);
             setConflictWarning(null);
           }}
-          title={`تخصیص درس به ${DAYS.find((d) => d.key === form.dayOfWeek)?.label || ''} - ${
+          title={`تخصیص درس (${DAYS.find((d) => d.key === form.dayOfWeek)?.label || ''} - ${
             PERIODS.find((p) => p.number === form.periodNumber)?.label || ''
-          }`}
-          description={`کلاس هدف: ${selectedClassroom?.name || ''}`}
+          })`}
+          description={selectedClassroom?.name ? `کلاس: ${selectedClassroom.name}` : undefined}
           maxWidth="lg"
         >
           {error && (
@@ -940,11 +940,8 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
               <div className="flex items-start gap-2.5 text-amber-900">
                 <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <h4 className="font-extrabold text-sm text-amber-900">هشدار تداخل زمانی دبیر</h4>
+                  <h4 className="font-extrabold text-sm text-amber-900">هشدار تداخل دبیر</h4>
                   <p className="text-amber-800 leading-relaxed font-medium">{conflictWarning}</p>
-                  <p className="text-[11px] text-amber-700 mt-1">
-                    در صورت لزوم می‌توانید بدون ایجاد مانع، این ساعت را با وجود تداخل تایید و ثبت کنید.
-                  </p>
                 </div>
               </div>
 
@@ -956,7 +953,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                   onClick={() => setConflictWarning(null)}
                   className="text-amber-900 hover:bg-amber-100/70 text-xs"
                 >
-                  ویرایش دبیر یا ساعت
+                  ویرایش
                 </Button>
                 <Button
                   type="button"
@@ -967,7 +964,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                   className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-sm flex items-center gap-1.5"
                 >
                   <CheckCircle2 className="h-4 w-4" />
-                  <span>تایید و ثبت با وجود تداخل</span>
+                  <span>ثبت با وجود تداخل</span>
                 </Button>
               </div>
             </div>
@@ -975,37 +972,32 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
 
           <form onSubmit={handleSaveSchedule} className="space-y-4">
             {/* Single Bell (Alternating Weeks) Toggle Switch */}
-            <div className="bg-white dark:bg-[#151C28] bg-gradient-to-l from-primary/10 via-primary/5 to-transparent dark:from-primary/20 dark:via-transparent dark:to-transparent rounded-2xl border border-primary/20 dark:border-[#242F42] p-4">
+            <div className="bg-white dark:bg-[#151C28] bg-gradient-to-l from-primary/10 via-primary/5 to-transparent dark:from-primary/20 dark:via-transparent dark:to-transparent rounded-2xl border border-primary/20 dark:border-[#242F42] p-3.5">
               <div
                 className="flex items-center justify-between cursor-pointer"
                 onClick={() => setForm((f) => ({ ...f, isSplitPeriod: !f.isSplitPeriod }))}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                   <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
                       form.isSplitPeriod
                         ? 'bg-primary text-white shadow-xs'
                         : 'bg-white text-gray-500 border border-gray-200'
                     }`}
                   >
-                    <Layers className="w-5 h-5" />
+                    <Layers className="w-4 h-4" />
                   </div>
-                  <div>
-                    <div className="font-extrabold text-sm text-ink-darker flex items-center gap-2">
-                      <span>فعال‌سازی یک هفته در میان</span>
-                      <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-colors ${
-                          form.isSplitPeriod
-                            ? 'bg-primary text-white'
-                            : 'bg-gray-100 text-gray-600 border border-gray-200'
-                        }`}
-                      >
-                        {form.isSplitPeriod ? 'فعال (هفته اول / هفته دوم)' : 'غیرفعال (ثابت هر هفته)'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      امکان تخصیص چرخشی این زنگ بین ۲ درس مجزا (یک هفته درس اول و یک هفته درس دوم)
-                    </p>
+                  <div className="font-extrabold text-xs sm:text-sm text-ink-darker flex items-center gap-2">
+                    <span>یک هفته در میان</span>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-colors ${
+                        form.isSplitPeriod
+                          ? 'bg-primary text-white'
+                          : 'bg-gray-100 text-gray-600 border border-gray-200'
+                      }`}
+                    >
+                      {form.isSplitPeriod ? 'فعال' : 'غیرفعال'}
+                    </span>
                   </div>
                 </div>
 
@@ -1032,16 +1024,16 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
             </div>
 
             {!form.isSplitPeriod ? (
-              /* Standard Full-Period Form (90 min) */
-              <div className="space-y-4">
+              /* Standard Full-Period Form */
+              <div className="space-y-3.5">
                 <div>
-                  <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
-                    انتخاب عنوان درس <span className="text-red-500">*</span>
+                  <label className="block text-xs font-bold text-ink-dark mb-1 text-right">
+                    درس <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={form.lessonId}
                     onChange={(e) => handleLessonChange(e.target.value)}
-                    className="flex h-11 w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                    className="flex h-10 w-full rounded-xl border border-gray-300 bg-white dark:bg-[#151C28] dark:border-[#242F42] px-3.5 text-xs sm:text-sm text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
                     required
                   >
                     <option value="" disabled>
@@ -1049,70 +1041,61 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                     </option>
                     {availableLessons.map((l) => (
                       <option key={l.id} value={l.id}>
-                        {l.name} ({l.code}) — {getLessonTypeInfo(l.type).label}
+                        {l.name} ({l.code})
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
-                    انتخاب دبیر مدرس <span className="text-red-500">*</span>
+                  <label className="block text-xs font-bold text-ink-dark mb-1 text-right">
+                    دبیر <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={form.teacherId}
                     onChange={(e) => setForm({ ...form, teacherId: e.target.value })}
-                    className="flex h-11 w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                    className="flex h-10 w-full rounded-xl border border-gray-300 bg-white dark:bg-[#151C28] dark:border-[#242F42] px-3.5 text-xs sm:text-sm text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
                     required
                   >
                     <option value="" disabled>
                       -- انتخاب دبیر --
                     </option>
-                    {teachers.map((t) => {
-                      const teachesThisLesson = t.teacherLessons?.some(
-                        (tl: any) => (tl.lessonId || tl.lesson?.id) === form.lessonId,
-                      );
-                      return (
-                        <option key={t.id} value={t.id}>
-                          {t.user?.firstName} {t.user?.lastName}{' '}
-                          {teachesThisLesson ? '[مدرس مصوب این درس]' : ''}
-                        </option>
-                      );
-                    })}
+                    {teachers.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.user?.firstName} {t.user?.lastName}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
             ) : (
               /* Alternating-Period Form (Week 1 + Week 2 with Reordering) */
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {/* 1st Half (Week 1) */}
-                <div className="bg-primary-50/20 border border-primary/25 rounded-2xl p-4 space-y-3">
+                <div className="bg-primary-50/20 border border-primary/25 rounded-2xl p-3.5 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary text-white text-xs font-bold">
-                      <span>درس هفته اول</span>
-                    </span>
-                    <span className="text-[11px] text-gray-500 font-mono">
-                      {form.startTime} تا {form.endTime}
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-primary text-white text-[11px] font-bold">
+                      هفته اول
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
                       <label className="block text-xs font-bold text-ink-dark mb-1">
-                        درس هفته اول <span className="text-red-500">*</span>
+                        درس <span className="text-red-500">*</span>
                       </label>
                       <select
                         value={form.lessonId}
                         onChange={(e) => handleLessonChange(e.target.value)}
-                        className="flex h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-xs text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                        className="flex h-10 w-full rounded-xl border border-gray-300 bg-white dark:bg-[#151C28] dark:border-[#242F42] px-3 text-xs text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
                         required
                       >
                         <option value="" disabled>
-                          -- انتخاب درس هفته اول --
+                          -- انتخاب درس --
                         </option>
                         {availableLessons.map((l) => (
                           <option key={l.id} value={l.id}>
-                            {l.name} ({l.code}) — {getLessonTypeInfo(l.type).label}
+                            {l.name} ({l.code})
                           </option>
                         ))}
                       </select>
@@ -1120,16 +1103,16 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
 
                     <div>
                       <label className="block text-xs font-bold text-ink-dark mb-1">
-                        دبیر هفته اول <span className="text-red-500">*</span>
+                        دبیر <span className="text-red-500">*</span>
                       </label>
                       <select
                         value={form.teacherId}
                         onChange={(e) => setForm({ ...form, teacherId: e.target.value })}
-                        className="flex h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-xs text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                        className="flex h-10 w-full rounded-xl border border-gray-300 bg-white dark:bg-[#151C28] dark:border-[#242F42] px-3 text-xs text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
                         required
                       >
                         <option value="" disabled>
-                          -- انتخاب دبیر هفته اول --
+                          -- انتخاب دبیر --
                         </option>
                         {teachers.map((t) => (
                           <option key={t.id} value={t.id}>
@@ -1146,42 +1129,39 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                   <button
                     type="button"
                     onClick={handleSwapSplitOrder}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 hover:text-primary transition-all text-xs font-bold shadow-xs active:scale-95"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-300 bg-white hover:bg-gray-100 hover:text-primary transition-all text-xs font-bold shadow-xs active:scale-95"
                     title="جابجایی درس و دبیر هفته اول و هفته دوم"
                   >
                     <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
-                    <span>جابجایی ترتیب هفته‌ها (هفته اول ⇄ هفته دوم)</span>
+                    <span>جابجایی هفته‌ها</span>
                   </button>
                 </div>
 
                 {/* 2nd Half (Week 2) */}
-                <div className="bg-purple-50/30 border border-purple-200/80 rounded-2xl p-4 space-y-3">
+                <div className="bg-purple-50/30 border border-purple-200/80 rounded-2xl p-3.5 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-700 text-white text-xs font-bold">
-                      <span>درس هفته دوم</span>
-                    </span>
-                    <span className="text-[11px] text-gray-500 font-mono">
-                      {form.startTime} تا {form.endTime}
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-purple-700 text-white text-[11px] font-bold">
+                      هفته دوم
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
                       <label className="block text-xs font-bold text-ink-dark mb-1">
-                        درس هفته دوم <span className="text-red-500">*</span>
+                        درس <span className="text-red-500">*</span>
                       </label>
                       <select
                         value={form.secondLessonId}
                         onChange={(e) => handleSecondLessonChange(e.target.value)}
-                        className="flex h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-xs text-ink-normal focus:outline-none focus:ring-2 focus:ring-purple-600 font-bold"
+                        className="flex h-10 w-full rounded-xl border border-gray-300 bg-white dark:bg-[#151C28] dark:border-[#242F42] px-3 text-xs text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-600 font-bold"
                         required
                       >
                         <option value="" disabled>
-                          -- انتخاب درس هفته دوم --
+                          -- انتخاب درس --
                         </option>
                         {availableLessons.map((l) => (
                           <option key={l.id} value={l.id}>
-                            {l.name} ({l.code}) — {getLessonTypeInfo(l.type).label}
+                            {l.name} ({l.code})
                           </option>
                         ))}
                       </select>
@@ -1189,16 +1169,16 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
 
                     <div>
                       <label className="block text-xs font-bold text-ink-dark mb-1">
-                        دبیر هفته دوم <span className="text-red-500">*</span>
+                        دبیر <span className="text-red-500">*</span>
                       </label>
                       <select
                         value={form.secondTeacherId}
                         onChange={(e) => setForm({ ...form, secondTeacherId: e.target.value })}
-                        className="flex h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-xs text-ink-normal focus:outline-none focus:ring-2 focus:ring-purple-600 font-bold"
+                        className="flex h-10 w-full rounded-xl border border-gray-300 bg-white dark:bg-[#151C28] dark:border-[#242F42] px-3 text-xs text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-600 font-bold"
                         required
                       >
                         <option value="" disabled>
-                          -- انتخاب دبیر هفته دوم --
+                          -- انتخاب دبیر --
                         </option>
                         {teachers.map((t) => (
                           <option key={t.id} value={t.id}>
@@ -1221,15 +1201,10 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                 <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-primary/5 border border-primary/20 text-xs">
                   <div className="flex items-center gap-1.5 text-ink-darker font-bold">
                     <Clock className="w-4 h-4 text-primary shrink-0" />
-                    <span>ساعت مصوب مدرسه برای {currentPeriodDef.label}:</span>
+                    <span>ساعت {currentPeriodDef.label}:</span>
                     <span className="font-mono text-primary font-black dir-ltr">
                       {toPersianDigits(currentPeriodDef.defaultStart)} تا {toPersianDigits(currentPeriodDef.defaultEnd)}
                     </span>
-                    {currentPeriodDef.isExtracurricular && (
-                      <span className="text-[10px] bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 px-1.5 py-0.5 rounded font-black border border-amber-300/80 dark:border-amber-400/40">
-                        فوق برنامه (عصر)
-                      </span>
-                    )}
                   </div>
                   {!isDefault && (
                     <button
@@ -1241,9 +1216,9 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                           endTime: currentPeriodDef.defaultEnd,
                         }))
                       }
-                      className="text-[11px] font-bold text-primary hover:underline hover:text-primary-dark cursor-pointer"
+                      className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
                     >
-                      تنظیم به ساعت مصوب مدرسه ←
+                      تنظیم ساعت پیش‌فرض ←
                     </button>
                   )}
                 </div>
@@ -1251,36 +1226,36 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
             })()}
 
             {/* Time Slot Inputs */}
-            <div className="grid grid-cols-2 gap-4 pt-1">
+            <div className="grid grid-cols-2 gap-3 pt-1">
               <div>
-                <label className="block text-xs font-medium text-ink-normal mb-1.5 text-right">
-                  ساعت شروع کل اسلات
+                <label className="block text-xs font-medium text-ink-normal mb-1 text-right">
+                  ساعت شروع
                 </label>
                 <input
                   type="time"
                   value={form.startTime}
                   onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-                  className="flex h-10 w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-sm font-mono text-center text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="flex h-10 w-full rounded-xl border border-gray-300 bg-white dark:bg-[#151C28] dark:border-[#242F42] px-3.5 py-2 text-sm font-mono text-center text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-ink-normal mb-1.5 text-right">
-                  ساعت پایان کل اسلات
+                <label className="block text-xs font-medium text-ink-normal mb-1 text-right">
+                  ساعت پایان
                 </label>
                 <input
                   type="time"
                   value={form.endTime}
                   onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-                  className="flex h-10 w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-sm font-mono text-center text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="flex h-10 w-full rounded-xl border border-gray-300 bg-white dark:bg-[#151C28] dark:border-[#242F42] px-3.5 py-2 text-sm font-mono text-center text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
                   required
                 />
               </div>
             </div>
 
             {/* Allow Conflict Checkbox Option */}
-            <label className="flex items-center gap-2.5 p-3 rounded-xl border border-amber-200 bg-amber-50/60 hover:bg-amber-100/50 cursor-pointer transition-colors text-xs text-amber-900">
+            <label className="flex items-center gap-2 p-2.5 rounded-xl border border-amber-200 bg-amber-50/60 hover:bg-amber-100/50 cursor-pointer transition-colors text-xs text-amber-900">
               <input
                 type="checkbox"
                 checked={form.allowTeacherConflict}
@@ -1288,11 +1263,11 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                 className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500 border-amber-300"
               />
               <span className="font-bold">
-                تایید و ثبت حتی با وجود تداخل زمانی دبیر با کلاس‌های دیگر (عدم ممانعت سیستم)
+                ثبت حتی در صورت تداخل زمانی دبیر
               </span>
             </label>
 
-            <div className="flex justify-end space-x-2 space-x-reverse pt-3 border-t border-gray-100">
+            <div className="flex justify-end space-x-2 space-x-reverse pt-3 border-t border-gray-100 dark:border-[#242F42]">
               <Button
                 type="button"
                 variant="ghost"
@@ -1311,10 +1286,10 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                 className={conflictWarning ? 'bg-amber-600 hover:bg-amber-700 font-black shadow-sm' : ''}
               >
                 {conflictWarning
-                  ? 'تایید و ثبت با وجود تداخل'
+                  ? 'ثبت با وجود تداخل'
                   : form.scheduleId
-                  ? 'بروزرسانی زنگ درسی'
-                  : 'ثبت در برنامه کلاسی'}
+                  ? 'ذخیره تغییرات'
+                  : 'ثبت درس'}
               </Button>
             </div>
           </form>
