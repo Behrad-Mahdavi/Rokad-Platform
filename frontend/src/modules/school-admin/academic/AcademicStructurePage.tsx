@@ -846,19 +846,17 @@ export const AcademicStructurePage: React.FC = () => {
               header: 'عملیات',
               mobilePriority: 'hidden',
               cell: (y) => (
-                <div className="flex items-center gap-1.5 justify-end">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenEditYear(y);
-                    }}
-                    className="p-2 rounded-xl text-blue-500 hover:text-white hover:bg-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 hover:border-blue-500 transition-all cursor-pointer shadow-2xs"
-                    title="ویرایش سال تحصیلی"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenEditYear(y);
+                  }}
+                  className="p-2 rounded-xl text-blue-500 hover:text-white hover:bg-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 hover:border-blue-500 transition-all cursor-pointer shadow-2xs"
+                  title="ویرایش سال تحصیلی"
+                >
+                  <Edit3 className="w-4 h-4" />
+                </button>
               ),
             },
           ]}
@@ -1365,10 +1363,11 @@ export const AcademicStructurePage: React.FC = () => {
                 setIsEditYearModalOpen(false);
                 setDeleteConfirmYear({ id: editingYearId, name: editYearForm.name });
               }}
-              className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="p-2 rounded-xl text-rose-500 hover:text-white hover:bg-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 hover:border-rose-500 transition-all cursor-pointer shadow-2xs shrink-0"
+              title="حذف سال تحصیلی"
+              aria-label="حذف سال تحصیلی"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>حذف سال تحصیلی</span>
+              <Trash2 className="w-4 h-4" />
             </button>
 
             <div className="flex items-center gap-2">
