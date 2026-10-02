@@ -1629,7 +1629,7 @@ export const AcademicStructurePage: React.FC = () => {
                 انصراف
               </Button>
               <Button type="submit" variant="primary" isLoading={isSubmitting} className="h-10 px-4 text-xs sm:text-sm font-bold">
-                ذخیره
+                ذخیره تغییرات
               </Button>
             </div>
           </div>
