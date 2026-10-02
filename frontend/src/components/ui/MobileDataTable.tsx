@@ -200,24 +200,31 @@ export function MobileDataTable<T>({
 
               {/* Collapsible Details (Detail Columns) */}
               {detailCols.length > 0 && (
-                <div className="pt-2.5 border-t border-gray-100 dark:border-gray-800">
+                <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
                   <button
                     type="button"
                     onClick={() => toggleExpand(key)}
-                    className="w-full min-h-[40px] py-1.5 flex items-center justify-between text-xs font-bold text-primary hover:text-primary-dark transition-colors"
+                    className="w-full min-h-[38px] py-1.5 px-3 rounded-xl bg-gray-50/80 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-between text-xs font-black text-primary transition-all cursor-pointer border border-gray-200/60 dark:border-gray-700/60 select-none"
                   >
                     <span>{isExpanded ? 'بستن جزئیات تکمیلی' : 'مشاهده جزئیات بیشتر'}</span>
-                    {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    </div>
                   </button>
 
                   {isExpanded && (
-                    <div className="mt-2.5 p-3.5 bg-gray-50 dark:bg-[#1C2536] rounded-xl border border-gray-200/60 dark:border-gray-700/60 space-y-2.5 text-xs animate-in fade-in">
+                    <div className="mt-2.5 p-3 rounded-xl bg-gray-50/90 dark:bg-[#1C2536] border border-gray-200/70 dark:border-gray-700/70 space-y-2 text-xs divide-y divide-gray-200/60 dark:divide-gray-700/60 animate-in fade-in">
                       {detailCols.map((col, cIdx) => (
-                        <div key={getColKey(col, cIdx)} className="flex items-center justify-between gap-3 py-1">
-                          <span className="text-gray-500 dark:text-gray-400 font-medium shrink-0">{col.header}:</span>
-                          <span className="font-semibold text-ink-dark dark:text-gray-200 text-left truncate">
-                            {renderCell(col, item, index)}
+                        <div
+                          key={getColKey(col, cIdx)}
+                          className={`flex items-center justify-between gap-3 ${cIdx > 0 ? 'pt-2' : ''} py-0.5`}
+                        >
+                          <span className="text-gray-500 dark:text-gray-400 font-medium shrink-0 text-xs">
+                            {col.header}:
                           </span>
+                          <div className="font-bold text-ink-darker dark:text-gray-100 text-right">
+                            {renderCell(col, item, index)}
+                          </div>
                         </div>
                       ))}
                     </div>

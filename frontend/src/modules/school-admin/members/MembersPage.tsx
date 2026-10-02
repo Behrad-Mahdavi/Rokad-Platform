@@ -1062,10 +1062,10 @@ export const MembersPage: React.FC = () => {
               header: 'شماره تماس',
               mobilePriority: 'detail',
               render: (t) => (
-                <div className="text-xs">
-                  <div className="font-mono text-gray-700 dark:text-gray-300 font-bold">{t.user?.phone || '—'}</div>
+                <div className="text-xs flex items-center gap-2 flex-wrap justify-end">
+                  <span className="font-mono text-gray-700 dark:text-gray-300 font-bold" dir="ltr">{t.user?.phone || '—'}</span>
                   {t.landlinePhone && (
-                    <div className="font-mono text-[10px] text-gray-500">ثابت: {t.landlinePhone}</div>
+                    <span className="font-mono text-[10px] text-gray-500 bg-gray-200/70 dark:bg-gray-700 px-1.5 py-0.5 rounded" dir="ltr">ثابت: {t.landlinePhone}</span>
                   )}
                 </div>
               ),
@@ -1084,11 +1084,11 @@ export const MembersPage: React.FC = () => {
                 };
                 const empLabel = empTypeMap[t.employmentType] || 'دبیر';
                 return (
-                  <div className="flex flex-col gap-1 items-start">
-                    <Badge variant={isSuspended ? 'destructive' : 'male'}>
+                  <div className="flex items-center gap-2 justify-end">
+                    <Badge variant={isSuspended ? 'destructive' : 'male'} className="text-[10px] px-2 py-0.5">
                       {isSuspended ? 'حساب معلق' : 'دبیر فعال'}
                     </Badge>
-                    <span className="text-[10px] text-gray-500 font-medium">{empLabel}</span>
+                    <span className="text-[11px] text-gray-600 dark:text-gray-300 font-bold">{empLabel}</span>
                   </div>
                 );
               },
