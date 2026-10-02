@@ -28,10 +28,16 @@ import {
   Check,
   FileText,
   SlidersHorizontal,
+  Building2,
+  BookOpen,
+  GraduationCap,
+  Clock,
+  Layers,
 } from 'lucide-react';
 
 interface DisciplinaryMatter {
   id: string;
+  source?: 'DIRECT_MATTER' | 'CLASSROOM_SESSION';
   studentId: string;
   type: 'POSITIVE' | 'NEGATIVE' | 'WARNING' | 'SUSPENSION' | 'COUNSELING_REFERRAL';
   title: string;
@@ -40,6 +46,19 @@ interface DisciplinaryMatter {
   actionTaken?: string;
   notifiedParents: boolean;
   reportedAt: string;
+  sessionDate?: string;
+  oralGrade?: number | null;
+  periodNumber?: number | null;
+  classroom?: {
+    id: string;
+    name: string;
+    roomNumber?: string;
+  } | null;
+  lesson?: {
+    id: string;
+    name: string;
+    code?: string;
+  } | null;
   student: {
     id: string;
     studentNumber?: string;
@@ -52,6 +71,7 @@ interface DisciplinaryMatter {
   reportedBy: {
     firstName: string;
     lastName: string;
+    role?: string;
   };
 }
 
@@ -483,6 +503,14 @@ export const MattersPage: React.FC = () => {
                       <span>{meta.label}</span>
                     </span>
 
+                    {/* Oral Grade Badge */}
+                    {matter.oralGrade !== null && matter.oralGrade !== undefined && (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shadow-2xs">
+                        <GraduationCap className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                        <span>نمره پرسش: {toPersianDigits(matter.oralGrade)} از ۲۰</span>
+                      </span>
+                    )}
+
                     {/* Points Chip */}
                     {matter.points !== 0 && (
                       <span
@@ -493,6 +521,13 @@ export const MattersPage: React.FC = () => {
                         }`}
                       >
                         {isPos ? `+${toPersianDigits(matter.points)} امتیاز` : `${toPersianDigits(matter.points)} امتیاز`}
+                      </span>
+                    )}
+
+                    {/* Classroom Session Tag */}
+                    {matter.source === 'CLASSROOM_SESSION' && (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-amber-700 dark:text-amber-300 font-bold bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-md">
+                        دفتر کلاسی
                       </span>
                     )}
 
@@ -516,6 +551,36 @@ export const MattersPage: React.FC = () => {
                   </p>
                 </div>
 
+                {/* Classroom Session Details Strip (Classroom, Lesson, Period, Session Date) */}
+                {(matter.classroom || matter.lesson || matter.periodNumber || matter.sessionDate) && (
+                  <div className="p-3 rounded-xl bg-gray-50/90 dark:bg-[#151C28]/90 border border-gray-200/70 dark:border-[#242F42] flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+                    {matter.classroom && (
+                      <div className="flex items-center gap-1.5 text-ink-darker dark:text-white font-bold">
+                        <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span>کلاس: {matter.classroom.name}</span>
+                      </div>
+                    )}
+                    {matter.lesson && (
+                      <div className="flex items-center gap-1.5 text-ink-darker dark:text-white font-bold">
+                        <BookOpen className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span>درس: {matter.lesson.name}</span>
+                      </div>
+                    )}
+                    {matter.periodNumber && (
+                      <div className="flex items-center gap-1.5 text-muted-foreground font-bold">
+                        <Layers className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span>زنگ {toPersianDigits(matter.periodNumber)}</span>
+                      </div>
+                    )}
+                    {matter.sessionDate && (
+                      <div className="flex items-center gap-1.5 text-muted-foreground font-bold">
+                        <Calendar className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span>تاریخ جلسه: {formatJalaliDisplay(matter.sessionDate, false)}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Action Taken Callout */}
                 {matter.actionTaken && (
                   <div className="p-3 rounded-xl bg-primary-light/40 dark:bg-[#151C28] border-r-4 border-r-primary text-xs flex items-start gap-2.5">
@@ -536,7 +601,7 @@ export const MattersPage: React.FC = () => {
                     </span>
                     <span className="text-gray-300 dark:text-gray-600 hidden sm:inline">•</span>
                     <span className="inline-flex items-center gap-1.5 font-medium">
-                      <Calendar className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <Clock className="w-3.5 h-3.5 text-primary shrink-0" />
                       <span>{formatJalaliDisplay(matter.reportedAt, true)}</span>
                     </span>
                   </div>

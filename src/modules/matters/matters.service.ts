@@ -131,6 +131,25 @@ export class MattersService {
   }
 
   async deleteMatter(tenantId: string, matterId: string) {
+    if (matterId.startsWith('att-')) {
+      const attId = matterId.replace('att-', '');
+      const att = await this.prisma.studentAttendance.findFirst({
+        where: { id: attId, tenantId },
+      });
+      if (!att) {
+        throw new NotFoundException('مورد انضباطی یا ارزیابی جلسه یافت نشد');
+      }
+      return this.prisma.studentAttendance.update({
+        where: { id: attId },
+        data: {
+          oralGrade: null,
+          rewardDisciplineType: null,
+          rewardDisciplineNote: null,
+          sessionNote: null,
+        },
+      });
+    }
+
     const matter = await this.prisma.disciplinaryMatter.findFirst({
       where: { id: matterId, tenantId },
     });
@@ -141,6 +160,100 @@ export class MattersService {
     return this.prisma.disciplinaryMatter.delete({
       where: { id: matterId },
     });
+  }
+
+  private mapAttendanceToMatter(att: any) {
+    let type: 'POSITIVE' | 'NEGATIVE' | 'WARNING' | 'SUSPENSION' | 'COUNSELING_REFERRAL' = 'POSITIVE';
+    let points = 0;
+    let title = 'ارزیابی جلسه کلاسی';
+
+    const rewardType = att.rewardDisciplineType;
+    const grade = att.oralGrade;
+
+    if (rewardType === 'EXCELLENT') {
+      type = 'POSITIVE';
+      points = 2;
+      title = 'تشویق کلاسی (عالی)';
+    } else if (rewardType === 'POSITIVE') {
+      type = 'POSITIVE';
+      points = 1;
+      title = 'نمره مثبت کلاسی';
+    } else if (rewardType === 'NEGATIVE') {
+      type = 'NEGATIVE';
+      points = -1;
+      title = 'نمره منفی کلاسی';
+    } else if (rewardType === 'WARNING') {
+      type = 'WARNING';
+      points = -0.5;
+      title = 'تذکر انضباطی در جلسه';
+    } else if (rewardType === 'HOMEWORK_INCOMPLETE') {
+      type = 'NEGATIVE';
+      points = -1;
+      title = 'عدم انجام تکالیف درسی';
+    } else if (grade !== null && grade !== undefined) {
+      if (grade >= 14) {
+        type = 'POSITIVE';
+        points = grade >= 18 ? 2 : 1;
+      } else {
+        type = 'NEGATIVE';
+        points = grade < 10 ? -1 : 0;
+      }
+      title = `نمره پرسش کلاسی: ${grade} از ۲۰`;
+    }
+
+    if (grade !== null && grade !== undefined && rewardType && rewardType !== 'NONE') {
+      title = `${title} (${grade} از ۲۰)`;
+    }
+
+    const descParts: string[] = [];
+    if (att.rewardDisciplineNote?.trim()) {
+      descParts.push(att.rewardDisciplineNote.trim());
+    }
+    if (att.sessionNote?.trim()) {
+      descParts.push(`یادداشت دبیر: ${att.sessionNote.trim()}`);
+    }
+    if (descParts.length === 0 && grade !== null && grade !== undefined) {
+      descParts.push(`ثبت نمره پرسش کلاسی ${grade} از ۲۰ در دفتر کلاسی`);
+    }
+
+    return {
+      id: `att-${att.id}`,
+      source: 'CLASSROOM_SESSION',
+      attendanceId: att.id,
+      studentId: att.studentId,
+      student: att.student,
+      academicYearId: att.academicYearId,
+      type,
+      title,
+      description: descParts.join(' — ') || 'ثبت در دفتر کلاسی و حضور غیاب',
+      points,
+      actionTaken: att.classroom ? `کلاس ${att.classroom.name}` : undefined,
+      classroom: att.classroom ? { id: att.classroom.id, name: att.classroom.name, roomNumber: att.classroom.roomNumber } : null,
+      lesson: att.lesson ? { id: att.lesson.id, name: att.lesson.name, code: att.lesson.code } : null,
+      periodNumber: att.periodNumber || null,
+      sessionDate: att.date,
+      oralGrade: att.oralGrade,
+      rewardDisciplineType: att.rewardDisciplineType,
+      rewardDisciplineNote: att.rewardDisciplineNote,
+      sessionNote: att.sessionNote,
+      reportedById: att.recordedById,
+      reportedBy: att.recordedBy,
+      reportedAt: att.createdAt || new Date(att.date),
+      notifiedParents: true,
+    };
+  }
+
+  private mapDirectMatter(m: any) {
+    return {
+      ...m,
+      source: 'DIRECT_MATTER',
+      classroom: null,
+      lesson: null,
+      periodNumber: null,
+      sessionDate: m.reportedAt ? new Date(m.reportedAt).toISOString().slice(0, 10) : null,
+      oralGrade: null,
+      rewardDisciplineType: null,
+    };
   }
 
   async getMyMatters(tenantId: string, user: any) {
@@ -166,37 +279,99 @@ export class MattersService {
   }
 
   async getStudentMatters(tenantId: string, studentId: string) {
-    const matters = await this.prisma.disciplinaryMatter.findMany({
-      where: { tenantId, studentId },
-      include: {
-        reportedBy: { select: { firstName: true, lastName: true } },
-      },
-      orderBy: { reportedAt: 'desc' },
+    const [directMatters, attendanceRecords] = await Promise.all([
+      this.prisma.disciplinaryMatter.findMany({
+        where: { tenantId, studentId },
+        include: {
+          student: { include: { user: true } },
+          reportedBy: { select: { firstName: true, lastName: true, role: true } },
+        },
+        orderBy: { reportedAt: 'desc' },
+      }),
+      this.prisma.studentAttendance.findMany({
+        where: {
+          tenantId,
+          studentId,
+          OR: [
+            { rewardDisciplineType: { not: null, notIn: ['NONE'] } },
+            { oralGrade: { not: null } },
+            { rewardDisciplineNote: { not: null } },
+          ],
+        },
+        include: {
+          student: { include: { user: true } },
+          recordedBy: { select: { firstName: true, lastName: true, role: true } },
+          classroom: { select: { id: true, name: true, roomNumber: true } },
+          lesson: { select: { id: true, name: true, code: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    const mappedDirect = directMatters.map((m) => this.mapDirectMatter(m));
+    const mappedAttendance = attendanceRecords.map((att) => this.mapAttendanceToMatter(att));
+
+    const combined = [...mappedDirect, ...mappedAttendance].sort((a, b) => {
+      const dateA = new Date(a.reportedAt || a.sessionDate).getTime();
+      const dateB = new Date(b.reportedAt || b.sessionDate).getTime();
+      return dateB - dateA;
     });
 
-    const totalPoints = matters.reduce((sum, m) => sum + m.points, 0);
+    const totalPoints = combined.reduce((sum, m) => sum + (m.points || 0), 0);
 
     return {
-      matters,
+      matters: combined,
       totalPoints,
-      positiveCount: matters.filter((m) => m.type === 'POSITIVE').length,
-      negativeCount: matters.filter(
+      positiveCount: combined.filter((m) => m.type === 'POSITIVE').length,
+      negativeCount: combined.filter(
         (m) => m.type === 'NEGATIVE' || m.type === 'WARNING' || m.type === 'SUSPENSION',
       ).length,
     };
   }
 
   async listMatters(tenantId: string, type?: string) {
-    return this.prisma.disciplinaryMatter.findMany({
-      where: {
-        tenantId,
-        ...(type ? { type: type as any } : {}),
-      },
-      include: {
-        student: { include: { user: true } },
-        reportedBy: { select: { firstName: true, lastName: true } },
-      },
-      orderBy: { reportedAt: 'desc' },
+    const [directMatters, attendanceRecords] = await Promise.all([
+      this.prisma.disciplinaryMatter.findMany({
+        where: {
+          tenantId,
+          ...(type && type !== 'ALL' ? { type: type as any } : {}),
+        },
+        include: {
+          student: { include: { user: true } },
+          reportedBy: { select: { firstName: true, lastName: true, role: true } },
+        },
+        orderBy: { reportedAt: 'desc' },
+      }),
+      this.prisma.studentAttendance.findMany({
+        where: {
+          tenantId,
+          OR: [
+            { rewardDisciplineType: { not: null, notIn: ['NONE'] } },
+            { oralGrade: { not: null } },
+            { rewardDisciplineNote: { not: null } },
+          ],
+        },
+        include: {
+          student: { include: { user: true } },
+          recordedBy: { select: { firstName: true, lastName: true, role: true } },
+          classroom: { select: { id: true, name: true, roomNumber: true } },
+          lesson: { select: { id: true, name: true, code: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    const mappedDirect = directMatters.map((m) => this.mapDirectMatter(m));
+    let mappedAttendance = attendanceRecords.map((att) => this.mapAttendanceToMatter(att));
+
+    if (type && type !== 'ALL') {
+      mappedAttendance = mappedAttendance.filter((m) => m.type === type);
+    }
+
+    return [...mappedDirect, ...mappedAttendance].sort((a, b) => {
+      const dateA = new Date(a.reportedAt || a.sessionDate).getTime();
+      const dateB = new Date(b.reportedAt || b.sessionDate).getTime();
+      return dateB - dateA;
     });
   }
 }

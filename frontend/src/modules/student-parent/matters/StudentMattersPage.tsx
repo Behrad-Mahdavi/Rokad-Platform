@@ -15,19 +15,39 @@ import {
   Scale,
   Search,
   X,
+  Building2,
+  BookOpen,
+  GraduationCap,
+  Clock,
+  Layers,
 } from 'lucide-react';
 
 interface MatterRecord {
   id: string;
+  source?: 'DIRECT_MATTER' | 'CLASSROOM_SESSION';
   type: 'POSITIVE' | 'NEGATIVE' | 'WARNING' | 'SUSPENSION' | 'COUNSELING_REFERRAL';
   title: string;
   description: string;
   points: number;
   actionTaken?: string;
   reportedAt: string;
+  sessionDate?: string;
+  oralGrade?: number | null;
+  periodNumber?: number | null;
+  classroom?: {
+    id: string;
+    name: string;
+    roomNumber?: string;
+  } | null;
+  lesson?: {
+    id: string;
+    name: string;
+    code?: string;
+  } | null;
   reportedBy?: {
     firstName: string;
     lastName: string;
+    role?: string;
   };
 }
 
@@ -297,7 +317,7 @@ export const StudentMattersPage: React.FC = () => {
               return (
                 <div
                   key={m.id}
-                  className="rounded-2xl border border-gray-200/80 dark:border-[#242F42] bg-white dark:bg-[#151C28] p-4 sm:p-5 shadow-xs hover:-translate-y-0.5 hover:shadow-sm transition-all duration-200 flex flex-col justify-between gap-4"
+                  className="rounded-2xl border border-gray-200/80 dark:border-[#242F42] bg-white dark:bg-[#151C28] p-4 sm:p-5 shadow-xs hover:-translate-y-0.5 hover:shadow-sm transition-all duration-200 flex flex-col justify-between gap-3.5"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     {/* Right side: Icon, Type, Title, Description */}
@@ -316,6 +336,14 @@ export const StudentMattersPage: React.FC = () => {
                             {meta.label}
                           </span>
 
+                          {/* Oral Grade Chip */}
+                          {m.oralGrade !== null && m.oralGrade !== undefined && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shadow-2xs">
+                              <GraduationCap className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
+                              <span>نمره پرسش: {toPersianDigits(m.oralGrade)} از ۲۰</span>
+                            </span>
+                          )}
+
                           {m.points !== 0 && (
                             <span
                               className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black ${
@@ -328,18 +356,30 @@ export const StudentMattersPage: React.FC = () => {
                               {isPositive ? `+${toPersianDigits(m.points)} امتیاز` : `${toPersianDigits(m.points)} امتیاز`}
                             </span>
                           )}
+
+                          {m.source === 'CLASSROOM_SESSION' && (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 dark:text-amber-300 font-bold bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-md">
+                              دفتر کلاسی
+                            </span>
+                          )}
                         </div>
 
                         <h3 className="text-sm sm:text-base font-black text-ink-darker dark:text-white">
                           {m.title}
                         </h3>
+
+                        {m.description && (
+                          <p className="text-xs sm:text-[13px] text-ink-normal/80 dark:text-gray-300 leading-relaxed">
+                            {m.description}
+                          </p>
+                        )}
                       </div>
                     </div>
 
                     {/* Left side: Date & Reporter badge */}
                     <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-gray-800">
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                        <Calendar className="w-3.5 h-3.5 text-primary" />
+                        <Clock className="w-3.5 h-3.5 text-primary" />
                         <span>{formatJalaliDisplay(m.reportedAt, true)}</span>
                       </div>
 
@@ -347,12 +387,50 @@ export const StudentMattersPage: React.FC = () => {
                         <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-[#1E293B] border border-gray-200/60 dark:border-gray-800 text-[11px] text-muted-foreground font-bold">
                           <User className="w-3 h-3" />
                           <span>
-                            {m.reportedBy.firstName} {m.reportedBy.lastName}
+                            ثبت: {m.reportedBy.firstName} {m.reportedBy.lastName}
                           </span>
                         </div>
                       )}
                     </div>
                   </div>
+
+                  {/* Classroom Session Details Strip (Classroom, Lesson, Period, Session Date) */}
+                  {(m.classroom || m.lesson || m.periodNumber || m.sessionDate) && (
+                    <div className="p-2.5 rounded-xl bg-gray-50/90 dark:bg-[#1C2536]/90 border border-gray-200/70 dark:border-[#242F42] flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs">
+                      {m.classroom && (
+                        <div className="flex items-center gap-1.5 text-ink-darker dark:text-white font-bold">
+                          <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                          <span>کلاس: {m.classroom.name}</span>
+                        </div>
+                      )}
+                      {m.lesson && (
+                        <div className="flex items-center gap-1.5 text-ink-darker dark:text-white font-bold">
+                          <BookOpen className="w-3.5 h-3.5 text-primary shrink-0" />
+                          <span>درس: {m.lesson.name}</span>
+                        </div>
+                      )}
+                      {m.periodNumber && (
+                        <div className="flex items-center gap-1.5 text-muted-foreground font-bold">
+                          <Layers className="w-3.5 h-3.5 text-primary shrink-0" />
+                          <span>زنگ {toPersianDigits(m.periodNumber)}</span>
+                        </div>
+                      )}
+                      {m.sessionDate && (
+                        <div className="flex items-center gap-1.5 text-muted-foreground font-bold">
+                          <Calendar className="w-3.5 h-3.5 text-primary shrink-0" />
+                          <span>تاریخ جلسه: {formatJalaliDisplay(m.sessionDate, false)}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Action Taken Callout */}
+                  {m.actionTaken && (
+                    <div className="p-2.5 rounded-xl bg-primary-light/30 dark:bg-[#1C2536] border-r-4 border-r-primary text-xs flex items-start gap-2">
+                      <strong className="font-black text-ink-darker dark:text-white">اقدام: </strong>
+                      <span className="text-ink-normal dark:text-gray-300">{m.actionTaken}</span>
+                    </div>
+                  )}
                 </div>
               );
             })}
