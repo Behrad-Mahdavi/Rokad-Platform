@@ -129,12 +129,8 @@ export const AttendancePage: React.FC = () => {
   const isManagerOrAdmin =
     user?.role === 'SUPER_ADMIN' || user?.role === 'SCHOOL_ADMIN' || user?.role === 'STAFF';
 
-  // 1. Live system time (updates every second for real-time period highlight)
-  const [liveSystemTime, setLiveSystemTime] = useState<Date>(new Date());
-  useEffect(() => {
-    const timer = setInterval(() => setLiveSystemTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+  // Selected teacher state for Admins & Staff
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
 
   // 2. Jalali date selection
   const todayJalali = useMemo(() => {
@@ -145,8 +141,8 @@ export const AttendancePage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(todayJalali);
   const [showDatePickerModal, setShowDatePickerModal] = useState<boolean>(false);
 
-  // Active top navigation tab: 'today_schedule' | 'all_classes' | 'staff_attendance'
-  const [activeTab, setActiveTab] = useState<'today_schedule' | 'all_classes' | 'staff_attendance'>('today_schedule');
+  // Active top navigation tab: 'today_schedule' | 'staff_attendance'
+  const [activeTab, setActiveTab] = useState<'today_schedule' | 'staff_attendance'>('today_schedule');
 
   // Active classroom session
   const [activeSession, setActiveSession] = useState<{
@@ -162,12 +158,17 @@ export const AttendancePage: React.FC = () => {
   // Search & edit state for attendance roster
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | AttendanceStatus>('ALL');
+  const [showFilterStats, setShowFilterStats] = useState<boolean>(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [studentsList, setStudentsList] = useState<LocalStudentAttendance[]>([]);
 
   // Modal / Bottom Sheet State for Student Evaluation & Track Record History
   const [evaluationModalStudent, setEvaluationModalStudent] = useState<LocalStudentAttendance | null>(null);
   const [modalTab, setModalTab] = useState<'EVALUATE' | 'HISTORY'>('EVALUATE');
+
+  // Dedicated Tardy Modal State
+  const [tardyModalStudent, setTardyModalStudent] = useState<LocalStudentAttendance | null>(null);
+  const [tardyInputMinutes, setTardyInputMinutes] = useState<number>(15);
 
   // Evaluation Form State
   const [modalOralGrade, setModalOralGrade] = useState<string>('');
@@ -247,8 +248,9 @@ export const AttendancePage: React.FC = () => {
 
   // 4. Live time calculation
   const currentMinutes = useMemo(() => {
-    return liveSystemTime.getHours() * 60 + liveSystemTime.getMinutes();
-  }, [liveSystemTime]);
+    const now = new Date();
+    return now.getHours() * 60 + now.getMinutes();
+  }, []);
 
   const checkSlotStatus = (startTimeStr?: string, endTimeStr?: string) => {
     if (!startTimeStr || !endTimeStr) return 'INACTIVE';
@@ -271,22 +273,38 @@ export const AttendancePage: React.FC = () => {
     }
   };
 
+  // 4.5. Query: Teachers List (For Admin & Staff)
+  const { data: teachersData } = useQuery({
+    enabled: isManagerOrAdmin,
+    queryKey: ['members-teachers-attendance'],
+    queryFn: async () => {
+      const res: any = await apiClient.get('/members/teachers');
+      const list = res?.data || res || [];
+      return Array.isArray(list) ? list : [];
+    },
+  });
+
   // 5. Query: Daily Schedule for Teacher
   const {
     data: dailyScheduleData,
     isLoading: isLoadingSchedule,
   } = useQuery({
-    queryKey: ['teacher-daily-schedule', selectedDate],
+    queryKey: ['teacher-daily-schedule', selectedDate, selectedTeacherId],
     queryFn: async () => {
+      const teacherParam = selectedTeacherId ? `&teacherId=${selectedTeacherId}` : '';
       const res: any = await apiClient.get(
-        `/attendance/teacher-daily-schedule?date=${selectedDate}`,
+        `/attendance/teacher-daily-schedule?date=${selectedDate}${teacherParam}`,
       );
       return res?.data || res;
     },
   });
 
   const schedulesList: ScheduleSlot[] = useMemo(() => {
-    return Array.isArray(dailyScheduleData?.schedules) ? dailyScheduleData.schedules : [];
+    const list = Array.isArray(dailyScheduleData?.schedules) ? [...dailyScheduleData.schedules] : [];
+    return list.sort((a, b) => {
+      if (a.periodNumber !== b.periodNumber) return a.periodNumber - b.periodNumber;
+      return (a.startTime || '').localeCompare(b.startTime || '');
+    });
   }, [dailyScheduleData]);
 
   const activeNowSlot = useMemo(() => {
@@ -402,16 +420,23 @@ export const AttendancePage: React.FC = () => {
 
   // Filtered Students
   const filteredStudents = useMemo(() => {
-    return studentsList.filter((s) => {
-      if (statusFilter !== 'ALL' && s.status !== statusFilter) return false;
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase().trim();
-      const fullName = `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.toLowerCase();
-      const code = s.studentCode || '';
-      const national = s.nationalCode || '';
-      return fullName.includes(q) || code.includes(q) || national.includes(q);
-    });
+    return studentsList
+      .filter((s) => {
+        if (statusFilter !== 'ALL' && s.status !== statusFilter) return false;
+        if (!searchQuery.trim()) return true;
+        const q = searchQuery.toLowerCase().trim();
+        const fullName = `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.toLowerCase();
+        const code = s.studentCode || '';
+        const national = s.nationalCode || '';
+        return fullName.includes(q) || code.includes(q) || national.includes(q);
+      })
+      .sort((a, b) => {
+        const lastA = a.user?.lastName || '';
+        const lastB = b.user?.lastName || '';
+        return lastA.localeCompare(lastB, 'fa');
+      });
   }, [studentsList, searchQuery, statusFilter]);
+
 
   // 9. Query: Student Track Record / History in Subject
   const {
@@ -553,35 +578,36 @@ export const AttendancePage: React.FC = () => {
       if (!activeSession) return;
       const payload = {
         classroomId: activeSession.classroomId,
-        lessonId: activeSession.lessonId,
+        lessonId: activeSession.lessonId || undefined,
         date: selectedDate,
-        periodNumber: activeSession.periodNumber,
+        periodNumber: activeSession.periodNumber || 1,
         attendances: studentsList.map((s) => ({
           studentId: s.studentId,
           status: s.status,
-          delayMinutes: s.status === 'TARDY' ? s.delayMinutes : 0,
-          reason: s.reason || '',
-          oralGrade: s.oralGrade !== null && s.oralGrade !== undefined ? Number(s.oralGrade) : undefined,
-          rewardDisciplineType: s.rewardDisciplineType || undefined,
-          rewardDisciplineNote: s.rewardDisciplineNote || undefined,
-          sessionNote: s.sessionNote || undefined,
+          delayMinutes: s.status === 'TARDY' ? (Number(s.delayMinutes) || 0) : 0,
+          reason: s.reason?.trim() ? s.reason.trim() : undefined,
+          oralGrade: s.oralGrade !== null && s.oralGrade !== undefined && String(s.oralGrade).trim() !== '' ? Number(s.oralGrade) : undefined,
+          rewardDisciplineType: s.rewardDisciplineType && s.rewardDisciplineType !== 'NONE' ? s.rewardDisciplineType : undefined,
+          rewardDisciplineNote: s.rewardDisciplineNote?.trim() ? s.rewardDisciplineNote.trim() : undefined,
+          sessionNote: s.sessionNote?.trim() ? s.sessionNote.trim() : undefined,
         })),
       };
       const res: any = await apiClient.post('/attendance/students/bulk', payload);
       return res?.data || res;
     },
     onSuccess: (data: any) => {
-      toast.success(data?.message || 'دفتر کلاسی با موفقیت ثبت و ذخیره شد', {
-        description: `کلاس ${activeSession?.classroomName} - زنگ ${toPersianDigits(activeSession?.periodNumber)}`,
-      });
+      toast.success('ثبت شد');
       setHasUnsavedChanges(false);
       queryClient.invalidateQueries({ queryKey: ['classroom-attendance'] });
       queryClient.invalidateQueries({ queryKey: ['teacher-daily-schedule'] });
       queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
     },
     onError: (err: any) => {
+      console.error('Save attendance error:', err);
+      const rawMsg = err?.response?.data?.message;
+      const errorMsg = Array.isArray(rawMsg) ? rawMsg.join(' - ') : rawMsg || err?.message || 'خطا در برقراری ارتباط با سرور';
       toast.error('خطا در ثبت اطلاعات دفتر کلاسی', {
-        description: err?.response?.data?.message || 'لطفاً اتصال اینترنت را بررسی فرمایید',
+        description: errorMsg,
       });
     },
   });
@@ -618,6 +644,31 @@ export const AttendancePage: React.FC = () => {
       }),
     );
     setHasUnsavedChanges(true);
+  };
+
+  const handleOpenTardyModal = (st: LocalStudentAttendance) => {
+    setTardyModalStudent(st);
+    setTardyInputMinutes(st.delayMinutes && st.delayMinutes > 0 ? st.delayMinutes : 15);
+  };
+
+  const handleConfirmTardy = () => {
+    if (!tardyModalStudent) return;
+    const mins = Number(tardyInputMinutes) || 15;
+    setStudentsList((prev) =>
+      prev.map((s) => {
+        if (s.studentId === tardyModalStudent.studentId) {
+          return {
+            ...s,
+            status: 'TARDY',
+            delayMinutes: mins,
+          };
+        }
+        return s;
+      }),
+    );
+    setHasUnsavedChanges(true);
+    setTardyModalStudent(null);
+    toast.success(`تاخیر ${toPersianDigits(mins)} دقیقه‌ای ثبت شد`);
   };
 
   const handleOpenEvaluationModal = (st: LocalStudentAttendance) => {
@@ -659,18 +710,18 @@ export const AttendancePage: React.FC = () => {
         setIsSavingEvaluation(true);
         await apiClient.post('/attendance/students/bulk', {
           classroomId: activeSession.classroomId,
-          lessonId: activeSession.lessonId,
+          lessonId: activeSession.lessonId || undefined,
           date: selectedDate,
-          periodNumber: activeSession.periodNumber,
+          periodNumber: activeSession.periodNumber || 1,
           attendances: nextList.map((s) => ({
             studentId: s.studentId,
             status: s.status,
-            delayMinutes: s.status === 'TARDY' ? s.delayMinutes : 0,
-            reason: s.reason || '',
-            oralGrade: s.oralGrade !== null && s.oralGrade !== undefined ? Number(s.oralGrade) : undefined,
-            rewardDisciplineType: s.rewardDisciplineType || undefined,
-            rewardDisciplineNote: s.rewardDisciplineNote || undefined,
-            sessionNote: s.sessionNote || undefined,
+            delayMinutes: s.status === 'TARDY' ? (Number(s.delayMinutes) || 0) : 0,
+            reason: s.reason?.trim() ? s.reason.trim() : undefined,
+            oralGrade: s.oralGrade !== null && s.oralGrade !== undefined && String(s.oralGrade).trim() !== '' ? Number(s.oralGrade) : undefined,
+            rewardDisciplineType: s.rewardDisciplineType && s.rewardDisciplineType !== 'NONE' ? s.rewardDisciplineType : undefined,
+            rewardDisciplineNote: s.rewardDisciplineNote?.trim() ? s.rewardDisciplineNote.trim() : undefined,
+            sessionNote: s.sessionNote?.trim() ? s.sessionNote.trim() : undefined,
           })),
         });
 
@@ -711,41 +762,39 @@ export const AttendancePage: React.FC = () => {
           1. TOP APP BAR & LIVE SYSTEM TIME (Master Panel Header)
       ───────────────────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-[#151C28] rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-[#242F42] shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] p-4 sm:p-5 space-y-3.5">
-        {/* Row 1: Header & Live System Time */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-primary/10 text-primary dark:text-primary border border-primary/25 flex items-center justify-center font-black shadow-2xs shrink-0">
-              <CalendarCheck className="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-lg sm:text-2xl font-black text-ink-darker dark:text-white truncate">
-                  دفتر حضور و غیاب کلاسی
-                </h1>
-                <Badge variant="college" className="text-[11px] sm:text-xs font-bold shrink-0">
-                  {user ? `${user.firstName} ${user.lastName}` : 'مربی'}
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground font-bold mt-0.5 truncate hidden xs:block">
-                ثبت الکترونیکی حضور، غیاب، تاخیر و ارزیابی مستمر دانش‌آموزان
-              </p>
-            </div>
+        {/* Row 1: Header */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-primary/10 text-primary dark:text-primary border border-primary/25 flex items-center justify-center font-black shadow-2xs shrink-0">
+            <CalendarCheck className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-
-          {/* Live System Time Chip */}
-          <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-[#1C2536] px-3 py-1.5 rounded-xl border border-gray-200 dark:border-[#242F42] shrink-0">
-            <Clock className="w-3.5 h-3.5 text-primary shrink-0 animate-spin" style={{ animationDuration: '6s' }} />
-            <span className="font-mono text-xs sm:text-sm font-black text-primary">
-              {toPersianDigits(
-                liveSystemTime.toLocaleTimeString('fa-IR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                }),
-              )}
-            </span>
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-2xl font-black text-ink-darker dark:text-white truncate">
+              دفتر حضور و غیاب کلاسی
+            </h1>
+            <p className="text-xs text-muted-foreground font-bold mt-0.5 truncate hidden xs:block">
+              ثبت الکترونیکی حضور، غیاب، تاخیر و ارزیابی مستمر دانش‌آموزان
+            </p>
           </div>
         </div>
+
+        {/* Teacher Selector for Admin/Staff - full width below title */}
+        {isManagerOrAdmin && (
+          <select
+            value={selectedTeacherId}
+            onChange={(e) => {
+              setSelectedTeacherId(e.target.value);
+              setActiveSession(null);
+            }}
+            className="w-full h-9 px-3 text-xs font-bold rounded-xl border border-gray-200 dark:border-[#242F42] bg-gray-50 dark:bg-[#1C2536] text-foreground dark:text-white cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            <option value="">همه دبیران / برنامه کلی</option>
+            {teachersData?.map((t: any) => (
+              <option key={t.id} value={t.id}>
+                {t.user?.firstName} {t.user?.lastName} {t.speciality ? `(${t.speciality})` : ''}
+              </option>
+            ))}
+          </select>
+        )}
 
         {/* Row 2: Jalali Date Navigator Bar */}
         <div className="grid grid-cols-1 sm:flex sm:items-center sm:justify-between gap-2 pt-1">
@@ -837,67 +886,30 @@ export const AttendancePage: React.FC = () => {
           </div>
         )}
 
-        {/* Row 3: Horizontal Scrollable Weekday Pill Strip */}
-        <div className="pt-2 border-t border-gray-100 dark:border-[#242F42]">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-            {WEEK_DAYS_INFO.map((day) => {
-              const isCurrentDay = currentDayOfWeekInfo.key === day.key;
-              return (
-                <button
-                  key={day.key}
-                  type="button"
-                  onClick={() => selectWeekday(day.key)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all ${
-                    isCurrentDay
-                      ? 'bg-primary text-white shadow-xs font-black'
-                      : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground'
-                  }`}
-                >
-                  {day.name}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Row 4: Top Navigation Tabs */}
-        <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 bg-gray-50 dark:bg-[#1C2536] p-1 rounded-xl border border-gray-200 dark:border-[#242F42]">
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('today_schedule');
-              setActiveSession(null);
-            }}
-            className={`py-2 px-3 rounded-lg text-xs font-bold transition-all text-center ${
-              activeTab === 'today_schedule'
-                ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs font-black'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            برنامه زنگ‌های امروز
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('all_classes');
-              setActiveSession(null);
-            }}
-            className={`py-2 px-3 rounded-lg text-xs font-bold transition-all text-center ${
-              activeTab === 'all_classes'
-                ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs font-black'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            تمام کلاس‌های تحت تدریس
-          </button>
-          {isManagerOrAdmin && (
+        {/* Row 3: Staff Attendance Tab (Only for Admins/Managers) */}
+        {isManagerOrAdmin && (
+          <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-[#1C2536] p-1 rounded-xl border border-gray-200 dark:border-[#242F42] w-full">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('today_schedule');
+                setActiveSession(null);
+              }}
+              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
+                activeTab === 'today_schedule'
+                  ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs font-black'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              برنامه زنگ‌ها
+            </button>
             <button
               type="button"
               onClick={() => {
                 setActiveTab('staff_attendance');
                 setActiveSession(null);
               }}
-              className={`py-2 px-3 rounded-lg text-xs font-bold transition-all text-center ${
+              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
                 activeTab === 'staff_attendance'
                   ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs font-black'
                   : 'text-muted-foreground hover:text-foreground'
@@ -905,8 +917,8 @@ export const AttendancePage: React.FC = () => {
             >
               پایش تردد همکاران
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
@@ -989,356 +1001,387 @@ export const AttendancePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Action Buttons: Quick Navigation to Gradebook & Save */}
-              <div className="flex items-center gap-2 flex-wrap">
+              {/* Action Buttons: Filter, Gradebook, Submit */}
+              <div className="flex items-center gap-2 w-full sm:w-auto sm:justify-end">
+                {/* Filter Toggle Button - fixed icon */}
+                <button
+                  type="button"
+                  onClick={() => setShowFilterStats(!showFilterStats)}
+                  className={`h-10 w-10 shrink-0 rounded-xl border transition-all inline-flex items-center justify-center cursor-pointer shadow-2xs ${
+                    showFilterStats || statusFilter !== 'ALL'
+                      ? 'bg-primary text-white border-primary shadow-xs'
+                      : 'border-gray-200 dark:border-[#242F42] bg-gray-50 dark:bg-[#1C2536] text-foreground dark:text-gray-200 hover:border-primary/50'
+                  }`}
+                  title={showFilterStats ? 'بستن فیلترها' : 'نمایش فیلترها و آمار'}
+                >
+                  <Filter className="w-4 h-4" />
+                </button>
+
                 {activeSession.lessonId && (
                   <button
                     type="button"
                     onClick={() =>
                       navigate(`/app/teacher/gradebook?classroomId=${activeSession.classroomId}&lessonId=${activeSession.lessonId}`)
                     }
-                    className="h-10 px-3.5 sm:px-4 rounded-xl border border-primary/30 dark:border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary dark:text-primary font-black text-xs sm:text-sm inline-flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
+                    className="flex-1 sm:flex-none h-10 px-3.5 rounded-xl border border-primary/30 dark:border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary dark:text-primary font-black text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
                     title="دفتر نمرات و ارزشیابی برای این کلاس و درس"
                   >
                     <BookOpen className="w-4 h-4 text-primary shrink-0" />
-                    <span>دفتر نمرات این کلاس</span>
+                    <span>دفتر نمرات</span>
                   </button>
-                )}
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleMarkAllPresent}
-                  disabled={studentsList.length === 0}
-                  className="rounded-xl border border-gray-200 dark:border-[#242F42] font-bold text-xs h-10 px-3"
-                >
-                  <CheckCircle2 className="w-4 h-4 ml-1.5 text-emerald-500" />
-                  همه حاضرند
-                </Button>
-
-                {hasUnsavedChanges && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleResetToSaved}
-                    className="rounded-xl border border-gray-200 dark:border-[#242F42] font-bold text-xs h-10 px-3"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5 ml-1" />
-                    بازنشانی
-                  </Button>
                 )}
 
                 <button
                   type="button"
                   onClick={() => saveAttendanceMutation.mutate()}
                   disabled={saveAttendanceMutation.isPending || studentsList.length === 0}
-                  className="h-10 px-4 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs sm:text-sm border-[1.5px] border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] hover:shadow-[2.5px_2.5px_0_#438C83] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer inline-flex items-center gap-1.5 shrink-0 disabled:opacity-50"
+                  className="flex-1 sm:flex-none h-10 px-4 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs sm:text-sm border-[1.5px] border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] hover:shadow-[2.5px_2.5px_0_#438C83] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
                   {saveAttendanceMutation.isPending ? (
                     <RefreshCw className="w-4 h-4 animate-spin ml-1.5" />
                   ) : (
                     <Send className="w-4 h-4 ml-1.5" />
                   )}
-                  ثبت نهایی دفتر کلاسی
+                  ثبت نهایی
                 </button>
               </div>
+
             </div>
 
-            {/* Compact Responsive Stats Bar */}
-            <div className="grid grid-cols-5 gap-1.5 sm:gap-2.5 pt-2 border-t border-gray-100 dark:border-[#242F42]">
-              <div
-                onClick={() => setStatusFilter('ALL')}
-                className={`cursor-pointer text-center p-2 rounded-xl transition-all border ${
-                  statusFilter === 'ALL'
-                    ? 'bg-primary/10 border-primary text-primary font-black'
-                    : 'bg-gray-50/70 dark:bg-[#1C2536]/70 border-gray-200/70 dark:border-[#242F42] hover:bg-gray-100'
-                }`}
-              >
-                <div className="text-[10px] sm:text-xs font-bold text-muted-foreground">کل</div>
-                <div className="text-sm sm:text-base font-black text-foreground dark:text-white">
-                  {toPersianDigits(rosterStats.total)}
-                </div>
-              </div>
-
-              <div
-                onClick={() => setStatusFilter(statusFilter === 'PRESENT' ? 'ALL' : 'PRESENT')}
-                className={`cursor-pointer text-center p-2 rounded-xl transition-all border ${
-                  statusFilter === 'PRESENT'
-                    ? 'bg-emerald-100 dark:bg-emerald-950/70 border-emerald-600 text-emerald-800 dark:text-emerald-200'
-                    : 'bg-emerald-50/50 dark:bg-emerald-950/30 border-emerald-200/60 dark:border-emerald-800/40 hover:bg-emerald-100/70'
-                }`}
-              >
-                <div className="text-[10px] sm:text-xs font-bold text-emerald-600 dark:text-emerald-400">حاضر</div>
-                <div className="text-sm sm:text-base font-black text-emerald-700 dark:text-emerald-300">
-                  {toPersianDigits(rosterStats.present)}
-                </div>
-              </div>
-
-              <div
-                onClick={() => setStatusFilter(statusFilter === 'ABSENT' ? 'ALL' : 'ABSENT')}
-                className={`cursor-pointer text-center p-2 rounded-xl transition-all border ${
-                  statusFilter === 'ABSENT'
-                    ? 'bg-rose-100 dark:bg-rose-950/70 border-rose-600 text-rose-800 dark:text-rose-200'
-                    : 'bg-rose-50/50 dark:bg-rose-950/30 border-rose-200/60 dark:border-rose-800/40 hover:bg-rose-100/70'
-                }`}
-              >
-                <div className="text-[10px] sm:text-xs font-bold text-rose-600 dark:text-rose-400">غایب</div>
-                <div className="text-sm sm:text-base font-black text-rose-700 dark:text-rose-300">
-                  {toPersianDigits(rosterStats.absent)}
-                </div>
-              </div>
-
-              <div
-                onClick={() => setStatusFilter(statusFilter === 'TARDY' ? 'ALL' : 'TARDY')}
-                className={`cursor-pointer text-center p-2 rounded-xl transition-all border ${
-                  statusFilter === 'TARDY'
-                    ? 'bg-orange-100 dark:bg-orange-950/70 border-orange-600 text-orange-800 dark:text-orange-200'
-                    : 'bg-orange-50/50 dark:bg-orange-950/30 border-orange-200/60 dark:border-orange-800/40 hover:bg-orange-100/70'
-                }`}
-              >
-                <div className="text-[10px] sm:text-xs font-bold text-orange-600 dark:text-orange-400">تاخیر</div>
-                <div className="text-sm sm:text-base font-black text-orange-700 dark:text-orange-300">
-                  {toPersianDigits(rosterStats.tardy)}
-                </div>
-              </div>
-
-              <div
-                onClick={() => setStatusFilter(statusFilter === 'EXCUSED_ABSENT' ? 'ALL' : 'EXCUSED_ABSENT')}
-                className={`cursor-pointer text-center p-2 rounded-xl transition-all border ${
-                  statusFilter === 'EXCUSED_ABSENT'
-                    ? 'bg-sky-100 dark:bg-sky-950/70 border-sky-600 text-sky-800 dark:text-sky-200'
-                    : 'bg-sky-50/50 dark:bg-sky-950/30 border-sky-200/60 dark:border-sky-800/40 hover:bg-sky-100/70'
-                }`}
-              >
-                <div className="text-[10px] sm:text-xs font-bold text-sky-600 dark:text-sky-400">موجه</div>
-                <div className="text-sm sm:text-base font-black text-sky-700 dark:text-sky-300">
-                  {toPersianDigits(rosterStats.excused)}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Student Roster Card */}
-          <div className="bg-white dark:bg-[#151C28] rounded-2xl border border-gray-200/80 dark:border-[#242F42] p-4 sm:p-5 shadow-xs">
-            {/* Search Input Bar */}
-            <div className="mb-4">
-              <div className="relative">
-                <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="جستجوی نام یا کد دانش‌آموزی..."
-                  className="pr-10 rounded-xl border border-gray-200 dark:border-[#242F42] bg-gray-50/50 dark:bg-[#1C2536] font-bold text-xs h-10 w-full"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Students List */}
-            {isLoadingRoster ? (
-              <div className="py-16 text-center space-y-2">
-                <RefreshCw className="w-8 h-8 text-primary animate-spin mx-auto" />
-                <p className="font-black text-xs sm:text-sm text-foreground dark:text-white">در حال بارگذاری لیست دانش‌آموزان...</p>
-              </div>
-            ) : filteredStudents.length === 0 ? (
-              <div className="py-12 text-center border border-dashed border-gray-200 dark:border-[#242F42] rounded-2xl p-4">
-                <Users className="w-8 h-8 text-muted-foreground mx-auto mb-1.5 opacity-50" />
-                <p className="font-bold text-xs sm:text-sm text-foreground dark:text-white">دانش‌آموزی مطابق فیلتر یافت نشد</p>
-                {statusFilter !== 'ALL' && (
-                  <button
-                    type="button"
+            {/* Collapsible Filter & Stats Bar + Search Bar (Toggled via Filter Icon) */}
+            {showFilterStats && (
+              <div className="pt-2 border-t border-gray-100 dark:border-[#242F42] animate-in fade-in duration-150 space-y-2">
+                <div className="grid grid-cols-5 gap-1.5 sm:gap-2.5">
+                  <div
                     onClick={() => setStatusFilter('ALL')}
-                    className="text-xs text-primary underline font-bold mt-1"
+                    className={`cursor-pointer text-center p-2 rounded-xl transition-all border ${
+                      statusFilter === 'ALL'
+                        ? 'bg-primary/10 border-primary text-primary font-black'
+                        : 'bg-gray-50/70 dark:bg-[#1C2536]/70 border-gray-200/70 dark:border-[#242F42] hover:bg-gray-100'
+                    }`}
                   >
-                    پاک کردن فیلتر وضعیت
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-2 divide-y divide-gray-100 dark:divide-[#242F42]/60 sm:divide-y-0">
-                {filteredStudents.map((st, idx) => {
-                  const fullName = `${st.user?.firstName || ''} ${st.user?.lastName || ''}`;
-                  const hasOralGrade = st.oralGrade !== null && st.oralGrade !== undefined;
-                  const hasDiscipline = st.rewardDisciplineType && st.rewardDisciplineType !== 'NONE';
-                  const hasSessionNote = !!st.sessionNote;
-
-                  return (
-                    <div
-                      key={st.studentId}
-                      className="pt-2 sm:pt-0 sm:py-2.5 flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-4 sm:hover:bg-gray-50/70 sm:dark:hover:bg-[#1C2536]/40 sm:px-3 sm:rounded-xl transition-all"
-                    >
-                      {/* Student Info: Avatar + Name + Evaluation Chips */}
-                      <div
-                        onClick={() => handleOpenEvaluationModal(st)}
-                        className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 cursor-pointer group"
-                        title="برای ثبت نمره پرسش، انضباطی یا یادداشت کلیک کنید"
-                      >
-                        <div className="w-6 text-center font-mono font-bold text-xs text-muted-foreground shrink-0">
-                          {toPersianDigits(idx + 1)}
-                        </div>
-                        <div className="w-10 h-10 rounded-xl border border-gray-200 dark:border-[#242F42] bg-gray-100 dark:bg-[#1C2536] overflow-hidden shrink-0 group-hover:scale-105 transition-all">
-                          {st.user?.avatarUrl ? (
-                            <img
-                              src={st.user.avatarUrl}
-                              alt={fullName}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center font-bold text-sm text-foreground dark:text-white">
-                              {st.user?.firstName?.[0] || 'د'}
-                            </div>
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-black text-xs sm:text-sm text-foreground dark:text-white group-hover:text-primary transition-colors truncate">
-                              {fullName}
-                            </span>
-
-                            {/* Oral Grade Chip */}
-                            {hasOralGrade && (
-                              <span className="bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-primary/25 flex items-center gap-0.5">
-                                <Award className="w-3 h-3 text-primary" />
-                                نمره: {toPersianDigits(st.oralGrade!)}
-                              </span>
-                            )}
-
-                            {/* Disciplinary/Reward Chip */}
-                            {hasDiscipline && (
-                              <span
-                                className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border flex items-center gap-0.5 ${
-                                  st.rewardDisciplineType === 'POSITIVE' || st.rewardDisciplineType === 'EXCELLENT'
-                                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
-                                    : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
-                                }`}
-                              >
-                                {st.rewardDisciplineType === 'POSITIVE' && '🌟 مثبت'}
-                                {st.rewardDisciplineType === 'EXCELLENT' && '🏆 عالی'}
-                                {st.rewardDisciplineType === 'NEGATIVE' && '⚠️ منفی'}
-                                {st.rewardDisciplineType === 'WARNING' && '⚡ تذکر'}
-                                {st.rewardDisciplineType === 'HOMEWORK_INCOMPLETE' && '📝 بدون تکلیف'}
-                              </span>
-                            )}
-
-                            {/* Note Chip */}
-                            {hasSessionNote && (
-                              <span className="bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] text-foreground dark:text-slate-300 text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
-                                <MessageSquare className="w-2.5 h-2.5 text-blue-500" />
-                                یادداشت
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="text-[10px] sm:text-xs text-muted-foreground font-mono truncate mt-0.5">
-                            کد: {toPersianDigits(st.studentCode)}
-                            {st.reason && (
-                              <span className="text-orange-600 dark:text-orange-400 font-bold mr-1">
-                                • {st.reason}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Status Selector - 4 Clean buttons */}
-                      <div className="grid grid-cols-4 sm:flex sm:items-center gap-1 sm:gap-1.5 w-full md:w-auto">
-                        {/* PRESENT */}
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateStudentStatus(st.studentId, 'PRESENT')}
-                          className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap ${
-                            st.status === 'PRESENT'
-                              ? 'bg-emerald-600 text-white shadow-2xs font-black'
-                              : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground'
-                          }`}
-                        >
-                          <Check className="w-3 h-3 shrink-0" />
-                          <span>حاضر</span>
-                        </button>
-
-                        {/* ABSENT */}
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateStudentStatus(st.studentId, 'ABSENT')}
-                          className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap ${
-                            st.status === 'ABSENT'
-                              ? 'bg-rose-600 text-white shadow-2xs font-black'
-                              : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground'
-                          }`}
-                        >
-                          <UserX className="w-3 h-3 shrink-0" />
-                          <span>غایب</span>
-                        </button>
-
-                        {/* TARDY */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            handleUpdateStudentStatus(st.studentId, 'TARDY');
-                            handleOpenEvaluationModal(st);
-                            setModalDelayMinutes(st.delayMinutes || 15);
-                          }}
-                          className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap ${
-                            st.status === 'TARDY'
-                              ? 'bg-orange-500 text-white shadow-2xs font-black'
-                              : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground'
-                          }`}
-                        >
-                          <Clock className="w-3 h-3 shrink-0" />
-                          <span>تاخیر</span>
-                        </button>
-
-                        {/* EXCUSED_ABSENT */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            handleUpdateStudentStatus(st.studentId, 'EXCUSED_ABSENT');
-                            handleOpenEvaluationModal(st);
-                          }}
-                          className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap ${
-                            st.status === 'EXCUSED_ABSENT'
-                              ? 'bg-sky-600 text-white shadow-2xs font-black'
-                              : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground'
-                          }`}
-                        >
-                          <ShieldAlert className="w-3 h-3 shrink-0" />
-                          <span>موجه</span>
-                        </button>
-                      </div>
+                    <div className="text-[10px] sm:text-xs font-bold text-muted-foreground">کل</div>
+                    <div className="text-sm sm:text-base font-black text-foreground dark:text-white">
+                      {toPersianDigits(rosterStats.total)}
                     </div>
-                  );
-                })}
+                  </div>
+
+                  <div
+                    onClick={() => setStatusFilter(statusFilter === 'PRESENT' ? 'ALL' : 'PRESENT')}
+                    className={`cursor-pointer text-center p-2 rounded-xl transition-all border ${
+                      statusFilter === 'PRESENT'
+                        ? 'bg-emerald-100 dark:bg-emerald-950/70 border-emerald-600 text-emerald-800 dark:text-emerald-200'
+                        : 'bg-emerald-50/50 dark:bg-emerald-950/30 border-emerald-200/60 dark:border-emerald-800/40 hover:bg-emerald-100/70'
+                    }`}
+                  >
+                    <div className="text-[10px] sm:text-xs font-bold text-emerald-600 dark:text-emerald-400">حاضر</div>
+                    <div className="text-sm sm:text-base font-black text-emerald-700 dark:text-emerald-300">
+                      {toPersianDigits(rosterStats.present)}
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setStatusFilter(statusFilter === 'ABSENT' ? 'ALL' : 'ABSENT')}
+                    className={`cursor-pointer text-center p-2 rounded-xl transition-all border ${
+                      statusFilter === 'ABSENT'
+                        ? 'bg-rose-100 dark:bg-rose-950/70 border-rose-600 text-rose-800 dark:text-rose-200'
+                        : 'bg-rose-50/50 dark:bg-rose-950/30 border-rose-200/60 dark:border-rose-800/40 hover:bg-rose-100/70'
+                    }`}
+                  >
+                    <div className="text-[10px] sm:text-xs font-bold text-rose-600 dark:text-rose-400">غایب</div>
+                    <div className="text-sm sm:text-base font-black text-rose-700 dark:text-rose-300">
+                      {toPersianDigits(rosterStats.absent)}
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setStatusFilter(statusFilter === 'TARDY' ? 'ALL' : 'TARDY')}
+                    className={`cursor-pointer text-center p-2 rounded-xl transition-all border ${
+                      statusFilter === 'TARDY'
+                        ? 'bg-orange-100 dark:bg-orange-950/70 border-orange-600 text-orange-800 dark:text-orange-200'
+                        : 'bg-orange-50/50 dark:bg-orange-950/30 border-orange-200/60 dark:border-orange-800/40 hover:bg-orange-100/70'
+                    }`}
+                  >
+                    <div className="text-[10px] sm:text-xs font-bold text-orange-600 dark:text-orange-400">تاخیر</div>
+                    <div className="text-sm sm:text-base font-black text-orange-700 dark:text-orange-300">
+                      {toPersianDigits(rosterStats.tardy)}
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setStatusFilter(statusFilter === 'EXCUSED_ABSENT' ? 'ALL' : 'EXCUSED_ABSENT')}
+                    className={`cursor-pointer text-center p-2 rounded-xl transition-all border ${
+                      statusFilter === 'EXCUSED_ABSENT'
+                        ? 'bg-sky-100 dark:bg-sky-950/70 border-sky-600 text-sky-800 dark:text-sky-200'
+                        : 'bg-sky-50/50 dark:bg-sky-950/30 border-sky-200/60 dark:border-sky-800/40 hover:bg-sky-100/70'
+                    }`}
+                  >
+                    <div className="text-[10px] sm:text-xs font-bold text-sky-600 dark:text-sky-400">موجه</div>
+                    <div className="text-sm sm:text-base font-black text-sky-700 dark:text-sky-300">
+                      {toPersianDigits(rosterStats.excused)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Search Input Bar */}
+                <div className="relative pt-1">
+                  <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="جستجوی نام یا کد دانش‌آموزی..."
+                    className="pr-10 rounded-xl border border-gray-200 dark:border-[#242F42] bg-gray-50/50 dark:bg-[#1C2536] font-bold text-xs h-10 w-full"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
 
-          {/* Sticky Mobile Floating Action Footer for Roster */}
-          <div className="sm:hidden fixed bottom-0 inset-x-0 bg-white/95 dark:bg-[#151C28]/95 backdrop-blur-md border-t border-gray-200 dark:border-[#242F42] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-40 shadow-lg flex items-center justify-between gap-3">
-            <div className="text-xs font-bold flex items-center gap-1.5 min-w-0 truncate">
-              <span className="text-emerald-600 dark:text-emerald-400 font-black">{toPersianDigits(rosterStats.present)} حاضر</span>
-              <span className="text-muted-foreground">•</span>
-              <span className="text-rose-600 dark:text-rose-400 font-black">{toPersianDigits(rosterStats.absent)} غایب</span>
-              {rosterStats.tardy > 0 && (
-                <>
-                  <span className="text-muted-foreground">•</span>
-                  <span className="text-orange-600 dark:text-orange-400 font-black">{toPersianDigits(rosterStats.tardy)} تاخیر</span>
-                </>
+          {/* Students Direct List (No Outer Wrapper Box) */}
+          {isLoadingRoster ? (
+            <div className="space-y-2.5 w-full">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="p-3.5 sm:p-4 bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-[#242F42] rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 w-full animate-pulse"
+                >
+                  {/* Left: avatar + name */}
+                  <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+                    {/* Row number */}
+                    <div className="w-6 h-4 bg-gray-200 dark:bg-[#242F42] rounded" />
+                    {/* Avatar */}
+                    <div className="w-10 h-10 rounded-xl bg-gray-200 dark:bg-[#242F42] shrink-0" />
+                    {/* Name + badge */}
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <div className="h-3.5 bg-gray-200 dark:bg-[#242F42] rounded-lg w-32" />
+                      <div className="h-3 bg-gray-100 dark:bg-[#1C2536] rounded-lg w-20" />
+                    </div>
+                  </div>
+                  {/* Right: status buttons */}
+                  <div className="flex items-center gap-1.5 flex-wrap mr-auto md:mr-0">
+                    {Array.from({ length: 4 }).map((__, j) => (
+                      <div key={j} className="h-8 w-14 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200/60 dark:border-[#242F42]" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredStudents.length === 0 ? (
+            <div className="py-12 text-center bg-white dark:bg-[#151C28] border border-dashed border-gray-200 dark:border-[#242F42] rounded-2xl p-4">
+              <Users className="w-8 h-8 text-muted-foreground mx-auto mb-1.5 opacity-50" />
+              <p className="font-bold text-xs sm:text-sm text-foreground dark:text-white">دانش‌آموزی مطابق فیلتر یافت نشد</p>
+              {statusFilter !== 'ALL' && (
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('ALL')}
+                  className="text-xs text-primary underline font-bold mt-1 cursor-pointer"
+                >
+                  پاک کردن فیلتر وضعیت
+                </button>
               )}
             </div>
+          ) : (
+            <div className="space-y-2.5 w-full">
+              {filteredStudents.map((st, idx) => {
+                const fullName = `${st.user?.firstName || ''} ${st.user?.lastName || ''}`;
+                const hasOralGrade = st.oralGrade !== null && st.oralGrade !== undefined;
+                const hasDiscipline = st.rewardDisciplineType && st.rewardDisciplineType !== 'NONE';
+                const hasSessionNote = !!st.sessionNote;
 
+                return (
+                  <div
+                    key={st.studentId}
+                    className="p-3.5 sm:p-4 bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-[#242F42] rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 hover:border-primary/40 hover:shadow-xs transition-all w-full"
+                  >
+                    {/* Student Info: Avatar + Name + Evaluation Chips */}
+                    <div
+                      onClick={() => handleOpenEvaluationModal(st)}
+                      className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 cursor-pointer group"
+                      title="برای ثبت نمره پرسش، انضباطی یا یادداشت کلیک کنید"
+                    >
+                      <div className="w-6 text-center font-mono font-bold text-xs text-muted-foreground shrink-0">
+                        {toPersianDigits(idx + 1)}
+                      </div>
+                      <div className="w-10 h-10 rounded-xl border border-gray-200 dark:border-[#242F42] bg-gray-100 dark:bg-[#1C2536] overflow-hidden shrink-0 group-hover:scale-105 transition-all">
+                        {st.user?.avatarUrl ? (
+                          <img
+                            src={st.user.avatarUrl}
+                            alt={fullName}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center font-bold text-sm text-foreground dark:text-white">
+                            {st.user?.firstName?.[0] || 'د'}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-black text-xs sm:text-sm text-foreground dark:text-white group-hover:text-primary transition-colors truncate">
+                            {fullName}
+                          </span>
+
+                          {/* Oral Grade Chip */}
+                          {hasOralGrade && (
+                            <span className="bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-primary/25 flex items-center gap-0.5">
+                              <Award className="w-3 h-3 text-primary" />
+                              نمره: {toPersianDigits(st.oralGrade!)}
+                            </span>
+                          )}
+
+                          {/* Disciplinary/Reward Chip */}
+                          {hasDiscipline && (
+                            <span
+                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border flex items-center gap-0.5 ${
+                                st.rewardDisciplineType === 'POSITIVE' || st.rewardDisciplineType === 'EXCELLENT'
+                                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                                  : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+                              }`}
+                            >
+                              {st.rewardDisciplineType === 'POSITIVE' && '🌟 مثبت'}
+                              {st.rewardDisciplineType === 'EXCELLENT' && '🏆 عالی'}
+                              {st.rewardDisciplineType === 'NEGATIVE' && '⚠️ منفی'}
+                              {st.rewardDisciplineType === 'WARNING' && '⚡ تذکر'}
+                              {st.rewardDisciplineType === 'HOMEWORK_INCOMPLETE' && '📝 بدون تکلیف'}
+                            </span>
+                          )}
+
+                          {/* Note Chip */}
+                          {hasSessionNote && (
+                            <span className="bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] text-foreground dark:text-slate-300 text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                              <MessageSquare className="w-2.5 h-2.5 text-blue-500" />
+                              یادداشت
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="text-[10px] sm:text-xs text-muted-foreground font-mono truncate mt-0.5">
+                          کد: {toPersianDigits(st.studentCode)}
+                          {st.status === 'TARDY' && st.delayMinutes && st.delayMinutes > 0 && (
+                            <span className="text-orange-600 dark:text-orange-400 font-bold mr-1">
+                              • تاخیر {toPersianDigits(st.delayMinutes)} دقیقه
+                            </span>
+                          )}
+                          {st.reason && (
+                            <span className="text-orange-600 dark:text-orange-400 font-bold mr-1">
+                              • {st.reason}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status Selector - 4 Clean buttons */}
+                    <div className="grid grid-cols-4 sm:flex sm:items-center gap-1 sm:gap-1.5 w-full md:w-auto">
+                      {/* PRESENT */}
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateStudentStatus(st.studentId, 'PRESENT')}
+                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer ${
+                          st.status === 'PRESENT'
+                            ? 'bg-emerald-600 text-white shadow-2xs font-black'
+                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground'
+                        }`}
+                      >
+                        <Check className="w-3 h-3 shrink-0" />
+                        <span>حاضر</span>
+                      </button>
+
+                      {/* ABSENT */}
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateStudentStatus(st.studentId, 'ABSENT')}
+                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer ${
+                          st.status === 'ABSENT'
+                            ? 'bg-rose-600 text-white shadow-2xs font-black'
+                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground'
+                        }`}
+                      >
+                        <UserX className="w-3 h-3 shrink-0" />
+                        <span>غایب</span>
+                      </button>
+
+                      {/* TARDY */}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenTardyModal(st)}
+                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer ${
+                          st.status === 'TARDY'
+                            ? 'bg-orange-500 text-white shadow-2xs font-black'
+                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground'
+                        }`}
+                      >
+                        <Clock className="w-3 h-3 shrink-0" />
+                        <span>تاخیر</span>
+                      </button>
+
+                      {/* EXCUSED_ABSENT - No modal popup */}
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateStudentStatus(st.studentId, 'EXCUSED_ABSENT')}
+                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer ${
+                          st.status === 'EXCUSED_ABSENT'
+                            ? 'bg-sky-600 text-white shadow-2xs font-black'
+                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground'
+                        }`}
+                      >
+                        <ShieldAlert className="w-3 h-3 shrink-0" />
+                        <span>موجه</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Sticky Mobile Floating Action Footer for Roster */}
+          <div className="sm:hidden fixed bottom-0 inset-x-0 bg-white/95 dark:bg-[#151C28]/95 backdrop-blur-md border-t border-gray-200 dark:border-[#242F42] p-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-40 shadow-lg flex items-center gap-2">
+            {/* دفتر نمرات - Right */}
+            {activeSession?.lessonId ? (
+              <button
+                type="button"
+                onClick={() =>
+                  navigate(`/app/teacher/gradebook?classroomId=${activeSession.classroomId}&lessonId=${activeSession.lessonId}`)
+                }
+                className="flex-1 h-10 rounded-xl border border-primary/30 dark:border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary font-black text-xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              >
+                <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                <span>دفتر نمرات</span>
+              </button>
+            ) : (
+              <div className="flex-1" />
+            )}
+
+            {/* فیلترها - Center */}
+            <button
+              type="button"
+              onClick={() => setShowFilterStats(!showFilterStats)}
+              className={`h-10 w-10 shrink-0 rounded-xl border transition-all inline-flex items-center justify-center cursor-pointer ${
+                showFilterStats || statusFilter !== 'ALL'
+                  ? 'bg-primary text-white border-primary'
+                  : 'border-gray-200 dark:border-[#242F42] bg-gray-50 dark:bg-[#1C2536] text-foreground dark:text-gray-200'
+              }`}
+              title="فیلترها"
+            >
+              <Filter className="w-4 h-4" />
+            </button>
+
+            {/* ثبت نهایی - Left */}
             <button
               type="button"
               onClick={() => saveAttendanceMutation.mutate()}
               disabled={saveAttendanceMutation.isPending || studentsList.length === 0}
-              className="h-9 px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs inline-flex items-center gap-1.5 shrink-0 shadow-xs cursor-pointer disabled:opacity-50"
+              className="flex-1 h-10 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs border-[1.5px] border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               {saveAttendanceMutation.isPending ? (
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -1359,9 +1402,6 @@ export const AttendancePage: React.FC = () => {
               <h2 className="text-base sm:text-lg font-black text-foreground dark:text-white">
                 برنامه درسی {currentDayOfWeekInfo.name} ({formatJalaliDisplay(selectedDate, false)})
               </h2>
-              <p className="text-xs font-bold text-muted-foreground mt-0.5">
-                برای ثبت حضور و نمرات، روی هر زنگ یا کلاس کلیک فرمایید.
-              </p>
             </div>
           </div>
 
@@ -1379,17 +1419,9 @@ export const AttendancePage: React.FC = () => {
                   در روز {currentDayOfWeekInfo.name} زنگ درسی برای شما ثبت نشده است
                 </h3>
                 <p className="text-xs text-muted-foreground dark:text-slate-400 mt-1 max-w-sm mx-auto">
-                  از تب «تمام کلاس‌های تحت تدریس» می‌توانید هر کلاسی را انتخاب و دفتر کلاسی آن را تکمیل فرمایید.
+                  برنامه هفتگی برای این روز خالی است.
                 </p>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setActiveTab('all_classes')}
-                className="rounded-xl border border-gray-200 dark:border-[#242F42] text-xs font-bold"
-              >
-                مشاهده تمامی کلاس‌ها
-              </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
@@ -1476,7 +1508,7 @@ export const AttendancePage: React.FC = () => {
                         {isRecorded ? (
                           <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800 flex items-center gap-1 font-bold">
                             <CheckCircle2 className="w-3.5 h-3.5" />
-                            ثبت شده ({toPersianDigits(slot.stats?.presentCount || 0)} حاضر)
+                            ثبت شده
                           </span>
                         ) : (
                           <span className="text-muted-foreground bg-gray-50 dark:bg-[#1C2536] px-2 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42]">
@@ -1488,71 +1520,6 @@ export const AttendancePage: React.FC = () => {
                   </div>
                 );
               })}
-            </div>
-          )}
-        </div>
-      ) : activeTab === 'all_classes' ? (
-        /* ─────────────────────────────────────────────────────────────
-            5. ALL CLASSROOMS DIRECT ACCESS
-        ───────────────────────────────────────────────────────────── */
-        <div className="space-y-3.5">
-          <div>
-            <h2 className="text-base sm:text-lg font-black text-foreground dark:text-white">تمام کلاس‌های تحت تدریس</h2>
-            <p className="text-xs font-bold text-muted-foreground mt-0.5">
-              جهت ورود به دفتر کلاسی هر کلاس و زنگ دلخواه:
-            </p>
-          </div>
-
-          {isLoadingAllClassrooms ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-36 rounded-2xl" />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-              {allClassroomsData?.map((cls: any) => (
-                <div
-                  key={cls.id}
-                  className="bg-white dark:bg-[#151C28] rounded-2xl border border-gray-200/80 dark:border-[#242F42] p-4 sm:p-5 shadow-xs space-y-3"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-black text-base text-foreground dark:text-white truncate">{cls.name}</h3>
-                    <Badge variant="neutral" className="text-[10px] font-bold border-gray-200 dark:border-[#242F42] shrink-0">
-                      کد {toPersianDigits(cls.code || '')}
-                    </Badge>
-                  </div>
-
-                  <p className="text-xs font-bold text-muted-foreground truncate">
-                    پایه: {cls.level?.name || 'ـ'} • رشته: {cls.field?.name || 'ـ'}
-                  </p>
-
-                  {/* Responsive Quick Period Buttons */}
-                  <div className="pt-2 border-t border-gray-100 dark:border-[#242F42]">
-                    <span className="text-[11px] font-bold text-muted-foreground block mb-1.5">
-                      انتخاب زنگ:
-                    </span>
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-                      {[1, 2, 3, 4, 5, 6].map((pNum) => (
-                        <button
-                          key={pNum}
-                          type="button"
-                          onClick={() =>
-                            setActiveSession({
-                              classroomId: cls.id,
-                              classroomName: cls.name,
-                              periodNumber: pNum,
-                            })
-                          }
-                          className="py-1 text-xs font-bold rounded-lg border border-gray-200 dark:border-[#242F42] bg-gray-50 dark:bg-[#1C2536] hover:bg-primary hover:text-white dark:hover:bg-primary transition-colors text-center"
-                        >
-                          {pNum >= 5 ? `زنگ ${toPersianDigits(pNum)} (فوق)` : `زنگ ${toPersianDigits(pNum)}`}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
             </div>
           )}
         </div>
@@ -1944,6 +1911,103 @@ export const AttendancePage: React.FC = () => {
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          8. DEDICATED TARDY TIME MODAL
+      ───────────────────────────────────────────────────────────── */}
+      {tardyModalStudent && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 animate-in fade-in"
+          onClick={() => setTardyModalStudent(null)}
+        >
+          <div
+            className="bg-white dark:bg-[#151C28] rounded-2xl border border-gray-200 dark:border-[#242F42] w-full max-w-sm p-5 space-y-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+            dir="rtl"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-[#242F42]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-orange-50 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800 text-orange-600 flex items-center justify-center font-black">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm text-foreground dark:text-white">
+                    ثبت تاخیر ورود
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground font-bold truncate">
+                    {tardyModalStudent.user?.firstName} {tardyModalStudent.user?.lastName}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTardyModalStudent(null)}
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#1C2536] rounded-xl text-muted-foreground transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Input Form */}
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-foreground dark:text-white block">
+                مدت زمان تاخیر (دقیقه):
+              </label>
+
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min="1"
+                  max="90"
+                  value={tardyInputMinutes}
+                  onChange={(e) => setTardyInputMinutes(Number(e.target.value))}
+                  className="rounded-xl border border-gray-200 dark:border-[#242F42] bg-gray-50/60 dark:bg-[#1C2536] font-mono font-black text-center text-base h-11"
+                  autoFocus
+                />
+                <span className="text-xs font-bold text-muted-foreground shrink-0">دقیقه</span>
+              </div>
+
+              {/* Quick Preset Pills */}
+              <div className="grid grid-cols-4 gap-1.5 pt-1">
+                {[5, 10, 15, 20, 25, 30, 45, 60].map((mins) => (
+                  <button
+                    key={mins}
+                    type="button"
+                    onClick={() => setTardyInputMinutes(mins)}
+                    className={`py-1.5 text-xs font-bold rounded-xl border transition-all text-center cursor-pointer ${
+                      tardyInputMinutes === mins
+                        ? 'bg-orange-500 text-white border-orange-500 shadow-2xs font-black'
+                        : 'bg-gray-50 dark:bg-[#1C2536] text-foreground dark:text-gray-200 border-gray-200 dark:border-[#242F42] hover:border-orange-400'
+                    }`}
+                  >
+                    {toPersianDigits(mins)} دقیقه
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100 dark:border-[#242F42]">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setTardyModalStudent(null)}
+                className="rounded-xl border border-gray-200 dark:border-[#242F42] text-xs font-bold h-9"
+              >
+                انصراف
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleConfirmTardy}
+                className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black text-xs h-9 shadow-xs"
+              >
+                ثبت تاخیر
+              </Button>
+            </div>
           </div>
         </div>
       )}

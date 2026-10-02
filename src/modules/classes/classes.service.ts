@@ -126,56 +126,58 @@ export class ClassesService {
     const isModular = dto.isModular !== undefined ? Boolean(dto.isModular) : isModularLessonType;
     const podmanCount = isModular ? Math.max(1, dto.podmanCount || 5) : 5;
 
-    return this.prisma.$transaction(async (tx) => {
-      const lesson = await tx.lesson.create({
-        data: {
-          tenantId,
-          levelId: levelId!,
-          fieldId: sanitizedFieldId,
-          name: dto.name,
-          code: dto.code,
-          unitCount: unitCount > 0 ? unitCount : 1,
-          type: dto.type || 'GENERAL',
-          description: dto.description,
-          isModular,
-          podmanCount,
-        },
-        include: {
-          level: true,
-          field: true,
-        },
-      });
-
-      if (isModular) {
-        const podmanCreates: Array<{
-          tenantId: string;
-          lessonId: string;
-          number: number;
-          title: string;
-        }> = [];
-        for (let i = 1; i <= podmanCount; i++) {
-          const customTitle = dto.podmanTitles && dto.podmanTitles[i - 1]?.trim();
-          podmanCreates.push({
+    return this.prisma.$transaction(
+      async (tx) => {
+        const lesson = await tx.lesson.create({
+          data: {
             tenantId,
-            lessonId: lesson.id,
-            number: i,
-            title: customTitle || `پودمان ${i}`,
+            levelId: levelId!,
+            fieldId: sanitizedFieldId,
+            name: dto.name,
+            code: dto.code,
+            unitCount: unitCount > 0 ? unitCount : 1,
+            type: dto.type || 'GENERAL',
+            description: dto.description,
+            isModular,
+            podmanCount,
+          },
+        });
+
+        if (isModular) {
+          const podmanCreates: Array<{
+            tenantId: string;
+            lessonId: string;
+            number: number;
+            title: string;
+          }> = [];
+          for (let i = 1; i <= podmanCount; i++) {
+            const customTitle = dto.podmanTitles && dto.podmanTitles[i - 1]?.trim();
+            podmanCreates.push({
+              tenantId,
+              lessonId: lesson.id,
+              number: i,
+              title: customTitle || `پودمان ${i}`,
+            });
+          }
+          await tx.podman.createMany({
+            data: podmanCreates,
           });
         }
-        await tx.podman.createMany({
-          data: podmanCreates,
-        });
-      }
 
-      return tx.lesson.findUnique({
-        where: { id: lesson.id },
-        include: {
-          level: true,
-          field: true,
-          podmans: { orderBy: { number: 'asc' } },
-        },
-      });
-    });
+        return tx.lesson.findUnique({
+          where: { id: lesson.id },
+          include: {
+            level: true,
+            field: true,
+            podmans: { orderBy: { number: 'asc' } },
+          },
+        });
+      },
+      {
+        timeout: 15000,
+        maxWait: 5000,
+      },
+    );
   }
 
   // 2. Classrooms
@@ -422,6 +424,25 @@ export class ClassesService {
       throw new NotFoundException('کلاس درس مورد نظر یافت نشد');
     }
     return classroom;
+  }
+
+  async deleteClassroom(tenantId: string, classroomId: string) {
+    const classroom = await this.prisma.classroom.findFirst({
+      where: { id: classroomId, tenantId },
+    });
+
+    if (!classroom) {
+      throw new NotFoundException('کلاس مورد نظر یافت نشد');
+    }
+
+    await this.prisma.classroom.delete({
+      where: { id: classroomId },
+    });
+
+    return {
+      message: `کلاس «${classroom.name}» با موفقیت حذف گردید`,
+      deletedClassroomId: classroomId,
+    };
   }
 
   // 3. Class Enrollment

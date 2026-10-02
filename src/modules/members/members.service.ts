@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as argon2 from 'argon2';
@@ -10,6 +11,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateStudentDto,
   CreateTeacherDto,
+  UpdateTeacherDto,
   CreateCoachDto,
   CreateStaffDto,
   CreateParentDto,
@@ -876,6 +878,212 @@ export class MembersService {
           },
         },
       });
+    });
+  }
+
+  async updateTeacher(tenantId: string, teacherId: string, dto: UpdateTeacherDto): Promise<any> {
+    const teacher = await this.prisma.teacherProfile.findFirst({
+      where: { id: teacherId, tenantId },
+      include: { user: true, teacherLessons: true },
+    });
+    if (!teacher) {
+      throw new NotFoundException('دبیر مورد نظر در این مدرسه یافت نشد');
+    }
+
+    if (dto.phone && dto.phone !== teacher.user.phone) {
+      const existingPhone = await this.prisma.user.findFirst({
+        where: {
+          tenantId,
+          phone: dto.phone,
+          id: { not: teacher.userId },
+        },
+      });
+      if (existingPhone) {
+        throw new BadRequestException('شماره همراه وارد شده قبلاً برای کاربر دیگری در این مدرسه ثبت شده است');
+      }
+    }
+
+    if (dto.username && dto.username !== teacher.user.username) {
+      const existingUsername = await this.prisma.user.findFirst({
+        where: {
+          tenantId,
+          username: dto.username,
+          id: { not: teacher.userId },
+        },
+      });
+      if (existingUsername) {
+        throw new BadRequestException('نام کاربری وارد شده قبلاً برای کاربر دیگری در این مدرسه ثبت شده است');
+      }
+    }
+
+    let passwordHash: string | undefined;
+    let encryptedPassword: string | null | undefined;
+    if (dto.password && dto.password.trim()) {
+      passwordHash = await argon2.hash(dto.password.trim());
+      encryptedPassword = await this.passwordVaultService.encryptPasswordForTenant(
+        tenantId,
+        dto.password.trim(),
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Update user fields
+      const userUpdate: any = {};
+      if (dto.firstName !== undefined) userUpdate.firstName = dto.firstName;
+      if (dto.lastName !== undefined) userUpdate.lastName = dto.lastName;
+      if (dto.phone !== undefined) {
+        userUpdate.phone = dto.phone;
+        // Keep username synced if username wasn't explicitly changed or was identical to previous phone
+        if (!dto.username && teacher.user.username === teacher.user.phone) {
+          userUpdate.username = dto.phone;
+        }
+      }
+      if (dto.username !== undefined) userUpdate.username = dto.username;
+      if (dto.nationalCode !== undefined) userUpdate.nationalId = dto.nationalCode;
+      if (dto.email !== undefined) userUpdate.email = dto.email || null;
+      if (dto.status !== undefined) userUpdate.status = dto.status;
+      if (passwordHash) {
+        userUpdate.passwordHash = passwordHash;
+        if (encryptedPassword) {
+          userUpdate.encryptedPassword = encryptedPassword;
+        }
+      }
+
+      if (Object.keys(userUpdate).length > 0) {
+        await tx.user.update({
+          where: { id: teacher.userId },
+          data: userUpdate,
+        });
+      }
+
+      // 2. Update teacherProfile fields
+      const profileUpdate: any = {};
+      if (dto.personnelCode !== undefined) profileUpdate.personnelCode = dto.personnelCode;
+      if (dto.degree !== undefined) profileUpdate.degree = dto.degree;
+      if (dto.studyField !== undefined) profileUpdate.studyField = dto.studyField;
+      if (dto.homeAddress !== undefined) profileUpdate.homeAddress = dto.homeAddress;
+      if (dto.landlinePhone !== undefined) profileUpdate.landlinePhone = dto.landlinePhone;
+      if (dto.employmentType !== undefined) profileUpdate.employmentType = dto.employmentType;
+      if (dto.bio !== undefined) profileUpdate.bio = dto.bio;
+      if (dto.speciality !== undefined || dto.specialization !== undefined) {
+        profileUpdate.speciality = dto.speciality || dto.specialization;
+      }
+
+      if (Object.keys(profileUpdate).length > 0) {
+        await tx.teacherProfile.update({
+          where: { id: teacher.id },
+          data: profileUpdate,
+        });
+      }
+
+      // 3. Update assigned lessons if lessonIds provided
+      if (dto.lessonIds !== undefined && Array.isArray(dto.lessonIds)) {
+        await tx.teacherLesson.deleteMany({
+          where: { teacherId: teacher.id, tenantId },
+        });
+        const uniqueLessonIds = Array.from(new Set(dto.lessonIds.filter(Boolean)));
+        for (const lessonId of uniqueLessonIds) {
+          await tx.teacherLesson.create({
+            data: {
+              tenantId,
+              teacherId: teacher.id,
+              lessonId,
+            },
+          });
+        }
+      }
+
+      return tx.teacherProfile.findUnique({
+        where: { id: teacher.id },
+        include: {
+          user: true,
+          teacherLessons: {
+            include: {
+              lesson: {
+                include: {
+                  level: true,
+                  field: true,
+                },
+              },
+            },
+          },
+          schedules: {
+            include: {
+              classroom: true,
+              lesson: true,
+            },
+          },
+        },
+      });
+    });
+  }
+
+  async deleteTeacher(tenantId: string, teacherId: string): Promise<any> {
+    const teacher = await this.prisma.teacherProfile.findFirst({
+      where: { id: teacherId, tenantId },
+      include: { user: true },
+    });
+    if (!teacher) {
+      throw new NotFoundException('دبیر مورد نظر در این مدرسه یافت نشد');
+    }
+
+    const userId = teacher.userId;
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Unlink from any split-period / secondTeacher schedules
+      await tx.classSchedule.updateMany({
+        where: { secondTeacherId: teacher.id },
+        data: { secondTeacherId: null, isSplitPeriod: false },
+      });
+
+      // 2. Cascade delete teacher relations
+      await tx.teacherLesson.deleteMany({
+        where: { teacherId: teacher.id },
+      });
+      await tx.teacherAttendance.deleteMany({
+        where: { teacherId: teacher.id },
+      });
+      await tx.parentVisitSlot.deleteMany({
+        where: { teacherId: teacher.id },
+      });
+
+      // 3. Delete teacher profile
+      await tx.teacherProfile.delete({
+        where: { id: teacher.id },
+      });
+
+      // 4. If user has no other profiles in the system, clean up user account
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        include: {
+          studentProfile: true,
+          staffProfile: true,
+          coachProfile: true,
+          parentProfile: true,
+        },
+      });
+
+      if (
+        user &&
+        !user.studentProfile &&
+        !user.staffProfile &&
+        !user.coachProfile &&
+        !user.parentProfile
+      ) {
+        try {
+          await tx.user.delete({
+            where: { id: userId },
+          });
+        } catch {
+          // If foreign keys (e.g. audit logs) prevent hard delete, mark SUSPENDED
+          await tx.user.update({
+            where: { id: userId },
+            data: { status: 'SUSPENDED' },
+          });
+        }
+      }
+
+      return { success: true, message: 'دبیر با موفقیت حذف گردید' };
     });
   }
 

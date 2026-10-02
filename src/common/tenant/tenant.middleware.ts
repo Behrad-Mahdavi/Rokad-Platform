@@ -101,9 +101,10 @@ export class TenantMiddleware implements NestMiddleware {
     if (parts.length >= 3) {
       // e.g. boys.rokadschool.ir -> subdomain = boys
       const subdomain = parts[0];
-      if (subdomain !== 'www' && subdomain !== 'api' && subdomain !== 'app') {
+      if (subdomain !== 'www' && subdomain !== 'api' && subdomain !== 'app' && subdomain !== 'platform') {
         return { type: 'subdomain', value: subdomain };
       }
+      return null;
     }
 
     // Custom domain

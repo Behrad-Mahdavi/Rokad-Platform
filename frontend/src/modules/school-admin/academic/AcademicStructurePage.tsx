@@ -30,7 +30,9 @@ import {
   Building,
   AlertCircle,
   Edit3,
+  Trash2,
 } from 'lucide-react';
+import { toast } from '../../../components/ui/toast/toast';
 import { ResponsivePageHeader } from '@/components/ui/ResponsivePageHeader';
 
 export const AcademicStructurePage: React.FC = () => {
@@ -49,6 +51,8 @@ export const AcademicStructurePage: React.FC = () => {
   const [isEditClassModalOpen, setIsEditClassModalOpen] = useState(false);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
   const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
+  const [deleteConfirmClass, setDeleteConfirmClass] = useState<any | null>(null);
+  const [isDeletingClass, setIsDeletingClass] = useState(false);
 
   // Forms
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -245,6 +249,26 @@ export const AcademicStructurePage: React.FC = () => {
     }
   };
 
+  const handleConfirmDeleteClass = async () => {
+    if (!deleteConfirmClass) return;
+    setIsDeletingClass(true);
+    try {
+      await apiClient.delete(`/classes/classrooms/${deleteConfirmClass.id}`);
+      setClassrooms((prev) => prev.filter((c) => c.id !== deleteConfirmClass.id));
+      toast.success('کلاس با موفقیت حذف شد.');
+      setDeleteConfirmClass(null);
+      if (isEditClassModalOpen && editingClassId === deleteConfirmClass.id) {
+        setIsEditClassModalOpen(false);
+        setEditingClassId(null);
+      }
+      fetchData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err.message || 'خطا در حذف کلاس درس.');
+    } finally {
+      setIsDeletingClass(false);
+    }
+  };
+
   const handleCreateLesson = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -357,33 +381,27 @@ export const AcademicStructurePage: React.FC = () => {
           isLoading={isLoading}
           emptyMessage="هنوز کلاسی ثبت نشده است. از دکمه «ایجاد کلاس درس جدید» استفاده کنید."
           primaryField={(c) => (
-            <div className="flex items-center justify-between w-full">
-              <div>
-                <div className="font-bold text-ink-darker text-sm">{c.name}</div>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="font-mono text-[11px] bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">{c.code}</span>
-                  {c.roomNumber && <span className="text-[11px] text-gray-400">اتاق {c.roomNumber}</span>}
-                </div>
+            <div className="space-y-1">
+              <div className="font-bold text-ink-darker text-sm">{c.name}</div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-mono text-[11px] bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">{c.code}</span>
+                {c.roomNumber && <span className="text-[11px] text-gray-400">{c.roomNumber}</span>}
               </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleOpenEditClass(c);
-                }}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all border border-primary/20 shrink-0 cursor-pointer shadow-2xs"
-                title="ویرایش اطلاعات کلاس"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>ویرایش</span>
-              </button>
             </div>
           )}
           secondaryField={(c) => (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <Badge variant="default" className="text-[11px]">پایه {c.level?.name || 'دهم'}</Badge>
-              <Badge variant="college" className="text-[11px]">{c.field?.name || 'عمومی'}</Badge>
-            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenEditClass(c);
+              }}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all border border-primary/20 shrink-0 cursor-pointer shadow-2xs"
+              title="ویرایش کلاس"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>ویرایش</span>
+            </button>
           )}
           columns={[
             {
@@ -401,6 +419,7 @@ export const AcademicStructurePage: React.FC = () => {
             },
             {
               header: 'پایه تحصیلی',
+              mobilePriority: 'secondary',
               cell: (c) => (
                 <Badge variant="default" className="font-bold">
                   پایه {c.level?.name || 'دهم'}
@@ -409,6 +428,7 @@ export const AcademicStructurePage: React.FC = () => {
             },
             {
               header: 'رشته تحصیلی',
+              mobilePriority: 'secondary',
               cell: (c) => (
                 <Badge variant="college" className="font-bold">
                   {c.field?.name || 'شبکه و نرم‌افزار رایانه'}
@@ -417,28 +437,31 @@ export const AcademicStructurePage: React.FC = () => {
             },
             {
               header: 'سال تحصیلی',
+              mobilePriority: 'secondary',
               cell: (c) => <span className="text-xs text-gray-600">{c.academicYear?.name || '۱۴۰۴-۱۴۰۵'}</span>,
             },
             {
               header: 'تعداد دانش‌آموزان',
+              mobileDetail: true,
               cell: (c) => (
                 <span className="font-bold text-ink-darker">
                   {c._count?.enrollments || c._count?.students || 0} دانش‌آموز
                 </span>
               ),
-              mobileDetail: true,
             },
             {
               header: 'ظرفیت کلاس',
-              cell: (c) => <span className="text-xs text-gray-500">{c.capacity || 30} نفر</span>,
               mobileDetail: true,
+              cell: (c) => <span className="text-xs text-gray-500">{c.capacity || 30} نفر</span>,
             },
             {
               header: 'وضعیت',
+              mobileDetail: true,
               cell: () => <Badge variant="success">فعال</Badge>,
             },
             {
               header: 'عملیات',
+              mobilePriority: 'hidden',
               cell: (c) => (
                 <button
                   type="button"
@@ -514,41 +537,45 @@ export const AcademicStructurePage: React.FC = () => {
       {/* Tab 3: Lessons */}
       {activeTab === 'LESSONS' && (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-ink-dark">فیلتر بر اساس پایه:</span>
-              <select
-                value={lessonFilterLevel}
-                onChange={(e) => {
-                  setLessonFilterLevel(e.target.value);
-                  setLessonFilterField('ALL');
-                }}
-                className="h-9 rounded-md border border-gray-200 bg-gray-50 px-2.5 text-xs font-medium text-ink-dark focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                <option value="ALL">همه پایه‌ها</option>
-                {levels.map((lvl) => (
-                  <option key={lvl.id} value={lvl.id}>
-                    پایه {lvl.name}
-                  </option>
-                ))}
-              </select>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-gray-200/80 shadow-xs">
+            <div className="grid grid-cols-1 sm:flex sm:items-center gap-2.5 w-full sm:w-auto">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-ink-dark shrink-0">پایه:</span>
+                <select
+                  value={lessonFilterLevel}
+                  onChange={(e) => {
+                    setLessonFilterLevel(e.target.value);
+                    setLessonFilterField('ALL');
+                  }}
+                  className="h-9 w-full sm:w-auto rounded-lg border border-gray-200 bg-gray-50 px-2.5 text-xs font-medium text-ink-dark focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="ALL">همه پایه‌ها</option>
+                  {levels.map((lvl) => (
+                    <option key={lvl.id} value={lvl.id}>
+                      پایه {lvl.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <span className="text-xs font-bold text-ink-dark">رشته تحصیلی:</span>
-              <select
-                value={lessonFilterField}
-                onChange={(e) => setLessonFilterField(e.target.value)}
-                className="h-9 rounded-md border border-gray-200 bg-gray-50 px-2.5 text-xs font-medium text-ink-dark focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                <option value="ALL">همه رشته‌ها</option>
-                {(lessonFilterLevel === 'ALL'
-                  ? fields
-                  : fields.filter((f) => f.levelId === lessonFilterLevel)
-                ).map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.name}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-ink-dark shrink-0">رشته:</span>
+                <select
+                  value={lessonFilterField}
+                  onChange={(e) => setLessonFilterField(e.target.value)}
+                  className="h-9 w-full sm:w-auto rounded-lg border border-gray-200 bg-gray-50 px-2.5 text-xs font-medium text-ink-dark focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="ALL">همه رشته‌ها</option>
+                  {(lessonFilterLevel === 'ALL'
+                    ? fields
+                    : fields.filter((f) => f.levelId === lessonFilterLevel)
+                  ).map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="text-xs text-gray-500 font-medium">
               تعداد دروس نمایش‌داده‌شده:{' '}
@@ -767,7 +794,7 @@ export const AcademicStructurePage: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleCreateClass} className="space-y-4">
+        <form onSubmit={handleCreateClass} className="space-y-3.5">
           <Input
             label="نام کلاس"
             placeholder="مثال: کلاس دهم ریاضی ۱"
@@ -776,7 +803,7 @@ export const AcademicStructurePage: React.FC = () => {
             required
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <Input
               label="کد یکتای کلاس"
               placeholder="مثال: CLS-10-M1"
@@ -793,15 +820,15 @@ export const AcademicStructurePage: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="w-full text-right space-y-1.5">
+              <label className="block text-xs sm:text-[13px] font-bold text-ink-normal/80 dark:text-gray-300 text-right">
                 پایه تحصیلی <span className="text-red-500">*</span>
               </label>
               <select
                 value={classForm.levelId}
                 onChange={(e) => handleLevelChange(e.target.value)}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs sm:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all cursor-pointer"
                 required
               >
                 {levels.map((lvl) => (
@@ -812,14 +839,14 @@ export const AcademicStructurePage: React.FC = () => {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+            <div className="w-full text-right space-y-1.5">
+              <label className="block text-xs sm:text-[13px] font-bold text-ink-normal/80 dark:text-gray-300 text-right">
                 رشته تحصیلی <span className="text-red-500">*</span>
               </label>
               <select
                 value={classForm.fieldId}
                 onChange={(e) => setClassForm({ ...classForm, fieldId: e.target.value })}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs sm:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all cursor-pointer"
                 required
               >
                 {(fields.filter((f) => f.levelId === classForm.levelId).length > 0
@@ -834,15 +861,15 @@ export const AcademicStructurePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="w-full text-right space-y-1.5">
+              <label className="block text-xs sm:text-[13px] font-bold text-ink-normal/80 dark:text-gray-300 text-right">
                 سال تحصیلی
               </label>
               <select
                 value={classForm.academicYearId}
                 onChange={(e) => setClassForm({ ...classForm, academicYearId: e.target.value })}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs sm:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all cursor-pointer"
               >
                 {academicYears.map((y) => (
                   <option key={y.id} value={y.id}>
@@ -853,14 +880,14 @@ export const AcademicStructurePage: React.FC = () => {
             </div>
 
             <Input
-              label="شماره یا نام اتاق فیزیکی (اختیاری)"
-              placeholder="مثال: اتاق ۱۰۱ یا کارگاه کامپیوتر"
+              label="نام کلاس (اختیاری)"
+              placeholder="مثال: ۱۰۱ یا کارگاه ۱"
               value={classForm.roomNumber}
               onChange={(e) => setClassForm({ ...classForm, roomNumber: e.target.value })}
             />
           </div>
 
-          <div className="flex justify-end space-x-2 space-x-reverse pt-2">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
             <Button
               type="button"
               variant="ghost"
@@ -868,10 +895,11 @@ export const AcademicStructurePage: React.FC = () => {
                 setIsClassModalOpen(false);
                 setError(null);
               }}
+              className="h-10 px-4 text-xs sm:text-sm"
             >
               انصراف
             </Button>
-            <Button type="submit" variant="primary" isLoading={isSubmitting}>
+            <Button type="submit" variant="primary" isLoading={isSubmitting} className="h-10 px-5 text-xs sm:text-sm font-bold">
               ایجاد کلاس
             </Button>
           </div>
@@ -897,7 +925,7 @@ export const AcademicStructurePage: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleUpdateClass} className="space-y-4">
+        <form onSubmit={handleUpdateClass} className="space-y-3.5">
           <Input
             label="نام کلاس"
             placeholder="مثال: کلاس دهم ریاضی ۱"
@@ -906,7 +934,7 @@ export const AcademicStructurePage: React.FC = () => {
             required
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <Input
               label="کد یکتای کلاس"
               placeholder="مثال: CLS-10-M1"
@@ -923,15 +951,15 @@ export const AcademicStructurePage: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="w-full text-right space-y-1.5">
+              <label className="block text-xs sm:text-[13px] font-bold text-ink-normal/80 dark:text-gray-300 text-right">
                 پایه تحصیلی <span className="text-red-500">*</span>
               </label>
               <select
                 value={editClassForm.levelId}
                 onChange={(e) => handleEditClassLevelChange(e.target.value)}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs sm:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all cursor-pointer"
                 required
               >
                 {levels.map((lvl) => (
@@ -942,14 +970,14 @@ export const AcademicStructurePage: React.FC = () => {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+            <div className="w-full text-right space-y-1.5">
+              <label className="block text-xs sm:text-[13px] font-bold text-ink-normal/80 dark:text-gray-300 text-right">
                 رشته تحصیلی <span className="text-red-500">*</span>
               </label>
               <select
                 value={editClassForm.fieldId}
                 onChange={(e) => setEditClassForm({ ...editClassForm, fieldId: e.target.value })}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs sm:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all cursor-pointer"
                 required
               >
                 {(fields.filter((f) => f.levelId === editClassForm.levelId).length > 0
@@ -964,15 +992,15 @@ export const AcademicStructurePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="w-full text-right space-y-1.5">
+              <label className="block text-xs sm:text-[13px] font-bold text-ink-normal/80 dark:text-gray-300 text-right">
                 سال تحصیلی
               </label>
               <select
                 value={editClassForm.academicYearId}
                 onChange={(e) => setEditClassForm({ ...editClassForm, academicYearId: e.target.value })}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs sm:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all cursor-pointer"
               >
                 {academicYears.map((y) => (
                   <option key={y.id} value={y.id}>
@@ -983,28 +1011,44 @@ export const AcademicStructurePage: React.FC = () => {
             </div>
 
             <Input
-              label="شماره یا نام اتاق فیزیکی (اختیاری)"
-              placeholder="مثال: اتاق ۱۰۱ یا کارگاه کامپیوتر"
+              label="نام کلاس (اختیاری)"
+              placeholder="مثال: ۱۰۱ یا کارگاه ۱"
               value={editClassForm.roomNumber}
               onChange={(e) => setEditClassForm({ ...editClassForm, roomNumber: e.target.value })}
             />
           </div>
 
-          <div className="flex justify-end space-x-2 space-x-reverse pt-2">
-            <Button
+          <div className="flex items-center justify-between gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+            <button
               type="button"
-              variant="ghost"
+              className="h-10 w-10 flex items-center justify-center rounded-xl text-rose-600 hover:text-white hover:bg-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 transition-all shrink-0 cursor-pointer shadow-2xs"
+              title="حذف کلاس"
               onClick={() => {
-                setIsEditClassModalOpen(false);
-                setEditingClassId(null);
-                setError(null);
+                const currentClass = classrooms.find((c) => c.id === editingClassId);
+                if (currentClass) {
+                  setDeleteConfirmClass(currentClass);
+                }
               }}
             >
-              انصراف
-            </Button>
-            <Button type="submit" variant="primary" isLoading={isSubmitting}>
-              ذخیره تغییرات
-            </Button>
+              <Trash2 className="w-4 h-4" />
+            </button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setIsEditClassModalOpen(false);
+                  setEditingClassId(null);
+                  setError(null);
+                }}
+                className="h-10 px-3.5 text-xs sm:text-sm"
+              >
+                انصراف
+              </Button>
+              <Button type="submit" variant="primary" isLoading={isSubmitting} className="h-10 px-4 text-xs sm:text-sm font-bold">
+                ذخیره تغییرات
+              </Button>
+            </div>
           </div>
         </form>
       </Modal>
@@ -1036,11 +1080,11 @@ export const AcademicStructurePage: React.FC = () => {
               <select
                 value={lessonForm.levelId}
                 onChange={(e) => handleLessonLevelChange(e.target.value)}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                className="flex h-11 w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3.5 py-2 text-sm text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
                 required
               >
                 {levels.map((lvl) => (
-                  <option key={lvl.id} value={lvl.id}>
+                  <option key={lvl.id} value={lvl.id} className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">
                     پایه {lvl.name}
                   </option>
                 ))}
@@ -1048,23 +1092,23 @@ export const AcademicStructurePage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+              <label className="block text-sm font-medium text-ink-normal dark:text-gray-300 mb-1.5 text-right">
                 رشته تحصیلی <span className="text-red-500">*</span>
               </label>
               <select
                 value={lessonForm.fieldId}
                 onChange={(e) => setLessonForm({ ...lessonForm, fieldId: e.target.value })}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                className="flex h-11 w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3.5 py-2 text-sm text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
               >
                 {(fields.filter((f) => f.levelId === lessonForm.levelId).length > 0
                   ? fields.filter((f) => f.levelId === lessonForm.levelId)
                   : fields
                 ).map((f) => (
-                  <option key={f.id} value={f.id}>
+                  <option key={f.id} value={f.id} className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">
                     {f.name}
                   </option>
                 ))}
-                <option value="">عمومی (مشترک بین تمام رشته‌ها)</option>
+                <option value="" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">عمومی (مشترک بین تمام رشته‌ها)</option>
               </select>
             </div>
           </div>
@@ -1089,7 +1133,7 @@ export const AcademicStructurePage: React.FC = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+                <label className="block text-sm font-medium text-ink-normal dark:text-gray-300 mb-1.5 text-right">
                   نوع درس
                 </label>
                 <select
@@ -1103,13 +1147,13 @@ export const AcademicStructurePage: React.FC = () => {
                       isModular: isMod,
                     });
                   }}
-                  className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-medium"
+                  className="flex h-11 w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3.5 py-2 text-sm text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-medium"
                 >
-                  <option value="GENERAL">۱- عمومی</option>
-                  <option value="NON_TECHNICAL_COMPETENCY">۲- شایستگی‌های غیرفنی (پودمانی)</option>
-                  <option value="BASIC_COMPETENCY">۳- شایستگی‌های پایه (پودمانی)</option>
-                  <option value="TECHNICAL_MODULAR_COMPETENCY">۴- شایستگی‌های فنی / پودمانی</option>
-                  <option value="TECHNICAL_PRACTICAL_COMPETENCY">۵- شایستگی‌های فنی / عملی</option>
+                  <option value="GENERAL" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۱- عمومی</option>
+                  <option value="NON_TECHNICAL_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۲- شایستگی‌های غیرفنی (پودمانی)</option>
+                  <option value="BASIC_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۳- شایستگی‌های پایه (پودمانی)</option>
+                  <option value="TECHNICAL_MODULAR_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۴- شایستگی‌های فنی / پودمانی</option>
+                  <option value="TECHNICAL_PRACTICAL_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۵- شایستگی‌های فنی / عملی</option>
                 </select>
               </div>
 
@@ -1124,86 +1168,86 @@ export const AcademicStructurePage: React.FC = () => {
 
             {/* کارت راهنما و توضیحات زنده منطق نمره‌دهی و ارزشیابی نوع درس */}
             {lessonForm.type === 'GENERAL' && (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5 text-xs text-emerald-950 space-y-1.5 transition-all">
-                <div className="flex items-center justify-between font-bold text-emerald-900">
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                    منطق ارزشیابی: دروس عمومی (غیرپودمانی)
+              <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/30 p-3 sm:p-3.5 text-xs text-emerald-950 dark:text-emerald-200 space-y-1.5 transition-all">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 font-bold text-emerald-900 dark:text-emerald-300">
+                  <span className="flex items-center gap-1.5 text-xs sm:text-[13px]">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                    ارزشیابی نوبت اول و دوم (غیرپودمانی)
                   </span>
-                  <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[11px] border border-emerald-300">
-                    نظام نوبت اول و نوبت دوم
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 text-[10.5px] border border-emerald-300 dark:border-emerald-700/60 shrink-0">
+                    نظام سالانه
                   </span>
                 </div>
-                <p className="leading-relaxed text-emerald-800 text-[11.5px]">
-                  این درس به صورت ترمی/سالیانه ارزشیابی می‌شود: دارای <strong>نمره مستمر و پایانی نوبت اول (دی‌ماه)</strong> و <strong>نمره مستمر و پایانی نوبت دوم (خرداد/شهریور)</strong>. محاسبه نمره سالانه طبق فرمول آموزش متوسطه انجام می‌گیرد و نیازی به تفکیک ۵ پودمان ندارد.
+                <p className="leading-relaxed text-emerald-800 dark:text-emerald-400 text-[11px] sm:text-xs break-words">
+                  ثبت نمرات مستمر و پایانی در دو نوبت دی‌ماه و خرداد، بدون نیاز به پودمان‌بندی.
                 </p>
               </div>
             )}
 
             {lessonForm.type === 'NON_TECHNICAL_COMPETENCY' && (
-              <div className="rounded-xl border border-purple-200 bg-purple-50/70 p-3.5 text-xs text-purple-950 space-y-1.5 transition-all">
-                <div className="flex items-center justify-between font-bold text-purple-900">
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-purple-500 animate-pulse" />
-                    منطق ارزشیابی: شایستگی‌های غیرفنی (پودمانی)
+              <div className="rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50/70 dark:bg-purple-950/30 p-3 sm:p-3.5 text-xs text-purple-950 dark:text-purple-200 space-y-1.5 transition-all">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 font-bold text-purple-900 dark:text-purple-300">
+                  <span className="flex items-center gap-1.5 text-xs sm:text-[13px]">
+                    <span className="h-2 w-2 rounded-full bg-purple-500 shrink-0" />
+                    شایستگی‌های غیرفنی (۵ پودمان)
                   </span>
-                  <span className="px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 text-[11px] border border-purple-300">
-                    ۵ پودمان مهارتی مستقل
+                  <span className="px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-300 text-[10.5px] border border-purple-300 dark:border-purple-700/60 shrink-0">
+                    نصاب قبولی: ۱۲
                   </span>
                 </div>
-                <p className="leading-relaxed text-purple-800 text-[11.5px]">
-                  دروسی نظیر الزامات محیط کار، اخلاق حرفه‌ای، کاربرد فناوری اطلاعات و ارتباطات، و کارگاه نوآوری و کارآفرینی. ارزشیابی در <strong>۵ پودمان مجزا</strong> انجام می‌شود (نمره مستمر ۰ تا ۵ + شایستگی ۱ تا ۳ ضربدر ۵ = نمره پودمان از ۲۰). <strong>حد نصاب قبولی کسب حداقل نمره ۱۲ در تمام ۵ پودمان است.</strong>
+                <p className="leading-relaxed text-purple-800 dark:text-purple-400 text-[11px] sm:text-xs break-words">
+                  ارزشیابی در ۵ پودمان مهارتی مستقل (الزامات محیط کار، اخلاق حرفه‌ای، کارآفرینی و...).
                 </p>
               </div>
             )}
 
             {lessonForm.type === 'BASIC_COMPETENCY' && (
-              <div className="rounded-xl border border-indigo-200 bg-indigo-50/70 p-3.5 text-xs text-indigo-950 space-y-1.5 transition-all">
-                <div className="flex items-center justify-between font-bold text-indigo-900">
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
-                    منطق ارزشیابی: شایستگی‌های پایه (پودمانی)
+              <div className="rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/70 dark:bg-indigo-950/30 p-3 sm:p-3.5 text-xs text-indigo-950 dark:text-indigo-200 space-y-1.5 transition-all">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 font-bold text-indigo-900 dark:text-indigo-300">
+                  <span className="flex items-center gap-1.5 text-xs sm:text-[13px]">
+                    <span className="h-2 w-2 rounded-full bg-indigo-500 shrink-0" />
+                    شایستگی‌های پایه (۵ پودمان)
                   </span>
-                  <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 text-[11px] border border-indigo-300">
-                    ۵ پودمان علوم پایه هنرستان
+                  <span className="px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-300 text-[10.5px] border border-indigo-300 dark:border-indigo-700/60 shrink-0">
+                    دروس علوم پایه
                   </span>
                 </div>
-                <p className="leading-relaxed text-indigo-800 text-[11.5px]">
-                  دروس علوم پایه فنی‌وحرفه‌ای نظیر ریاضی ۱، ۲، ۳، فیزیک، و شیمی هنرستان. ساختار کتاب شامل <strong>۵ پودمان متوالی مستقل</strong> است و ارزشیابی هر پودمان به صورت مجزا با نمره مستمر و پایانی پودمان ثبت می‌گردد. شرط قبولی درس، قبولی در هر ۵ پودمان (حداقل نمره ۱۲) می‌باشد.
+                <p className="leading-relaxed text-indigo-800 dark:text-indigo-400 text-[11px] sm:text-xs break-words">
+                  ۵ پودمان متوالی با نمره مستمر و پایانی مجزا (ریاضی، فیزیک، شیمی هنرستان).
                 </p>
               </div>
             )}
 
             {lessonForm.type === 'TECHNICAL_MODULAR_COMPETENCY' && (
-              <div className="rounded-xl border border-purple-200 bg-gradient-to-r from-purple-50 via-purple-50/50 to-indigo-50/40 p-3.5 text-xs text-purple-950 space-y-1.5 transition-all">
-                <div className="flex items-center justify-between font-bold text-purple-900">
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-purple-600 animate-pulse" />
-                    منطق ارزشیابی: شایستگی‌های فنی / پودمانی (کارگاهی اصلی)
+              <div className="rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50/70 dark:bg-purple-950/30 p-3 sm:p-3.5 text-xs text-purple-950 dark:text-purple-200 space-y-1.5 transition-all">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 font-bold text-purple-900 dark:text-purple-300">
+                  <span className="flex items-center gap-1.5 text-xs sm:text-[13px]">
+                    <span className="h-2 w-2 rounded-full bg-purple-600 shrink-0" />
+                    شایستگی‌های فنی کارگاهی (۵ پودمان)
                   </span>
-                  <span className="px-2 py-0.5 rounded-md bg-purple-100 text-purple-900 text-[11px] border border-purple-300">
-                    ۵ پودمان کارگاهی شایستگی‌محور
+                  <span className="px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-300 text-[10.5px] border border-purple-300 dark:border-purple-700/60 shrink-0">
+                    کارگاهی تخصصی
                   </span>
                 </div>
-                <p className="leading-relaxed text-purple-800 text-[11.5px]">
-                  دروس اصلی کارگاهی رشته (مانند دانش فنی، نصب و راه‌اندازی، تولید محتوا، توسعه نرم‌افزار و...). ارزشیابی استاندارد در <strong>۵ پودمان تخصصی</strong> با سطوح شایستگی کارگاهی (شایستگی ۱ تا ۳ ضربدر ۵ + مستمر ۰ تا ۵ = نمره ۲۰). ملاک قبولی در هر پودمان نمره ۱۲ بوده و پودمان‌های تجدید شده دارای آزمون جبرانی مجزا هستند.
+                <p className="leading-relaxed text-purple-800 dark:text-purple-400 text-[11px] sm:text-xs break-words">
+                  ارزشیابی دروس تخصصی رشته در ۵ پودمان کارگاهی شایستگی‌محور با حد نصاب قبولی ۱۲.
                 </p>
               </div>
             )}
 
             {lessonForm.type === 'TECHNICAL_PRACTICAL_COMPETENCY' && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3.5 text-xs text-amber-950 space-y-1.5 transition-all">
-                <div className="flex items-center justify-between font-bold text-amber-900">
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                    منطق ارزشیابی: شایستگی‌های فنی / عملی (غیرپودمانی)
+              <div className="rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/30 p-3 sm:p-3.5 text-xs text-amber-950 dark:text-amber-200 space-y-1.5 transition-all">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 font-bold text-amber-900 dark:text-amber-300">
+                  <span className="flex items-center gap-1.5 text-xs sm:text-[13px]">
+                    <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+                    شایستگی‌های فنی و عملی (غیرپودمانی)
                   </span>
-                  <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[11px] border border-amber-300">
-                    سنجش کتبی و عملی آخر سال
+                  <span className="px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 text-[10.5px] border border-amber-300 dark:border-amber-700/60 shrink-0">
+                    آزمون کتبی و عملی
                   </span>
                 </div>
-                <p className="leading-relaxed text-amber-800 text-[11.5px]">
-                  این درس به ۵ پودمان تقسیم نمی‌شود؛ ارزشیابی آن بر اساس <strong>نمره آزمون کتبی</strong> و <strong>سنجش عملی کارگاهی آخر سال</strong> انجام می‌گیرد و عملکرد مهارتی و آزمون عملی ملاک اصلی تعیین نمره پایانی درس در کارنامه است.
+                <p className="leading-relaxed text-amber-800 dark:text-amber-400 text-[11px] sm:text-xs break-words">
+                  ارزشیابی بر اساس سنجش عملکردی کارگاهی و آزمون نهایی پایان دوره.
                 </p>
               </div>
             )}
@@ -1211,37 +1255,34 @@ export const AcademicStructurePage: React.FC = () => {
 
           {/* بخش تنظیمات پودمان (در صورت پودمانی بودن درس) */}
           {lessonForm.isModular ? (
-            <div className="bg-white dark:bg-[#151C28] bg-gradient-to-l from-purple-50/60 via-purple-50/20 to-transparent dark:from-purple-950/40 dark:via-transparent dark:to-transparent rounded-2xl border border-purple-200 dark:border-purple-900/50 p-4 space-y-3">
+            <div className="bg-white dark:bg-[#151C28] rounded-2xl border border-purple-200 dark:border-purple-900/50 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="font-extrabold text-sm text-ink-darker dark:text-white">
-                    پودمان‌های این درس (نظام ۵ پودمانی)
+                    پودمان‌های این درس
                   </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
                     ۵ پودمان فعال
                   </span>
                 </div>
-                <span className="text-xs text-purple-700 font-medium">
-                  ثبت خودکار در پایگاه داده
+                <span className="text-xs text-purple-700 dark:text-purple-400 font-medium">
+                  ثبت خودکار
                 </span>
               </div>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                برای این درس به طور خودکار ۵ پودمان در دیتابیس ساخته می‌شود. می‌توانید در صورت تمایل عناوین اختصاصی پودمان‌ها را وارد نمایید:
+              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                عناوین ۵ پودمان این درس به صورت اختیاری:
               </p>
 
-              <div className="pt-2 border-t border-purple-100 space-y-2">
-                <label className="block text-xs font-bold text-purple-900 mb-1">
-                  عناوین ۵ پودمان این درس (اختیاری):
-                </label>
+              <div className="pt-2 border-t border-purple-100 dark:border-purple-900/40 space-y-2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
                   {[0, 1, 2, 3, 4].map((idx) => (
                     <div
                       key={idx}
-                      className={`flex items-center gap-2 bg-white px-2 py-1.5 rounded-xl border border-purple-200/80 min-w-0 w-full overflow-hidden ${
+                      className={`flex items-center gap-2 bg-white dark:bg-[#1C2536] px-2.5 py-1.5 rounded-xl border border-purple-200/80 dark:border-purple-900/60 min-w-0 w-full overflow-hidden ${
                         idx === 4 ? 'sm:col-span-2' : ''
                       }`}
                     >
-                      <span className="text-[11px] font-bold text-purple-700 w-16 shrink-0 text-center font-mono">
+                      <span className="text-[11px] font-bold text-purple-700 dark:text-purple-400 w-16 shrink-0 text-center font-mono">
                         پودمان {idx + 1}:
                       </span>
                       <input
@@ -1253,7 +1294,7 @@ export const AcademicStructurePage: React.FC = () => {
                           setLessonForm({ ...lessonForm, podmanTitles: newTitles });
                         }}
                         placeholder={`عنوان پودمان ${idx + 1}`}
-                        className="flex-1 min-w-0 w-full h-8 text-xs px-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500 font-medium bg-gray-50/50 focus:bg-white transition-colors"
+                        className="flex-1 min-w-0 w-full h-8 text-xs px-2.5 rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-500 font-medium bg-gray-50/50 dark:bg-[#151C28] text-gray-800 dark:text-white focus:bg-white dark:focus:bg-[#1C2536] transition-colors"
                       />
                     </div>
                   ))}
@@ -1261,8 +1302,8 @@ export const AcademicStructurePage: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50/60 p-3.5 text-center text-xs text-gray-500">
-              <span className="font-semibold text-gray-700">این درس غیرپودمانی است: </span>
+            <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50/60 dark:bg-[#1C2536]/40 p-3 text-center text-xs text-gray-500 dark:text-gray-400">
+              <span className="font-semibold text-gray-700 dark:text-gray-300">این درس غیرپودمانی است: </span>
               ارزشیابی نمرات به صورت کلاسی/ترمی یا کتبی و عملی سالانه ثبت شده و نیازی به پودمان‌بندی ندارد.
             </div>
           )}
@@ -1283,6 +1324,46 @@ export const AcademicStructurePage: React.FC = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete Classroom Confirmation Modal */}
+      <Modal
+        isOpen={!!deleteConfirmClass}
+        onClose={() => !isDeletingClass && setDeleteConfirmClass(null)}
+        title="حذف کلاس درس"
+        description="آیا از حذف این کلاس اطمینان دارید؟ این عملیات غیرقابل بازگشت است."
+        maxWidth="sm"
+      >
+        <div className="space-y-4">
+          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-sm">
+            <p className="font-bold mb-1">نام کلاس: {deleteConfirmClass?.name}</p>
+            <p className="text-xs text-rose-600 leading-relaxed">
+              با حذف کلاس، تمام داده‌های مرتبط با این کلاس (ثبت‌نام‌ها، برنامه‌های هفتگی و ...) حذف خواهند شد.
+            </p>
+          </div>
+
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={isDeletingClass}
+              onClick={() => setDeleteConfirmClass(null)}
+              className="w-full sm:w-auto"
+            >
+              انصراف
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              className="bg-rose-600 hover:bg-rose-700 text-white w-full sm:w-auto"
+              isLoading={isDeletingClass}
+              onClick={handleConfirmDeleteClass}
+            >
+              <Trash2 className="w-4 h-4 ml-1.5" />
+              <span>بله، حذف شود</span>
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

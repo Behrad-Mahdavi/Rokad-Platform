@@ -42,11 +42,14 @@ import {
   Edit3,
   Save,
   KeyRound,
+  Trash2,
+  Lock,
 } from 'lucide-react';
 import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import { useTenantStore } from '../../../lib/auth/tenant-store';
 import { toPersianDigits, formatToJalali } from '../../../lib/utils';
 import { PasswordRevealModal, TargetMember } from '../vault/PasswordRevealModal';
+import { toast } from '../../../components/ui/toast/toast';
 
 import { read, utils, writeFile } from 'xlsx';
 
@@ -136,6 +139,30 @@ export const MembersPage: React.FC = () => {
   const [isEditLessonsModalOpen, setIsEditLessonsModalOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<any | null>(null);
   const [editingLessonIds, setEditingLessonIds] = useState<string[]>([]);
+
+  // Teacher Full Edit & Delete States
+  const [isEditTeacherModalOpen, setIsEditTeacherModalOpen] = useState(false);
+  const [teacherEditTab, setTeacherEditTab] = useState<'INFO' | 'JOB' | 'CONTACT' | 'SECURITY' | 'LESSONS'>('INFO');
+  const [teacherEditForm, setTeacherEditForm] = useState({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    username: '',
+    nationalCode: '',
+    personnelCode: '',
+    degree: '',
+    studyField: '',
+    employmentType: 'FULL_TIME',
+    homeAddress: '',
+    landlinePhone: '',
+    email: '',
+    password: '',
+    status: 'ACTIVE',
+    lessonIds: [] as string[],
+  });
+  const [isDeleteTeacherModalOpen, setIsDeleteTeacherModalOpen] = useState(false);
+  const [deletingTeacher, setDeletingTeacher] = useState<any | null>(null);
+  const [isDeletingTeacher, setIsDeletingTeacher] = useState(false);
 
   // Excel Bulk Import States
   const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
@@ -535,6 +562,95 @@ export const MembersPage: React.FC = () => {
     }
   };
 
+  const handleOpenEditTeacher = (teacher: any) => {
+    setEditingTeacher(teacher);
+    const assigned = teacher.teacherLessons?.map((tl: any) => tl.lessonId || tl.lesson?.id).filter(Boolean) || [];
+    setTeacherEditForm({
+      firstName: teacher.user?.firstName || '',
+      lastName: teacher.user?.lastName || '',
+      phone: teacher.user?.phone || '',
+      username: teacher.user?.username || teacher.user?.phone || '',
+      nationalCode: teacher.user?.nationalId || '',
+      personnelCode: teacher.personnelCode || '',
+      degree: teacher.degree || '',
+      studyField: teacher.studyField || '',
+      employmentType: teacher.employmentType || 'FULL_TIME',
+      homeAddress: teacher.homeAddress || '',
+      landlinePhone: teacher.landlinePhone || '',
+      email: teacher.user?.email || '',
+      password: '',
+      status: teacher.user?.status || 'ACTIVE',
+      lessonIds: assigned,
+    });
+    setTeacherEditTab('INFO');
+    setError(null);
+    setIsEditTeacherModalOpen(true);
+  };
+
+  const handleSaveEditTeacher = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTeacher) return;
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const payload: any = {
+        firstName: teacherEditForm.firstName.trim(),
+        lastName: teacherEditForm.lastName.trim(),
+        phone: teacherEditForm.phone.trim(),
+        username: teacherEditForm.username.trim() || undefined,
+        nationalCode: teacherEditForm.nationalCode.trim() || undefined,
+        personnelCode: teacherEditForm.personnelCode.trim() || undefined,
+        degree: teacherEditForm.degree.trim() || undefined,
+        studyField: teacherEditForm.studyField.trim() || undefined,
+        employmentType: teacherEditForm.employmentType,
+        homeAddress: teacherEditForm.homeAddress.trim() || undefined,
+        landlinePhone: teacherEditForm.landlinePhone.trim() || undefined,
+        email: teacherEditForm.email.trim() || undefined,
+        status: teacherEditForm.status,
+        lessonIds: teacherEditForm.lessonIds,
+      };
+      if (teacherEditForm.password && teacherEditForm.password.trim()) {
+        payload.password = teacherEditForm.password.trim();
+      }
+
+      await apiClient.put(`/members/teachers/${editingTeacher.id}`, payload);
+      toast.success('اطلاعات دبیر با موفقیت به‌روزرسانی شد');
+      setIsEditTeacherModalOpen(false);
+      setEditingTeacher(null);
+      await fetchData();
+    } catch (err: any) {
+      setError(
+        err.message ||
+          (Array.isArray(err.message) ? err.message.join('، ') : 'خطا در به‌روزرسانی مشخصات دبیر.'),
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenDeleteTeacher = (teacher: any) => {
+    setDeletingTeacher(teacher);
+    setIsDeleteTeacherModalOpen(true);
+  };
+
+  const handleConfirmDeleteTeacher = async () => {
+    if (!deletingTeacher) return;
+    setIsDeletingTeacher(true);
+    try {
+      await apiClient.delete(`/members/teachers/${deletingTeacher.id}`);
+      toast.success(
+        `دبیر «${deletingTeacher.user?.firstName || ''} ${deletingTeacher.user?.lastName || ''}» با موفقیت از سیستم حذف شد`,
+      );
+      setIsDeleteTeacherModalOpen(false);
+      setDeletingTeacher(null);
+      await fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'خطا در حذف دبیر از کادر آموزشی');
+    } finally {
+      setIsDeletingTeacher(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header & Actions */}
@@ -787,12 +903,6 @@ export const MembersPage: React.FC = () => {
               ),
             },
             {
-              key: 'specialization',
-              header: 'تخصص تدریس',
-              mobilePriority: 'primary',
-              render: (t) => <span className="text-xs text-gray-700 font-bold">{t.specialization || t.speciality || 'عمومی'}</span>,
-            },
-            {
               key: 'degreeAndField',
               header: 'مدرک و رشته',
               mobilePriority: 'secondary',
@@ -854,9 +964,26 @@ export const MembersPage: React.FC = () => {
             },
             {
               key: 'contractStatus',
-              header: 'وضعیت قرارداد',
+              header: 'وضعیت و نوع قرارداد',
               mobilePriority: 'detail',
-              render: () => <Badge variant="male">دبیر فعال</Badge>,
+              render: (t) => {
+                const isSuspended = t.user?.status === 'SUSPENDED';
+                const empTypeMap: Record<string, string> = {
+                  FULL_TIME: 'تمام‌وقت',
+                  PART_TIME: 'پاره‌وقت',
+                  CONTRACT: 'قراردادی',
+                  HOURLY: 'حق‌التدریس',
+                };
+                const empLabel = empTypeMap[t.employmentType] || 'دبیر';
+                return (
+                  <div className="flex flex-col gap-1 items-start">
+                    <Badge variant={isSuspended ? 'destructive' : 'male'}>
+                      {isSuspended ? 'حساب معلق' : 'دبیر فعال'}
+                    </Badge>
+                    <span className="text-[10px] text-gray-500 font-medium">{empLabel}</span>
+                  </div>
+                );
+              },
             },
             {
               key: 'actions',
@@ -864,12 +991,21 @@ export const MembersPage: React.FC = () => {
               mobilePriority: 'primary',
               render: (t) => (
                 <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditTeacher(t)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white transition-all shadow-2xs border border-blue-500/20 cursor-pointer"
+                    title="ویرایش کامل مشخصات دبیر"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>ویرایش</span>
+                  </button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleOpenEditLessons(t)}
                     className="text-xs text-primary hover:text-primary-dark h-8 px-2"
-                    title="ویرایش دروس"
+                    title="ویرایش دروس تخصیص‌یافته"
                   >
                     <BookOpen className="h-3.5 w-3.5 ms-1" />
                     <span>دروس</span>
@@ -882,6 +1018,15 @@ export const MembersPage: React.FC = () => {
                   >
                     <KeyRound className="w-3.5 h-3.5" />
                     <span>رمز</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenDeleteTeacher(t)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white transition-all shadow-2xs border border-red-500/20 cursor-pointer"
+                    title="حذف دبیر از کادر آموزشی"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>حذف</span>
                   </button>
                 </div>
               ),
@@ -1796,14 +1941,14 @@ export const MembersPage: React.FC = () => {
         <form onSubmit={handleCreateTeacher} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Input
-              label="نام"
+              label="نام *"
               placeholder="مثال: محمد"
               value={teacherForm.firstName}
               onChange={(e) => setTeacherForm({ ...teacherForm, firstName: e.target.value })}
               required
             />
             <Input
-              label="نام خانوادگی"
+              label="نام خانوادگی *"
               placeholder="مثال: کاظمی"
               value={teacherForm.lastName}
               onChange={(e) => setTeacherForm({ ...teacherForm, lastName: e.target.value })}
@@ -1814,27 +1959,19 @@ export const MembersPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Input
               label="کد پرسنلی"
-              placeholder="مثال: TCH-1404-01"
+              placeholder="مثال: TCH-1404-01 (اختیاری)"
               value={teacherForm.personnelCode}
               onChange={(e) => setTeacherForm({ ...teacherForm, personnelCode: e.target.value })}
-              required
             />
             <Input
-              label="رشته / تخصص تدریس"
-              placeholder="مثال: ریاضی و هندسه تحلیلی"
-              value={teacherForm.specialization}
-              onChange={(e) => setTeacherForm({ ...teacherForm, specialization: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <Input
-              label="کد ملی (نام کاربری ورود)"
-              placeholder="مثال: 0012345678"
+              label="کد ملی"
+              placeholder="مثال: 0012345678 (اختیاری)"
               value={teacherForm.nationalCode}
               onChange={(e) => setTeacherForm({ ...teacherForm, nationalCode: e.target.value })}
             />
+          </div>
+
+          <div>
             <Input
               label="شماره تماس *"
               placeholder="مثال: 09122222222"
@@ -1891,8 +2028,10 @@ export const MembersPage: React.FC = () => {
                 <span className="text-[10px] text-gray-500 dark:text-gray-400 block">رمز عبور پیش‌فرض:</span>
                 <span className="font-mono font-bold text-primary">
                   {teacherForm.nationalCode
-                    ? `${branchPrefix}${teacherForm.nationalCode}`
-                    : (teacherForm.phone || 'رمز پیش‌فرض')}
+                    ? `${branchPrefix}${teacherForm.nationalCode.replace(/^0+/, '') || teacherForm.nationalCode}`
+                    : teacherForm.phone
+                      ? `${branchPrefix}${teacherForm.phone}`
+                      : `${branchPrefix} + کد ملی یا موبایل`}
                 </span>
               </div>
             </div>
@@ -2221,6 +2360,420 @@ export const MembersPage: React.FC = () => {
               isLoading={isSubmitting}
             >
               ثبت نهایی {excelRows.length > 0 ? `(${excelRows.length} دانش‌آموز)` : ''}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 5. Modal: Full Edit Teacher */}
+      <Modal
+        isOpen={isEditTeacherModalOpen}
+        onClose={() => {
+          setIsEditTeacherModalOpen(false);
+          setEditingTeacher(null);
+          setError(null);
+        }}
+        title={`ویرایش مشخصات دبیر: ${editingTeacher?.user?.firstName || ''} ${editingTeacher?.user?.lastName || ''}`}
+        description="ویرایش جامع اطلاعات هویتی، پرسنلی، شغلی، امنیت و دروس تخصیص‌یافته"
+        maxWidth="2xl"
+      >
+        {error && (
+          <div className="mb-4 flex items-center space-x-2 space-x-reverse rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Tab Navigation */}
+        <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4 overflow-x-auto gap-1">
+          <button
+            type="button"
+            onClick={() => setTeacherEditTab('INFO')}
+            className={`px-3 py-2 text-xs font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+              teacherEditTab === 'INFO'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <UserCheck className="w-3.5 h-3.5" />
+            <span>اطلاعات فردی</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setTeacherEditTab('JOB')}
+            className={`px-3 py-2 text-xs font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+              teacherEditTab === 'JOB'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Briefcase className="w-3.5 h-3.5" />
+            <span>شغلی و مدارک</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setTeacherEditTab('CONTACT')}
+            className={`px-3 py-2 text-xs font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+              teacherEditTab === 'CONTACT'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Phone className="w-3.5 h-3.5" />
+            <span>تماس و آدرس</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setTeacherEditTab('SECURITY')}
+            className={`px-3 py-2 text-xs font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+              teacherEditTab === 'SECURITY'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Lock className="w-3.5 h-3.5" />
+            <span>امنیت و وضعیت</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setTeacherEditTab('LESSONS')}
+            className={`px-3 py-2 text-xs font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+              teacherEditTab === 'LESSONS'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>دروس تدریسی ({teacherEditForm.lessonIds.length})</span>
+          </button>
+        </div>
+
+        <form onSubmit={handleSaveEditTeacher} className="space-y-4">
+          {/* Tab 1: Personal Info */}
+          {teacherEditTab === 'INFO' && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="نام *"
+                  value={teacherEditForm.firstName}
+                  onChange={(e) => setTeacherEditForm({ ...teacherEditForm, firstName: e.target.value })}
+                  required
+                />
+                <Input
+                  label="نام خانوادگی *"
+                  value={teacherEditForm.lastName}
+                  onChange={(e) => setTeacherEditForm({ ...teacherEditForm, lastName: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="شماره تماس (موبایل) *"
+                  value={teacherEditForm.phone}
+                  onChange={(e) => setTeacherEditForm({ ...teacherEditForm, phone: e.target.value })}
+                  required
+                />
+                <Input
+                  label="کد ملی (اختیاری)"
+                  value={teacherEditForm.nationalCode}
+                  onChange={(e) => setTeacherEditForm({ ...teacherEditForm, nationalCode: e.target.value })}
+                  placeholder="مثال: 0012345678"
+                />
+              </div>
+              <div>
+                <Input
+                  label="نام کاربری ورود سامانه"
+                  value={teacherEditForm.username}
+                  onChange={(e) => setTeacherEditForm({ ...teacherEditForm, username: e.target.value })}
+                  placeholder="پیش‌فرض: شماره همراه"
+                />
+                <p className="text-[10px] text-gray-500 mt-1">
+                  در صورت خالی گذاشتن، همان شماره همراه به عنوان نام کاربری در نظر گرفته خواهد شد.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Tab 2: Job & Education */}
+          {teacherEditTab === 'JOB' && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="کد پرسنلی"
+                  value={teacherEditForm.personnelCode}
+                  onChange={(e) => setTeacherEditForm({ ...teacherEditForm, personnelCode: e.target.value })}
+                  placeholder="مثال: TCH-1404-01"
+                />
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                    نوع همکاری / قرارداد
+                  </label>
+                  <Select
+                    value={teacherEditForm.employmentType}
+                    onChange={(e) => setTeacherEditForm({ ...teacherEditForm, employmentType: e.target.value as any })}
+                    options={[
+                      { value: 'FULL_TIME', label: 'تمام‌وقت' },
+                      { value: 'PART_TIME', label: 'پاره‌وقت' },
+                      { value: 'CONTRACT', label: 'قراردادی' },
+                      { value: 'HOURLY', label: 'حق‌التدریس / ساعتی' },
+                    ]}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="مدرک تحصیلی"
+                  value={teacherEditForm.degree}
+                  onChange={(e) => setTeacherEditForm({ ...teacherEditForm, degree: e.target.value })}
+                  placeholder="مثال: کارشناسی ارشد"
+                />
+                <Input
+                  label="رشته تحصیلی"
+                  value={teacherEditForm.studyField}
+                  onChange={(e) => setTeacherEditForm({ ...teacherEditForm, studyField: e.target.value })}
+                  placeholder="مثال: آموزش ریاضی / مهندسی کامپیوتر"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Tab 3: Contact & Address */}
+          {teacherEditTab === 'CONTACT' && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="شماره تلفن ثابت"
+                  value={teacherEditForm.landlinePhone}
+                  onChange={(e) => setTeacherEditForm({ ...teacherEditForm, landlinePhone: e.target.value })}
+                  placeholder="مثال: 05137654321"
+                />
+                <Input
+                  label="آدرس ایمیل"
+                  type="email"
+                  value={teacherEditForm.email}
+                  onChange={(e) => setTeacherEditForm({ ...teacherEditForm, email: e.target.value })}
+                  placeholder="مثال: teacher@rokadschool.ir"
+                />
+              </div>
+              <div>
+                <Input
+                  label="آدرس محل سکونت"
+                  value={teacherEditForm.homeAddress}
+                  onChange={(e) => setTeacherEditForm({ ...teacherEditForm, homeAddress: e.target.value })}
+                  placeholder="مثال: مشهد، بلوار سجاد، خیابان بهار، پلاک ۱۲"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Tab 4: Security & Status */}
+          {teacherEditTab === 'SECURITY' && (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  وضعیت حساب کاربری
+                </label>
+                <Select
+                  value={teacherEditForm.status}
+                  onChange={(e) => setTeacherEditForm({ ...teacherEditForm, status: e.target.value })}
+                  options={[
+                    { value: 'ACTIVE', label: 'فعال (دسترسی کامل به پنل)' },
+                    { value: 'SUSPENDED', label: 'معلق / غیرفعال (مسدودسازی ورود)' },
+                  ]}
+                />
+              </div>
+              <div className="p-3.5 rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 space-y-2">
+                <div className="font-bold text-amber-900 dark:text-amber-200 text-xs flex items-center gap-1.5">
+                  <KeyRound className="w-4 h-4 text-amber-600" />
+                  <span>تغییر رمز عبور دبیر:</span>
+                </div>
+                <Input
+                  label="رمز عبور جدید"
+                  type="text"
+                  value={teacherEditForm.password}
+                  onChange={(e) => setTeacherEditForm({ ...teacherEditForm, password: e.target.value })}
+                  placeholder="در صورت عدم تمایل به تغییر رمز، این فیلد را خالی بگذارید"
+                />
+                <p className="text-[10px] text-amber-800 dark:text-amber-300">
+                  ⚠️ اگر این فیلد را پر کنید، رمز عبور دبیر تغییر کرده و در گاوصندوق رمزهای سامانه نیز به‌روز خواهد شد.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Tab 5: Lessons Assignment */}
+          {teacherEditTab === 'LESSONS' && (
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">
+                دروس تخصیص‌یافته به دبیر
+              </label>
+              <p className="text-[11px] text-gray-500">
+                دروس مورد نظر را برای این دبیر انتخاب کنید:
+              </p>
+              <div className="max-h-60 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 dark:bg-gray-800/40 p-2.5 space-y-1.5">
+                {lessons.length === 0 ? (
+                  <div className="text-xs text-gray-400 py-3 text-center">هیچ درسی تعریف نشده است.</div>
+                ) : (
+                  lessons.map((lesson) => {
+                    const isSelected = teacherEditForm.lessonIds.includes(lesson.id);
+                    return (
+                      <div
+                        key={lesson.id}
+                        onClick={() => {
+                          setTeacherEditForm((prev) => ({
+                            ...prev,
+                            lessonIds: isSelected
+                              ? prev.lessonIds.filter((id) => id !== lesson.id)
+                              : [...prev.lessonIds, lesson.id],
+                          }));
+                        }}
+                        className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-all border ${
+                          isSelected
+                            ? 'bg-primary/10 border-primary text-primary-dark font-bold shadow-xs'
+                            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-2 space-x-reverse">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {}}
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                          />
+                          <span className="text-xs font-bold">{lesson.name}</span>
+                          <span className="font-mono text-[10px] text-gray-500 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">
+                            {lesson.code}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-1.5 space-x-reverse">
+                          {lesson.level?.name && (
+                            <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded">
+                              پایه {lesson.level.name}
+                            </span>
+                          )}
+                          {lesson.field?.name ? (
+                            <span className="text-[10px] bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded font-medium">
+                              {lesson.field.name}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-medium">
+                              عمومی
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Modal Actions */}
+          <div className="flex justify-between items-center pt-3 border-t border-gray-100 dark:border-gray-800">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => handleOpenDeleteTeacher(editingTeacher)}
+              className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-900/40"
+            >
+              <Trash2 className="w-3.5 h-3.5 ml-1" />
+              <span>حذف دبیر</span>
+            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setIsEditTeacherModalOpen(false);
+                  setEditingTeacher(null);
+                }}
+              >
+                انصراف
+              </Button>
+              <Button type="submit" variant="primary" isLoading={isSubmitting}>
+                <Save className="w-3.5 h-3.5 ml-1" />
+                <span>ذخیره تغییرات</span>
+              </Button>
+            </div>
+          </div>
+        </form>
+      </Modal>
+
+      {/* 6. Modal: Delete Teacher Confirmation */}
+      <Modal
+        isOpen={isDeleteTeacherModalOpen}
+        onClose={() => {
+          setIsDeleteTeacherModalOpen(false);
+          setDeletingTeacher(null);
+        }}
+        title="حذف دبیر از کادر آموزشی"
+        description="تایید عملیات حذف حساب و پروفایل دبیر"
+        maxWidth="md"
+      >
+        <div className="space-y-4">
+          <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 flex items-start space-x-2.5 space-x-reverse">
+            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+            <div className="text-xs text-red-800 dark:text-red-300 space-y-1">
+              <div className="font-bold">هشدار حذف دبیر:</div>
+              <p className="leading-relaxed">
+                آیا از حذف دبیر{' '}
+                <strong>
+                  {deletingTeacher?.user?.firstName} {deletingTeacher?.user?.lastName}
+                </strong>{' '}
+                اطمینان دارید؟ با تایید این عملیات، پروفایل آموزشی، تخصیص دروس و دسترسی ورود ایشان حذف خواهد شد.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-xs space-y-1.5 font-medium">
+            <div className="flex justify-between">
+              <span className="text-gray-500">نام و نام‌خانوادگی:</span>
+              <strong className="text-ink-darker dark:text-white">
+                {deletingTeacher?.user?.firstName} {deletingTeacher?.user?.lastName}
+              </strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">شماره تماس (نام کاربری):</span>
+              <strong className="font-mono text-ink-darker dark:text-white">
+                {deletingTeacher?.user?.phone || '—'}
+              </strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">کد پرسنلی:</span>
+              <strong className="font-mono text-ink-darker dark:text-white">
+                {deletingTeacher?.personnelCode || '—'}
+              </strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">تعداد دروس تخصیص‌یافته:</span>
+              <strong className="text-primary font-bold">
+                {toPersianDigits(deletingTeacher?.teacherLessons?.length || 0)} درس
+              </strong>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setIsDeleteTeacherModalOpen(false);
+                setDeletingTeacher(null);
+              }}
+              disabled={isDeletingTeacher}
+            >
+              انصراف
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleConfirmDeleteTeacher}
+              isLoading={isDeletingTeacher}
+            >
+              <Trash2 className="w-3.5 h-3.5 ml-1" />
+              <span>بله، حذف قطعی دبیر</span>
             </Button>
           </div>
         </div>

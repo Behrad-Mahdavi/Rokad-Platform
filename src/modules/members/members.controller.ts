@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Delete,
   Param,
   Body,
   Query,
@@ -14,6 +15,7 @@ import { MembersService } from './members.service';
 import {
   CreateStudentDto,
   CreateTeacherDto,
+  UpdateTeacherDto,
   AssignTeacherLessonsDto,
   CreateCoachDto,
   CreateStaffDto,
@@ -111,6 +113,33 @@ export class MembersController {
   ) {
     const effectiveTenantId = tenantId || userTenantId;
     return this.membersService.createTeacher(effectiveTenantId, dto);
+  }
+
+  @Put('teachers/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.TEACHER_WRITE)
+  @ApiOperation({ summary: 'ویرایش اطلاعات، پروفایل و مشخصات دبیر' })
+  async updateTeacher(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') teacherId: string,
+    @Body() dto: UpdateTeacherDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.membersService.updateTeacher(effectiveTenantId, teacherId, dto);
+  }
+
+  @Delete('teachers/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.TEACHER_WRITE)
+  @ApiOperation({ summary: 'حذف دبیر از کادر آموزشی مدرسه' })
+  async deleteTeacher(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') teacherId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.membersService.deleteTeacher(effectiveTenantId, teacherId);
   }
 
   @Put('teachers/:id/lessons')

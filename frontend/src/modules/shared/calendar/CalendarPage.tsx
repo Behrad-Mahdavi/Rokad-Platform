@@ -41,6 +41,7 @@ import {
   Trash2,
   SlidersHorizontal,
   ExternalLink,
+  X,
 } from 'lucide-react';
 import { toast } from '../../../components/ui/toast/toast';
 
@@ -74,7 +75,7 @@ import {
 export const CalendarPage: React.FC = () => {
   const navigate = useNavigate();
   const currentUser = useAuthStore((s) => s.user);
-  const canManageCalendar = ['SCHOOL_ADMIN', 'SUPER_ADMIN'].includes(currentUser?.role || '');
+  const canManageCalendar = ['SCHOOL_ADMIN', 'SUPER_ADMIN', 'STAFF'].includes(currentUser?.role || '');
 
   // Exact Today info from system date
   const todayInfo = useMemo(() => getTodayJalali(), []);
@@ -91,6 +92,15 @@ export const CalendarPage: React.FC = () => {
   // Custom Event Type Dropdown in Modal State & Outside Click Handling
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Selected Day Details Card Ref (for smooth auto-scroll into view on mobile)
+  const selectedDayCardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (selectedDay && selectedDayCardRef.current && window.innerWidth < 768) {
+      selectedDayCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [selectedDay]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -127,6 +137,8 @@ export const CalendarPage: React.FC = () => {
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [deleteConfirmEvent, setDeleteConfirmEvent] = useState<{ id: string; title: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteConfirmHoliday, setDeleteConfirmHoliday] = useState<{ id: string; title: string; date?: string } | null>(null);
+  const [isDeletingHoliday, setIsDeletingHoliday] = useState(false);
   const [isEventTypesModalOpen, setIsEventTypesModalOpen] = useState(false);
   const [isSavingEventTypes, setIsSavingEventTypes] = useState(false);
   const [newTypeForm, setNewTypeForm] = useState({ titleFa: '', color: 'emerald', baseType: 'ACADEMIC' });
@@ -491,12 +503,34 @@ export const CalendarPage: React.FC = () => {
         date: holidayForm.date,
         titleFa: holidayForm.titleFa,
       });
+      toast.success(`تعطیلی مدرسه «${holidayForm.titleFa}» با موفقیت ثبت شد.`);
+      setHolidayForm({ date: todayInfo.jalaliStr, titleFa: '' });
       setIsHolidayModalOpen(false);
       fetchData();
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'خطا در ثبت تعطیلی مدرسه.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteTenantHoliday = (holidayId: string, title: string, date?: string) => {
+    setDeleteConfirmHoliday({ id: holidayId, title, date });
+  };
+
+  const confirmDeleteHoliday = async () => {
+    if (!deleteConfirmHoliday) return;
+    setIsDeletingHoliday(true);
+    try {
+      await apiClient.delete(`/calendar/tenant-holidays/${deleteConfirmHoliday.id}`);
+      setTenantHolidays((prev) => prev.filter((h) => h.id !== deleteConfirmHoliday.id));
+      toast.success(`تعطیلی مدرسه «${deleteConfirmHoliday.title}» با موفقیت لغو و حذف شد.`);
+      setDeleteConfirmHoliday(null);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'خطا در حذف تعطیلی مدرسه.');
+    } finally {
+      setIsDeletingHoliday(false);
     }
   };
 
@@ -638,7 +672,7 @@ export const CalendarPage: React.FC = () => {
                     }}
                     className="text-xs font-bold text-primary dark:text-primary-light hover:underline flex items-center gap-1"
                   >
-                    <span>ماه جاری ({todayInfo.monthName} {toPersianDigits(todayInfo.year)})</span>
+                    <span>ماه جاری</span>
                   </button>
                   <button
                     type="button"
@@ -784,7 +818,7 @@ export const CalendarPage: React.FC = () => {
                     : 'bg-white dark:bg-[#1C2536] text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#242F42]'
                 }`}
               >
-                همه روزها ({toPersianDigits(monthDays.length)})
+                همه ({toPersianDigits(monthDays.length)})
               </button>
               <button
                 type="button"
@@ -800,7 +834,7 @@ export const CalendarPage: React.FC = () => {
                     filterType === 'HOLIDAYS' ? 'bg-white' : 'bg-rose-500'
                   }`}
                 />
-                <span>تعطیلات رسمی</span>
+                <span>تعطیلات</span>
               </button>
               <button
                 type="button"
@@ -816,7 +850,7 @@ export const CalendarPage: React.FC = () => {
                     filterType === 'SCHOOL_EVENTS' ? 'bg-white' : 'bg-primary'
                   }`}
                 />
-                <span>رویدادهای مدرسه ({toPersianDigits(events.length)})</span>
+                <span>رویدادها ({toPersianDigits(events.length)})</span>
               </button>
             </div>
 
@@ -827,11 +861,8 @@ export const CalendarPage: React.FC = () => {
 
           {scheduleItems.length === 0 ? (
             <div className="bg-white dark:bg-[#151C28] rounded-2xl border border-gray-200 dark:border-gray-800 p-8 text-center">
-              <CalendarCheck className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-              <h4 className="font-bold text-sm text-gray-700 dark:text-gray-200">هیچ مناسبت یا رویدادی با این فیلتر یافت نشد</h4>
-              <p className="text-xs text-gray-400 dark:text-gray-400 mt-1">
-                می‌توانید فیلتر را به «همه روزها» تغییر دهید یا مناسبت جدیدی را مشاهده فرمایید.
-              </p>
+              <CalendarCheck className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+              <p className="text-xs font-bold text-gray-500 dark:text-gray-400">موردی یافت نشد</p>
             </div>
           ) : (
             <div className="space-y-2.5">
@@ -900,10 +931,25 @@ export const CalendarPage: React.FC = () => {
                     <div className="flex-1 w-full space-y-1.5 min-w-0">
                       {/* Emergency / Tenant Holiday */}
                       {tenantHoliday && (
-                        <div className="p-2 sm:p-2.5 rounded-xl bg-rose-600 text-white text-xs flex items-center gap-2 shadow-2xs">
-                          <ShieldAlert className="w-4 h-4 shrink-0" />
-                          <span className="font-bold">تعطیلی اعلام‌شده مدرسه:</span>
-                          <span className="truncate">{tenantHoliday.titleFa}</span>
+                        <div className="p-2 sm:p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/60 text-rose-800 dark:text-rose-200 text-xs flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <ShieldAlert className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
+                            <strong className="font-bold shrink-0">تعطیلی مدرسه:</strong>
+                            <span className="truncate">{tenantHoliday.titleFa}</span>
+                          </div>
+                          {canManageCalendar && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteTenantHoliday(tenantHoliday.id, tenantHoliday.titleFa, day.jalaliStr);
+                              }}
+                              className="p-1 hover:bg-rose-100 dark:hover:bg-rose-900/50 rounded-lg text-rose-600 dark:text-rose-400 transition-colors shrink-0"
+                              title="لغو تعطیلی"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       )}
 
@@ -958,7 +1004,7 @@ export const CalendarPage: React.FC = () => {
                                   }}
                                   className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold text-primary hover:text-primary-dark dark:hover:text-primary-light transition-colors cursor-pointer group/link hover:underline"
                                 >
-                                  <span>رفتن به صفحه رویداد</span>
+                                  <span>مشاهده</span>
                                   <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover/link:-translate-x-0.5 shrink-0" />
                                 </button>
                               )}
@@ -977,7 +1023,7 @@ export const CalendarPage: React.FC = () => {
                                   }}
                                   className="text-[11px] h-7 px-2.5 rounded-lg border-orange-200 dark:border-orange-800/80 text-orange-700 dark:text-orange-300 hover:bg-orange-100/50 dark:hover:bg-orange-900/30 flex items-center gap-1 font-bold"
                                 >
-                                  <span>مشاهده تکلیف</span>
+                                  <span>تکلیف</span>
                                   <ExternalLink className="w-3 h-3" />
                                 </Button>
                               ) : canManageCalendar && (
@@ -1188,184 +1234,227 @@ export const CalendarPage: React.FC = () => {
             </div>
           </Card>
 
-          {/* Google Calendar Split Day Details (Immediately visible under month grid) */}
+          {/* Selected Day Details Card (Responsive & matches platform design) */}
           {selectedDay && (
-            <Card className="p-3.5 sm:p-5 bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-gray-800 shadow-xs rounded-2xl animate-in fade-in duration-150">
-              <div className="flex items-start justify-between pb-3 border-b border-gray-100 dark:border-gray-800 gap-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-base sm:text-lg font-black text-ink-darker dark:text-white">
-                      {selectedDay.dayOfWeekName} {toPersianDigits(selectedDay.day)}{' '}
-                      {currentMonthMeta.name} {toPersianDigits(selectedYear)}
-                    </h3>
-                    {selectedDay.isToday && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary text-white font-bold">
-                        امروز
-                      </span>
-                    )}
+            <div
+              ref={selectedDayCardRef}
+              className="bg-white dark:bg-[#151C28] rounded-2xl border border-gray-200 dark:border-gray-800 p-3 sm:p-4 shadow-2xs space-y-3 animate-in fade-in duration-150 scroll-mt-6"
+            >
+              {/* Card Header (Responsive wrap on small screens) */}
+              <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800 gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                  <div
+                    className={`h-10 w-10 sm:h-11 sm:w-11 rounded-2xl flex flex-col items-center justify-center shrink-0 ${
+                      selectedDay.isToday
+                        ? 'bg-primary text-white font-black shadow-xs'
+                        : selectedDay.isOfficialHoliday || Boolean(getDayTenantHoliday(selectedDay.jalaliStr))
+                        ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-bold border border-rose-200/50 dark:border-rose-800/50'
+                        : 'bg-gray-100 dark:bg-[#1C2536] text-ink-darker dark:text-gray-100 font-bold'
+                    }`}
+                  >
+                    <span className="text-sm sm:text-base leading-none">{toPersianDigits(selectedDay.day)}</span>
+                    <span className="text-[8px] sm:text-[9px] mt-0.5 leading-none opacity-80">
+                      {currentMonthMeta.name}
+                    </span>
                   </div>
-                  <p className="text-xs text-gray-400 dark:text-gray-400 font-mono mt-0.5">
-                    {selectedDay.gregorianStr}
-                  </p>
+
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span
+                        className={`text-xs sm:text-sm font-black truncate ${
+                          selectedDay.isOfficialHoliday || Boolean(getDayTenantHoliday(selectedDay.jalaliStr))
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : 'text-gray-800 dark:text-gray-200'
+                        }`}
+                      >
+                        {selectedDay.dayOfWeekName}
+                      </span>
+                      {selectedDay.isToday && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-primary text-white font-bold">
+                          امروز
+                        </span>
+                      )}
+                      {(selectedDay.isOfficialHoliday || Boolean(getDayTenantHoliday(selectedDay.jalaliStr))) && !selectedDay.isToday && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 font-bold">
+                          تعطیل
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-400 font-mono block mt-0.5">
+                      {selectedDay.gregorianStr}
+                    </span>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  <Badge
-                    variant={selectedDay.isOfficialHoliday ? 'destructive' : 'neutral'}
-                    className="text-xs shrink-0"
-                  >
-                    {selectedDay.isOfficialHoliday ? 'تعطیل' : 'روزِ آموزشی'}
-                  </Badge>
-
+                <div className="flex items-center gap-1.5 shrink-0 mr-auto sm:mr-0">
                   {canManageCalendar && (
-                    <Button
-                      variant="outline"
-                      size="sm"
+                    <button
+                      type="button"
                       onClick={() => handleOpenCreate(selectedDay.jalaliStr)}
-                      className="text-xs min-h-[36px] px-3 border-gray-300 dark:border-gray-700 shrink-0"
+                      className="min-h-[32px] sm:min-h-[36px] px-2.5 sm:px-3 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-primary/50 text-[11px] sm:text-xs font-bold text-gray-700 dark:text-gray-200 hover:text-primary transition-colors flex items-center gap-1"
                     >
-                      <Plus className="w-3.5 h-3.5 ml-1 text-primary" />
-                      <span>ثبت رویداد</span>
-                    </Button>
+                      <Plus className="w-3.5 h-3.5 text-primary" />
+                      <span>رویداد</span>
+                    </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDay(null)}
+                    className="p-1.5 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1C2536] transition-colors"
+                    title="بستن"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
               {/* Day Contents */}
-              <div className="pt-3 space-y-2">
+              <div className="space-y-2">
+                {/* School Declared Holiday */}
+                {(() => {
+                  const selectedTenantHoliday = getDayTenantHoliday(selectedDay.jalaliStr);
+                  if (!selectedTenantHoliday) return null;
+                  return (
+                    <div className="p-2 sm:p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/60 text-rose-800 dark:text-rose-200 text-xs flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <ShieldAlert className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
+                        <strong className="font-bold shrink-0">تعطیلی مدرسه:</strong>
+                        <span className="truncate">{selectedTenantHoliday.titleFa}</span>
+                      </div>
+                      {canManageCalendar && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTenantHoliday(selectedTenantHoliday.id, selectedTenantHoliday.titleFa, selectedDay.jalaliStr)}
+                          className="p-1 text-rose-600 hover:text-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/40 rounded-lg transition-colors shrink-0"
+                          title="لغو تعطیلی"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Official Holiday Reason */}
+                {selectedDay.holidayReason && selectedDay.holidayReason !== 'تعطیل هفتگی (جمعه)' && !getDayTenantHoliday(selectedDay.jalaliStr) && (
+                  <div className="p-2 sm:p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/60 text-rose-800 dark:text-rose-200 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
+                    <strong className="font-bold shrink-0">تعطیل رسمی:</strong>
+                    <span className="truncate">{selectedDay.holidayReason}</span>
+                  </div>
+                )}
 
                 {/* Occasions List */}
-                {selectedDay.occasions.length > 0 && (
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-gray-700 dark:text-gray-300 block">مناسبت‌های روز:</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedDay.occasions.map((occ, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-[#1C2536] border border-gray-100 dark:border-gray-700 text-xs text-gray-700 dark:text-gray-200 flex items-center gap-1.5"
-                        >
-                          <Check className="w-3 h-3 text-emerald-600" />
-                          <span>{occ}</span>
-                        </span>
-                      ))}
-                    </div>
+                {selectedDay.occasions.filter((occ) => occ !== selectedDay.holidayReason && occ !== 'تعطیل هفتگی (جمعه)').length > 0 && (
+                  <div className="text-[11px] text-gray-600 dark:text-gray-300 flex items-center gap-1.5 py-1 truncate">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <span className="truncate">
+                      {selectedDay.occasions.filter((occ) => occ !== selectedDay.holidayReason && occ !== 'تعطیل هفتگی (جمعه)').join(' • ')}
+                    </span>
                   </div>
                 )}
 
                 {/* School Events & Homeworks */}
-                {getDaySchoolEvents(selectedDay.jalaliStr).length > 0 && (
-                  <div className="space-y-1.5 pt-1">
-                    <span className="text-xs font-bold text-gray-700 dark:text-gray-300 block">برنامه‌ها، آزمون‌ها و تکالیف:</span>
-                    {getDaySchoolEvents(selectedDay.jalaliStr).map((ev) => {
-                      const isHomework = ev.type === 'HOMEWORK' || ev.eventType === 'HOMEWORK';
-                      return (
-                        <div
-                          key={ev.id}
-                          className={`p-3 rounded-xl border text-xs flex flex-col justify-between gap-1.5 ${
-                            isHomework
-                              ? 'bg-orange-50/70 dark:bg-orange-950/30 border-orange-200/80 dark:border-orange-900/50'
-                              : 'bg-primary/5 dark:bg-primary/10 border border-primary/20 dark:border-primary/30'
-                          }`}
-                        >
-                          {/* Title (Full text, no truncate) */}
-                          <div className="flex items-start gap-2 min-w-0">
-                            {isHomework ? (
-                              <Clock className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-                            ) : (
-                              <span className={`w-2.5 h-2.5 rounded-full shrink-0 mt-1 ${getTypeDotColor(ev.type || ev.eventType)}`} />
-                            )}
-                            <p className="font-bold text-ink-darker dark:text-gray-100 text-xs sm:text-[13px] leading-relaxed break-words">
-                              {ev.title}
-                            </p>
-                          </div>
-
-                          {/* Bottom Row: Location / Lesson (Right) & Label/Actions (Left) */}
-                          <div className="flex items-center justify-between gap-2 mt-1 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06]">
-                            {isHomework ? (
-                              (ev.lessonName || ev.location) ? (
-                                <p className="text-gray-500 dark:text-gray-400 text-[10px] flex items-center gap-1 min-w-0 font-medium">
-                                  <BookOpen className="w-3 h-3 text-orange-500 shrink-0" />
-                                  <span className="truncate">{ev.lessonName || ev.location}</span>
-                                </p>
-                              ) : (
-                                <span />
-                              )
-                            ) : ev.location ? (
-                              <p className="text-gray-400 dark:text-gray-400 text-[10px] flex items-center gap-1 min-w-0">
-                                <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
-                                <span className="truncate">{ev.location}</span>
-                              </p>
-                            ) : (
-                              <span />
-                            )}
-
-                            <div className="flex items-center gap-2 shrink-0">
-                              {!isHomework && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(`/app/events/${ev.id}`);
-                                  }}
-                                  className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold text-primary hover:text-primary-dark dark:hover:text-primary-light transition-colors cursor-pointer group/link hover:underline"
-                                >
-                                  <span>رفتن به صفحه رویداد</span>
-                                  <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover/link:-translate-x-0.5 shrink-0" />
-                                </button>
-                              )}
-                              {isHomework ? (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const hwId = ev.homeworkId || ev.id.replace('hw-', '');
-                                    const targetUrl =
-                                      currentUser?.role === 'TEACHER'
-                                        ? `/app/teacher/homework?homeworkId=${hwId}`
-                                        : `/app/student/homework?homeworkId=${hwId}`;
-                                    navigate(targetUrl);
-                                  }}
-                                  className="text-[11px] h-7 px-2.5 rounded-lg border-orange-200 dark:border-orange-800/80 text-orange-700 dark:text-orange-300 hover:bg-orange-100/50 dark:hover:bg-orange-900/30 flex items-center gap-1 font-bold"
-                                >
-                                  <span>مشاهده تکلیف</span>
-                                  <ExternalLink className="w-3 h-3" />
-                                </Button>
-                              ) : canManageCalendar && (
-                                <div className="flex items-center gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenEdit(ev)}
-                                    className="p-1.5 text-gray-500 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                                    title="ویرایش رویداد"
-                                  >
-                                    <Edit3 className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteEvent(ev.id, ev.title)}
-                                    className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
-                                    title="حذف رویداد"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                {getDaySchoolEvents(selectedDay.jalaliStr).map((ev) => {
+                  const isHomework = ev.type === 'HOMEWORK' || ev.eventType === 'HOMEWORK';
+                  return (
+                    <div
+                      key={ev.id}
+                      className={`p-2.5 sm:p-3 rounded-xl border text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 transition-colors ${
+                        isHomework
+                          ? 'bg-orange-50/70 dark:bg-orange-950/30 border-orange-200/80 dark:border-orange-900/50'
+                          : 'bg-gray-50 dark:bg-[#1C2536]/80 border-gray-200/80 dark:border-gray-700/60'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0 w-full sm:w-auto flex-1">
+                        <span
+                          className={`w-2 h-2 rounded-full shrink-0 ${getTypeDotColor(ev.type || ev.eventType)}`}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <span className="font-bold text-ink-darker dark:text-gray-100 truncate block text-xs sm:text-[13px]">
+                            {ev.title}
+                          </span>
+                          {isHomework ? (
+                            (ev.lessonName || ev.location) && (
+                              <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate flex items-center gap-1 font-medium mt-0.5">
+                                <BookOpen className="w-2.5 h-2.5 text-orange-500 shrink-0" />
+                                <span className="truncate">{ev.lessonName || ev.location}</span>
+                              </span>
+                            )
+                          ) : ev.location ? (
+                            <span className="text-[10px] text-gray-400 dark:text-gray-400 truncate block mt-0.5">
+                              {ev.location}
+                            </span>
+                          ) : null}
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                      </div>
+
+                      <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t border-gray-200/50 dark:border-gray-800/60 sm:border-0">
+                        {!isHomework && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/app/events/${ev.id}`);
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold text-primary hover:text-primary-dark dark:hover:text-primary-light transition-colors cursor-pointer group/link hover:underline py-1 px-1.5"
+                          >
+                            <span>مشاهده</span>
+                            <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover/link:-translate-x-0.5 shrink-0" />
+                          </button>
+                        )}
+                        {isHomework ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const hwId = ev.homeworkId || ev.id.replace('hw-', '');
+                              const targetUrl =
+                                currentUser?.role === 'TEACHER'
+                                  ? `/app/teacher/homework?homeworkId=${hwId}`
+                                  : `/app/student/homework?homeworkId=${hwId}`;
+                              navigate(targetUrl);
+                            }}
+                            className="text-[11px] h-7 px-2.5 rounded-lg border-orange-200 dark:border-orange-800/80 text-orange-700 dark:text-orange-300 hover:bg-orange-100/50 dark:hover:bg-orange-900/30 flex items-center gap-1 font-bold"
+                          >
+                            <span>تکلیف</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </Button>
+                        ) : canManageCalendar && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEdit(ev)}
+                              className="p-1.5 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                              title="ویرایش رویداد"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteEvent(ev.id, ev.title)}
+                              className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
+                              title="حذف رویداد"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
 
                 {selectedDay.occasions.length === 0 &&
-                  getDaySchoolEvents(selectedDay.jalaliStr).length === 0 && (
+                  getDaySchoolEvents(selectedDay.jalaliStr).length === 0 &&
+                  !getDayTenantHoliday(selectedDay.jalaliStr) &&
+                  !selectedDay.isOfficialHoliday && (
                     <p className="text-xs text-gray-400 dark:text-gray-400 py-2 text-center">
-                      هیچ رویداد یا مناسبت رسمی برای این روز ثبت نشده است.
+                      رویدادی برای این روز ثبت نشده است.
                     </p>
                   )}
               </div>
-            </Card>
+            </div>
           )}
         </div>
       )}
@@ -1391,8 +1480,7 @@ export const CalendarPage: React.FC = () => {
           setIsCreateOpen(false);
           setEditingEventId(null);
         }}
-        title={editingEventId ? 'ویرایش رویداد' : 'ثبت رویداد جدید در تقویم'}
-        description={editingEventId ? 'ویرایش اطلاعات، تاریخ و محل برگزاری رویداد' : 'افزودن برنامه، آزمون یا جلسه به تقویم'}
+        title={editingEventId ? 'ویرایش رویداد' : 'رویداد جدید'}
         maxWidth="lg"
       >
         <form onSubmit={handleSaveEvent} className="space-y-3.5">
@@ -1404,7 +1492,7 @@ export const CalendarPage: React.FC = () => {
 
           <Input
             label="عنوان رویداد"
-            placeholder="مثال: آزمون هماهنگ ریاضی یازدهم"
+            placeholder="عنوان رویداد..."
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
             required
@@ -1474,7 +1562,7 @@ export const CalendarPage: React.FC = () => {
 
             <Input
               label="مکان برگزاری"
-              placeholder="مثال: سالن اجتماعات"
+              placeholder="مکان برگزاری..."
               value={form.location}
               onChange={(e) => setForm({ ...form, location: e.target.value })}
               className="min-h-[44px]"
@@ -1514,36 +1602,57 @@ export const CalendarPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-ink-dark dark:text-gray-300 mb-1">توضیحات تکمیلی</label>
+            <label className="block text-xs font-bold text-ink-dark dark:text-gray-300 mb-1">توضیحات</label>
             <textarea
               rows={2}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="نکات ضروری و جزئیات شرکت..."
+              placeholder="توضیحات اختیاری..."
               className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] p-2.5 text-xs text-ink-normal dark:text-gray-100 focus:ring-2 focus:ring-primary resize-none"
             />
           </div>
 
-          <div className="flex justify-end space-x-2 space-x-reverse pt-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => {
-                setIsCreateOpen(false);
-                setEditingEventId(null);
-              }}
-              className="min-h-[44px] px-4"
-            >
-              انصراف
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              isLoading={isSubmitting}
-              className="min-h-[44px] px-5"
-            >
-              {editingEventId ? 'ذخیره تغییرات' : 'ثبت رویداد'}
-            </Button>
+          <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div>
+              {editingEventId && canManageCalendar && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const idToDelete = editingEventId;
+                    const titleToDelete = form.title;
+                    setIsCreateOpen(false);
+                    setEditingEventId(null);
+                    handleDeleteEvent(idToDelete, titleToDelete);
+                  }}
+                  className="min-h-[44px] px-3.5 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-1.5"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>حذف رویداد</span>
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center space-x-2 space-x-reverse">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setIsCreateOpen(false);
+                  setEditingEventId(null);
+                }}
+                className="min-h-[44px] px-4"
+              >
+                انصراف
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                isLoading={isSubmitting}
+                className="min-h-[44px] px-5"
+              >
+                {editingEventId ? 'ذخیره تغییرات' : 'ثبت رویداد'}
+              </Button>
+            </div>
           </div>
         </form>
       </Modal>
@@ -1552,12 +1661,12 @@ export const CalendarPage: React.FC = () => {
       <Modal
         isOpen={!!deleteConfirmEvent}
         onClose={() => setDeleteConfirmEvent(null)}
-        title="حذف رویداد از تقویم"
+        title="حذف رویداد"
         maxWidth="sm"
       >
         <div className="space-y-4 text-right">
           <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-            آیا از حذف رویداد <span className="font-bold text-ink-darker dark:text-white">«{deleteConfirmEvent?.title}»</span> اطمینان دارید؟ این اقدام قابل بازگشت نخواهد بود.
+            آیا از حذف رویداد <span className="font-bold text-ink-darker dark:text-white">«{deleteConfirmEvent?.title}»</span> اطمینان دارید؟
           </p>
           <div className="flex justify-end gap-2 pt-2">
             <Button
@@ -1575,7 +1684,7 @@ export const CalendarPage: React.FC = () => {
               isLoading={isDeleting}
               className="bg-rose-600 hover:bg-rose-700 text-white min-h-[40px] px-4"
             >
-              حذف قطعی
+              حذف
             </Button>
           </div>
         </div>
@@ -1585,8 +1694,7 @@ export const CalendarPage: React.FC = () => {
       <Modal
         isOpen={isEventTypesModalOpen}
         onClose={() => setIsEventTypesModalOpen(false)}
-        title="مدیریت و تعریف انواع رویدادها"
-        description="افزودن، ویرایش و شخصی‌سازی دسته‌بندی‌ها و انواع رویدادهای تقویم مدرسه"
+        title="انواع رویدادها"
         maxWidth="lg"
       >
         <div className="space-y-4 text-right">
@@ -1632,13 +1740,13 @@ export const CalendarPage: React.FC = () => {
 
           {/* Add New Type Section */}
           <div className="p-3.5 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50/40 dark:bg-[#1C2536]/30 space-y-3">
-            <span className="text-xs font-bold text-ink-darker dark:text-white block">تعریف نوع رویداد جدید:</span>
+            <span className="text-xs font-bold text-ink-darker dark:text-white block">افزودن نوع جدید:</span>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <input
                 type="text"
                 value={newTypeForm.titleFa}
                 onChange={(e) => setNewTypeForm({ ...newTypeForm, titleFa: e.target.value })}
-                placeholder="عنوان (مثال: کارگاه مهارت)"
+                placeholder="عنوان نوع رویداد..."
                 className="text-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3 py-2 text-ink-darker dark:text-white outline-none focus:ring-1 focus:ring-primary min-h-[40px]"
               />
               <select
@@ -1712,7 +1820,41 @@ export const CalendarPage: React.FC = () => {
               isLoading={isSavingEventTypes}
               className="min-h-[44px] px-5"
             >
-              ذخیره تغییرات
+              ذخیره
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* MODAL: DELETE HOLIDAY CONFIRMATION */}
+      <Modal
+        isOpen={!!deleteConfirmHoliday}
+        onClose={() => setDeleteConfirmHoliday(null)}
+        title="لغو تعطیلی مدرسه"
+        maxWidth="sm"
+      >
+        <div className="space-y-4 text-right">
+          <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+            آیا از لغو تعطیلی <span className="font-bold text-rose-600 dark:text-rose-400">«{deleteConfirmHoliday?.title}»</span>
+            {deleteConfirmHoliday?.date ? ` در تاریخ ${toPersianDigits(deleteConfirmHoliday.date)}` : ''} اطمینان دارید؟
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setDeleteConfirmHoliday(null)}
+              disabled={isDeletingHoliday}
+            >
+              انصراف
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={confirmDeleteHoliday}
+              isLoading={isDeletingHoliday}
+              className="bg-rose-600 hover:bg-rose-700 text-white min-h-[40px] px-4"
+            >
+              لغو تعطیلی
             </Button>
           </div>
         </div>
@@ -1722,51 +1864,91 @@ export const CalendarPage: React.FC = () => {
       <Modal
         isOpen={isHolidayModalOpen}
         onClose={() => setIsHolidayModalOpen(false)}
-        title="اعلام تعطیلی مدرسه"
-        description="ثبت روز تعطیل اختصاصی یا مصوب مدرسه"
+        title="تعطیلی مدرسه"
         maxWidth="md"
       >
-        <form onSubmit={handleCreateTenantHoliday} className="space-y-3.5">
-          {error && (
-            <div className="p-3 rounded-xl bg-red-50 dark:bg-rose-950/40 text-red-700 dark:text-red-300 text-xs border border-red-200 dark:border-red-800">
-              {error}
+        <div className="space-y-4">
+          <form onSubmit={handleCreateTenantHoliday} className="space-y-3.5">
+            {error && (
+              <div className="p-3 rounded-xl bg-red-50 dark:bg-rose-950/40 text-red-700 dark:text-red-300 text-xs border border-red-200 dark:border-red-800">
+                {error}
+              </div>
+            )}
+
+            <PersianDatePicker
+              label="تاریخ"
+              value={holidayForm.date}
+              onChange={(d) => setHolidayForm({ ...holidayForm, date: d })}
+            />
+
+            <Input
+              label="علت تعطیلی"
+              placeholder="علت تعطیلی..."
+              value={holidayForm.titleFa}
+              onChange={(e) => setHolidayForm({ ...holidayForm, titleFa: e.target.value })}
+              required
+              className="min-h-[44px]"
+            />
+
+            <div className="flex justify-end space-x-2 space-x-reverse pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsHolidayModalOpen(false)}
+                className="min-h-[44px] px-4"
+              >
+                انصراف
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                isLoading={isSubmitting}
+                className="bg-rose-600 hover:bg-rose-700 min-h-[44px] px-5"
+              >
+                ثبت تعطیلی
+              </Button>
+            </div>
+          </form>
+
+          {/* List of currently registered school holidays */}
+          {tenantHolidays.length > 0 && (
+            <div className="pt-3 border-t border-gray-100 dark:border-gray-800 space-y-2">
+              <span className="text-xs font-bold text-ink-darker dark:text-gray-200 block">
+                تعطیلی‌های ثبت‌شده:
+              </span>
+              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-0.5">
+                {tenantHolidays.map((th) => {
+                  const jalaliDateStr = th.jalaliInfo?.formatted || (th.date ? gregorianToJalaliStr(th.date) : '');
+                  return (
+                    <div
+                      key={th.id}
+                      className="p-2.5 rounded-xl bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200/70 dark:border-rose-900/50 flex items-center justify-between gap-2"
+                    >
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-rose-800 dark:text-rose-200 block truncate">
+                          {th.titleFa}
+                        </span>
+                        {jalaliDateStr && (
+                          <span className="text-[10px] text-rose-600/80 dark:text-rose-400 font-mono block mt-0.5">
+                            {toPersianDigits(jalaliDateStr)}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteTenantHoliday(th.id, th.titleFa, jalaliDateStr)}
+                        className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-100 dark:hover:bg-rose-900/50 rounded-lg transition-colors shrink-0"
+                        title="حذف این تعطیلی"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
-
-          <PersianDatePicker
-            label="تاریخ روز تعطیل"
-            value={holidayForm.date}
-            onChange={(d) => setHolidayForm({ ...holidayForm, date: d })}
-          />
-
-          <Input
-            label="علت تعطیلی مدرسه"
-            placeholder="مثال: برودت شدید هوا و یخبندان معابر"
-            value={holidayForm.titleFa}
-            onChange={(e) => setHolidayForm({ ...holidayForm, titleFa: e.target.value })}
-            required
-            className="min-h-[44px]"
-          />
-
-          <div className="flex justify-end space-x-2 space-x-reverse pt-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setIsHolidayModalOpen(false)}
-              className="min-h-[44px] px-4"
-            >
-              انصراف
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              isLoading={isSubmitting}
-              className="bg-rose-600 hover:bg-rose-700 min-h-[44px] px-5"
-            >
-              ثبت تعطیلی
-            </Button>
-          </div>
-        </form>
+        </div>
       </Modal>
     </div>
   );

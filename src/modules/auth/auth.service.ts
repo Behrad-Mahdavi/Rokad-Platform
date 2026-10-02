@@ -212,6 +212,9 @@ export class AuthService {
             ...(strippedZeroIdentifier ? [{ studentProfile: { nationalCode: strippedZeroIdentifier } }] : []),
             ...(paddedTenIdentifier ? [{ studentProfile: { nationalCode: paddedTenIdentifier } }] : []),
             ...(nationalBlind ? [{ studentProfile: { nationalCodeBlindIndex: nationalBlind } }] : []),
+            { studentProfile: { studentCode: cleanIdentifier } },
+            ...(strippedZeroIdentifier ? [{ studentProfile: { studentCode: strippedZeroIdentifier } }] : []),
+            ...(paddedTenIdentifier ? [{ studentProfile: { studentCode: paddedTenIdentifier } }] : []),
             // Match Parent account linked to student with this national code or username
             {
               parentProfile: {
@@ -223,6 +226,9 @@ export class AuthService {
                         ...(strippedZeroIdentifier ? [{ nationalCode: strippedZeroIdentifier }] : []),
                         ...(paddedTenIdentifier ? [{ nationalCode: paddedTenIdentifier }] : []),
                         ...(nationalBlind ? [{ nationalCodeBlindIndex: nationalBlind }] : []),
+                        { studentCode: cleanIdentifier },
+                        ...(strippedZeroIdentifier ? [{ studentCode: strippedZeroIdentifier }] : []),
+                        ...(paddedTenIdentifier ? [{ studentCode: paddedTenIdentifier }] : []),
                         { user: { username: cleanIdentifier } },
                         ...(strippedZeroIdentifier ? [{ user: { username: strippedZeroIdentifier } }] : []),
                         ...(paddedTenIdentifier ? [{ user: { username: paddedTenIdentifier } }] : []),
@@ -352,6 +358,9 @@ export class AuthService {
               ...(strippedZeroIdentifier ? [{ studentProfile: { nationalCode: strippedZeroIdentifier } }] : []),
               ...(paddedTenIdentifier ? [{ studentProfile: { nationalCode: paddedTenIdentifier } }] : []),
               ...(nationalBlind ? [{ studentProfile: { nationalCodeBlindIndex: nationalBlind } }] : []),
+              { studentProfile: { studentCode: cleanIdentifier } },
+              ...(strippedZeroIdentifier ? [{ studentProfile: { studentCode: strippedZeroIdentifier } }] : []),
+              ...(paddedTenIdentifier ? [{ studentProfile: { studentCode: paddedTenIdentifier } }] : []),
             ],
           },
           include: {

@@ -127,6 +127,19 @@ export class ClassesController {
     return this.classesService.updateClassroom(effectiveTenantId, classroomId, dto);
   }
 
+  @Delete('classrooms/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.CLASSROOM_WRITE)
+  @ApiOperation({ summary: 'حذف کلاس درس' })
+  async deleteClassroom(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') classroomId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.classesService.deleteClassroom(effectiveTenantId, classroomId);
+  }
+
   // 3. Class Enrollment
   @Post('enroll')
   @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
