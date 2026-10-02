@@ -798,25 +798,25 @@ export const MembersPage: React.FC = () => {
         <MobileDataTable
           data={filteredStudents}
           primaryField={(s) => (
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold text-xs text-ink-dark">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl overflow-hidden shrink-0 border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold text-sm text-ink-dark">
                 {s.user?.avatarUrl ? (
                   <img src={s.user.avatarUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
                   s.user?.firstName?.[0] || 'د'
                 )}
               </div>
-              <div>
-                <div className="font-bold text-ink-darker dark:text-white text-sm">
+              <div className="space-y-1">
+                <div className="font-black text-ink-darker dark:text-white text-sm">
                   {s.user?.firstName} {s.user?.lastName}
                 </div>
-                <div className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                  <span>پایه:</span>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5 flex-wrap">
+                  <span className="text-gray-400">پایه:</span>
                   <span className="font-bold text-primary">{s.enrollments?.[0]?.classroom?.level?.name || s.gradeLevel || 'دهم'}</span>
                   {s.fatherName && (
                     <>
                       <span className="text-gray-300 dark:text-gray-600">•</span>
-                      <span>فرزند: {s.fatherName}</span>
+                      <span>فرزند: <strong className="text-ink-dark dark:text-gray-200 font-medium">{s.fatherName}</strong></span>
                     </>
                   )}
                 </div>
@@ -849,6 +849,7 @@ export const MembersPage: React.FC = () => {
             {
               key: 'name',
               header: 'نام و نام خانوادگی',
+              mobilePriority: 'hidden',
               render: (s) => (
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold text-xs text-ink-dark">
@@ -950,11 +951,77 @@ export const MembersPage: React.FC = () => {
       {activeTab === 'TEACHERS' && (
         <MobileDataTable
           data={filteredTeachers}
+          primaryField={(t) => (
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl overflow-hidden shrink-0 border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold text-sm text-ink-dark">
+                {t.user?.avatarUrl ? (
+                  <img src={t.user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  t.user?.firstName?.[0] || 'د'
+                )}
+              </div>
+              <div className="space-y-1">
+                <div className="font-black text-ink-darker dark:text-white text-sm">
+                  {t.user?.firstName} {t.user?.lastName}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5 flex-wrap">
+                  <span className="font-medium text-gray-600 dark:text-gray-300">{t.degree || 'دبیر'}</span>
+                  {t.studyField && (
+                    <>
+                      <span className="text-gray-300 dark:text-gray-600">•</span>
+                      <span>رشته {t.studyField}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          cardActions={(t) => (
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => handleOpenEditTeacher(t)}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white transition-all shadow-2xs border border-blue-500/20 cursor-pointer"
+                title="ویرایش کامل مشخصات دبیر"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>ویرایش</span>
+              </button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleOpenEditLessons(t)}
+                className="text-xs text-primary hover:text-primary-dark h-8 px-2"
+                title="ویرایش دروس تخصیص‌یافته"
+              >
+                <BookOpen className="h-3.5 w-3.5 ms-1" />
+                <span>دروس</span>
+              </Button>
+              <button
+                type="button"
+                onClick={() => setVaultTarget(t)}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white transition-all shadow-2xs border border-amber-500/20 cursor-pointer"
+                title="مشاهده رمز عبور در گاوصندوق"
+              >
+                <KeyRound className="w-3.5 h-3.5" />
+                <span>رمز</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleOpenDeleteTeacher(t)}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white transition-all shadow-2xs border border-red-500/20 cursor-pointer"
+                title="حذف دبیر از کادر آموزشی"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>حذف</span>
+              </button>
+            </div>
+          )}
           columns={[
             {
               key: 'name',
               header: 'نام دبیر / پرسنل',
-              mobilePriority: 'primary',
+              mobilePriority: 'hidden',
               render: (t) => (
                 <div className="font-bold text-ink-darker text-sm">
                   {t.user?.firstName} {t.user?.lastName}
@@ -997,7 +1064,7 @@ export const MembersPage: React.FC = () => {
                         className="inline-flex items-center gap-1 text-[11px] bg-primary/10 text-primary-dark font-bold px-2 py-0.5 rounded border border-primary/20"
                         title={`پایه ${l.level?.name || '—'} | رشته ${l.field?.name || 'عمومی'}`}
                       >
-                        <BookOpen className="h-3 w-3" />
+                        <BookOpen className="h-3.5 w-3.5" />
                         {l.name}
                         {l.level?.name && (
                           <span className="text-[9px] text-gray-500">({l.level.name})</span>
@@ -1047,7 +1114,7 @@ export const MembersPage: React.FC = () => {
             {
               key: 'actions',
               header: 'عملیات',
-              mobilePriority: 'primary',
+              mobilePriority: 'hidden',
               render: (t) => (
                 <div className="flex items-center gap-1.5">
                   <button
@@ -1094,27 +1161,6 @@ export const MembersPage: React.FC = () => {
           keyExtractor={(t) => t.id}
           isLoading={isLoading}
           emptyMessage="هنوز دبیری ثبت نشده است."
-          cardActions={(t) => (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleOpenEditLessons(t)}
-                className="text-xs text-primary hover:text-primary-dark h-8 px-2.5"
-              >
-                <BookOpen className="h-3.5 w-3.5 ms-1" />
-                ویرایش دروس
-              </Button>
-              <button
-                type="button"
-                onClick={() => setVaultTarget(t)}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white transition-all shadow-2xs border border-amber-500/20 cursor-pointer"
-              >
-                <KeyRound className="w-3.5 h-3.5" />
-                <span>رمز عبور</span>
-              </button>
-            </div>
-          )}
         />
       )}
 

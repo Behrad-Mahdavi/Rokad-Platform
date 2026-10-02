@@ -146,7 +146,7 @@ export function MobileDataTable<T>({
           return (
             <div
               key={key}
-              className="bg-white dark:bg-[#151C28] rounded-2xl border border-gray-200/80 dark:border-[#242F42] shadow-[2.75px_2.75px_0_#202A5A] dark:shadow-[2.75px_2.75px_0_#59BBAF] p-4 transition-all space-y-3"
+              className="bg-white dark:bg-[#151C28] rounded-2xl border border-gray-200/80 dark:border-[#242F42] shadow-[2.75px_2.75px_0_#202A5A] dark:shadow-[2.75px_2.75px_0_#59BBAF] p-4 sm:p-5 transition-all space-y-3.5"
             >
               {/* Card Header */}
               {primaryField || secondaryField ? (
@@ -186,11 +186,11 @@ export function MobileDataTable<T>({
 
               {/* Card Body (Secondary Columns) */}
               {secondaryCols.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1 border-t border-gray-100 dark:border-gray-800">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs pt-3 border-t border-gray-100 dark:border-gray-800">
                   {secondaryCols.map((col, cIdx) => (
-                    <div key={getColKey(col, cIdx)} className="flex items-center justify-between gap-2 py-0.5">
+                    <div key={getColKey(col, cIdx)} className="flex items-center justify-between gap-2.5 py-1.5 px-3 rounded-xl bg-gray-50/70 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/50">
                       <span className="text-gray-500 dark:text-gray-400 font-medium shrink-0">{col.header}:</span>
-                      <span className="font-semibold text-ink-dark dark:text-gray-200 truncate">
+                      <span className="font-bold text-ink-darker dark:text-gray-100 truncate">
                         {renderCell(col, item, index)}
                       </span>
                     </div>
@@ -200,20 +200,20 @@ export function MobileDataTable<T>({
 
               {/* Collapsible Details (Detail Columns) */}
               {detailCols.length > 0 && (
-                <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+                <div className="pt-2.5 border-t border-gray-100 dark:border-gray-800">
                   <button
                     type="button"
                     onClick={() => toggleExpand(key)}
-                    className="w-full min-h-[44px] py-1.5 flex items-center justify-between text-xs font-bold text-primary hover:text-primary-dark transition-colors"
+                    className="w-full min-h-[40px] py-1.5 flex items-center justify-between text-xs font-bold text-primary hover:text-primary-dark transition-colors"
                   >
                     <span>{isExpanded ? 'بستن جزئیات تکمیلی' : 'مشاهده جزئیات بیشتر'}</span>
                     {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </button>
 
                   {isExpanded && (
-                    <div className="mt-2 p-3 bg-gray-50 dark:bg-[#1C2536] rounded-xl border border-gray-200/60 dark:border-gray-700/60 space-y-2 text-xs animate-in fade-in">
+                    <div className="mt-2.5 p-3.5 bg-gray-50 dark:bg-[#1C2536] rounded-xl border border-gray-200/60 dark:border-gray-700/60 space-y-2.5 text-xs animate-in fade-in">
                       {detailCols.map((col, cIdx) => (
-                        <div key={getColKey(col, cIdx)} className="flex items-center justify-between gap-2 py-0.5">
+                        <div key={getColKey(col, cIdx)} className="flex items-center justify-between gap-3 py-1">
                           <span className="text-gray-500 dark:text-gray-400 font-medium shrink-0">{col.header}:</span>
                           <span className="font-semibold text-ink-dark dark:text-gray-200 text-left truncate">
                             {renderCell(col, item, index)}
