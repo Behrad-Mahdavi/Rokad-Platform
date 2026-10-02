@@ -762,48 +762,39 @@ export const AttendancePage: React.FC = () => {
           1. TOP APP BAR & LIVE SYSTEM TIME (Master Panel Header)
       ───────────────────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-[#151C28] rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-[#242F42] shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] p-4 sm:p-5 space-y-3.5">
-        {/* Row 1: Header & Live System Time */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-primary/10 text-primary dark:text-primary border border-primary/25 flex items-center justify-center font-black shadow-2xs shrink-0">
-              <CalendarCheck className="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-lg sm:text-2xl font-black text-ink-darker dark:text-white truncate">
-                  دفتر حضور و غیاب کلاسی
-                </h1>
-              </div>
-              <p className="text-xs text-muted-foreground font-bold mt-0.5 truncate hidden xs:block">
-                ثبت الکترونیکی حضور، غیاب، تاخیر و ارزیابی مستمر دانش‌آموزان
-              </p>
-            </div>
+        {/* Row 1: Header */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-primary/10 text-primary dark:text-primary border border-primary/25 flex items-center justify-center font-black shadow-2xs shrink-0">
+            <CalendarCheck className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-
-          {/* Teacher Selector for Admin/Staff or Empty */}
-          {isManagerOrAdmin ? (
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-muted-foreground whitespace-nowrap hidden sm:inline">
-                انتخاب دبیر:
-              </span>
-              <select
-                value={selectedTeacherId}
-                onChange={(e) => {
-                  setSelectedTeacherId(e.target.value);
-                  setActiveSession(null);
-                }}
-                className="h-9 px-3 text-xs font-bold rounded-xl border border-gray-200 dark:border-[#242F42] bg-gray-50 dark:bg-[#1C2536] text-foreground dark:text-white cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                <option value="">همه دبیران / برنامه کلی</option>
-                {teachersData?.map((t: any) => (
-                  <option key={t.id} value={t.id}>
-                    {t.user?.firstName} {t.user?.lastName} {t.speciality ? `(${t.speciality})` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : null}
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-2xl font-black text-ink-darker dark:text-white truncate">
+              دفتر حضور و غیاب کلاسی
+            </h1>
+            <p className="text-xs text-muted-foreground font-bold mt-0.5 truncate hidden xs:block">
+              ثبت الکترونیکی حضور، غیاب، تاخیر و ارزیابی مستمر دانش‌آموزان
+            </p>
+          </div>
         </div>
+
+        {/* Teacher Selector for Admin/Staff - full width below title */}
+        {isManagerOrAdmin && (
+          <select
+            value={selectedTeacherId}
+            onChange={(e) => {
+              setSelectedTeacherId(e.target.value);
+              setActiveSession(null);
+            }}
+            className="w-full h-9 px-3 text-xs font-bold rounded-xl border border-gray-200 dark:border-[#242F42] bg-gray-50 dark:bg-[#1C2536] text-foreground dark:text-white cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            <option value="">همه دبیران / برنامه کلی</option>
+            {teachersData?.map((t: any) => (
+              <option key={t.id} value={t.id}>
+                {t.user?.firstName} {t.user?.lastName} {t.speciality ? `(${t.speciality})` : ''}
+              </option>
+            ))}
+          </select>
+        )}
 
         {/* Row 2: Jalali Date Navigator Bar */}
         <div className="grid grid-cols-1 sm:flex sm:items-center sm:justify-between gap-2 pt-1">
@@ -897,14 +888,14 @@ export const AttendancePage: React.FC = () => {
 
         {/* Row 3: Staff Attendance Tab (Only for Admins/Managers) */}
         {isManagerOrAdmin && (
-          <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-[#1C2536] p-1 rounded-xl border border-gray-200 dark:border-[#242F42] w-fit">
+          <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-[#1C2536] p-1 rounded-xl border border-gray-200 dark:border-[#242F42] w-full">
             <button
               type="button"
               onClick={() => {
                 setActiveTab('today_schedule');
                 setActiveSession(null);
               }}
-              className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
+              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
                 activeTab === 'today_schedule'
                   ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs font-black'
                   : 'text-muted-foreground hover:text-foreground'
@@ -918,7 +909,7 @@ export const AttendancePage: React.FC = () => {
                 setActiveTab('staff_attendance');
                 setActiveSession(null);
               }}
-              className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
+              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
                 activeTab === 'staff_attendance'
                   ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs font-black'
                   : 'text-muted-foreground hover:text-foreground'
@@ -1011,12 +1002,12 @@ export const AttendancePage: React.FC = () => {
               </div>
 
               {/* Action Buttons: Filter, Gradebook, Submit */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Filter Toggle Button (Right of Gradebook) */}
+              <div className="flex items-center gap-2 w-full">
+                {/* Filter Toggle Button - fixed icon */}
                 <button
                   type="button"
                   onClick={() => setShowFilterStats(!showFilterStats)}
-                  className={`h-10 w-10 rounded-xl border transition-all inline-flex items-center justify-center cursor-pointer shadow-2xs ${
+                  className={`h-10 w-10 shrink-0 rounded-xl border transition-all inline-flex items-center justify-center cursor-pointer shadow-2xs ${
                     showFilterStats || statusFilter !== 'ALL'
                       ? 'bg-primary text-white border-primary shadow-xs'
                       : 'border-gray-200 dark:border-[#242F42] bg-gray-50 dark:bg-[#1C2536] text-foreground dark:text-gray-200 hover:border-primary/50'
@@ -1032,7 +1023,7 @@ export const AttendancePage: React.FC = () => {
                     onClick={() =>
                       navigate(`/app/teacher/gradebook?classroomId=${activeSession.classroomId}&lessonId=${activeSession.lessonId}`)
                     }
-                    className="h-10 px-3.5 sm:px-4 rounded-xl border border-primary/30 dark:border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary dark:text-primary font-black text-xs sm:text-sm inline-flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
+                    className="flex-1 h-10 px-3.5 rounded-xl border border-primary/30 dark:border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary dark:text-primary font-black text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
                     title="دفتر نمرات و ارزشیابی برای این کلاس و درس"
                   >
                     <BookOpen className="w-4 h-4 text-primary shrink-0" />
@@ -1044,7 +1035,7 @@ export const AttendancePage: React.FC = () => {
                   type="button"
                   onClick={() => saveAttendanceMutation.mutate()}
                   disabled={saveAttendanceMutation.isPending || studentsList.length === 0}
-                  className="h-10 px-4 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs sm:text-sm border-[1.5px] border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] hover:shadow-[2.5px_2.5px_0_#438C83] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer inline-flex items-center gap-1.5 shrink-0 disabled:opacity-50"
+                  className="flex-1 h-10 px-4 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs sm:text-sm border-[1.5px] border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] hover:shadow-[2.5px_2.5px_0_#438C83] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
                   {saveAttendanceMutation.isPending ? (
                     <RefreshCw className="w-4 h-4 animate-spin ml-1.5" />
@@ -1054,6 +1045,7 @@ export const AttendancePage: React.FC = () => {
                   ثبت نهایی
                 </button>
               </div>
+
             </div>
 
             {/* Collapsible Filter & Stats Bar + Search Bar (Toggled via Filter Icon) */}
@@ -1516,7 +1508,7 @@ export const AttendancePage: React.FC = () => {
                         {isRecorded ? (
                           <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800 flex items-center gap-1 font-bold">
                             <CheckCircle2 className="w-3.5 h-3.5" />
-                            ثبت شده ({toPersianDigits(slot.stats?.presentCount || 0)} حاضر)
+                            ثبت شده
                           </span>
                         ) : (
                           <span className="text-muted-foreground bg-gray-50 dark:bg-[#1C2536] px-2 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42]">
