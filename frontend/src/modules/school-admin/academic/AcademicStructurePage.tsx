@@ -508,11 +508,10 @@ export const AcademicStructurePage: React.FC = () => {
                 e.stopPropagation();
                 handleOpenEditClass(c);
               }}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all border border-primary/20 shrink-0 cursor-pointer shadow-2xs"
+              className="p-2 rounded-xl text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all border border-primary/20 shrink-0 cursor-pointer"
               title="ویرایش کلاس"
             >
-              <Edit3 className="w-3.5 h-3.5" />
-              <span>ویرایش</span>
+              <Edit3 className="w-4 h-4" />
             </button>
           )}
           columns={[
@@ -581,11 +580,10 @@ export const AcademicStructurePage: React.FC = () => {
                     e.stopPropagation();
                     handleOpenEditClass(c);
                   }}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all border border-primary/20 cursor-pointer shadow-2xs"
+                  className="p-2 rounded-xl text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all border border-primary/20 cursor-pointer"
                   title="ویرایش کلاس"
                 >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>ویرایش</span>
+                  <Edit3 className="w-4 h-4" />
                 </button>
               ),
             },
@@ -736,11 +734,10 @@ export const AcademicStructurePage: React.FC = () => {
                     e.stopPropagation();
                     handleOpenEditLesson(l);
                   }}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all border border-primary/20 shrink-0 cursor-pointer shadow-2xs"
+                  className="p-2 rounded-xl text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all border border-primary/20 shrink-0 cursor-pointer"
                   title="ویرایش درس"
                 >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>ویرایش</span>
+                  <Edit3 className="w-4 h-4" />
                 </button>
               </div>
             )}
@@ -856,11 +853,10 @@ export const AcademicStructurePage: React.FC = () => {
                       e.stopPropagation();
                       handleOpenEditLesson(l);
                     }}
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all border border-primary/20 cursor-pointer shadow-2xs"
+                    className="p-2 rounded-xl text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all border border-primary/20 cursor-pointer"
                     title="ویرایش درس"
                   >
-                    <Edit3 className="w-3.5 h-3.5" />
-                    <span>ویرایش</span>
+                    <Edit3 className="w-4 h-4" />
                   </button>
                 ),
               },
@@ -1210,8 +1206,8 @@ export const AcademicStructurePage: React.FC = () => {
           setIsLessonModalOpen(false);
           setError(null);
         }}
-        title="تعریف عنوان درس جدید"
-        description="افزودن درس به چارت آموزشی مدرسه و تخصیص به پایه و رشته"
+        title="تعریف درس جدید"
+        description="مشخصات درس، پایه و رشته"
         maxWidth="md"
       >
         {error && (
@@ -1222,19 +1218,19 @@ export const AcademicStructurePage: React.FC = () => {
         )}
 
         <form onSubmit={handleCreateLesson} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+              <label className="block text-xs font-bold text-ink-normal dark:text-gray-300 mb-1.5 text-right">
                 پایه تحصیلی <span className="text-red-500">*</span>
               </label>
               <select
                 value={lessonForm.levelId}
                 onChange={(e) => handleLessonLevelChange(e.target.value)}
-                className="flex h-11 w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3.5 py-2 text-sm text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                className="flex h-10 w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3 py-2 text-xs text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
                 required
               >
                 {levels.map((lvl) => (
-                  <option key={lvl.id} value={lvl.id} className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">
+                  <option key={lvl.id} value={lvl.id}>
                     پایه {lvl.name}
                   </option>
                 ))}
@@ -1242,237 +1238,97 @@ export const AcademicStructurePage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-ink-normal dark:text-gray-300 mb-1.5 text-right">
+              <label className="block text-xs font-bold text-ink-normal dark:text-gray-300 mb-1.5 text-right">
                 رشته تحصیلی <span className="text-red-500">*</span>
               </label>
               <select
                 value={lessonForm.fieldId}
                 onChange={(e) => setLessonForm({ ...lessonForm, fieldId: e.target.value })}
-                className="flex h-11 w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3.5 py-2 text-sm text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                className="flex h-10 w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3 py-2 text-xs text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
               >
                 {(fields.filter((f) => f.levelId === lessonForm.levelId).length > 0
                   ? fields.filter((f) => f.levelId === lessonForm.levelId)
                   : fields
                 ).map((f) => (
-                  <option key={f.id} value={f.id} className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">
+                  <option key={f.id} value={f.id}>
                     {f.name}
                   </option>
                 ))}
-                <option value="" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">عمومی (مشترک بین تمام رشته‌ها)</option>
+                <option value="">عمومی (مشترک)</option>
               </select>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="نام درس"
-              placeholder="مثال: کارگاه شبکه و نرم‌افزار یا ریاضی ۱"
+              placeholder="مثال: ریاضی ۱"
               value={lessonForm.name}
               onChange={(e) => setLessonForm({ ...lessonForm, name: e.target.value })}
               required
             />
             <Input
               label="کد درس"
-              placeholder="مثال: NET-101"
+              placeholder="مثال: MATH-10"
               value={lessonForm.code}
               onChange={(e) => setLessonForm({ ...lessonForm, code: e.target.value })}
               required
             />
           </div>
 
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-ink-normal dark:text-gray-300 mb-1.5 text-right">
-                  نوع درس
-                </label>
-                <select
-                  value={lessonForm.type}
-                  onChange={(e) => {
-                    const newType = e.target.value;
-                    const isMod = ['NON_TECHNICAL_COMPETENCY', 'BASIC_COMPETENCY', 'TECHNICAL_MODULAR_COMPETENCY'].includes(newType);
-                    setLessonForm({
-                      ...lessonForm,
-                      type: newType,
-                      isModular: isMod,
-                    });
-                  }}
-                  className="flex h-11 w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3.5 py-2 text-sm text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-medium"
-                >
-                  <option value="GENERAL" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۱- عمومی</option>
-                  <option value="NON_TECHNICAL_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۲- شایستگی‌های غیرفنی (پودمانی)</option>
-                  <option value="BASIC_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۳- شایستگی‌های پایه (پودمانی)</option>
-                  <option value="TECHNICAL_MODULAR_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۴- شایستگی‌های فنی / پودمانی</option>
-                  <option value="TECHNICAL_PRACTICAL_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۵- شایستگی‌های فنی / عملی</option>
-                </select>
-              </div>
-
-              <Input
-                label="تعداد واحد / ساعت هفتگی"
-                type="number"
-                value={lessonForm.units}
-                onChange={(e) => setLessonForm({ ...lessonForm, units: Number(e.target.value) })}
-                required
-              />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-ink-normal dark:text-gray-300 mb-1.5 text-right">
+                نوع درس
+              </label>
+              <select
+                value={lessonForm.type}
+                onChange={(e) => {
+                  const newType = e.target.value;
+                  const isMod = ['NON_TECHNICAL_COMPETENCY', 'BASIC_COMPETENCY', 'TECHNICAL_MODULAR_COMPETENCY'].includes(newType);
+                  setLessonForm({
+                    ...lessonForm,
+                    type: newType,
+                    isModular: isMod,
+                  });
+                }}
+                className="flex h-10 w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3 py-2 text-xs text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-medium"
+              >
+                <option value="GENERAL">عمومی</option>
+                <option value="NON_TECHNICAL_COMPETENCY">شایستگی‌های غیرفنی (پودمانی)</option>
+                <option value="BASIC_COMPETENCY">شایستگی‌های پایه (پودمانی)</option>
+                <option value="TECHNICAL_MODULAR_COMPETENCY">شایستگی‌های فنی / پودمانی</option>
+                <option value="TECHNICAL_PRACTICAL_COMPETENCY">شایستگی‌های فنی / عملی</option>
+                <option value="SPECIALIZED">تخصصی</option>
+                <option value="PRACTICAL">کارگاهی</option>
+                <option value="OPTIONAL">انتخابی</option>
+              </select>
             </div>
 
-            {/* کارت راهنما و توضیحات زنده منطق نمره‌دهی و ارزشیابی نوع درس */}
-            {lessonForm.type === 'GENERAL' && (
-              <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/30 p-3 sm:p-3.5 text-xs text-emerald-950 dark:text-emerald-200 space-y-1.5 transition-all">
-                <div className="flex flex-wrap items-center justify-between gap-1.5 font-bold text-emerald-900 dark:text-emerald-300">
-                  <span className="flex items-center gap-1.5 text-xs sm:text-[13px]">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-                    ارزشیابی نوبت اول و دوم (غیرپودمانی)
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 text-[10.5px] border border-emerald-300 dark:border-emerald-700/60 shrink-0">
-                    نظام سالانه
-                  </span>
-                </div>
-                <p className="leading-relaxed text-emerald-800 dark:text-emerald-400 text-[11px] sm:text-xs break-words">
-                  ثبت نمرات مستمر و پایانی در دو نوبت دی‌ماه و خرداد، بدون نیاز به پودمان‌بندی.
-                </p>
-              </div>
-            )}
-
-            {lessonForm.type === 'NON_TECHNICAL_COMPETENCY' && (
-              <div className="rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50/70 dark:bg-purple-950/30 p-3 sm:p-3.5 text-xs text-purple-950 dark:text-purple-200 space-y-1.5 transition-all">
-                <div className="flex flex-wrap items-center justify-between gap-1.5 font-bold text-purple-900 dark:text-purple-300">
-                  <span className="flex items-center gap-1.5 text-xs sm:text-[13px]">
-                    <span className="h-2 w-2 rounded-full bg-purple-500 shrink-0" />
-                    شایستگی‌های غیرفنی (۵ پودمان)
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-300 text-[10.5px] border border-purple-300 dark:border-purple-700/60 shrink-0">
-                    نصاب قبولی: ۱۲
-                  </span>
-                </div>
-                <p className="leading-relaxed text-purple-800 dark:text-purple-400 text-[11px] sm:text-xs break-words">
-                  ارزشیابی در ۵ پودمان مهارتی مستقل (الزامات محیط کار، اخلاق حرفه‌ای، کارآفرینی و...).
-                </p>
-              </div>
-            )}
-
-            {lessonForm.type === 'BASIC_COMPETENCY' && (
-              <div className="rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/70 dark:bg-indigo-950/30 p-3 sm:p-3.5 text-xs text-indigo-950 dark:text-indigo-200 space-y-1.5 transition-all">
-                <div className="flex flex-wrap items-center justify-between gap-1.5 font-bold text-indigo-900 dark:text-indigo-300">
-                  <span className="flex items-center gap-1.5 text-xs sm:text-[13px]">
-                    <span className="h-2 w-2 rounded-full bg-indigo-500 shrink-0" />
-                    شایستگی‌های پایه (۵ پودمان)
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-300 text-[10.5px] border border-indigo-300 dark:border-indigo-700/60 shrink-0">
-                    دروس علوم پایه
-                  </span>
-                </div>
-                <p className="leading-relaxed text-indigo-800 dark:text-indigo-400 text-[11px] sm:text-xs break-words">
-                  ۵ پودمان متوالی با نمره مستمر و پایانی مجزا (ریاضی، فیزیک، شیمی هنرستان).
-                </p>
-              </div>
-            )}
-
-            {lessonForm.type === 'TECHNICAL_MODULAR_COMPETENCY' && (
-              <div className="rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50/70 dark:bg-purple-950/30 p-3 sm:p-3.5 text-xs text-purple-950 dark:text-purple-200 space-y-1.5 transition-all">
-                <div className="flex flex-wrap items-center justify-between gap-1.5 font-bold text-purple-900 dark:text-purple-300">
-                  <span className="flex items-center gap-1.5 text-xs sm:text-[13px]">
-                    <span className="h-2 w-2 rounded-full bg-purple-600 shrink-0" />
-                    شایستگی‌های فنی کارگاهی (۵ پودمان)
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-300 text-[10.5px] border border-purple-300 dark:border-purple-700/60 shrink-0">
-                    کارگاهی تخصصی
-                  </span>
-                </div>
-                <p className="leading-relaxed text-purple-800 dark:text-purple-400 text-[11px] sm:text-xs break-words">
-                  ارزشیابی دروس تخصصی رشته در ۵ پودمان کارگاهی شایستگی‌محور با حد نصاب قبولی ۱۲.
-                </p>
-              </div>
-            )}
-
-            {lessonForm.type === 'TECHNICAL_PRACTICAL_COMPETENCY' && (
-              <div className="rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/30 p-3 sm:p-3.5 text-xs text-amber-950 dark:text-amber-200 space-y-1.5 transition-all">
-                <div className="flex flex-wrap items-center justify-between gap-1.5 font-bold text-amber-900 dark:text-amber-300">
-                  <span className="flex items-center gap-1.5 text-xs sm:text-[13px]">
-                    <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
-                    شایستگی‌های فنی و عملی (غیرپودمانی)
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 text-[10.5px] border border-amber-300 dark:border-amber-700/60 shrink-0">
-                    آزمون کتبی و عملی
-                  </span>
-                </div>
-                <p className="leading-relaxed text-amber-800 dark:text-amber-400 text-[11px] sm:text-xs break-words">
-                  ارزشیابی بر اساس سنجش عملکردی کارگاهی و آزمون نهایی پایان دوره.
-                </p>
-              </div>
-            )}
+            <Input
+              label="تعداد واحد / ساعت هفتگی"
+              type="number"
+              value={lessonForm.units}
+              onChange={(e) => setLessonForm({ ...lessonForm, units: Number(e.target.value) })}
+              required
+            />
           </div>
 
-          {/* بخش تنظیمات پودمان (در صورت پودمانی بودن درس) */}
-          {lessonForm.isModular ? (
-            <div className="bg-white dark:bg-[#151C28] rounded-2xl border border-purple-200 dark:border-purple-900/50 p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="font-extrabold text-sm text-ink-darker dark:text-white">
-                    پودمان‌های این درس
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                    ۵ پودمان فعال
-                  </span>
-                </div>
-                <span className="text-xs text-purple-700 dark:text-purple-400 font-medium">
-                  ثبت خودکار
-                </span>
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                عناوین ۵ پودمان این درس به صورت اختیاری:
-              </p>
-
-              <div className="pt-2 border-t border-purple-100 dark:border-purple-900/40 space-y-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
-                  {[0, 1, 2, 3, 4].map((idx) => (
-                    <div
-                      key={idx}
-                      className={`flex items-center gap-2 bg-white dark:bg-[#1C2536] px-2.5 py-1.5 rounded-xl border border-purple-200/80 dark:border-purple-900/60 min-w-0 w-full overflow-hidden ${
-                        idx === 4 ? 'sm:col-span-2' : ''
-                      }`}
-                    >
-                      <span className="text-[11px] font-bold text-purple-700 dark:text-purple-400 w-16 shrink-0 text-center font-mono">
-                        پودمان {idx + 1}:
-                      </span>
-                      <input
-                        type="text"
-                        value={lessonForm.podmanTitles[idx] || `پودمان ${idx + 1}`}
-                        onChange={(e) => {
-                          const newTitles = [...lessonForm.podmanTitles];
-                          newTitles[idx] = e.target.value;
-                          setLessonForm({ ...lessonForm, podmanTitles: newTitles });
-                        }}
-                        placeholder={`عنوان پودمان ${idx + 1}`}
-                        className="flex-1 min-w-0 w-full h-8 text-xs px-2.5 rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-500 font-medium bg-gray-50/50 dark:bg-[#151C28] text-gray-800 dark:text-white focus:bg-white dark:focus:bg-[#1C2536] transition-colors"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50/60 dark:bg-[#1C2536]/40 p-3 text-center text-xs text-gray-500 dark:text-gray-400">
-              <span className="font-semibold text-gray-700 dark:text-gray-300">این درس غیرپودمانی است: </span>
-              ارزشیابی نمرات به صورت کلاسی/ترمی یا کتبی و عملی سالانه ثبت شده و نیازی به پودمان‌بندی ندارد.
-            </div>
-          )}
-
           {/* انتخاب دبیران مدرس درس */}
-          <div className="w-full text-right space-y-1.5">
-            <label className="block text-xs sm:text-[13px] font-bold text-ink-normal/80 dark:text-gray-300 text-right">
-              دبیران مدرس این درس ({lessonForm.teacherIds.length} دبیر انتخاب شده)
+          <div className="w-full text-right space-y-1">
+            <label className="block text-xs font-bold text-ink-normal dark:text-gray-300 text-right">
+              دبیران مدرس ({lessonForm.teacherIds.length})
             </label>
-            <div className="max-h-36 overflow-y-auto p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-[#151C28] space-y-1">
+            <div className="max-h-32 overflow-y-auto p-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-[#151C28] space-y-1">
               {teachers.length === 0 ? (
-                <div className="text-xs text-gray-400 py-2 text-center">دبیری در سامانه ثبت نشده است.</div>
+                <div className="text-xs text-gray-400 py-2 text-center">دبیری ثبت نشده است.</div>
               ) : (
                 teachers.map((t) => {
                   const isSelected = lessonForm.teacherIds.includes(t.id);
                   return (
                     <label
                       key={t.id}
-                      className={`flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer transition-colors ${
+                      className={`flex items-center justify-between p-1.5 rounded-lg text-xs cursor-pointer transition-colors ${
                         isSelected
                           ? 'bg-primary/10 text-primary font-bold border border-primary/30'
                           : 'hover:bg-white dark:hover:bg-[#1C2536] text-gray-700 dark:text-gray-300'
@@ -1490,14 +1346,14 @@ export const AcademicStructurePage: React.FC = () => {
                                 : [...prev.teacherIds, t.id],
                             }));
                           }}
-                          className="rounded text-primary focus:ring-primary h-4 w-4"
+                          className="rounded text-primary focus:ring-primary h-3.5 w-3.5"
                         />
                         <span>
                           {t.user?.firstName} {t.user?.lastName}
                         </span>
                       </div>
                       {t.specialization && (
-                        <span className="text-[10px] text-gray-400 font-normal">{t.specialization}</span>
+                        <span className="text-[10px] text-gray-400">{t.specialization}</span>
                       )}
                     </label>
                   );
@@ -1505,6 +1361,35 @@ export const AcademicStructurePage: React.FC = () => {
               )}
             </div>
           </div>
+
+          {/* پودمان‌ها */}
+          {lessonForm.isModular && (
+            <div className="bg-gray-50/60 dark:bg-[#151C28] rounded-xl border border-gray-200 dark:border-gray-700 p-3 space-y-2">
+              <span className="font-bold text-xs text-ink-darker dark:text-white">
+                عناوین ۵ پودمان
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[0, 1, 2, 3, 4].map((idx) => (
+                  <div key={idx} className={`flex items-center gap-1.5 ${idx === 4 ? 'sm:col-span-2' : ''}`}>
+                    <span className="text-[11px] font-bold text-gray-500 w-14 shrink-0 text-center font-mono">
+                      پودمان {idx + 1}:
+                    </span>
+                    <input
+                      type="text"
+                      value={lessonForm.podmanTitles[idx] || `پودمان ${idx + 1}`}
+                      onChange={(e) => {
+                        const newTitles = [...lessonForm.podmanTitles];
+                        newTitles[idx] = e.target.value;
+                        setLessonForm({ ...lessonForm, podmanTitles: newTitles });
+                      }}
+                      placeholder={`پودمان ${idx + 1}`}
+                      className="flex-1 h-8 text-xs px-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1C2536] text-gray-800 dark:text-white"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end space-x-2 space-x-reverse pt-2">
             <Button
@@ -1532,9 +1417,9 @@ export const AcademicStructurePage: React.FC = () => {
           setEditingLessonId(null);
           setError(null);
         }}
-        title="ویرایش مشخصات درس"
-        description="تغییر عنوان، کد، پایه، رشته، دبیران، نوع درس، تعداد واحد و سرفصل‌ها/پودمان‌ها"
-        maxWidth="lg"
+        title="ویرایش درس"
+        description="مشخصات درس، دبیران و پودمان‌ها"
+        maxWidth="md"
       >
         {error && (
           <div className="mb-4 flex items-center space-x-2 space-x-reverse rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200">
@@ -1544,19 +1429,19 @@ export const AcademicStructurePage: React.FC = () => {
         )}
 
         <form onSubmit={handleUpdateLesson} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-ink-normal dark:text-gray-300 mb-1.5 text-right">
+              <label className="block text-xs font-bold text-ink-normal dark:text-gray-300 mb-1.5 text-right">
                 پایه تحصیلی <span className="text-red-500">*</span>
               </label>
               <select
                 value={editLessonForm.levelId}
                 onChange={(e) => handleEditLessonLevelChange(e.target.value)}
-                className="flex h-11 w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3.5 py-2 text-sm text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                className="flex h-10 w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3 py-2 text-xs text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
                 required
               >
                 {levels.map((lvl) => (
-                  <option key={lvl.id} value={lvl.id} className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">
+                  <option key={lvl.id} value={lvl.id}>
                     پایه {lvl.name}
                   </option>
                 ))}
@@ -1564,47 +1449,47 @@ export const AcademicStructurePage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-ink-normal dark:text-gray-300 mb-1.5 text-right">
+              <label className="block text-xs font-bold text-ink-normal dark:text-gray-300 mb-1.5 text-right">
                 رشته تحصیلی <span className="text-red-500">*</span>
               </label>
               <select
                 value={editLessonForm.fieldId}
                 onChange={(e) => setEditLessonForm({ ...editLessonForm, fieldId: e.target.value })}
-                className="flex h-11 w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3.5 py-2 text-sm text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                className="flex h-10 w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3 py-2 text-xs text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
               >
                 {(fields.filter((f) => f.levelId === editLessonForm.levelId).length > 0
                   ? fields.filter((f) => f.levelId === editLessonForm.levelId)
                   : fields
                 ).map((f) => (
-                  <option key={f.id} value={f.id} className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">
+                  <option key={f.id} value={f.id}>
                     {f.name}
                   </option>
                 ))}
-                <option value="" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">عمومی (مشترک بین تمام رشته‌ها)</option>
+                <option value="">عمومی (مشترک)</option>
               </select>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="نام درس"
-              placeholder="مثال: کارگاه شبکه و نرم‌افزار یا ریاضی ۱"
+              placeholder="مثال: ریاضی ۱"
               value={editLessonForm.name}
               onChange={(e) => setEditLessonForm({ ...editLessonForm, name: e.target.value })}
               required
             />
             <Input
               label="کد درس"
-              placeholder="مثال: NET-101"
+              placeholder="مثال: MATH-10"
               value={editLessonForm.code}
               onChange={(e) => setEditLessonForm({ ...editLessonForm, code: e.target.value })}
               required
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-ink-normal dark:text-gray-300 mb-1.5 text-right">
+              <label className="block text-xs font-bold text-ink-normal dark:text-gray-300 mb-1.5 text-right">
                 نوع درس
               </label>
               <select
@@ -1618,16 +1503,16 @@ export const AcademicStructurePage: React.FC = () => {
                     isModular: isMod,
                   });
                 }}
-                className="flex h-11 w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3.5 py-2 text-sm text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-medium"
+                className="flex h-10 w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#1C2536] px-3 py-2 text-xs text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-medium"
               >
-                <option value="GENERAL" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۱- عمومی</option>
-                <option value="NON_TECHNICAL_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۲- شایستگی‌های غیرفنی (پودمانی)</option>
-                <option value="BASIC_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۳- شایستگی‌های پایه (پودمانی)</option>
-                <option value="TECHNICAL_MODULAR_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۴- شایستگی‌های فنی / پودمانی</option>
-                <option value="TECHNICAL_PRACTICAL_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۵- شایستگی‌های فنی / عملی</option>
-                <option value="SPECIALIZED" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۶- تخصصی</option>
-                <option value="PRACTICAL" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۷- کارگاهی</option>
-                <option value="OPTIONAL" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۸- انتخابی</option>
+                <option value="GENERAL">عمومی</option>
+                <option value="NON_TECHNICAL_COMPETENCY">شایستگی‌های غیرفنی (پودمانی)</option>
+                <option value="BASIC_COMPETENCY">شایستگی‌های پایه (پودمانی)</option>
+                <option value="TECHNICAL_MODULAR_COMPETENCY">شایستگی‌های فنی / پودمانی</option>
+                <option value="TECHNICAL_PRACTICAL_COMPETENCY">شایستگی‌های فنی / عملی</option>
+                <option value="SPECIALIZED">تخصصی</option>
+                <option value="PRACTICAL">کارگاهی</option>
+                <option value="OPTIONAL">انتخابی</option>
               </select>
             </div>
 
@@ -1641,20 +1526,20 @@ export const AcademicStructurePage: React.FC = () => {
           </div>
 
           {/* انتخاب دبیران مدرس درس */}
-          <div className="w-full text-right space-y-1.5">
-            <label className="block text-xs sm:text-[13px] font-bold text-ink-normal/80 dark:text-gray-300 text-right">
-              دبیران مدرس این درس ({editLessonForm.teacherIds.length} دبیر انتخاب شده)
+          <div className="w-full text-right space-y-1">
+            <label className="block text-xs font-bold text-ink-normal dark:text-gray-300 text-right">
+              دبیران مدرس ({editLessonForm.teacherIds.length})
             </label>
-            <div className="max-h-36 overflow-y-auto p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-[#151C28] space-y-1">
+            <div className="max-h-32 overflow-y-auto p-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-[#151C28] space-y-1">
               {teachers.length === 0 ? (
-                <div className="text-xs text-gray-400 py-2 text-center">دبیری در سامانه ثبت نشده است.</div>
+                <div className="text-xs text-gray-400 py-2 text-center">دبیری ثبت نشده است.</div>
               ) : (
                 teachers.map((t) => {
                   const isSelected = editLessonForm.teacherIds.includes(t.id);
                   return (
                     <label
                       key={t.id}
-                      className={`flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer transition-colors ${
+                      className={`flex items-center justify-between p-1.5 rounded-lg text-xs cursor-pointer transition-colors ${
                         isSelected
                           ? 'bg-primary/10 text-primary font-bold border border-primary/30'
                           : 'hover:bg-white dark:hover:bg-[#1C2536] text-gray-700 dark:text-gray-300'
@@ -1672,14 +1557,14 @@ export const AcademicStructurePage: React.FC = () => {
                                 : [...prev.teacherIds, t.id],
                             }));
                           }}
-                          className="rounded text-primary focus:ring-primary h-4 w-4"
+                          className="rounded text-primary focus:ring-primary h-3.5 w-3.5"
                         />
                         <span>
                           {t.user?.firstName} {t.user?.lastName}
                         </span>
                       </div>
                       {t.specialization && (
-                        <span className="text-[10px] text-gray-400 font-normal">{t.specialization}</span>
+                        <span className="text-[10px] text-gray-400">{t.specialization}</span>
                       )}
                     </label>
                   );
@@ -1688,20 +1573,15 @@ export const AcademicStructurePage: React.FC = () => {
             </div>
           </div>
 
-          {/* تنظیمات پودمان / سرفصل‌ها */}
-          {editLessonForm.isModular ? (
-            <div className="bg-white dark:bg-[#151C28] rounded-2xl border border-purple-200 dark:border-purple-900/50 p-4 space-y-3">
+          {/* تنظیمات پودمان */}
+          {editLessonForm.isModular && (
+            <div className="bg-gray-50/60 dark:bg-[#151C28] rounded-xl border border-gray-200 dark:border-gray-700 p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="font-extrabold text-sm text-ink-darker dark:text-white">
-                    پودمان‌های این درس
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                    {editLessonForm.podmanCount} پودمان
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">تعداد پودمان:</span>
+                <span className="font-bold text-xs text-ink-darker dark:text-white">
+                  عناوین پودمان‌ها
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-gray-500">تعداد:</span>
                   <select
                     value={editLessonForm.podmanCount}
                     onChange={(e) => {
@@ -1715,7 +1595,7 @@ export const AcademicStructurePage: React.FC = () => {
                         podmanTitles: newTitles,
                       });
                     }}
-                    className="h-8 rounded-lg border border-purple-200 dark:border-purple-800 bg-white dark:bg-[#1C2536] text-xs font-bold px-2 text-purple-800 dark:text-purple-300"
+                    className="h-7 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1C2536] text-xs px-2 font-bold"
                   >
                     {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
                       <option key={n} value={n}>
@@ -1725,47 +1605,34 @@ export const AcademicStructurePage: React.FC = () => {
                   </select>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                عناوین پودمان‌ها و سرفصل‌های تدریس:
-              </p>
 
-              <div className="pt-2 border-t border-purple-100 dark:border-purple-900/40 space-y-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
-                  {Array.from({ length: editLessonForm.podmanCount }).map((_, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-2 bg-white dark:bg-[#1C2536] px-2.5 py-1.5 rounded-xl border border-purple-200/80 dark:border-purple-900/60 min-w-0 w-full overflow-hidden"
-                    >
-                      <span className="text-[11px] font-bold text-purple-700 dark:text-purple-400 w-16 shrink-0 text-center font-mono">
-                        پودمان {idx + 1}:
-                      </span>
-                      <input
-                        type="text"
-                        value={editLessonForm.podmanTitles[idx] || `پودمان ${idx + 1}`}
-                        onChange={(e) => {
-                          const newTitles = [...editLessonForm.podmanTitles];
-                          newTitles[idx] = e.target.value;
-                          setEditLessonForm({ ...editLessonForm, podmanTitles: newTitles });
-                        }}
-                        placeholder={`عنوان پودمان ${idx + 1}`}
-                        className="flex-1 min-w-0 w-full h-8 text-xs px-2.5 rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-500 font-medium bg-gray-50/50 dark:bg-[#151C28] text-gray-800 dark:text-white focus:bg-white dark:focus:bg-[#1C2536] transition-colors"
-                      />
-                    </div>
-                  ))}
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {Array.from({ length: editLessonForm.podmanCount }).map((_, idx) => (
+                  <div key={idx} className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-bold text-gray-500 w-14 shrink-0 text-center font-mono">
+                      پودمان {idx + 1}:
+                    </span>
+                    <input
+                      type="text"
+                      value={editLessonForm.podmanTitles[idx] || `پودمان ${idx + 1}`}
+                      onChange={(e) => {
+                        const newTitles = [...editLessonForm.podmanTitles];
+                        newTitles[idx] = e.target.value;
+                        setEditLessonForm({ ...editLessonForm, podmanTitles: newTitles });
+                      }}
+                      placeholder={`پودمان ${idx + 1}`}
+                      className="flex-1 h-8 text-xs px-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1C2536] text-gray-800 dark:text-white"
+                    />
+                  </div>
+                ))}
               </div>
-            </div>
-          ) : (
-            <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50/60 dark:bg-[#1C2536]/40 p-3 text-center text-xs text-gray-500 dark:text-gray-400">
-              <span className="font-semibold text-gray-700 dark:text-gray-300">این درس غیرپودمانی است: </span>
-              ارزشیابی نمرات به صورت کلاسی/ترمی یا کتبی و عملی سالانه ثبت شده و نیازی به پودمان‌بندی ندارد.
             </div>
           )}
 
           <div className="flex items-center justify-between gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
             <button
               type="button"
-              className="h-10 w-10 flex items-center justify-center rounded-xl text-rose-600 hover:text-white hover:bg-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 transition-all shrink-0 cursor-pointer shadow-2xs"
+              className="h-10 w-10 flex items-center justify-center rounded-xl text-rose-600 hover:text-white hover:bg-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 transition-all shrink-0 cursor-pointer"
               title="حذف درس"
               onClick={() => {
                 const currentLesson = lessons.find((l) => l.id === editingLessonId);
@@ -1790,7 +1657,7 @@ export const AcademicStructurePage: React.FC = () => {
                 انصراف
               </Button>
               <Button type="submit" variant="primary" isLoading={isSubmitting} className="h-10 px-4 text-xs sm:text-sm font-bold">
-                ذخیره تغییرات درس
+                ذخیره
               </Button>
             </div>
           </div>
