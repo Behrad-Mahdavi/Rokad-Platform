@@ -359,7 +359,7 @@ export const StudentSchedulePage: React.FC = () => {
                         </Badge>
 
                         {slot.periodNumber >= 5 && (
-                          <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-300/50">
+                          <span className="text-[11px] font-bold text-amber-900 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/20 px-2 py-0.5 rounded-md border border-amber-300/80 dark:border-amber-400/40">
                             فوق برنامه (عصر)
                           </span>
                         )}

@@ -583,7 +583,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                     </span>
                     <span className="text-xs font-bold text-ink-darker">{period.label}</span>
                     {period.isExtracurricular && (
-                      <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-extrabold border border-amber-300">
+                      <span className="text-[10px] bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 px-1.5 py-0.5 rounded font-extrabold border border-amber-300/80 dark:border-amber-400/40">
                         فوق برنامه (عصر)
                       </span>
                     )}
@@ -727,7 +727,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                   <div className="flex items-center justify-center gap-1">
                     <span className="font-bold text-xs text-ink-darker">{period.label}</span>
                     {period.isExtracurricular && (
-                      <span className="text-[9px] font-black bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded border border-amber-300">
+                      <span className="text-[9px] font-black bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 px-1.5 py-0.5 rounded border border-amber-300/80 dark:border-amber-400/40">
                         فوق برنامه
                       </span>
                     )}
@@ -1241,7 +1241,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                       {toPersianDigits(currentPeriodDef.defaultStart)} تا {toPersianDigits(currentPeriodDef.defaultEnd)}
                     </span>
                     {currentPeriodDef.isExtracurricular && (
-                      <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-black border border-amber-300">
+                      <span className="text-[10px] bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 px-1.5 py-0.5 rounded font-black border border-amber-300/80 dark:border-amber-400/40">
                         فوق برنامه (عصر)
                       </span>
                     )}

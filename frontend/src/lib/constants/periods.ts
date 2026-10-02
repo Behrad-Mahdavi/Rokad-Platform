@@ -47,8 +47,8 @@ export const OFFICIAL_PERIODS: PeriodDefinition[] = [
   },
   {
     number: 5,
-    label: 'زنگ پنجم (فوق برنامه)',
-    shortLabel: 'زنگ ۵ (فوق)',
+    label: 'زنگ پنجم',
+    shortLabel: 'زنگ ۵',
     defaultStart: '14:30',
     defaultEnd: '15:50',
     isExtracurricular: true,
@@ -56,8 +56,8 @@ export const OFFICIAL_PERIODS: PeriodDefinition[] = [
   },
   {
     number: 6,
-    label: 'زنگ ششم (فوق برنامه)',
-    shortLabel: 'زنگ ۶ (فوق)',
+    label: 'زنگ ششم',
+    shortLabel: 'زنگ ۶',
     defaultStart: '16:00',
     defaultEnd: '17:20',
     isExtracurricular: true,
@@ -70,8 +70,8 @@ export const PERIOD_LABELS: Record<number, string> = {
   2: 'زنگ دوم',
   3: 'زنگ سوم',
   4: 'زنگ چهارم',
-  5: 'زنگ پنجم (فوق برنامه)',
-  6: 'زنگ ششم (فوق برنامه)',
+  5: 'زنگ پنجم',
+  6: 'زنگ ششم',
 };
 
 export const PERIOD_SHORT_LABELS: Record<number, string> = {
@@ -79,8 +79,8 @@ export const PERIOD_SHORT_LABELS: Record<number, string> = {
   2: 'زنگ ۲',
   3: 'زنگ ۳',
   4: 'زنگ ۴',
-  5: 'زنگ ۵ (فوق)',
-  6: 'زنگ ۶ (فوق)',
+  5: 'زنگ ۵',
+  6: 'زنگ ۶',
 };
 
 export const PERIOD_TIMES_DISPLAY: Record<number, string> = {
