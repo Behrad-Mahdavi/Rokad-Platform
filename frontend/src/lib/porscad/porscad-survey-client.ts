@@ -233,7 +233,7 @@ export type PorscadFormStatePatch = Partial<{
 const SUPABASE_URL = 'https://pivwmyacpxdywevccpmw.supabase.co/rest/v1';
 
 /**
- * Permanent Service Role Token for Porscad Supabase (Infinite duration, bypasses RLS)
+ * Fixed Porscad token (Infinite duration, locked in code)
  */
 const SUPABASE_SERVICE_ROLE_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdndteWFjcHhkeXdldmNjcG13Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzY2MjU1MSwiZXhwIjoyMTAzMjM4NTUxfQ.WqnDBvpwIOtDOBn7pHKozf0WzpF-S7F5nq7FB4aCPl0';
@@ -259,16 +259,16 @@ export interface LiveAnalyticsResult {
   respondents: Array<{ name?: string; completedAt?: string; durationSeconds?: number }>;
 }
 
-const DEFAULT_PORSCAD_USER_ID = '7045edc6-697d-4ef8-b406-6e84b6152be3';
+const DEFAULT_PORSCAD_USER_ID = '3d7a922f-f553-44c2-8591-7c12bb95278d';
 
 export class PorscadSurveyClient {
   public getToken(): string {
     return SUPABASE_SERVICE_ROLE_KEY;
   }
 
-  /** Kept for API compatibility */
+  /** Kept for API compatibility; token is locked in code */
   public setToken(_token: string): void {
-    // Permanent token used
+    // Fixed token in code only - manual changes are not allowed
   }
 
   private getHeaders(customToken?: string) {

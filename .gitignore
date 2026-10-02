@@ -42,3 +42,6 @@ coverage/
 scratch/
 .tempmediaStorage/
 .polls_dev_store.json
+.calendar_events_dev_store.json
+.*_dev_store.json
+

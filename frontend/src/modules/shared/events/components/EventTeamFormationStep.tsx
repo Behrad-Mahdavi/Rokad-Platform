@@ -101,6 +101,8 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
 }) => {
   const currentUser = useAuthStore((s) => s.user);
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(currentUser?.role || '');
+  const isParent = currentUser?.role === 'PARENT';
+  const isStudent = currentUser?.role === 'STUDENT';
   const currentUserName = currentUser ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() : 'دانش‌آموز';
 
   // DB Students list state
@@ -218,6 +220,11 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
 
   // Add Member to Idea Team
   const handleAddMember = (idea: EventIdea) => {
+    if (isParent || (!isStudent && !isManager)) {
+      toast.error('انتخاب و مدیریت اعضای تیم فقط مختص سرپرست تیم (دانش‌آموز) و مدیران است.');
+      return;
+    }
+
     const targetStudent = dbStudents.find((s) => s.id === selectedStudentId);
     const candidateName = targetStudent ? targetStudent.name : customStudentName.trim();
     const candidateId = targetStudent ? targetStudent.id : 'custom_' + Date.now();
@@ -269,6 +276,11 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
 
   // Add Member directly from list without closing modal
   const handleAddMemberDirectly = (idea: EventIdea, student: { id: string; name: string }) => {
+    if (isParent || (!isStudent && !isManager)) {
+      toast.error('انتخاب و مدیریت اعضای تیم فقط مختص سرپرست تیم (دانش‌آموز) و مدیران است.');
+      return;
+    }
+
     const candidateName = student.name;
     const candidateId = student.id;
 
@@ -312,6 +324,11 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
 
   // Remove Member from Idea Team
   const handleRemoveMember = (ideaId: string, memberId: string, memberName: string) => {
+    if (isParent || (!isStudent && !isManager)) {
+      toast.error('ویرایش ترکیب تیم فقط مختص سرپرست تیم و مدیران است.');
+      return;
+    }
+
     const currentTeam = teamsMap[ideaId];
     if (!currentTeam) return;
 
@@ -377,14 +394,19 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
               صاحب ایده می‌تواند اعضای تیم خود را از لیست دیتابیس انتخاب کند. هر فرد فقط می‌تواند عضو ۱ تیم باشد. تایید نهایی توسط مدیر انجام می‌گیرد.
             </p>
           </div>
-
-
         </div>
 
         {isManager && (
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-indigo-600 bg-indigo-50 text-indigo-900 dark:bg-indigo-950 dark:text-indigo-200 text-xs font-black">
             <ShieldCheck className="w-4 h-4 text-indigo-600" />
             <span>پنل مدیر: امکان ویرایش اعضا و تایید نهایی برای شما فعال است</span>
+          </div>
+        )}
+
+        {isParent && (
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-blue-600 bg-blue-50 text-blue-900 dark:bg-blue-950 dark:text-blue-200 text-xs font-black">
+            <Users className="w-4 h-4 text-blue-600" />
+            <span>حالت مشاهده‌گر اولیاء: ترکیب تیم‌ها و اعضا در حالت نمایشی</span>
           </div>
         )}
       </div>
@@ -404,7 +426,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {winningIdeas.map((idea) => {
             const team = getIdeaTeam(idea);
-            const isLeader = !!currentUser && isOwnedByUser(idea.authorName, currentUser);
+            const isLeader = isStudent && !!currentUser && isOwnedByUser(idea.authorName, currentUser);
             const canEditTeam = isManager || (isLeader && !team.isApprovedByAdmin);
 
             return (

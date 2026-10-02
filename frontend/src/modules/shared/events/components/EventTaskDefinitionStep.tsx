@@ -63,6 +63,8 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(
     currentUser?.role || '',
   );
+  const isParent = currentUser?.role === 'PARENT';
+  const isStudent = currentUser?.role === 'STUDENT';
 
   const teamsMap = useMemo(() => loadTeamsMap(eventId), [eventId]);
   const allTeams = useMemo(
@@ -82,7 +84,8 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
   const [applyBulkToAll, setApplyBulkToAll] = useState(true);
 
   const visibleTeams = useMemo(() => {
-    if (isManager) return allTeams;
+    if (isManager || isParent) return allTeams;
+    if (!isStudent) return [];
     const myKeys = findStudentTeamKeys(
       allTeams,
       currentUser?.firstName,
@@ -90,7 +93,7 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
     );
     if (myKeys.length === 0) return [];
     return allTeams.filter((t) => myKeys.includes(t.key));
-  }, [allTeams, isManager, currentUser]);
+  }, [allTeams, isManager, isParent, isStudent, currentUser]);
 
   useEffect(() => {
     saveTaskBoard(eventId, board);
@@ -318,6 +321,13 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-cyan-600 bg-cyan-50 text-cyan-900 dark:bg-cyan-950 dark:text-cyan-200 text-xs font-black">
             <ShieldCheck className="w-4 h-4" />
             <span>پنل مدیر: افزودن، ویرایش، حذف و تیک زدن تسک‌های همه تیم‌ها فعال است</span>
+          </div>
+        )}
+
+        {isParent && (
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-blue-600 bg-blue-50 text-blue-900 dark:bg-blue-950 dark:text-blue-200 text-xs font-black">
+            <Users className="w-4 h-4 text-blue-600" />
+            <span>حالت مشاهده‌گر اولیاء: تابلوی وظایف و امتیازات تیم‌ها در حالت نمایشی</span>
           </div>
         )}
       </div>

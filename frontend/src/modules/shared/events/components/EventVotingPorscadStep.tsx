@@ -55,6 +55,9 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
 }) => {
   const currentUser = useAuthStore((s) => s.user);
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(currentUser?.role || '');
+  const isParent = currentUser?.role === 'PARENT';
+  const isStudent = currentUser?.role === 'STUDENT';
+  const canVote = isStudent || isManager;
 
   const [porscadPoll, setPorscadPoll] = useState<PorscadPollData | null>(() =>
     porscadClient.getLocalPollData(eventId)
@@ -214,6 +217,11 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
   const handleToggleOption = (optionId: string) => {
     if (!porscadPoll || porscadPoll.isClosed || hasVoted) return;
 
+    if (isParent || !canVote) {
+      toast.info('حالت مشاهده‌گر اولیاء: ثبت رای صرفاً برای دانش‌آموزان و داوران فعال است.');
+      return;
+    }
+
     const maxAllowed = porscadPoll.settings?.maxSelections || 1;
 
     if (maxAllowed === 1) {
@@ -233,6 +241,11 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
 
   // Submit Votes to Porscad on Button Click (Single submission per student)
   const handleVoteSubmit = async () => {
+    if (isParent || !canVote) {
+      toast.error('ثبت رای فقط مختص دانش‌آموزان و هنرجویان است.');
+      return;
+    }
+
     if (!porscadPoll) return;
     if (porscadPoll.isClosed) {
       toast.error('نظرسنجی به پایان رسیده است.');
@@ -890,7 +903,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                       const winningIds = porscadPoll.winningOptionIds || (porscadPoll.winningOptionId ? [porscadPoll.winningOptionId] : []);
                       const isWinner = porscadPoll.isClosed && (winningIds.includes(option.id) || winningIds.includes(option.ideaId || ''));
                       const matchingIdea = ideas.find((i) => i.id === option.ideaId || i.id === option.id);
-                      const isInteractive = !porscadPoll.isClosed && !hasVoted;
+                      const isInteractive = !porscadPoll.isClosed && !hasVoted && canVote && !isParent;
 
                       return (
                         <div
@@ -903,6 +916,8 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                               ? 'border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/40 shadow-[4px_4px_0px_0px_#059669]'
                               : porscadPoll.isClosed || hasVoted
                               ? 'border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/40 opacity-90'
+                              : isParent || !canVote
+                              ? 'border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 cursor-default'
                               : 'cursor-pointer border-zinc-900 bg-white hover:bg-zinc-50 dark:border-zinc-200 dark:bg-zinc-900 shadow-[3px_3px_0px_0px_#202A5A]'
                           } p-4 md:p-5`}
                         >
@@ -987,8 +1002,15 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                     })}
                   </div>
 
-                  {/* Manual Submit Button for All Question Types */}
-                  {!hasVoted && !porscadPoll.isClosed && (
+                  {/* Manual Submit Button for All Question Types (or Parent Spectator View) */}
+                  {isParent ? (
+                    <div className="mt-6 p-4 rounded-xl border-2 border-blue-200 bg-blue-50/70 dark:bg-blue-950/30 text-blue-950 dark:text-blue-200 flex items-center justify-between gap-3 text-xs font-bold">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                        <span>حالت مشاهده‌گر اولیاء: امکان ثبت رای صرفاً برای دانش‌آموزان و داوران رویداد فعال است.</span>
+                      </div>
+                    </div>
+                  ) : !hasVoted && !porscadPoll.isClosed ? (
                     <div className="mt-6 pt-4 border-t-2 border-zinc-900/10 flex flex-wrap items-center justify-between gap-3">
                       <span className="text-xs font-bold text-zinc-500">
                         {isMultiSelect
@@ -1005,7 +1027,7 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                         <span>{isSubmittingVote ? 'در حال ارسال به پرس‌کاد...' : `ثبت نهایی رای در پرس‌کاد (${toPersianDigits(selectedOptionIds.length)} ایده)`}</span>
                       </Button>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
 

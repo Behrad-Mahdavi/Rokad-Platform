@@ -228,7 +228,8 @@ export const PollsPage: React.FC = () => {
   const { user } = useAuthStore();
   const [polls, setPolls] = useState<Poll[]>(() => {
     try {
-      const cached = sessionStorage.getItem('rokad_polls_cache');
+      sessionStorage.removeItem('rokad_polls_cache');
+      const cached = sessionStorage.getItem('rokad_polls_cache_v2');
       return cached ? JSON.parse(cached) : [];
     } catch {
       return [];
@@ -236,7 +237,7 @@ export const PollsPage: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState<boolean>(() => {
     try {
-      const cached = sessionStorage.getItem('rokad_polls_cache');
+      const cached = sessionStorage.getItem('rokad_polls_cache_v2');
       return !cached || JSON.parse(cached).length === 0;
     } catch {
       return true;
@@ -314,7 +315,7 @@ export const PollsPage: React.FC = () => {
       const data = res.data || [];
       setPolls(data);
       try {
-        sessionStorage.setItem('rokad_polls_cache', JSON.stringify(data));
+        sessionStorage.setItem('rokad_polls_cache_v2', JSON.stringify(data));
       } catch {}
     } catch (err) {
       console.error('Failed to fetch polls:', err);

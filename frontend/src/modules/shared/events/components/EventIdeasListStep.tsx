@@ -132,10 +132,12 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredIdeas.map((idea) => {
+            const isStudent = currentUser?.role === 'STUDENT';
             const ownerLast = (currentUser?.lastName || '').trim();
             const ownerFirst = (currentUser?.firstName || '').trim();
             const authorLower = (idea.authorName || '').toLowerCase();
             const isCurrentUserIdea =
+              isStudent &&
               !!currentUser &&
               ((ownerLast && authorLower.includes(ownerLast.toLowerCase())) ||
                 (ownerFirst && authorLower.includes(ownerFirst.toLowerCase())));

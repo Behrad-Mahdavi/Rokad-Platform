@@ -10,6 +10,7 @@ import {
   Send,
   Sparkles,
   User,
+  Users,
   CheckCircle2,
   FileText,
   Lock,
@@ -66,6 +67,9 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
 }) => {
   const currentUser = useAuthStore((s) => s.user);
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(currentUser?.role || '');
+  const isParent = currentUser?.role === 'PARENT';
+  const isStudent = currentUser?.role === 'STUDENT';
+  const canSubmitIdea = isStudent || isManager;
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -101,15 +105,15 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
     return 'دانش‌آموز';
   }, [currentUser]);
 
-  // Find if current student has already submitted an idea for this event
+  // Find if current student has already submitted an idea for this event (exclude PARENT)
   const userSubmittedIdea = useMemo(() => {
-    if (!currentUser) return null;
+    if (!currentUser || isParent) return null;
     const exact = ideas.find(
       (item) => item.authorName.trim().toLowerCase() === studentName.trim().toLowerCase(),
     );
     if (exact) return exact;
     return ideas.find((item) => isOwnedByUser(item.authorName, currentUser)) || null;
-  }, [ideas, currentUser, studentName]);
+  }, [ideas, currentUser, studentName, isParent]);
 
   const [studentEditTitle, setStudentEditTitle] = useState('');
   const [studentEditDescription, setStudentEditDescription] = useState('');
@@ -123,6 +127,10 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
 
   const handleSaveStudentEdit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isParent || !canSubmitIdea) {
+      toast.error('ویرایش ایده فقط برای دانش‌آموزان و هنرجویان مجاز است.');
+      return;
+    }
     if (isLocked) {
       toast.error('مهلت ویرایش ایده به پایان رسیده و قفل شده است.');
       return;
@@ -147,6 +155,10 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isParent || !canSubmitIdea) {
+      toast.error('ثبت ایده فقط برای دانش‌آموزان مجاز است و دسترسی اولیاء به صورت مشاهده‌گر می‌باشد.');
+      return;
+    }
     if (isLocked) {
       toast.error('مهلت ثبت ایده به پایان رسیده و قفل شده است.');
       return;
@@ -286,8 +298,20 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
           </div>
         )}
 
-        {/* Locked Notice vs Existing Submitted Idea Edit vs New Submission Form */}
-        {userSubmittedIdea && !isManager && !isLocked ? (
+        {/* Parent Spectator Notice vs Locked Notice vs Existing Submitted Idea Edit vs New Submission Form */}
+        {isParent ? (
+          <div className="p-8 text-center bg-blue-50/70 dark:bg-blue-950/30 rounded-2xl border-2 border-blue-200 dark:border-blue-800 space-y-4 my-6 shadow-[2px_2px_0px_0px_#202A5A]">
+            <div className="w-14 h-14 mx-auto rounded-2xl border-2 border-zinc-900 bg-blue-400 text-zinc-950 flex items-center justify-center shadow-[2px_2px_0px_0px_#202A5A]">
+              <Users className="w-7 h-7" />
+            </div>
+            <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
+              مشاهده‌گر اولیاء گرامی (دسترسی نمایشی)
+            </h3>
+            <p className="text-xs md:text-sm font-medium text-zinc-600 dark:text-zinc-400 max-w-lg mx-auto leading-relaxed">
+              ثبت و ارسال ایده‌های رویداد مختص دانش‌آموزان و هنرجویان است. شما می‌توانید ایده‌های ارسال‌شده توسط شرکت‌کنندگان و فرآیند برگزاری را در تالار ایده‌ها و گام‌های بعدی مشاهده نمایید.
+            </p>
+          </div>
+        ) : userSubmittedIdea && !isManager && !isLocked ? (
           <div className="space-y-6">
             <div className="p-4 rounded-xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/40 flex flex-wrap items-center justify-between gap-4 shadow-[2px_2px_0px_0px_#202A5A]">
               <div className="flex items-center gap-3">

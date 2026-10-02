@@ -264,7 +264,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <item.icon
-                      solid={active}
                       className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
                         active ? 'text-primary' : 'text-gray-400 dark:text-gray-500'
                       }`}
@@ -303,9 +302,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
 
   return (
     <>
-      {/* 1. Desktop Persistent Sidebar (w-72 per standard) */}
-      <aside className="hidden lg:flex w-72 border-l border-[#EAEAEA] dark:border-gray-800 bg-white dark:bg-[#121824] min-h-[calc(100vh-5rem)] flex-col shrink-0 transition-colors">
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
+      {/* 1. Desktop Persistent Sticky Sidebar (Independent Scroll) */}
+      <aside className="hidden lg:flex w-72 sticky top-16 sm:top-18 h-[calc(100vh-4rem)] sm:h-[calc(100vh-4.5rem)] border-l border-[#EAEAEA] dark:border-gray-800 bg-white dark:bg-[#121824] flex-col shrink-0 transition-colors z-30 select-none">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 overscroll-contain custom-sidebar-scroll">
           {renderNavSections()}
         </div>
         <div className="p-4 border-t border-[#EAEAEA] dark:border-gray-800 bg-white dark:bg-[#121824] shrink-0">

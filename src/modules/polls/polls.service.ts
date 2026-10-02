@@ -37,12 +37,24 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const DEV_STORE_PATH = path.join(process.cwd(), '.polls_dev_store.json');
+const DEFAULT_PORSCAD_USER_ID = '3d7a922f-f553-44c2-8591-7c12bb95278d';
 
 function loadPersistedPolls(): any[] {
   try {
     if (fs.existsSync(DEV_STORE_PATH)) {
       const raw = fs.readFileSync(DEV_STORE_PATH, 'utf-8');
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        // Filter out legacy forms from old test accounts
+        return parsed.filter(
+          (p: any) =>
+            !p.createdById ||
+            p.createdById === DEFAULT_PORSCAD_USER_ID ||
+            p.createdById === 'admin' ||
+            p.createdById.startsWith('usr_') ||
+            p.createdById.startsWith('usr-'),
+        );
+      }
     }
   } catch {}
   return [];
@@ -198,7 +210,7 @@ export class PollsService {
       if (list.length === 0) {
         try {
           const res = await fetch(
-            'https://pivwmyacpxdywevccpmw.supabase.co/rest/v1/forms?select=*,questions(*)&deleted_at=is.null&order=created_at.desc&limit=30',
+            `https://pivwmyacpxdywevccpmw.supabase.co/rest/v1/forms?select=*,questions(*)&created_by=eq.${DEFAULT_PORSCAD_USER_ID}&deleted_at=is.null&order=created_at.desc&limit=30`,
             {
               headers: {
                 apikey:
@@ -290,7 +302,7 @@ export class PollsService {
       if (list.length === 0) {
         try {
           const res = await fetch(
-            'https://pivwmyacpxdywevccpmw.supabase.co/rest/v1/forms?select=*,questions(*)&deleted_at=is.null&order=created_at.desc&limit=30',
+            `https://pivwmyacpxdywevccpmw.supabase.co/rest/v1/forms?select=*,questions(*)&created_by=eq.${DEFAULT_PORSCAD_USER_ID}&deleted_at=is.null&order=created_at.desc&limit=30`,
             {
               headers: {
                 apikey:
