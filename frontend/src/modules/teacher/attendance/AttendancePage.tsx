@@ -1656,12 +1656,12 @@ export const AttendancePage: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-stretch gap-1.5">
                     {/* ▲ راست */}
                     <button
                       type="button"
                       onClick={() => setModalOralGrade(v => String(Math.min(20, parseFloat(v || '0') + 0.25)))}
-                      className="h-10 w-10 shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-colors cursor-pointer text-foreground dark:text-gray-200"
+                      className="h-full w-10 shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-colors cursor-pointer text-foreground dark:text-gray-200"
                     >
                       <ChevronRight className="w-4 h-4 -rotate-90" />
                     </button>
@@ -1685,7 +1685,7 @@ export const AttendancePage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setModalOralGrade(v => String(Math.max(0, parseFloat(v || '0') - 0.25)))}
-                      className="h-10 w-10 shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#242F42] transition-colors cursor-pointer text-foreground dark:text-gray-200"
+                      className="h-full w-10 shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#242F42] transition-colors cursor-pointer text-foreground dark:text-gray-200"
                     >
                       <ChevronLeft className="w-4 h-4 -rotate-90" />
                     </button>
