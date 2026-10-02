@@ -78,14 +78,15 @@ export class ClassesController {
   }
 
   @Get('my-schedule')
-  @ApiOperation({ summary: 'دریافت برنامه هفتگی اختصاصی دانش‌آموز یا دبیر جاری' })
+  @ApiOperation({ summary: 'دریافت برنامه هفتگی اختصاصی دانش‌آموز، والد یا دبیر جاری' })
   async getMySchedule(
     @CurrentUser() user: any,
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentTenant('id') tenantId: string,
+    @Query('studentId') studentId?: string,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
-    return this.classesService.getMySchedule(effectiveTenantId, user);
+    return this.classesService.getMySchedule(effectiveTenantId, user, studentId);
   }
 
   @Get('classrooms/:id')

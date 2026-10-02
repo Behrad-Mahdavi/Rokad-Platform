@@ -7,6 +7,7 @@ import { Skeleton } from '../../../components/ui/Skeleton';
 import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import { useAuthStore } from '../../../lib/auth/auth-store';
 import { toPersianDigits } from '../../../utils/jalali';
+import { toast } from '../../../components/ui/toast/toast';
 import { OFFICIAL_PERIODS, PeriodDefinition } from '../../../lib/constants/periods';
 import { generateSchedulePdf } from '../../student-parent/schedule/schedulePdfGenerator';
 import {
@@ -96,7 +97,15 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
         setTeachers(teachersRes.data || []);
 
         if (classList.length > 0) {
-          setSelectedClassroomId(classList[0].id);
+          setSelectedClassroomId((prev) => {
+            if (initialClassroomId && classList.some((c: any) => c.id === initialClassroomId)) {
+              return initialClassroomId;
+            }
+            if (prev && classList.some((c: any) => c.id === prev)) {
+              return prev;
+            }
+            return classList[0].id;
+          });
         }
       } catch (err) {
         console.error('Failed to load initial timetable data', err);
@@ -248,7 +257,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
       return;
     }
 
-    const shouldAllowConflict = forceAllowConflict || form.allowTeacherConflict;
+    const shouldAllowConflict = forceAllowConflict || form.allowTeacherConflict || Boolean(conflictWarning);
 
     setIsSubmitting(true);
     setError(null);
@@ -275,6 +284,9 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
       setIsModalOpen(false);
       setConflictWarning(null);
       setConflictDetails(null);
+      toast.success(
+        form.scheduleId ? 'زنگ درسی با موفقیت ویرایش شد' : 'زنگ درسی با موفقیت در برنامه ثبت شد',
+      );
       await fetchClassSchedule(selectedClassroomId);
     } catch (err: any) {
       const responseData = err.response?.data;
@@ -316,9 +328,10 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
     }
     try {
       await apiClient.delete(`/classes/schedules/${scheduleId}`);
+      toast.success('زنگ درسی با موفقیت از برنامه حذف شد');
       await fetchClassSchedule(selectedClassroomId);
     } catch (err: any) {
-      alert(err.message || 'خطا در حذف برنامه درسی.');
+      toast.error(err.message || 'خطا در حذف برنامه درسی.');
     }
   };
 

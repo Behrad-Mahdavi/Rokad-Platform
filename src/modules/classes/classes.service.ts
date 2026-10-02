@@ -501,6 +501,51 @@ export class ClassesService {
 
   // 4. Class Schedules (Timetable with Conflict Detection)
   async createSchedule(tenantId: string, dto: CreateScheduleDto) {
+    if (!dto.periodNumber || dto.periodNumber < 1 || dto.periodNumber > 10) {
+      throw new BadRequestException('شماره زنگ کلاسی باید بین ۱ تا ۱۰ باشد');
+    }
+
+    // 0. Verify classroom, lesson, and teacher belong to this tenant (Zero Tenant Data Leakage)
+    const classroom = await this.prisma.classroom.findFirst({
+      where: { id: dto.classroomId, tenantId },
+    });
+    if (!classroom) {
+      throw new NotFoundException('کلاس درس مورد نظر در این مدرسه یافت نشد');
+    }
+
+    const lesson = await this.prisma.lesson.findFirst({
+      where: { id: dto.lessonId, tenantId },
+    });
+    if (!lesson) {
+      throw new NotFoundException('درس مورد نظر در این مدرسه یافت نشد');
+    }
+
+    const teacher = await this.prisma.teacherProfile.findFirst({
+      where: { id: dto.teacherId, tenantId },
+    });
+    if (!teacher) {
+      throw new NotFoundException('دبیر مورد نظر در این مدرسه یافت نشد');
+    }
+
+    if (dto.isSplitPeriod) {
+      if (!dto.secondLessonId || !dto.secondTeacherId) {
+        throw new BadRequestException('در حالت تک‌زنگ، مشخص کردن درس دوم و دبیر دوم الزامی است');
+      }
+      const secondLesson = await this.prisma.lesson.findFirst({
+        where: { id: dto.secondLessonId, tenantId },
+      });
+      if (!secondLesson) {
+        throw new NotFoundException('درس دوم مورد نظر در این مدرسه یافت نشد');
+      }
+
+      const secondTeacher = await this.prisma.teacherProfile.findFirst({
+        where: { id: dto.secondTeacherId, tenantId },
+      });
+      if (!secondTeacher) {
+        throw new NotFoundException('دبیر دوم مورد نظر در این مدرسه یافت نشد');
+      }
+    }
+
     // 1. If slot already has a schedule in this classroom, check for conflict / replacement
     const existingSlot = await this.prisma.classSchedule.findFirst({
       where: {
@@ -575,13 +620,44 @@ export class ClassesService {
         teacherConflict?.classroom?.name || secondTeacherConflict?.classroom?.name || 'کلاس دیگر';
 
       throw new ConflictException(
-        `تداخل برنامه دبیر: ${conflictingTeacher} در این روز و زنگ کلاسی، در کلاس '${conflictingClassroom}' تدریس دارد`
+        `تداخل برنامه دبیر: ${conflictingTeacher} در این روز و زنگ کلاسی، در کلاس '${conflictingClassroom}' تدریس دارد`,
       );
     }
 
+    const scheduleInclude = {
+      lesson: {
+        include: {
+          level: true,
+          field: true,
+        },
+      },
+      teacher: {
+        include: { user: true },
+      },
+      secondLesson: {
+        include: {
+          level: true,
+          field: true,
+        },
+      },
+      secondTeacher: {
+        include: { user: true },
+      },
+    };
+
     if (existingSlot && dto.replaceExisting) {
-      await this.prisma.classSchedule.delete({
+      return this.prisma.classSchedule.update({
         where: { id: existingSlot.id },
+        data: {
+          lessonId: dto.lessonId,
+          teacherId: dto.teacherId,
+          isSplitPeriod: Boolean(dto.isSplitPeriod),
+          secondLessonId: dto.isSplitPeriod ? dto.secondLessonId || null : null,
+          secondTeacherId: dto.isSplitPeriod ? dto.secondTeacherId || null : null,
+          startTime: dto.startTime,
+          endTime: dto.endTime,
+        },
+        include: scheduleInclude,
       });
     }
 
@@ -599,26 +675,7 @@ export class ClassesService {
         startTime: dto.startTime,
         endTime: dto.endTime,
       },
-      include: {
-        lesson: {
-          include: {
-            level: true,
-            field: true,
-          },
-        },
-        teacher: {
-          include: { user: true },
-        },
-        secondLesson: {
-          include: {
-            level: true,
-            field: true,
-          },
-        },
-        secondTeacher: {
-          include: { user: true },
-        },
-      },
+      include: scheduleInclude,
     });
   }
 
@@ -720,7 +777,7 @@ export class ClassesService {
     });
   }
 
-  async getMySchedule(tenantId: string, user: any) {
+  async getMySchedule(tenantId: string, user: any, studentIdQuery?: string) {
     if (user?.role === Role.STUDENT) {
       const student = await this.prisma.studentProfile.findFirst({
         where: { userId: user.id, tenantId },
@@ -799,13 +856,34 @@ export class ClassesService {
       });
 
       if (!parent || parent.studentLinks.length === 0) {
-        return { classroom: null, schedules: [] };
+        return { classroom: null, schedules: [], allChildren: [] };
       }
 
-      const activeStudent = parent.studentLinks[0].student;
+      const allChildren = parent.studentLinks.map((link) => ({
+        id: link.student.id,
+        firstName: link.student.user.firstName,
+        lastName: link.student.user.lastName,
+        nationalCode: link.student.nationalCode,
+        classroomName: link.student.enrollments[0]?.classroom?.name,
+        classroomId: link.student.enrollments[0]?.classroom?.id,
+      }));
+
+      // Select targeted student if studentIdQuery provided and belongs to parent's children
+      const targetLink = studentIdQuery
+        ? parent.studentLinks.find(
+            (l) => l.student.id === studentIdQuery || l.student.userId === studentIdQuery,
+          ) || parent.studentLinks[0]
+        : parent.studentLinks[0];
+
+      const activeStudent = targetLink.student;
       const activeEnrollment = activeStudent.enrollments[0];
       if (!activeEnrollment) {
-        return { classroom: null, schedules: [] };
+        return {
+          classroom: null,
+          schedules: [],
+          student: activeStudent,
+          allChildren,
+        };
       }
 
       const classroom = activeEnrollment.classroom;
@@ -815,6 +893,7 @@ export class ClassesService {
         classroom,
         schedules,
         student: activeStudent,
+        allChildren,
       };
     } else {
       throw new BadRequestException('این متد فقط برای نقش‌های دانش‌آموز، والد یا دبیر معتبر است');
