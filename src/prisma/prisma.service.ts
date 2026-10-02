@@ -37,7 +37,7 @@ export class PrismaService
       await Promise.race([
         this.$connect(),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Connection timeout')), 500),
+          setTimeout(() => reject(new Error('Connection timeout')), 10000),
         ),
       ]);
       this.isConnected = true;

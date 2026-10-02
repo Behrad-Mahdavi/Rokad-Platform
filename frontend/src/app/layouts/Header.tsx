@@ -23,9 +23,23 @@ export const Header: React.FC = () => {
         .then((res: any) => {
           const freshUser = res?.data?.user || res?.user;
           if (freshUser && freshUser.avatarUrl !== user.avatarUrl) {
+            const isGeneric =
+              (freshUser.firstName === 'کاربر' && (freshUser.lastName === 'سیستم' || !freshUser.lastName)) ||
+              (!freshUser.firstName && !freshUser.lastName);
+            const hasExistingRealName =
+              user?.firstName &&
+              user.firstName !== 'کاربر' &&
+              user.firstName !== 'کاربر سیستم';
+
             useAuthStore.getState().setUser({
               ...user,
               ...freshUser,
+              ...(isGeneric && hasExistingRealName
+                ? {
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                  }
+                : {}),
             });
           }
         })

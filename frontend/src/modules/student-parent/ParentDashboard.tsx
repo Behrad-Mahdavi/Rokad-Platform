@@ -82,7 +82,7 @@ export const ParentDashboard: React.FC = () => {
           </div>
           <div>
             <h1 className="text-base sm:text-lg font-black text-ink-darker dark:text-white">
-              پرتال اولیاء: {cleanUserFullName(user?.firstName, user?.lastName)}
+              پرتال اولیاء: {cleanUserFullName(user?.firstName, user?.lastName, user?.username || user?.phone) || 'ولی گرامی'}
             </h1>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <Badge variant="female" className="text-[11px] flex items-center gap-1">

@@ -61,10 +61,23 @@ export function formatToJalali(
 
 /**
  * Clean user full name by removing any parenthesized roles or titles (e.g. "علیرضا عزیزپور (راهبر ارشد)" -> "علیرضا عزیزپور")
+ * If the resulting name is empty or a generic placeholder like "کاربر سیستم", falls back to the provided fallback.
  */
-export function cleanUserFullName(firstName?: string | null, lastName?: string | null): string {
+export function cleanUserFullName(
+  firstName?: string | null,
+  lastName?: string | null,
+  fallback?: string | null,
+): string {
   const full = [firstName || '', lastName || ''].filter(Boolean).join(' ');
-  return full.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+  const cleaned = full.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+  const isGeneric = !cleaned || cleaned === 'کاربر سیستم';
+  if (isGeneric && fallback) {
+    return fallback.trim();
+  }
+  if (isGeneric) {
+    return '';
+  }
+  return cleaned;
 }
 
 /**

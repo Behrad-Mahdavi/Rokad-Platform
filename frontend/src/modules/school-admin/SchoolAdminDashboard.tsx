@@ -91,7 +91,7 @@ export const SchoolAdminDashboard: React.FC = () => {
           </div>
           <div>
             <h1 className="text-base sm:text-lg font-black text-ink-darker dark:text-white">
-              درود، {cleanUserFullName(user?.firstName, user?.lastName)}
+              درود، {cleanUserFullName(user?.firstName, user?.lastName, user?.username || user?.phone) || 'راهبر گرامی'}
             </h1>
             <div className="flex items-center gap-2 mt-1">
               <Badge variant="default" className="text-[11px]">مدیریت هنرستان</Badge>
