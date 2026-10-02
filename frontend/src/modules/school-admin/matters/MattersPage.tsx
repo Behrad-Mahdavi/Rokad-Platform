@@ -77,29 +77,28 @@ interface DisciplinaryMatter {
 
 const QUICK_PRESETS: Record<string, string[]> = {
   POSITIVE: [
-    'مشارکت فعال و درخشان در مباحث کلاسی',
-    'پیشرفت چشمگیر نمرات آزمون',
-    'رعایت برجسته نظم و ادب',
-    'همکاری موثر در فعالیت‌های گروهی',
+    'مشارکت فعال در کلاس',
+    'پیشرفت درسی',
+    'نظم و اخلاق نمونه',
+    'فعالیت گروهی',
   ],
   WARNING: [
-    'تاخیر غیرموجه در ورود به کلاس',
-    'عدم تحویل به موقع تکالیف درسی',
-    'بی‌نظمی در محیط آموزشی',
+    'تاخیر در ورود به کلاس',
+    'عدم انجام تکلیف',
+    'بی‌نظمی در کلاس',
   ],
   NEGATIVE: [
-    'اخلال مکرر در روند آموزش کلاس',
-    'بی‌احترامی به کادر آموزشی یا همکلاسی‌ها',
-    'غیبت غیرموجه در ساعات درسی',
+    'اخلال در کلاس',
+    'بی‌انضباطی مکرر',
+    'غیبت غیرموجه',
   ],
   SUSPENSION: [
-    'محرومیت موقت ناشی از تخلف مکرر',
-    'غیبت‌های غیرمجاز پیاپی',
+    'محرومیت موقت از کلاس',
+    'تخلف انضباطی',
   ],
   COUNSELING_REFERRAL: [
-    'افت ناگهانی تحصیلی و نیاز به مشاوره فردی',
-    'نیاز به راهنمایی در مدیریت زمان و اضطراب',
-    'مشاوره انگیزشی و بهبود عملکرد تحصیلی',
+    'نیاز به مشاوره تحصیلی',
+    'مشاوره رفتاری و انگیزشی',
   ],
 };
 
@@ -626,12 +625,12 @@ export const MattersPage: React.FC = () => {
       <Modal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        title="ثبت مورد انضباطی یا تشویقی جدید"
+        title="ثبت مورد جدید"
         maxWidth="lg"
       >
-        <form onSubmit={handleCreateSubmit} className="space-y-4 pt-2">
+        <form onSubmit={handleCreateSubmit} className="space-y-3.5 pt-1">
           {createError && (
-            <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 rounded-xl text-xs flex items-center gap-2">
+            <div className="p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 rounded-xl text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{createError}</span>
             </div>
@@ -639,37 +638,37 @@ export const MattersPage: React.FC = () => {
 
           {/* Student Selector */}
           <div>
-            <label className="block text-xs font-black text-ink-darker dark:text-white mb-1.5">
-              انتخاب دانش‌آموز *
+            <label className="block text-xs font-bold text-ink-darker dark:text-white mb-1">
+              دانش‌آموز <span className="text-red-500">*</span>
             </label>
             <Select
               value={form.studentId}
               onChange={(e) => setForm({ ...form, studentId: e.target.value })}
               required
-              className="h-11 rounded-xl"
+              className="h-10 rounded-xl text-xs sm:text-sm font-bold"
             >
-              <option value="">انتخاب از لیست دانش‌آموزان...</option>
+              <option value="">انتخاب دانش‌آموز...</option>
               {students.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.user?.firstName} {s.user?.lastName} (کد ملی: {s.user?.nationalCode || s.studentNumber || '-'})
+                  {s.user?.firstName} {s.user?.lastName} (کد: {s.studentNumber || s.user?.nationalCode || '-'})
                 </option>
               ))}
             </Select>
           </div>
 
-          {/* Matter Type Selector (Visual Radio Tabs) */}
+          {/* Matter Type Selector */}
           <div>
-            <label className="block text-xs font-black text-ink-darker dark:text-white mb-2">
-              نوع رویداد انضباطی یا تشویقی *
+            <label className="block text-xs font-bold text-ink-darker dark:text-white mb-1.5">
+              نوع <span className="text-red-500">*</span>
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
               {(
                 [
-                  { type: 'POSITIVE', label: 'تشویق و تقدیر', icon: Award, defaultPoints: 2, color: 'emerald' },
-                  { type: 'WARNING', label: 'تذکر / اخطار', icon: AlertTriangle, defaultPoints: -1, color: 'amber' },
-                  { type: 'NEGATIVE', label: 'مورد منفی', icon: ShieldAlert, defaultPoints: -2, color: 'rose' },
-                  { type: 'SUSPENSION', label: 'محرومیت موقت', icon: AlertCircle, defaultPoints: -3, color: 'red' },
-                  { type: 'COUNSELING_REFERRAL', label: 'ارجاع به مشاور', icon: HeartHandshake, defaultPoints: 0, color: 'purple' },
+                  { type: 'POSITIVE', label: 'تشویق', icon: Award, defaultPoints: 2 },
+                  { type: 'WARNING', label: 'تذکر', icon: AlertTriangle, defaultPoints: -1 },
+                  { type: 'NEGATIVE', label: 'مورد منفی', icon: ShieldAlert, defaultPoints: -2 },
+                  { type: 'SUSPENSION', label: 'محرومیت', icon: AlertCircle, defaultPoints: -3 },
+                  { type: 'COUNSELING_REFERRAL', label: 'مشاوره', icon: HeartHandshake, defaultPoints: 0 },
                 ] as const
               ).map((item) => {
                 const isSelected = form.type === item.type;
@@ -685,124 +684,117 @@ export const MattersPage: React.FC = () => {
                         points: item.defaultPoints,
                       })
                     }
-                    className={`p-2.5 rounded-xl border text-right transition-all flex items-center gap-2 cursor-pointer ${
+                    className={`p-2 rounded-xl border text-center transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 cursor-pointer ${
                       isSelected
-                        ? 'border-primary bg-primary/10 dark:bg-primary/20 shadow-xs font-black text-ink-darker dark:text-white'
+                        ? 'border-primary bg-primary text-white shadow-2xs font-bold'
                         : 'border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1C2536]/50 hover:bg-gray-100 dark:hover:bg-[#1C2536] text-muted-foreground'
                     }`}
                   >
-                    <Icon className="w-4 h-4 shrink-0 text-primary" />
-                    <span className="text-xs truncate">{item.label}</span>
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
+                    <span className="text-xs">{item.label}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Points Stepper */}
-          <div>
-            <label className="block text-xs font-black text-ink-darker dark:text-white mb-1.5">
-              امتیاز تأثیرگذار در کارنامه انضباطی
-            </label>
-            <Input
-              type="number"
-              step="0.5"
-              value={form.points}
-              onChange={(e) => setForm({ ...form, points: Number(e.target.value) })}
-              placeholder="مثال: +2 یا -1"
-              className="h-11 rounded-xl font-mono text-center font-black"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Title Input */}
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-ink-darker dark:text-white mb-1">
+                عنوان <span className="text-red-500">*</span>
+              </label>
+              <Input
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="عنوان تشویق یا تذکر..."
+                required
+                className="h-10 rounded-xl text-xs font-bold"
+              />
+            </div>
+
+            {/* Points Stepper */}
+            <div>
+              <label className="block text-xs font-bold text-ink-darker dark:text-white mb-1">
+                امتیاز
+              </label>
+              <Input
+                type="number"
+                step="0.5"
+                value={form.points}
+                onChange={(e) => setForm({ ...form, points: Number(e.target.value) })}
+                placeholder="+2 یا -1"
+                className="h-10 rounded-xl font-mono text-center font-bold text-xs"
+              />
+            </div>
           </div>
 
-          {/* Title Input & Quick Presets */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-black text-ink-darker dark:text-white">
-                عنوان مورد *
-              </label>
-              <span className="text-[11px] text-muted-foreground">پیشنهادات سریع زیر را لمس کنید:</span>
-            </div>
-            <Input
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="مثال: پاسخگویی دقیق و مشارکت فعال در حل تمرین‌های کلاسی"
-              required
-              className="h-11 rounded-xl"
-            />
-            {/* Suggestion Chips */}
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {(QUICK_PRESETS[form.type] || []).map((preset, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setForm({ ...form, title: preset })}
-                  className="px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-primary/10 hover:text-primary text-[11px] font-medium text-muted-foreground transition-colors cursor-pointer"
-                >
-                  {preset}
-                </button>
-              ))}
-            </div>
+          {/* Quick Presets */}
+          <div className="flex flex-wrap gap-1">
+            {(QUICK_PRESETS[form.type] || []).map((preset, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setForm({ ...form, title: preset })}
+                className="px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-primary/10 hover:text-primary text-[11px] font-medium text-muted-foreground transition-colors cursor-pointer"
+              >
+                {preset}
+              </button>
+            ))}
           </div>
 
           {/* Full Description */}
           <div>
-            <label className="block text-xs font-black text-ink-darker dark:text-white mb-1.5">
-              شرح رویداد و شواهد *
+            <label className="block text-xs font-bold text-ink-darker dark:text-white mb-1">
+              توضیحات <span className="text-red-500">*</span>
             </label>
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="توضیحات تکمیلی در مورد جزئیات رویداد، زمان و مکان وقوع و توضیحات دبیر/ناظم..."
-              rows={3}
-              className="w-full px-3.5 py-2.5 text-xs bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-hidden text-ink-darker dark:text-white placeholder:text-muted-foreground leading-relaxed"
+              placeholder="شرح رویداد..."
+              rows={2}
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-hidden text-ink-darker dark:text-white placeholder:text-muted-foreground leading-relaxed"
               required
             />
           </div>
 
           {/* Action Taken */}
           <div>
-            <label className="block text-xs font-black text-ink-darker dark:text-white mb-1.5">
-              اقدام صورت‌گرفته (اختیاری)
+            <label className="block text-xs font-bold text-ink-darker dark:text-white mb-1">
+              اقدام صورت‌گرفته
             </label>
             <Input
               value={form.actionTaken}
               onChange={(e) => setForm({ ...form, actionTaken: e.target.value })}
-              placeholder="مثال: اهدای لوح تقدیر در صف صبحگاه / ثبت در پرونده انضباطی"
-              className="h-11 rounded-xl"
+              placeholder="مثال: تذکر شفاهی / لوح تقدیر"
+              className="h-10 rounded-xl text-xs"
             />
           </div>
 
           {/* Notify Parents Switch */}
-          <div className="p-3 rounded-xl bg-gray-50 dark:bg-[#1C2536] border border-gray-200/80 dark:border-gray-800 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <Bell className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-xs font-bold text-ink-darker dark:text-white block">
-                  اطلاع‌رسانی به اولیا
-                </span>
-                <span className="text-[11px] text-muted-foreground block">
-                  ارسال پیامک و نوتیفیکیشن برخط به درگاه والدین
-                </span>
-              </div>
+          <label className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50/80 dark:bg-[#1C2536]/80 border border-gray-200/70 dark:border-gray-800 cursor-pointer">
+            <div className="flex items-center gap-2">
+              <Bell className="w-4 h-4 text-primary" />
+              <span className="text-xs font-bold text-ink-darker dark:text-white">
+                اطلاع‌رسانی به اولیا
+              </span>
             </div>
             <input
               type="checkbox"
               id="notifiedParents"
               checked={form.notifiedParents}
-              onChange={(e) => setForm({ ...form, notifiedParents: e.target.checked })}
-              className="w-5 h-5 rounded-md border-gray-300 text-primary focus:ring-primary cursor-pointer accent-primary"
+              onChange={(e) => setForm((prev) => ({ ...prev, notifiedParents: e.target.checked }))}
+              className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer accent-primary"
             />
-          </div>
+          </label>
 
           {/* Modal Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-gray-100 dark:border-gray-800">
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsCreateModalOpen(false)}
-              className="h-10 px-4 text-xs font-bold rounded-xl"
+              className="h-9 px-3 text-xs font-bold rounded-xl"
             >
               انصراف
             </Button>
@@ -810,9 +802,9 @@ export const MattersPage: React.FC = () => {
               type="submit"
               variant="primary"
               disabled={isSubmitting}
-              className="h-10 px-5 text-xs font-black rounded-xl shadow-[2px_2px_0_#1F413D] dark:shadow-[2px_2px_0_#0F172A]"
+              className="h-9 px-4 text-xs font-black rounded-xl"
             >
-              {isSubmitting ? 'در حال ثبت...' : 'ثبت و اعمال در پرونده'}
+              {isSubmitting ? 'در حال ثبت...' : 'ثبت مورد'}
             </Button>
           </div>
         </form>
