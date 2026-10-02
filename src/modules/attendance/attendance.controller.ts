@@ -147,6 +147,7 @@ export class AttendanceController {
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentTenant('id') tenantId: string,
     @Query('date') date: string,
+    @Query('teacherId') teacherIdQuery?: string,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
     return this.attendanceService.getTeacherDailySchedule(
@@ -154,6 +155,7 @@ export class AttendanceController {
       userId,
       role,
       date,
+      teacherIdQuery,
     );
   }
 

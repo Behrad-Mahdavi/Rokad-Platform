@@ -605,6 +605,7 @@ export class AttendanceService {
     userId: string,
     userRole: string,
     dateStr: string,
+    teacherIdQuery?: string,
   ) {
     const dayOfWeek = getDayOfWeekFromDate(dateStr);
     const dateVariants = getDateVariants(dateStr);
@@ -622,6 +623,8 @@ export class AttendanceService {
         };
       }
       teacherId = teacher.id;
+    } else if (teacherIdQuery) {
+      teacherId = teacherIdQuery;
     }
 
     const whereClause: any = {
