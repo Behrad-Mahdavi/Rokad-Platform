@@ -983,21 +983,11 @@ export const MembersPage: React.FC = () => {
                 type="button"
                 onClick={() => handleOpenEditTeacher(t)}
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white transition-all shadow-2xs border border-blue-500/20 cursor-pointer"
-                title="ویرایش کامل مشخصات دبیر"
+                title="ویرایش کامل مشخصات دبیر و دروس تدریسی"
               >
                 <Edit3 className="w-3.5 h-3.5" />
                 <span>ویرایش</span>
               </button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleOpenEditLessons(t)}
-                className="text-xs text-primary hover:text-primary-dark h-8 px-2"
-                title="ویرایش دروس تخصیص‌یافته"
-              >
-                <BookOpen className="h-3.5 w-3.5 ms-1" />
-                <span>دروس</span>
-              </Button>
               <button
                 type="button"
                 onClick={() => setVaultTarget(t)}
