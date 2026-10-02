@@ -28,6 +28,7 @@ import {
   SlidersHorizontal,
   X,
   ChevronDown,
+  ChevronUp,
   Award,
   Star,
   FileText,
@@ -1656,14 +1657,15 @@ export const AttendancePage: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="flex items-stretch gap-1.5">
-                    {/* ▲ راست */}
+                  <div className="flex items-center gap-2">
+                    {/* دکمه فلش بالا (سمت راست در RTL) */}
                     <button
                       type="button"
-                      onClick={() => setModalOralGrade(v => String(Math.min(20, parseFloat(v || '0') + 0.25)))}
-                      className="h-full w-10 shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-colors cursor-pointer text-foreground dark:text-gray-200"
+                      onClick={() => setModalOralGrade(v => String(Math.min(20, Math.round((parseFloat(v || '0') + 0.25) * 100) / 100)))}
+                      className="h-[44px] w-[44px] shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-all cursor-pointer text-foreground dark:text-gray-200 active:scale-95"
+                      title="افزایش ۰.۲۵ نمره"
                     >
-                      <ChevronRight className="w-4 h-4 -rotate-90" />
+                      <ChevronUp className="w-5 h-5" />
                     </button>
 
                     <Input
@@ -1678,16 +1680,17 @@ export const AttendancePage: React.FC = () => {
                         else if (!isNaN(v)) setModalOralGrade(String(Math.min(20, Math.max(0, v))));
                       }}
                       placeholder="نمره مورد نظر را وارد کنید (مثلاً ۱۹.۵)"
-                      className="rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] font-bold h-10 text-center text-sm flex-1"
+                      className="rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] font-bold min-h-[44px] h-[44px] text-center text-sm flex-1"
                     />
 
-                    {/* ▼ چپ */}
+                    {/* دکمه فلش پایین (سمت چپ در RTL) */}
                     <button
                       type="button"
-                      onClick={() => setModalOralGrade(v => String(Math.max(0, parseFloat(v || '0') - 0.25)))}
-                      className="h-full w-10 shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#242F42] transition-colors cursor-pointer text-foreground dark:text-gray-200"
+                      onClick={() => setModalOralGrade(v => String(Math.max(0, Math.round((parseFloat(v || '0') - 0.25) * 100) / 100)))}
+                      className="h-[44px] w-[44px] shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#242F42] transition-all cursor-pointer text-foreground dark:text-gray-200 active:scale-95"
+                      title="کاهش ۰.۲۵ نمره"
                     >
-                      <ChevronLeft className="w-4 h-4 -rotate-90" />
+                      <ChevronDown className="w-5 h-5" />
                     </button>
                   </div>
 
