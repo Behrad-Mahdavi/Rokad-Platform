@@ -445,11 +445,17 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                   onChange={(e) => setSelectedClassroomId(e.target.value)}
                   className="h-10 rounded-xl border border-gray-300 bg-white dark:bg-[#151C28] dark:border-[#242F42] px-3.5 py-2 text-xs sm:text-sm font-bold text-ink-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-primary min-w-[180px] shadow-2xs cursor-pointer"
                 >
-                  {classrooms.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.code})
-                    </option>
-                  ))}
+                  {classrooms.map((c) => {
+                    const fieldName = c.field?.name || '';
+                    const levelName = c.level?.name ? (c.level.name.includes('پایه') ? c.level.name : `پایه ${c.level.name}`) : '';
+                    const classCode = c.roomNumber || c.code || c.name;
+                    const parts = [fieldName, levelName].filter(Boolean).join(' - ');
+                    return (
+                      <option key={c.id} value={c.id}>
+                        {parts ? `${parts} (${classCode})` : classCode}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             ) : null}
@@ -494,15 +500,16 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center space-x-1.5 space-x-reverse text-ink-darker dark:text-white font-bold text-base">
               <Building2 className="h-5 w-5 text-primary" />
-              <span>{selectedClassroom.name}</span>
+              <span>
+                {selectedClassroom.field?.name
+                  ? `${selectedClassroom.field.name} - ${selectedClassroom.roomNumber || selectedClassroom.code || selectedClassroom.name}`
+                  : selectedClassroom.name}
+              </span>
             </div>
             {selectedClassroom.level?.name && (
-              <Badge variant="default">پایه {selectedClassroom.level.name}</Badge>
-            )}
-            {selectedClassroom.field?.name ? (
-              <Badge variant="college">{selectedClassroom.field.name}</Badge>
-            ) : (
-              <Badge variant="neutral">عمومی</Badge>
+              <Badge variant="default">
+                {selectedClassroom.level.name.includes('پایه') ? selectedClassroom.level.name : `پایه ${selectedClassroom.level.name}`}
+              </Badge>
             )}
           </div>
 
