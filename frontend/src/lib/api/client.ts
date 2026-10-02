@@ -2,7 +2,23 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { forceLoginRedirect, useAuthStore } from '../auth/auth-store';
 import { useTenantStore } from '../auth/tenant-store';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
+const resolveApiBaseUrl = (): string => {
+  const rawUrl = (import.meta.env.VITE_API_URL as string)?.trim() || '';
+  if (
+    !rawUrl ||
+    rawUrl.includes('rokad-api.liara.run') ||
+    rawUrl.includes('api-rokad.liara.run') ||
+    rawUrl.includes('rokad.liara.run')
+  ) {
+    if (import.meta.env.DEV && !rawUrl) {
+      return '/api/v1';
+    }
+    return 'https://api.rokadschool.ir/api/v1';
+  }
+  return rawUrl;
+};
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

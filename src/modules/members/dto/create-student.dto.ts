@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import {
   IsArray,
   IsBoolean,
@@ -287,6 +287,18 @@ export class CreateTeacherDto {
   @IsString({ each: true })
   @IsOptional()
   lessonIds?: string[];
+}
+
+export class UpdateTeacherDto extends PartialType(CreateTeacherDto) {
+  @ApiPropertyOptional({ description: 'وضعیت کاربر در سامانه', enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'PENDING'] })
+  @IsString()
+  @IsOptional()
+  status?: string;
+
+  @ApiPropertyOptional({ description: 'نام کاربری سامانه' })
+  @IsString()
+  @IsOptional()
+  username?: string;
 }
 
 export class AssignTeacherLessonsDto {

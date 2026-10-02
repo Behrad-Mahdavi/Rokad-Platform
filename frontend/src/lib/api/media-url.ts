@@ -1,3 +1,5 @@
+import { API_BASE_URL } from './client';
+
 /**
  * Utility to resolve full absolute media & file URLs for browser rendering,
  * streaming, and downloading across different environments (local, production, Liara).
@@ -17,12 +19,11 @@ export function getFullMediaUrl(rawUrl?: string | null): string {
     return trimmed;
   }
 
-  // Prepend API origin from VITE_API_URL if configured
-  const apiBase = (import.meta.env.VITE_API_URL as string) || '';
-  if (apiBase.startsWith('http://') || apiBase.startsWith('https://')) {
+  // Prepend API origin from API_BASE_URL
+  if (API_BASE_URL.startsWith('http://') || API_BASE_URL.startsWith('https://')) {
     try {
-      const parsed = new URL(apiBase);
-      const origin = parsed.origin; // e.g. "https://rokad-api.liara.run"
+      const parsed = new URL(API_BASE_URL);
+      const origin = parsed.origin;
 
       if (trimmed.startsWith('/api/v1')) {
         return `${origin}${trimmed}`;

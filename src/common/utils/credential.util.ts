@@ -102,7 +102,11 @@ export function generateUnifiedCredentials(params: {
   const cleanPhone = normalizePersianDigits(params.fallbackPhone).replace(/\D/g, '').trim();
 
   const username = strippedCode || cleanPhone || `user_${Date.now()}`;
-  const defaultPassword = strippedCode ? `${prefix}${strippedCode}` : (cleanPhone || 'RokadPass2026!');
+  const defaultPassword = strippedCode
+    ? `${prefix}${strippedCode}`
+    : cleanPhone
+      ? `${prefix}${cleanPhone}`
+      : 'RokadPass2026!';
   const finalPassword = params.customPassword?.trim() ? params.customPassword.trim() : defaultPassword;
 
   return {
