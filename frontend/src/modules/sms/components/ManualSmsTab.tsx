@@ -42,6 +42,7 @@ interface ManualSmsTabProps {
   setDirectPhone: (p: string) => void;
   charCount: number;
   smsParts: number;
+  charsRemainingInPart?: number;
   unitTariffTomans?: number;
   singleRecipientCostTomans?: number;
   totalCostTomans?: number;
@@ -73,6 +74,7 @@ export const ManualSmsTab: React.FC<ManualSmsTabProps> = ({
   setDirectPhone,
   charCount,
   smsParts,
+  charsRemainingInPart = 0,
   unitTariffTomans = 0,
   singleRecipientCostTomans = 0,
   totalCostTomans = 0,
@@ -404,19 +406,22 @@ export const ManualSmsTab: React.FC<ManualSmsTabProps> = ({
           {targetType === 'DIRECT_PHONE' && (
             <div>
               <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
-                شماره همراه گیرنده:
+                شماره همراه گیرنده(ها):
               </label>
-              <div className="relative max-w-sm">
+              <div className="relative max-w-lg">
                 <PhoneCall className="w-4 h-4 text-gray-400 absolute right-3 top-3" />
-                <input
-                  type="text"
-                  placeholder="مثال: 09121234567"
+                <textarea
+                  rows={2}
+                  placeholder="مثال: 09121234567 یا با اینتر و ویرگول چندین شماره وارد کنید..."
                   value={directPhone}
                   onChange={(e) => setDirectPhone(e.target.value)}
-                  className="w-full pr-9 pl-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-sm font-mono text-left focus:border-primary focus:outline-none transition"
+                  className="w-full pr-9 pl-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-xs sm:text-sm font-mono text-left focus:border-primary focus:outline-none transition leading-relaxed resize-none"
                   dir="ltr"
                 />
               </div>
+              <p className="mt-1 text-[11px] text-gray-400">
+                می‌توانید یک شماره یا چند شماره (با خط جدید یا کاما) وارد کنید تا هزینه به تعداد گیرنده‌ها محاسبه شود.
+              </p>
             </div>
           )}
         </div>
@@ -505,13 +510,19 @@ export const ManualSmsTab: React.FC<ManualSmsTabProps> = ({
         </div>
 
         {/* Bottom Specs Bar */}
-        <div className="mt-3.5 flex items-center justify-between text-xs pt-3 border-t border-gray-100 dark:border-gray-800">
-          <div className="flex items-center gap-3">
+        <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 text-xs pt-3 border-t border-gray-100 dark:border-gray-800">
+          <div className="flex items-center gap-2.5">
             <span className="font-bold text-gray-600 dark:text-gray-300">
-              کاراکتر: <strong className="text-sec dark:text-white font-mono">{toPersianDigits(charCount)}</strong>
+              کاراکترها: <strong className="text-sec dark:text-white font-mono">{toPersianDigits(charCount)}</strong>
             </span>
+            <span className="text-[11px] text-gray-400 font-mono">
+              ({toPersianDigits(charsRemainingInPart)} کاراکتر تا پارت بعدی)
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-lg bg-ecosystem-light dark:bg-ecosystem-darker/60 text-primary-darker dark:text-primary border border-primary/30 font-bold font-mono text-[11px]">
-              {toPersianDigits(smsParts)} پارت
+              {toPersianDigits(smsParts)} پارت پیامک
             </span>
           </div>
         </div>

@@ -247,21 +247,30 @@ export const SmsCenterPage: React.FC = () => {
   const quickTemplates = Array.isArray(quickTemplatesData) ? quickTemplatesData : [];
 
   const charCount = messageText.length;
-  // Persian SMS calculation (Amoot standard):
-  // 1 Part = 70 characters
-  // Subsequent parts (Multipart UDH) = 67 characters per part
-  const isPersian = !/^[\u0000-\u007F]*$/.test(messageText);
-  const partCapacityFirst = isPersian ? 70 : 160;
-  const partCapacityNext = isPersian ? 67 : 153;
+  // Persian / Unicode SMS standards (Amoot / Telecommunication standard):
+  // Persian / Unicode: 1st part = 70 chars. Multi-part UDH = 67 chars per part.
+  // English / GSM-7: 1st part = 160 chars. Multi-part UDH = 153 chars per part.
+  const hasUnicode = /[\u0600-\u06FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(messageText) || charCount === 0 || !/^[\x00-\x7F]*$/.test(messageText);
+  const partCapacityFirst = hasUnicode ? 70 : 160;
+  const partCapacityNext = hasUnicode ? 67 : 153;
 
-  const smsParts = charCount === 0
-    ? 1
-    : charCount <= partCapacityFirst
-    ? 1
-    : Math.ceil((charCount - partCapacityFirst) / partCapacityNext) + 1;
+  const calculateSmsParts = (chars: number) => {
+    if (chars <= 0) return 1;
+    if (chars <= partCapacityFirst) return 1;
+    return Math.ceil((chars - partCapacityFirst) / partCapacityNext) + 1;
+  };
 
-  // amootsms standard tariff estimate (live from account or 0 if loading)
-  const unitTariffTomans = gatewayConfigData?.liveAccount?.unitPriceTomans || 0;
+  const smsParts = calculateSmsParts(charCount);
+
+  // Remaining characters in current part
+  const charsRemainingInPart = charCount <= partCapacityFirst
+    ? partCapacityFirst - charCount
+    : partCapacityNext - ((charCount - partCapacityFirst) % partCapacityNext || partCapacityNext);
+
+  // amootsms standard tariff estimate (live from account or 199 if loading/not set)
+  const unitTariffTomans = (gatewayConfigData?.liveAccount?.unitPriceTomans && gatewayConfigData.liveAccount.unitPriceTomans > 0)
+    ? gatewayConfigData.liveAccount.unitPriceTomans
+    : 199;
   const singleRecipientCostTomans = smsParts * unitTariffTomans;
 
   const getEstimatedRecipientCount = () => {
@@ -292,15 +301,23 @@ export const SmsCenterPage: React.FC = () => {
       }
       case 'INDIVIDUAL':
         return selectedUserIds.length || 0;
-      case 'DIRECT_PHONE':
-        return directPhone.trim() ? 1 : 0;
+      case 'DIRECT_PHONE': {
+        if (!directPhone.trim()) return 0;
+        const phones = directPhone
+          .split(/[\r\n,;\s]+/)
+          .map((p) => p.trim())
+          .filter((p) => p.length >= 8);
+        return phones.length > 0 ? phones.length : 1;
+      }
       default:
         return 0;
     }
   };
 
   const estimatedRecipients = getEstimatedRecipientCount();
-  const totalCostTomans = estimatedRecipients * singleRecipientCostTomans;
+  // If no recipient is explicitly selected yet, calculate for at least 1 recipient in the preview/estimation so user sees deduction
+  const effectiveRecipients = estimatedRecipients > 0 ? estimatedRecipients : 1;
+  const totalCostTomans = (estimatedRecipients > 0 ? estimatedRecipients : 1) * singleRecipientCostTomans;
   const liveCreditTomans =
     gatewayConfigData?.liveAccount?.remaindCreditTomans ??
     (gatewayConfigData?.liveAccount?.remaindCredit !== undefined
@@ -320,8 +337,11 @@ export const SmsCenterPage: React.FC = () => {
         return 'دانش‌آموزان و اولیای کلاس منتخب';
       case 'INDIVIDUAL':
         return `${toPersianDigits(selectedUserIds.length)} مخاطب انتخابی`;
-      case 'DIRECT_PHONE':
-        return directPhone || 'شماره مستقیم';
+      case 'DIRECT_PHONE': {
+        const count = estimatedRecipients;
+        if (count > 1) return `${toPersianDigits(count)} شماره مستقیم`;
+        return directPhone.trim() || 'شماره مستقیم';
+      }
       default:
         return 'مخاطب پیامک';
     }
@@ -536,10 +556,11 @@ export const SmsCenterPage: React.FC = () => {
               setDirectPhone={setDirectPhone}
               charCount={charCount}
               smsParts={smsParts}
+              charsRemainingInPart={charsRemainingInPart}
               unitTariffTomans={unitTariffTomans}
               singleRecipientCostTomans={singleRecipientCostTomans}
               totalCostTomans={totalCostTomans}
-              estimatedRecipients={estimatedRecipients}
+              estimatedRecipients={effectiveRecipients}
               liveCreditTomans={liveCreditTomans}
               creditAfterSendTomans={creditAfterSendTomans}
               isConfigLoading={gatewayConfigLoading}
@@ -557,7 +578,7 @@ export const SmsCenterPage: React.FC = () => {
               charCount={charCount}
               singleCostTomans={singleRecipientCostTomans}
               totalCostTomans={totalCostTomans}
-              estimatedRecipients={estimatedRecipients}
+              estimatedRecipients={effectiveRecipients}
               creditAfterSendTomans={creditAfterSendTomans}
               isConfigLoading={gatewayConfigLoading}
             />

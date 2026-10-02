@@ -79,8 +79,8 @@ export const SmsLivePhonePreview: React.FC<SmsLivePhonePreviewProps> = ({
             </div>
 
             {/* Simulated SMS Bubble */}
-            <div className="flex flex-col items-start max-w-[90%] self-start animate-in fade-in slide-in-from-bottom-2 duration-200">
-              <div className="p-3 rounded-2xl rounded-tr-xs bg-white dark:bg-[#202A5A] text-gray-800 dark:text-gray-100 border border-gray-200/90 dark:border-[#3F50A0] shadow-xs text-xs sm:text-[12.5px] leading-relaxed break-words font-medium whitespace-pre-wrap">
+            <div className="flex flex-col items-start w-full max-w-[88%] self-start animate-in fade-in slide-in-from-bottom-2 duration-200">
+              <div className="p-3 rounded-2xl rounded-tr-xs bg-white dark:bg-[#202A5A] text-gray-800 dark:text-gray-100 border border-gray-200/90 dark:border-[#3F50A0] shadow-xs text-xs sm:text-[12.5px] leading-relaxed break-words [overflow-wrap:anywhere] [word-break:break-word] font-medium whitespace-pre-wrap max-w-full">
                 {messageText.trim() ? (
                   messageText
                 ) : (
@@ -90,8 +90,8 @@ export const SmsLivePhonePreview: React.FC<SmsLivePhonePreviewProps> = ({
                 )}
               </div>
               <div className="flex items-center justify-between w-full px-1.5 mt-1 text-[10px] text-gray-400 dark:text-gray-500 font-mono">
-                <span>تحویل به: {targetDescription}</span>
-                <span>{toPersianDigits('09:41')}</span>
+                <span className="truncate max-w-[140px]">تحویل به: {targetDescription}</span>
+                <span className="shrink-0">{toPersianDigits('09:41')}</span>
               </div>
             </div>
           </div>
@@ -144,7 +144,14 @@ export const SmsLivePhonePreview: React.FC<SmsLivePhonePreviewProps> = ({
         </div>
 
         <div className="pt-1.5 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between font-bold">
-          <span className="text-sec dark:text-white">کل کسر از شارژ:</span>
+          <div className="flex flex-col">
+            <span className="text-sec dark:text-white">کل کسر از شارژ:</span>
+            {estimatedRecipients > 0 && (
+              <span className="text-[10px] text-gray-400 font-mono font-normal">
+                {toPersianDigits(estimatedRecipients)} × {toPersianDigits(singleCostTomans.toLocaleString())}
+              </span>
+            )}
+          </div>
           <span className="font-mono text-sm font-black text-primary-darker dark:text-primary">
             {isConfigLoading ? '...' : `${toPersianDigits(totalCostTomans.toLocaleString())} تومان`}
           </span>
@@ -156,11 +163,11 @@ export const SmsLivePhonePreview: React.FC<SmsLivePhonePreviewProps> = ({
             {isConfigLoading ? (
               <span className="text-gray-400">...</span>
             ) : creditAfterSendTomans < 0 ? (
-              <span className="text-red-500 font-bold">
+              <span className="text-red-500 dark:text-red-400 font-bold" title="کسری شارژ">
                 {toPersianDigits(Math.abs(creditAfterSendTomans).toLocaleString())}- ت (کسری)
               </span>
             ) : (
-              <span className="text-sec dark:text-gray-300">
+              <span className="text-sec dark:text-gray-300 font-bold">
                 {toPersianDigits(creditAfterSendTomans.toLocaleString())} تومان
               </span>
             )}

@@ -161,6 +161,23 @@ async function main() {
       },
     });
 
+    boysFields[`${code}_WEB`] = await prisma.studyField.upsert({
+      where: {
+        tenantId_levelId_name: {
+          tenantId: boys.id,
+          levelId: lvlB.id,
+          name: 'تولید و توسعه پایگاه‌های اینترنتی',
+        },
+      },
+      update: { code: `B_${code}_WEB` },
+      create: {
+        tenantId: boys.id,
+        levelId: lvlB.id,
+        name: 'تولید و توسعه پایگاه‌های اینترنتی',
+        code: `B_${code}_WEB`,
+      },
+    });
+
     boysFields[`${code}_MEDIA`] = await prisma.studyField.upsert({
       where: {
         tenantId_levelId_name: {
@@ -193,6 +210,40 @@ async function main() {
         levelId: lvlG.id,
         name: 'شبکه و نرم‌افزار رایانه',
         code: `G_${code}_NET`,
+      },
+    });
+
+    girlsFields[`${code}_WEB`] = await prisma.studyField.upsert({
+      where: {
+        tenantId_levelId_name: {
+          tenantId: girls.id,
+          levelId: lvlG.id,
+          name: 'تولید و توسعه پایگاه‌های اینترنتی',
+        },
+      },
+      update: { code: `G_${code}_WEB` },
+      create: {
+        tenantId: girls.id,
+        levelId: lvlG.id,
+        name: 'تولید و توسعه پایگاه‌های اینترنتی',
+        code: `G_${code}_WEB`,
+      },
+    });
+
+    girlsFields[`${code}_MEDIA`] = await prisma.studyField.upsert({
+      where: {
+        tenantId_levelId_name: {
+          tenantId: girls.id,
+          levelId: lvlG.id,
+          name: 'تولید محتوای چندرسانه‌ای',
+        },
+      },
+      update: { code: `G_${code}_MEDIA` },
+      create: {
+        tenantId: girls.id,
+        levelId: lvlG.id,
+        name: 'تولید محتوای چندرسانه‌ای',
+        code: `G_${code}_MEDIA`,
       },
     });
   }

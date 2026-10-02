@@ -213,9 +213,9 @@ export function MobileDataTable<T>({
                   {isExpanded && (
                     <div className="mt-2 p-3 bg-gray-50 dark:bg-[#1C2536] rounded-xl border border-gray-200/60 dark:border-gray-700/60 space-y-2 text-xs animate-in fade-in">
                       {detailCols.map((col, cIdx) => (
-                        <div key={getColKey(col, cIdx)} className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                          <span className="text-gray-500 dark:text-gray-400 font-medium">{col.header}:</span>
-                          <span className="font-semibold text-ink-dark dark:text-gray-200">
+                        <div key={getColKey(col, cIdx)} className="flex items-center justify-between gap-2 py-0.5">
+                          <span className="text-gray-500 dark:text-gray-400 font-medium shrink-0">{col.header}:</span>
+                          <span className="font-semibold text-ink-dark dark:text-gray-200 text-left truncate">
                             {renderCell(col, item, index)}
                           </span>
                         </div>

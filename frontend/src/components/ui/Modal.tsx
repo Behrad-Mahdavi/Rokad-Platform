@@ -75,7 +75,7 @@ export const Modal: React.FC<ModalProps> = ({
       <div
         role="dialog"
         aria-modal="true"
-        className={`relative w-full ${maxWidthClasses} rounded-t-3xl sm:rounded-3xl bg-white dark:bg-[#151C28] text-ink-normal dark:text-white p-5 sm:p-6 border-2 border-primary/40 shadow-[4px_4px_0_#202A5A] dark:shadow-[4px_4px_0_#59BBAF] z-10 max-h-[88vh] sm:max-h-[90vh] overflow-y-auto overscroll-contain animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150 pb-[max(1.25rem,env(safe-area-inset-bottom))]`}
+        className={`relative w-full ${maxWidthClasses} rounded-t-3xl sm:rounded-3xl bg-white dark:bg-[#151C28] text-ink-normal dark:text-white p-4 sm:p-6 border-2 border-primary/40 shadow-[4px_4px_0_#202A5A] dark:shadow-[4px_4px_0_#59BBAF] z-10 max-h-[88vh] sm:max-h-[90vh] overflow-y-auto overscroll-contain animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150 pb-[max(1.25rem,env(safe-area-inset-bottom))]`}
       >
         {/* Mobile Drag Indicator Pill */}
         <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-3 sm:hidden shrink-0" />

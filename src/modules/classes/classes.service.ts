@@ -424,6 +424,25 @@ export class ClassesService {
     return classroom;
   }
 
+  async deleteClassroom(tenantId: string, classroomId: string) {
+    const classroom = await this.prisma.classroom.findFirst({
+      where: { id: classroomId, tenantId },
+    });
+
+    if (!classroom) {
+      throw new NotFoundException('کلاس مورد نظر یافت نشد');
+    }
+
+    await this.prisma.classroom.delete({
+      where: { id: classroomId },
+    });
+
+    return {
+      message: `کلاس «${classroom.name}» با موفقیت حذف گردید`,
+      deletedClassroomId: classroomId,
+    };
+  }
+
   // 3. Class Enrollment
   async enrollStudent(tenantId: string, dto: EnrollStudentDto) {
     // Check classroom and capacity

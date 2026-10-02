@@ -30,7 +30,9 @@ import {
   Building,
   AlertCircle,
   Edit3,
+  Trash2,
 } from 'lucide-react';
+import { toast } from '../../../components/ui/toast/toast';
 import { ResponsivePageHeader } from '@/components/ui/ResponsivePageHeader';
 
 export const AcademicStructurePage: React.FC = () => {
@@ -49,6 +51,8 @@ export const AcademicStructurePage: React.FC = () => {
   const [isEditClassModalOpen, setIsEditClassModalOpen] = useState(false);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
   const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
+  const [deleteConfirmClass, setDeleteConfirmClass] = useState<any | null>(null);
+  const [isDeletingClass, setIsDeletingClass] = useState(false);
 
   // Forms
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -245,6 +249,26 @@ export const AcademicStructurePage: React.FC = () => {
     }
   };
 
+  const handleConfirmDeleteClass = async () => {
+    if (!deleteConfirmClass) return;
+    setIsDeletingClass(true);
+    try {
+      await apiClient.delete(`/classes/classrooms/${deleteConfirmClass.id}`);
+      setClassrooms((prev) => prev.filter((c) => c.id !== deleteConfirmClass.id));
+      toast.success('کلاس با موفقیت حذف شد.');
+      setDeleteConfirmClass(null);
+      if (isEditClassModalOpen && editingClassId === deleteConfirmClass.id) {
+        setIsEditClassModalOpen(false);
+        setEditingClassId(null);
+      }
+      fetchData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err.message || 'خطا در حذف کلاس درس.');
+    } finally {
+      setIsDeletingClass(false);
+    }
+  };
+
   const handleCreateLesson = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -357,33 +381,27 @@ export const AcademicStructurePage: React.FC = () => {
           isLoading={isLoading}
           emptyMessage="هنوز کلاسی ثبت نشده است. از دکمه «ایجاد کلاس درس جدید» استفاده کنید."
           primaryField={(c) => (
-            <div className="flex items-center justify-between w-full">
-              <div>
-                <div className="font-bold text-ink-darker text-sm">{c.name}</div>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="font-mono text-[11px] bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">{c.code}</span>
-                  {c.roomNumber && <span className="text-[11px] text-gray-400">اتاق {c.roomNumber}</span>}
-                </div>
+            <div className="space-y-1">
+              <div className="font-bold text-ink-darker text-sm">{c.name}</div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-mono text-[11px] bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">{c.code}</span>
+                {c.roomNumber && <span className="text-[11px] text-gray-400">{c.roomNumber}</span>}
               </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleOpenEditClass(c);
-                }}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all border border-primary/20 shrink-0 cursor-pointer shadow-2xs"
-                title="ویرایش اطلاعات کلاس"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>ویرایش</span>
-              </button>
             </div>
           )}
           secondaryField={(c) => (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <Badge variant="default" className="text-[11px]">پایه {c.level?.name || 'دهم'}</Badge>
-              <Badge variant="college" className="text-[11px]">{c.field?.name || 'عمومی'}</Badge>
-            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenEditClass(c);
+              }}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary hover:text-white transition-all border border-primary/20 shrink-0 cursor-pointer shadow-2xs"
+              title="ویرایش کلاس"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>ویرایش</span>
+            </button>
           )}
           columns={[
             {
@@ -401,6 +419,7 @@ export const AcademicStructurePage: React.FC = () => {
             },
             {
               header: 'پایه تحصیلی',
+              mobilePriority: 'secondary',
               cell: (c) => (
                 <Badge variant="default" className="font-bold">
                   پایه {c.level?.name || 'دهم'}
@@ -409,6 +428,7 @@ export const AcademicStructurePage: React.FC = () => {
             },
             {
               header: 'رشته تحصیلی',
+              mobilePriority: 'secondary',
               cell: (c) => (
                 <Badge variant="college" className="font-bold">
                   {c.field?.name || 'شبکه و نرم‌افزار رایانه'}
@@ -417,28 +437,31 @@ export const AcademicStructurePage: React.FC = () => {
             },
             {
               header: 'سال تحصیلی',
+              mobilePriority: 'secondary',
               cell: (c) => <span className="text-xs text-gray-600">{c.academicYear?.name || '۱۴۰۴-۱۴۰۵'}</span>,
             },
             {
               header: 'تعداد دانش‌آموزان',
+              mobileDetail: true,
               cell: (c) => (
                 <span className="font-bold text-ink-darker">
                   {c._count?.enrollments || c._count?.students || 0} دانش‌آموز
                 </span>
               ),
-              mobileDetail: true,
             },
             {
               header: 'ظرفیت کلاس',
-              cell: (c) => <span className="text-xs text-gray-500">{c.capacity || 30} نفر</span>,
               mobileDetail: true,
+              cell: (c) => <span className="text-xs text-gray-500">{c.capacity || 30} نفر</span>,
             },
             {
               header: 'وضعیت',
+              mobileDetail: true,
               cell: () => <Badge variant="success">فعال</Badge>,
             },
             {
               header: 'عملیات',
+              mobilePriority: 'hidden',
               cell: (c) => (
                 <button
                   type="button"
@@ -514,41 +537,45 @@ export const AcademicStructurePage: React.FC = () => {
       {/* Tab 3: Lessons */}
       {activeTab === 'LESSONS' && (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-ink-dark">فیلتر بر اساس پایه:</span>
-              <select
-                value={lessonFilterLevel}
-                onChange={(e) => {
-                  setLessonFilterLevel(e.target.value);
-                  setLessonFilterField('ALL');
-                }}
-                className="h-9 rounded-md border border-gray-200 bg-gray-50 px-2.5 text-xs font-medium text-ink-dark focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                <option value="ALL">همه پایه‌ها</option>
-                {levels.map((lvl) => (
-                  <option key={lvl.id} value={lvl.id}>
-                    پایه {lvl.name}
-                  </option>
-                ))}
-              </select>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-gray-200/80 shadow-xs">
+            <div className="grid grid-cols-1 sm:flex sm:items-center gap-2.5 w-full sm:w-auto">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-ink-dark shrink-0">پایه:</span>
+                <select
+                  value={lessonFilterLevel}
+                  onChange={(e) => {
+                    setLessonFilterLevel(e.target.value);
+                    setLessonFilterField('ALL');
+                  }}
+                  className="h-9 w-full sm:w-auto rounded-lg border border-gray-200 bg-gray-50 px-2.5 text-xs font-medium text-ink-dark focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="ALL">همه پایه‌ها</option>
+                  {levels.map((lvl) => (
+                    <option key={lvl.id} value={lvl.id}>
+                      پایه {lvl.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <span className="text-xs font-bold text-ink-dark">رشته تحصیلی:</span>
-              <select
-                value={lessonFilterField}
-                onChange={(e) => setLessonFilterField(e.target.value)}
-                className="h-9 rounded-md border border-gray-200 bg-gray-50 px-2.5 text-xs font-medium text-ink-dark focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                <option value="ALL">همه رشته‌ها</option>
-                {(lessonFilterLevel === 'ALL'
-                  ? fields
-                  : fields.filter((f) => f.levelId === lessonFilterLevel)
-                ).map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.name}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-ink-dark shrink-0">رشته:</span>
+                <select
+                  value={lessonFilterField}
+                  onChange={(e) => setLessonFilterField(e.target.value)}
+                  className="h-9 w-full sm:w-auto rounded-lg border border-gray-200 bg-gray-50 px-2.5 text-xs font-medium text-ink-dark focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="ALL">همه رشته‌ها</option>
+                  {(lessonFilterLevel === 'ALL'
+                    ? fields
+                    : fields.filter((f) => f.levelId === lessonFilterLevel)
+                  ).map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="text-xs text-gray-500 font-medium">
               تعداد دروس نمایش‌داده‌شده:{' '}
@@ -767,7 +794,7 @@ export const AcademicStructurePage: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleCreateClass} className="space-y-4">
+        <form onSubmit={handleCreateClass} className="space-y-3.5">
           <Input
             label="نام کلاس"
             placeholder="مثال: کلاس دهم ریاضی ۱"
@@ -776,7 +803,7 @@ export const AcademicStructurePage: React.FC = () => {
             required
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <Input
               label="کد یکتای کلاس"
               placeholder="مثال: CLS-10-M1"
@@ -793,15 +820,15 @@ export const AcademicStructurePage: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="w-full text-right space-y-1.5">
+              <label className="block text-xs sm:text-[13px] font-bold text-ink-normal/80 dark:text-gray-300 text-right">
                 پایه تحصیلی <span className="text-red-500">*</span>
               </label>
               <select
                 value={classForm.levelId}
                 onChange={(e) => handleLevelChange(e.target.value)}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs sm:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all cursor-pointer"
                 required
               >
                 {levels.map((lvl) => (
@@ -812,14 +839,14 @@ export const AcademicStructurePage: React.FC = () => {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+            <div className="w-full text-right space-y-1.5">
+              <label className="block text-xs sm:text-[13px] font-bold text-ink-normal/80 dark:text-gray-300 text-right">
                 رشته تحصیلی <span className="text-red-500">*</span>
               </label>
               <select
                 value={classForm.fieldId}
                 onChange={(e) => setClassForm({ ...classForm, fieldId: e.target.value })}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs sm:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all cursor-pointer"
                 required
               >
                 {(fields.filter((f) => f.levelId === classForm.levelId).length > 0
@@ -834,15 +861,15 @@ export const AcademicStructurePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="w-full text-right space-y-1.5">
+              <label className="block text-xs sm:text-[13px] font-bold text-ink-normal/80 dark:text-gray-300 text-right">
                 سال تحصیلی
               </label>
               <select
                 value={classForm.academicYearId}
                 onChange={(e) => setClassForm({ ...classForm, academicYearId: e.target.value })}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs sm:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all cursor-pointer"
               >
                 {academicYears.map((y) => (
                   <option key={y.id} value={y.id}>
@@ -853,14 +880,14 @@ export const AcademicStructurePage: React.FC = () => {
             </div>
 
             <Input
-              label="شماره یا نام اتاق فیزیکی (اختیاری)"
-              placeholder="مثال: اتاق ۱۰۱ یا کارگاه کامپیوتر"
+              label="نام کلاس (اختیاری)"
+              placeholder="مثال: ۱۰۱ یا کارگاه ۱"
               value={classForm.roomNumber}
               onChange={(e) => setClassForm({ ...classForm, roomNumber: e.target.value })}
             />
           </div>
 
-          <div className="flex justify-end space-x-2 space-x-reverse pt-2">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
             <Button
               type="button"
               variant="ghost"
@@ -868,10 +895,11 @@ export const AcademicStructurePage: React.FC = () => {
                 setIsClassModalOpen(false);
                 setError(null);
               }}
+              className="h-10 px-4 text-xs sm:text-sm"
             >
               انصراف
             </Button>
-            <Button type="submit" variant="primary" isLoading={isSubmitting}>
+            <Button type="submit" variant="primary" isLoading={isSubmitting} className="h-10 px-5 text-xs sm:text-sm font-bold">
               ایجاد کلاس
             </Button>
           </div>
@@ -897,7 +925,7 @@ export const AcademicStructurePage: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleUpdateClass} className="space-y-4">
+        <form onSubmit={handleUpdateClass} className="space-y-3.5">
           <Input
             label="نام کلاس"
             placeholder="مثال: کلاس دهم ریاضی ۱"
@@ -906,7 +934,7 @@ export const AcademicStructurePage: React.FC = () => {
             required
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <Input
               label="کد یکتای کلاس"
               placeholder="مثال: CLS-10-M1"
@@ -923,15 +951,15 @@ export const AcademicStructurePage: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="w-full text-right space-y-1.5">
+              <label className="block text-xs sm:text-[13px] font-bold text-ink-normal/80 dark:text-gray-300 text-right">
                 پایه تحصیلی <span className="text-red-500">*</span>
               </label>
               <select
                 value={editClassForm.levelId}
                 onChange={(e) => handleEditClassLevelChange(e.target.value)}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs sm:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all cursor-pointer"
                 required
               >
                 {levels.map((lvl) => (
@@ -942,14 +970,14 @@ export const AcademicStructurePage: React.FC = () => {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+            <div className="w-full text-right space-y-1.5">
+              <label className="block text-xs sm:text-[13px] font-bold text-ink-normal/80 dark:text-gray-300 text-right">
                 رشته تحصیلی <span className="text-red-500">*</span>
               </label>
               <select
                 value={editClassForm.fieldId}
                 onChange={(e) => setEditClassForm({ ...editClassForm, fieldId: e.target.value })}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary font-bold"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs sm:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all cursor-pointer"
                 required
               >
                 {(fields.filter((f) => f.levelId === editClassForm.levelId).length > 0
@@ -964,15 +992,15 @@ export const AcademicStructurePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="w-full text-right space-y-1.5">
+              <label className="block text-xs sm:text-[13px] font-bold text-ink-normal/80 dark:text-gray-300 text-right">
                 سال تحصیلی
               </label>
               <select
                 value={editClassForm.academicYearId}
                 onChange={(e) => setEditClassForm({ ...editClassForm, academicYearId: e.target.value })}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-normal dark:text-white text-xs sm:text-sm font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all cursor-pointer"
               >
                 {academicYears.map((y) => (
                   <option key={y.id} value={y.id}>
@@ -983,28 +1011,44 @@ export const AcademicStructurePage: React.FC = () => {
             </div>
 
             <Input
-              label="شماره یا نام اتاق فیزیکی (اختیاری)"
-              placeholder="مثال: اتاق ۱۰۱ یا کارگاه کامپیوتر"
+              label="نام کلاس (اختیاری)"
+              placeholder="مثال: ۱۰۱ یا کارگاه ۱"
               value={editClassForm.roomNumber}
               onChange={(e) => setEditClassForm({ ...editClassForm, roomNumber: e.target.value })}
             />
           </div>
 
-          <div className="flex justify-end space-x-2 space-x-reverse pt-2">
-            <Button
+          <div className="flex items-center justify-between gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+            <button
               type="button"
-              variant="ghost"
+              className="h-10 w-10 flex items-center justify-center rounded-xl text-rose-600 hover:text-white hover:bg-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 transition-all shrink-0 cursor-pointer shadow-2xs"
+              title="حذف کلاس"
               onClick={() => {
-                setIsEditClassModalOpen(false);
-                setEditingClassId(null);
-                setError(null);
+                const currentClass = classrooms.find((c) => c.id === editingClassId);
+                if (currentClass) {
+                  setDeleteConfirmClass(currentClass);
+                }
               }}
             >
-              انصراف
-            </Button>
-            <Button type="submit" variant="primary" isLoading={isSubmitting}>
-              ذخیره تغییرات
-            </Button>
+              <Trash2 className="w-4 h-4" />
+            </button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setIsEditClassModalOpen(false);
+                  setEditingClassId(null);
+                  setError(null);
+                }}
+                className="h-10 px-3.5 text-xs sm:text-sm"
+              >
+                انصراف
+              </Button>
+              <Button type="submit" variant="primary" isLoading={isSubmitting} className="h-10 px-4 text-xs sm:text-sm font-bold">
+                ذخیره تغییرات
+              </Button>
+            </div>
           </div>
         </form>
       </Modal>
@@ -1283,6 +1327,46 @@ export const AcademicStructurePage: React.FC = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete Classroom Confirmation Modal */}
+      <Modal
+        isOpen={!!deleteConfirmClass}
+        onClose={() => !isDeletingClass && setDeleteConfirmClass(null)}
+        title="حذف کلاس درس"
+        description="آیا از حذف این کلاس اطمینان دارید؟ این عملیات غیرقابل بازگشت است."
+        maxWidth="sm"
+      >
+        <div className="space-y-4">
+          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-sm">
+            <p className="font-bold mb-1">نام کلاس: {deleteConfirmClass?.name}</p>
+            <p className="text-xs text-rose-600 leading-relaxed">
+              با حذف کلاس، تمام داده‌های مرتبط با این کلاس (ثبت‌نام‌ها، برنامه‌های هفتگی و ...) حذف خواهند شد.
+            </p>
+          </div>
+
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={isDeletingClass}
+              onClick={() => setDeleteConfirmClass(null)}
+              className="w-full sm:w-auto"
+            >
+              انصراف
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              className="bg-rose-600 hover:bg-rose-700 text-white w-full sm:w-auto"
+              isLoading={isDeletingClass}
+              onClick={handleConfirmDeleteClass}
+            >
+              <Trash2 className="w-4 h-4 ml-1.5" />
+              <span>بله، حذف شود</span>
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
