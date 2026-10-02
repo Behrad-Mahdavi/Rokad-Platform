@@ -665,16 +665,16 @@ export const MembersPage: React.FC = () => {
           title="مدیریت دانش‌آموزان"
           description="ثبت پرونده تحصیلی، اطلاعات اولیاء، پرونده‌های الکترونیکی و ورود دسته‌جمعی"
           actions={
-            <div className="flex items-center space-x-2 space-x-reverse w-full sm:w-auto">
-              <Link to="/app/admin/vault">
+            <div className="grid grid-cols-3 sm:flex items-center gap-2 w-full sm:w-auto">
+              <Link to="/app/admin/vault" className="w-full sm:w-auto">
                 <Button
                   variant="outline"
                   size="sm"
                   type="button"
-                  className="w-full sm:w-auto text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30 font-bold"
+                  className="w-full sm:w-auto text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30 font-bold px-2 sm:px-3 text-xs justify-center"
                 >
-                  <KeyRound className="h-4 w-4 ml-1.5 text-amber-600 dark:text-amber-400" />
-                  <span>گاوصندوق رمزها</span>
+                  <KeyRound className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-1 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span>رمز ها</span>
                 </Button>
               </Link>
 
@@ -689,15 +689,20 @@ export const MembersPage: React.FC = () => {
                   setExcelRows([]);
                   setError(null);
                 }}
-                className="w-full sm:w-auto text-emerald-700 border-emerald-300 hover:bg-emerald-50 font-bold"
+                className="w-full sm:w-auto text-emerald-700 border-emerald-300 hover:bg-emerald-50 font-bold px-2 sm:px-3 text-xs justify-center"
               >
-                <FileSpreadsheet className="h-4 w-4 ml-1.5 text-emerald-600" />
-                <span>ورود گروهی با اکسل (.xlsx)</span>
+                <FileSpreadsheet className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-1 text-emerald-600 shrink-0" />
+                <span>اکسل</span>
               </Button>
 
-              <Button variant="primary" size="sm" onClick={() => setIsStudentModalOpen(true)} className="w-full sm:w-auto">
-                <UserPlus className="h-4 w-4 ml-1" />
-                <span>ثبت‌نام فردی دانش‌آموز</span>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setIsStudentModalOpen(true)}
+                className="w-full sm:w-auto px-2 sm:px-3 text-xs justify-center font-bold"
+              >
+                <UserPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-1 shrink-0" />
+                <span>ثبت دانش‌آموز</span>
               </Button>
             </div>
           }
@@ -708,21 +713,21 @@ export const MembersPage: React.FC = () => {
           title="مدیریت کادر آموزشی"
           description="مدیریت دبیران، کادر اجرایی، تخصص تدریس و تخصیص دروس مدرسه"
           actions={
-            <Button variant="primary" size="sm" onClick={() => setIsTeacherModalOpen(true)} className="w-full sm:w-auto">
+            <Button variant="primary" size="sm" onClick={() => setIsTeacherModalOpen(true)} className="w-full sm:w-auto justify-center font-bold">
               <Plus className="h-4 w-4 ml-1" />
-              <span>ثبت کادر آموزشی جدید</span>
+              <span>ثبت کادر آموزشی</span>
             </Button>
           }
         />
       )}
 
       {/* Modern Tabs Bar & Live Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 dark:border-gray-800 pb-3">
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-gray-100/90 dark:bg-gray-800/80 w-fit">
+      <div className="space-y-3 border-b border-gray-200 dark:border-gray-800 pb-3">
+        <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-gray-100/90 dark:bg-gray-800/80 w-full">
           <button
             type="button"
             onClick={() => handleTabChange('STUDENTS')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer select-none ${
+            className={`w-full py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-2 cursor-pointer select-none ${
               activeTab === 'STUDENTS'
                 ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs ring-1 ring-black/5 dark:ring-white/10'
                 : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
@@ -744,7 +749,7 @@ export const MembersPage: React.FC = () => {
           <button
             type="button"
             onClick={() => handleTabChange('TEACHERS')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer select-none ${
+            className={`w-full py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-2 cursor-pointer select-none ${
               activeTab === 'TEACHERS'
                 ? 'bg-white dark:bg-[#151C28] text-club-normal dark:text-club-light shadow-xs ring-1 ring-black/5 dark:ring-white/10'
                 : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
@@ -765,13 +770,13 @@ export const MembersPage: React.FC = () => {
         </div>
 
         {/* Live Search Input */}
-        <div className="relative w-full sm:w-72">
+        <div className="relative w-full">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={activeTab === 'STUDENTS' ? 'جستجو در دانش‌آموزان...' : 'جستجو در کادر آموزشی...'}
-            className="pr-9 pl-8 text-xs h-9"
+            className="pr-9 pl-8 text-xs h-9 w-full"
           />
           {search && (
             <button
