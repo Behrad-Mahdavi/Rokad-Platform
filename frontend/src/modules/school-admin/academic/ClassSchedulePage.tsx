@@ -593,7 +593,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                           <div className="flex items-center gap-1.5">
                             <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
                               <Layers className="h-3 w-3" />
-                              یک هفته در میان (هفته اول / هفته دوم)
+                              یک هفته در میان
                             </span>
                           </div>
 
