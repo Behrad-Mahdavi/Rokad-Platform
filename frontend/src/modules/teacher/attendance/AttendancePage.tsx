@@ -1656,16 +1656,37 @@ export const AttendancePage: React.FC = () => {
                     )}
                   </div>
 
-                  <Input
-                    type="number"
-                    step="0.25"
-                    min="0"
-                    max="20"
-                    value={modalOralGrade}
-                    onChange={(e) => setModalOralGrade(e.target.value)}
-                    placeholder="نمره مورد نظر را وارد کنید (مثلاً ۱۹.۵)"
-                    className="rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] font-bold h-10 text-center text-sm"
-                  />
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      step="0.25"
+                      min="0"
+                      max="20"
+                      value={modalOralGrade}
+                      onChange={(e) => setModalOralGrade(e.target.value)}
+                      placeholder="نمره مورد نظر را وارد کنید (مثلاً ۱۹.۵)"
+                      className="rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] font-bold h-10 text-center text-sm"
+                    />
+                    {/* + button - top right */}
+                    <button
+                      type="button"
+                      onClick={() => setModalOralGrade(v => String(Math.min(20, parseFloat(v || '0') + 0.25)))}
+                      className="absolute top-0 left-0 w-8 h-5 rounded-br-none rounded-tl-xl rounded-tr-none rounded-bl-none bg-gray-100 dark:bg-[#1C2536] border-b border-r border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-primary hover:text-white transition-colors cursor-pointer text-foreground dark:text-gray-200 font-bold text-sm leading-none"
+                      title="افزایش ۰.۲۵"
+                    >
+                      +
+                    </button>
+                    {/* - button - bottom right (rtl: right side is start) */}
+                    <button
+                      type="button"
+                      onClick={() => setModalOralGrade(v => String(Math.max(0, parseFloat(v || '0') - 0.25)))}
+                      className="absolute bottom-0 right-0 w-8 h-5 rounded-tl-none rounded-br-xl rounded-bl-none rounded-tr-none bg-gray-100 dark:bg-[#1C2536] border-t border-l border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-rose-500 hover:text-white transition-colors cursor-pointer text-foreground dark:text-gray-200 font-bold text-sm leading-none"
+                      title="کاهش ۰.۲۵"
+                    >
+                      −
+                    </button>
+                  </div>
+
 
                 </div>
 
