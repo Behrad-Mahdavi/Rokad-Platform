@@ -19,7 +19,7 @@ export const TOAST_MESSAGES = {
   auth: {
     loginSuccess: (name: string) => `خوش اومدید، ${name}`,
     loginFailed: 'شماره موبایل یا رمز عبور اشتباهه.',
-    accountSuspended: 'حساب شما غیرفعال شده. با مدیر مدرسه تماس بگیرید.',
+    accountSuspended: 'حساب شما غیرفعال شده. با راهبر مدرسه تماس بگیرید.',
     logout: 'با موفقیت خارج شدید.',
     sessionExpired: 'نشست شما منقضی شده. دوباره وارد بشید.',
     registerSchoolSuccess: 'مدرسه با موفقیت ثبت شد. خوش اومدید!',

@@ -22,9 +22,16 @@ async function getOrRegisterServiceWorker(): Promise<ServiceWorkerRegistration> 
 
   if (!registration) {
     try {
-      registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+      // In dev or standalone, /push-worker.js is always available in public folder
+      const swUrl = import.meta.env.PROD ? '/sw.js' : '/push-worker.js';
+      registration = await navigator.serviceWorker.register(swUrl, { scope: '/' });
     } catch (err) {
-      console.warn('Manual SW registration attempt:', err);
+      console.warn('Initial SW registration failed, falling back to /push-worker.js:', err);
+      try {
+        registration = await navigator.serviceWorker.register('/push-worker.js', { scope: '/' });
+      } catch (fallbackErr) {
+        console.error('Push worker fallback registration failed:', fallbackErr);
+      }
     }
   }
 
@@ -52,7 +59,7 @@ export interface WebPushState {
   error: string | null;
   subscribe: () => Promise<boolean>;
   unsubscribe: () => Promise<boolean>;
-  sendTestNotification: () => Promise<boolean>;
+  sendTestNotification: () => Promise<{ ok: boolean; message: string }>;
 }
 
 export function useWebPush(): WebPushState {
@@ -207,16 +214,24 @@ export function useWebPush(): WebPushState {
     }
   };
 
-  const sendTestNotification = async (): Promise<boolean> => {
+  const sendTestNotification = async (): Promise<{ ok: boolean; message: string }> => {
     try {
       setIsLoading(true);
       setError(null);
-      await apiClient.post('/notifications/push/test');
-      return true;
+      const res = await apiClient.post<any>('/notifications/push/test');
+      const data = res.data;
+      if (data?.sent > 0) {
+        return { ok: true, message: data.message || 'اعلان تستی با موفقیت به دستگاه ارسال شد! 🎉' };
+      } else {
+        const msg = data?.message || 'ارسال اعلان با خطا مواجه شد.';
+        setError(msg);
+        return { ok: false, message: msg };
+      }
     } catch (err: any) {
       console.error('Failed to send test push:', err);
-      setError('ارسال نوتیفیکیشن آزمایشی با خطا مواجه شد.');
-      return false;
+      const errMsg = err?.response?.data?.message || err?.message || 'ارسال نوتیفیکیشن آزمایشی با خطا مواجه شد.';
+      setError(errMsg);
+      return { ok: false, message: errMsg };
     } finally {
       setIsLoading(false);
     }

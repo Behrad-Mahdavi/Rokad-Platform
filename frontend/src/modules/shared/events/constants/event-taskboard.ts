@@ -121,9 +121,8 @@ export function buildTaskBoardTeams(
   teamsMap: Record<string, IdeaTeam>,
 ): TaskBoardTeamInfo[] {
   const winning = getWinningIdeas(eventId, ideas);
-  // Prefer winning ideas only; before the poll closes, only show ideas that already have teams.
-  // Never invent phantom teams from every idea.
-  const source = winning.length > 0 ? winning : ideas.filter((idea) => teamsMap[idea.id]);
+  const teamsWithMembers = ideas.filter((idea) => teamsMap[idea.id]);
+  const source = winning.length > 0 ? winning : teamsWithMembers.length > 0 ? teamsWithMembers : ideas;
 
   return source.map((idea) => {
     const team = teamsMap[idea.id];

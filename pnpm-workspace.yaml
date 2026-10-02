@@ -1,6 +1,7 @@
 packages:
   - '.'
-  - 'frontend'
+
+dangerouslyAllowAllBuilds: true
 
 allowBuilds:
   '@nestjs/core': true
@@ -10,3 +11,12 @@ allowBuilds:
   argon2: true
   esbuild: true
   prisma: true
+
+onlyBuiltDependencies:
+  - '@nestjs/core'
+  - '@prisma/client'
+  - '@prisma/engines'
+  - '@scarf/scarf'
+  - argon2
+  - esbuild
+  - prisma

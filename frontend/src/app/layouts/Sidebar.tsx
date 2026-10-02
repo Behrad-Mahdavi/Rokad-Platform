@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import {
@@ -33,11 +33,14 @@ import {
   CalendarRange,
   Scale,
   Briefcase,
+  KeyRound,
 } from 'lucide-react';
 import { CoinStackIcon } from '../../components/icons/CustomNavIcons';
 import { UserRole } from '../../types/auth';
 import { useSidebarStore } from '../../lib/ui/sidebar-store';
 import { useScrollLock } from '../../lib/hooks/useScrollLock';
+import { useCuriosityStore } from '../../lib/ui/curiosity-store';
+import { toPersianDigits } from '../../lib/utils';
 
 export interface NavItem {
   title: string;
@@ -53,6 +56,7 @@ export interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   const { isOpen, close } = useSidebarStore();
   const location = useLocation();
+  const navigate = useNavigate();
 
   useScrollLock(isOpen);
 
@@ -110,15 +114,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       case 'STAFF':
         return [
           {
-            section: 'مدیریت هنرستان',
+            section: 'راهبری هنرستان',
             items: [
-              { title: 'داشبورد مدیریت', href: '/app/admin/dashboard', icon: LayoutDashboard },
-              { title: 'مدیریت باشگاه کسب‌وکار رُکاد', href: '/app/admin/club', icon: Award },
+              { title: 'داشبورد راهبری', href: '/app/admin/dashboard', icon: LayoutDashboard },
+              { title: 'باشگاه کسب‌وکار رُکاد', href: '/app/admin/club', icon: Award },
               { title: 'پروفایل رسمی مدرسه', href: '/app/admin/profile', icon: School },
               { title: 'ساختار سال و کلاس‌ها', href: '/app/admin/academic', icon: BookOpen },
               { title: 'برنامه هفتگی کلاس‌ها', href: '/app/admin/schedule', icon: CalendarDays },
               { title: 'دانش‌آموزان', href: '/app/admin/members?tab=students', icon: GraduationCap },
               { title: 'کادر آموزشی', href: '/app/admin/members?tab=staff', icon: Briefcase },
+              { title: 'گاوصندوق رمز عبور', href: '/app/admin/vault', icon: KeyRound },
               { title: 'سازنده نقش‌ها و دسترسی‌ها', href: '/app/admin/roles', icon: ShieldCheck },
               { title: 'انضباطی/تشویقی', href: '/app/admin/matters', icon: Scale },
             ],
@@ -291,12 +296,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
     </div>
   );
 
+  const recordCuriosityClick = useCuriosityStore((s) => s.recordClick);
+
   const renderFooterBanner = () => (
-    <div className="rounded-xl bg-gray-50 dark:bg-[#161D2A] p-2.5 border border-gray-200 dark:border-gray-800 text-center">
-      <div className="flex items-center justify-center space-x-1.5 space-x-reverse text-gray-600 dark:text-gray-300 font-bold text-xs">
+    <div className="rounded-xl bg-gray-50 dark:bg-[#161D2A] p-2.5 border border-gray-200 dark:border-gray-800 text-center select-none">
+      <div
+        onClick={() => navigate('/app')}
+        className="flex items-center justify-center space-x-1.5 space-x-reverse text-gray-600 dark:text-gray-300 font-bold text-xs cursor-pointer hover:text-primary transition-colors active:scale-95"
+      >
         <img src="/logo.svg" alt="رکاد" className="h-4 w-4 rounded-md object-cover inline-block shrink-0" />
         <span>سامانه یکپارچه رکاد</span>
       </div>
+      <button
+        type="button"
+        onClick={recordCuriosityClick}
+        title="نسخه ۱.۰.۰"
+        className="mt-1 text-[10.5px] text-gray-400/90 dark:text-gray-500 font-mono hover:text-amber-500 dark:hover:text-amber-400 transition-colors cursor-pointer active:scale-95 inline-block"
+      >
+        نسخه {toPersianDigits('1.0.0')}
+      </button>
     </div>
   );
 
@@ -331,8 +349,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
         )}
       >
         {/* Drawer Header */}
-        <div className="p-4 border-b border-[#EAEAEA] dark:border-gray-800 flex items-center justify-between bg-gray-50/70 dark:bg-[#161D2A] shrink-0">
-          <div className="flex items-center gap-2.5">
+        <div className="pt-[calc(1rem+env(safe-area-inset-top,0px))] px-4 pb-4 border-b border-[#EAEAEA] dark:border-gray-800 flex items-center justify-between bg-gray-50/70 dark:bg-[#161D2A] shrink-0">
+          <div
+            onClick={() => {
+              navigate('/app');
+              close();
+            }}
+            className="flex items-center gap-2.5 cursor-pointer active:scale-95 transition-transform"
+          >
             <img
               src="/logo.svg"
               alt="رکاد"
@@ -361,7 +385,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
         </div>
 
         {/* Docked Drawer Footer */}
-        <div className="p-4 border-t border-[#EAEAEA] dark:border-gray-800 bg-white dark:bg-[#121824] shrink-0">
+        <div className="pt-4 px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] border-t border-[#EAEAEA] dark:border-gray-800 bg-white dark:bg-[#121824] shrink-0">
           {renderFooterBanner()}
         </div>
       </aside>

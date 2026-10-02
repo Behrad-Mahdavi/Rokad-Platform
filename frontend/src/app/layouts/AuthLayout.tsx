@@ -1,10 +1,16 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { School, Sparkles } from 'lucide-react';
+import { ScrollToTop } from '../../components/common/ScrollToTop';
+
+import { useCuriosityStore } from '../../lib/ui/curiosity-store';
 
 export const AuthLayout: React.FC = () => {
+  const recordCuriosityClick = useCuriosityStore((s) => s.recordClick);
+
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-gray-50 dark:bg-[#0B0F17] text-ink-normal dark:text-gray-100 font-sans transition-colors">
+      <ScrollToTop />
       {/* Left Brand Panel (in RTL: right side visually) */}
       <div className="hidden lg:flex lg:col-span-5 bg-gradient-to-br from-primary-darker via-primary to-primary-dark p-12 text-white flex-col justify-between relative overflow-hidden">
         {/* Background decorative patterns */}
@@ -42,7 +48,14 @@ export const AuthLayout: React.FC = () => {
 
         {/* Bottom Metadata */}
         <div className="text-xs text-white/60 relative z-10 flex justify-between items-center border-t border-white/10 pt-6">
-          <span>نسخه تخصصی هنرستان‌های رکاد</span>
+          <button
+            type="button"
+            onClick={recordCuriosityClick}
+            className="hover:text-amber-300 transition-colors cursor-pointer select-none active:scale-95"
+            title="نسخه ۱.۰.۰"
+          >
+            نسخه ۱.۰.۰ تخصصی هنرستان‌های رکاد
+          </button>
           <span>امنیت و ایزولاسیون اطلاعات شعب</span>
         </div>
       </div>

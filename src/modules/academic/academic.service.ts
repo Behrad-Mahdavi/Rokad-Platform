@@ -164,4 +164,97 @@ export class AcademicService {
       },
     });
   }
+
+  // 5. School Admin Dynamic Dashboard Stats
+  async getSchoolDashboardStats(tenantId: string) {
+    const [
+      studentsCount,
+      teachersCount,
+      classrooms,
+      lessonsCount,
+      currentYear,
+      feesSummary,
+      attendanceStats,
+      subInfo,
+    ] = await Promise.all([
+      this.prisma.studentProfile.count({ where: { tenantId } }),
+      this.prisma.teacherProfile.count({ where: { tenantId } }),
+      this.prisma.classroom.findMany({
+        where: { tenantId },
+        include: {
+          level: true,
+          field: true,
+          _count: { select: { enrollments: true } },
+        },
+        orderBy: { code: 'asc' },
+      }),
+      this.prisma.lesson.count({ where: { tenantId } }),
+      this.prisma.academicYear.findFirst({
+        where: { tenantId, isCurrent: true },
+        include: { terms: { where: { isCurrent: true } } },
+      }),
+      this.prisma.studentFeeContract.aggregate({
+        where: { tenantId },
+        _sum: { finalPayableAmount: true, balanceRemaining: true },
+        _count: true,
+      }),
+      this.prisma.studentAttendance.groupBy({
+        by: ['status'],
+        where: { tenantId },
+        _count: { id: true },
+      }),
+      this.prisma.tenantSubscription.findFirst({
+        where: { tenantId, status: 'ACTIVE' },
+        include: { plan: true },
+      }),
+    ]);
+
+    const totalStudents = studentsCount;
+    const totalTeachers = teachersCount;
+    const totalCapacity = classrooms.reduce((acc, c) => acc + (c.capacity || 0), 0);
+
+    const totalFees = Number(feesSummary._sum?.finalPayableAmount || 0);
+    const balanceRemaining = Number(feesSummary._sum?.balanceRemaining || 0);
+    const paidFees = Math.max(0, totalFees - balanceRemaining);
+
+    let totalAttendanceRecords = 0;
+    let presentRecords = 0;
+    for (const a of attendanceStats) {
+      totalAttendanceRecords += a._count.id;
+      if (a.status === 'PRESENT') {
+        presentRecords += a._count.id;
+      }
+    }
+    const attendanceRate =
+      totalAttendanceRecords > 0
+        ? Math.round((presentRecords / totalAttendanceRecords) * 1000) / 10
+        : 100;
+
+    return {
+      studentsCount: totalStudents,
+      maxStudents: subInfo?.plan?.maxStudents || (totalCapacity > 0 ? totalCapacity : 150),
+      teachersCount: totalTeachers,
+      maxTeachers: subInfo?.plan?.maxTeachers || 40,
+      classroomsCount: classrooms.length,
+      classrooms: classrooms.map((c) => ({
+        id: c.id,
+        code: c.code,
+        name: c.name,
+        roomNumber: c.roomNumber,
+        capacity: c.capacity,
+        studentsCount: c._count.enrollments,
+        levelName: c.level?.name,
+        fieldName: c.field?.name,
+      })),
+      lessonsCount,
+      currentYear: currentYear?.name || '۱۴۰۵-۱۴۰۶',
+      currentTerm: currentYear?.terms?.[0]?.name || 'نیم‌سال اول',
+      financial: {
+        paidAmount: paidFees,
+        totalAmount: totalFees,
+        collectionRate: totalFees > 0 ? Math.round((paidFees / totalFees) * 100) : 0,
+      },
+      attendanceRate,
+    };
+  }
 }

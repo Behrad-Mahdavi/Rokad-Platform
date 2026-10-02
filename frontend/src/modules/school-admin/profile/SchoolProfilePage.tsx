@@ -283,12 +283,12 @@ export const SchoolProfilePage: React.FC = () => {
           <Card className="p-6 space-y-4">
             <h3 className="font-bold text-sm text-ink-darker flex items-center gap-2 border-b pb-3">
               <User className="h-4 w-4 text-primary" />
-              <span>مدیریت و پیام رسمی</span>
+              <span>راهبری و پیام رسمی</span>
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                label="نام و نام خانوادگی مدیر"
+                label="نام و نام خانوادگی راهبر"
                 placeholder="مثال: دکتر صادقی"
                 value={profileForm.managerName}
                 onChange={(e) => setProfileForm({ ...profileForm, managerName: e.target.value })}
@@ -297,13 +297,13 @@ export const SchoolProfilePage: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-ink-normal mb-1.5 text-right">
-                پیام مدیر به دانش‌آموزان و اولیا
+                پیام راهبر به دانش‌آموزان و اولیا
               </label>
               <textarea
                 rows={3}
                 value={profileForm.managerMessage}
                 onChange={(e) => setProfileForm({ ...profileForm, managerMessage: e.target.value })}
-                placeholder="پیام خوش‌آمدگویی و توصیه‌های آموزشی مدیر مدرسه..."
+                placeholder="پیام خوش‌آمدگویی و توصیه‌های آموزشی راهبر مدرسه..."
                 className="w-full rounded-xl border border-gray-300 p-3 text-sm text-ink-normal focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>

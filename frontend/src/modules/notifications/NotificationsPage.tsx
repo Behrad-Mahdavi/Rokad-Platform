@@ -14,10 +14,14 @@ import {
   ExternalLink,
   Inbox,
   Loader2,
+  Megaphone,
+  PlusCircle,
+  RefreshCw,
   Send,
   Smartphone,
   Sparkles,
   Volume2,
+  X,
 } from 'lucide-react';
 
 interface NotificationItem {
@@ -32,12 +36,31 @@ interface NotificationItem {
   createdAt?: string;
 }
 
+import { useNotificationStore } from '../../lib/notifications/notification-store';
+
 export const NotificationsPage: React.FC = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [filter, setFilter] = useState<'ALL' | 'UNREAD'>('ALL');
+
+  // Broadcast modal state
+  const [showBroadcastModal, setShowBroadcastModal] = useState(false);
+  const [broadcastTitle, setBroadcastTitle] = useState('');
+  const [broadcastBody, setBroadcastBody] = useState('');
+  const [broadcastTargetRole, setBroadcastTargetRole] = useState<'ALL' | 'TEACHER' | 'STUDENT' | 'PARENT'>('ALL');
+  const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
+  const [broadcastFeedback, setBroadcastFeedback] = useState<string | null>(null);
+
+  const canBroadcast =
+    user?.role === 'SUPER_ADMIN' ||
+    user?.role === 'SCHOOL_ADMIN' ||
+    user?.role === 'STAFF' ||
+    user?.role === 'TEACHER';
+
+  const { markAllRead: storeMarkAllRead, markAsRead: storeMarkAsRead, isRead, setUnreadCount } =
+    useNotificationStore();
 
   // Push notifications hook
   const {
@@ -55,8 +78,13 @@ export const NotificationsPage: React.FC = () => {
     try {
       setIsLoading(true);
       const res = await apiClient.get<NotificationItem[]>('/notifications');
-      const list = res.data || [];
+      const list = (res.data || []).map((n) => ({
+        ...n,
+        read: isRead(n.id, n.read),
+      }));
       setNotifications(Array.isArray(list) ? list : []);
+      const unread = list.filter((n) => !n.read).length;
+      setUnreadCount(unread);
     } catch (err) {
       console.error('Failed to load notifications', err);
     } finally {
@@ -72,11 +100,13 @@ export const NotificationsPage: React.FC = () => {
 
   const markAllAsRead = async () => {
     try {
-      const ids = notifications.filter((n) => !n.read).map((n) => n.id);
+      const ids = notifications.map((n) => n.id);
+      storeMarkAllRead();
+      ids.forEach((id) => storeMarkAsRead(id));
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       if (ids.length > 0) {
         await apiClient.post('/notifications/mark-all-read', { notificationIds: ids });
       }
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     } catch (err) {
       console.error('Failed to mark all as read', err);
     }
@@ -85,6 +115,7 @@ export const NotificationsPage: React.FC = () => {
   const handleNotificationClick = async (notif: NotificationItem) => {
     try {
       if (!notif.read) {
+        storeMarkAsRead(notif.id);
         apiClient.patch(`/notifications/${notif.id}/read`).catch(() => {});
         setNotifications((prev) =>
           prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n))
@@ -95,6 +126,35 @@ export const NotificationsPage: React.FC = () => {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleSendBroadcast = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!broadcastTitle.trim() || !broadcastBody.trim()) return;
+
+    try {
+      setIsSendingBroadcast(true);
+      setBroadcastFeedback(null);
+      const res = await apiClient.post<any>('/notifications/send', {
+        title: broadcastTitle.trim(),
+        body: broadcastBody.trim(),
+        targetRole: broadcastTargetRole,
+      });
+
+      setBroadcastFeedback(res.data?.message || 'اعلان با موفقیت ارسال شد.');
+      await fetchNotifications();
+
+      setTimeout(() => {
+        setShowBroadcastModal(false);
+        setBroadcastTitle('');
+        setBroadcastBody('');
+        setBroadcastFeedback(null);
+      }, 1500);
+    } catch (err: any) {
+      setBroadcastFeedback(err?.response?.data?.message || 'خطا در ارسال اعلان');
+    } finally {
+      setIsSendingBroadcast(false);
     }
   };
 
@@ -129,16 +189,40 @@ export const NotificationsPage: React.FC = () => {
           </div>
         </div>
 
-        {unreadCount > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={markAllAsRead}
-            className="text-xs font-bold text-primary hover:bg-primary/10 border-primary/30"
+        <div className="flex items-center gap-2">
+          {canBroadcast && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowBroadcastModal(true)}
+              className="text-xs font-bold bg-primary hover:bg-primary-dark text-white flex items-center gap-1 shadow-2xs"
+            >
+              <Megaphone className="w-3.5 h-3.5" />
+              <span>ارسال اعلان</span>
+            </Button>
+          )}
+
+          <button
+            type="button"
+            onClick={fetchNotifications}
+            title="به‌روزرسانی"
+            aria-label="به‌روزرسانی"
+            className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-xl bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-primary transition-all flex items-center justify-center cursor-pointer shadow-2xs"
           >
-            خوانده‌شدن همه
-          </Button>
-        )}
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-primary' : ''}`} />
+          </button>
+
+          {unreadCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={markAllAsRead}
+              className="text-xs font-bold text-primary hover:bg-primary/10 border-primary/30"
+            >
+              خوانده‌شدن همه
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Web Push Banner */}
@@ -170,13 +254,13 @@ export const NotificationsPage: React.FC = () => {
                   type="button"
                   onClick={async () => {
                     setTestPushStatus('در حال ارسال...');
-                    const ok = await sendTestNotification();
-                    if (ok) {
-                      setTestPushStatus('ارسال شد!');
-                      setTimeout(() => setTestPushStatus(null), 3000);
+                    const res = await sendTestNotification();
+                    if (res.ok) {
+                      setTestPushStatus(res.message);
+                      setTimeout(() => setTestPushStatus(null), 4000);
                     } else {
-                      setTestPushStatus('خطا در ارسال');
-                      setTimeout(() => setTestPushStatus(null), 3000);
+                      setTestPushStatus(res.message);
+                      setTimeout(() => setTestPushStatus(null), 5000);
                     }
                   }}
                   disabled={isPushLoading}
@@ -301,6 +385,120 @@ export const NotificationsPage: React.FC = () => {
           ))
         )}
       </div>
+
+      {/* Broadcast Announcement Modal */}
+      {showBroadcastModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 rounded-3xl p-6 w-full max-w-lg shadow-xl relative animate-in zoom-in-95 duration-200">
+            <button
+              type="button"
+              onClick={() => {
+                setShowBroadcastModal(false);
+                setBroadcastFeedback(null);
+              }}
+              className="absolute top-5 left-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-xl transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2.5 mb-5">
+              <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                <Megaphone className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-black text-ink-darker dark:text-white">ارسال اعلان سیستمی و پوش</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400">پیام شما به صورت آنلاین و در لیست نوتیفیکیشن‌ها ثبت می‌شود</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSendBroadcast} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+                  گروه مخاطب
+                </label>
+                <div className="grid grid-cols-4 gap-1.5 bg-gray-100 dark:bg-[#1C2536] p-1 rounded-xl text-xs">
+                  {[
+                    { id: 'ALL', label: 'همه' },
+                    { id: 'TEACHER', label: 'دبیران' },
+                    { id: 'STUDENT', label: 'دانش‌آموزان' },
+                    { id: 'PARENT', label: 'اولیا' },
+                  ].map((target) => (
+                    <button
+                      key={target.id}
+                      type="button"
+                      onClick={() => setBroadcastTargetRole(target.id as any)}
+                      className={`py-2 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
+                        broadcastTargetRole === target.id
+                          ? 'bg-white dark:bg-primary text-primary dark:text-white shadow-2xs'
+                          : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
+                      }`}
+                    >
+                      {target.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+                  عنوان اعلان <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثال: تعطیلی کلاس کارگاه یا رویداد فردا"
+                  value={broadcastTitle}
+                  onChange={(e) => setBroadcastTitle(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1C2536] text-xs text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+                  متن پیام <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="شرح کامل اعلان و توصیه‌های مورد نظر..."
+                  value={broadcastBody}
+                  onChange={(e) => setBroadcastBody(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1C2536] text-xs text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none leading-relaxed"
+                />
+              </div>
+
+              {broadcastFeedback && (
+                <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-xs font-bold text-primary text-center animate-in fade-in">
+                  {broadcastFeedback}
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowBroadcastModal(false)}
+                  disabled={isSendingBroadcast}
+                  className="text-xs"
+                >
+                  انصراف
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  disabled={isSendingBroadcast || !broadcastTitle.trim() || !broadcastBody.trim()}
+                  className="text-xs font-bold bg-primary hover:bg-primary-dark text-white flex items-center gap-1.5"
+                >
+                  {isSendingBroadcast ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  <span>ارسال و انتشار سیگنال</span>
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -359,7 +359,7 @@ export const ReportsPage: React.FC = () => {
             </div>
 
             <div className="flex justify-between items-center pt-4 text-xs text-gray-500">
-              <div>امضاء و مهر مدیر مجتمع</div>
+              <div>امضاء و مهر راهبر مجتمع</div>
               <div className="text-emerald-600 font-bold">تایید شده الکترونیکی</div>
             </div>
           </div>

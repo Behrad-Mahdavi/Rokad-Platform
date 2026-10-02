@@ -47,7 +47,7 @@ export const SmsCenterPage: React.FC = () => {
   const [logPage, setLogPage] = useState<number>(1);
 
   // 1. Fetch Gateway Config & Balance
-  const { data: gatewayConfigData, refetch: refetchGatewayConfig } = useQuery({
+  const { data: gatewayConfigData, isLoading: gatewayConfigLoading, refetch: refetchGatewayConfig } = useQuery({
     queryKey: ['sms-gateway-config'],
     queryFn: async () => {
       const res: any = await apiClient.get('/sms/config');
@@ -129,7 +129,13 @@ export const SmsCenterPage: React.FC = () => {
     mutationFn: async (payload: any) => apiClient.post('/sms/manual-send', payload),
     onSuccess: (res: any) => {
       const data = res?.data || res;
-      toast.success(data?.message || 'پیامک با موفقیت ارسال شد');
+      if (data?.sentCount > 0) {
+        toast.success(data?.message || 'پیامک با موفقیت ارسال شد');
+      } else if (data?.failedCount > 0) {
+        toast.error(data?.message || 'خطا در ارسال پیامک');
+      } else {
+        toast.success(data?.message || 'پیامک با موفقیت ارسال شد');
+      }
       setMessageText('');
       setDirectPhone('');
       setSelectedUserIds([]);
@@ -225,10 +231,82 @@ export const SmsCenterPage: React.FC = () => {
     },
   });
 
-  // --- Handlers & Calculations ---
+  const classrooms = Array.isArray(classroomsData)
+    ? classroomsData
+    : Array.isArray(classroomsData?.data)
+    ? classroomsData.data
+    : [];
+  const usersList = Array.isArray(usersData)
+    ? usersData
+    : Array.isArray(usersData?.data)
+    ? usersData.data
+    : [];
+  const logsList = Array.isArray(logsData?.logs) ? logsData.logs : [];
+  const totalLogs = logsData?.total || 0;
+  const templates = Array.isArray(templatesData) ? templatesData : [];
+  const quickTemplates = Array.isArray(quickTemplatesData) ? quickTemplatesData : [];
+
   const charCount = messageText.length;
-  // Persian SMS calculation: 1 part = 70 chars, then 67 chars per subsequent part
-  const smsParts = charCount <= 70 ? 1 : Math.ceil((charCount - 70) / 67) + 1;
+  // Persian SMS calculation (Amoot standard):
+  // 1 Part = 70 characters
+  // Subsequent parts (Multipart UDH) = 67 characters per part
+  const isPersian = !/^[\u0000-\u007F]*$/.test(messageText);
+  const partCapacityFirst = isPersian ? 70 : 160;
+  const partCapacityNext = isPersian ? 67 : 153;
+
+  const smsParts = charCount === 0
+    ? 1
+    : charCount <= partCapacityFirst
+    ? 1
+    : Math.ceil((charCount - partCapacityFirst) / partCapacityNext) + 1;
+
+  // amootsms standard tariff estimate (live from account or 0 if loading)
+  const unitTariffTomans = gatewayConfigData?.liveAccount?.unitPriceTomans || 0;
+  const singleRecipientCostTomans = smsParts * unitTariffTomans;
+
+  const getEstimatedRecipientCount = () => {
+    switch (targetType) {
+      case 'ROLE': {
+        if (targetRole === 'ALL') return usersList.length || 0;
+        if (targetRole === 'PARENTS') {
+          return usersList.filter((u: any) => (u.role || '').toUpperCase() === 'PARENT').length || 0;
+        }
+        if (targetRole === 'STUDENTS') {
+          return usersList.filter((u: any) => (u.role || '').toUpperCase() === 'STUDENT').length || 0;
+        }
+        if (targetRole === 'TEACHERS') {
+          return usersList.filter((u: any) => (u.role || '').toUpperCase() === 'TEACHER').length || 0;
+        }
+        if (targetRole === 'STAFF') {
+          return usersList.filter((u: any) => {
+            const r = (u.role || '').toUpperCase();
+            return r === 'STAFF' || r === 'SCHOOL_ADMIN' || r === 'SUPER_ADMIN';
+          }).length || 0;
+        }
+        return 0;
+      }
+      case 'CLASS': {
+        const cls = classrooms.find((c: any) => c.id === selectedClassroomId);
+        const count = cls?._count?.enrollments ?? cls?._count?.students ?? cls?.students?.length ?? 0;
+        return classAudience === 'BOTH' ? count * 2 : count;
+      }
+      case 'INDIVIDUAL':
+        return selectedUserIds.length || 0;
+      case 'DIRECT_PHONE':
+        return directPhone.trim() ? 1 : 0;
+      default:
+        return 0;
+    }
+  };
+
+  const estimatedRecipients = getEstimatedRecipientCount();
+  const totalCostTomans = estimatedRecipients * singleRecipientCostTomans;
+  const liveCreditTomans =
+    gatewayConfigData?.liveAccount?.remaindCreditTomans ??
+    (gatewayConfigData?.liveAccount?.remaindCredit !== undefined
+      ? Math.floor(gatewayConfigData.liveAccount.remaindCredit / 10)
+      : 0);
+  const creditAfterSendTomans = liveCreditTomans - totalCostTomans;
 
   const getTargetDescription = () => {
     switch (targetType) {
@@ -294,21 +372,6 @@ export const SmsCenterPage: React.FC = () => {
     });
   };
 
-  const classrooms = Array.isArray(classroomsData)
-    ? classroomsData
-    : Array.isArray(classroomsData?.data)
-    ? classroomsData.data
-    : [];
-  const usersList = Array.isArray(usersData)
-    ? usersData
-    : Array.isArray(usersData?.data)
-    ? usersData.data
-    : [];
-  const logsList = Array.isArray(logsData?.logs) ? logsData.logs : [];
-  const totalLogs = logsData?.total || 0;
-  const templates = Array.isArray(templatesData) ? templatesData : [];
-  const quickTemplates = Array.isArray(quickTemplatesData) ? quickTemplatesData : [];
-
   return (
     <div className="space-y-6 sm:space-y-8 pb-12">
       {/* 1. Header Banner & Identity */}
@@ -343,11 +406,13 @@ export const SmsCenterPage: React.FC = () => {
               <div>
                 <span className="text-[11px] font-bold text-ink-normal/60 dark:text-gray-400 block">مانده اعتبار:</span>
                 <div className="text-sm sm:text-base font-black text-sec dark:text-white font-mono">
-                  {gatewayConfigData?.liveAccount?.remaindCreditTomans !== undefined
+                  {gatewayConfigLoading
+                    ? '...'
+                    : gatewayConfigData?.liveAccount?.remaindCreditTomans !== undefined
                     ? `${toPersianDigits(gatewayConfigData.liveAccount.remaindCreditTomans.toLocaleString())} تومان`
                     : gatewayConfigData?.liveAccount?.remaindCredit !== undefined
-                    ? `${toPersianDigits(gatewayConfigData.liveAccount.remaindCredit.toLocaleString())} ریال`
-                    : '۹۵,۶۸۸ تومان'}
+                    ? `${toPersianDigits(Math.floor(gatewayConfigData.liveAccount.remaindCredit / 10).toLocaleString())} تومان`
+                    : '۰ تومان'}
                 </div>
               </div>
             </div>
@@ -361,7 +426,7 @@ export const SmsCenterPage: React.FC = () => {
               <div className="text-xs">
                 <span className="text-ink-normal/60 dark:text-gray-400 block font-medium">درگاه متصل:</span>
                 <span className="font-black text-sec dark:text-white font-mono uppercase">
-                  {gatewayConfigData?.provider || 'AMOOT SMS'}
+                  {gatewayConfigLoading ? '...' : (gatewayConfigData?.provider || 'AMOOT SMS')}
                 </span>
               </div>
               <div className="h-6 w-px bg-gray-300 dark:bg-gray-700 mx-1" />
@@ -471,6 +536,13 @@ export const SmsCenterPage: React.FC = () => {
               setDirectPhone={setDirectPhone}
               charCount={charCount}
               smsParts={smsParts}
+              unitTariffTomans={unitTariffTomans}
+              singleRecipientCostTomans={singleRecipientCostTomans}
+              totalCostTomans={totalCostTomans}
+              estimatedRecipients={estimatedRecipients}
+              liveCreditTomans={liveCreditTomans}
+              creditAfterSendTomans={creditAfterSendTomans}
+              isConfigLoading={gatewayConfigLoading}
               onSendSms={handleSendManual}
             />
           </div>
@@ -483,6 +555,11 @@ export const SmsCenterPage: React.FC = () => {
               targetDescription={getTargetDescription()}
               smsParts={smsParts}
               charCount={charCount}
+              singleCostTomans={singleRecipientCostTomans}
+              totalCostTomans={totalCostTomans}
+              estimatedRecipients={estimatedRecipients}
+              creditAfterSendTomans={creditAfterSendTomans}
+              isConfigLoading={gatewayConfigLoading}
             />
           </div>
         </div>

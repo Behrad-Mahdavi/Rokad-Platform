@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateDirectChannelDto,
@@ -13,7 +14,10 @@ import {
 
 @Injectable()
 export class ChatService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   // 1. Get or Create 1-on-1 Direct Channel
   async getOrCreateDirectChannel(
@@ -202,6 +206,15 @@ export class ChatService {
     await this.prisma.chatChannel.update({
       where: { id: dto.channelId },
       data: { updatedAt: new Date() },
+    });
+
+    // Emit event for push notifications to offline members
+    this.eventEmitter.emit('chat.message_created', {
+      tenantId,
+      channelId: dto.channelId,
+      senderId,
+      senderName: `${message.sender?.firstName || ''} ${message.sender?.lastName || ''}`.trim() || 'همکار',
+      content: dto.content,
     });
 
     return message;

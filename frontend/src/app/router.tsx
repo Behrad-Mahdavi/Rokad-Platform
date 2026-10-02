@@ -54,6 +54,7 @@ import { ParentFeesPage } from '../modules/student-parent/fees/ParentFeesPage';
 
 // Newly Integrated Modules
 import { SchoolProfilePage } from '../modules/school-admin/profile/SchoolProfilePage';
+import { PasswordVaultPage } from '../modules/school-admin/vault/PasswordVaultPage';
 import { MattersPage } from '../modules/school-admin/matters/MattersPage';
 import { PollsPage } from '../modules/shared/polls/PollsPage';
 import { ParentVisitsPage } from '../modules/student-parent/visits/ParentVisitsPage';
@@ -79,6 +80,7 @@ import { ClubChallengeDetailPage } from '../modules/club/ClubChallengeDetailPage
 import { AdminClubPage } from '../modules/school-admin/club/AdminClubPage';
 import { TeacherClubApprovalsPage } from '../modules/teacher/club/TeacherClubApprovalsPage';
 import { SmsCenterPage } from '../modules/sms/SmsCenterPage';
+import { DashboardRedirect } from './routes/DashboardRedirect';
 
 export const router = createBrowserRouter([
   // 1. Guest / Auth Routes
@@ -96,10 +98,17 @@ export const router = createBrowserRouter([
     ],
   },
 
+  // 1.1 Direct /dashboard route
+  {
+    path: '/dashboard',
+    element: <DashboardRedirect />,
+  },
+
   // 2. Protected App Routes per Persona
   {
     path: '/app',
     children: [
+      { path: 'dashboard', element: <DashboardRedirect /> },
       // 2.1 Persona 1: Super Admin
       {
         path: 'super-admin',
@@ -132,6 +141,7 @@ export const router = createBrowserRouter([
               { path: 'academic', element: <AcademicStructurePage /> },
               { path: 'schedule', element: <ClassSchedulePage /> },
               { path: 'members', element: <MembersPage /> },
+              { path: 'vault', element: <PasswordVaultPage /> },
               { path: 'roles', element: <RoleBuilderPage /> },
               { path: 'profile', element: <SchoolProfilePage /> },
               { path: 'matters', element: <MattersPage /> },
@@ -233,7 +243,7 @@ export const router = createBrowserRouter([
               { path: 'chat', element: <Navigate to="/app" replace /> },
               { path: 'messages', element: <MessagesPage /> },
               {
-                element: <RoleGuard allowedRoles={['SUPER_ADMIN', 'SCHOOL_ADMIN']} />,
+                element: <RoleGuard allowedRoles={['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF']} />,
                 children: [
                   { path: 'sms', element: <SmsCenterPage /> },
                 ],

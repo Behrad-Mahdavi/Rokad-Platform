@@ -59,7 +59,7 @@ export const NoticeboardPage: React.FC = () => {
           isPinned: true,
           audience: 'ALL',
           createdAt: new Date().toISOString(),
-          author: { firstName: 'مدیریت', lastName: 'مجتمع آموزشی' },
+          author: { firstName: 'راهبری', lastName: 'مجتمع آموزشی' },
         },
         {
           id: 'note-2',
@@ -247,7 +247,7 @@ export const NoticeboardPage: React.FC = () => {
 
               <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
                 <span>
-                  صادرکننده: {notice.author ? `${notice.author.firstName} ${notice.author.lastName}` : 'دفتر مدیریت'}
+                  صادرکننده: {notice.author ? `${notice.author.firstName} ${notice.author.lastName}` : 'دفتر راهبری'}
                 </span>
                 <span className="text-primary font-bold">پلتفرم مدارس رکاد</span>
               </div>

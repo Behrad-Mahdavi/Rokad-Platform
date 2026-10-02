@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../lib/auth/auth-store';
 import { useTenantStore } from '../../lib/auth/tenant-store';
 import { apiClient } from '../../lib/api/client';
-import { formatToJalali, toPersianDigits } from '../../lib/utils';
+import { formatToJalali, toPersianDigits, cleanUserFullName } from '../../lib/utils';
 import { HomeBannerSlider } from './components/HomeBannerSlider';
 import { BannerSettingsModal } from './components/BannerSettingsModal';
 import {
@@ -32,7 +32,13 @@ import {
   MessageSquare,
   Briefcase,
   Award,
+  KeyRound,
+  ShieldCheck,
+  School,
+  CreditCard,
+  Smartphone,
 } from 'lucide-react';
+import { CoinStackIcon } from '../../components/icons/CustomNavIcons';
 
 interface SuperAppCard {
   id: string;
@@ -42,6 +48,12 @@ interface SuperAppCard {
   iconBg: string;
   iconColor: string;
   badge?: string;
+}
+
+interface CardSection {
+  id: string;
+  title: string;
+  cards: SuperAppCard[];
 }
 
 export const SuperAppHomePage: React.FC = () => {
@@ -128,7 +140,7 @@ export const SuperAppHomePage: React.FC = () => {
       case 'SUPER_ADMIN':
         return 'سوپرادمین کلان';
       case 'SCHOOL_ADMIN':
-        return 'مدیریت';
+        return 'راهبر';
       case 'STAFF':
         return 'کادر اجرایی';
       case 'TEACHER':
@@ -163,433 +175,749 @@ export const SuperAppHomePage: React.FC = () => {
     }
   };
 
-  const getAcademicCards = (): SuperAppCard[] => {
-    const rawCards = (() => {
-      switch (user?.role) {
-      case 'TEACHER':
-        return [
-          {
-            id: 'dashboard',
-            title: 'داشبورد',
-            href: '/app/teacher/dashboard',
-            icon: LayoutDashboard,
-            iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-            iconColor: 'text-primary-dark dark:text-primary',
-          },
-          {
-            id: 'gradebook',
-            title: 'دفتر کلاسی',
-            href: '/app/teacher/gradebook',
-            icon: BarChart3,
-            iconBg: 'bg-male-light dark:bg-[#182346]',
-            iconColor: 'text-sec dark:text-[#8194EE]',
-          },
-          {
-            id: 'homework',
-            title: 'تکالیف',
-            href: '/app/teacher/homework',
-            icon: FileCheck,
-            iconBg: 'bg-club-light dark:bg-[#2A173E]',
-            iconColor: 'text-club dark:text-[#C084FC]',
-          },
-          {
-            id: 'exams',
-            title: 'آزمون‌ها',
-            href: '/app/teacher/exams',
-            icon: HelpCircle,
-            iconBg: 'bg-college-light dark:bg-[#38260D]',
-            iconColor: 'text-third dark:text-[#FBBF24]',
-          },
-          {
-            id: 'question-bank',
-            title: 'بانک سوالات',
-            href: '/app/teacher/question-bank',
-            icon: FileQuestion,
-            iconBg: 'bg-male-light dark:bg-[#182346]',
-            iconColor: 'text-sec dark:text-[#8194EE]',
-          },
-          {
-            id: 'lessons',
-            title: 'طرح درس',
-            href: '/app/teacher/lessons',
-            icon: BookOpen,
-            iconBg: 'bg-female-light dark:bg-[#3D1426]',
-            iconColor: 'text-girl dark:text-[#F472B6]',
-          },
-          {
-            id: 'schedule',
-            title: 'برنامه کلاسی',
-            href: '/app/teacher/schedule',
-            icon: CalendarDays,
-            iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-            iconColor: 'text-primary-dark dark:text-primary',
-          },
-          {
-            id: 'matters',
-            title: 'انضباطی/تشویقی',
-            href: '/app/teacher/matters',
-            icon: Scale,
-            iconBg: 'bg-college-light dark:bg-[#38260D]',
-            iconColor: 'text-third dark:text-[#FBBF24]',
-          },
-          {
-            id: 'visits',
-            title: 'جلسات اولیا',
-            href: '/app/teacher/visits',
-            icon: Users,
-            iconBg: 'bg-club-light dark:bg-[#2A173E]',
-            iconColor: 'text-club dark:text-[#C084FC]',
-          },
-          {
-            id: 'payroll',
-            title: 'فیش حقوقی',
-            href: '/app/teacher/payroll',
-            icon: Wallet,
-            iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-            iconColor: 'text-primary-dark dark:text-primary',
-          },
-          {
-            id: 'club-approvals',
-            title: 'باشگاه کسب‌وکار',
-            href: '/app/teacher/club-approvals',
-            icon: Award,
-            iconBg: 'bg-amber-100 dark:bg-amber-950/60',
-            iconColor: 'text-amber-600 dark:text-amber-400',
-          },
-        ];
-
+  const getCardSections = (): CardSection[] => {
+    switch (user?.role) {
       case 'SCHOOL_ADMIN':
       case 'STAFF':
         return [
           {
-            id: 'dashboard',
-            title: 'داشبورد',
-            href: '/app/admin/dashboard',
-            icon: LayoutDashboard,
-            iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-            iconColor: 'text-primary-dark dark:text-primary',
+            id: 'admin-academic',
+            title: 'آموزش و پایش کلاس‌ها',
+            cards: [
+              {
+                id: 'admin-gradebook',
+                title: 'ارزشیابی و ثبت نمرات',
+                href: '/app/admin/gradebook',
+                icon: BarChart3,
+                iconBg: 'bg-male-light dark:bg-[#182346]',
+                iconColor: 'text-sec dark:text-[#8194EE]',
+              },
+              {
+                id: 'admin-attendance',
+                title: 'دفتر کلاسی و حضور غیاب',
+                href: '/app/admin/attendance',
+                icon: UserCheck,
+                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+                iconColor: 'text-primary-dark dark:text-primary',
+              },
+              {
+                id: 'admin-homework',
+                title: 'تکالیف و بازخورد',
+                href: '/app/admin/homework',
+                icon: FileCheck,
+                iconBg: 'bg-club-light dark:bg-[#2A173E]',
+                iconColor: 'text-club dark:text-[#C084FC]',
+                badge: homeworkCount > 0 ? toPersianDigits(homeworkCount) : undefined,
+              },
+              {
+                id: 'admin-exams',
+                title: 'آزمون‌های آنلاین و کارنامه',
+                href: '/app/admin/exams',
+                icon: HelpCircle,
+                iconBg: 'bg-college-light dark:bg-[#38260D]',
+                iconColor: 'text-third dark:text-[#FBBF24]',
+                badge: examsCount > 0 ? toPersianDigits(examsCount) : undefined,
+              },
+              {
+                id: 'admin-question-bank',
+                title: 'بانک سوالات متمرکز',
+                href: '/app/admin/question-bank',
+                icon: FileQuestion,
+                iconBg: 'bg-male-light dark:bg-[#182346]',
+                iconColor: 'text-sec dark:text-[#8194EE]',
+              },
+              {
+                id: 'admin-lessons',
+                title: 'طرح درس و محتوا',
+                href: '/app/admin/lessons',
+                icon: BookOpen,
+                iconBg: 'bg-female-light dark:bg-[#3D1426]',
+                iconColor: 'text-girl dark:text-[#F472B6]',
+              },
+            ],
           },
           {
-            id: 'students',
-            title: 'دانش‌آموزان',
-            href: '/app/admin/members?tab=students',
-            icon: GraduationCap,
-            iconBg: 'bg-male-light dark:bg-[#182346]',
-            iconColor: 'text-sec dark:text-[#8194EE]',
+            id: 'admin-operations',
+            title: 'راهبری هنرستان',
+            cards: [
+              {
+                id: 'admin-academic-struct',
+                title: 'ساختار سال و کلاس‌ها',
+                href: '/app/admin/academic',
+                icon: BookOpen,
+                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+                iconColor: 'text-primary-dark dark:text-primary',
+              },
+              {
+                id: 'admin-schedule',
+                title: 'برنامه هفتگی کلاس‌ها',
+                href: '/app/admin/schedule',
+                icon: CalendarDays,
+                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+                iconColor: 'text-primary-dark dark:text-primary',
+              },
+              {
+                id: 'admin-students',
+                title: 'دانش‌آموزان',
+                href: '/app/admin/members?tab=students',
+                icon: GraduationCap,
+                iconBg: 'bg-male-light dark:bg-[#182346]',
+                iconColor: 'text-sec dark:text-[#8194EE]',
+              },
+              {
+                id: 'admin-staff',
+                title: 'کادر آموزشی',
+                href: '/app/admin/members?tab=staff',
+                icon: Briefcase,
+                iconBg: 'bg-club-light dark:bg-[#2A173E]',
+                iconColor: 'text-club dark:text-[#C084FC]',
+              },
+              {
+                id: 'admin-vault',
+                title: 'گاوصندوق رمز عبور',
+                href: '/app/admin/vault',
+                icon: KeyRound,
+                iconBg: 'bg-amber-100 dark:bg-amber-950/60',
+                iconColor: 'text-amber-600 dark:text-amber-400',
+              },
+              {
+                id: 'admin-roles',
+                title: 'سازنده نقش‌ها و دسترسی‌ها',
+                href: '/app/admin/roles',
+                icon: ShieldCheck,
+                iconBg: 'bg-male-light dark:bg-[#182346]',
+                iconColor: 'text-sec dark:text-[#8194EE]',
+              },
+              {
+                id: 'admin-matters',
+                title: 'انضباطی/تشویقی',
+                href: '/app/admin/matters',
+                icon: Scale,
+                iconBg: 'bg-college-light dark:bg-[#38260D]',
+                iconColor: 'text-third dark:text-[#FBBF24]',
+              },
+              {
+                id: 'admin-profile',
+                title: 'پروفایل رسمی مدرسه',
+                href: '/app/admin/profile',
+                icon: School,
+                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+                iconColor: 'text-primary-dark dark:text-primary',
+              },
+            ],
           },
           {
-            id: 'staff',
-            title: 'کادر آموزشی',
-            href: '/app/admin/members?tab=staff',
-            icon: Briefcase,
-            iconBg: 'bg-club-light dark:bg-[#2A173E]',
-            iconColor: 'text-club dark:text-[#C084FC]',
+            id: 'admin-finance',
+            title: 'امور مالی و اداری',
+            cards: [
+              {
+                id: 'admin-fees',
+                title: 'شهریه و اقساط',
+                href: '/app/admin/finance/fees',
+                icon: Receipt,
+                iconBg: 'bg-club-light dark:bg-[#2A173E]',
+                iconColor: 'text-club dark:text-[#C084FC]',
+              },
+              {
+                id: 'admin-payroll',
+                title: 'حقوق و دستمزد',
+                href: '/app/admin/finance/payroll',
+                icon: Wallet,
+                iconBg: 'bg-male-light dark:bg-[#182346]',
+                iconColor: 'text-sec dark:text-[#8194EE]',
+              },
+              {
+                id: 'admin-reports',
+                title: 'گزارش‌های جامع',
+                href: '/app/admin/reports',
+                icon: BarChart3,
+                iconBg: 'bg-college-light dark:bg-[#38260D]',
+                iconColor: 'text-third dark:text-[#FBBF24]',
+              },
+            ],
           },
           {
-            id: 'academic',
-            title: 'کلاس‌ها و رشته‌ها',
-            href: '/app/admin/academic',
-            icon: BookOpen,
-            iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-            iconColor: 'text-primary-dark dark:text-primary',
-          },
-          {
-            id: 'schedule',
-            title: 'برنامه هفتگی',
-            href: '/app/admin/schedule',
-            icon: CalendarDays,
-            iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-            iconColor: 'text-primary-dark dark:text-primary',
-          },
-          {
-            id: 'matters',
-            title: 'انضباطی/تشویقی',
-            href: '/app/admin/matters',
-            icon: Scale,
-            iconBg: 'bg-college-light dark:bg-[#38260D]',
-            iconColor: 'text-third dark:text-[#FBBF24]',
-          },
-          {
-            id: 'fees',
-            title: 'شهریه و مالی',
-            href: '/app/admin/finance/fees',
-            icon: Receipt,
-            iconBg: 'bg-club-light dark:bg-[#2A173E]',
-            iconColor: 'text-club dark:text-[#C084FC]',
-          },
-          {
-            id: 'payroll',
-            title: 'حقوق و دستمزد',
-            href: '/app/admin/finance/payroll',
-            icon: Wallet,
-            iconBg: 'bg-male-light dark:bg-[#182346]',
-            iconColor: 'text-sec dark:text-[#8194EE]',
-          },
-          {
-            id: 'reports',
-            title: 'گزارشات',
-            href: '/app/admin/reports',
-            icon: BarChart3,
-            iconBg: 'bg-college-light dark:bg-[#38260D]',
-            iconColor: 'text-third dark:text-[#FBBF24]',
-          },
-          {
-            id: 'profile',
-            title: 'پروفایل آموزشگاه',
-            href: '/app/admin/profile',
-            icon: Building2,
-            iconBg: 'bg-male-light dark:bg-[#182346]',
-            iconColor: 'text-sec dark:text-[#8194EE]',
-          },
-          {
-            id: 'club-admin',
-            title: 'باشگاه کسب‌وکار',
-            href: '/app/admin/club',
-            icon: Award,
-            iconBg: 'bg-amber-100 dark:bg-amber-950/60',
-            iconColor: 'text-amber-600 dark:text-amber-400',
+            id: 'admin-ecosystem',
+            title: 'ارتباطات و اکوسیستم',
+            cards: [
+              {
+                id: 'admin-sms',
+                title: 'سامانه پیامک هوشمند',
+                href: '/app/sms',
+                icon: Smartphone,
+                iconBg: 'bg-emerald-50 dark:bg-[#132A20]',
+                iconColor: 'text-emerald-600 dark:text-emerald-400',
+              },
+              {
+                id: 'admin-messages',
+                title: 'پیام‌ها و مکاتبات',
+                href: '/app/messages',
+                icon: MessageSquare,
+                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+                iconColor: 'text-primary-dark dark:text-primary',
+                badge: unreadMessagesCount > 0 ? toPersianDigits(unreadMessagesCount) : undefined,
+              },
+              {
+                id: 'admin-calendar',
+                title: 'تقویم آموزشی',
+                href: '/app/calendar',
+                icon: CalendarDays,
+                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+                iconColor: 'text-primary-dark dark:text-primary',
+              },
+              {
+                id: 'admin-events',
+                title: 'رودمپ رویدادها',
+                href: '/app/events',
+                icon: CalendarRange,
+                iconBg: 'bg-college-light dark:bg-[#38260D]',
+                iconColor: 'text-third dark:text-[#FBBF24]',
+                badge: eventsCount > 0 ? toPersianDigits(eventsCount) : undefined,
+              },
+              {
+                id: 'admin-media',
+                title: 'رسانه هنرستان',
+                href: '/app/media',
+                icon: Sparkles,
+                iconBg: 'bg-female-light dark:bg-[#3D1426]',
+                iconColor: 'text-girl dark:text-[#F472B6]',
+              },
+              {
+                id: 'admin-coaching',
+                title: 'کوچینگ و مربی‌گری',
+                href: '/app/coaching',
+                icon: Compass,
+                iconBg: 'bg-club-light dark:bg-[#2A173E]',
+                iconColor: 'text-club dark:text-[#C084FC]',
+              },
+              {
+                id: 'admin-polls',
+                title: 'پرس‌کاد (نظرسنجی و آراء)',
+                href: '/app/polls',
+                icon: Vote,
+                iconBg: 'bg-college-light dark:bg-[#38260D]',
+                iconColor: 'text-third dark:text-[#FBBF24]',
+              },
+              {
+                id: 'admin-club',
+                title: 'باشگاه کسب‌وکار',
+                href: '/app/admin/club',
+                icon: Award,
+                iconBg: 'bg-amber-100 dark:bg-amber-950/60',
+                iconColor: 'text-amber-600 dark:text-amber-400',
+              },
+              {
+                id: 'admin-ka',
+                title: 'پلتفرم کا',
+                href: '/app/ka-platform',
+                icon: CoinStackIcon,
+                iconBg: 'bg-amber-50 dark:bg-[#2A2010]',
+                iconColor: 'text-amber-500',
+              },
+            ],
           },
         ];
 
-      case 'SUPER_ADMIN':
+      case 'TEACHER':
         return [
           {
-            id: 'dashboard',
-            title: 'داشبورد',
-            href: '/app/super-admin/dashboard',
-            icon: LayoutDashboard,
-            iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-            iconColor: 'text-primary-dark dark:text-primary',
+            id: 'teacher-classes',
+            title: 'آموزش و کلاس‌ها',
+            cards: [
+              {
+                id: 'teacher-attendance',
+                title: 'دفتر کلاسی و حضور غیاب',
+                href: '/app/teacher/attendance',
+                icon: UserCheck,
+                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+                iconColor: 'text-primary-dark dark:text-primary',
+              },
+              {
+                id: 'teacher-gradebook',
+                title: 'ارزشیابی و ثبت نمرات',
+                href: '/app/teacher/gradebook',
+                icon: BookOpen,
+                iconBg: 'bg-male-light dark:bg-[#182346]',
+                iconColor: 'text-sec dark:text-[#8194EE]',
+              },
+              {
+                id: 'teacher-homework',
+                title: 'تکالیف و بازخورد',
+                href: '/app/teacher/homework',
+                icon: FileCheck,
+                iconBg: 'bg-club-light dark:bg-[#2A173E]',
+                iconColor: 'text-club dark:text-[#C084FC]',
+              },
+              {
+                id: 'teacher-exams',
+                title: 'آزمون‌های آنلاین',
+                href: '/app/teacher/exams',
+                icon: HelpCircle,
+                iconBg: 'bg-college-light dark:bg-[#38260D]',
+                iconColor: 'text-third dark:text-[#FBBF24]',
+              },
+              {
+                id: 'teacher-question-bank',
+                title: 'بانک سوالات متمرکز',
+                href: '/app/teacher/question-bank',
+                icon: FileQuestion,
+                iconBg: 'bg-male-light dark:bg-[#182346]',
+                iconColor: 'text-sec dark:text-[#8194EE]',
+              },
+              {
+                id: 'teacher-lessons',
+                title: 'طرح درس و محتوا',
+                href: '/app/teacher/lessons',
+                icon: BookOpen,
+                iconBg: 'bg-female-light dark:bg-[#3D1426]',
+                iconColor: 'text-girl dark:text-[#F472B6]',
+              },
+            ],
           },
           {
-            id: 'tenants',
-            title: 'مدیریت مدارس',
-            href: '/app/super-admin/tenants',
-            icon: Building2,
-            iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-            iconColor: 'text-primary-dark dark:text-primary',
+            id: 'teacher-desk',
+            title: 'برنامه و امور مربی',
+            cards: [
+              {
+                id: 'teacher-schedule',
+                title: 'برنامه هفتگی کلاس‌ها',
+                href: '/app/teacher/schedule',
+                icon: CalendarDays,
+                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+                iconColor: 'text-primary-dark dark:text-primary',
+              },
+              {
+                id: 'teacher-matters',
+                title: 'انضباطی/تشویقی',
+                href: '/app/teacher/matters',
+                icon: Scale,
+                iconBg: 'bg-college-light dark:bg-[#38260D]',
+                iconColor: 'text-third dark:text-[#FBBF24]',
+              },
+              {
+                id: 'teacher-visits',
+                title: 'ملاقات با اولیاء',
+                href: '/app/teacher/visits',
+                icon: Users,
+                iconBg: 'bg-club-light dark:bg-[#2A173E]',
+                iconColor: 'text-club dark:text-[#C084FC]',
+              },
+              {
+                id: 'teacher-payroll',
+                title: 'فیش‌های حقوقی من',
+                href: '/app/teacher/payroll',
+                icon: Wallet,
+                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+                iconColor: 'text-primary-dark dark:text-primary',
+              },
+              {
+                id: 'teacher-club-approvals',
+                title: 'تأییدیه‌های باشگاه رُکاد',
+                href: '/app/teacher/club-approvals',
+                icon: Award,
+                iconBg: 'bg-amber-100 dark:bg-amber-950/60',
+                iconColor: 'text-amber-600 dark:text-amber-400',
+              },
+            ],
           },
           {
-            id: 'subscriptions',
-            title: 'اشتراک‌ها',
-            href: '/app/super-admin/subscriptions',
-            icon: Receipt,
-            iconBg: 'bg-club-light dark:bg-[#2A173E]',
-            iconColor: 'text-club dark:text-[#C084FC]',
-          },
-          {
-            id: 'role-templates',
-            title: 'قالب‌های نقش',
-            href: '/app/super-admin/role-templates',
-            icon: Sliders,
-            iconBg: 'bg-college-light dark:bg-[#38260D]',
-            iconColor: 'text-third dark:text-[#FBBF24]',
-          },
-          {
-            id: 'ops',
-            title: 'عملیات سیستم',
-            href: '/app/super-admin/ops',
-            icon: Activity,
-            iconBg: 'bg-female-light dark:bg-[#3D1426]',
-            iconColor: 'text-girl dark:text-[#F472B6]',
+            id: 'teacher-ecosystem',
+            title: 'ارتباطات و اکوسیستم',
+            cards: [
+              {
+                id: 'teacher-messages',
+                title: 'پیام‌ها و مکاتبات',
+                href: '/app/messages',
+                icon: MessageSquare,
+                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+                iconColor: 'text-primary-dark dark:text-primary',
+                badge: unreadMessagesCount > 0 ? toPersianDigits(unreadMessagesCount) : undefined,
+              },
+              {
+                id: 'teacher-calendar',
+                title: 'تقویم آموزشی',
+                href: '/app/calendar',
+                icon: CalendarDays,
+                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+                iconColor: 'text-primary-dark dark:text-primary',
+              },
+              {
+                id: 'teacher-events',
+                title: 'رودمپ رویدادها',
+                href: '/app/events',
+                icon: CalendarRange,
+                iconBg: 'bg-college-light dark:bg-[#38260D]',
+                iconColor: 'text-third dark:text-[#FBBF24]',
+                badge: eventsCount > 0 ? toPersianDigits(eventsCount) : undefined,
+              },
+              {
+                id: 'teacher-media',
+                title: 'رسانه هنرستان',
+                href: '/app/media',
+                icon: Sparkles,
+                iconBg: 'bg-female-light dark:bg-[#3D1426]',
+                iconColor: 'text-girl dark:text-[#F472B6]',
+              },
+              {
+                id: 'teacher-coaching',
+                title: 'کوچینگ و مربی‌گری',
+                href: '/app/coaching',
+                icon: Compass,
+                iconBg: 'bg-club-light dark:bg-[#2A173E]',
+                iconColor: 'text-club dark:text-[#C084FC]',
+              },
+              {
+                id: 'teacher-polls',
+                title: 'پرس‌کاد (نظرسنجی و آراء)',
+                href: '/app/polls',
+                icon: Vote,
+                iconBg: 'bg-college-light dark:bg-[#38260D]',
+                iconColor: 'text-third dark:text-[#FBBF24]',
+              },
+              {
+                id: 'teacher-club',
+                title: 'باشگاه کارآفرینی رُکاد',
+                href: '/app/club',
+                icon: Award,
+                iconBg: 'bg-amber-100 dark:bg-amber-950/60',
+                iconColor: 'text-amber-600 dark:text-amber-400',
+              },
+              {
+                id: 'teacher-ka',
+                title: 'پلتفرم کا',
+                href: '/app/ka-platform',
+                icon: CoinStackIcon,
+                iconBg: 'bg-amber-50 dark:bg-[#2A2010]',
+                iconColor: 'text-amber-500',
+              },
+            ],
           },
         ];
 
       case 'PARENT':
         return [
           {
-            id: 'dashboard',
-            title: 'داشبورد',
-            href: '/app/parent/dashboard',
-            icon: LayoutDashboard,
-            iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-            iconColor: 'text-primary-dark dark:text-primary',
+            id: 'parent-student',
+            title: 'امور فرزند و مدرسه',
+            cards: [
+              {
+                id: 'parent-schedule',
+                title: 'برنامه هفتگی فرزند',
+                href: '/app/parent/schedule',
+                icon: CalendarDays,
+                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+                iconColor: 'text-primary-dark dark:text-primary',
+              },
+              {
+                id: 'parent-reports',
+                title: 'کارنامه و نمرات',
+                href: '/app/parent/reports',
+                icon: BarChart3,
+                iconBg: 'bg-college-light dark:bg-[#38260D]',
+                iconColor: 'text-third dark:text-[#FBBF24]',
+              },
+              {
+                id: 'parent-fees',
+                title: 'پرداخت شهریه و اقساط',
+                href: '/app/parent/fees',
+                icon: CreditCard,
+                iconBg: 'bg-club-light dark:bg-[#2A173E]',
+                iconColor: 'text-club dark:text-[#C084FC]',
+              },
+              {
+                id: 'parent-matters',
+                title: 'انضباطی/تشویقی',
+                href: '/app/parent/matters',
+                icon: Scale,
+                iconBg: 'bg-college-light dark:bg-[#38260D]',
+                iconColor: 'text-third dark:text-[#FBBF24]',
+              },
+              {
+                id: 'parent-visits',
+                title: 'ملاقات با کادر آموزشی',
+                href: '/app/parent/visits',
+                icon: Users,
+                iconBg: 'bg-club-light dark:bg-[#2A173E]',
+                iconColor: 'text-club dark:text-[#C084FC]',
+              },
+            ],
           },
           {
-            id: 'schedule',
-            title: 'برنامه هفتگی',
-            href: '/app/parent/schedule',
-            icon: CalendarDays,
-            iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-            iconColor: 'text-primary-dark dark:text-primary',
-          },
-          {
-            id: 'fees',
-            title: 'شهریه و اقساط',
-            href: '/app/parent/fees',
-            icon: Receipt,
-            iconBg: 'bg-club-light dark:bg-[#2A173E]',
-            iconColor: 'text-club dark:text-[#C084FC]',
-          },
-          {
-            id: 'reports',
-            title: 'کارنامه و نمرات',
-            href: '/app/parent/reports',
-            icon: GraduationCap,
-            iconBg: 'bg-college-light dark:bg-[#38260D]',
-            iconColor: 'text-third dark:text-[#FBBF24]',
-          },
-          {
-            id: 'matters',
-            title: 'انضباطی/تشویقی',
-            href: '/app/parent/matters',
-            icon: Scale,
-            iconBg: 'bg-college-light dark:bg-[#38260D]',
-            iconColor: 'text-third dark:text-[#FBBF24]',
-          },
-          {
-            id: 'visits',
-            title: 'جلسات با مربیان',
-            href: '/app/parent/visits',
-            icon: Users,
-            iconBg: 'bg-club-light dark:bg-[#2A173E]',
-            iconColor: 'text-club dark:text-[#C084FC]',
+            id: 'parent-ecosystem',
+            title: 'ارتباطات و اکوسیستم',
+            cards: [
+              {
+                id: 'parent-messages',
+                title: 'پیام‌ها و مکاتبات',
+                href: '/app/messages',
+                icon: MessageSquare,
+                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+                iconColor: 'text-primary-dark dark:text-primary',
+                badge: unreadMessagesCount > 0 ? toPersianDigits(unreadMessagesCount) : undefined,
+              },
+              {
+                id: 'parent-calendar',
+                title: 'تقویم آموزشی',
+                href: '/app/calendar',
+                icon: CalendarDays,
+                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+                iconColor: 'text-primary-dark dark:text-primary',
+              },
+              {
+                id: 'parent-events',
+                title: 'رودمپ رویدادها',
+                href: '/app/events',
+                icon: CalendarRange,
+                iconBg: 'bg-college-light dark:bg-[#38260D]',
+                iconColor: 'text-third dark:text-[#FBBF24]',
+                badge: eventsCount > 0 ? toPersianDigits(eventsCount) : undefined,
+              },
+              {
+                id: 'parent-media',
+                title: 'رسانه هنرستان',
+                href: '/app/media',
+                icon: Sparkles,
+                iconBg: 'bg-female-light dark:bg-[#3D1426]',
+                iconColor: 'text-girl dark:text-[#F472B6]',
+              },
+              {
+                id: 'parent-coaching',
+                title: 'کوچینگ و مشاوره',
+                href: '/app/coaching',
+                icon: Compass,
+                iconBg: 'bg-club-light dark:bg-[#2A173E]',
+                iconColor: 'text-club dark:text-[#C084FC]',
+              },
+              {
+                id: 'parent-polls',
+                title: 'پرس‌کاد (نظرسنجی و آراء)',
+                href: '/app/polls',
+                icon: Vote,
+                iconBg: 'bg-college-light dark:bg-[#38260D]',
+                iconColor: 'text-third dark:text-[#FBBF24]',
+              },
+              {
+                id: 'parent-club',
+                title: 'باشگاه کارآفرینی رُکاد',
+                href: '/app/club',
+                icon: Award,
+                iconBg: 'bg-amber-100 dark:bg-amber-950/60',
+                iconColor: 'text-amber-600 dark:text-amber-400',
+              },
+              {
+                id: 'parent-ka',
+                title: 'پلتفرم کا',
+                href: '/app/ka-platform',
+                icon: CoinStackIcon,
+                iconBg: 'bg-amber-50 dark:bg-[#2A2010]',
+                iconColor: 'text-amber-500',
+              },
+            ],
           },
         ];
 
       case 'COACH':
         return [
           {
-            id: 'coaching-desk',
-            title: 'کوچینگ',
-            href: '/app/coaching',
-            icon: Compass,
-            iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-            iconColor: 'text-primary-dark dark:text-primary',
+            id: 'coach-desk',
+            title: 'میز کار هدایت و مربی‌گری',
+            cards: [
+              {
+                id: 'coach-coaching',
+                title: 'کوچینگ و مربی‌گری',
+                href: '/app/coaching',
+                icon: Compass,
+                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+                iconColor: 'text-primary-dark dark:text-primary',
+              },
+              {
+                id: 'coach-calendar',
+                title: 'تقویم رویدادها و جلسات',
+                href: '/app/calendar',
+                icon: CalendarDays,
+                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+                iconColor: 'text-primary-dark dark:text-primary',
+              },
+              {
+                id: 'coach-events',
+                title: 'رودمپ رویدادها',
+                href: '/app/events',
+                icon: CalendarRange,
+                iconBg: 'bg-college-light dark:bg-[#38260D]',
+                iconColor: 'text-third dark:text-[#FBBF24]',
+                badge: eventsCount > 0 ? toPersianDigits(eventsCount) : undefined,
+              },
+            ],
           },
           {
-            id: 'roadmap-events',
-            title: 'رویدادها',
-            href: '/app/events',
-            icon: CalendarRange,
-            iconBg: 'bg-college-light dark:bg-[#38260D]',
-            iconColor: 'text-third dark:text-[#FBBF24]',
-          },
-          {
-            id: 'messages',
-            title: 'پیام‌ها و مکاتبات',
-            href: '/app/messages',
-            icon: MessageSquare,
-            iconBg: 'bg-club-light dark:bg-[#2A173E]',
-            iconColor: 'text-club dark:text-[#C084FC]',
-            badge: unreadMessagesCount > 0 ? toPersianDigits(unreadMessagesCount) : undefined,
-          },
-          {
-            id: 'polls',
-            title: 'نظرسنجی و آراء',
-            href: '/app/polls',
-            icon: Vote,
-            iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-            iconColor: 'text-primary-dark dark:text-primary',
+            id: 'coach-ecosystem',
+            title: 'ارتباطات و اکوسیستم',
+            cards: [
+              {
+                id: 'coach-messages',
+                title: 'پیام‌ها و مکاتبات',
+                href: '/app/messages',
+                icon: MessageSquare,
+                iconBg: 'bg-club-light dark:bg-[#2A173E]',
+                iconColor: 'text-club dark:text-[#C084FC]',
+                badge: unreadMessagesCount > 0 ? toPersianDigits(unreadMessagesCount) : undefined,
+              },
+              {
+                id: 'coach-media',
+                title: 'رسانه هنرستان',
+                href: '/app/media',
+                icon: Sparkles,
+                iconBg: 'bg-female-light dark:bg-[#3D1426]',
+                iconColor: 'text-girl dark:text-[#F472B6]',
+              },
+              {
+                id: 'coach-polls',
+                title: 'پرس‌کاد (نظرسنجی و آراء)',
+                href: '/app/polls',
+                icon: Vote,
+                iconBg: 'bg-college-light dark:bg-[#38260D]',
+                iconColor: 'text-third dark:text-[#FBBF24]',
+              },
+              {
+                id: 'coach-club',
+                title: 'باشگاه کارآفرینی رُکاد',
+                href: '/app/club',
+                icon: Award,
+                iconBg: 'bg-amber-100 dark:bg-amber-950/60',
+                iconColor: 'text-amber-600 dark:text-amber-400',
+              },
+              {
+                id: 'coach-ka',
+                title: 'پلتفرم کا',
+                href: '/app/ka-platform',
+                icon: CoinStackIcon,
+                iconBg: 'bg-amber-50 dark:bg-[#2A2010]',
+                iconColor: 'text-amber-500',
+              },
+            ],
           },
         ];
 
-      case 'STUDENT':
-      default:
+      case 'SUPER_ADMIN':
         return [
           {
-            id: 'dashboard',
-            title: 'داشبورد',
-            href: '/app/student/dashboard',
-            icon: LayoutDashboard,
-            iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-            iconColor: 'text-primary-dark dark:text-primary',
+            id: 'super-command',
+            title: 'مرکز فرماندهی SaaS',
+            cards: [
+              {
+                id: 'super-tenants',
+                title: 'مدیریت شعب و تننت‌ها',
+                href: '/app/super-admin/tenants',
+                icon: Building2,
+                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+                iconColor: 'text-primary-dark dark:text-primary',
+              },
+              {
+                id: 'super-subs',
+                title: 'اشتراک‌ها و سهمیه‌ها',
+                href: '/app/super-admin/subscriptions',
+                icon: Receipt,
+                iconBg: 'bg-club-light dark:bg-[#2A173E]',
+                iconColor: 'text-club dark:text-[#C084FC]',
+              },
+              {
+                id: 'super-roles',
+                title: 'قالب‌های نقش پویا',
+                href: '/app/super-admin/role-templates',
+                icon: Sliders,
+                iconBg: 'bg-college-light dark:bg-[#38260D]',
+                iconColor: 'text-third dark:text-[#FBBF24]',
+              },
+              {
+                id: 'super-ops',
+                title: 'عملیات و وضعیت سامانه',
+                href: '/app/super-admin/ops',
+                icon: Activity,
+                iconBg: 'bg-female-light dark:bg-[#3D1426]',
+                iconColor: 'text-girl dark:text-[#F472B6]',
+              },
+              {
+                id: 'super-club',
+                title: 'مدیریت باشگاه کسب‌وکار',
+                href: '/app/admin/club',
+                icon: Award,
+                iconBg: 'bg-amber-100 dark:bg-amber-950/60',
+                iconColor: 'text-amber-600 dark:text-amber-400',
+              },
+            ],
           },
           {
-            id: 'homework',
-            title: 'تکالیف',
-            href: '/app/student/homework',
-            icon: FileCheck,
-            iconBg: 'bg-club-light dark:bg-[#2A173E]',
-            iconColor: 'text-club dark:text-[#C084FC]',
-            badge: homeworkCount > 0 ? toPersianDigits(homeworkCount) : undefined,
+            id: 'super-ecosystem',
+            title: 'ارتباطات و اکوسیستم',
+            cards: [
+              {
+                id: 'super-sms',
+                title: 'سامانه پیامک هوشمند',
+                href: '/app/sms',
+                icon: Smartphone,
+                iconBg: 'bg-emerald-50 dark:bg-[#132A20]',
+                iconColor: 'text-emerald-600 dark:text-emerald-400',
+              },
+              {
+                id: 'super-messages',
+                title: 'پیام‌ها و مکاتبات',
+                href: '/app/messages',
+                icon: MessageSquare,
+                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+                iconColor: 'text-primary-dark dark:text-primary',
+                badge: unreadMessagesCount > 0 ? toPersianDigits(unreadMessagesCount) : undefined,
+              },
+              {
+                id: 'super-calendar',
+                title: 'تقویم آموزشی',
+                href: '/app/calendar',
+                icon: CalendarDays,
+                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+                iconColor: 'text-primary-dark dark:text-primary',
+              },
+              {
+                id: 'super-events',
+                title: 'رودمپ رویدادها',
+                href: '/app/events',
+                icon: CalendarRange,
+                iconBg: 'bg-college-light dark:bg-[#38260D]',
+                iconColor: 'text-third dark:text-[#FBBF24]',
+                badge: eventsCount > 0 ? toPersianDigits(eventsCount) : undefined,
+              },
+              {
+                id: 'super-media',
+                title: 'رسانه هنرستان',
+                href: '/app/media',
+                icon: Sparkles,
+                iconBg: 'bg-female-light dark:bg-[#3D1426]',
+                iconColor: 'text-girl dark:text-[#F472B6]',
+              },
+              {
+                id: 'super-polls',
+                title: 'پرس‌کاد (نظرسنجی و آراء)',
+                href: '/app/polls',
+                icon: Vote,
+                iconBg: 'bg-college-light dark:bg-[#38260D]',
+                iconColor: 'text-third dark:text-[#FBBF24]',
+              },
+              {
+                id: 'super-ka',
+                title: 'پلتفرم کا',
+                href: '/app/ka-platform',
+                icon: CoinStackIcon,
+                iconBg: 'bg-amber-50 dark:bg-[#2A2010]',
+                iconColor: 'text-amber-500',
+              },
+            ],
           },
-          {
-            id: 'exams',
-            title: 'آزمون‌ها',
-            href: '/app/student/exams',
-            icon: HelpCircle,
-            iconBg: 'bg-college-light dark:bg-[#38260D]',
-            iconColor: 'text-third dark:text-[#FBBF24]',
-            badge: examsCount > 0 ? toPersianDigits(examsCount) : undefined,
-          },
-          {
-            id: 'grades',
-            title: 'نمرات و کارنامه',
-            href: '/app/student/grades',
-            icon: BarChart3,
-            iconBg: 'bg-male-light dark:bg-[#182346]',
-            iconColor: 'text-sec dark:text-[#8194EE]',
-          },
-          {
-            id: 'schedule',
-            title: 'برنامه هفتگی',
-            href: '/app/student/schedule',
-            icon: CalendarDays,
-            iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-            iconColor: 'text-primary-dark dark:text-primary',
-          },
-          {
-            id: 'materials',
-            title: 'محتوای آموزشی',
-            href: '/app/student/materials',
-            icon: BookOpen,
-            iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-            iconColor: 'text-primary-dark dark:text-primary',
-          },
-          {
-            id: 'matters',
-            title: 'انضباطی/تشویقی',
-            href: '/app/student/matters',
-            icon: Scale,
-            iconBg: 'bg-female-light dark:bg-[#3D1426]',
-            iconColor: 'text-girl dark:text-[#F472B6]',
-          },
-          ];
-      }
-    })();
-    const BOTTOM_NAV_HREFS = ['/app/ka-platform', '/app/club', '/app/media', '/app/calendar', '/app'];
-    return (rawCards || []).filter((c) => c.id !== 'dashboard' && !BOTTOM_NAV_HREFS.includes(c.href));
+        ];
+
+      default:
+        return [];
+    }
   };
 
-  const sharedCards: SuperAppCard[] = [
-    {
-      id: 'events',
-      title: 'رویدادها',
-      href: '/app/events',
-      icon: CalendarRange,
-      iconBg: 'bg-college-light dark:bg-[#38260D]',
-      iconColor: 'text-third dark:text-[#FBBF24]',
-      badge: eventsCount > 0 ? toPersianDigits(eventsCount) : undefined,
-    },
-    {
-      id: 'coaching',
-      title: 'کوچینگ',
-      href: '/app/coaching',
-      icon: Compass,
-      iconBg: 'bg-club-light dark:bg-[#2A173E]',
-      iconColor: 'text-club dark:text-[#C084FC]',
-    },
-    {
-      id: 'messages',
-      title: 'پیام‌ها',
-      href: '/app/messages',
-      icon: MessageSquare,
-      iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-      iconColor: 'text-primary-dark dark:text-primary',
-      badge: unreadMessagesCount > 0 ? toPersianDigits(unreadMessagesCount) : undefined,
-    },
-    {
-      id: 'polls',
-      title: 'نظرسنجی',
-      href: '/app/polls',
-      icon: Vote,
-      iconBg: 'bg-college-light dark:bg-[#38260D]',
-      iconColor: 'text-third dark:text-[#FBBF24]',
-    },
-  ];
-
-  const academicCards = getAcademicCards();
+  const cardSections = getCardSections();
 
   // Determine if this is a Girls or Boys account based on tenant theme/slug/name or user profile
   const isGirlsAccount =
@@ -763,7 +1091,7 @@ export const SuperAppHomePage: React.FC = () => {
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-white shrink-0 shadow-xs ring-2 ring-white/30 animate-pulse" />
             <span className="font-black text-base sm:text-lg lg:text-xl text-white tracking-tight truncate">
-              درود، {user?.firstName} {user?.lastName}
+              درود، {cleanUserFullName(user?.firstName, user?.lastName, user?.username || user?.phone) || 'کاربر گرامی'}
             </span>
           </div>
 
@@ -822,13 +1150,25 @@ export const SuperAppHomePage: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="space-y-2.5 sm:space-y-3.5">
-          <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
-            {academicCards.map(renderCard)}
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5">
-            {sharedCards.map(renderCard)}
-          </div>
+        <div className="space-y-5 sm:space-y-6">
+          {cardSections.map((section) => (
+            <div key={section.id} className="space-y-2.5 sm:space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-4 sm:h-4.5 rounded-full bg-primary shrink-0" />
+                  <h3 className="font-black text-xs sm:text-sm text-ink-darker dark:text-gray-100">
+                    {section.title}
+                  </h3>
+                </div>
+                <span className="text-[10px] sm:text-[11px] font-bold text-ink-lighter dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md">
+                  {toPersianDigits(section.cards.length)} بخش
+                </span>
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3.5">
+                {section.cards.map(renderCard)}
+              </div>
+            </div>
+          ))}
         </div>
       )}
       {/* Admin Banner Settings Modal */}

@@ -47,6 +47,20 @@ export class CreateEventDto {
   @IsOptional()
   eventType?: string;
 
+  @ApiPropertyOptional({
+    description: 'کد نوع رویداد',
+  })
+  @IsString()
+  @IsOptional()
+  type?: string;
+
+  @ApiPropertyOptional({
+    description: 'نوع پایه سیستمی برای انوم دیتابیس (ACADEMIC, EXAM, MEETING, ...)',
+  })
+  @IsString()
+  @IsOptional()
+  baseType?: string;
+
   @ApiProperty({ description: 'تاریخ و زمان شروع', example: '2026-09-15T08:00:00.000Z' })
   @IsDateString()
   startDate: string;
@@ -122,6 +136,16 @@ export class UpdateEventDto {
   @IsString()
   @IsOptional()
   eventType?: string;
+
+  @ApiPropertyOptional({ description: 'کد نوع رویداد' })
+  @IsString()
+  @IsOptional()
+  type?: string;
+
+  @ApiPropertyOptional({ description: 'نوع پایه سیستمی برای انوم دیتابیس' })
+  @IsString()
+  @IsOptional()
+  baseType?: string;
 
   @ApiPropertyOptional({ description: 'تاریخ و زمان شروع' })
   @IsDateString()

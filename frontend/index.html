@@ -10,17 +10,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
     
     <!-- PWA & Mobile Web App Meta Tags -->
-    <meta name="theme-color" content="#2FAA9E" />
-    <meta name="msapplication-TileColor" content="#2FAA9E" />
+    <meta name="theme-color" content="#59BBAF" />
+    <meta name="msapplication-TileColor" content="#59BBAF" />
     <meta name="msapplication-TileImage" content="/icons/pwa-192x192.png" />
-    <meta name="application-name" content="رکاد" />
+    <meta name="application-name" content="Rokad" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="رکاد" />
+    <meta name="apple-mobile-web-app-title" content="Rokad" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="description" content="پلتفرم جامع هوشمند آموزشی، مدیریت مدارس و هنرستان‌های رکاد" />
 
-    <title>پلتفرم جامع مدارس و هنرستان‌های رکاد | Rokad Platform</title>
+    <title>Rokad</title>
 
     <!-- Local IRANSansXFaNum font preloads from /public -->
     <link rel="preload" href="/IRANSansXFaNum-RegularD4.ttf" as="font" type="font/ttf" crossorigin />
@@ -39,7 +39,11 @@
     </script>
   </head>
   <body class="bg-gray-50 dark:bg-[#0B0F17] text-ink-normal dark:text-gray-100 font-sans antialiased selection:bg-primary-light selection:text-primary-darker">
-    <div id="root"></div>
+    <div id="root">
+      <div id="pwa-splash" style="position: fixed; inset: 0; width: 100vw; height: 100dvh; background-color: #59BBAF; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 99999;">
+        <img src="/logo-rokad-white.svg" alt="Rokad" style="width: 140px; height: auto; max-width: 45vw; object-fit: contain;" />
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -238,11 +238,11 @@ async function main() {
     },
     create: {
       tenantId: boysTenant.id,
-      firstName: 'علیرضا',
-      lastName: 'احمدی (مدیر پسرانه)',
-      phone: '09121111111',
+      firstName: 'امیرحسین',
+      lastName: 'امیریان (راهبر پسرانه)',
+      phone: '09101654176',
       email: 'boys-admin@rokadschool.ir',
-      username: 'boysadmin',
+      username: '09101654176',
       passwordHash: boysAdminPasswordHash,
       role: 'SCHOOL_ADMIN',
       status: 'ACTIVE',
@@ -257,18 +257,18 @@ async function main() {
       },
     },
     update: {
-      phone: '09121111119',
+      phone: '09021600933',
       passwordHash: boysAdminPasswordHash,
       role: 'STAFF',
       status: 'ACTIVE',
     },
     create: {
       tenantId: boysTenant.id,
-      firstName: 'محمدرضا',
-      lastName: 'کاظمی (معاون پسرانه)',
-      phone: '09121111119',
+      firstName: 'عماد',
+      lastName: 'پورحسنی (معاون پسرانه)',
+      phone: '09021600933',
       email: 'boys-vice@rokadschool.ir',
-      username: 'boysvice',
+      username: '09021600933',
       passwordHash: boysAdminPasswordHash,
       role: 'STAFF',
       status: 'ACTIVE',
@@ -308,25 +308,25 @@ async function main() {
     },
   });
 
-  // 5. Seed Academic Structure for Boys School
+  // 5. Seed Academic Structure for Boys School (Only Current Academic Year 1405-1406)
   const academicYear = await prisma.academicYear.upsert({
     where: {
       tenantId_name: {
         tenantId: boysTenant.id,
-        name: '۱۴۰۴-۱۴۰۵',
+        name: '۱۴۰۵-۱۴۰۶',
       },
     },
     update: { isCurrent: true },
     create: {
       tenantId: boysTenant.id,
-      name: '۱۴۰۴-۱۴۰۵',
-      startDate: new Date('2025-09-23T00:00:00.000Z'),
-      endDate: new Date('2026-06-20T00:00:00.000Z'),
+      name: '۱۴۰۵-۱۴۰۶',
+      startDate: new Date('2026-09-23T00:00:00.000Z'),
+      endDate: new Date('2027-06-20T00:00:00.000Z'),
       isCurrent: true,
     },
   });
 
-  const term1 = await prisma.term.upsert({
+  await prisma.term.upsert({
     where: {
       academicYearId_name: {
         academicYearId: academicYear.id,
@@ -338,271 +338,12 @@ async function main() {
       tenantId: boysTenant.id,
       academicYearId: academicYear.id,
       name: 'نیم‌سال اول',
-      startDate: new Date('2025-09-23T00:00:00.000Z'),
-      endDate: new Date('2026-01-20T00:00:00.000Z'),
+      startDate: new Date('2026-09-23T00:00:00.000Z'),
+      endDate: new Date('2027-01-20T00:00:00.000Z'),
       isCurrent: true,
     },
   });
 
-  // 5. Seed Academic Structure for Boys School
-  const grade10Level = await prisma.educationalLevel.upsert({
-    where: { tenantId_code: { tenantId: boysTenant.id, code: 'GRADE_10' } },
-    update: { name: 'دهم' },
-    create: {
-      tenantId: boysTenant.id,
-      name: 'دهم',
-      code: 'GRADE_10',
-      orderIndex: 10,
-    },
-  });
-
-  const grade11Level = await prisma.educationalLevel.upsert({
-    where: { tenantId_code: { tenantId: boysTenant.id, code: 'GRADE_11' } },
-    update: { name: 'یازدهم' },
-    create: {
-      tenantId: boysTenant.id,
-      name: 'یازدهم',
-      code: 'GRADE_11',
-      orderIndex: 11,
-    },
-  });
-
-  const grade12Level = await prisma.educationalLevel.upsert({
-    where: { tenantId_code: { tenantId: boysTenant.id, code: 'GRADE_12' } },
-    update: { name: 'دوازدهم' },
-    create: {
-      tenantId: boysTenant.id,
-      name: 'دوازدهم',
-      code: 'GRADE_12',
-      orderIndex: 12,
-    },
-  });
-
-  // Boys Fields: شبکه و نرم‌افزار رایانه - تولید و توسعه پایگاه اینترنتی - تولید محتوای چندرسانه‌ای
-  const boysNetField10 = await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade10Level.id, name: 'شبکه و نرم‌افزار رایانه' } },
-    update: { code: 'BOYS_NET_10' },
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade10Level.id,
-      name: 'شبکه و نرم‌افزار رایانه',
-      code: 'BOYS_NET_10',
-    },
-  });
-
-  const boysWebField10 = await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade10Level.id, name: 'تولید و توسعه پایگاه اینترنتی' } },
-    update: { code: 'BOYS_WEB_10' },
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade10Level.id,
-      name: 'تولید و توسعه پایگاه اینترنتی',
-      code: 'BOYS_WEB_10',
-    },
-  });
-
-  const boysMediaField10 = await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade10Level.id, name: 'تولید محتوای چندرسانه‌ای' } },
-    update: { code: 'BOYS_MEDIA_10' },
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade10Level.id,
-      name: 'تولید محتوای چندرسانه‌ای',
-      code: 'BOYS_MEDIA_10',
-    },
-  });
-
-  // Grade 11 Boys Fields
-  await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade11Level.id, name: 'شبکه و نرم‌افزار رایانه' } },
-    update: { code: 'BOYS_NET_11' },
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade11Level.id,
-      name: 'شبکه و نرم‌افزار رایانه',
-      code: 'BOYS_NET_11',
-    },
-  });
-
-  await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade11Level.id, name: 'تولید و توسعه پایگاه اینترنتی' } },
-    update: { code: 'BOYS_WEB_11' },
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade11Level.id,
-      name: 'تولید و توسعه پایگاه اینترنتی',
-      code: 'BOYS_WEB_11',
-    },
-  });
-
-  await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade11Level.id, name: 'تولید محتوای چندرسانه‌ای' } },
-    update: { code: 'BOYS_MEDIA_11' },
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade11Level.id,
-      name: 'تولید محتوای چندرسانه‌ای',
-      code: 'BOYS_MEDIA_11',
-    },
-  });
-
-  // Grade 12 Boys Fields
-  await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade12Level.id, name: 'شبکه و نرم‌افزار رایانه' } },
-    update: { code: 'BOYS_NET_12' },
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade12Level.id,
-      name: 'شبکه و نرم‌افزار رایانه',
-      code: 'BOYS_NET_12',
-    },
-  });
-
-  await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade12Level.id, name: 'تولید و توسعه پایگاه اینترنتی' } },
-    update: { code: 'BOYS_WEB_12' },
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade12Level.id,
-      name: 'تولید و توسعه پایگاه اینترنتی',
-      code: 'BOYS_WEB_12',
-    },
-  });
-
-  await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: boysTenant.id, levelId: grade12Level.id, name: 'تولید محتوای چندرسانه‌ای' } },
-    update: { code: 'BOYS_MEDIA_12' },
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade12Level.id,
-      name: 'تولید محتوای چندرسانه‌ای',
-      code: 'BOYS_MEDIA_12',
-    },
-  });
-
-  // Legacy highSchoolLevel reference for compatibility
-  const highSchoolLevel = grade10Level;
-  const mathField = boysNetField10;
-
-  // Lessons
-  const calculusLesson = await prisma.lesson.upsert({
-    where: {
-      tenantId_code: {
-        tenantId: boysTenant.id,
-        code: 'CALC-10',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade10Level.id,
-      fieldId: boysNetField10.id,
-      name: 'حسابان ۱',
-      code: 'CALC-10',
-      unitCount: 4,
-      type: 'SPECIALIZED',
-    },
-  });
-
-  const physicsLesson = await prisma.lesson.upsert({
-    where: {
-      tenantId_code: {
-        tenantId: boysTenant.id,
-        code: 'PHYS-10',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade10Level.id,
-      fieldId: boysNetField10.id,
-      name: 'فیزیک ۱ و آزمایشگاه',
-      code: 'PHYS-10',
-      unitCount: 3,
-      type: 'SPECIALIZED',
-    },
-  });
-
-  const webLesson = await prisma.lesson.upsert({
-    where: {
-      tenantId_code: {
-        tenantId: boysTenant.id,
-        code: 'WEB-DEV-10',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade10Level.id,
-      fieldId: boysWebField10.id,
-      name: 'تولید و توسعه پایگاه اینترنتی ۱',
-      code: 'WEB-DEV-10',
-      unitCount: 4,
-      type: 'SPECIALIZED',
-    },
-  });
-
-  const mediaLesson = await prisma.lesson.upsert({
-    where: {
-      tenantId_code: {
-        tenantId: boysTenant.id,
-        code: 'MEDIA-DEV-10',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade10Level.id,
-      fieldId: boysMediaField10.id,
-      name: 'تولید محتوای الکترونیکی و چندرسانه‌ای',
-      code: 'MEDIA-DEV-10',
-      unitCount: 4,
-      type: 'SPECIALIZED',
-    },
-  });
-
-  const persianLesson = await prisma.lesson.upsert({
-    where: {
-      tenantId_code: {
-        tenantId: boysTenant.id,
-        code: 'FA-10',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      levelId: grade10Level.id,
-      name: 'فارسی و نگارش ۱',
-      code: 'FA-10',
-      unitCount: 2,
-      type: 'GENERAL',
-    },
-  });
-
-  // Classroom
-  const classroom10M1 = await prisma.classroom.upsert({
-    where: {
-      tenantId_academicYearId_code: {
-        tenantId: boysTenant.id,
-        academicYearId: academicYear.id,
-        code: 'CLS-10-M1',
-      },
-    },
-    update: {
-      levelId: grade10Level.id,
-      fieldId: boysNetField10.id,
-    },
-    create: {
-      tenantId: boysTenant.id,
-      academicYearId: academicYear.id,
-      levelId: grade10Level.id,
-      fieldId: boysNetField10.id,
-      name: 'کلاس دهم شبکه ۱',
-      code: 'CLS-10-M1',
-      capacity: 30,
-      roomNumber: 'اتاق ۲۰۱',
-    },
-  });
 
   // 5.1 Seed Girls School (شعبه دخترانه)
   const girlsTenant = await prisma.tenant.upsert({
@@ -641,11 +382,11 @@ async function main() {
     },
     create: {
       tenantId: girlsTenant.id,
-      firstName: 'فاطمه',
-      lastName: 'حسینی (مدیر دخترانه)',
-      phone: '09121111112',
+      firstName: 'رویا',
+      lastName: 'دولت‌آبادی (راهبر دخترانه)',
+      phone: '09307966319',
       email: 'girls-admin@rokadschool.ir',
-      username: 'girlsadmin',
+      username: '09307966319',
       passwordHash: girlsAdminPasswordHash,
       role: 'SCHOOL_ADMIN',
       status: 'ACTIVE',
@@ -660,17 +401,18 @@ async function main() {
       },
     },
     update: {
+      phone: '09150747096',
       passwordHash: girlsAdminPasswordHash,
       role: 'STAFF',
       status: 'ACTIVE',
     },
     create: {
       tenantId: girlsTenant.id,
-      firstName: 'مریم',
-      lastName: 'سلیمانی (معاون دخترانه)',
-      phone: '09122221112',
+      firstName: 'مبینا',
+      lastName: 'فلاح (معاون دخترانه)',
+      phone: '09150747096',
       email: 'girls-vice@rokadschool.ir',
-      username: 'girlsvice',
+      username: '09150747096',
       passwordHash: girlsAdminPasswordHash,
       role: 'STAFF',
       status: 'ACTIVE',
@@ -688,151 +430,40 @@ async function main() {
     where: {
       tenantId_name: {
         tenantId: girlsTenant.id,
-        name: '۱۴۰۴-۱۴۰۵',
+        name: '۱۴۰۵-۱۴۰۶',
       },
     },
     update: { isCurrent: true },
     create: {
       tenantId: girlsTenant.id,
-      name: '۱۴۰۴-۱۴۰۵',
-      startDate: new Date('2025-09-23T00:00:00.000Z'),
-      endDate: new Date('2026-06-20T00:00:00.000Z'),
+      name: '۱۴۰۵-۱۴۰۶',
+      startDate: new Date('2026-09-23T00:00:00.000Z'),
+      endDate: new Date('2027-06-20T00:00:00.000Z'),
       isCurrent: true,
     },
   });
 
-  // Girls Levels: دهم یازدهم دوازدهم
-  const girlsGrade10 = await prisma.educationalLevel.upsert({
-    where: { tenantId_code: { tenantId: girlsTenant.id, code: 'GRADE_10' } },
-    update: { name: 'دهم' },
-    create: {
-      tenantId: girlsTenant.id,
-      name: 'دهم',
-      code: 'GRADE_10',
-      orderIndex: 10,
-    },
-  });
-
-  const girlsGrade11 = await prisma.educationalLevel.upsert({
-    where: { tenantId_code: { tenantId: girlsTenant.id, code: 'GRADE_11' } },
-    update: { name: 'یازدهم' },
-    create: {
-      tenantId: girlsTenant.id,
-      name: 'یازدهم',
-      code: 'GRADE_11',
-      orderIndex: 11,
-    },
-  });
-
-  const girlsGrade12 = await prisma.educationalLevel.upsert({
-    where: { tenantId_code: { tenantId: girlsTenant.id, code: 'GRADE_12' } },
-    update: { name: 'دوازدهم' },
-    create: {
-      tenantId: girlsTenant.id,
-      name: 'دوازدهم',
-      code: 'GRADE_12',
-      orderIndex: 12,
-    },
-  });
-
-  // Girls Field: شبکه و نرم‌افزار رایانه
-  const girlsNet10 = await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: girlsTenant.id, levelId: girlsGrade10.id, name: 'شبکه و نرم‌افزار رایانه' } },
-    update: { code: 'GIRLS_NET_10' },
-    create: {
-      tenantId: girlsTenant.id,
-      levelId: girlsGrade10.id,
-      name: 'شبکه و نرم‌افزار رایانه',
-      code: 'GIRLS_NET_10',
-    },
-  });
-
-  await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: girlsTenant.id, levelId: girlsGrade11.id, name: 'شبکه و نرم‌افزار رایانه' } },
-    update: { code: 'GIRLS_NET_11' },
-    create: {
-      tenantId: girlsTenant.id,
-      levelId: girlsGrade11.id,
-      name: 'شبکه و نرم‌افزار رایانه',
-      code: 'GIRLS_NET_11',
-    },
-  });
-
-  await prisma.studyField.upsert({
-    where: { tenantId_levelId_name: { tenantId: girlsTenant.id, levelId: girlsGrade12.id, name: 'شبکه و نرم‌افزار رایانه' } },
-    update: { code: 'GIRLS_NET_12' },
-    create: {
-      tenantId: girlsTenant.id,
-      levelId: girlsGrade12.id,
-      name: 'شبکه و نرم‌افزار رایانه',
-      code: 'GIRLS_NET_12',
-    },
-  });
-
-  // Classroom for Girls
-  await prisma.classroom.upsert({
+  await prisma.term.upsert({
     where: {
-      tenantId_academicYearId_code: {
-        tenantId: girlsTenant.id,
+      academicYearId_name: {
         academicYearId: girlsAcademicYear.id,
-        code: 'CLS-10-G-NET',
+        name: 'نیم‌سال اول',
       },
     },
-    update: {},
+    update: { isCurrent: true },
     create: {
       tenantId: girlsTenant.id,
       academicYearId: girlsAcademicYear.id,
-      levelId: girlsGrade10.id,
-      fieldId: girlsNet10.id,
-      name: 'کلاس دهم شبکه دختران',
-      code: 'CLS-10-G-NET',
-      capacity: 25,
-      roomNumber: 'اتاق ۱۰۱',
+      name: 'نیم‌سال اول',
+      startDate: new Date('2026-09-23T00:00:00.000Z'),
+      endDate: new Date('2027-01-20T00:00:00.000Z'),
+      isCurrent: true,
     },
   });
 
-  // Lessons for Girls
-  await prisma.lesson.upsert({
-    where: {
-      tenantId_code: {
-        tenantId: girlsTenant.id,
-        code: 'G-NET-TECH-10',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: girlsTenant.id,
-      levelId: girlsGrade10.id,
-      fieldId: girlsNet10.id,
-      name: 'دانش فنی پایه شبکه و نرم‌افزار',
-      code: 'G-NET-TECH-10',
-      unitCount: 3,
-      type: 'SPECIALIZED',
-    },
-  });
-
-  await prisma.lesson.upsert({
-    where: {
-      tenantId_code: {
-        tenantId: girlsTenant.id,
-        code: 'G-FA-10',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: girlsTenant.id,
-      levelId: girlsGrade10.id,
-      name: 'فارسی و نگارش ۱',
-      code: 'G-FA-10',
-      unitCount: 2,
-      type: 'GENERAL',
-    },
-  });
-
-  // 6. Seed Teacher & Student & Parent with Links
+  // 6. Seed Teacher
   const defaultPass = await argon2.hash('RokadPass2026!');
 
-  // Teacher
   const teacherUser = await prisma.user.upsert({
     where: {
       tenantId_phone: {
@@ -853,7 +484,7 @@ async function main() {
     },
   });
 
-  const teacherProfile = await prisma.teacherProfile.upsert({
+  await prisma.teacherProfile.upsert({
     where: { userId: teacherUser.id },
     update: {},
     create: {
@@ -864,375 +495,7 @@ async function main() {
       employmentType: 'FULL_TIME',
     },
   });
-
-  // Assign lessons to Dr. Kazemi (Calculus & Physics)
-  await prisma.teacherLesson.upsert({
-    where: {
-      teacherId_lessonId: {
-        teacherId: teacherProfile.id,
-        lessonId: calculusLesson.id,
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      teacherId: teacherProfile.id,
-      lessonId: calculusLesson.id,
-    },
-  });
-
-  await prisma.teacherLesson.upsert({
-    where: {
-      teacherId_lessonId: {
-        teacherId: teacherProfile.id,
-        lessonId: physicsLesson.id,
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      teacherId: teacherProfile.id,
-      lessonId: physicsLesson.id,
-    },
-  });
-
-  // Second Teacher for Boys (Eng. Mohammadi - Web & Calculus)
-  const teacherUser2 = await prisma.user.upsert({
-    where: {
-      tenantId_phone: {
-        tenantId: boysTenant.id,
-        phone: '09123000002',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      firstName: 'مهندس علی',
-      lastName: 'محمدی',
-      phone: '09123000002',
-      email: 'mohammadi@rokadschool.ir',
-      passwordHash: defaultPass,
-      role: 'TEACHER',
-      status: 'ACTIVE',
-    },
-  });
-
-  const teacherProfile2 = await prisma.teacherProfile.upsert({
-    where: { userId: teacherUser2.id },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      userId: teacherUser2.id,
-      speciality: 'توسعه وب و شبکه',
-      degree: 'کارشناسی ارشد نرم‌افزار',
-      employmentType: 'FULL_TIME',
-    },
-  });
-
-  // Assign Web & Calculus to Teacher 2 (Demonstrating multiple teachers on Calculus)
-  await prisma.teacherLesson.upsert({
-    where: {
-      teacherId_lessonId: {
-        teacherId: teacherProfile2.id,
-        lessonId: webLesson.id,
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      teacherId: teacherProfile2.id,
-      lessonId: webLesson.id,
-    },
-  });
-
-  await prisma.teacherLesson.upsert({
-    where: {
-      teacherId_lessonId: {
-        teacherId: teacherProfile2.id,
-        lessonId: calculusLesson.id,
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      teacherId: teacherProfile2.id,
-      lessonId: calculusLesson.id,
-    },
-  });
-
-  // Schedule for Classroom
-  await prisma.classSchedule.upsert({
-    where: {
-      classroomId_dayOfWeek_periodNumber: {
-        classroomId: classroom10M1.id,
-        dayOfWeek: 'SATURDAY',
-        periodNumber: 1,
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      classroomId: classroom10M1.id,
-      lessonId: calculusLesson.id,
-      teacherId: teacherProfile.id,
-      dayOfWeek: 'SATURDAY',
-      periodNumber: 1,
-      startTime: '07:45',
-      endTime: '09:00',
-    },
-  });
-
-  await prisma.classSchedule.upsert({
-    where: {
-      classroomId_dayOfWeek_periodNumber: {
-        classroomId: classroom10M1.id,
-        dayOfWeek: 'SATURDAY',
-        periodNumber: 2,
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      classroomId: classroom10M1.id,
-      lessonId: physicsLesson.id,
-      teacherId: teacherProfile.id,
-      dayOfWeek: 'SATURDAY',
-      periodNumber: 2,
-      startTime: '09:15',
-      endTime: '10:30',
-    },
-  });
-
-  await prisma.classSchedule.upsert({
-    where: {
-      classroomId_dayOfWeek_periodNumber: {
-        classroomId: classroom10M1.id,
-        dayOfWeek: 'SATURDAY',
-        periodNumber: 3,
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      classroomId: classroom10M1.id,
-      lessonId: webLesson.id,
-      teacherId: teacherProfile2.id,
-      dayOfWeek: 'SATURDAY',
-      periodNumber: 3,
-      startTime: '10:45',
-      endTime: '12:00',
-    },
-  });
-
-  await prisma.classSchedule.upsert({
-    where: {
-      classroomId_dayOfWeek_periodNumber: {
-        classroomId: classroom10M1.id,
-        dayOfWeek: 'SUNDAY',
-        periodNumber: 1,
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      classroomId: classroom10M1.id,
-      lessonId: persianLesson.id,
-      teacherId: teacherProfile.id,
-      dayOfWeek: 'SUNDAY',
-      periodNumber: 1,
-      startTime: '07:45',
-      endTime: '09:00',
-    },
-  });
-
-  await prisma.classSchedule.upsert({
-    where: {
-      classroomId_dayOfWeek_periodNumber: {
-        classroomId: classroom10M1.id,
-        dayOfWeek: 'MONDAY',
-        periodNumber: 2,
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      classroomId: classroom10M1.id,
-      lessonId: mediaLesson.id,
-      teacherId: teacherProfile2.id,
-      dayOfWeek: 'MONDAY',
-      periodNumber: 2,
-      startTime: '09:15',
-      endTime: '10:30',
-    },
-  });
-
-  // Student (Boys School: username=0012345678, password=b0012345678)
-  const boysStudentPass = await argon2.hash('b0012345678');
-  const studentUser = await prisma.user.upsert({
-    where: {
-      tenantId_phone: {
-        tenantId: boysTenant.id,
-        phone: '09124000001',
-      },
-    },
-    update: {
-      username: '0012345678',
-      nationalId: '0012345678',
-      passwordHash: boysStudentPass,
-    },
-    create: {
-      tenantId: boysTenant.id,
-      firstName: 'امیرعلی',
-      lastName: 'صادقی',
-      phone: '09124000001',
-      username: '0012345678',
-      nationalId: '0012345678',
-      passwordHash: boysStudentPass,
-      role: 'STUDENT',
-      gender: 'MALE',
-      status: 'ACTIVE',
-    },
-  });
-
-  const studentProfile = await prisma.studentProfile.upsert({
-    where: { userId: studentUser.id },
-    update: {
-      studentCode: '12345678',
-      nationalCode: '0012345678',
-    },
-    create: {
-      tenantId: boysTenant.id,
-      userId: studentUser.id,
-      studentCode: '12345678',
-      nationalCode: '0012345678',
-      fatherName: 'حسین',
-      birthDate: new Date('2009-04-10'),
-    },
-  });
-
-  // Enroll Student in Classroom
-  await prisma.classEnrollment.upsert({
-    where: {
-      classroomId_studentId: {
-        classroomId: classroom10M1.id,
-        studentId: studentProfile.id,
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      academicYearId: academicYear.id,
-      classroomId: classroom10M1.id,
-      studentId: studentProfile.id,
-      status: 'ACTIVE',
-    },
-  });
-
-  // Student (Girls School: username=0023456789, password=g0023456789)
-  const girlsStudentPass = await argon2.hash('g0023456789');
-  const girlsStudentUser = await prisma.user.upsert({
-    where: {
-      tenantId_phone: {
-        tenantId: girlsTenant.id,
-        phone: '09124000002',
-      },
-    },
-    update: {
-      username: '0023456789',
-      nationalId: '0023456789',
-      passwordHash: girlsStudentPass,
-    },
-    create: {
-      tenantId: girlsTenant.id,
-      firstName: 'فاطمه',
-      lastName: 'کریمی',
-      phone: '09124000002',
-      username: '0023456789',
-      nationalId: '0023456789',
-      passwordHash: girlsStudentPass,
-      role: 'STUDENT',
-      gender: 'FEMALE',
-      status: 'ACTIVE',
-    },
-  });
-
-  await prisma.studentProfile.upsert({
-    where: { userId: girlsStudentUser.id },
-    update: {
-      studentCode: '23456789',
-      nationalCode: '0023456789',
-    },
-    create: {
-      tenantId: girlsTenant.id,
-      userId: girlsStudentUser.id,
-      studentCode: '23456789',
-      nationalCode: '0023456789',
-      fatherName: 'محمدرضا',
-      birthDate: new Date('2009-06-15'),
-    },
-  });
-
-  // Parent (Boys School: username=p0012345678, password=p0012345678)
-  const boysParentPass = await argon2.hash('p0012345678');
-  const parentUser = await prisma.user.upsert({
-    where: {
-      tenantId_phone: {
-        tenantId: boysTenant.id,
-        phone: '09125000001',
-      },
-    },
-    update: {
-      username: 'p0012345678',
-      passwordHash: boysParentPass,
-      firstName: 'حسین',
-      lastName: 'صادقی (ولی دانش‌آموز)',
-    },
-    create: {
-      tenantId: boysTenant.id,
-      firstName: 'حسین',
-      lastName: 'صادقی (ولی دانش‌آموز)',
-      phone: '09125000001',
-      username: 'p0012345678',
-      passwordHash: boysParentPass,
-      role: 'PARENT',
-      gender: 'MALE',
-      status: 'ACTIVE',
-    },
-  });
-
-  const parentProfile = await prisma.parentProfile.upsert({
-    where: { userId: parentUser.id },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      userId: parentUser.id,
-      occupation: 'مهندس عمران',
-      education: 'کارشناسی ارشد',
-    },
-  });
-
-  // Link Parent & Student
-  await prisma.parentStudentLink.upsert({
-    where: {
-      parentId_studentId: {
-        parentId: parentProfile.id,
-        studentId: studentProfile.id,
-      },
-    },
-    update: {
-      relationType: 'LEGAL_GUARDIAN',
-      isPrimaryContact: true,
-    },
-    create: {
-      tenantId: boysTenant.id,
-      parentId: parentProfile.id,
-      studentId: studentProfile.id,
-      relationType: 'LEGAL_GUARDIAN',
-      isPrimaryContact: true,
-    },
-  });
-
-  // 7. Seed School Profiles and Sample Blogs
+  // 7. Seed School Profiles
   await prisma.schoolProfile.upsert({
     where: { tenantId: boysTenant.id },
     update: {},
@@ -1245,714 +508,19 @@ async function main() {
     },
   });
 
-  const sampleMediaPost1 = await prisma.profileBlog.upsert({
-    where: {
-      tenantId_slug: {
-        tenantId: boysTenant.id,
-        slug: 'ai-robotics-workshop-opening',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      authorId: boysAdmin.id,
-      title: 'گزارش تصویری افتتاح کارگاه تخصصی هوش مصنوعی و برنامه‌نویسی وب هنرستان پسرانه',
-      slug: 'ai-robotics-workshop-opening',
-      content: 'به لطف خداوند و تلاش کادر تخصصی، فاز اول کارگاه کامپیوتر و هوش مصنوعی هنرستان پسرانه رکاد با تجهیز ۲۰ ایستگاه کاری پیشرفته افتتاح گردید. دانش‌آموزان عزیز از روز شنبه می‌توانند بر اساس برنامه زمان‌بندی در کارگاه‌ها حضور یابند.',
-      postType: 'SLIDESHOW',
-      mediaUrls: [
-        'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1000&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1000&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=1000&auto=format&fit=crop&q=80',
-      ],
-      attachments: [
-        { name: 'شیوه‌نامه_اجرایی_کارگاه_کامپیوتر_پاییز۱۴۰۵.pdf', url: 'https://example.com/workshop-guide.pdf', size: 2840000 },
-        { name: 'جدول_گروه‌بندی_دانش‌آموزان.xlsx', url: 'https://example.com/groups.xlsx', size: 450000 },
-      ],
-      audienceType: 'ALL',
-      isPinned: true,
-      allowComments: true,
-      tags: ['کارگاه تخصصی', 'افتتاحیه', 'هوش مصنوعی', 'رکاد پسرانه'],
-      isPublished: true,
-    },
-  });
-
-  // Seed sample like and comment on post 1
-  await prisma.profileBlogLike.upsert({
-    where: {
-      blogId_userId: {
-        blogId: sampleMediaPost1.id,
-        userId: teacherUser.id,
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      blogId: sampleMediaPost1.id,
-      userId: teacherUser.id,
-    },
-  });
-
-  await prisma.profileBlogComment.create({
-    data: {
-      tenantId: boysTenant.id,
-      blogId: sampleMediaPost1.id,
-      authorId: teacherUser.id,
-      content: 'خدا قوت به تیم مدیریت، تجهیزات کارگاه بسیار استاندارد و آماده شروع پودمان‌های عملی است.',
-    },
-  }).catch(() => {});
-
-  // Post 2: Specific to students
-  await prisma.profileBlog.upsert({
-    where: {
-      tenantId_slug: {
-        tenantId: boysTenant.id,
-        slug: 'student-project-submission-guide',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      authorId: teacherUser.id,
-      title: 'دستورالعمل تحویل پروژه‌های کارگاهی پودمان اول (اختصاصی دانش‌آموزان)',
-      slug: 'student-project-submission-guide',
-      content: 'دانش‌آموزان گرامی پایه دهم و یازدهم شبکه و نرم‌افزار، مهلت ارسال فایل مخزن گیت‌هاب و مستندات پروژه تا پایان هفته جاری تمدید شد.',
-      postType: 'DOCUMENT',
-      mediaUrls: [
-        'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1000&auto=format&fit=crop&q=80',
-      ],
-      attachments: [
-        { name: 'قالب_استاندارد_مستندسازی_پروژه.pdf', url: 'https://example.com/template.pdf', size: 1200000 },
-      ],
-      audienceType: 'ROLES',
-      targetRoles: ['STUDENT'],
-      isPinned: false,
-      allowComments: true,
-      tags: ['پروژه', 'پودمان اول', 'شبکه و نرم‌افزار'],
-      isPublished: true,
-    },
-  });
-
-  // Post 3: Girls School Media Post (Isolated to girls branch)
-  await prisma.profileBlog.upsert({
-    where: {
-      tenantId_slug: {
-        tenantId: girlsTenant.id,
-        slug: 'girls-multimedia-exhibition',
-      },
-    },
+  await prisma.schoolProfile.upsert({
+    where: { tenantId: girlsTenant.id },
     update: {},
     create: {
       tenantId: girlsTenant.id,
-      authorId: girlsAdmin.id,
-      title: 'برگزاری نمایشگاه آثار دانش‌آموزان رشته طراحی و گرافیک رایانه‌ای هنرستان دخترانه',
-      slug: 'girls-multimedia-exhibition',
-      content: 'نمایشگاه تخصصی دستاوردهای تجسمی و دیجیتال دانش‌آموزان دخترانه رکاد در آتلیه هنرستان برگزار گردید.',
-      postType: 'SLIDESHOW',
-      mediaUrls: [
-        'https://images.unsplash.com/photo-1561089489-f13d5e730d72?w=1000&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=1000&auto=format&fit=crop&q=80',
-      ],
-      audienceType: 'ALL',
-      isPinned: true,
-      allowComments: true,
-      tags: ['طراحی', 'نمایشگاه', 'رکاد دخترانه'],
-      isPublished: true,
+      motto: 'پرورش دختران توانمند، نوآور و اخلاق‌مدار در رکاد',
+      aboutHtml: '<h2>درباره مجتمع دخترانه رکاد</h2><p>فضایی پویا و شاداب برای یادگیری علوم نوین و مهارت‌های کاربردی دیجیتال.</p>',
+      managerName: 'فاطمه حسینی',
+      managerMessage: 'آینده از آنِ دختران دانا و پرتلاش امروز است.',
     },
   });
 
-  // 8. Phase 3: Seed Daily Academic Operations
-  console.log('⚡ 8. Seeding Phase 3 Daily Academic Operations...');
 
-  // Student Attendance
-  await prisma.studentAttendance.upsert({
-    where: {
-      tenantId_classroomId_studentId_date_periodNumber: {
-        tenantId: boysTenant.id,
-        classroomId: classroom10M1.id,
-        studentId: studentProfile.id,
-        date: '2026-09-01',
-        periodNumber: 1,
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      academicYearId: academicYear.id,
-      classroomId: classroom10M1.id,
-      studentId: studentProfile.id,
-      lessonId: calculusLesson.id,
-      date: '2026-09-01',
-      periodNumber: 1,
-      status: 'PRESENT',
-      recordedById: teacherUser.id,
-    },
-  });
-
-  // Teacher Attendance
-  await prisma.teacherAttendance.upsert({
-    where: {
-      tenantId_teacherId_date: {
-        tenantId: boysTenant.id,
-        teacherId: teacherProfile.id,
-        date: '2026-09-01',
-      },
-    },
-    update: {},
-    create: {
-      tenantId: boysTenant.id,
-      teacherId: teacherProfile.id,
-      date: '2026-09-01',
-      entryTime: '07:45',
-      exitTime: '14:30',
-      status: 'PRESENT',
-      recordedById: boysAdmin.id,
-    },
-  });
-
-  // Homework
-  const calculusHomework = await prisma.homework.create({
-    data: {
-      tenantId: boysTenant.id,
-      classroomId: classroom10M1.id,
-      lessonId: calculusLesson.id,
-      teacherId: teacherProfile.id,
-      title: 'تمرینات فصل اول: مشتق و پیوستگی',
-      description: 'لطفاً تمرین‌های صفحه ۱۵ الی ۱۸ کتاب درسی را حل نموده و تصویر دست‌نویس آن را بارگذاری نمایید.',
-      dueDate: new Date('2026-09-20T23:59:59.000Z'),
-      maxScore: 20,
-      isGraded: true,
-      allowLateSubmissions: true,
-    },
-  });
-
-  // Homework Submission
-  await prisma.homeworkSubmission.create({
-    data: {
-      tenantId: boysTenant.id,
-      homeworkId: calculusHomework.id,
-      studentId: studentProfile.id,
-      content: 'پاسخ سوالات ۱ تا ۵ پیوست گردید.',
-      status: 'GRADED',
-      score: 19.5,
-      feedback: 'بسیار عالی و دقیق حل شده است.',
-      gradedAt: new Date(),
-      gradedById: teacherUser.id,
-    },
-  });
-
-  // Calendar Event
-  await prisma.schoolEvent.create({
-    data: {
-      tenantId: boysTenant.id,
-      title: 'اولین آزمون جامع پیشرفت تحصیلی ترم اول',
-      description: 'آزمون تستی از دروس تخصصی ریاضی و فیزیک پایه دهم',
-      eventType: 'EXAM',
-      startDate: new Date('2026-09-25T08:30:00.000Z'),
-      endDate: new Date('2026-09-25T11:30:00.000Z'),
-      targetAudience: 'STUDENTS',
-      location: 'سالن امتحانات شماره ۱',
-      coverUrl: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=1200&q=80',
-      tags: ['آزمون', 'سنجش', 'پایه دهم'],
-      createdById: boysAdmin.id,
-    },
-  });
-
-  const sampleRoadmapEvents = [
-    {
-      title: 'جشن آغاز سال تحصیلی و معارفه دانش‌آموزان نوورود',
-      description: 'آیین بازگشایی هنرستان با حضور اساتید، دانش‌آموزان پایه دهم و والدین گرامی به همراه رونمایی از نقشه راه آموزشی سال جدید تحصیلی.',
-      eventType: 'CULTURAL' as const,
-      startDate: new Date('2026-09-23T04:30:00.000Z'),
-      endDate: new Date('2026-09-23T08:30:00.000Z'),
-      isAllDay: false,
-      targetAudience: 'ALL' as const,
-      location: 'سالن همایش‌های مرکزی خوارزمی',
-      coverUrl: 'https://images.unsplash.com/photo-1523580494863-6f3031224c94?auto=format&fit=crop&w=1200&q=80',
-      tags: ['جشن', 'ورودی جدید', 'آغاز سال', 'معارفه'],
-    },
-    {
-      title: 'هکاتون تخصصی پاییزه هوش مصنوعی و وب راکد',
-      description: 'ماراتن ۴۸ ساعته برنامه‌نویسی و طراحی سامانه‌های هوشمند با داوری اساتید دانشگاه و کارشناسان ارشد صنعت نرم‌افزار، همراه با جوایز ویژه.',
-      eventType: 'ACADEMIC' as const,
-      startDate: new Date('2026-10-15T05:30:00.000Z'),
-      endDate: new Date('2026-10-17T13:30:00.000Z'),
-      isAllDay: false,
-      targetAudience: 'STUDENTS' as const,
-      location: 'لابراتوار کامپیوتر شماره ۱ و ۲ هنرستان',
-      coverUrl: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
-      tags: ['هکاتون', 'برنامه‌نویسی', 'هوش مصنوعی', 'مسابقه'],
-    },
-    {
-      title: 'مجمع عمومی انجمن اولیاء و مربیان و کارگاه فرزندپروری دیجیتال',
-      description: 'بررسی پیشرفت تحصیلی فصل پاییز، ارائه کارنامه میان‌ترم و کارگاه تخصصی راهکارهای حمایت والدین در عصر فناوری‌های دیجیتال.',
-      eventType: 'MEETING' as const,
-      startDate: new Date('2026-11-20T12:30:00.000Z'),
-      endDate: new Date('2026-11-20T15:30:00.000Z'),
-      isAllDay: false,
-      targetAudience: 'PARENTS' as const,
-      location: 'آمفی‌تئاتر فرهنگسرای اندیشه',
-      coverUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
-      tags: ['جلسه اولیاء', 'کارنامه', 'کارگاه مشاوره'],
-    },
-    {
-      title: 'شروع امتحانات هماهنگ نوبت اول (دی‌ماه)',
-      description: 'آغاز ماراتن امتحانات جامع ترم اول کلیه پایه‌های تحصیلی و استقرار حوزه‌های آزمون استاندارد.',
-      eventType: 'EXAM' as const,
-      startDate: new Date('2026-12-25T04:30:00.000Z'),
-      endDate: new Date('2027-01-10T08:30:00.000Z'),
-      isAllDay: true,
-      targetAudience: 'STUDENTS' as const,
-      location: 'حوزه‌های امتحانی شهید شهریاری',
-      coverUrl: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=1200&q=80',
-      tags: ['امتحان', 'دی ماه', 'نوبت اول'],
-    },
-    {
-      title: 'المپیاد درون‌مدرسه‌ای ورزش‌های الکترونیک و فوتسال جام فجر',
-      description: 'رقابت‌های هیجان‌انگیز ورزشی در رشته‌های فوتسال، تنیس روی میز و مسابقات ورزش‌های الکترونیک (E-Sports) بین کلاسی.',
-      eventType: 'SPORTS' as const,
-      startDate: new Date('2027-02-05T06:00:00.000Z'),
-      endDate: new Date('2027-02-12T12:00:00.000Z'),
-      isAllDay: false,
-      targetAudience: 'ALL' as const,
-      location: 'مجموعه ورزشی چندمنظوره راکد',
-      coverUrl: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=1200&q=80',
-      tags: ['ورزش', 'المپیاد', 'فوتسال', 'ای‌اسپورت'],
-    },
-    {
-      title: 'اردوی علمی-پژوهشی پارک فناوری پردیس و شتابدهنده‌ها',
-      description: 'بازدید یک‌روزه دانش‌آموزان رشته‌های کامپیوتر و الکترونیک از شرکت‌های دانش‌بنیان، مراکز هوش مصنوعی و شتابدهنده‌های نوآوری.',
-      eventType: 'EXCURSION' as const,
-      startDate: new Date('2027-02-28T04:00:00.000Z'),
-      endDate: new Date('2027-02-28T12:30:00.000Z'),
-      isAllDay: false,
-      targetAudience: 'STUDENTS' as const,
-      location: 'پارک فناوری پردیس، مرکز رشد',
-      coverUrl: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1200&q=80',
-      tags: ['اردو', 'پارک فناوری', 'هوش مصنوعی', 'بازدید علمی'],
-    },
-  ];
-
-  for (const ev of sampleRoadmapEvents) {
-    await prisma.schoolEvent.create({
-      data: {
-        tenantId: boysTenant.id,
-        ...ev,
-        createdById: boysAdmin.id,
-      },
-    });
-  }
-
-  // Poll
-  await prisma.poll.create({
-    data: {
-      tenantId: boysTenant.id,
-      title: 'نظرسنجی انتخاب کارگاه‌های مهارت‌آموزی ترم پاییز',
-      description: 'علاقه‌مندی خود را به یکی از دوره‌های مهارتی مشخص نمایید',
-      pollType: 'SINGLE_CHOICE',
-      targetAudience: 'STUDENTS',
-      startDate: new Date('2026-09-01T00:00:00.000Z'),
-      endDate: new Date('2026-09-30T23:59:59.000Z'),
-      createdById: boysAdmin.id,
-      options: {
-        create: [
-          { text: 'هوش مصنوعی و یادگیری ماشین', orderIndex: 1 },
-          { text: 'طراحی وب و توسعه اپلیکیشن', orderIndex: 2 },
-          { text: 'رباتیک و اینترنت اشیاء (IoT)', orderIndex: 3 },
-        ],
-      },
-    },
-  });
-
-  // Parent Visit Slot
-  await prisma.parentVisitSlot.create({
-    data: {
-      tenantId: boysTenant.id,
-      teacherId: teacherProfile.id,
-      date: '2026-09-12',
-      startTime: '10:00',
-      endTime: '10:20',
-      durationMinutes: 20,
-      capacityPerSlot: 1,
-      roomLocation: 'اتاق مشاوره و دیدار با اولیا ۱۰۲',
-    },
-  });
-
-  // Disciplinary / Commendation Matter
-  await prisma.disciplinaryMatter.create({
-    data: {
-      tenantId: boysTenant.id,
-      studentId: studentProfile.id,
-      academicYearId: academicYear.id,
-      type: 'POSITIVE',
-      title: 'کسب مدال طلای المپیاد ریاضی استانی',
-      description: 'درخشش در مرحله اول المپیاد علمی و تشویق در صف صبحگاه',
-      points: 5.0,
-      actionTaken: 'تقدیرنامه کتبی و درج در پرونده تحصیلی',
-      notifiedParents: true,
-      reportedById: boysAdmin.id,
-    },
-  });
-
-  // 9. Phase 4: Seed Exams & LMS Engine
-  console.log('⚡ 9. Seeding Phase 4 Exams & LMS Engine...');
-
-  // Lesson Plan
-  const calculusPlan = await prisma.lessonPlan.create({
-    data: {
-      tenantId: boysTenant.id,
-      academicYearId: academicYear.id,
-      lessonId: calculusLesson.id,
-      teacherId: teacherProfile.id,
-      title: 'طرح درس سالانه حسابان ۱ پایه دهم ریاضی',
-      description: 'سرفصل‌ها و بودجه‌بندی جلسات درس حسابان ۱ برای سال تحصیلی',
-      totalHoursPlanned: 32,
-      sessions: {
-        create: [
-          {
-            sessionNumber: 1,
-            topic: 'آشنایی با توابع و دامنه و برد تابع',
-            objectives: 'درک مفهوم تابع و تعیین دامنه توابع کسری و رادیکالی',
-            activities: 'حل تمرین‌های مقدماتی و رسم نمودار با نرم‌افزار GeoGebra',
-            status: 'COMPLETED',
-          },
-          {
-            sessionNumber: 2,
-            topic: 'توابع جبری و ترکیب توابع (f o g)',
-            objectives: 'آموزش ترکیب توابع و خواص آن',
-            status: 'COMPLETED',
-          },
-          {
-            sessionNumber: 3,
-            topic: 'مفهوم حد و پیوستگی توابع',
-            objectives: 'محاسبه حدود نامعین صفر بر صفر و رفع ابهام',
-            status: 'PLANNED',
-          },
-        ],
-      },
-    },
-  });
-
-  // Question Bank
-  const calculusCategory = await prisma.questionCategory.create({
-    data: {
-      tenantId: boysTenant.id,
-      lessonId: calculusLesson.id,
-      name: 'فصل اول: توابع و روابط بین متغیرها',
-      orderIndex: 1,
-    },
-  });
-
-  const q1 = await prisma.question.create({
-    data: {
-      tenantId: boysTenant.id,
-      lessonId: calculusLesson.id,
-      categoryId: calculusCategory.id,
-      createdById: teacherUser.id,
-      type: 'MULTIPLE_CHOICE',
-      difficulty: 'MEDIUM',
-      text: 'دامنه تابع f(x) = sqrt(x - 2) / (x - 5) کدام است؟',
-      defaultScore: 2.0,
-      suggestedTimeSeconds: 90,
-      solutionExplanation: 'زیر رادیکال زوج باید نامنفی باشد (x >= 2) و مخرج کسر نباید صفر شود (x != 5). پس دامنه: [2, +inf) - {5}',
-      options: {
-        create: [
-          { text: '[2, +inf) - {5}', isCorrect: true, orderIndex: 1 },
-          { text: '(2, +inf)', isCorrect: false, orderIndex: 2 },
-          { text: '[2, 5)', isCorrect: false, orderIndex: 3 },
-          { text: 'R - {5}', isCorrect: false, orderIndex: 4 },
-        ],
-      },
-    },
-  });
-
-  const q2 = await prisma.question.create({
-    data: {
-      tenantId: boysTenant.id,
-      lessonId: calculusLesson.id,
-      categoryId: calculusCategory.id,
-      createdById: teacherUser.id,
-      type: 'MULTIPLE_CHOICE',
-      difficulty: 'EASY',
-      text: 'اگر f(x) = 2x + 3 و g(x) = x^2 باشد، مقدار (f o g)(2) کدام است؟',
-      defaultScore: 2.0,
-      suggestedTimeSeconds: 60,
-      solutionExplanation: 'g(2) = 2^2 = 4 -> f(4) = 2(4) + 3 = 11',
-      options: {
-        create: [
-          { text: '11', isCorrect: true, orderIndex: 1 },
-          { text: '49', isCorrect: false, orderIndex: 2 },
-          { text: '14', isCorrect: false, orderIndex: 3 },
-          { text: '7', isCorrect: false, orderIndex: 4 },
-        ],
-      },
-    },
-  });
-
-  // Exam
-  const calculusExam = await prisma.exam.create({
-    data: {
-      tenantId: boysTenant.id,
-      academicYearId: academicYear.id,
-      lessonId: calculusLesson.id,
-      teacherId: teacherProfile.id,
-      title: 'آزمون آنلاین مبحثی فصل اول حسابان',
-      description: 'آزمون تستی زمان‌دار با تصحیح خودکار',
-      examType: 'ONLINE',
-      durationMinutes: 45,
-      startTime: new Date('2026-09-01T00:00:00.000Z'),
-      endTime: new Date('2026-10-30T23:59:59.000Z'),
-      totalScore: 4.0,
-      shuffleQuestions: true,
-      shuffleOptions: true,
-      status: 'RUNNING',
-      isPublished: true,
-      classrooms: {
-        create: [{ tenantId: boysTenant.id, classroomId: classroom10M1.id }],
-      },
-      questions: {
-        create: [
-          { questionId: q1.id, orderIndex: 1, score: 2.0 },
-          { questionId: q2.id, orderIndex: 2, score: 2.0 },
-        ],
-      },
-    },
-  });
-
-  // Grade Entries (Gradebook)
-  await prisma.gradeEntry.create({
-    data: {
-      tenantId: boysTenant.id,
-      academicYearId: academicYear.id,
-      classroomId: classroom10M1.id,
-      lessonId: calculusLesson.id,
-      studentId: studentProfile.id,
-      teacherId: teacherProfile.id,
-      gradeType: 'CLASS_ACTIVITY',
-      title: 'فعالیت کلاسی و حل تمرین پای تخته',
-      score: 19.5,
-      maxScore: 20,
-      weight: 1.0,
-      recordedById: teacherUser.id,
-    },
-  });
-
-  // 10. Phase 5: Seed Live Communication & Content
-  console.log('⚡ 10. Seeding Phase 5 Live Communication & Content...');
-
-  // Course Material
-  await prisma.courseMaterial.create({
-    data: {
-      tenantId: boysTenant.id,
-      academicYearId: academicYear.id,
-      lessonId: calculusLesson.id,
-      teacherId: teacherProfile.id,
-      title: 'جزوه دست‌نویس فرمول‌های طلایی حسابان و نکات تستی',
-      description: 'فایل جامع خلاصه مباحث تابع، حد و مشتق به همراه ۵۰ تست منتخب کنکور',
-      materialType: 'DOCUMENT',
-      fileKey: `tenants/${boysTenant.slug}/materials/calculus-summary-2026.pdf`,
-      fileUrl: `http://localhost:9000/rokad-storage/tenants/${boysTenant.slug}/materials/calculus-summary-2026.pdf`,
-      fileSizeMb: 3.8,
-      mimeType: 'application/pdf',
-      isDownloadable: true,
-      isPublished: true,
-      classrooms: {
-        create: [{ tenantId: boysTenant.id, classroomId: classroom10M1.id }],
-      },
-    },
-  });
-
-  // Noticeboard Announcement
-  await prisma.schoolEvent.create({
-    data: {
-      tenantId: boysTenant.id,
-      title: 'اطلاعیه مهم: زمان‌بندی اردوهای علمی و کارگاه‌های تخصصی برنامه‌نویسی',
-      description: 'دانش‌آموزان گرامی جهت ثبت‌نام در کارگاه‌های مهارت‌آموزی به بخش نظرسنجی مراجعه نمایند.',
-      eventType: 'ACADEMIC',
-      startDate: new Date('2026-09-01T00:00:00.000Z'),
-      endDate: new Date('2026-10-30T23:59:59.000Z'),
-      targetAudience: 'ALL',
-      createdById: boysAdmin.id,
-    },
-  });
-
-  // Chat Channel (Class Group)
-  const classChannel = await prisma.chatChannel.create({
-    data: {
-      tenantId: boysTenant.id,
-      type: 'CLASS_GROUP',
-      name: 'کانال گفتگوی رسمی کلاس دهم ریاضی ۱',
-      description: 'هماهنگی تکالیف، آزمون‌ها و اخبار کلاسی',
-      classroomId: classroom10M1.id,
-      createdById: teacherUser.id,
-      members: {
-        create: [
-          { tenantId: boysTenant.id, userId: teacherUser.id, isAdmin: true },
-          { tenantId: boysTenant.id, userId: studentUser.id, isAdmin: false },
-        ],
-      },
-      messages: {
-        create: [
-          {
-            tenantId: boysTenant.id,
-            senderId: teacherUser.id,
-            content: 'سلام به همگی، جزوه جدید فصل اول در بخش محتوای آموزشی بارگذاری شد.',
-          },
-        ],
-      },
-    },
-  });
-
-  // 11. Phase 6: Seed Financial Management (Fee & Payroll)
-  console.log('⚡ 11. Seeding Phase 6 Financial Management (Fee & Payroll)...');
-
-  // Clean up previous fee & payroll seed data for idempotent runs
-  await prisma.feeReceipt.deleteMany({ where: { tenantId: boysTenant.id } });
-  await prisma.paymentTransaction.deleteMany({ where: { tenantId: boysTenant.id } });
-  await prisma.feeInstallment.deleteMany({ where: { tenantId: boysTenant.id } });
-  await prisma.studentFeeContract.deleteMany({ where: { tenantId: boysTenant.id } });
-  await prisma.payrollItem.deleteMany({ where: { tenantId: boysTenant.id } });
-  await prisma.payrollSlip.deleteMany({ where: { tenantId: boysTenant.id } });
-  await prisma.staffPayrollProfile.deleteMany({ where: { tenantId: boysTenant.id } });
-  await prisma.tenantSubscription.deleteMany({ where: { tenantId: boysTenant.id } });
-
-  // Student Fee Contract with 3 Installments
-  const feeContract = await prisma.studentFeeContract.create({
-    data: {
-      tenantId: boysTenant.id,
-      academicYearId: academicYear.id,
-      studentId: studentProfile.id,
-      contractNumber: 'FEE-1404-001',
-      totalAmount: 36000000, // 36 Million Tomans
-      discountAmount: 6000000, // 6 Million Discount
-      finalPayableAmount: 30000000, // 30 Million Payable
-      discountReason: 'تخفیف ثبت‌نام زودهنگام و دانش‌آموز ممتاز',
-      status: 'ACTIVE',
-      installments: {
-        create: [
-          {
-            tenantId: boysTenant.id,
-            installmentNumber: 1,
-            title: 'پیش‌پرداخت ثبت‌نام شهریه',
-            dueDate: new Date('2026-09-15T00:00:00.000Z'),
-            amount: 10000000,
-            paidAmount: 10000000,
-            status: 'PAID',
-            paidAt: new Date('2026-09-10T10:00:00.000Z'),
-          },
-          {
-            tenantId: boysTenant.id,
-            installmentNumber: 2,
-            title: 'قسط اول — آبان‌ماه',
-            dueDate: new Date('2026-11-01T00:00:00.000Z'),
-            amount: 10000000,
-            paidAmount: 0,
-            status: 'UNPAID',
-          },
-          {
-            tenantId: boysTenant.id,
-            installmentNumber: 3,
-            title: 'قسط دوم — بهمن‌ماه',
-            dueDate: new Date('2027-02-01T00:00:00.000Z'),
-            amount: 10000000,
-            paidAmount: 0,
-            status: 'UNPAID',
-          },
-        ],
-      },
-    },
-    include: { installments: true },
-  });
-
-  // Initial Receipt for Paid Installment 1
-  const paidInst = feeContract.installments[0];
-  const initialTx = await prisma.paymentTransaction.create({
-    data: {
-      tenantId: boysTenant.id,
-      contractId: feeContract.id,
-      installmentId: paidInst.id,
-      payerUserId: studentUser.id,
-      gateway: 'ZARINPAL',
-      method: 'ONLINE_GATEWAY',
-      amount: 10000000,
-      status: 'SUCCESSFUL',
-      authority: 'A00000000000000000000000000000100001',
-      refId: 'REF-SEED-1404-01',
-      trackingCode: 'TRK-SEED-1404-01',
-      cardPan: '603799******7890',
-      verifiedAt: new Date('2026-09-10T10:05:00.000Z'),
-    },
-  });
-
-  await prisma.feeReceipt.create({
-    data: {
-      tenantId: boysTenant.id,
-      transactionId: initialTx.id,
-      contractId: feeContract.id,
-      receiptNumber: 'REC-1404-0001',
-      amount: 10000000,
-      payerName: 'رضا حسینی',
-      paymentMethod: 'ONLINE_GATEWAY',
-      issuedAt: new Date('2026-09-10T10:05:00.000Z'),
-    },
-  });
-
-  // Staff Payroll Profile
-  await prisma.staffPayrollProfile.create({
-    data: {
-      tenantId: boysTenant.id,
-      userId: teacherUser.id,
-      contractType: 'FULL_TIME_SALARY',
-      baseMonthlySalary: 22000000, // 22 Million Tomans
-      hourlyRate: 350000,
-      bankName: 'بانک ملت',
-      bankAccountNumber: '1234567890',
-      bankShebaNumber: 'IR120120000000001234567890',
-      insuranceNumber: '88776655',
-      isActive: true,
-    },
-  });
-
-  // Sample Approved Payroll Slip
-  const sampleSlip = await prisma.payrollSlip.create({
-    data: {
-      tenantId: boysTenant.id,
-      userId: teacherUser.id,
-      year: 1404,
-      month: 7, // مهر
-      slipNumber: 'PAY-1404-07-01',
-      grossPay: 25500000,
-      totalDeductions: 1785000,
-      netPay: 23715000,
-      status: 'PAID',
-      paidAt: new Date('2026-10-25T12:00:00.000Z'),
-      paidById: boysAdmin.id,
-      paymentRefNumber: 'PAYA-140407-9988',
-      items: {
-        create: [
-          {
-            tenantId: boysTenant.id,
-            type: 'BASE_SALARY',
-            title: 'حقوق پایه مهرماه',
-            amount: 22000000,
-          },
-          {
-            tenantId: boysTenant.id,
-            type: 'HOURLY_TEACHING',
-            title: 'حق‌التدریس ۱۰ ساعت کلاس فوق‌برنامه',
-            amount: 3500000,
-            multiplierOrHours: 10,
-          },
-          {
-            tenantId: boysTenant.id,
-            type: 'INSURANCE_DEDUCTION',
-            title: 'کسر بیمه تأمین اجتماعی سهم کارمند (۷٪)',
-            amount: -1785000,
-          },
-        ],
-      },
-    },
-  });
 
   // 12. Phase 7: Seed SaaS SuperAdmin & Platform Operations
   console.log('⚡ 12. Seeding Phase 7 SaaS SuperAdmin (Plans, Global Roles & Platform Ops)...');
@@ -2073,72 +641,6 @@ async function main() {
     },
   });
 
-  // Sample Sub-Campus / College Tenant
-  const collegeTenant = await prisma.tenant.upsert({
-    where: { slug: 'rokad-college' },
-    update: {},
-    create: {
-      name: 'کالج علمی و مهارتی رکاد',
-      slug: 'rokad-college',
-      type: 'COLLEGE',
-      theme: 'COLLEGE',
-      subdomain: 'college',
-      parentTenantId: boysTenant.id,
-      status: 'ACTIVE',
-      settings: {
-        branding: {
-          primaryColor: '#0D9488',
-          secondaryColor: '#F59E0B',
-          mottoText: 'مرکز تخصصی آموزش‌های مهارتی و فناوری',
-        },
-      },
-    },
-  });
-
-  // Student (College: username=0034567890, password=c0034567890)
-  const collegeStudentPass = await argon2.hash('c0034567890');
-  const collegeStudentUser = await prisma.user.upsert({
-    where: {
-      tenantId_phone: {
-        tenantId: collegeTenant.id,
-        phone: '09124000003',
-      },
-    },
-    update: {
-      username: '0034567890',
-      nationalId: '0034567890',
-      passwordHash: collegeStudentPass,
-    },
-    create: {
-      tenantId: collegeTenant.id,
-      firstName: 'پارسا',
-      lastName: 'مرادی',
-      phone: '09124000003',
-      username: '0034567890',
-      nationalId: '0034567890',
-      passwordHash: collegeStudentPass,
-      role: 'STUDENT',
-      gender: 'MALE',
-      status: 'ACTIVE',
-    },
-  });
-
-  await prisma.studentProfile.upsert({
-    where: { userId: collegeStudentUser.id },
-    update: {
-      studentCode: '34567890',
-      nationalCode: '0034567890',
-    },
-    create: {
-      tenantId: collegeTenant.id,
-      userId: collegeStudentUser.id,
-      studentCode: '34567890',
-      nationalCode: '0034567890',
-      fatherName: 'سعید',
-      birthDate: new Date('2005-08-20'),
-    },
-  });
-
   // 8.5. Official Ka Platform Rewards (سیستم جامع پاداش مدارس رُکاد)
   console.log('🎁 Seeding Official Ka Platform Rewards...');
   const officialRewards = [
@@ -2168,7 +670,7 @@ async function main() {
     { parent: 'پاداش نیکوکارانه', name: 'کمک به انجام امور نیکوکارانه در مدرسه و خارج از مدرسه', minToken: 1, maxToken: null, icon: 'به میزان دلخواه', color: '#E0195B' },
   ];
 
-  for (const t of [boysTenant, girlsTenant, collegeTenant]) {
+  for (const t of [boysTenant, girlsTenant]) {
     for (const rew of officialRewards) {
       const existing = await prisma.kaReward.findFirst({
         where: { tenantId: t.id, name: rew.name },

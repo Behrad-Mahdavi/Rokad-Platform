@@ -6,6 +6,10 @@ import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import { useAuthStore } from '../../../lib/auth/auth-store';
+import { toPersianDigits } from '../../../utils/jalali';
+import { toast } from '../../../components/ui/toast/toast';
+import { OFFICIAL_PERIODS, PeriodDefinition } from '../../../lib/constants/periods';
+import { generateSchedulePdf } from '../../student-parent/schedule/schedulePdfGenerator';
 import {
   CalendarDays,
   Clock,
@@ -15,6 +19,7 @@ import {
   Trash2,
   Edit2,
   Printer,
+  FileDown,
   AlertCircle,
   AlertTriangle,
   Building2,
@@ -26,35 +31,9 @@ import {
   Layers,
 } from 'lucide-react';
 
-interface DayDef {
-  key: string;
-  label: string;
-}
+import { DAYS, DayDef } from '../../student-parent/schedule/StudentSchedulePage';
 
-interface PeriodDef {
-  number: number;
-  label: string;
-  defaultStart: string;
-  defaultEnd: string;
-}
-
-const DAYS: DayDef[] = [
-  { key: 'SATURDAY', label: 'شنبه' },
-  { key: 'SUNDAY', label: 'یکشنبه' },
-  { key: 'MONDAY', label: 'دوشنبه' },
-  { key: 'TUESDAY', label: 'سه‌شنبه' },
-  { key: 'WEDNESDAY', label: 'چهارشنبه' },
-  { key: 'THURSDAY', label: 'پنج‌شنبه' },
-];
-
-const PERIODS: PeriodDef[] = [
-  { number: 1, label: 'زنگ اول', defaultStart: '07:45', defaultEnd: '09:00' },
-  { number: 2, label: 'زنگ دوم', defaultStart: '09:15', defaultEnd: '10:30' },
-  { number: 3, label: 'زنگ سوم', defaultStart: '10:45', defaultEnd: '12:00' },
-  { number: 4, label: 'زنگ چهارم', defaultStart: '12:30', defaultEnd: '13:45' },
-  { number: 5, label: 'زنگ پنجم', defaultStart: '14:00', defaultEnd: '15:15' },
-  { number: 6, label: 'زنگ ششم', defaultStart: '15:30', defaultEnd: '16:45' },
-];
+const PERIODS = OFFICIAL_PERIODS;
 
 interface ClassSchedulePageProps {
   readOnly?: boolean;
@@ -96,7 +75,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
     isSplitPeriod: false,
     secondLessonId: '',
     secondTeacherId: '',
-    startTime: '07:45',
+    startTime: '07:30',
     endTime: '09:00',
     allowTeacherConflict: false,
   });
@@ -118,7 +97,15 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
         setTeachers(teachersRes.data || []);
 
         if (classList.length > 0) {
-          setSelectedClassroomId(classList[0].id);
+          setSelectedClassroomId((prev) => {
+            if (initialClassroomId && classList.some((c: any) => c.id === initialClassroomId)) {
+              return initialClassroomId;
+            }
+            if (prev && classList.some((c: any) => c.id === prev)) {
+              return prev;
+            }
+            return classList[0].id;
+          });
         }
       } catch (err) {
         console.error('Failed to load initial timetable data', err);
@@ -270,7 +257,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
       return;
     }
 
-    const shouldAllowConflict = forceAllowConflict || form.allowTeacherConflict;
+    const shouldAllowConflict = forceAllowConflict || form.allowTeacherConflict || Boolean(conflictWarning);
 
     setIsSubmitting(true);
     setError(null);
@@ -297,6 +284,9 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
       setIsModalOpen(false);
       setConflictWarning(null);
       setConflictDetails(null);
+      toast.success(
+        form.scheduleId ? 'زنگ درسی با موفقیت ویرایش شد' : 'زنگ درسی با موفقیت در برنامه ثبت شد',
+      );
       await fetchClassSchedule(selectedClassroomId);
     } catch (err: any) {
       const responseData = err.response?.data;
@@ -338,10 +328,22 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
     }
     try {
       await apiClient.delete(`/classes/schedules/${scheduleId}`);
+      toast.success('زنگ درسی با موفقیت از برنامه حذف شد');
       await fetchClassSchedule(selectedClassroomId);
     } catch (err: any) {
-      alert(err.message || 'خطا در حذف برنامه درسی.');
+      toast.error(err.message || 'خطا در حذف برنامه درسی.');
     }
+  };
+
+  // Official PDF Export
+  const handleDownloadPdf = () => {
+    generateSchedulePdf({
+      title: 'برنامه هفتگی کلاس درس',
+      classroomName: selectedClassroom?.name || 'کلاس درس',
+      academicYear: '۱۴۰۵-۱۴۰۶',
+      schedules,
+      days: DAYS,
+    });
   };
 
   // Print Timetable
@@ -419,10 +421,26 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
             ) : null}
 
             {classrooms.length > 0 && (
-              <Button variant="outline" size="sm" onClick={handlePrint} className="flex items-center gap-1.5 text-xs">
-                <Printer className="h-3.5 w-3.5" />
-                <span>چاپ برنامه</span>
-              </Button>
+              <>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleDownloadPdf}
+                  className="flex items-center gap-1.5 text-xs shadow-xs"
+                >
+                  <FileDown className="h-3.5 w-3.5" />
+                  <span>دانلود PDF</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePrint}
+                  className="flex items-center gap-1.5 text-xs"
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  <span>چاپ مرورگر</span>
+                </Button>
+              </>
             )}
           </div>
         }
@@ -532,13 +550,18 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
               >
                 <div className="flex items-center justify-between pb-2 border-b border-gray-100 mb-2.5">
                   <div className="flex items-center gap-2">
-                    <span className="h-6 w-6 rounded-lg bg-primary-light text-primary flex items-center justify-center text-xs font-bold font-mono">
+                    <span className={`h-6 w-6 rounded-lg ${period.isExtracurricular ? 'bg-amber-100 text-amber-800' : 'bg-primary-light text-primary'} flex items-center justify-center text-xs font-bold font-mono`}>
                       {period.number}
                     </span>
                     <span className="text-xs font-bold text-ink-darker">{period.label}</span>
+                    {period.isExtracurricular && (
+                      <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-extrabold border border-amber-300">
+                        فوق برنامه (عصر)
+                      </span>
+                    )}
                   </div>
                   <span className="font-mono text-[10px] text-gray-500 dir-ltr bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
-                    {item ? `${item.startTime} - ${item.endTime}` : `${period.defaultStart} - ${period.defaultEnd}`}
+                    {item ? `${toPersianDigits(item.startTime)} - ${toPersianDigits(item.endTime)}` : `${toPersianDigits(period.defaultStart)} - ${toPersianDigits(period.defaultEnd)}`}
                   </span>
                 </div>
 
@@ -672,10 +695,22 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                 روز / زنگ
               </th>
               {PERIODS.map((period) => (
-                <th key={period.number} className="p-3 text-center border-l border-gray-200 last:border-l-0">
-                  <div className="font-bold text-xs text-ink-darker">{period.label}</div>
-                  <div className="font-mono text-[10px] text-gray-400 mt-0.5 dir-ltr">
-                    {period.defaultStart} - {period.defaultEnd}
+                <th
+                  key={period.number}
+                  className={`p-3 text-center border-l border-gray-200 last:border-l-0 ${
+                    period.isExtracurricular ? 'bg-purple-50/80 border-b-2 border-b-purple-400' : ''
+                  }`}
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    <span className="font-bold text-xs text-ink-darker">{period.label}</span>
+                    {period.isExtracurricular && (
+                      <span className="text-[9px] font-black bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded border border-amber-300">
+                        فوق برنامه
+                      </span>
+                    )}
+                  </div>
+                  <div className="font-mono text-[10px] text-gray-500 mt-0.5 dir-ltr">
+                    {toPersianDigits(period.defaultStart)} - {toPersianDigits(period.defaultEnd)}
                   </div>
                 </th>
               ))}
@@ -700,7 +735,9 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                   return (
                     <td
                       key={period.number}
-                      className="p-2 border-l border-gray-200 last:border-l-0 align-top min-w-[155px] max-w-[190px]"
+                      className={`p-2 border-l border-gray-200 last:border-l-0 align-top min-w-[155px] max-w-[190px] ${
+                        period.isExtracurricular ? 'bg-purple-50/20' : ''
+                      }`}
                     >
                       {item ? (
                         /* Filled Slot Card */
@@ -1172,6 +1209,44 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                 </div>
               </div>
             )}
+
+            {/* Standard Period Time Preset Notice */}
+            {(() => {
+              const currentPeriodDef = PERIODS.find((p) => p.number === form.periodNumber);
+              if (!currentPeriodDef) return null;
+              const isDefault = form.startTime === currentPeriodDef.defaultStart && form.endTime === currentPeriodDef.defaultEnd;
+              return (
+                <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-primary/5 border border-primary/20 text-xs">
+                  <div className="flex items-center gap-1.5 text-ink-darker font-bold">
+                    <Clock className="w-4 h-4 text-primary shrink-0" />
+                    <span>ساعت مصوب مدرسه برای {currentPeriodDef.label}:</span>
+                    <span className="font-mono text-primary font-black dir-ltr">
+                      {toPersianDigits(currentPeriodDef.defaultStart)} تا {toPersianDigits(currentPeriodDef.defaultEnd)}
+                    </span>
+                    {currentPeriodDef.isExtracurricular && (
+                      <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-black border border-amber-300">
+                        فوق برنامه (عصر)
+                      </span>
+                    )}
+                  </div>
+                  {!isDefault && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          startTime: currentPeriodDef.defaultStart,
+                          endTime: currentPeriodDef.defaultEnd,
+                        }))
+                      }
+                      className="text-[11px] font-bold text-primary hover:underline hover:text-primary-dark cursor-pointer"
+                    >
+                      تنظیم به ساعت مصوب مدرسه ←
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Time Slot Inputs */}
             <div className="grid grid-cols-2 gap-4 pt-1">

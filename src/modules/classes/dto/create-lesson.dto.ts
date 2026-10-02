@@ -129,6 +129,49 @@ export class CreateClassroomDto {
   roomNumber?: string;
 }
 
+export class UpdateClassroomDto {
+  @ApiPropertyOptional({ description: 'شناسه سال تحصیلی' })
+  @IsString()
+  @IsOptional()
+  academicYearId?: string;
+
+  @ApiPropertyOptional({ description: 'شناسه مقطع تحصیلی' })
+  @IsString()
+  @IsOptional()
+  levelId?: string;
+
+  @ApiPropertyOptional({ description: 'شناسه رشته تحصیلی' })
+  @IsString()
+  @IsOptional()
+  fieldId?: string;
+
+  @ApiPropertyOptional({ description: 'شناسه کاربر معلم راهنما / سرپرست کلاس' })
+  @IsString()
+  @IsOptional()
+  mentorId?: string;
+
+  @ApiPropertyOptional({ description: 'نام کلاس', example: 'کلاس دهم ریاضی ۱' })
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @ApiPropertyOptional({ description: 'کد یکتای کلاس', example: 'CLS-10-M1' })
+  @IsString()
+  @IsOptional()
+  code?: string;
+
+  @ApiPropertyOptional({ description: 'ظرفیت کلاس', default: 30 })
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  capacity?: number;
+
+  @ApiPropertyOptional({ description: 'شماره یا نام اتاق فیزیکی', example: 'اتاق ۱۰۱' })
+  @IsString()
+  @IsOptional()
+  roomNumber?: string;
+}
+
 export class EnrollStudentDto {
   @ApiProperty({ description: 'شناسه پروفایل دانش‌آموز' })
   @IsString()
@@ -175,12 +218,12 @@ export class CreateScheduleDto {
   @Min(1)
   periodNumber: number;
 
-  @ApiProperty({ description: 'ساعت شروع', example: '08:00' })
+  @ApiProperty({ description: 'ساعت شروع', example: '07:30' })
   @IsString()
   @IsNotEmpty()
   startTime: string;
 
-  @ApiProperty({ description: 'ساعت پایان', example: '09:30' })
+  @ApiProperty({ description: 'ساعت پایان', example: '09:00' })
   @IsString()
   @IsNotEmpty()
   endTime: string;

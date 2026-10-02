@@ -3,9 +3,12 @@ import {
   OnModuleInit,
   Logger,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as Minio from 'minio';
+import * as path from 'path';
+import * as fs from 'fs';
+import * as os from 'os';
 import { randomUUID } from 'crypto';
 
 export interface UploadResult {
@@ -16,64 +19,144 @@ export interface UploadResult {
   originalName: string;
 }
 
+const MIME_MAP: Record<string, string> = {
+  mp4: 'video/mp4',
+  webm: 'video/webm',
+  mov: 'video/quicktime',
+  mkv: 'video/x-matroska',
+  avi: 'video/x-msvideo',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  svg: 'image/svg+xml',
+  pdf: 'application/pdf',
+  zip: 'application/zip',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xls: 'application/vnd.ms-excel',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  mp3: 'audio/mpeg',
+  wav: 'audio/wav',
+};
+
 @Injectable()
 export class StorageService implements OnModuleInit {
   private readonly logger = new Logger(StorageService.name);
-  private minioClient: Minio.Client;
+  private readonly storageDriver: string;
+  private verifiedUploadDir: string | null = null;
+  private minioClient: any = null;
   private bucketName: string;
-  private endpoint: string;
-  private port: number;
-  private useSSL: boolean;
 
   constructor(private readonly configService: ConfigService) {
-    this.endpoint = this.configService.get<string>('MINIO_ENDPOINT', 'localhost');
-    this.port = parseInt(this.configService.get<string>('MINIO_PORT', '9000'), 10);
-    this.useSSL = this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true';
+    this.storageDriver = this.configService.get<string>('STORAGE_DRIVER', 'disk').toLowerCase();
     this.bucketName = this.configService.get<string>('MINIO_BUCKET_NAME', 'rokad-storage');
+  }
 
-    this.minioClient = new Minio.Client({
-      endPoint: this.endpoint,
-      port: this.port,
-      useSSL: this.useSSL,
-      accessKey: this.configService.get<string>('MINIO_ROOT_USER', 'rokad_minio_admin'),
-      secretKey: this.configService.get<string>('MINIO_ROOT_PASSWORD', 'rokad_minio_secret_2026'),
-    });
+  /**
+   * Resilient upload directory resolver.
+   * Tests candidates (custom UPLOAD_DIR, ./uploads, /tmp/rokad-uploads)
+   * to guarantee write permissions and avoid broken symlinks or ENOENT.
+   */
+  public getUploadDir(): string {
+    if (this.verifiedUploadDir) {
+      return this.verifiedUploadDir;
+    }
+
+    const customDir = this.configService.get<string>('UPLOAD_DIR');
+    const candidates = [
+      customDir,
+      '/app/uploads',
+      '/usr/src/app/uploads',
+      path.resolve(process.cwd(), 'uploads'),
+      '/tmp/rokad-uploads',
+      path.join(os.tmpdir(), 'rokad-uploads'),
+    ].filter(Boolean) as string[];
+
+    for (const candidate of candidates) {
+      try {
+        // Check if candidate is a broken symlink
+        let isBrokenSymlink = false;
+        try {
+          const lstat = fs.lstatSync(candidate);
+          if (lstat.isSymbolicLink() && !fs.existsSync(candidate)) {
+            isBrokenSymlink = true;
+          }
+        } catch {
+          // Path doesn't exist yet, which is fine
+        }
+
+        if (isBrokenSymlink) {
+          this.logger.warn(`Candidate ${candidate} is a broken symlink, skipping.`);
+          continue;
+        }
+
+        if (!fs.existsSync(candidate)) {
+          fs.mkdirSync(candidate, { recursive: true });
+        }
+
+        // Test write permission with a probe file
+        const probeFile = path.join(candidate, `.probe-${Date.now()}`);
+        fs.writeFileSync(probeFile, 'ok');
+        fs.unlinkSync(probeFile);
+
+        this.verifiedUploadDir = candidate;
+        this.logger.log(`Verified active storage directory: ${candidate}`);
+        return candidate;
+      } catch (err: any) {
+        this.logger.warn(`Storage candidate ${candidate} unusable: ${err.message}. Trying next candidate.`);
+      }
+    }
+
+    // Absolute fallback: system temp directory
+    const tempFallback = path.join(os.tmpdir(), 'rokad-uploads');
+    try {
+      fs.mkdirSync(tempFallback, { recursive: true });
+    } catch {}
+    this.verifiedUploadDir = tempFallback;
+    return tempFallback;
   }
 
   async onModuleInit() {
+    // 1. Initialize local disk storage
     try {
-      const exists = await this.minioClient.bucketExists(this.bucketName);
-      if (!exists) {
-        await this.minioClient.makeBucket(this.bucketName, 'us-east-1');
-        this.logger.log(`Created MinIO storage bucket: '${this.bucketName}'`);
-      } else {
-        this.logger.log(`MinIO storage bucket ready: '${this.bucketName}'`);
-      }
-
-      // Apply public read policy so browsers can access images, avatars, and assets
-      const publicReadPolicy = {
-        Version: '2012-10-17',
-        Statement: [
-          {
-            Effect: 'Allow',
-            Principal: { AWS: ['*'] },
-            Action: ['s3:GetObject'],
-            Resource: [`arn:aws:s3:::${this.bucketName}/*`],
-          },
-        ],
-      };
-      await this.minioClient.setBucketPolicy(
-        this.bucketName,
-        JSON.stringify(publicReadPolicy),
-      );
-      this.logger.log(`Public read policy applied to bucket: '${this.bucketName}'`);
+      const activeDir = this.getUploadDir();
+      this.logger.log(`Local Disk Storage initialized at: ${activeDir}`);
     } catch (err: any) {
-      this.logger.warn(`MinIO connection check warning: ${err.message}. Operating with fallback mode.`);
+      this.logger.error(`Storage initialization warning: ${err.message}`);
+    }
+
+    // 2. Only attempt MinIO if explicitly configured
+    if (this.storageDriver === 'minio') {
+      try {
+        const Minio = await import('minio');
+        const endpoint = this.configService.get<string>('MINIO_ENDPOINT', 'localhost');
+        const port = parseInt(this.configService.get<string>('MINIO_PORT', '9000'), 10);
+        const useSSL = this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true';
+
+        this.minioClient = new Minio.Client({
+          endPoint: endpoint,
+          port,
+          useSSL,
+          accessKey: this.configService.get<string>('MINIO_ROOT_USER', 'rokad_minio_admin'),
+          secretKey: this.configService.get<string>('MINIO_ROOT_PASSWORD', 'rokad_minio_secret_2026'),
+        });
+
+        const exists = await this.minioClient.bucketExists(this.bucketName);
+        if (!exists) {
+          await this.minioClient.makeBucket(this.bucketName, 'us-east-1');
+        }
+        this.logger.log(`MinIO storage bucket ready: '${this.bucketName}'`);
+      } catch (err: any) {
+        this.logger.warn(`MinIO connection unavailable (${err.message}). Defaulting to local disk storage.`);
+        this.minioClient = null;
+      }
     }
   }
 
   /**
-   * Uploads file buffer with tenant folder namespacing
+   * Uploads file buffer directly to disk (or MinIO if explicitly configured)
    */
   async uploadFile(
     tenantId: string,
@@ -91,66 +174,169 @@ export class StorageService implements OnModuleInit {
 
     const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
     const fileId = randomUUID();
-    const fileKey = `tenants/${tenantId}/${moduleName}/${fileId}-${sanitizedFilename}`;
+    const storedFilename = `${fileId}-${sanitizedFilename}`;
+    const sanitizedModule = (moduleName || 'general').replace(/[^a-zA-Z0-9_-]/g, '_');
     const fileSizeMb = parseFloat((file.size / (1024 * 1024)).toFixed(3));
 
-    try {
-      await this.minioClient.putObject(
-        this.bucketName,
-        fileKey,
-        file.buffer,
-        file.size,
-        {
-          'Content-Type': file.mimetype,
-          'x-amz-meta-tenant-id': tenantId,
-          'x-amz-meta-original-name': encodeURIComponent(file.originalname),
-        },
-      );
+    // If MinIO is active and initialized
+    if (this.storageDriver === 'minio' && this.minioClient) {
+      const fileKey = `tenants/${tenantId}/${sanitizedModule}/${storedFilename}`;
+      try {
+        await this.minioClient.putObject(
+          this.bucketName,
+          fileKey,
+          file.buffer,
+          file.size,
+          {
+            'Content-Type': file.mimetype,
+            'x-amz-meta-tenant-id': tenantId,
+            'x-amz-meta-original-name': encodeURIComponent(file.originalname),
+          },
+        );
 
-      const fileUrl = `http://${this.endpoint}:${this.port}/${this.bucketName}/${fileKey}`;
+        const endpoint = this.configService.get<string>('MINIO_ENDPOINT', 'localhost');
+        const port = this.configService.get<string>('MINIO_PORT', '9000');
+        const fileUrl = `http://${endpoint}:${port}/${this.bucketName}/${fileKey}`;
 
-      return {
-        fileKey,
-        fileUrl,
-        fileSizeMb,
-        mimeType: file.mimetype,
-        originalName: file.originalname,
-      };
-    } catch (err: any) {
-      this.logger.error(`Failed to upload file to MinIO: ${err.message}`);
-      // Return structured URL in development/fallback
-      const fileUrl = `http://${this.endpoint}:${this.port}/${this.bucketName}/${fileKey}`;
-      return {
-        fileKey,
-        fileUrl,
-        fileSizeMb,
-        mimeType: file.mimetype,
-        originalName: file.originalname,
-      };
+        return {
+          fileKey,
+          fileUrl,
+          fileSizeMb,
+          mimeType: file.mimetype,
+          originalName: file.originalname,
+        };
+      } catch (err: any) {
+        this.logger.error(`MinIO upload failed: ${err.message}. Falling back to local disk.`);
+      }
     }
+
+    // Local Disk Storage Engine (Guaranteed Resilient)
+    const baseDir = this.getUploadDir();
+    const targetModuleDir = path.join(baseDir, sanitizedModule);
+
+    try {
+      if (!fs.existsSync(targetModuleDir)) {
+        fs.mkdirSync(targetModuleDir, { recursive: true });
+      }
+    } catch (mkdirErr: any) {
+      this.logger.warn(`Failed to create ${targetModuleDir}: ${mkdirErr.message}. Retrying at /tmp...`);
+      const fallbackModuleDir = path.join('/tmp/rokad-uploads', sanitizedModule);
+      fs.mkdirSync(fallbackModuleDir, { recursive: true });
+      this.verifiedUploadDir = '/tmp/rokad-uploads';
+    }
+
+    const finalModuleDir = path.join(this.getUploadDir(), sanitizedModule);
+    if (!fs.existsSync(finalModuleDir)) {
+      fs.mkdirSync(finalModuleDir, { recursive: true });
+    }
+
+    const fullFilePath = path.join(finalModuleDir, storedFilename);
+    await fs.promises.writeFile(fullFilePath, file.buffer);
+
+    const fileKey = `${sanitizedModule}/${storedFilename}`;
+    const fileUrl = `/api/v1/storage/files/${sanitizedModule}/${storedFilename}`;
+
+    return {
+      fileKey,
+      fileUrl,
+      fileSizeMb,
+      mimeType: file.mimetype,
+      originalName: file.originalname,
+    };
   }
 
   /**
-   * Generates a short-lived presigned download URL (default 15 minutes = 900 seconds)
+   * Resolves local file metadata and security validation for streaming.
+   * Searches across possible storage roots to always find uploaded media.
    */
-  async getPresignedDownloadUrl(
-    fileKey: string,
-    expirySeconds = 900,
-  ): Promise<string> {
+  getFileInfo(moduleName: string, filename: string): {
+    fullPath: string;
+    size: number;
+    mimeType: string;
+    originalName?: string;
+  } {
+    const safeModuleName = path.basename(moduleName || 'general');
+    
+    // Support both raw and URI-decoded filenames
+    let decodedFilename = filename;
     try {
-      return await this.minioClient.presignedGetObject(
-        this.bucketName,
-        fileKey,
-        expirySeconds,
-      );
-    } catch (err: any) {
-      this.logger.warn(`Presigned URL generation fallback: ${err.message}`);
-      return `http://${this.endpoint}:${this.port}/${this.bucketName}/${fileKey}`;
+      decodedFilename = decodeURIComponent(filename);
+    } catch {}
+
+    const filenameVariants = [
+      path.basename(filename),
+      path.basename(decodedFilename),
+    ];
+
+    const searchRoots = [
+      this.getUploadDir(),
+      this.configService.get<string>('UPLOAD_DIR'),
+      '/app/uploads',
+      '/usr/src/app/uploads',
+      path.resolve(process.cwd(), 'uploads'),
+      '/tmp/rokad-uploads',
+      path.join(os.tmpdir(), 'rokad-uploads'),
+    ].filter(Boolean) as string[];
+
+    let foundPath: string | null = null;
+    let foundFilename: string = filenameVariants[0];
+
+    for (const root of searchRoots) {
+      for (const name of filenameVariants) {
+        // 1. Check under module folder (e.g. uploads/messages/file.mp4)
+        const modulePath = path.join(root, safeModuleName, name);
+        if (fs.existsSync(modulePath)) {
+          foundPath = modulePath;
+          foundFilename = name;
+          break;
+        }
+
+        // 2. Check directly under root (e.g. uploads/file.mp4)
+        const directPath = path.join(root, name);
+        if (fs.existsSync(directPath)) {
+          foundPath = directPath;
+          foundFilename = name;
+          break;
+        }
+      }
+      if (foundPath) break;
     }
+
+    if (!foundPath) {
+      throw new NotFoundException('فایل مورد نظر یافت نشد');
+    }
+
+    const stat = fs.statSync(foundPath);
+    const ext = path.extname(foundFilename).toLowerCase().replace('.', '');
+    const mimeType = MIME_MAP[ext] || 'application/octet-stream';
+
+    // Extract human-friendly original name by stripping the UUID prefix if present
+    const originalName = foundFilename.replace(/^[0-9a-fA-F-]{36}-/, '');
+
+    return {
+      fullPath: foundPath,
+      size: stat.size,
+      mimeType,
+      originalName,
+    };
   }
 
   /**
-   * Generates a short-lived presigned upload URL (default 15 minutes = 900 seconds)
+   * Generates a download URL
+   */
+  async getPresignedDownloadUrl(fileKey: string, expirySeconds = 900): Promise<string> {
+    if (this.storageDriver === 'minio' && this.minioClient) {
+      try {
+        return await this.minioClient.presignedGetObject(this.bucketName, fileKey, expirySeconds);
+      } catch (err: any) {
+        // Fallback
+      }
+    }
+    return `/api/v1/storage/files/${fileKey}`;
+  }
+
+  /**
+   * Generates a presigned upload URL or relative upload endpoint
    */
   async getPresignedUploadUrl(
     tenantId: string,
@@ -160,31 +346,57 @@ export class StorageService implements OnModuleInit {
   ): Promise<{ uploadUrl: string; fileKey: string }> {
     const sanitizedFilename = originalFilename.replace(/[^a-zA-Z0-9._-]/g, '_');
     const fileId = randomUUID();
-    const fileKey = `tenants/${tenantId}/${moduleName}/${fileId}-${sanitizedFilename}`;
+    const storedFilename = `${fileId}-${sanitizedFilename}`;
+    const sanitizedModule = (moduleName || 'general').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const fileKey = `${sanitizedModule}/${storedFilename}`;
 
-    try {
-      const uploadUrl = await this.minioClient.presignedPutObject(
-        this.bucketName,
-        fileKey,
-        expirySeconds,
-      );
-      return { uploadUrl, fileKey };
-    } catch (err: any) {
-      return {
-        uploadUrl: `http://${this.endpoint}:${this.port}/${this.bucketName}/${fileKey}`,
-        fileKey,
-      };
+    if (this.storageDriver === 'minio' && this.minioClient) {
+      try {
+        const uploadUrl = await this.minioClient.presignedPutObject(
+          this.bucketName,
+          `tenants/${tenantId}/${fileKey}`,
+          expirySeconds,
+        );
+        return { uploadUrl, fileKey };
+      } catch (err: any) {
+        // Fallback
+      }
     }
+
+    return {
+      uploadUrl: `/api/v1/storage/upload`,
+      fileKey,
+    };
   }
 
   /**
-   * Deletes a file from MinIO
+   * Deletes a file from storage
    */
   async deleteFile(fileKey: string): Promise<void> {
-    try {
-      await this.minioClient.removeObject(this.bucketName, fileKey);
-    } catch (err: any) {
-      this.logger.warn(`Failed to delete object from MinIO: ${err.message}`);
+    if (this.storageDriver === 'minio' && this.minioClient) {
+      try {
+        await this.minioClient.removeObject(this.bucketName, fileKey);
+        return;
+      } catch (err: any) {
+        this.logger.warn(`Failed to delete object from MinIO: ${err.message}`);
+      }
+    }
+
+    const searchRoots = [
+      this.getUploadDir(),
+      path.resolve(process.cwd(), 'uploads'),
+      '/tmp/rokad-uploads',
+      path.join(os.tmpdir(), 'rokad-uploads'),
+    ];
+
+    for (const root of searchRoots) {
+      try {
+        const safePath = path.join(root, fileKey);
+        if (fs.existsSync(safePath)) {
+          await fs.promises.unlink(safePath);
+          return;
+        }
+      } catch {}
     }
   }
 }

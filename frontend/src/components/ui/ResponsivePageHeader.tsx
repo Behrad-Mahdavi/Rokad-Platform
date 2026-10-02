@@ -33,12 +33,12 @@ export const ResponsivePageHeader: React.FC<ResponsivePageHeaderProps> = ({
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2.5">
           {icon && (
-            <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-primary-light dark:bg-primary-darker/60 flex items-center justify-center text-primary-darker dark:text-primary-light shrink-0 border border-primary/20 dark:border-primary/40 shadow-xs">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary dark:text-primary border border-primary/25 flex items-center justify-center font-black shadow-2xs shrink-0">
               {React.isValidElement(icon) ? (
                 icon
               ) : (
                 React.createElement(icon as React.ComponentType<{ className?: string }>, {
-                  className: 'h-4 w-4 sm:h-5 sm:w-5',
+                  className: 'w-5 h-5',
                 })
               )}
             </div>

@@ -819,8 +819,8 @@ export const StudentExamsPage: React.FC = () => {
         {/* Top Row: Title, Matching Icon with Home Page, and Filter Button */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            {/* Icon matching home page: HelpCircle with college/third palette */}
-            <div className="w-10 h-10 rounded-xl bg-college-light dark:bg-[#38260D] text-third dark:text-[#FBBF24] border border-third/30 flex items-center justify-center font-black shadow-2xs shrink-0">
+            {/* Icon matching home page: HelpCircle with primary palette aligned with Homework page */}
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary dark:text-primary border border-primary/25 flex items-center justify-center font-black shadow-2xs shrink-0">
               <HelpCircle className="w-5 h-5" />
             </div>
             <div className="flex items-center gap-2 min-w-0">

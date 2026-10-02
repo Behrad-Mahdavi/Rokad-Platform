@@ -27,18 +27,20 @@ export class BruteForceService {
     const userLockKey = `brute:lock:user:${cleanId}`;
     const ipLockKey = `brute:lock:ip:${ip}`;
 
+    const isLoopback = ['127.0.0.1', '::1', '::ffff:127.0.0.1', 'localhost', 'unknown'].includes(ip);
+
     const [userTtl, ipTtl] = await Promise.all([
       this.redisService.ttl(userLockKey),
-      this.redisService.ttl(ipLockKey),
+      isLoopback ? Promise.resolve(-2) : this.redisService.ttl(ipLockKey),
     ]);
 
-    let maxTtl = Math.max(userTtl, ipTtl);
+    let maxTtl = Math.max(userTtl, isLoopback ? 0 : ipTtl);
 
     // Fallback check in memory
     if (maxTtl <= 0) {
       const now = Date.now();
       const memUserLock = this.memoryLocks.get(cleanId);
-      const memIpLock = this.memoryLocks.get(ip);
+      const memIpLock = isLoopback ? 0 : this.memoryLocks.get(ip);
       const memLock = Math.max(memUserLock || 0, memIpLock || 0);
 
       if (memLock > now) {
@@ -117,10 +119,13 @@ export class BruteForceService {
       this.redisService.del(`brute:attempt:user:${cleanId}`),
       this.redisService.del(`brute:lock:user:${cleanId}`),
       this.redisService.del(`brute:attempt:ip:${ip}`),
+      this.redisService.del(`brute:lock:ip:${ip}`),
     ]);
 
     this.memoryLocks.delete(cleanId);
+    this.memoryLocks.delete(ip);
     this.memoryAttempts.delete(cleanId);
+    this.memoryAttempts.delete(ip);
   }
 
   /**

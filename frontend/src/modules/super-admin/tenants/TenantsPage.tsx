@@ -150,7 +150,7 @@ export const TenantsPage: React.FC = () => {
         {
           id: impersonatedUser.id,
           tenantId: tenant.id,
-          firstName: impersonatedUser.name.split(' ')[0] || 'مدیر',
+          firstName: impersonatedUser.name.split(' ')[0] || 'راهبر',
           lastName: impersonatedUser.name.split(' ')[1] || 'مدرسه',
           role: impersonatedUser.role,
           isPlatformAdmin: true, // Retain admin capabilities
@@ -456,17 +456,17 @@ export const TenantsPage: React.FC = () => {
           </div>
 
           <div className="pt-2 border-t border-gray-100">
-            <h4 className="font-bold text-xs text-ink-darker mb-3 text-right">مشخصات کاربر مدیر مدرسه:</h4>
+            <h4 className="font-bold text-xs text-ink-darker mb-3 text-right">مشخصات کاربر راهبر مدرسه:</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                label="نام مدیر"
+                label="نام راهبر"
                 placeholder="مثال: رضا"
                 value={provisionForm.adminFirstName}
                 onChange={(e) => setProvisionForm({ ...provisionForm, adminFirstName: e.target.value })}
                 required
               />
               <Input
-                label="نام خانوادگی مدیر"
+                label="نام خانوادگی راهبر"
                 placeholder="مثال: سهرابی"
                 value={provisionForm.adminLastName}
                 onChange={(e) => setProvisionForm({ ...provisionForm, adminLastName: e.target.value })}
@@ -475,14 +475,14 @@ export const TenantsPage: React.FC = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
               <Input
-                label="شماره همراه مدیر (نام کاربری ورود)"
+                label="شماره همراه راهبر (نام کاربری ورود)"
                 placeholder="مثال: 09129998877"
                 value={provisionForm.adminPhone}
                 onChange={(e) => setProvisionForm({ ...provisionForm, adminPhone: e.target.value })}
                 required
               />
               <Input
-                label="رمز عبور مدیر"
+                label="رمز عبور راهبر"
                 type="password"
                 placeholder="••••••••"
                 value={provisionForm.adminPassword}

@@ -42,7 +42,7 @@ export const MembersAccessTab: React.FC<Props> = ({
       case 'SUPER_ADMIN':
         return { label: 'سوپرادمین', color: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' };
       case 'SCHOOL_ADMIN':
-        return { label: 'مدیر آموزشگاه', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300' };
+        return { label: 'راهبر آموزشگاه', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300' };
       case 'TEACHER':
         return { label: 'هنرآموز / دبیر', color: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' };
       case 'STAFF':

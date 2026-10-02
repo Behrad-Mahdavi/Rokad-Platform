@@ -14,6 +14,9 @@ import {
   Tag,
   Clock,
   Filter,
+  Calculator,
+  CreditCard,
+  Coins,
 } from 'lucide-react';
 import { toPersianDigits } from '../../../lib/utils';
 import { toast } from 'sonner';
@@ -39,6 +42,13 @@ interface ManualSmsTabProps {
   setDirectPhone: (p: string) => void;
   charCount: number;
   smsParts: number;
+  unitTariffTomans?: number;
+  singleRecipientCostTomans?: number;
+  totalCostTomans?: number;
+  estimatedRecipients?: number;
+  liveCreditTomans?: number;
+  creditAfterSendTomans?: number;
+  isConfigLoading?: boolean;
   onSendSms: () => void;
 }
 
@@ -63,6 +73,13 @@ export const ManualSmsTab: React.FC<ManualSmsTabProps> = ({
   setDirectPhone,
   charCount,
   smsParts,
+  unitTariffTomans = 0,
+  singleRecipientCostTomans = 0,
+  totalCostTomans = 0,
+  estimatedRecipients = 0,
+  liveCreditTomans = 0,
+  creditAfterSendTomans = 0,
+  isConfigLoading = false,
   onSendSms,
 }) => {
   const [userSearchQuery, setUserSearchQuery] = useState('');
@@ -488,35 +505,129 @@ export const ManualSmsTab: React.FC<ManualSmsTabProps> = ({
         </div>
 
         {/* Bottom Specs Bar */}
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="mt-3.5 flex items-center justify-between text-xs pt-3 border-t border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-3">
             <span className="font-bold text-gray-600 dark:text-gray-300">
-              کاراکترها: <strong className="text-sec dark:text-white font-mono">{toPersianDigits(charCount)}</strong>
+              کاراکتر: <strong className="text-sec dark:text-white font-mono">{toPersianDigits(charCount)}</strong>
             </span>
-            <span className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold font-mono">
-              {toPersianDigits(smsParts)} پارت پیامک
-            </span>
-            <span className="text-gray-400">
-              (زبان: فارسی)
+            <span className="px-2.5 py-0.5 rounded-lg bg-ecosystem-light dark:bg-ecosystem-darker/60 text-primary-darker dark:text-primary border border-primary/30 font-bold font-mono text-[11px]">
+              {toPersianDigits(smsParts)} پارت
             </span>
           </div>
+        </div>
+      </div>
 
-          {/* Primary Action Button */}
+      {/* 3. Live Amoot Financial Estimation & Send Action */}
+      <div className="rokad-card p-4 sm:p-5 bg-white dark:bg-[#151C28] border-[1.5px] border-gray-200 dark:border-gray-800 shadow-[2.75px_2.75px_0_#202A5A] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
+        <div className="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-ecosystem-light dark:bg-ecosystem-darker/60 border border-primary/40 flex items-center justify-center text-primary shadow-[1.5px_1.5px_0_#59BBAF] shrink-0">
+              <Calculator className="w-4 h-4" />
+            </div>
+            <h3 className="text-sm font-black text-sec dark:text-white">
+              برآورد هزینه و کسر اعتبار
+            </h3>
+          </div>
+
+          <span className="text-xs font-bold text-gray-500 dark:text-gray-400 bg-[#FAFAFA] dark:bg-[#1C2536] border border-gray-200 dark:border-gray-700 px-2.5 py-1 rounded-lg font-mono">
+            {isConfigLoading || unitTariffTomans === 0
+              ? 'در حال استعلام تعرفه...'
+              : `تعرفه: ${toPersianDigits(unitTariffTomans)} ت / پارت`}
+          </span>
+        </div>
+
+        {/* 4 Persona Stat Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+          {/* 1. SMS Parts & Length */}
+          <div className="rokad-card rounded-xl border-[1.5px] border-[#EAEAEA] dark:border-[#242F42] bg-[#FAFAFA] dark:bg-[#1C2536] p-3 text-right shadow-[2px_2px_0_#202A5A] dark:shadow-[2px_2px_0_#59BBAF]">
+            <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 block mb-1">
+              حجم پیامک
+            </span>
+            <div className="text-base sm:text-lg font-black text-sec dark:text-white font-mono">
+              {toPersianDigits(smsParts)} پارت
+            </div>
+            <div className="text-[10px] text-gray-400 font-mono mt-0.5">
+              {toPersianDigits(charCount)} کاراکتر
+            </div>
+          </div>
+
+          {/* 2. Single Recipient Cost */}
+          <div className="rokad-card rounded-xl border-[1.5px] border-[#EAEAEA] dark:border-[#242F42] bg-[#FAFAFA] dark:bg-[#1C2536] p-3 text-right shadow-[2px_2px_0_#F8A41D]">
+            <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 block mb-1">
+              هزینه هر پیامک
+            </span>
+            <div className="text-base sm:text-lg font-black text-sec dark:text-white font-mono">
+              {isConfigLoading || singleRecipientCostTomans === 0
+                ? '...'
+                : `${toPersianDigits(singleRecipientCostTomans.toLocaleString())} تومان`}
+            </div>
+            <div className="text-[10px] text-gray-400 font-mono mt-0.5">
+              برای هر گیرنده
+            </div>
+          </div>
+
+          {/* 3. Total Cost */}
+          <div className="rokad-card rounded-xl border-[1.5px] border-primary/40 dark:border-primary/50 bg-primary-light/40 dark:bg-primary-darker/40 p-3 text-right shadow-[2px_2px_0_#59BBAF]">
+            <span className="text-[11px] font-bold text-primary-darker dark:text-primary-light block mb-1">
+              مجموع کسر از حساب
+            </span>
+            <div className="text-base sm:text-lg font-black text-primary-darker dark:text-white font-mono">
+              {isConfigLoading && estimatedRecipients > 0
+                ? '...'
+                : `${toPersianDigits(totalCostTomans.toLocaleString())} تومان`}
+            </div>
+            <div className="text-[10px] text-primary-darker/70 dark:text-primary-light/70 font-mono mt-0.5">
+              {toPersianDigits(estimatedRecipients)} مخاطب
+            </div>
+          </div>
+
+          {/* 4. Credit Remaining */}
+          <div className="rokad-card rounded-xl border-[1.5px] border-[#EAEAEA] dark:border-[#242F42] bg-[#FAFAFA] dark:bg-[#1C2536] p-3 text-right shadow-[2px_2px_0_#202A5A] dark:shadow-[2px_2px_0_#59BBAF]">
+            <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 block mb-1">
+              مانده پس از ارسال
+            </span>
+            <div className="text-base sm:text-lg font-black font-mono">
+              {isConfigLoading ? (
+                <span className="text-sec dark:text-white">...</span>
+              ) : creditAfterSendTomans < 0 ? (
+                <span className="text-red-500 font-bold" title="کسری موجودی">
+                  {toPersianDigits(Math.abs(creditAfterSendTomans).toLocaleString())}- تومان
+                </span>
+              ) : (
+                <span className="text-sec dark:text-white">
+                  {toPersianDigits(creditAfterSendTomans.toLocaleString())} تومان
+                </span>
+              )}
+            </div>
+            <div className="text-[10px] font-mono mt-0.5">
+              {isConfigLoading ? (
+                <span className="text-gray-400">در حال دریافت...</span>
+              ) : creditAfterSendTomans < 0 ? (
+                <span className="text-red-500 font-bold">کسری موجودی شارژ</span>
+              ) : (
+                <span className="text-gray-400">فعلی: {toPersianDigits(liveCreditTomans.toLocaleString())} ت</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <div className="flex items-center justify-end pt-3 border-t border-gray-100 dark:border-gray-800">
           <button
             type="button"
             disabled={isSending || !messageText.trim()}
             onClick={onSendSms}
-            className="rokad-btn-primary px-6 py-2.5 text-sm font-black flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rokad-btn-primary px-7 py-2.5 text-sm font-black flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-[2.5px_2.5px_0_#1F413D] w-full sm:w-auto"
           >
             {isSending ? (
               <>
                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>در حال مخابره...</span>
+                <span>در حال ارسال...</span>
               </>
             ) : (
               <>
                 <Send className="w-4 h-4" />
-                <span>تأیید و ارسال پیامک</span>
+                <span>ارسال پیامک</span>
               </>
             )}
           </button>

@@ -30,7 +30,21 @@ export function getDateVariants(dateStr: string): string[] {
   return Array.from(new Set(variants));
 }
 
-export function getDayOfWeekFromDate(dateStr: string): DayOfWeek {
+export function getDayOfWeekFromDate(dateStr?: string): DayOfWeek {
+  if (!dateStr || typeof dateStr !== 'string') {
+    const today = new Date();
+    const day = today.getDay();
+    const map: Record<number, DayOfWeek> = {
+      6: DayOfWeek.SATURDAY,
+      0: DayOfWeek.SUNDAY,
+      1: DayOfWeek.MONDAY,
+      2: DayOfWeek.TUESDAY,
+      3: DayOfWeek.WEDNESDAY,
+      4: DayOfWeek.THURSDAY,
+      5: DayOfWeek.FRIDAY,
+    };
+    return map[day] || DayOfWeek.SATURDAY;
+  }
   let gDate: Date;
   const parts = dateStr.split('-').map(Number);
   if (parts.length === 3 && parts[0] > 1300 && parts[0] < 1500) {
@@ -324,6 +338,77 @@ export class AttendanceService {
       summary,
       students,
     };
+  }
+
+  /**
+   * Get attendance summary for all students in a classroom & lesson (for Gradebook sync)
+   */
+  async getClassroomAttendanceSummary(
+    tenantId: string,
+    classroomId: string,
+    lessonId?: string,
+  ) {
+    const whereClause: any = {
+      tenantId,
+      classroomId,
+    };
+    if (lessonId) {
+      whereClause.lessonId = lessonId;
+    }
+
+    const records = await this.prisma.studentAttendance.findMany({
+      where: whereClause,
+      select: {
+        studentId: true,
+        status: true,
+        date: true,
+        delayMinutes: true,
+      },
+    });
+
+    const summaryMap: Record<
+      string,
+      {
+        totalSessions: number;
+        presentCount: number;
+        absentCount: number;
+        tardyCount: number;
+        excusedCount: number;
+        presenceRate: number;
+        hasExcessiveAbsence: boolean;
+      }
+    > = {};
+
+    for (const r of records) {
+      if (!summaryMap[r.studentId]) {
+        summaryMap[r.studentId] = {
+          totalSessions: 0,
+          presentCount: 0,
+          absentCount: 0,
+          tardyCount: 0,
+          excusedCount: 0,
+          presenceRate: 100,
+          hasExcessiveAbsence: false,
+        };
+      }
+      const st = summaryMap[r.studentId];
+      st.totalSessions++;
+      if (r.status === 'PRESENT') st.presentCount++;
+      else if (r.status === 'ABSENT') st.absentCount++;
+      else if (r.status === 'TARDY') st.tardyCount++;
+      else if (r.status === 'EXCUSED_ABSENT') st.excusedCount++;
+    }
+
+    for (const sId of Object.keys(summaryMap)) {
+      const st = summaryMap[sId];
+      const validSessions = st.totalSessions;
+      if (validSessions > 0) {
+        st.presenceRate = Math.round(((st.presentCount + st.tardyCount) / validSessions) * 100);
+      }
+      st.hasExcessiveAbsence = st.absentCount >= 3;
+    }
+
+    return summaryMap;
   }
 
   /**

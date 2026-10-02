@@ -137,7 +137,7 @@ export class MessagesService {
           targetType: (dto.targetType as any) || 'INDIVIDUAL',
           targetAudience: (dto.targetAudience as any) || 'ALL',
           targetClassroomId: dto.targetClassroomId || null,
-          attachments: (dto.attachments as any) || [],
+          attachments: this.normalizeAttachments(dto.attachments),
           replyToId: dto.replyToId || null,
         },
       });
@@ -641,6 +641,7 @@ export class MessagesService {
       success: true,
       data: {
         ...message,
+        attachments: this.normalizeAttachments(message.attachments),
         isStarred: recipientRecord?.isStarred || false,
         isRead: recipientRecord?.isRead || false,
         readAt: recipientRecord?.readAt || null,
@@ -984,5 +985,62 @@ export class MessagesService {
       classrooms: [],
       users: [],
     };
+  }
+
+  public normalizeAttachments(rawList: any): any[] {
+    if (!Array.isArray(rawList)) return [];
+    return rawList.map((att) => {
+      if (typeof att === 'string') {
+        const cleanUrl = att.trim();
+        const fileName = decodeURIComponent(cleanUrl.split('/').pop()?.split('?')[0] || 'فایل پیوست');
+        const isVideo = /\.(mp4|mov|webm|mkv|avi|m4v)$/i.test(fileName);
+        const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
+        return { name: fileName, url: cleanUrl, type: isVideo ? 'video' : isImage ? 'image' : 'file' };
+      }
+      if (att && typeof att === 'object') {
+        const rawUrl = att.url || att.fileUrl || att.path || att.attachmentUrl || att.src || '';
+        const cleanUrl = typeof rawUrl === 'string' ? rawUrl.trim() : '';
+        let rawName =
+          att.name ||
+          att.originalName ||
+          att.filename ||
+          att.fileName ||
+          att.title ||
+          '';
+        if (!rawName && cleanUrl) {
+          rawName = decodeURIComponent(cleanUrl.split('/').pop()?.split('?')[0] || '');
+        }
+        if (!rawName) {
+          rawName = 'فایل پیوست';
+        }
+
+        const isVideo =
+          att.type === 'video' ||
+          (typeof att.mimetype === 'string' && att.mimetype.startsWith('video/')) ||
+          /\.(mp4|mov|webm|mkv|avi|m4v)$/i.test(rawName) ||
+          /\.(mp4|mov|webm|mkv|avi|m4v)$/i.test(cleanUrl);
+
+        const isImage =
+          att.type === 'image' ||
+          (typeof att.mimetype === 'string' && att.mimetype.startsWith('image/')) ||
+          /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(rawName) ||
+          /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(cleanUrl);
+
+        const size =
+          typeof att.size === 'number'
+            ? att.size
+            : typeof att.fileSize === 'number'
+              ? att.fileSize
+              : undefined;
+
+        return {
+          name: rawName,
+          url: cleanUrl,
+          type: isVideo ? 'video' : isImage ? 'image' : (att.type || 'file'),
+          size,
+        };
+      }
+      return { name: 'فایل پیوست', url: '', type: 'file' };
+    });
   }
 }

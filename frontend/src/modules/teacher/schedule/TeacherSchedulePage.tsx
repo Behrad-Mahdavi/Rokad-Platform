@@ -45,14 +45,8 @@ export const DAYS: DayDef[] = [
   { key: 'THURSDAY', label: 'پنج‌شنبه', shortLabel: 'پ', dayIndex: 4 },
 ];
 
-export const PERIOD_LABELS: Record<number, string> = {
-  1: 'زنگ اول',
-  2: 'زنگ دوم',
-  3: 'زنگ سوم',
-  4: 'زنگ چهارم',
-  5: 'زنگ پنجم',
-  6: 'زنگ ششم',
-};
+import { OFFICIAL_PERIODS, PERIOD_LABELS } from '../../../lib/constants/periods';
+export { PERIOD_LABELS };
 
 export interface ClassScheduleItem {
   id: string;
@@ -94,6 +88,7 @@ export const TeacherSchedulePage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [schedules, setSchedules] = useState<ClassScheduleItem[]>([]);
+  const [teacherProfile, setTeacherProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Determine today's day of week
@@ -107,6 +102,7 @@ export const TeacherSchedulePage: React.FC = () => {
       try {
         const res = await apiClient.get<any>('/classes/my-schedule');
         const data = res.data;
+        setTeacherProfile(data?.teacher || null);
         const items = data?.schedules || (Array.isArray(data) ? data : []);
         setSchedules(items);
       } catch (err: any) {
@@ -179,7 +175,7 @@ export const TeacherSchedulePage: React.FC = () => {
         {/* Top Row: Title & Action Button side-by-side on all viewports */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black shadow-2xs shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary dark:text-primary border border-primary/25 flex items-center justify-center font-black shadow-2xs shrink-0">
               <CalendarDays className="w-5 h-5" />
             </div>
             <div className="flex flex-wrap items-center gap-2 min-w-0">
@@ -275,6 +271,11 @@ export const TeacherSchedulePage: React.FC = () => {
               const formattedStartTime = toPersianDigits(slot.startTime);
               const formattedEndTime = toPersianDigits(slot.endTime);
 
+              const isTeachingFirstHalf = !slot.isSplitPeriod || (teacherProfile?.id ? slot.teacherId === teacherProfile.id : true);
+              const isTeachingSecondHalf = slot.isSplitPeriod && Boolean(teacherProfile?.id && slot.secondTeacherId === teacherProfile.id);
+              const activeLessonId = (isTeachingSecondHalf && !isTeachingFirstHalf) ? (slot.secondLessonId || slot.lessonId) : slot.lessonId;
+              const activeLessonName = (isTeachingSecondHalf && !isTeachingFirstHalf) ? (slot.secondLesson?.name || slot.lesson?.name) : slot.lesson?.name;
+
               return (
                 <Card
                   key={slot.id}
@@ -296,6 +297,12 @@ export const TeacherSchedulePage: React.FC = () => {
                         <Badge variant="default" className="font-bold text-xs py-0.5">
                           {periodLabel}
                         </Badge>
+
+                        {slot.periodNumber >= 5 && (
+                          <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-300/50">
+                            فوق برنامه (عصر)
+                          </span>
+                        )}
 
                         <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-gray-50 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] text-xs font-bold text-foreground dark:text-slate-300">
                           <Clock className="w-3.5 h-3.5 text-primary shrink-0" />
@@ -330,8 +337,19 @@ export const TeacherSchedulePage: React.FC = () => {
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {/* Part 1 */}
-                            <div className="p-2.5 bg-primary-50/30 dark:bg-primary-950/30 rounded-xl border border-primary/20 dark:border-primary/30 space-y-1">
-                              <span className="text-[10px] font-bold text-primary dark:text-primary-light block">۴۵ دقیقه اول</span>
+                            <div className={`p-2.5 rounded-xl border space-y-1 ${
+                              isTeachingFirstHalf
+                                ? 'bg-primary-50/40 dark:bg-primary-950/40 border-primary/40 dark:border-primary/50'
+                                : 'bg-gray-50/50 dark:bg-[#1C2536]/40 border-gray-200 dark:border-[#242F42] opacity-85'
+                            }`}>
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="text-[10px] font-bold text-primary dark:text-primary-light block">۴۵ دقیقه اول</span>
+                                {isTeachingFirstHalf && (
+                                  <span className="text-[9.5px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-300">
+                                    تدریس شما
+                                  </span>
+                                )}
+                              </div>
                               <div className="flex flex-wrap items-center gap-2">
                                 <h3 className="font-extrabold text-base text-foreground dark:text-white flex items-center gap-1.5">
                                   <BookOpen className="w-4 h-4 text-primary shrink-0" />
@@ -347,8 +365,19 @@ export const TeacherSchedulePage: React.FC = () => {
                             </div>
 
                             {/* Part 2 */}
-                            <div className="p-2.5 bg-purple-50/30 dark:bg-purple-950/30 rounded-xl border border-purple-200/60 dark:border-purple-800/40 space-y-1">
-                              <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 block">۴۵ دقیقه دوم</span>
+                            <div className={`p-2.5 rounded-xl border space-y-1 ${
+                              isTeachingSecondHalf
+                                ? 'bg-purple-50/50 dark:bg-purple-950/40 border-purple-400 dark:border-purple-600'
+                                : 'bg-gray-50/50 dark:bg-[#1C2536]/40 border-gray-200 dark:border-[#242F42] opacity-85'
+                            }`}>
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 block">۴۵ دقیقه دوم</span>
+                                {isTeachingSecondHalf && (
+                                  <span className="text-[9.5px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-300">
+                                    تدریس شما
+                                  </span>
+                                )}
+                              </div>
                               <div className="flex flex-wrap items-center gap-2">
                                 <h3 className="font-extrabold text-base text-foreground dark:text-white flex items-center gap-1.5">
                                   <BookOpen className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
@@ -390,11 +419,11 @@ export const TeacherSchedulePage: React.FC = () => {
                         size="sm"
                         onClick={() =>
                           navigate(
-                            `/app/teacher/lessons?tab=PLANS&lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                            `/app/teacher/lessons?tab=PLANS&lessonId=${activeLessonId}&lessonName=${encodeURIComponent(activeLessonName || '')}`
                           )
                         }
                         className="text-[10px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-purple-400/60 dark:border-purple-500/50 bg-purple-100/85 dark:bg-purple-600/25 text-purple-800 dark:text-purple-200 hover:bg-purple-200/80 dark:hover:bg-purple-600/35 shadow-2xs font-bold transition-colors"
-                        title={`مشاهده و تدوین طرح درس ${slot.lesson?.name}`}
+                        title={`مشاهده و تدوین طرح درس ${activeLessonName}`}
                       >
                         <BookOpen className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300 shrink-0" />
                         <span className="whitespace-nowrap">طرح درس</span>
@@ -406,11 +435,11 @@ export const TeacherSchedulePage: React.FC = () => {
                         size="sm"
                         onClick={() =>
                           navigate(
-                            `/app/teacher/homework?classroomId=${slot.classroomId}&lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}&classroomName=${encodeURIComponent(slot.classroom?.name || '')}`
+                            `/app/teacher/homework?classroomId=${slot.classroomId}&lessonId=${activeLessonId}&lessonName=${encodeURIComponent(activeLessonName || '')}&classroomName=${encodeURIComponent(slot.classroom?.name || '')}`
                           )
                         }
                         className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-third/40 bg-third-light/70 dark:bg-third/15 text-third-dark dark:text-third hover:bg-third-light dark:hover:bg-third/25 dark:border-third/40 shadow-2xs font-bold transition-colors"
-                        title={`تکالیف درس ${slot.lesson?.name} برای کلاس ${slot.classroom?.name}`}
+                        title={`تکالیف درس ${activeLessonName} برای کلاس ${slot.classroom?.name}`}
                       >
                         <FileCheck className="w-3.5 h-3.5 text-third-dark dark:text-third shrink-0" />
                         <span className="whitespace-nowrap">تکالیف کلاس</span>

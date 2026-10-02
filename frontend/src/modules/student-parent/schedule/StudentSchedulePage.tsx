@@ -44,14 +44,8 @@ export const DAYS: DayDef[] = [
   { key: 'THURSDAY', label: 'پنج‌شنبه', dayIndex: 4 },
 ];
 
-export const PERIOD_LABELS: Record<number, string> = {
-  1: 'زنگ اول',
-  2: 'زنگ دوم',
-  3: 'زنگ سوم',
-  4: 'زنگ چهارم',
-  5: 'زنگ پنجم',
-  6: 'زنگ ششم',
-};
+import { OFFICIAL_PERIODS, PERIOD_LABELS } from '../../../lib/constants/periods';
+export { PERIOD_LABELS };
 
 export interface StudentScheduleItem {
   id: string;
@@ -96,6 +90,8 @@ export const StudentSchedulePage: React.FC = () => {
   const { user } = useAuthStore();
   const [classroom, setClassroom] = useState<any>(null);
   const [studentInfo, setStudentInfo] = useState<any>(null);
+  const [availableChildren, setAvailableChildren] = useState<any[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState<string>('');
   const [schedules, setSchedules] = useState<StudentScheduleItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -103,23 +99,31 @@ export const StudentSchedulePage: React.FC = () => {
   const todayDayDef = DAYS.find((d) => d.dayIndex === currentJsDay) || DAYS[0];
   const [selectedDay, setSelectedDay] = useState<DayOfWeekKey>(todayDayDef.key);
 
-  useEffect(() => {
-    const fetchSchedule = async () => {
-      setIsLoading(true);
-      try {
-        const res = await apiClient.get<any>('/classes/my-schedule');
-        const data = res.data;
-        setClassroom(data?.classroom || null);
-        setStudentInfo(data?.student || null);
-        const items = data?.schedules || (Array.isArray(data) ? data : []);
-        setSchedules(items);
-      } catch (err: any) {
-        console.error('Failed to load student schedule:', err);
-      } finally {
-        setIsLoading(false);
+  const fetchSchedule = async (childId?: string) => {
+    setIsLoading(true);
+    try {
+      const targetChildId = childId || selectedStudentId;
+      const url = targetChildId ? `/classes/my-schedule?studentId=${targetChildId}` : '/classes/my-schedule';
+      const res = await apiClient.get<any>(url);
+      const data = res.data;
+      setClassroom(data?.classroom || null);
+      setStudentInfo(data?.student || null);
+      if (Array.isArray(data?.allChildren) && data.allChildren.length > 0) {
+        setAvailableChildren(data.allChildren);
+        if (!selectedStudentId && data.student?.id) {
+          setSelectedStudentId(data.student.id);
+        }
       }
-    };
+      const items = data?.schedules || (Array.isArray(data) ? data : []);
+      setSchedules(items);
+    } catch (err: any) {
+      console.error('Failed to load student schedule:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchSchedule();
   }, []);
 
@@ -190,7 +194,7 @@ export const StudentSchedulePage: React.FC = () => {
         {/* Top Row: Title & Action Button side-by-side on all viewports */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black shadow-2xs shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary dark:text-primary border border-primary/25 flex items-center justify-center font-black shadow-2xs shrink-0">
               <CalendarDays className="w-5 h-5" />
             </div>
             <div className="flex flex-wrap items-center gap-2 min-w-0">
@@ -223,6 +227,35 @@ export const StudentSchedulePage: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Multi-Child Selector for Parents */}
+        {isParent && availableChildren.length > 1 && (
+          <div className="flex items-center gap-2 flex-wrap pt-3 mt-3 border-t border-gray-100 dark:border-[#242F42]">
+            <span className="text-xs font-bold text-ink-normal dark:text-slate-400">انتخاب فرزند:</span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {availableChildren.map((child) => {
+                const isSelected = (selectedStudentId || studentInfo?.id) === child.id;
+                return (
+                  <button
+                    key={child.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedStudentId(child.id);
+                      fetchSchedule(child.id);
+                    }}
+                    className={`text-xs px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-female text-white shadow-xs'
+                        : 'bg-gray-100 dark:bg-[#1C2536] text-ink-normal dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-[#242F42]'
+                    }`}
+                  >
+                    {child.firstName} {child.lastName} {child.classroomName ? `(${child.classroomName})` : ''}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 2. Day Navigation Bar: Arrow buttons flanking the Day Title Box */}
@@ -316,6 +349,12 @@ export const StudentSchedulePage: React.FC = () => {
                           {periodLabel}
                         </Badge>
 
+                        {slot.periodNumber >= 5 && (
+                          <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-300/50">
+                            فوق برنامه (عصر)
+                          </span>
+                        )}
+
                         <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-gray-50 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] text-xs font-bold text-foreground dark:text-slate-300">
                           <Clock className="w-3.5 h-3.5 text-primary shrink-0" />
                           <span>
@@ -397,56 +436,168 @@ export const StudentSchedulePage: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Quick Actions for Student - Full width 3-column row */}
+                    {/* Quick Actions for Student */}
                     {!isParent && (
-                      <div className="grid grid-cols-3 gap-2 pt-2.5 border-t border-gray-100 dark:border-[#242F42] w-full">
-                        {/* 1. Right Box (First in RTL): محتوای آموزشی (رنگ بنفش زنده و مشخص هم‌تراز با دو دکمه دیگر) */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            navigate(
-                              `/app/student/materials?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
-                            )
-                          }
-                          className="text-[10px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-purple-400/60 dark:border-purple-500/50 bg-purple-100/85 dark:bg-purple-600/25 text-purple-800 dark:text-purple-200 hover:bg-purple-200/80 dark:hover:bg-purple-600/35 shadow-2xs font-bold transition-colors"
-                          title={`دانلود محتوای آموزشی ${slot.lesson?.name}`}
-                        >
-                          <FolderDown className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300 shrink-0" />
-                          <span className="whitespace-nowrap">محتوای آموزشی</span>
-                        </Button>
+                      <div className="pt-2.5 border-t border-gray-100 dark:border-[#242F42] w-full space-y-2">
+                        {slot.isSplitPeriod && slot.secondLesson ? (
+                          <>
+                            {/* Part 1 Actions */}
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-bold text-primary dark:text-primary-light block">
+                                دسترسی سریع ۴۵ دقیقه اول ({slot.lesson?.name}):
+                              </span>
+                              <div className="grid grid-cols-3 gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    navigate(
+                                      `/app/student/materials?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                                    )
+                                  }
+                                  className="text-[10px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-purple-400/60 dark:border-purple-500/50 bg-purple-100/85 dark:bg-purple-600/25 text-purple-800 dark:text-purple-200 hover:bg-purple-200/80 dark:hover:bg-purple-600/35 shadow-2xs font-bold transition-colors"
+                                  title={`دانلود محتوای آموزشی ${slot.lesson?.name}`}
+                                >
+                                  <FolderDown className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300 shrink-0" />
+                                  <span className="whitespace-nowrap">محتوا</span>
+                                </Button>
 
-                        {/* 2. Center Box: تکالیف (تونالیته زرد دیزاین سیستم) */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            navigate(
-                              `/app/student/homework?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
-                            )
-                          }
-                          className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-third/40 bg-third-light/70 dark:bg-third/15 text-third-dark dark:text-third hover:bg-third-light dark:hover:bg-third/25 dark:border-third/40 shadow-2xs font-bold transition-colors"
-                          title={`مشاهده و ارسال تکالیف ${slot.lesson?.name}`}
-                        >
-                          <FileCheck className="w-3.5 h-3.5 text-third-dark dark:text-third shrink-0" />
-                          <span className="whitespace-nowrap">تکالیف</span>
-                        </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    navigate(
+                                      `/app/student/homework?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                                    )
+                                  }
+                                  className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-third/40 bg-third-light/70 dark:bg-third/15 text-third-dark dark:text-third hover:bg-third-light dark:hover:bg-third/25 dark:border-third/40 shadow-2xs font-bold transition-colors"
+                                  title={`مشاهده و ارسال تکالیف ${slot.lesson?.name}`}
+                                >
+                                  <FileCheck className="w-3.5 h-3.5 text-third-dark dark:text-third shrink-0" />
+                                  <span className="whitespace-nowrap">تکالیف</span>
+                                </Button>
 
-                        {/* 3. Left Box: آزمون‌ها (تونالیته صورتی/قرمز دیزاین سیستم) */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            navigate(
-                              `/app/student/exams?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
-                            )
-                          }
-                          className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-girl/40 bg-girl-light/70 dark:bg-girl/15 text-girl-dark dark:text-girl-light hover:bg-girl-light dark:hover:bg-girl/25 dark:border-girl/40 shadow-2xs font-bold transition-colors"
-                          title={`آزمون‌های آنلاین درس ${slot.lesson?.name}`}
-                        >
-                          <HelpCircle className="w-3.5 h-3.5 text-girl dark:text-girl-light shrink-0" />
-                          <span className="whitespace-nowrap">آزمون‌ها</span>
-                        </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    navigate(
+                                      `/app/student/exams?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                                    )
+                                  }
+                                  className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-girl/40 bg-girl-light/70 dark:bg-girl/15 text-girl-dark dark:text-girl-light hover:bg-girl-light dark:hover:bg-girl/25 dark:border-girl/40 shadow-2xs font-bold transition-colors"
+                                  title={`آزمون‌های آنلاین درس ${slot.lesson?.name}`}
+                                >
+                                  <HelpCircle className="w-3.5 h-3.5 text-girl dark:text-girl-light shrink-0" />
+                                  <span className="whitespace-nowrap">آزمون‌ها</span>
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Part 2 Actions */}
+                            <div className="space-y-1 pt-1 border-t border-dashed border-gray-200 dark:border-[#242F42]">
+                              <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 block">
+                                دسترسی سریع ۴۵ دقیقه دوم ({slot.secondLesson?.name}):
+                              </span>
+                              <div className="grid grid-cols-3 gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    navigate(
+                                      `/app/student/materials?lessonId=${slot.secondLessonId || slot.lessonId}&lessonName=${encodeURIComponent(slot.secondLesson?.name || '')}`
+                                    )
+                                  }
+                                  className="text-[10px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-purple-400/60 dark:border-purple-500/50 bg-purple-100/85 dark:bg-purple-600/25 text-purple-800 dark:text-purple-200 hover:bg-purple-200/80 dark:hover:bg-purple-600/35 shadow-2xs font-bold transition-colors"
+                                  title={`دانلود محتوای آموزشی ${slot.secondLesson?.name}`}
+                                >
+                                  <FolderDown className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300 shrink-0" />
+                                  <span className="whitespace-nowrap">محتوا</span>
+                                </Button>
+
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    navigate(
+                                      `/app/student/homework?lessonId=${slot.secondLessonId || slot.lessonId}&lessonName=${encodeURIComponent(slot.secondLesson?.name || '')}`
+                                    )
+                                  }
+                                  className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-third/40 bg-third-light/70 dark:bg-third/15 text-third-dark dark:text-third hover:bg-third-light dark:hover:bg-third/25 dark:border-third/40 shadow-2xs font-bold transition-colors"
+                                  title={`مشاهده و ارسال تکالیف ${slot.secondLesson?.name}`}
+                                >
+                                  <FileCheck className="w-3.5 h-3.5 text-third-dark dark:text-third shrink-0" />
+                                  <span className="whitespace-nowrap">تکالیف</span>
+                                </Button>
+
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    navigate(
+                                      `/app/student/exams?lessonId=${slot.secondLessonId || slot.lessonId}&lessonName=${encodeURIComponent(slot.secondLesson?.name || '')}`
+                                    )
+                                  }
+                                  className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-girl/40 bg-girl-light/70 dark:bg-girl/15 text-girl-dark dark:text-girl-light hover:bg-girl-light dark:hover:bg-girl/25 dark:border-girl/40 shadow-2xs font-bold transition-colors"
+                                  title={`آزمون‌های آنلاین درس ${slot.secondLesson?.name}`}
+                                >
+                                  <HelpCircle className="w-3.5 h-3.5 text-girl dark:text-girl-light shrink-0" />
+                                  <span className="whitespace-nowrap">آزمون‌ها</span>
+                                </Button>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="grid grid-cols-3 gap-2">
+                            {/* 1. Right Box (First in RTL): محتوای آموزشی */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                navigate(
+                                  `/app/student/materials?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                                )
+                              }
+                              className="text-[10px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-purple-400/60 dark:border-purple-500/50 bg-purple-100/85 dark:bg-purple-600/25 text-purple-800 dark:text-purple-200 hover:bg-purple-200/80 dark:hover:bg-purple-600/35 shadow-2xs font-bold transition-colors"
+                              title={`دانلود محتوای آموزشی ${slot.lesson?.name}`}
+                            >
+                              <FolderDown className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300 shrink-0" />
+                              <span className="whitespace-nowrap">محتوای آموزشی</span>
+                            </Button>
+
+                            {/* 2. Center Box: تکالیف */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                navigate(
+                                  `/app/student/homework?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                                )
+                              }
+                              className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-third/40 bg-third-light/70 dark:bg-third/15 text-third-dark dark:text-third hover:bg-third-light dark:hover:bg-third/25 dark:border-third/40 shadow-2xs font-bold transition-colors"
+                              title={`مشاهده و ارسال تکالیف ${slot.lesson?.name}`}
+                            >
+                              <FileCheck className="w-3.5 h-3.5 text-third-dark dark:text-third shrink-0" />
+                              <span className="whitespace-nowrap">تکالیف</span>
+                            </Button>
+
+                            {/* 3. Left Box: آزمون‌ها */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                navigate(
+                                  `/app/student/exams?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                                )
+                              }
+                              className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-girl/40 bg-girl-light/70 dark:bg-girl/15 text-girl-dark dark:text-girl-light hover:bg-girl-light dark:hover:bg-girl/25 dark:border-girl/40 shadow-2xs font-bold transition-colors"
+                              title={`آزمون‌های آنلاین درس ${slot.lesson?.name}`}
+                            >
+                              <HelpCircle className="w-3.5 h-3.5 text-girl dark:text-girl-light shrink-0" />
+                              <span className="whitespace-nowrap">آزمون‌ها</span>
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

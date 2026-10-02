@@ -19,10 +19,12 @@ import {
   School,
 } from 'lucide-react';
 import { SecuritySection } from './components/SecuritySection';
-import { toPersianDigits } from '../../lib/utils';
+import { toPersianDigits, cleanUserFullName } from '../../lib/utils';
+import { useCuriosityStore } from '../../lib/ui/curiosity-store';
 
 export const ProfileSettingsPage: React.FC = () => {
   const navigate = useNavigate();
+  const recordCuriosityClick = useCuriosityStore((s) => s.recordClick);
   const { user, logout } = useAuthStore();
   const { currentTenant } = useTenantStore();
 
@@ -34,9 +36,23 @@ export const ProfileSettingsPage: React.FC = () => {
         const freshUser = res?.data?.user || res?.user;
         if (freshUser) {
           const currentUser = useAuthStore.getState().user;
+          const isGeneric =
+            (freshUser.firstName === 'کاربر' && (freshUser.lastName === 'سیستم' || !freshUser.lastName)) ||
+            (!freshUser.firstName && !freshUser.lastName);
+          const hasExistingRealName =
+            currentUser?.firstName &&
+            currentUser.firstName !== 'کاربر' &&
+            currentUser.firstName !== 'کاربر سیستم';
+
           useAuthStore.getState().setUser({
             ...currentUser,
             ...freshUser,
+            ...(isGeneric && hasExistingRealName
+              ? {
+                  firstName: currentUser.firstName,
+                  lastName: currentUser.lastName,
+                }
+              : {}),
           });
         }
       })
@@ -138,7 +154,7 @@ export const ProfileSettingsPage: React.FC = () => {
       case 'SUPER_ADMIN':
         return 'سوپرادمین';
       case 'SCHOOL_ADMIN':
-        return 'مدیریت';
+        return 'راهبر';
       case 'TEACHER':
         return 'مربی';
       case 'STUDENT':
@@ -257,7 +273,7 @@ export const ProfileSettingsPage: React.FC = () => {
           <div className="flex-1 min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg sm:text-xl font-black text-ink-darker dark:text-white tracking-tight">
-                {user ? `${user.firstName} ${user.lastName}` : 'کاربر مهمان'}
+                {user ? (cleanUserFullName(user.firstName, user.lastName, user.username || user.phone) || user.username || user.phone || 'کاربر') : 'کاربر مهمان'}
               </h2>
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-extrabold bg-primary/10 text-primary dark:bg-primary/20 dark:text-teal-300 border border-primary/20">
                 {getRoleLabel(user?.role)}
@@ -322,9 +338,14 @@ export const ProfileSettingsPage: React.FC = () => {
 
       {/* App Version & Build Footer */}
       <div className="pt-6 pb-2 text-center select-none">
-        <p className="text-[11.5px] text-gray-400/80 dark:text-gray-500 font-medium tracking-wide">
-          سامانه هوشمند مدارس رُکاد • نسخه {toPersianDigits(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.7.14')}
-        </p>
+        <button
+          type="button"
+          onClick={recordCuriosityClick}
+          title="پاداش نسخه ۱.۰.۰"
+          className="text-[11.5px] text-gray-400/80 dark:text-gray-500 font-medium tracking-wide hover:text-amber-500 dark:hover:text-amber-400 transition-colors cursor-pointer active:scale-95 inline-block"
+        >
+          سامانه هوشمند مدارس رُکاد • نسخه {toPersianDigits(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0')}
+        </button>
       </div>
     </div>
   );

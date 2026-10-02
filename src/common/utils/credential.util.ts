@@ -68,9 +68,21 @@ export function normalizeNationalCode(
 }
 
 /**
+ * حذف صفرهای اول کد ملی (یا عدد) جهت ساخت نام کاربری و شماره استاندارد
+ * - مثال: 0960158881 -> 960158881
+ * - کدهای بدون صفر اول دست‌نخورده باقی می‌مانند: 6420024730 -> 6420024730
+ */
+export function stripLeadingZero(code?: string | number | null): string {
+  if (code === null || code === undefined) return '';
+  const digitsOnly = normalizePersianDigits(code).replace(/\D/g, '');
+  const stripped = digitsOnly.replace(/^0+/, '');
+  return stripped || digitsOnly;
+}
+
+/**
  * تولید خودکار نام کاربری و رمز عبور یکپارچه:
- * - نام کاربری = کد ملی (۱۰ رقمی)
- * - رمز عبور = پیش‌وند شعبه (b / g / c) + کد ملی
+ * - نام کاربری = کد ملی بدون صفر اول (کدهای بدون صفر بدون تغییر می‌مانند)
+ * - رمز عبور = پیش‌وند شعبه (b / g / c) + کد ملی بدون صفر اول
  */
 export function generateUnifiedCredentials(params: {
   tenant?: TenantCredentialContext | null;
@@ -86,10 +98,11 @@ export function generateUnifiedCredentials(params: {
 } {
   const prefix = getTenantPasswordPrefix(params.tenant);
   const cleanNationalCode = normalizeNationalCode(params.nationalCode);
+  const strippedCode = stripLeadingZero(params.nationalCode);
   const cleanPhone = normalizePersianDigits(params.fallbackPhone).replace(/\D/g, '').trim();
 
-  const username = cleanNationalCode || cleanPhone || `user_${Date.now()}`;
-  const defaultPassword = cleanNationalCode ? `${prefix}${cleanNationalCode}` : (cleanPhone || 'RokadPass2026!');
+  const username = strippedCode || cleanPhone || `user_${Date.now()}`;
+  const defaultPassword = strippedCode ? `${prefix}${strippedCode}` : (cleanPhone || 'RokadPass2026!');
   const finalPassword = params.customPassword?.trim() ? params.customPassword.trim() : defaultPassword;
 
   return {
@@ -112,10 +125,9 @@ export function deriveStudentCode(
   nationalCode?: string | number | null,
   fallbackPhone?: string | number | null,
 ): string {
-  const cleanNationalCode = normalizeNationalCode(nationalCode);
-  if (cleanNationalCode) {
-    const withoutLeadingZeros = cleanNationalCode.replace(/^0+/, '');
-    return withoutLeadingZeros || cleanNationalCode;
+  const strippedCode = stripLeadingZero(nationalCode);
+  if (strippedCode) {
+    return strippedCode;
   }
 
   const cleanPhone = normalizePersianDigits(fallbackPhone)
@@ -131,8 +143,8 @@ export function deriveStudentCode(
 
 /**
  * تولید خودکار شناسه و رمز عبور یکپارچه برای والد دانش‌آموز:
- * - نام کاربری سیستمی والد = p + کد ملی فرزند
- * - رمز عبور والد = پیش‌وند 'p' + کد ملی فرزند (مثال: p0012345678)
+ * - نام کاربری سیستمی والد = p + کد ملی فرزند بدون صفر
+ * - رمز عبور والد = پیش‌وند 'p' + کد ملی فرزند بدون صفر (مثال: p960158881)
  */
 export function generateParentCredentials(params: {
   studentNationalCode?: string | number | null;
@@ -143,16 +155,16 @@ export function generateParentCredentials(params: {
   defaultPassword: string;
   finalPassword: string;
 } {
-  const cleanNationalCode = normalizeNationalCode(params.studentNationalCode);
+  const strippedCode = stripLeadingZero(params.studentNationalCode);
   const cleanPhone = normalizePersianDigits(params.fallbackPhone).replace(/\D/g, '').trim();
 
-  const username = cleanNationalCode
-    ? `p${cleanNationalCode}`
+  const username = strippedCode
+    ? `p${strippedCode}`
     : cleanPhone
       ? `p${cleanPhone}`
       : `parent_${Date.now()}`;
-  const defaultPassword = cleanNationalCode
-    ? `p${cleanNationalCode}`
+  const defaultPassword = strippedCode
+    ? `p${strippedCode}`
     : cleanPhone
       ? `p${cleanPhone}`
       : 'RokadParent2026!';

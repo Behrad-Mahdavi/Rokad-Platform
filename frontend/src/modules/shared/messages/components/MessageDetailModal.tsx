@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Modal } from '../../../../components/ui/Modal';
 import { Button } from '../../../../components/ui/Button';
 import { FormattedMessageView } from '../../../../components/ui/FormattedMessageView';
@@ -6,6 +7,7 @@ import { apiClient } from '../../../../lib/api/client';
 import { toast } from '../../../../components/ui/toast/toast';
 import { gregorianToJalaliStr, toPersianDigits } from '../../../../utils/jalali';
 import { AcademicMessageItem, MessageAttachment } from '../types';
+import { normalizeAttachment, getFullMediaUrl } from '../../../../lib/api/media-url';
 import {
   Trash2,
   Reply,
@@ -18,6 +20,9 @@ import {
   FileText,
   Eye,
   ExternalLink,
+  Video,
+  Play,
+  X,
 } from 'lucide-react';
 
 interface Props {
@@ -43,6 +48,41 @@ export const MessageDetailModal: React.FC<Props> = ({
   const [data, setData] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewVideo, setPreviewVideo] = useState<{ url: string; name: string } | null>(null);
+  const [videoError, setVideoError] = useState(false);
+
+  const handleClose = () => {
+    setPreviewVideo(null);
+    setPreviewImage(null);
+    setVideoError(false);
+    onClose();
+  };
+
+  // Close media preview on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (previewVideo) {
+          setPreviewVideo(null);
+          setVideoError(false);
+          e.stopPropagation();
+        } else if (previewImage) {
+          setPreviewImage(null);
+          e.stopPropagation();
+        }
+      }
+    };
+    if (previewVideo || previewImage) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [previewVideo, previewImage]);
+
+  const getDownloadUrl = (url: string, name: string) => {
+    if (!url) return '';
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}download=1&filename=${encodeURIComponent(name)}`;
+  };
 
   useEffect(() => {
     if (!isOpen || !messageId) {
@@ -108,7 +148,7 @@ export const MessageDetailModal: React.FC<Props> = ({
     switch (role) {
       case 'SUPER_ADMIN':
       case 'SCHOOL_ADMIN':
-        return 'مدیریت مجتمع آموزشی';
+        return 'راهبری مجتمع آموزشی';
       case 'TEACHER':
         return 'استاد / دبیر';
       case 'STUDENT':
@@ -124,7 +164,7 @@ export const MessageDetailModal: React.FC<Props> = ({
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} title="مشاهده پیام" maxWidth="xl">
+      <Modal isOpen={isOpen} onClose={handleClose} title="مشاهده پیام" maxWidth="xl">
         {loading || !data ? (
           <div className="py-12 flex flex-col items-center justify-center space-y-3">
             <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
@@ -216,60 +256,89 @@ export const MessageDetailModal: React.FC<Props> = ({
                 </span>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {data.attachments.map((att: MessageAttachment, index: number) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xs text-xs"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        {att.type === 'image' ? (
-                          <div
-                            onClick={() => setPreviewImage(att.url)}
-                            className="w-10 h-10 rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:opacity-85 shrink-0"
-                          >
-                            <img src={att.url} alt={att.name} className="w-full h-full object-cover" />
-                          </div>
-                        ) : (
-                          <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                            <FileText className="w-5 h-5" />
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <p className="font-bold truncate text-gray-800 dark:text-gray-200">
-                            {att.name}
-                          </p>
-                          {att.size && (
-                            <p className="text-[10px] text-gray-400 font-mono">
-                              {toPersianDigits((att.size / 1024).toFixed(0))} KB
+                  {data.attachments.map((rawAtt: any, index: number) => {
+                    const att = normalizeAttachment(rawAtt);
+                    const isVideo = att.type === 'video';
+                    const isImage = att.type === 'image';
+
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xs text-xs"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {isImage && att.url ? (
+                            <div
+                              onClick={() => setPreviewImage(att.url)}
+                              className="w-10 h-10 rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:opacity-85 shrink-0"
+                            >
+                              <img src={att.url} alt={att.name} className="w-full h-full object-cover" />
+                            </div>
+                          ) : isVideo && att.url ? (
+                            <div
+                              onClick={() => setPreviewVideo({ url: att.url, name: att.name })}
+                              className="w-10 h-10 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 cursor-pointer hover:bg-indigo-700 transition-colors shadow-2xs group"
+                              title="پخش ویدیو"
+                            >
+                              <Play className="w-4 h-4 fill-current ml-0.5 group-hover:scale-110 transition-transform" />
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                              <FileText className="w-5 h-5" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-bold truncate text-gray-800 dark:text-gray-200" title={att.name}>
+                              {att.name}
                             </p>
+                            {att.size && (
+                              <p className="text-[10px] text-gray-400 font-mono">
+                                {att.size > 1024 * 1024
+                                  ? `${toPersianDigits((att.size / (1024 * 1024)).toFixed(1))} MB`
+                                  : `${toPersianDigits((att.size / 1024).toFixed(0))} KB`}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          {isImage && att.url && (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewImage(att.url)}
+                              className="p-1.5 rounded-lg text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+                              title="مشاهده تصویر"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          )}
+                          {isVideo && att.url && (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewVideo({ url: att.url, name: att.name })}
+                              className="p-1.5 rounded-lg text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 cursor-pointer flex items-center gap-1 font-bold"
+                              title="پخش آنلاین ویدیو"
+                            >
+                              <Play className="w-3.5 h-3.5 fill-current" />
+                              <span className="text-[11px] hidden sm:inline">پخش</span>
+                            </button>
+                          )}
+                          {att.url && (
+                            <a
+                              href={getDownloadUrl(att.url, att.name)}
+                              download={att.name}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-1.5 rounded-lg text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-800"
+                              title="دانلود فایل"
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
                           )}
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-1 shrink-0">
-                        {att.type === 'image' && (
-                          <button
-                            type="button"
-                            onClick={() => setPreviewImage(att.url)}
-                            className="p-1.5 rounded-lg text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
-                            title="مشاهده تصویر"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                        )}
-                        <a
-                          href={att.url}
-                          download={att.name}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="p-1.5 rounded-lg text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-800"
-                          title="دانلود فایل"
-                        >
-                          <Download className="w-4 h-4" />
-                        </a>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -356,7 +425,7 @@ export const MessageDetailModal: React.FC<Props> = ({
                       body: data.body,
                       senderName: `${data.sender.firstName} ${data.sender.lastName}`,
                     });
-                    onClose();
+                    handleClose();
                   }}
                   className="font-bold text-xs gap-1.5"
                 >
@@ -367,7 +436,7 @@ export const MessageDetailModal: React.FC<Props> = ({
                 <div />
               )}
 
-              <Button type="button" variant="secondary" size="sm" onClick={onClose} className="text-xs">
+              <Button type="button" variant="secondary" size="sm" onClick={handleClose} className="text-xs">
                 بستن
               </Button>
             </div>
@@ -375,21 +444,107 @@ export const MessageDetailModal: React.FC<Props> = ({
         )}
       </Modal>
 
-      {/* Lightbox Preview for Images */}
-      {previewImage && (
-        <div
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
-          onClick={() => setPreviewImage(null)}
-        >
-          <div className="relative max-w-4xl max-h-[90vh]">
-            <img
-              src={previewImage}
-              alt="پیش‌نمایش تصویر"
-              className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl border border-white/20"
-            />
-          </div>
-        </div>
-      )}
+      {/* Lightbox Preview for Images (Portaled with z-[100] so it is strictly above Modal) */}
+      {previewImage &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+            onClick={() => setPreviewImage(null)}
+          >
+            <div className="relative max-w-4xl max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="absolute top-2 left-2 p-2 rounded-full bg-black/60 text-white hover:bg-black/90 transition-colors z-10 cursor-pointer"
+                title="بستن"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <img
+                src={previewImage}
+                alt="پیش‌نمایش تصویر"
+                className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl border border-white/20"
+              />
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {/* Video Player Modal with Native Streaming Controls (Portaled with z-[100]) */}
+      {previewVideo &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-4"
+            onClick={() => {
+              setPreviewVideo(null);
+              setVideoError(false);
+            }}
+          >
+            <div
+              className="relative max-w-3xl w-full bg-gray-950 rounded-2xl overflow-hidden shadow-2xl border border-white/20 p-3 sm:p-4 flex flex-col max-h-[92vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-3 px-1 text-white border-b border-gray-800">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+                    <Video className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs sm:text-sm font-bold truncate">{previewVideo.name}</span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <a
+                    href={getDownloadUrl(previewVideo.url, previewVideo.name)}
+                    download={previewVideo.name}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                    title="دانلود ویدیو"
+                  >
+                    <Download className="w-4 h-4" />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreviewVideo(null);
+                      setVideoError(false);
+                    }}
+                    className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                    title="بستن پخش‌کننده"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {videoError && (
+                <div className="mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex flex-col sm:flex-row items-center justify-between gap-2.5">
+                  <span>مرورگر امکان پخش مستقیم این فرمت ویدیویی را ندارد.</span>
+                  <a
+                    href={getDownloadUrl(previewVideo.url, previewVideo.name)}
+                    download={previewVideo.name}
+                    className="px-3 py-1.5 rounded-lg bg-amber-500 text-black font-bold text-xs shrink-0 flex items-center gap-1.5 hover:bg-amber-400 transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>دانلود فایل و مشاهده در دستگاه</span>
+                  </a>
+                </div>
+              )}
+
+              <div className="pt-3 flex-1 flex items-center justify-center min-h-0">
+                <video
+                  src={previewVideo.url}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  crossOrigin="anonymous"
+                  onError={() => setVideoError(true)}
+                  className="w-full max-h-[70vh] rounded-xl bg-black shadow-inner"
+                />
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </>
   );
 };

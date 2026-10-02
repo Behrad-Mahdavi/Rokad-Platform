@@ -95,12 +95,13 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
-    if (currentTenant?.slug && !config.headers['x-tenant-slug']) {
+    const isLoginRequest = config.url?.includes('/auth/login');
+    if (!isLoginRequest && currentTenant?.slug && !config.headers['x-tenant-slug']) {
       config.headers['x-tenant-slug'] = currentTenant.slug;
     }
 
     // Attach Client App Version for release version tracking and server error/audit logs
-    config.headers['X-App-Version'] = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.7.14';
+    config.headers['X-App-Version'] = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0';
 
     return config;
   },

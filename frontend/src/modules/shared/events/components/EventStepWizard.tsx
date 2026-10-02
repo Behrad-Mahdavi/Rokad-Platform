@@ -12,12 +12,14 @@ import { toast } from '../../../../components/ui/toast/toast';
 import { toPersianDigits } from '../../../../utils/jalali';
 import { EVENT_MODULE_REGISTRY, WorkflowModuleEntry, renumberWorkflowModules } from '../constants/event-modules';
 import { parseJsonArray } from '../constants/event-access';
+import { getInitialIdeasForEvent } from '../constants/initial-ideas';
+import { apiClient } from '../../../../lib/api/client';
 import {
   CheckCircle2,
-  Workflow,
   Lock,
   Unlock,
-  ShieldCheck,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 interface EventStepWizardProps {
@@ -50,6 +52,9 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(currentUser?.role || '');
 
   const [selectedIdeaForVote, setSelectedIdeaForVote] = useState<string | null>(null);
+
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const activeStepRef = React.useRef<HTMLDivElement>(null);
 
   // Dynamic steps config derived from workflowModules (always contiguous 1..n)
   const STEPS_CONFIG = useMemo(() => {
@@ -87,15 +92,17 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
 
   const stepNumbers = useMemo(() => new Set(STEPS_CONFIG.map((s) => s.step)), [STEPS_CONFIG]);
 
-  // Step Unlocking state for students
+  // Step Unlocking state for students (all steps unlocked by default)
   const unlockedStepsKey = `rokad_event_unlocked_steps_${eventId}`;
   const [unlockedSteps, setUnlockedSteps] = useState<number[]>(() => {
-    const fallback = STEPS_CONFIG.length > 0 ? [STEPS_CONFIG[0].step] : [1];
+    const allSteps = STEPS_CONFIG.map((s) => s.step);
     try {
-      return parseJsonArray<number>(localStorage.getItem(unlockedStepsKey), fallback);
+      const saved = parseJsonArray<number>(localStorage.getItem(unlockedStepsKey), allSteps);
+      if (saved && saved.length > 0) return saved;
     } catch {
-      return fallback;
+      return allSteps;
     }
+    return allSteps;
   });
 
   const [currentStep, setCurrentStep] = useState<number>(() => {
@@ -118,6 +125,23 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
     }
   }, [unlockedSteps, isManager, currentStep]);
 
+  // Smooth scroll active step into view in horizontal roadmap
+  useEffect(() => {
+    if (activeStepRef.current) {
+      activeStepRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
+    }
+  }, [currentStep]);
+
+  const handleScroll = (direction: 'left' | 'right') => {
+    if (!scrollContainerRef.current) return;
+    const scrollAmount = direction === 'left' ? -220 : 220;
+    scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+  };
+
   // Storage key for event ideas & lock state
   const storageKey = `rokad_event_ideas_${eventId}`;
   const lockKey = `rokad_event_locked_${eventId}`;
@@ -130,33 +154,45 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
 
   const firstStep = STEPS_CONFIG[0]?.step ?? 1;
 
-  const handleToggleIdeaLock = () => {
-    setIsIdeaSubmissionLocked((prev) => {
-      const next = !prev;
-      localStorage.setItem(lockKey, String(next));
-      if (next) {
-        toast.info('ثبت ایده قفل شد.');
-      } else {
-        toast.info('ثبت ایده مجدداً بازگشایی شد.');
-      }
-      return next;
-    });
+  const handleToggleIdeaLock = async () => {
+    const next = !isIdeaSubmissionLocked;
+    setIsIdeaSubmissionLocked(next);
+    localStorage.setItem(lockKey, String(next));
+    if (next) {
+      toast.info('ثبت ایده قفل شد.');
+    } else {
+      toast.info('ثبت ایده مجدداً بازگشایی شد.');
+    }
+
+    try {
+      await apiClient.patch(`/calendar/events/${eventId}/wizard-steps`, {
+        isIdeaSubmissionLocked: next,
+      });
+    } catch (err: any) {
+      console.error('Failed to sync idea lock state to server:', err);
+    }
   };
 
-  const handleToggleStepUnlock = (stepNum: number, e: React.MouseEvent) => {
+  const handleToggleStepUnlock = async (stepNum: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    setUnlockedSteps((prev) => {
-      let next: number[];
-      if (prev.includes(stepNum)) {
-        next = prev.filter((s) => s !== stepNum);
-        toast.info(`مرحله ${toPersianDigits(stepNum)} برای دانش‌آموزان قفل شد.`);
-      } else {
-        next = [...prev, stepNum];
-        toast.success(`مرحله ${toPersianDigits(stepNum)} برای دانش‌آموزان بازگشایی شد.`);
-      }
-      localStorage.setItem(unlockedStepsKey, JSON.stringify(next));
-      return next;
-    });
+    let next: number[];
+    if (unlockedSteps.includes(stepNum)) {
+      next = unlockedSteps.filter((s) => s !== stepNum);
+      toast.info(`مرحله ${toPersianDigits(stepNum)} برای دانش‌آموزان قفل شد.`);
+    } else {
+      next = [...unlockedSteps, stepNum];
+      toast.success(`مرحله ${toPersianDigits(stepNum)} برای دانش‌آموزان بازگشایی شد.`);
+    }
+    setUnlockedSteps(next);
+    localStorage.setItem(unlockedStepsKey, JSON.stringify(next));
+
+    try {
+      await apiClient.patch(`/calendar/events/${eventId}/wizard-steps`, {
+        unlockedSteps: next,
+      });
+    } catch (err: any) {
+      console.error('Failed to sync step unlock to server:', err);
+    }
   };
 
   const handleStepClick = (stepNum: number) => {
@@ -168,16 +204,23 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
   };
 
   const [ideas, setIdeas] = useState<EventIdea[]>(() => {
+    const preloaded = getInitialIdeasForEvent(eventId);
     try {
-      const parsed = parseJsonArray<EventIdea>(
-        localStorage.getItem(storageKey),
-        DEFAULT_EVENT_IDEAS.map((item) => ({ ...item, eventId })),
-      );
-      if (parsed.length > 0 || localStorage.getItem(storageKey) === '[]') return parsed;
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          const parsedIds = new Set(parsed.map((item: EventIdea) => item.id || item.ideaNumber));
+          const missingPreloaded = preloaded.filter(
+            (p) => !parsedIds.has(p.id) && !parsedIds.has(p.ideaNumber)
+          );
+          return [...parsed, ...missingPreloaded];
+        }
+      }
     } catch (e) {
       console.error('Failed to parse saved ideas', e);
     }
-    return DEFAULT_EVENT_IDEAS.map((item) => ({ ...item, eventId }));
+    return preloaded.length > 0 ? preloaded : DEFAULT_EVENT_IDEAS.map((item) => ({ ...item, eventId }));
   });
 
   // Save to localStorage on change
@@ -189,52 +232,137 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
     }
   }, [ideas, storageKey]);
 
+  // Live Server Sync with fallback & periodic polling
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchServerWizardData = async () => {
+      try {
+        const res = await apiClient.get(`/calendar/events/${eventId}/wizard-data`);
+        if (!isMounted || !res.data) return;
+
+        if (Array.isArray(res.data.ideas) && res.data.ideas.length > 0) {
+          setIdeas((prev) => {
+            const serverIds = new Set(res.data.ideas.map((i: EventIdea) => i.id));
+            const pendingLocal = prev.filter((i) => !serverIds.has(i.id) && i.id.startsWith('idea_'));
+            return [...pendingLocal, ...res.data.ideas];
+          });
+        }
+
+        if (Array.isArray(res.data.unlockedSteps) && res.data.unlockedSteps.length > 0) {
+          setUnlockedSteps(res.data.unlockedSteps);
+          localStorage.setItem(unlockedStepsKey, JSON.stringify(res.data.unlockedSteps));
+        }
+
+        if (typeof res.data.isIdeaSubmissionLocked === 'boolean') {
+          setIsIdeaSubmissionLocked(res.data.isIdeaSubmissionLocked);
+          localStorage.setItem(lockKey, String(res.data.isIdeaSubmissionLocked));
+        }
+      } catch (err) {
+        // Fallback to local storage silently
+      }
+    };
+
+    fetchServerWizardData();
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchServerWizardData();
+      }
+    }, 8000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [eventId]);
+
   const goToStepByKey = (key: string) => {
     const target = STEPS_CONFIG.find((s) => s.key === key);
     if (target) handleStepClick(target.step);
   };
 
-  const handleIdeaSubmitted = (newIdea: EventIdea) => {
+  const handleIdeaSubmitted = async (newIdea: EventIdea) => {
     const updatedIdeas = [newIdea, ...ideas];
     setIdeas(updatedIdeas);
+
+    try {
+      const res = await apiClient.post(`/calendar/events/${eventId}/ideas`, {
+        title: newIdea.title,
+        description: newIdea.description,
+        authorName: newIdea.authorName,
+        category: newIdea.category,
+        goals: newIdea.goals,
+        suggestedMaterials: newIdea.suggestedMaterials,
+        attachmentUrl: newIdea.attachmentUrl,
+      });
+      if (res.data?.idea) {
+        setIdeas((prev) =>
+          prev.map((i) => (i.id === newIdea.id ? res.data.idea : i))
+        );
+      }
+      if (Array.isArray(res.data?.ideas)) {
+        setIdeas(res.data.ideas);
+      }
+    } catch (err: any) {
+      console.error('Failed to sync idea to server:', err);
+    }
   };
 
-  const handleUpdateIdea = (updatedIdea: EventIdea) => {
+  const handleUpdateIdea = async (updatedIdea: EventIdea) => {
     setIdeas((prev) => prev.map((item) => (item.id === updatedIdea.id ? updatedIdea : item)));
+    try {
+      await apiClient.patch(`/calendar/events/${eventId}/ideas/${updatedIdea.id}`, {
+        title: updatedIdea.title,
+        description: updatedIdea.description,
+        status: updatedIdea.status,
+        ideaNumber: updatedIdea.ideaNumber,
+        authorName: updatedIdea.authorName,
+      });
+    } catch (err: any) {
+      console.error('Failed to sync idea update to server:', err);
+    }
+  };
+
+  const handleDeleteIdea = async (ideaId: string) => {
+    setIdeas((prev) => prev.filter((item) => item.id !== ideaId));
+    try {
+      await apiClient.delete(`/calendar/events/${eventId}/ideas/${ideaId}`);
+    } catch (err: any) {
+      console.error('Failed to delete idea from server:', err);
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* Stepper Navigation Bar */}
-      <div className="rounded-2xl border-[1.5px] border-[#EAEAEA] bg-white p-4 md:p-5 shadow-[2.75px_2.75px_0_#202A5A] dark:border-[#242F42] dark:bg-[#151C28] dark:shadow-[2.75px_2.75px_0_#59BBAF]">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4 px-1">
-          <div className="flex items-center gap-2">
-            <Workflow className="w-5 h-5 text-primary" />
-            <h3 className="text-sm md:text-base font-black text-zinc-900 dark:text-zinc-100">
-              چرخه گام‌به‌گام و تعاملی رویداد
-            </h3>
-          </div>
+      {/* Horizontal Step-by-Step Roadmap */}
+      <div className="relative group/roadmap">
+        {/* Scroll Left Button */}
+        <button
+          type="button"
+          onClick={() => handleScroll('left')}
+          title="اسکرول به چپ"
+          className="hidden md:flex absolute -left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-700 shadow-md items-center justify-center text-gray-600 dark:text-gray-300 hover:text-primary hover:border-primary transition-all opacity-0 group-hover/roadmap:opacity-100 cursor-pointer"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
 
-          <div className="flex items-center gap-2">
-            {isManager ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border-2 border-indigo-700 bg-indigo-50 text-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300 text-xs font-black">
-                <ShieldCheck className="w-4 h-4 text-indigo-600" />
-                <span>پنل مدیر: روی آیکون قفل هر مرحله برای باز/بستن کلیک کنید</span>
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border-2 border-zinc-900 bg-zinc-100 dark:bg-zinc-800 text-xs font-black">
-                <span>مراحل باز: {toPersianDigits(unlockedSteps.length)} از {toPersianDigits(STEPS_CONFIG.length)}</span>
-              </span>
-            )}
-            <span className="text-xs font-black text-zinc-500 dark:text-zinc-400">
-              مرحله فعلی: {toPersianDigits(currentStep)}
-            </span>
-          </div>
-        </div>
+        {/* Scroll Right Button */}
+        <button
+          type="button"
+          onClick={() => handleScroll('right')}
+          title="اسکرول به راست"
+          className="hidden md:flex absolute -right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-700 shadow-md items-center justify-center text-gray-600 dark:text-gray-300 hover:text-primary hover:border-primary transition-all opacity-0 group-hover/roadmap:opacity-100 cursor-pointer"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
 
-        {/* Steps Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {STEPS_CONFIG.map((s) => {
+        {/* Horizontal Track */}
+        <div
+          ref={scrollContainerRef}
+          className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto scrollbar-none py-2 px-1 w-full touch-pan-x select-none"
+        >
+          {STEPS_CONFIG.map((s, index) => {
             const IconComp = s.icon;
             const isCurrent = currentStep === s.step;
             const isPassed = currentStep > s.step;
@@ -242,68 +370,85 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
             const isLockedForStudent = !isManager && !isUnlocked;
 
             return (
-              <div
-                key={s.step}
-                onClick={() => handleStepClick(s.step)}
-                className={`relative flex items-center justify-between p-3 rounded-xl border-2 transition-all text-right ${
-                  isLockedForStudent
-                    ? 'border-zinc-300 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900/60 opacity-60 cursor-not-allowed text-zinc-400'
-                    : isCurrent
-                    ? `border-zinc-900 ${s.activeColor} shadow-[3px_3px_0px_0px_#202A5A] cursor-pointer`
-                    : isPassed
-                    ? 'border-zinc-900 bg-zinc-100 text-zinc-900 dark:border-zinc-300 dark:bg-zinc-800 dark:text-zinc-100 hover:bg-zinc-200 cursor-pointer'
-                    : 'border-zinc-300 bg-zinc-50 text-zinc-700 hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300 cursor-pointer'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 overflow-hidden">
+              <React.Fragment key={s.step}>
+                <div
+                  ref={isCurrent ? activeStepRef : null}
+                  onClick={() => handleStepClick(s.step)}
+                  className={`group flex-shrink-0 flex items-center gap-2 px-3 sm:px-3.5 py-2 rounded-xl transition-all text-right select-none ${
+                    isLockedForStudent
+                      ? 'border border-gray-200/60 dark:border-gray-800/80 bg-gray-100/60 dark:bg-gray-900/40 opacity-60 cursor-not-allowed'
+                      : isCurrent
+                      ? 'border-[1.5px] border-primary bg-primary/10 dark:bg-primary/20 shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#1F413D] ring-2 ring-primary/20 cursor-pointer'
+                      : isPassed
+                      ? 'border border-emerald-300/80 dark:border-emerald-800/70 bg-emerald-50/70 dark:bg-emerald-950/25 hover:bg-emerald-100/70 dark:hover:bg-emerald-950/40 hover:border-emerald-400 cursor-pointer shadow-2xs'
+                      : 'border border-gray-200/90 dark:border-[#242F42] bg-white dark:bg-[#151C28] hover:bg-gray-50 dark:hover:bg-[#1C2536] hover:border-primary/40 cursor-pointer shadow-2xs'
+                  }`}
+                >
                   <div
-                    className={`w-8 h-8 rounded-lg border-2 border-zinc-900 flex items-center justify-center font-black text-xs shadow-[1px_1px_0px_0px_#202A5A] flex-shrink-0 ${
+                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-black text-xs shrink-0 transition-colors ${
                       isLockedForStudent
-                        ? 'bg-zinc-300 dark:bg-zinc-700 text-zinc-500'
+                        ? 'bg-gray-200/80 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
                         : isCurrent
-                        ? 'bg-white text-zinc-950'
+                        ? 'bg-primary text-white shadow-sm'
                         : isPassed
-                        ? 'bg-emerald-400 text-zinc-950'
-                        : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300'
+                        ? 'bg-emerald-500 text-white shadow-sm'
+                        : 'bg-gray-100 dark:bg-[#1C2536] text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shadow-2xs group-hover:text-primary group-hover:border-primary/30'
                     }`}
                   >
                     {isLockedForStudent ? (
-                      <Lock className="w-3.5 h-3.5 text-zinc-600" />
+                      <Lock className="w-3.5 h-3.5" />
                     ) : isPassed ? (
-                      <CheckCircle2 className="w-4 h-4" />
+                      <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     ) : (
-                      <IconComp className="w-4 h-4" />
+                      <IconComp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     )}
                   </div>
 
-                  <div className="overflow-hidden">
-                    <div className="text-xs font-black truncate">{s.title}</div>
-                    <div className="text-[10px] font-bold opacity-80 truncate">{s.subtitle}</div>
-                  </div>
-                </div>
-
-                {/* Lock/Unlock Toggle for Manager */}
-                {isManager && (
-                  <button
-                    type="button"
-                    onClick={(e) => handleToggleStepUnlock(s.step, e)}
-                    title={isUnlocked ? 'کلیک کنید تا این مرحله برای دانش‌آموزان قفل شود' : 'کلیک کنید تا این مرحله برای دانش‌آموزان بازگشایی شود'}
-                    className={`p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg border transition-all ${
-                      isUnlocked
-                        ? 'border-emerald-600 bg-emerald-100 text-emerald-950 hover:bg-emerald-200 dark:bg-emerald-900 dark:text-emerald-200'
-                        : 'border-rose-600 bg-rose-100 text-rose-950 hover:bg-rose-200 dark:bg-rose-900 dark:text-rose-200'
+                  <span
+                    className={`text-xs sm:text-[13px] whitespace-nowrap ${
+                      isLockedForStudent
+                        ? 'font-medium text-gray-400 dark:text-gray-500'
+                        : isCurrent
+                        ? 'font-black text-primary'
+                        : isPassed
+                        ? 'font-bold text-emerald-900 dark:text-emerald-200'
+                        : 'font-bold text-ink-darker dark:text-gray-200 group-hover:text-primary transition-colors'
                     }`}
                   >
-                    {isUnlocked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-                  </button>
-                )}
+                    {s.title}
+                  </span>
 
-                {!isManager && !isUnlocked && (
-                  <div className="px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 text-[9px] font-bold text-zinc-600 dark:text-zinc-300">
-                    قفل مدیر
+                  {/* Lock/Unlock Toggle for Manager */}
+                  {isManager && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleStepUnlock(s.step, e)}
+                      title={isUnlocked ? 'کلیک کنید تا این مرحله برای دانش‌آموزان قفل شود' : 'کلیک کنید تا این مرحله برای دانش‌آموزان بازگشایی شود'}
+                      className={`p-1 w-6 h-6 flex items-center justify-center rounded-md border transition-all shrink-0 cursor-pointer shadow-2xs ${
+                        isUnlocked
+                          ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
+                          : 'border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60'
+                      }`}
+                    >
+                      {isUnlocked ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                    </button>
+                  )}
+
+                  {!isManager && !isUnlocked && (
+                    <div className="px-1.5 py-0.5 rounded-md bg-gray-200/80 dark:bg-gray-800 text-[10px] font-bold text-gray-500 dark:text-gray-400 flex items-center gap-1 shrink-0">
+                      <Lock className="w-2.5 h-2.5" />
+                      <span>قفل</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Arrow connector between steps */}
+                {index < STEPS_CONFIG.length - 1 && (
+                  <div className="flex items-center justify-center shrink-0 text-gray-300 dark:text-gray-600">
+                    <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
                   </div>
                 )}
-              </div>
+              </React.Fragment>
             );
           })}
         </div>
@@ -328,6 +473,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                   onToggleLock={handleToggleIdeaLock}
                   onIdeaSubmitted={handleIdeaSubmitted}
                   onUpdateIdea={handleUpdateIdea}
+                  onDeleteIdea={handleDeleteIdea}
                 />
               );
             case 'IDEA_HALL':

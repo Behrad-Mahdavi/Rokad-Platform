@@ -2,12 +2,16 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException,
 import { PrismaService } from '../../prisma/prisma.service';
 import { AssignCoachDto, UpdateSessionDto, CreateExtraRequestDto, RespondExtraRequestDto } from './dto/coaching.dto';
 import { Role } from '../../common/constants';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class CoachingService {
   private readonly logger = new Logger(CoachingService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   /**
    * دریافت زمینه و داشبورد کوچینگ متناسب با نقش کاربر
@@ -378,6 +382,25 @@ export class CoachingService {
     // تولید خودکار جلسات آینده (۴ جلسه دو هفته یک‌بار)
     await this.generateUpcomingBiweeklySessions(tenantId, link.id, dto.studentId, dto.coachId, link.slotDayOfWeek ?? 0, link.slotStartTime ?? '10:20', link.slotDurationMinutes);
 
+    // ارسال نوتیفیکیشن اختصاص کوچ به دانش‌آموز و مربی
+    this.notificationsService
+      .sendPushToUser(dto.studentId, {
+        title: '🎯 کوچ اختصاصی شما تخصیص یافت',
+        body: 'کوچ و مشاور اختصاصی شما در سامانه تعیین شد. جهت مشاهده برنامه جلسات به صفحه کوچینگ مراجعه نمایید.',
+        url: '/app/coaching',
+        tag: `coaching-assigned-${link.id}`,
+      })
+      .catch(() => {});
+
+    this.notificationsService
+      .sendPushToUser(dto.coachId, {
+        title: '📋 دانش‌آموز جدید تحت پوشش کوچینگ',
+        body: 'دانش‌آموز جدیدی به لیست هدایت تحصیلی و کوچینگ شما اضافه گردید.',
+        url: '/app/coaching',
+        tag: `coaching-assigned-${link.id}`,
+      })
+      .catch(() => {});
+
     return link;
   }
 
@@ -481,7 +504,7 @@ export class CoachingService {
       throw new BadRequestException('برای شما هنوز کوچ یا مربی تخصیص داده نشده است. لطفاً با معاونت یا مدیر مدرسه تماس بگیرید.');
     }
 
-    return this.prisma.coachingExtraRequest.create({
+    const extraReq = await this.prisma.coachingExtraRequest.create({
       data: {
         tenantId,
         studentId,
@@ -494,6 +517,18 @@ export class CoachingService {
         coach: { select: { firstName: true, lastName: true } },
       },
     });
+
+    // اطلاع‌رسانی آنی به کوچ در خصوص درخواست جلسه فوق‌العاده
+    this.notificationsService
+      .sendPushToUser(activeLink.coachId, {
+        title: '📩 درخواست جلسه فوق‌العاده کوچینگ',
+        body: `دانش‌آموز درخواست جلسه فوق‌العاده با موضوع «${dto.reason}» ثبت نموده است.`,
+        url: '/app/coaching',
+        tag: `coaching-extra-req-${extraReq.id}`,
+      })
+      .catch(() => {});
+
+    return extraReq;
   }
 
   /**
@@ -547,6 +582,18 @@ export class CoachingService {
         },
       });
 
+      // اطلاع‌رسانی تایید جلسه به دانش‌آموز
+      const dateStr = scheduledDateObj.toLocaleDateString('fa-IR');
+      const timeStr = scheduledDateObj.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+      this.notificationsService
+        .sendPushToUser(request.studentId, {
+          title: '✅ تایید جلسه فوق‌العاده کوچینگ',
+          body: `درخواست جلسه فوق‌العاده شما تایید شد. زمان برگزاری: ${dateStr} ساعت ${timeStr}`,
+          url: '/app/coaching',
+          tag: `coaching-extra-approved-${requestId}`,
+        })
+        .catch(() => {});
+
       return {
         success: true,
         session: newSession,
@@ -560,6 +607,16 @@ export class CoachingService {
           coachResponse: dto.coachResponse || 'متاسفانه در حال حاضر امکان هماهنگی جلسه فوق‌العاده وجود ندارد.',
         },
       });
+
+      // اطلاع‌رسانی عدم تایید به دانش‌آموز
+      this.notificationsService
+        .sendPushToUser(request.studentId, {
+          title: 'پیام درباره درخواست جلسه فوق‌العاده',
+          body: dto.coachResponse || 'درخواست جلسه فوق‌العاده شما توسط کوچ بررسی شد.',
+          url: '/app/coaching',
+          tag: `coaching-extra-rejected-${requestId}`,
+        })
+        .catch(() => {});
 
       return {
         success: true,

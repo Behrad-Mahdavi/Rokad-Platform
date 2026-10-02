@@ -38,6 +38,33 @@ import {
   Award,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { UnderDevelopmentOverlay } from '../../components/ui/UnderDevelopmentOverlay';
+
+const DEFAULT_PREVIEW_DATA: MyClubStatusResponse = {
+  membership: {
+    id: 'preview-mem',
+    userId: 'preview',
+    department: 'ENGINEER',
+    grade: 'B',
+    status: 'ACTIVE_MEMBER',
+    points: 1250,
+    currentStreak: 5,
+    maxStreak: 12,
+  } as any,
+  roadmap: [
+    { id: '1', title: 'مقدمات کسب‌وکار و کارآفرینی', status: 'COMPLETED', order: 1 } as any,
+    { id: '2', title: 'طراحی ارزش پیشنهادی و اعتبارسنجی ایده', status: 'COMPLETED', order: 2 } as any,
+    { id: '3', title: 'توسعه نمونه اولیه و تست محصول (MVP)', status: 'IN_PROGRESS', order: 3 } as any,
+    { id: '4', title: 'جذب کاربر و بازاریابی اولیه', status: 'LOCKED', order: 4 } as any,
+    { id: '5', title: 'پیچ‌دک و ورود به استودیوی رشد', status: 'LOCKED', order: 5 } as any,
+  ],
+  progressPercentage: 60,
+  activeChallengesCount: 2,
+  canStartNewChallenge: true,
+  activeSubmissions: [],
+  recentSubmissions: [],
+  isStudioReady: false,
+};
 
 export const ClubPage: React.FC = () => {
   const navigate = useNavigate();
@@ -145,16 +172,8 @@ export const ClubPage: React.FC = () => {
     }
   };
 
-  if (loading || !data) {
-    return (
-      <div className="max-w-4xl mx-auto py-16 text-center space-y-3">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-sm font-bold text-gray-500">در حال بارگذاری دنیای باشگاه کسب‌وکار رکاد...</p>
-      </div>
-    );
-  }
-
-  const { membership, roadmap, progressPercentage, activeChallengesCount, canStartNewChallenge } = data;
+  const currentData = data || DEFAULT_PREVIEW_DATA;
+  const { membership, roadmap, progressPercentage, activeChallengesCount, canStartNewChallenge } = currentData;
   const isMember = membership.status === 'ACTIVE_MEMBER' || membership.status === 'STUDIO_READY';
   const deptConfig = getDeptConfig(membership.department);
   const gradeConfig = getGradeConfig(membership.grade);
@@ -165,7 +184,15 @@ export const ClubPage: React.FC = () => {
   });
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-20 animate-in fade-in duration-300" data-theme="club">
+    <UnderDevelopmentOverlay
+      title="باشگاه کارآفرینی و کسب‌وکار رُکاد"
+      subtitle="Rokad Entrepreneurship & Business Club"
+      description="محیط تیم‌سازی دانش‌آموزی، انجام مأموریت‌ها و چالش‌های دنیای واقعی کسب‌وکار، و ورود به استودیوی محصول در حال توسعه نهایی است و به زودی رونمایی می‌شود."
+      badgeText="باشگاه کسب‌وکار • در حال توسعه"
+      icon={Rocket}
+      accentColor="purple"
+    >
+      <div className="max-w-4xl mx-auto space-y-6 pb-20 animate-in fade-in duration-300" data-theme="club">
       {/* Admin Quick Jump Banner */}
       {isAdmin && (
         <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 rounded-2xl p-4 text-stone-950 font-bold flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md border-2 border-stone-950">
@@ -840,6 +867,7 @@ export const ClubPage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </UnderDevelopmentOverlay>
   );
 };

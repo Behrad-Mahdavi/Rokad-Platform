@@ -1,12 +1,14 @@
 import { toPersianDigits } from '../../../utils/jalali';
 import { DayDef, StudentScheduleItem } from './StudentSchedulePage';
 import { ROKAD_LOGO_BASE64 } from '../../../assets/logoRokadBase64';
+import { OFFICIAL_PERIODS, PeriodDefinition } from '../../../lib/constants/periods';
 
 interface GeneratePdfOptions {
   title?: string;
   classroomName?: string;
   teacherName?: string;
   studentName?: string;
+  academicYear?: string;
   isTeacher?: boolean;
   schedules: any[];
   days: DayDef[];
@@ -17,11 +19,13 @@ export function generateSchedulePdf({
   title = 'برنامه هفتگی',
   classroomName = 'کلاس درس',
   teacherName,
+  academicYear = '۱۴۰۵-۱۴۰۶',
   isTeacher = false,
   schedules,
   days,
+  periodLabels,
 }: GeneratePdfOptions) {
-  const periods = [1, 2, 3, 4, 5, 6];
+  const periods = OFFICIAL_PERIODS;
   const targetLabel = isTeacher ? (teacherName || 'برنامه تدریس') : classroomName;
 
   // Build matrix rows with strict fixed heights so cells never vary in size
@@ -29,8 +33,10 @@ export function generateSchedulePdf({
     .map((day) => {
       const daySlots = schedules.filter((s) => s.dayOfWeek === day.key);
       const cellsHtml = periods
-        .map((periodNum) => {
+        .map((period) => {
+          const periodNum = period.number;
           const slot = daySlots.find((s) => s.periodNumber === periodNum);
+
           if (!slot) {
             return `
               <td class="slot-cell">
@@ -215,8 +221,14 @@ export function generateSchedulePdf({
       width: 10%;
       background-color: #161D3F;
     }
-    .schedule-table thead th.period-col {
-      width: 15%;
+    .period-time-badge {
+      display: block;
+      font-size: 7pt;
+      font-weight: 600;
+      color: #E0E7FF;
+      margin-top: 1px;
+      font-family: 'IRANSansXFaNum', 'IRANSansX', 'Vazirmatn', sans-serif !important;
+      letter-spacing: -0.2px;
     }
 
     /* Strict 24mm height per day row so all cells are permanently proportionate */
@@ -355,7 +367,7 @@ export function generateSchedulePdf({
             ${targetLabel ? `<span class="class-badge">${targetLabel}</span>` : ''}
           </div>
           <div class="year-label">
-            سال تحصیلی: <strong>${toPersianDigits('۱۴۰۴-۱۴۰۵')}</strong>
+            سال تحصیلی: <strong>${toPersianDigits(academicYear)}</strong>
           </div>
         </td>
         <td style="width: 25%; text-align: left; vertical-align: middle;">
@@ -380,12 +392,22 @@ export function generateSchedulePdf({
       <thead>
         <tr>
           <th class="day-col">روز / زنگ</th>
-          <th class="period-col">زنگ اول</th>
-          <th class="period-col">زنگ دوم</th>
-          <th class="period-col">زنگ سوم</th>
-          <th class="period-col">زنگ چهارم</th>
-          <th class="period-col">زنگ پنجم</th>
-          <th class="period-col">زنگ ششم</th>
+          ${periods
+            .map((p) => {
+              const rawLabel = (periodLabels && periodLabels[p.number]) || p.label;
+              const cleanLabel = rawLabel
+                .replace(/\s*\(فوق\s*برنامه\)/g, '')
+                .replace(/\s*فوق\s*برنامه/g, '')
+                .trim();
+
+              return `
+            <th class="period-col">
+              <div>${cleanLabel}</div>
+              <span class="period-time-badge">${toPersianDigits(p.defaultStart)} تا ${toPersianDigits(p.defaultEnd)}</span>
+            </th>
+          `;
+            })
+            .join('')}
         </tr>
       </thead>
       <tbody>

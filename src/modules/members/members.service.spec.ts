@@ -5,6 +5,7 @@ import * as argon2 from 'argon2';
 
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TenantContextService } from '../../common/tenant/tenant-context.service';
+import { PasswordVaultService } from '../auth/password-vault.service';
 
 describe('MembersService - Unified Credentials Generation', () => {
   let service: MembersService;
@@ -22,6 +23,13 @@ describe('MembersService - Unified Credentials Generation', () => {
         {
           provide: EventEmitter2,
           useValue: { emit: jest.fn(), on: jest.fn() },
+        },
+        {
+          provide: PasswordVaultService,
+          useValue: {
+            encryptPasswordForTenant: jest.fn().mockResolvedValue('mock-encrypted-password'),
+            decryptPasswordForTenant: jest.fn().mockResolvedValue('mock-decrypted-password'),
+          },
         },
       ],
     }).compile();
