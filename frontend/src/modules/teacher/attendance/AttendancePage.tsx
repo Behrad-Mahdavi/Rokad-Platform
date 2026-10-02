@@ -1656,43 +1656,17 @@ export const AttendancePage: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      step="0.25"
-                      min="0"
-                      max="20"
-                      value={modalOralGrade}
-                      onChange={(e) => setModalOralGrade(e.target.value)}
-                      placeholder="نمره (مثلاً ۱۹.۵)"
-                      className="rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] font-bold h-9 text-center text-sm w-32 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-auto [&::-webkit-outer-spin-button]:appearance-auto"
-                    />
-                    <div className="flex flex-col gap-0.5">
-                      <button
-                        type="button"
-                        onClick={() => setModalOralGrade(String(Math.min(20, parseFloat(modalOralGrade || '0') + 0.25)))}
-                        className="w-7 h-5 rounded-md bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#242F42] transition-colors cursor-pointer"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setModalOralGrade(String(Math.max(0, parseFloat(modalOralGrade || '0') - 0.25)))}
-                        className="w-7 h-5 rounded-md bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#242F42] transition-colors cursor-pointer"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                      </button>
-                    </div>
-                    {modalOralGrade && (
-                      <button
-                        type="button"
-                        onClick={() => setModalOralGrade('')}
-                        className="text-xs font-bold text-rose-500 hover:underline cursor-pointer"
-                      >
-                        پاک
-                      </button>
-                    )}
-                  </div>
+                  <Input
+                    type="number"
+                    step="0.25"
+                    min="0"
+                    max="20"
+                    value={modalOralGrade}
+                    onChange={(e) => setModalOralGrade(e.target.value)}
+                    placeholder="نمره مورد نظر را وارد کنید (مثلاً ۱۹.۵)"
+                    className="rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] font-bold h-10 text-center text-sm"
+                  />
+
                 </div>
 
                 {/* 2. Disciplinary / Encouragement Selector */}
