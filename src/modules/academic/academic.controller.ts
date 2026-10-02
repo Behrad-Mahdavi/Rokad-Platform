@@ -2,6 +2,9 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Delete,
+  Param,
   Body,
   Query,
   UseGuards,
@@ -11,7 +14,9 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AcademicService } from './academic.service';
 import {
   CreateAcademicYearDto,
+  UpdateAcademicYearDto,
   CreateTermDto,
+  UpdateTermDto,
   CreateEducationalLevelDto,
   CreateStudyFieldDto,
 } from './dto/create-academic-year.dto';
@@ -67,6 +72,33 @@ export class AcademicController {
     return this.academicService.createAcademicYear(effectiveTenantId, dto);
   }
 
+  @Patch('years/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.ACADEMIC_YEAR_WRITE)
+  @ApiOperation({ summary: 'ویرایش سال تحصیلی' })
+  async updateYear(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateAcademicYearDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.academicService.updateAcademicYear(effectiveTenantId, id, dto);
+  }
+
+  @Delete('years/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.ACADEMIC_YEAR_WRITE)
+  @ApiOperation({ summary: 'حذف سال تحصیلی' })
+  async deleteYear(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') id: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.academicService.deleteAcademicYear(effectiveTenantId, id);
+  }
+
   // Terms
   @Post('terms')
   @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
@@ -79,6 +111,33 @@ export class AcademicController {
   ) {
     const effectiveTenantId = tenantId || userTenantId;
     return this.academicService.createTerm(effectiveTenantId, dto);
+  }
+
+  @Patch('terms/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.ACADEMIC_YEAR_WRITE)
+  @ApiOperation({ summary: 'ویرایش ترم / نیم‌سال تحصیلی' })
+  async updateTerm(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateTermDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.academicService.updateTerm(effectiveTenantId, id, dto);
+  }
+
+  @Delete('terms/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.ACADEMIC_YEAR_WRITE)
+  @ApiOperation({ summary: 'حذف ترم / نیم‌سال تحصیلی' })
+  async deleteTerm(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') id: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.academicService.deleteTerm(effectiveTenantId, id);
   }
 
   // Educational Levels

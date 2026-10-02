@@ -6,7 +6,9 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateAcademicYearDto,
+  UpdateAcademicYearDto,
   CreateTermDto,
+  UpdateTermDto,
   CreateEducationalLevelDto,
   CreateStudyFieldDto,
 } from './dto/create-academic-year.dto';
@@ -56,6 +58,68 @@ export class AcademicService {
     });
   }
 
+  async updateAcademicYear(tenantId: string, id: string, dto: UpdateAcademicYearDto) {
+    const year = await this.prisma.academicYear.findFirst({
+      where: { id, tenantId },
+    });
+    if (!year) {
+      throw new NotFoundException('سال تحصیلی مورد نظر یافت نشد');
+    }
+
+    if (dto.name && dto.name !== year.name) {
+      const existing = await this.prisma.academicYear.findFirst({
+        where: { tenantId, name: dto.name, id: { not: id } },
+      });
+      if (existing) {
+        throw new ConflictException(`سال تحصیلی '${dto.name}' قبلاً ثبت شده است`);
+      }
+    }
+
+    if (dto.isCurrent) {
+      await this.prisma.academicYear.updateMany({
+        where: { tenantId, id: { not: id } },
+        data: { isCurrent: false },
+      });
+    }
+
+    return this.prisma.academicYear.update({
+      where: { id },
+      data: {
+        ...(dto.name ? { name: dto.name } : {}),
+        ...(dto.startDate ? { startDate: new Date(dto.startDate) } : {}),
+        ...(dto.endDate ? { endDate: new Date(dto.endDate) } : {}),
+        ...(dto.isCurrent !== undefined ? { isCurrent: dto.isCurrent } : {}),
+      },
+      include: {
+        terms: true,
+      },
+    });
+  }
+
+  async deleteAcademicYear(tenantId: string, id: string) {
+    const year = await this.prisma.academicYear.findFirst({
+      where: { id, tenantId },
+      include: {
+        _count: {
+          select: { classrooms: true, classEnrollments: true },
+        },
+      },
+    });
+    if (!year) {
+      throw new NotFoundException('سال تحصیلی مورد نظر یافت نشد');
+    }
+
+    if (year._count.classrooms > 0 || year._count.classEnrollments > 0) {
+      throw new ConflictException('امکان حذف سال تحصیلی دارای کلاس یا دانش‌آموز ثبت‌نامی وجود ندارد');
+    }
+
+    await this.prisma.academicYear.delete({
+      where: { id },
+    });
+
+    return { message: 'سال تحصیلی با موفقیت حذف شد' };
+  }
+
   // 2. Terms
   async createTerm(tenantId: string, dto: CreateTermDto) {
     const year = await this.prisma.academicYear.findFirst({
@@ -82,6 +146,47 @@ export class AcademicService {
         isCurrent: dto.isCurrent || false,
       },
     });
+  }
+
+  async updateTerm(tenantId: string, id: string, dto: UpdateTermDto) {
+    const term = await this.prisma.term.findFirst({
+      where: { id, tenantId },
+    });
+    if (!term) {
+      throw new NotFoundException('نیم‌سال تحصیلی مورد نظر یافت نشد');
+    }
+
+    if (dto.isCurrent) {
+      await this.prisma.term.updateMany({
+        where: { tenantId, academicYearId: term.academicYearId, id: { not: id } },
+        data: { isCurrent: false },
+      });
+    }
+
+    return this.prisma.term.update({
+      where: { id },
+      data: {
+        ...(dto.name ? { name: dto.name } : {}),
+        ...(dto.startDate ? { startDate: new Date(dto.startDate) } : {}),
+        ...(dto.endDate ? { endDate: new Date(dto.endDate) } : {}),
+        ...(dto.isCurrent !== undefined ? { isCurrent: dto.isCurrent } : {}),
+      },
+    });
+  }
+
+  async deleteTerm(tenantId: string, id: string) {
+    const term = await this.prisma.term.findFirst({
+      where: { id, tenantId },
+    });
+    if (!term) {
+      throw new NotFoundException('نیم‌سال تحصیلی مورد نظر یافت نشد');
+    }
+
+    await this.prisma.term.delete({
+      where: { id },
+    });
+
+    return { message: 'نیم‌سال تحصیلی با موفقیت حذف شد' };
   }
 
   // 3. Educational Levels

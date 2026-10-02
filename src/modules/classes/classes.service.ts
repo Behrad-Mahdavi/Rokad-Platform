@@ -143,7 +143,7 @@ export class ClassesService {
             name: dto.name,
             code: dto.code,
             unitCount: unitCount > 0 ? unitCount : 1,
-            type: dto.type || 'GENERAL',
+            type: (dto.type as any) || 'GENERAL',
             description: dto.description,
             isModular,
             podmanCount,

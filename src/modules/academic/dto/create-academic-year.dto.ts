@@ -28,6 +28,28 @@ export class CreateAcademicYearDto {
   isCurrent?: boolean;
 }
 
+export class UpdateAcademicYearDto {
+  @ApiPropertyOptional({ description: 'عنوان سال تحصیلی', example: '۱۴۰۴-۱۴۰۵' })
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @ApiPropertyOptional({ description: 'تاریخ شروع سال تحصیلی', example: '2025-09-23T00:00:00.000Z' })
+  @IsDateString()
+  @IsOptional()
+  startDate?: string;
+
+  @ApiPropertyOptional({ description: 'تاریخ پایان سال تحصیلی', example: '2026-06-20T00:00:00.000Z' })
+  @IsDateString()
+  @IsOptional()
+  endDate?: string;
+
+  @ApiPropertyOptional({ description: 'آیا سال تحصیلی جاری است؟', default: false })
+  @IsBoolean()
+  @IsOptional()
+  isCurrent?: boolean;
+}
+
 export class CreateTermDto {
   @ApiProperty({ description: 'شناسه سال تحصیلی' })
   @IsString()
@@ -46,6 +68,28 @@ export class CreateTermDto {
   @ApiProperty({ description: 'تاریخ پایان ترم', example: '2026-01-20T00:00:00.000Z' })
   @IsDateString()
   endDate: string;
+
+  @ApiPropertyOptional({ description: 'آیا ترم جاری است؟', default: false })
+  @IsBoolean()
+  @IsOptional()
+  isCurrent?: boolean;
+}
+
+export class UpdateTermDto {
+  @ApiPropertyOptional({ description: 'نام ترم (نیم‌سال اول، نیم‌سال دوم، تابستان)', example: 'نیم‌سال اول' })
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @ApiPropertyOptional({ description: 'تاریخ شروع ترم', example: '2025-09-23T00:00:00.000Z' })
+  @IsDateString()
+  @IsOptional()
+  startDate?: string;
+
+  @ApiPropertyOptional({ description: 'تاریخ پایان ترم', example: '2026-01-20T00:00:00.000Z' })
+  @IsDateString()
+  @IsOptional()
+  endDate?: string;
 
   @ApiPropertyOptional({ description: 'آیا ترم جاری است؟', default: false })
   @IsBoolean()
