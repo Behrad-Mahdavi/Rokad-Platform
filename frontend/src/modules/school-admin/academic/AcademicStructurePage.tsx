@@ -971,16 +971,7 @@ export const AcademicStructurePage: React.FC = () => {
             columns={[
               {
                 header: 'نام درس',
-                cell: (l) => (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-ink-darker">{l.name}</span>
-                    {l.isModular && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-purple-50 text-purple-700 border border-purple-200 shrink-0">
-                        پودمانی (۵ پودمان)
-                      </span>
-                    )}
-                  </div>
-                ),
+                cell: (l) => <span className="font-bold text-ink-darker">{l.name}</span>,
               },
               {
                 header: 'کد درس',
