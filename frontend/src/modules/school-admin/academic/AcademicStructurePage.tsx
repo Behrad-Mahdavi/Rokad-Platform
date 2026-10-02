@@ -548,7 +548,15 @@ export const AcademicStructurePage: React.FC = () => {
             {
               header: 'سال تحصیلی',
               mobilePriority: 'secondary',
-              cell: (c) => <span className="text-xs text-gray-600">{c.academicYear?.name || '۱۴۰۴-۱۴۰۵'}</span>,
+              cell: (c) => {
+                const yearName =
+                  c.academicYear?.name ||
+                  academicYears.find((y) => y.id === c.academicYearId)?.name ||
+                  academicYears.find((y) => y.isCurrent)?.name ||
+                  academicYears[0]?.name ||
+                  '۱۴۰۵-۱۴۰۶';
+                return <span className="text-xs text-gray-600">{yearName}</span>;
+              },
             },
             {
               header: 'تعداد دانش‌آموزان',
@@ -1301,10 +1309,7 @@ export const AcademicStructurePage: React.FC = () => {
                   <option value="BASIC_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۳- شایستگی‌های پایه (پودمانی)</option>
                   <option value="TECHNICAL_MODULAR_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۴- شایستگی‌های فنی / پودمانی</option>
                   <option value="TECHNICAL_PRACTICAL_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۵- شایستگی‌های فنی / عملی</option>
-                  <option value="SPECIALIZED" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۶- تخصصی</option>
-                  <option value="PRACTICAL" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۷- کارگاهی</option>
-                  <option value="OPTIONAL" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۸- انتخابی</option>
-                  <option value="EXTRACURRICULAR" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۹- فوق‌برنامه (ترمی بدون مستمر)</option>
+                  <option value="EXTRACURRICULAR" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۶- فوق‌برنامه (ترمی بدون مستمر)</option>
                 </select>
               </div>
 
@@ -1419,54 +1424,6 @@ export const AcademicStructurePage: React.FC = () => {
                 </p>
               </div>
             )}
-          </div>
-
-          {/* انتخاب دبیران مدرس درس */}
-          <div className="space-y-1.5 text-right">
-            <label className="block text-sm font-medium text-ink-normal dark:text-gray-300">
-              دبیران مدرس درس ({lessonForm.teacherIds.length} نفر انتخاب شده)
-            </label>
-            <div className="max-h-36 overflow-y-auto p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-[#151C28] space-y-1">
-              {teachers.length === 0 ? (
-                <div className="text-xs text-gray-400 py-3 text-center">هنوز دبیری در سامانه ثبت نشده است.</div>
-              ) : (
-                teachers.map((t) => {
-                  const isSelected = lessonForm.teacherIds.includes(t.id);
-                  return (
-                    <label
-                      key={t.id}
-                      className={`flex items-center justify-between p-2 rounded-xl text-xs cursor-pointer transition-colors ${
-                        isSelected
-                          ? 'bg-primary/10 text-primary font-bold border border-primary/30'
-                          : 'hover:bg-white dark:hover:bg-[#1C2536] text-gray-700 dark:text-gray-300 border border-transparent'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => {
-                            setLessonForm((prev) => ({
-                              ...prev,
-                              teacherIds: isSelected
-                                ? prev.teacherIds.filter((id) => id !== t.id)
-                                : [...prev.teacherIds, t.id],
-                            }));
-                          }}
-                          className="rounded text-primary focus:ring-primary h-4 w-4 cursor-pointer"
-                        />
-                        <span className="text-xs font-medium">
-                          {t.user?.firstName} {t.user?.lastName}
-                        </span>
-                      </div>
-                      {t.specialization && (
-                        <span className="text-[10px] text-gray-400 font-normal">{t.specialization}</span>
-                      )}
-                    </label>
-                  );
-                })
-              )}
-            </div>
           </div>
 
           {/* بخش تنظیمات پودمان (در صورت پودمانی بودن درس) */}
@@ -1644,10 +1601,7 @@ export const AcademicStructurePage: React.FC = () => {
                   <option value="BASIC_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۳- شایستگی‌های پایه (پودمانی)</option>
                   <option value="TECHNICAL_MODULAR_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۴- شایستگی‌های فنی / پودمانی</option>
                   <option value="TECHNICAL_PRACTICAL_COMPETENCY" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۵- شایستگی‌های فنی / عملی</option>
-                  <option value="SPECIALIZED" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۶- تخصصی</option>
-                  <option value="PRACTICAL" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۷- کارگاهی</option>
-                  <option value="OPTIONAL" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۸- انتخابی</option>
-                  <option value="EXTRACURRICULAR" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۹- فوق‌برنامه (ترمی بدون مستمر)</option>
+                  <option value="EXTRACURRICULAR" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۶- فوق‌برنامه (ترمی بدون مستمر)</option>
                 </select>
               </div>
 
@@ -1762,54 +1716,6 @@ export const AcademicStructurePage: React.FC = () => {
                 </p>
               </div>
             )}
-          </div>
-
-          {/* انتخاب دبیران مدرس درس */}
-          <div className="space-y-1.5 text-right">
-            <label className="block text-sm font-medium text-ink-normal dark:text-gray-300">
-              دبیران مدرس درس ({editLessonForm.teacherIds.length} نفر انتخاب شده)
-            </label>
-            <div className="max-h-36 overflow-y-auto p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-[#151C28] space-y-1">
-              {teachers.length === 0 ? (
-                <div className="text-xs text-gray-400 py-3 text-center">هنوز دبیری در سامانه ثبت نشده است.</div>
-              ) : (
-                teachers.map((t) => {
-                  const isSelected = editLessonForm.teacherIds.includes(t.id);
-                  return (
-                    <label
-                      key={t.id}
-                      className={`flex items-center justify-between p-2 rounded-xl text-xs cursor-pointer transition-colors ${
-                        isSelected
-                          ? 'bg-primary/10 text-primary font-bold border border-primary/30'
-                          : 'hover:bg-white dark:hover:bg-[#1C2536] text-gray-700 dark:text-gray-300 border border-transparent'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => {
-                            setEditLessonForm((prev) => ({
-                              ...prev,
-                              teacherIds: isSelected
-                                ? prev.teacherIds.filter((id) => id !== t.id)
-                                : [...prev.teacherIds, t.id],
-                            }));
-                          }}
-                          className="rounded text-primary focus:ring-primary h-4 w-4 cursor-pointer"
-                        />
-                        <span className="text-xs font-medium">
-                          {t.user?.firstName} {t.user?.lastName}
-                        </span>
-                      </div>
-                      {t.specialization && (
-                        <span className="text-[10px] text-gray-400 font-normal">{t.specialization}</span>
-                      )}
-                    </label>
-                  );
-                })
-              )}
-            </div>
           </div>
 
           {/* بخش تنظیمات پودمان (در صورت پودمانی بودن درس) */}

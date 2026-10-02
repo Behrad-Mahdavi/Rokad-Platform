@@ -448,6 +448,7 @@ export class ClassesService {
       include: {
         level: true,
         field: true,
+        academicYear: true,
         mentor: {
           select: {
             id: true,
