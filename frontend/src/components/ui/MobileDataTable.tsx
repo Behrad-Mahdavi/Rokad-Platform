@@ -239,7 +239,9 @@ export function MobileDataTable<T>({
                   {col.header}
                 </TableHead>
               ))}
-              {cardActions && <TableHead className="text-center w-24">عملیات</TableHead>}
+              {cardActions && !columns.some((c) => c.key === 'actions' || c.header === 'عملیات') && (
+                <TableHead className="text-center w-24">عملیات</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -252,7 +254,7 @@ export function MobileDataTable<T>({
                       {renderCell(col, item, index)}
                     </TableCell>
                   ))}
-                  {cardActions && (
+                  {cardActions && !columns.some((c) => c.key === 'actions' || c.header === 'عملیات') && (
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1.5">
                         {cardActions(item, index)}
