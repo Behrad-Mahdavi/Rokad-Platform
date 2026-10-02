@@ -17,6 +17,7 @@ export enum LessonType {
   SPECIALIZED = 'SPECIALIZED',
   PRACTICAL = 'PRACTICAL',
   OPTIONAL = 'OPTIONAL',
+  EXTRACURRICULAR = 'EXTRACURRICULAR',
 }
 
 export enum DayOfWeek {

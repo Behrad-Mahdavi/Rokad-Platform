@@ -816,6 +816,8 @@ export const AcademicStructurePage: React.FC = () => {
                       return <span className="text-xs font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-200">کارگاهی</span>;
                     case 'OPTIONAL':
                       return <span className="text-xs font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-lg">انتخابی</span>;
+                    case 'EXTRACURRICULAR':
+                      return <span className="text-xs font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200">فوق‌برنامه (ترمی)</span>;
                     default:
                       return <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">عمومی</span>;
                   }
@@ -1302,6 +1304,7 @@ export const AcademicStructurePage: React.FC = () => {
                   <option value="SPECIALIZED" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۶- تخصصی</option>
                   <option value="PRACTICAL" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۷- کارگاهی</option>
                   <option value="OPTIONAL" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۸- انتخابی</option>
+                  <option value="EXTRACURRICULAR" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۹- فوق‌برنامه (ترمی بدون مستمر)</option>
                 </select>
               </div>
 
@@ -1396,6 +1399,23 @@ export const AcademicStructurePage: React.FC = () => {
                 </div>
                 <p className="leading-relaxed text-amber-800 dark:text-amber-400 text-[11px] sm:text-xs break-words">
                   ارزشیابی بر اساس سنجش عملکردی کارگاهی و آزمون نهایی پایان دوره.
+                </p>
+              </div>
+            )}
+
+            {lessonForm.type === 'EXTRACURRICULAR' && (
+              <div className="rounded-xl border border-rose-200 dark:border-rose-800/60 bg-rose-50/70 dark:bg-rose-950/30 p-3 sm:p-3.5 text-xs text-rose-950 dark:text-rose-200 space-y-1.5 transition-all">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 font-bold text-rose-900 dark:text-rose-300">
+                  <span className="flex items-center gap-1.5 text-xs sm:text-[13px]">
+                    <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0" />
+                    درس فوق‌برنامه (ارزشیابی ترمی بدون مستمر)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-rose-100 dark:bg-rose-900/60 text-rose-800 dark:text-rose-300 text-[10.5px] border border-rose-300 dark:border-rose-700/60 shrink-0">
+                    نمره از ۲۰ (فقط پایانی ترم)
+                  </span>
+                </div>
+                <p className="leading-relaxed text-rose-800 dark:text-rose-400 text-[11px] sm:text-xs break-words">
+                  مدل نمره‌دهی به صورت ترمی و بدون نمره مستمر است؛ نمرات پایانی ترم اول و ترم دوم در مقیاس ۰ تا ۲۰ ثبت شده و میانگین نهایی محاسبه می‌شود.
                 </p>
               </div>
             )}
@@ -1627,6 +1647,7 @@ export const AcademicStructurePage: React.FC = () => {
                   <option value="SPECIALIZED" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۶- تخصصی</option>
                   <option value="PRACTICAL" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۷- کارگاهی</option>
                   <option value="OPTIONAL" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۸- انتخابی</option>
+                  <option value="EXTRACURRICULAR" className="bg-white dark:bg-[#1C2536] text-ink-normal dark:text-white">۹- فوق‌برنامه (ترمی بدون مستمر)</option>
                 </select>
               </div>
 
@@ -1721,6 +1742,23 @@ export const AcademicStructurePage: React.FC = () => {
                 </div>
                 <p className="leading-relaxed text-amber-800 dark:text-amber-400 text-[11px] sm:text-xs break-words">
                   ارزشیابی بر اساس سنجش عملکردی کارگاهی و آزمون نهایی پایان دوره.
+                </p>
+              </div>
+            )}
+
+            {editLessonForm.type === 'EXTRACURRICULAR' && (
+              <div className="rounded-xl border border-rose-200 dark:border-rose-800/60 bg-rose-50/70 dark:bg-rose-950/30 p-3 sm:p-3.5 text-xs text-rose-950 dark:text-rose-200 space-y-1.5 transition-all">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 font-bold text-rose-900 dark:text-rose-300">
+                  <span className="flex items-center gap-1.5 text-xs sm:text-[13px]">
+                    <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0" />
+                    درس فوق‌برنامه (ارزشیابی ترمی بدون مستمر)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-rose-100 dark:bg-rose-900/60 text-rose-800 dark:text-rose-300 text-[10.5px] border border-rose-300 dark:border-rose-700/60 shrink-0">
+                    نمره از ۲۰ (فقط پایانی ترم)
+                  </span>
+                </div>
+                <p className="leading-relaxed text-rose-800 dark:text-rose-400 text-[11px] sm:text-xs break-words">
+                  مدل نمره‌دهی به صورت ترمی و بدون نمره مستمر است؛ نمرات پایانی ترم اول و ترم دوم در مقیاس ۰ تا ۲۰ ثبت شده و میانگین نهایی محاسبه می‌شود.
                 </p>
               </div>
             )}

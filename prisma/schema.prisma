@@ -73,6 +73,7 @@ enum LessonType {
   SPECIALIZED
   PRACTICAL
   OPTIONAL
+  EXTRACURRICULAR
 }
 
 enum DayOfWeek {

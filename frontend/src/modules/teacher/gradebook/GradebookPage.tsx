@@ -52,6 +52,7 @@ interface LessonItem {
   name: string;
   code?: string;
   units?: number;
+  type?: string;
   isModular?: boolean; // پودمانی یا عمومی
   podmanCount?: number;
   level?: { id: string; name: string };
@@ -201,6 +202,7 @@ export const GradebookPage: React.FC = () => {
           name: l.name,
           code: l.code,
           units: l.units,
+          type: l.type,
           isModular: !!l.isModular,
           podmanCount: l.podmanCount || 5,
           level: l.level,
@@ -581,6 +583,38 @@ export const GradebookPage: React.FC = () => {
         passRate: recorded > 0 ? Math.round((passed / recorded) * 100) : 0,
         average: recorded > 0 ? Number((sum / recorded).toFixed(2)) : 0,
       };
+    } else if (selectedLesson?.type === 'EXTRACURRICULAR') {
+      let recorded = 0;
+      let passed = 0;
+      let sum = 0;
+
+      studentsList.forEach((s) => {
+        const g = generalGrades[s.studentId];
+        if (!g) return;
+        const f1 = g.final1 !== '' && g.final1 !== undefined ? parseFloat(String(g.final1)) : null;
+        const f2 = g.final2 !== '' && g.final2 !== undefined ? parseFloat(String(g.final2)) : null;
+
+        if (f1 !== null && f2 !== null) {
+          const annual = Number(((f1 + f2) / 2).toFixed(2));
+          recorded++;
+          sum += annual;
+          if (annual >= 10) passed++;
+        } else if (f1 !== null) {
+          recorded++;
+          sum += f1;
+          if (f1 >= 10) passed++;
+        } else if (f2 !== null) {
+          recorded++;
+          sum += f2;
+          if (f2 >= 10) passed++;
+        }
+      });
+      return {
+        total,
+        recorded,
+        passRate: recorded > 0 ? Math.round((passed / recorded) * 100) : 0,
+        average: recorded > 0 ? Number((sum / recorded).toFixed(2)) : 0,
+      };
     } else {
       let recorded = 0;
       let passed = 0;
@@ -797,7 +831,7 @@ export const GradebookPage: React.FC = () => {
                           : 'border-gray-200 dark:border-[#242F42]'
                       }`}
                     >
-                      {lesson.isModular ? 'پودمانی (۵ پودمان)' : 'عمومی / نظری'}
+                      {lesson.isModular ? 'پودمانی (۵ پودمان)' : lesson.type === 'EXTRACURRICULAR' ? 'فوق‌برنامه' : 'عمومی / نظری'}
                     </Badge>
                   </div>
 
@@ -859,7 +893,12 @@ export const GradebookPage: React.FC = () => {
                   درس انتخابی: {selectedLesson.name}
                 </h2>
                 <p className="text-xs font-bold text-muted-foreground mt-0.5">
-                  نوع ارزشیابی: {selectedLesson.isModular ? 'پودمانی شایستگی‌محور (فنی و حرفه‌ای)' : 'نمرات رسمی کارنامه (مستمر و پایانی)'}
+                  نوع ارزشیابی:{' '}
+                  {selectedLesson.isModular
+                    ? 'پودمانی شایستگی‌محور (فنی و حرفه‌ای)'
+                    : selectedLesson.type === 'EXTRACURRICULAR'
+                    ? 'فوق‌برنامه (ترمی بدون مستمر، نمره از ۲۰)'
+                    : 'نمرات رسمی کارنامه (مستمر و پایانی)'}
                 </p>
               </div>
             </div>
@@ -952,7 +991,7 @@ export const GradebookPage: React.FC = () => {
                           : 'bg-primary/10 text-primary border-primary/25'
                       }`}
                     >
-                      {selectedLesson.isModular ? 'پودمانی' : 'عمومی / کارنامه'}
+                      {selectedLesson.isModular ? 'پودمانی' : selectedLesson.type === 'EXTRACURRICULAR' ? 'فوق‌برنامه' : 'عمومی / کارنامه'}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground font-bold mt-0.5">
@@ -1085,6 +1124,13 @@ export const GradebookPage: React.FC = () => {
                             نمره پودمان (از ۲۰)
                           </th>
                           <th className="py-3 px-3 min-w-[90px] text-center">وضعیت</th>
+                        </>
+                      ) : selectedLesson.type === 'EXTRACURRICULAR' ? (
+                        <>
+                          <th className="py-3 px-3 min-w-[110px] text-center bg-sky-50/40 dark:bg-sky-950/20 font-black">نمره ترم اول (از ۲۰)</th>
+                          <th className="py-3 px-3 min-w-[110px] text-center bg-purple-50/40 dark:bg-purple-950/20 font-black">نمره ترم دوم (از ۲۰)</th>
+                          <th className="py-3 px-3 min-w-[100px] text-center bg-emerald-50/40 dark:bg-emerald-950/20 font-black">نمره سالانه (از ۲۰)</th>
+                          <th className="py-3 px-3 min-w-[85px] text-center font-black">نتیجه</th>
                         </>
                       ) : (
                         <>
@@ -1267,6 +1313,170 @@ export const GradebookPage: React.FC = () => {
                             </td>
 
                             {/* Dossier button */}
+                            <td className="py-2.5 px-3 text-center">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenDossier(sid)}
+                                className="h-7 px-2.5 rounded-xl border border-gray-200 dark:border-[#242F42] text-[10px] font-bold"
+                              >
+                                پرونده ۳۶۰°
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      }
+
+                      // Extracurricular (Termly without continuous grades, out of 20)
+                      if (selectedLesson.type === 'EXTRACURRICULAR') {
+                        const gData = generalGrades[sid] || {
+                          continuous1: '',
+                          final1: '',
+                          continuous2: '',
+                          final2: '',
+                        };
+
+                        const f1 = gData.final1 !== '' && gData.final1 !== undefined ? parseFloat(String(gData.final1)) : null;
+                        const f2 = gData.final2 !== '' && gData.final2 !== undefined ? parseFloat(String(gData.final2)) : null;
+
+                        const annualGrade =
+                          f1 !== null && f2 !== null
+                            ? Number(((f1 + f2) / 2).toFixed(2))
+                            : f1 !== null
+                            ? f1
+                            : f2 !== null
+                            ? f2
+                            : null;
+
+                        const isPassed = annualGrade !== null ? annualGrade >= 10 : null;
+
+                        return (
+                          <tr key={sid} className="hover:bg-gray-50/60 dark:hover:bg-[#1C2536]/40 transition-colors">
+                            <td className="py-2.5 px-3 text-center font-mono font-bold text-muted-foreground">{toPersianDigits(idx + 1)}</td>
+
+                            {/* Student Name */}
+                            <td className="py-2.5 px-4">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDossier(sid)}
+                                className="text-right group/st flex items-center gap-2 hover:underline focus:outline-none"
+                              >
+                                <span className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center font-bold text-[11px] shrink-0 text-foreground dark:text-white">
+                                  {st.firstName?.[0] || 'د'}
+                                </span>
+                                <div>
+                                  <div className="font-black text-foreground dark:text-white group-hover/st:text-primary transition-colors">
+                                    {st.firstName} {st.lastName}
+                                  </div>
+                                  <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                    <span>مشاهده سوابق</span>
+                                    <ExternalLink className="w-2.5 h-2.5" />
+                                  </div>
+                                </div>
+                              </button>
+                            </td>
+
+                            <td className="py-2.5 px-3 text-center font-mono font-bold text-muted-foreground">
+                              {st.studentCode ? toPersianDigits(st.studentCode) : 'ـ'}
+                            </td>
+
+                            {/* Synced Attendance Column */}
+                            <td className="py-2.5 px-3 text-center">
+                              {att && att.totalSessions > 0 ? (
+                                <div className="inline-flex flex-col items-center gap-1">
+                                  <div className="flex items-center gap-1 text-[11px] font-bold">
+                                    <span className="text-emerald-600 dark:text-emerald-400">
+                                      {toPersianDigits(att.presenceRate)}٪ حضور
+                                    </span>
+                                    <span className="text-muted-foreground">•</span>
+                                    <span className={att.absentCount > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-muted-foreground'}>
+                                      {toPersianDigits(att.absentCount)} غیبت
+                                    </span>
+                                  </div>
+                                  {att.hasExcessiveAbsence && (
+                                    <span className="inline-flex items-center gap-0.5 text-[10px] font-black px-1.5 py-0.5 rounded-md bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                                      <AlertTriangle className="w-3 h-3 text-rose-500 shrink-0" />
+                                      خطر محرومیت
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground text-[11px]">بدون جلسه</span>
+                              )}
+                            </td>
+
+                            {/* Term 1 Final Score (out of 20) */}
+                            <td className="py-2.5 px-3 text-center bg-sky-50/20 dark:bg-sky-950/10">
+                              <Input
+                                type="number"
+                                step="0.25"
+                                min="0"
+                                max="20"
+                                value={gData.final1}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setGeneralGrades((prev) => ({
+                                    ...prev,
+                                    [sid]: { ...prev[sid], final1: val },
+                                  }));
+                                  setHasUnsavedChanges(true);
+                                }}
+                                placeholder="۰-۲۰"
+                                className="h-8 w-20 text-center font-bold text-xs mx-auto rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28]"
+                              />
+                            </td>
+
+                            {/* Term 2 Final Score (out of 20) */}
+                            <td className="py-2.5 px-3 text-center bg-purple-50/20 dark:bg-purple-950/10">
+                              <Input
+                                type="number"
+                                step="0.25"
+                                min="0"
+                                max="20"
+                                value={gData.final2}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setGeneralGrades((prev) => ({
+                                    ...prev,
+                                    [sid]: { ...prev[sid], final2: val },
+                                  }));
+                                  setHasUnsavedChanges(true);
+                                }}
+                                placeholder="۰-۲۰"
+                                className="h-8 w-20 text-center font-bold text-xs mx-auto rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28]"
+                              />
+                            </td>
+
+                            {/* Annual Grade */}
+                            <td className="py-2.5 px-3 text-center bg-emerald-50/20 dark:bg-emerald-950/10 font-mono font-black text-sm">
+                              {annualGrade !== null ? (
+                                <span className={annualGrade >= 10 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
+                                  {toPersianDigits(annualGrade)}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">ـ</span>
+                              )}
+                            </td>
+
+                            {/* Passed status */}
+                            <td className="py-2.5 px-3 text-center">
+                              {isPassed !== null ? (
+                                <Badge
+                                  variant={isPassed ? 'default' : 'destructive'}
+                                  className={`text-[10px] font-bold py-0.5 px-2 rounded-lg ${
+                                    isPassed
+                                      ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                                      : 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                                  }`}
+                                >
+                                  {isPassed ? 'قبول' : 'تجدید'}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground text-[10px]">ناتمام</span>
+                              )}
+                            </td>
+
+                            {/* Dossier Button */}
                             <td className="py-2.5 px-3 text-center">
                               <Button
                                 size="sm"
