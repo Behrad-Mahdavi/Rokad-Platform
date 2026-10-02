@@ -786,30 +786,17 @@ export const AcademicStructurePage: React.FC = () => {
               <div>
                 {y.isCurrent ? <Badge variant="success">سال جاری</Badge> : <Badge variant="neutral">گذشته</Badge>}
               </div>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenEditYear(y);
-                  }}
-                  className="p-2 rounded-xl text-blue-500 hover:text-white hover:bg-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 hover:border-blue-500 transition-all cursor-pointer shadow-2xs shrink-0"
-                  title="ویرایش سال و نیم‌سال‌های تحصیلی"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeleteConfirmYear(y);
-                  }}
-                  className="p-2 rounded-xl text-rose-500 hover:text-white hover:bg-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 hover:border-rose-500 transition-all cursor-pointer shadow-2xs shrink-0"
-                  title="حذف سال تحصیلی"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenEditYear(y);
+                }}
+                className="p-2 rounded-xl text-blue-500 hover:text-white hover:bg-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 hover:border-blue-500 transition-all cursor-pointer shadow-2xs shrink-0"
+                title="ویرایش سال تحصیلی"
+              >
+                <Edit3 className="w-4 h-4" />
+              </button>
             </div>
           )}
           columns={[
@@ -867,20 +854,9 @@ export const AcademicStructurePage: React.FC = () => {
                       handleOpenEditYear(y);
                     }}
                     className="p-2 rounded-xl text-blue-500 hover:text-white hover:bg-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 hover:border-blue-500 transition-all cursor-pointer shadow-2xs"
-                    title="ویرایش سال و نیم‌سال‌های تحصیلی"
+                    title="ویرایش سال تحصیلی"
                   >
                     <Edit3 className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteConfirmYear(y);
-                    }}
-                    className="p-2 rounded-xl text-rose-500 hover:text-white hover:bg-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 hover:border-rose-500 transition-all cursor-pointer shadow-2xs"
-                    title="حذف سال تحصیلی"
-                  >
-                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               ),
@@ -1179,9 +1155,8 @@ export const AcademicStructurePage: React.FC = () => {
           setEditingTermId(null);
           setError(null);
         }}
-        title="ویرایش سال و نیم‌سال‌های تحصیلی"
-        description="مدیریت اطلاعات سال تحصیلی، تاریخ‌ها و نیم‌سال‌های مربوطه"
-        maxWidth="lg"
+        title="ویرایش سال تحصیلی"
+        maxWidth="md"
       >
         {error && (
           <div className="mb-4 flex items-center space-x-2 space-x-reverse rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200">
@@ -1190,80 +1165,50 @@ export const AcademicStructurePage: React.FC = () => {
           </div>
         )}
 
-        <div className="space-y-6">
-          {/* Main Year Edit Form */}
-          <form onSubmit={handleUpdateYear} className="space-y-4">
-            <div className="space-y-3 p-4 bg-gray-50/70 dark:bg-gray-800/40 rounded-2xl border border-gray-200/80 dark:border-gray-700">
-              <h4 className="text-xs font-black text-ink-darker dark:text-white flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-primary" />
-                <span>مشخصات سال تحصیلی</span>
-              </h4>
+        <div className="space-y-4">
+          <Input
+            label="عنوان سال تحصیلی"
+            placeholder="مثال: سال تحصیلی ۱۴۰۵-۱۴۰۶"
+            value={editYearForm.name}
+            onChange={(e) => setEditYearForm({ ...editYearForm, name: e.target.value })}
+            required
+          />
 
-              <Input
-                label="عنوان سال تحصیلی"
-                placeholder="مثال: سال تحصیلی ۱۴۰۵-۱۴۰۶"
-                value={editYearForm.name}
-                onChange={(e) => setEditYearForm({ ...editYearForm, name: e.target.value })}
-                required
-              />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <PersianDatePicker
+              label="تاریخ شروع"
+              value={editYearForm.startDate}
+              onChange={(date) => setEditYearForm({ ...editYearForm, startDate: date })}
+            />
+            <PersianDatePicker
+              label="تاریخ پایان"
+              value={editYearForm.endDate}
+              onChange={(date) => setEditYearForm({ ...editYearForm, endDate: date })}
+            />
+          </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <PersianDatePicker
-                  label="تاریخ شروع (شمسی)"
-                  value={editYearForm.startDate}
-                  onChange={(date) => setEditYearForm({ ...editYearForm, startDate: date })}
-                />
-                <PersianDatePicker
-                  label="تاریخ پایان (شمسی)"
-                  value={editYearForm.endDate}
-                  onChange={(date) => setEditYearForm({ ...editYearForm, endDate: date })}
-                />
-              </div>
+          <label className="flex items-center gap-2 cursor-pointer pt-1">
+            <input
+              type="checkbox"
+              id="editYearIsCurrent"
+              checked={editYearForm.isCurrent}
+              onChange={(e) => setEditYearForm({ ...editYearForm, isCurrent: e.target.checked })}
+              className="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary cursor-pointer"
+            />
+            <span className="text-xs font-bold text-ink-dark dark:text-gray-300">
+              سال تحصیلی جاری
+            </span>
+          </label>
 
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="editYearIsCurrent"
-                  checked={editYearForm.isCurrent}
-                  onChange={(e) => setEditYearForm({ ...editYearForm, isCurrent: e.target.checked })}
-                  className="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary cursor-pointer"
-                />
-                <label htmlFor="editYearIsCurrent" className="text-xs font-bold text-ink-dark dark:text-gray-300 cursor-pointer">
-                  تنظیم به عنوان سال تحصیلی جاری مدرسه
-                </label>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button
-                type="submit"
-                variant="primary"
-                isLoading={isSubmitting}
-                className="h-9 px-4 text-xs font-bold"
-              >
-                ذخیره مشخصات سال تحصیلی
-              </Button>
-            </div>
-          </form>
-
-          {/* Semesters / Terms Section */}
-          <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <h4 className="text-sm font-black text-ink-darker dark:text-white flex items-center gap-1.5">
-                  <Layers className="w-4 h-4 text-primary" />
-                  <span>نیم‌سال‌های تحصیلی این سال</span>
-                </h4>
-                <p className="text-[11px] text-gray-500 mt-0.5">
-                  تعریف و ویرایش دوره‌ها و نیم‌سال‌های این سال تحصیلی (مانند نیم‌سال اول، دوم و تابستان)
-                </p>
-              </div>
-
+          {/* Semesters */}
+          <div className="pt-3 border-t border-gray-100 dark:border-gray-800 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-ink-darker dark:text-white">
+                نیم‌سال‌های تحصیلی
+              </span>
               {!isAddingTerm && (
-                <Button
+                <button
                   type="button"
-                  variant="outline"
-                  size="sm"
                   onClick={() => {
                     setIsAddingTerm(true);
                     setNewTermForm({
@@ -1273,134 +1218,91 @@ export const AcademicStructurePage: React.FC = () => {
                       isCurrent: false,
                     });
                   }}
-                  className="h-8 px-2.5 text-xs font-bold gap-1 text-primary border-primary/30 hover:bg-primary/5"
+                  className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>افزودن نیم‌سال</span>
-                </Button>
+                </button>
               )}
             </div>
 
             {/* Add Term Form */}
             {isAddingTerm && (
-              <form onSubmit={handleCreateTerm} className="p-3.5 bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-xl space-y-3">
-                <div className="text-xs font-bold text-primary flex items-center gap-1.5">
-                  <Plus className="w-4 h-4" />
-                  <span>تعریف نیم‌سال تحصیلی جدید</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="p-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl space-y-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <Input
-                    label="عنوان نیم‌سال"
-                    placeholder="مثال: نیم‌سال اول"
+                    placeholder="نام نیم‌سال (مثال: نیم‌سال اول)"
                     value={newTermForm.name}
                     onChange={(e) => setNewTermForm({ ...newTermForm, name: e.target.value })}
-                    required
                   />
                   <PersianDatePicker
-                    label="تاریخ شروع"
                     value={newTermForm.startDate}
                     onChange={(date) => setNewTermForm({ ...newTermForm, startDate: date })}
                   />
                   <PersianDatePicker
-                    label="تاریخ پایان"
                     value={newTermForm.endDate}
                     onChange={(date) => setNewTermForm({ ...newTermForm, endDate: date })}
                   />
                 </div>
-
-                <div className="flex items-center justify-between pt-1">
-                  <label className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300 cursor-pointer">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-1.5 text-xs cursor-pointer">
                     <input
                       type="checkbox"
                       checked={newTermForm.isCurrent}
                       onChange={(e) => setNewTermForm({ ...newTermForm, isCurrent: e.target.checked })}
-                      className="w-3.5 h-3.5 text-primary rounded border-gray-300 focus:ring-primary cursor-pointer"
+                      className="w-3.5 h-3.5 text-primary rounded"
                     />
-                    <span className="text-[11px] font-medium">نیم‌سال جاری باشد</span>
+                    <span className="text-[11px] text-gray-600 dark:text-gray-300">نیم‌سال جاری</span>
                   </label>
-
                   <div className="flex items-center gap-1.5">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsAddingTerm(false)}
-                      className="h-8 px-2.5 text-xs"
-                    >
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setIsAddingTerm(false)} className="h-7 text-xs px-2">
                       انصراف
                     </Button>
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      size="sm"
-                      isLoading={isSubmitting}
-                      className="h-8 px-3 text-xs font-bold"
-                    >
-                      ثبت نیم‌سال
+                    <Button type="button" variant="primary" size="sm" isLoading={isSubmitting} onClick={handleCreateTerm} className="h-7 text-xs px-3 font-bold">
+                      افزودن
                     </Button>
                   </div>
                 </div>
-              </form>
+              </div>
             )}
 
-            {/* List of Terms */}
-            <div className="space-y-2">
+            {/* Terms List */}
+            <div className="space-y-1.5">
               {editYearForm.terms && editYearForm.terms.length > 0 ? (
                 editYearForm.terms.map((term: any) => {
                   const isEditingThis = editingTermId === term.id;
                   if (isEditingThis) {
                     return (
-                      <div key={term.id} className="p-3 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl space-y-3">
-                        <div className="text-xs font-bold text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
-                          <Edit3 className="w-3.5 h-3.5" />
-                          <span>ویرایش نیم‌سال: {term.name}</span>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      <div key={term.id} className="p-2.5 bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl space-y-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                           <Input
-                            label="نام نیم‌سال"
                             value={editTermForm.name}
                             onChange={(e) => setEditTermForm({ ...editTermForm, name: e.target.value })}
-                            required
                           />
                           <PersianDatePicker
-                            label="تاریخ شروع"
                             value={editTermForm.startDate}
                             onChange={(date) => setEditTermForm({ ...editTermForm, startDate: date })}
                           />
                           <PersianDatePicker
-                            label="تاریخ پایان"
                             value={editTermForm.endDate}
                             onChange={(date) => setEditTermForm({ ...editTermForm, endDate: date })}
                           />
                         </div>
-                        <div className="flex items-center justify-between pt-1">
-                          <label className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300 cursor-pointer">
+                        <div className="flex items-center justify-between">
+                          <label className="flex items-center gap-1.5 text-xs cursor-pointer">
                             <input
                               type="checkbox"
                               checked={editTermForm.isCurrent}
                               onChange={(e) => setEditTermForm({ ...editTermForm, isCurrent: e.target.checked })}
-                              className="w-3.5 h-3.5 text-primary rounded border-gray-300 focus:ring-primary cursor-pointer"
+                              className="w-3.5 h-3.5 text-primary rounded"
                             />
-                            <span className="text-[11px] font-medium">نیم‌سال جاری باشد</span>
+                            <span className="text-[11px] text-gray-600 dark:text-gray-300">نیم‌سال جاری</span>
                           </label>
-                          <div className="flex items-center gap-1.5">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditingTermId(null)}
-                              className="h-8 px-2.5 text-xs"
-                            >
+                          <div className="flex items-center gap-1">
+                            <Button type="button" variant="ghost" size="sm" onClick={() => setEditingTermId(null)} className="h-7 text-xs px-2">
                               انصراف
                             </Button>
-                            <Button
-                              type="button"
-                              variant="primary"
-                              size="sm"
-                              onClick={() => handleSaveEditTerm(term.id)}
-                              className="h-8 px-3 text-xs font-bold"
-                            >
+                            <Button type="button" variant="primary" size="sm" onClick={() => handleSaveEditTerm(term.id)} className="h-7 text-xs px-3 font-bold">
                               ذخیره
                             </Button>
                           </div>
@@ -1412,33 +1314,33 @@ export const AcademicStructurePage: React.FC = () => {
                   return (
                     <div
                       key={term.id}
-                      className="p-3 bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 rounded-xl flex items-center justify-between gap-3"
+                      className="p-2.5 bg-gray-50/80 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-700/60 rounded-xl flex items-center justify-between gap-2"
                     >
-                      <div className="flex items-center gap-2.5 flex-wrap">
-                        <span className="font-bold text-ink-darker dark:text-white text-xs sm:text-sm">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-xs text-ink-darker dark:text-white">
                           {term.name}
                         </span>
-                        {term.isCurrent ? (
-                          <Badge variant="success" className="text-[10px]">نیم‌سال جاری</Badge>
-                        ) : null}
-                        <span className="text-xs text-gray-500">
+                        {term.isCurrent && (
+                          <Badge variant="success" className="text-[10px] py-0 px-1.5">جاری</Badge>
+                        )}
+                        <span className="text-[11px] text-gray-500">
                           ({formatJalaliDisplay(term.startDate)} تا {formatJalaliDisplay(term.endDate)})
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center gap-1 shrink-0">
                         <button
                           type="button"
                           onClick={() => handleStartEditTerm(term)}
-                          className="p-1.5 rounded-lg text-blue-500 hover:text-white hover:bg-blue-500 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 transition-all cursor-pointer shadow-2xs"
-                          title="ویرایش این نیم‌سال"
+                          className="p-1 text-gray-500 hover:text-blue-600 transition-colors cursor-pointer"
+                          title="ویرایش نیم‌سال"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteTerm(term.id)}
-                          className="p-1.5 rounded-lg text-rose-500 hover:text-white hover:bg-rose-500 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 transition-all cursor-pointer shadow-2xs"
+                          className="p-1 text-gray-400 hover:text-rose-600 transition-colors cursor-pointer"
                           title="حذف نیم‌سال"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1448,10 +1350,48 @@ export const AcademicStructurePage: React.FC = () => {
                   );
                 })
               ) : (
-                <div className="p-4 text-center text-xs text-gray-400 bg-gray-50 dark:bg-gray-800/30 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
-                  هنوز هیچ نیم‌سالی برای این سال تحصیلی ثبت نشده است.
+                <div className="text-center py-2 text-xs text-gray-400">
+                  نیم‌سالی ثبت نشده است
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Modal Footer */}
+          <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800">
+            <button
+              type="button"
+              onClick={() => {
+                setIsEditYearModalOpen(false);
+                setDeleteConfirmYear({ id: editingYearId, name: editYearForm.name });
+              }}
+              className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>حذف سال تحصیلی</span>
+            </button>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setIsEditYearModalOpen(false);
+                  setEditingYearId(null);
+                }}
+                className="h-9 px-3.5 text-xs"
+              >
+                انصراف
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                isLoading={isSubmitting}
+                onClick={handleUpdateYear}
+                className="h-9 px-4 text-xs font-bold"
+              >
+                ذخیره تغییرات
+              </Button>
             </div>
           </div>
         </div>
