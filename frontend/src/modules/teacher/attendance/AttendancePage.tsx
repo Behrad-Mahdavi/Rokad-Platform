@@ -1656,41 +1656,40 @@ export const AttendancePage: React.FC = () => {
                     )}
                   </div>
 
-                  <Input
-                    type="number"
-                    step="0.25"
-                    min="0"
-                    max="20"
-                    value={modalOralGrade}
-                    onChange={(e) => setModalOralGrade(e.target.value)}
-                    placeholder="نمره مورد نظر را وارد کنید (مثلاً ۱۹.۵)"
-                    className="rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] font-bold h-10 text-center text-sm"
-                  />
-
-                  {/* Quick Grade Pills */}
-                  <div className="flex items-center gap-1 flex-wrap pt-1">
-                    <span className="text-[10px] font-bold text-muted-foreground ml-1">نمرات سریع:</span>
-                    {QUICK_GRADES.map((g) => (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      step="0.25"
+                      min="0"
+                      max="20"
+                      value={modalOralGrade}
+                      onChange={(e) => setModalOralGrade(e.target.value)}
+                      placeholder="نمره (مثلاً ۱۹.۵)"
+                      className="rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] font-bold h-9 text-center text-sm w-32 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-auto [&::-webkit-outer-spin-button]:appearance-auto"
+                    />
+                    <div className="flex flex-col gap-0.5">
                       <button
-                        key={g}
                         type="button"
-                        onClick={() => setModalOralGrade(String(g))}
-                        className={`px-2 py-0.5 rounded-lg text-xs font-bold transition-all ${
-                          modalOralGrade === String(g)
-                            ? 'bg-primary text-white shadow-2xs font-black'
-                            : 'bg-white dark:bg-[#151C28] text-foreground dark:text-white border border-gray-200 dark:border-[#242F42] hover:border-primary'
-                        }`}
+                        onClick={() => setModalOralGrade(String(Math.min(20, parseFloat(modalOralGrade || '0') + 0.25)))}
+                        className="w-7 h-5 rounded-md bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#242F42] transition-colors cursor-pointer"
                       >
-                        {toPersianDigits(g)}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
                       </button>
-                    ))}
+                      <button
+                        type="button"
+                        onClick={() => setModalOralGrade(String(Math.max(0, parseFloat(modalOralGrade || '0') - 0.25)))}
+                        className="w-7 h-5 rounded-md bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#242F42] transition-colors cursor-pointer"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                      </button>
+                    </div>
                     {modalOralGrade && (
                       <button
                         type="button"
                         onClick={() => setModalOralGrade('')}
-                        className="px-2 py-0.5 rounded-lg text-xs font-bold text-rose-500 hover:underline"
+                        className="text-xs font-bold text-rose-500 hover:underline cursor-pointer"
                       >
-                        پاک کردن
+                        پاک
                       </button>
                     )}
                   </div>
@@ -1754,14 +1753,6 @@ export const AttendancePage: React.FC = () => {
 
                 {/* Action Buttons */}
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100 dark:border-[#242F42] flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => setModalTab('HISTORY')}
-                    className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
-                  >
-                    <History className="w-3.5 h-3.5" />
-                    مشاهده پرونده و سابقه کامل
-                  </button>
 
                   <div className="flex items-center gap-2">
                     <Button
@@ -1813,14 +1804,14 @@ export const AttendancePage: React.FC = () => {
                       </div>
 
                       <div className="bg-white dark:bg-[#151C28] p-2 rounded-lg border border-gray-200/60 dark:border-[#242F42]">
-                        <div className="text-[10px] font-bold text-emerald-600">تشویقی‌ها</div>
+                        <div className="text-[10px] font-bold text-emerald-600">تشویقی</div>
                         <div className="text-sm font-black text-emerald-700 dark:text-emerald-400">
                           {toPersianDigits(combinedHistory.summary?.positiveRewardsCount || 0)} مورد
                         </div>
                       </div>
 
                       <div className="bg-white dark:bg-[#151C28] p-2 rounded-lg border border-gray-200/60 dark:border-[#242F42]">
-                        <div className="text-[10px] font-bold text-rose-600">تذکرات</div>
+                        <div className="text-[10px] font-bold text-rose-600">انضباطی</div>
                         <div className="text-sm font-black text-rose-700 dark:text-rose-400">
                           {toPersianDigits(combinedHistory.summary?.negativeDisciplineCount || 0)} مورد
                         </div>
