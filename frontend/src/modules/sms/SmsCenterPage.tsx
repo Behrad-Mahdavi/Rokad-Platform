@@ -410,9 +410,6 @@ export const SmsCenterPage: React.FC = () => {
                   <Zap className="w-3 h-3 text-primary" /> نسل ۳ هوشمند
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-ink-normal/70 dark:text-gray-400 mt-1 font-medium">
-                ارسال گروهی، اتوماسیون غیبت اولیا، یادآوری سررسید چک‌های صیادی و تبریک زادروز با وب‌سرویس آموت
-              </p>
             </div>
           </div>
 

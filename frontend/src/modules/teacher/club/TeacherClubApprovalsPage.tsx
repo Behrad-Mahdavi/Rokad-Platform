@@ -116,10 +116,6 @@ export const TeacherClubApprovalsPage: React.FC = () => {
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
               تأییدیه‌های ورود به باشگاه دانش‌آموزی
             </h1>
-            <p className="text-white/90 text-sm max-w-2xl font-medium leading-relaxed">
-              دانش‌آموزان متقاضی عضویت در باشگاه کسب‌وکار جهت تکمیل نقشه راه پذیرش، نیازمند تأییدیه فنی و اخلاقی از
-              دبیران دروس تخصصی هستند. بررسی شما مسیر ورود آن‌ها به استارتاپ استودیو رُکاد را مشخص می‌کند.
-            </p>
           </div>
 
           <div className="grid grid-cols-3 gap-3 self-stretch md:self-auto bg-stone-900/25 p-3 rounded-2xl border border-white/20 backdrop-blur-sm text-center">

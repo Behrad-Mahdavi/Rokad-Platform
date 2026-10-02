@@ -453,10 +453,6 @@ export const AdminClubPage: React.FC = () => {
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
               باشگاه کسب‌وکار دانش‌آموزان و رُکاد استودیو
             </h1>
-            <p className="text-stone-300 text-sm max-w-2xl font-medium leading-relaxed">
-              مدیریت دپارتمان‌ها (مهندسا، آرتیستا، آچار فرانسه‌ها)، رده‌بندی اعضا (گریدهای A، B، C)، نقشه راه پذیرش
-              داینامیک، انتشار چالش‌های ورودی و فصلی، و کارتابل داوری پروژه‌ها.
-            </p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-stone-800/80 p-3.5 rounded-2xl border border-stone-700 backdrop-blur-sm text-center">

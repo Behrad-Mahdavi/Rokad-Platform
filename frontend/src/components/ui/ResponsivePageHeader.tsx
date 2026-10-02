@@ -48,11 +48,6 @@ export const ResponsivePageHeader: React.FC<ResponsivePageHeaderProps> = ({
           </h1>
           {badge}
         </div>
-        {(subtitle || description) && (
-          <p className="mt-1.5 text-xs sm:text-[13px] text-ink-normal/70 dark:text-gray-400 leading-relaxed">
-            {subtitle || description}
-          </p>
-        )}
       </div>
 
       {actions && (

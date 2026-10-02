@@ -250,9 +250,6 @@ export const PasswordVaultPage: React.FC = () => {
                 Zero-Knowledge
               </span>
             </div>
-            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mt-1">
-              رمزگشایی امن کلمات عبور دانش‌آموزان، والدین و همکاران با پروتکل رمزنگاری نامتقارن RSA-2048 + AES-256
-            </p>
           </div>
         </div>
 

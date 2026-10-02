@@ -210,9 +210,6 @@ export const KaRewardsStore: React.FC<KaRewardsStoreProps> = ({
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white drop-shadow-sm">
               سیستم جامع ارزیابی و پاداش مدارس رکاد
             </h1>
-            <p className="text-xs sm:text-sm text-[#B7E4DF] max-w-2xl leading-relaxed">
-              پاداش‌های عمومی بر مبنای توکن کا (K)، مزایای ویژه ۵ نفر برتر پایه، و فرصت نیکوکاری مدرسه‌ای
-            </p>
           </div>
 
           {/* کارت موجودی توکن کاربر */}

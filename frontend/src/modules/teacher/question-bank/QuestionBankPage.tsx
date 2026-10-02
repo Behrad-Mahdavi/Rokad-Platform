@@ -340,9 +340,6 @@ export const QuestionBankPage: React.FC = () => {
             <h1 className="text-base sm:text-lg md:text-xl font-bold text-foreground tracking-tight">
               بانک سوالات متمرکز و آزمون‌ساز هوشمند
             </h1>
-            <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 line-clamp-1 sm:line-clamp-none">
-              مخزن تخصصی سوالات درسی، طبقه‌بندی موضوعی، بارم‌بندی و راهنمای حل تشریحی
-            </p>
           </div>
         </div>
 

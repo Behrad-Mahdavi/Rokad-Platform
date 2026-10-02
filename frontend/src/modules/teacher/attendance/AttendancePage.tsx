@@ -772,9 +772,6 @@ export const AttendancePage: React.FC = () => {
             <h1 className="text-lg sm:text-2xl font-black text-ink-darker dark:text-white truncate">
               دفتر حضور و غیاب کلاسی
             </h1>
-            <p className="text-xs text-muted-foreground font-bold mt-0.5 truncate hidden xs:block">
-              ثبت الکترونیکی حضور، غیاب، تاخیر و ارزیابی مستمر دانش‌آموزان
-            </p>
           </div>
         </div>
 

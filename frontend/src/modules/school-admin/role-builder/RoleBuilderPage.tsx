@@ -143,9 +143,6 @@ export const RoleBuilderPage: React.FC = () => {
             </div>
             <span>سازنده نقش‌ها و مدیریت دسترسی‌ها (RBAC)</span>
           </h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            تعریف نقش‌های سفارشی مدرسه، تخصیص مجوزهای دانه‌ای، و مدیریت استثناهای دسترسی اعضا
-          </p>
         </div>
 
         <div className="flex items-center gap-2">
