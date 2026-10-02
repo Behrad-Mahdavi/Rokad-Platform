@@ -420,16 +420,23 @@ export const AttendancePage: React.FC = () => {
 
   // Filtered Students
   const filteredStudents = useMemo(() => {
-    return studentsList.filter((s) => {
-      if (statusFilter !== 'ALL' && s.status !== statusFilter) return false;
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase().trim();
-      const fullName = `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.toLowerCase();
-      const code = s.studentCode || '';
-      const national = s.nationalCode || '';
-      return fullName.includes(q) || code.includes(q) || national.includes(q);
-    });
+    return studentsList
+      .filter((s) => {
+        if (statusFilter !== 'ALL' && s.status !== statusFilter) return false;
+        if (!searchQuery.trim()) return true;
+        const q = searchQuery.toLowerCase().trim();
+        const fullName = `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.toLowerCase();
+        const code = s.studentCode || '';
+        const national = s.nationalCode || '';
+        return fullName.includes(q) || code.includes(q) || national.includes(q);
+      })
+      .sort((a, b) => {
+        const lastA = a.user?.lastName || '';
+        const lastB = b.user?.lastName || '';
+        return lastA.localeCompare(lastB, 'fa');
+      });
   }, [studentsList, searchQuery, statusFilter]);
+
 
   // 9. Query: Student Track Record / History in Subject
   const {
@@ -571,35 +578,36 @@ export const AttendancePage: React.FC = () => {
       if (!activeSession) return;
       const payload = {
         classroomId: activeSession.classroomId,
-        lessonId: activeSession.lessonId,
+        lessonId: activeSession.lessonId || undefined,
         date: selectedDate,
-        periodNumber: activeSession.periodNumber,
+        periodNumber: activeSession.periodNumber || 1,
         attendances: studentsList.map((s) => ({
           studentId: s.studentId,
           status: s.status,
-          delayMinutes: s.status === 'TARDY' ? s.delayMinutes : 0,
-          reason: s.reason || '',
-          oralGrade: s.oralGrade !== null && s.oralGrade !== undefined ? Number(s.oralGrade) : undefined,
-          rewardDisciplineType: s.rewardDisciplineType || undefined,
-          rewardDisciplineNote: s.rewardDisciplineNote || undefined,
-          sessionNote: s.sessionNote || undefined,
+          delayMinutes: s.status === 'TARDY' ? (Number(s.delayMinutes) || 0) : 0,
+          reason: s.reason?.trim() ? s.reason.trim() : undefined,
+          oralGrade: s.oralGrade !== null && s.oralGrade !== undefined && String(s.oralGrade).trim() !== '' ? Number(s.oralGrade) : undefined,
+          rewardDisciplineType: s.rewardDisciplineType && s.rewardDisciplineType !== 'NONE' ? s.rewardDisciplineType : undefined,
+          rewardDisciplineNote: s.rewardDisciplineNote?.trim() ? s.rewardDisciplineNote.trim() : undefined,
+          sessionNote: s.sessionNote?.trim() ? s.sessionNote.trim() : undefined,
         })),
       };
       const res: any = await apiClient.post('/attendance/students/bulk', payload);
       return res?.data || res;
     },
     onSuccess: (data: any) => {
-      toast.success(data?.message || 'دفتر کلاسی با موفقیت ثبت و ذخیره شد', {
-        description: `کلاس ${activeSession?.classroomName} - زنگ ${toPersianDigits(activeSession?.periodNumber)}`,
-      });
+      toast.success('ثبت شد');
       setHasUnsavedChanges(false);
       queryClient.invalidateQueries({ queryKey: ['classroom-attendance'] });
       queryClient.invalidateQueries({ queryKey: ['teacher-daily-schedule'] });
       queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
     },
     onError: (err: any) => {
+      console.error('Save attendance error:', err);
+      const rawMsg = err?.response?.data?.message;
+      const errorMsg = Array.isArray(rawMsg) ? rawMsg.join(' - ') : rawMsg || err?.message || 'خطا در برقراری ارتباط با سرور';
       toast.error('خطا در ثبت اطلاعات دفتر کلاسی', {
-        description: err?.response?.data?.message || 'لطفاً اتصال اینترنت را بررسی فرمایید',
+        description: errorMsg,
       });
     },
   });
@@ -702,18 +710,18 @@ export const AttendancePage: React.FC = () => {
         setIsSavingEvaluation(true);
         await apiClient.post('/attendance/students/bulk', {
           classroomId: activeSession.classroomId,
-          lessonId: activeSession.lessonId,
+          lessonId: activeSession.lessonId || undefined,
           date: selectedDate,
-          periodNumber: activeSession.periodNumber,
+          periodNumber: activeSession.periodNumber || 1,
           attendances: nextList.map((s) => ({
             studentId: s.studentId,
             status: s.status,
-            delayMinutes: s.status === 'TARDY' ? s.delayMinutes : 0,
-            reason: s.reason || '',
-            oralGrade: s.oralGrade !== null && s.oralGrade !== undefined ? Number(s.oralGrade) : undefined,
-            rewardDisciplineType: s.rewardDisciplineType || undefined,
-            rewardDisciplineNote: s.rewardDisciplineNote || undefined,
-            sessionNote: s.sessionNote || undefined,
+            delayMinutes: s.status === 'TARDY' ? (Number(s.delayMinutes) || 0) : 0,
+            reason: s.reason?.trim() ? s.reason.trim() : undefined,
+            oralGrade: s.oralGrade !== null && s.oralGrade !== undefined && String(s.oralGrade).trim() !== '' ? Number(s.oralGrade) : undefined,
+            rewardDisciplineType: s.rewardDisciplineType && s.rewardDisciplineType !== 'NONE' ? s.rewardDisciplineType : undefined,
+            rewardDisciplineNote: s.rewardDisciplineNote?.trim() ? s.rewardDisciplineNote.trim() : undefined,
+            sessionNote: s.sessionNote?.trim() ? s.sessionNote.trim() : undefined,
           })),
         });
 
@@ -1002,7 +1010,7 @@ export const AttendancePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Action Buttons: Filter, Gradebook, Reset, Submit */}
+              {/* Action Buttons: Filter, Gradebook, Submit */}
               <div className="flex items-center gap-2 flex-wrap">
                 {/* Filter Toggle Button (Right of Gradebook) */}
                 <button
@@ -1032,21 +1040,6 @@ export const AttendancePage: React.FC = () => {
                   </button>
                 )}
 
-                {/* Reset Icon-only Button (Always visible, active only when hasUnsavedChanges) */}
-                <button
-                  type="button"
-                  onClick={handleResetToSaved}
-                  disabled={!hasUnsavedChanges}
-                  className={`h-10 w-10 rounded-xl border transition-all inline-flex items-center justify-center shadow-2xs ${
-                    hasUnsavedChanges
-                      ? 'border-orange-300 dark:border-orange-800/80 bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 hover:bg-orange-100 cursor-pointer'
-                      : 'border-gray-200 dark:border-[#242F42] bg-gray-50 dark:bg-[#1C2536] text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50'
-                  }`}
-                  title={hasUnsavedChanges ? 'بازنشانی تغییرات' : 'تغییری برای بازنشانی وجود ندارد'}
-                >
-                  <RotateCcw className="w-4 h-4" />
-                </button>
-
                 <button
                   type="button"
                   onClick={() => saveAttendanceMutation.mutate()}
@@ -1063,9 +1056,9 @@ export const AttendancePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Collapsible Filter & Stats Bar (Toggled via Filter Icon) */}
+            {/* Collapsible Filter & Stats Bar + Search Bar (Toggled via Filter Icon) */}
             {showFilterStats && (
-              <div className="pt-2 border-t border-gray-100 dark:border-[#242F42] animate-in fade-in duration-150">
+              <div className="pt-2 border-t border-gray-100 dark:border-[#242F42] animate-in fade-in duration-150 space-y-2">
                 <div className="grid grid-cols-5 gap-1.5 sm:gap-2.5">
                   <div
                     onClick={() => setStatusFilter('ALL')}
@@ -1137,35 +1130,58 @@ export const AttendancePage: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Search Input Bar */}
+                <div className="relative pt-1">
+                  <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="جستجوی نام یا کد دانش‌آموزی..."
+                    className="pr-10 rounded-xl border border-gray-200 dark:border-[#242F42] bg-gray-50/50 dark:bg-[#1C2536] font-bold text-xs h-10 w-full"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             )}
-
-            {/* Search Input Bar */}
-            <div className="relative pt-2 border-t border-gray-100 dark:border-[#242F42]">
-              <Search className="absolute right-3.5 top-[calc(50%+4px)] -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="جستجوی نام یا کد دانش‌آموزی..."
-                className="pr-10 rounded-xl border border-gray-200 dark:border-[#242F42] bg-gray-50/50 dark:bg-[#1C2536] font-bold text-xs h-10 w-full"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute left-3 top-[calc(50%+4px)] -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
           </div>
 
           {/* Students Direct List (No Outer Wrapper Box) */}
           {isLoadingRoster ? (
-            <div className="py-16 text-center space-y-2 bg-white dark:bg-[#151C28] rounded-2xl border border-gray-200/80 dark:border-[#242F42] p-5">
-              <RefreshCw className="w-8 h-8 text-primary animate-spin mx-auto" />
-              <p className="font-black text-xs sm:text-sm text-foreground dark:text-white">در حال بارگذاری لیست دانش‌آموزان...</p>
+            <div className="space-y-2.5 w-full">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="p-3.5 sm:p-4 bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-[#242F42] rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 w-full animate-pulse"
+                >
+                  {/* Left: avatar + name */}
+                  <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+                    {/* Row number */}
+                    <div className="w-6 h-4 bg-gray-200 dark:bg-[#242F42] rounded" />
+                    {/* Avatar */}
+                    <div className="w-10 h-10 rounded-xl bg-gray-200 dark:bg-[#242F42] shrink-0" />
+                    {/* Name + badge */}
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <div className="h-3.5 bg-gray-200 dark:bg-[#242F42] rounded-lg w-32" />
+                      <div className="h-3 bg-gray-100 dark:bg-[#1C2536] rounded-lg w-20" />
+                    </div>
+                  </div>
+                  {/* Right: status buttons */}
+                  <div className="flex items-center gap-1.5 flex-wrap mr-auto md:mr-0">
+                    {Array.from({ length: 4 }).map((__, j) => (
+                      <div key={j} className="h-8 w-14 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200/60 dark:border-[#242F42]" />
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           ) : filteredStudents.length === 0 ? (
             <div className="py-12 text-center bg-white dark:bg-[#151C28] border border-dashed border-gray-200 dark:border-[#242F42] rounded-2xl p-4">
@@ -1337,64 +1353,51 @@ export const AttendancePage: React.FC = () => {
           )}
 
           {/* Sticky Mobile Floating Action Footer for Roster */}
-          <div className="sm:hidden fixed bottom-0 inset-x-0 bg-white/95 dark:bg-[#151C28]/95 backdrop-blur-md border-t border-gray-200 dark:border-[#242F42] p-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-40 shadow-lg flex items-center justify-between gap-2">
-            <div className="text-xs font-bold flex items-center gap-1 min-w-0 truncate">
-              <span className="text-emerald-600 dark:text-emerald-400 font-black">{toPersianDigits(rosterStats.present)} ح</span>
-              <span className="text-muted-foreground">•</span>
-              <span className="text-rose-600 dark:text-rose-400 font-black">{toPersianDigits(rosterStats.absent)} غ</span>
-              {rosterStats.tardy > 0 && (
-                <>
-                  <span className="text-muted-foreground">•</span>
-                  <span className="text-orange-600 dark:text-orange-400 font-black">{toPersianDigits(rosterStats.tardy)} ت</span>
-                </>
+          <div className="sm:hidden fixed bottom-0 inset-x-0 bg-white/95 dark:bg-[#151C28]/95 backdrop-blur-md border-t border-gray-200 dark:border-[#242F42] p-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-40 shadow-lg flex items-center gap-2">
+            {/* دفتر نمرات - Right */}
+            {activeSession?.lessonId ? (
+              <button
+                type="button"
+                onClick={() =>
+                  navigate(`/app/teacher/gradebook?classroomId=${activeSession.classroomId}&lessonId=${activeSession.lessonId}`)
+                }
+                className="flex-1 h-10 rounded-xl border border-primary/30 dark:border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary font-black text-xs inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              >
+                <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                <span>دفتر نمرات</span>
+              </button>
+            ) : (
+              <div className="flex-1" />
+            )}
+
+            {/* فیلترها - Center */}
+            <button
+              type="button"
+              onClick={() => setShowFilterStats(!showFilterStats)}
+              className={`h-10 w-10 shrink-0 rounded-xl border transition-all inline-flex items-center justify-center cursor-pointer ${
+                showFilterStats || statusFilter !== 'ALL'
+                  ? 'bg-primary text-white border-primary'
+                  : 'border-gray-200 dark:border-[#242F42] bg-gray-50 dark:bg-[#1C2536] text-foreground dark:text-gray-200'
+              }`}
+              title="فیلترها"
+            >
+              <Filter className="w-4 h-4" />
+            </button>
+
+            {/* ثبت نهایی - Left */}
+            <button
+              type="button"
+              onClick={() => saveAttendanceMutation.mutate()}
+              disabled={saveAttendanceMutation.isPending || studentsList.length === 0}
+              className="flex-1 h-10 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs border-[1.5px] border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              {saveAttendanceMutation.isPending ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Send className="w-3.5 h-3.5" />
               )}
-            </div>
-
-            <div className="flex items-center gap-1.5 shrink-0">
-              {/* Filter Toggle on Mobile */}
-              <button
-                type="button"
-                onClick={() => setShowFilterStats(!showFilterStats)}
-                className={`h-9 w-9 rounded-xl border transition-all inline-flex items-center justify-center cursor-pointer ${
-                  showFilterStats || statusFilter !== 'ALL'
-                    ? 'bg-primary text-white border-primary'
-                    : 'border-gray-200 dark:border-[#242F42] bg-gray-50 dark:bg-[#1C2536] text-foreground dark:text-gray-200'
-                }`}
-                title="فیلترها"
-              >
-                <Filter className="w-3.5 h-3.5" />
-              </button>
-
-              {/* Reset on Mobile */}
-              <button
-                type="button"
-                onClick={handleResetToSaved}
-                disabled={!hasUnsavedChanges}
-                className={`h-9 w-9 rounded-xl border transition-all inline-flex items-center justify-center ${
-                  hasUnsavedChanges
-                    ? 'border-orange-300 dark:border-orange-800/80 bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 cursor-pointer'
-                    : 'border-gray-200 dark:border-[#242F42] bg-gray-50 dark:bg-[#1C2536] text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50'
-                }`}
-                title="بازنشانی"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
-
-              {/* Submit Final */}
-              <button
-                type="button"
-                onClick={() => saveAttendanceMutation.mutate()}
-                disabled={saveAttendanceMutation.isPending || studentsList.length === 0}
-                className="h-9 px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs inline-flex items-center gap-1.5 shrink-0 shadow-xs cursor-pointer disabled:opacity-50"
-              >
-                {saveAttendanceMutation.isPending ? (
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Send className="w-3.5 h-3.5" />
-                )}
-                <span>ثبت نهایی</span>
-              </button>
-            </div>
+              <span>ثبت نهایی</span>
+            </button>
           </div>
         </div>
       ) : activeTab === 'today_schedule' ? (

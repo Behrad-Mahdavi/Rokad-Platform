@@ -124,38 +124,62 @@ export class AttendanceService {
       academicYearId = fallbackYear.id;
     }
 
-    const results = await this.prisma.$transaction(async (tx) => {
-      const records: any[] = [];
-      for (const item of dto.attendances) {
-        const existing = await tx.studentAttendance.findFirst({
-          where: {
-            tenantId,
-            classroomId: dto.classroomId,
-            studentId: item.studentId,
-            date: dto.date,
-            periodNumber,
-          },
-        });
+    // Pre-fetch all existing attendance records for this session (outside transaction)
+    const studentIds = dto.attendances.map((a) => a.studentId);
 
-        let record;
+    const existingRecords = await this.prisma.studentAttendance.findMany({
+      where: {
+        tenantId,
+        classroomId: dto.classroomId,
+        date: dto.date,
+        periodNumber,
+        studentId: { in: studentIds },
+      },
+    });
+    const existingMap = new Map(existingRecords.map((r) => [r.studentId, r]));
+
+    // Pre-fetch student profiles for absent/tardy students (outside transaction)
+    const absentOrTardyIds = dto.attendances
+      .filter((a) => a.status === 'ABSENT' || a.status === 'TARDY')
+      .map((a) => a.studentId);
+
+    const studentProfiles = absentOrTardyIds.length
+      ? await this.prisma.studentProfile.findMany({
+          where: { id: { in: absentOrTardyIds } },
+          include: { user: true },
+        })
+      : [];
+    const profileMap = new Map(studentProfiles.map((p) => [p.id, p]));
+
+    // Run all upserts in parallel inside a single short transaction (no extra queries inside)
+    const results = await this.prisma.$transaction(
+      dto.attendances.map((item) => {
+        const existing = existingMap.get(item.studentId);
         if (existing) {
-          record = await tx.studentAttendance.update({
+          return this.prisma.studentAttendance.update({
             where: { id: existing.id },
             data: {
               status: item.status,
               delayMinutes: item.delayMinutes || 0,
               reason: item.reason,
               oralGrade: item.oralGrade !== undefined ? item.oralGrade : existing.oralGrade,
-              rewardDisciplineType: item.rewardDisciplineType !== undefined ? item.rewardDisciplineType : existing.rewardDisciplineType,
-              rewardDisciplineNote: item.rewardDisciplineNote !== undefined ? item.rewardDisciplineNote : existing.rewardDisciplineNote,
-              sessionNote: item.sessionNote !== undefined ? item.sessionNote : existing.sessionNote,
+              rewardDisciplineType:
+                item.rewardDisciplineType !== undefined
+                  ? item.rewardDisciplineType
+                  : existing.rewardDisciplineType,
+              rewardDisciplineNote:
+                item.rewardDisciplineNote !== undefined
+                  ? item.rewardDisciplineNote
+                  : existing.rewardDisciplineNote,
+              sessionNote:
+                item.sessionNote !== undefined ? item.sessionNote : existing.sessionNote,
               recordedById,
               lessonId: dto.lessonId || existing.lessonId,
               scheduleId: dto.scheduleId || existing.scheduleId,
             },
           });
         } else {
-          record = await tx.studentAttendance.create({
+          return this.prisma.studentAttendance.create({
             data: {
               tenantId,
               academicYearId: academicYearId || '',
@@ -169,37 +193,38 @@ export class AttendanceService {
               delayMinutes: item.delayMinutes || 0,
               reason: item.reason,
               oralGrade: item.oralGrade !== undefined ? item.oralGrade : null,
-              rewardDisciplineType: item.rewardDisciplineType !== undefined ? item.rewardDisciplineType : null,
+              rewardDisciplineType:
+                item.rewardDisciplineType !== undefined ? item.rewardDisciplineType : null,
               rewardDisciplineNote: item.rewardDisciplineNote || null,
               sessionNote: item.sessionNote || null,
               recordedById,
             },
           });
         }
-        records.push(record);
+      }),
+    );
 
-        // Fire event if student is absent or tardy
-        if (item.status === 'ABSENT' || item.status === 'TARDY') {
-          const studentProfile = await tx.studentProfile.findUnique({
-            where: { id: item.studentId },
-            include: { user: true },
-          });
-
-          this.eventEmitter.emit('attendance.student_absence', {
-            tenantId,
-            studentId: item.studentId,
-            studentName: studentProfile ? `${studentProfile.user.firstName} ${studentProfile.user.lastName}` : '',
-            parentPhone: studentProfile?.fatherPhone || studentProfile?.motherPhone,
-            date: dto.date,
-            periodNumber,
-            status: item.status,
-            delayMinutes: item.delayMinutes,
-            reason: item.reason,
-          });
-        }
+    // Fire events outside the transaction to avoid timeout
+    for (const item of dto.attendances) {
+      if (item.status === 'ABSENT' || item.status === 'TARDY') {
+        const studentProfile = profileMap.get(item.studentId);
+        this.eventEmitter.emit('attendance.student_absence', {
+          tenantId,
+          studentId: item.studentId,
+          studentName: studentProfile
+            ? `${studentProfile.user.firstName} ${studentProfile.user.lastName}`
+            : '',
+          parentPhone: studentProfile?.fatherPhone || studentProfile?.motherPhone,
+          date: dto.date,
+          periodNumber,
+          status: item.status,
+          delayMinutes: item.delayMinutes,
+          reason: item.reason,
+        });
       }
-      return records;
-    });
+    }
+
+
 
     // Invalidate daily stats cache
     await this.redisService.del(`attendance:stats:${tenantId}:${dto.date}`);
