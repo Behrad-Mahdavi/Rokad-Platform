@@ -916,9 +916,10 @@ export const MembersPage: React.FC = () => {
             {
               key: 'actions',
               header: 'عملیات',
+              className: 'text-center',
               mobilePriority: 'hidden',
               render: (s) => (
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => handleOpenDossier(s)}
@@ -1114,9 +1115,10 @@ export const MembersPage: React.FC = () => {
             {
               key: 'actions',
               header: 'عملیات',
+              className: 'text-center',
               mobilePriority: 'hidden',
               render: (t) => (
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => handleOpenEditTeacher(t)}
