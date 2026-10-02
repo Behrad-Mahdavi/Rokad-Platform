@@ -406,7 +406,12 @@ export class MembersService {
         },
         enrollments: {
           include: {
-            classroom: true,
+            classroom: {
+              include: {
+                level: true,
+                field: true,
+              },
+            },
           },
         },
         parentLinks: {
@@ -658,7 +663,16 @@ export class MembersService {
         data: profileUpdate,
         include: {
           user: true,
-          enrollments: { include: { classroom: true } },
+          enrollments: {
+            include: {
+              classroom: {
+                include: {
+                  level: true,
+                  field: true,
+                },
+              },
+            },
+          },
         },
       });
 
@@ -696,7 +710,22 @@ export class MembersService {
         education: updated.fatherEducation || updated.motherEducation,
       });
 
-      return updated;
+      return tx.studentProfile.findUnique({
+        where: { id: profile.id },
+        include: {
+          user: true,
+          enrollments: {
+            include: {
+              classroom: {
+                include: {
+                  level: true,
+                  field: true,
+                },
+              },
+            },
+          },
+        },
+      });
     });
   }
 

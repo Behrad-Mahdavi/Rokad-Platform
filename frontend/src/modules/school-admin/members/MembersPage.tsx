@@ -432,14 +432,19 @@ export const MembersPage: React.FC = () => {
     setSelectedStudentDossier(student);
     setDossierTab('IDENTITY');
     setIsEditingDossier(false);
+    const currentClassroomId = student.enrollments?.[0]?.classroomId || student.enrollments?.[0]?.classroom?.id || '';
+    const currentClassroom = classrooms.find((c) => c.id === currentClassroomId) || student.enrollments?.[0]?.classroom;
+    const currentGradeLevel = student.gradeLevel || (currentClassroom?.level?.name ? (currentClassroom.level.name.includes('پایه') ? currentClassroom.level.name.replace('پایه', '').trim() : currentClassroom.level.name) : 'دهم');
+
     setDossierEditForm({
       firstName: student.user?.firstName || '',
       lastName: student.user?.lastName || '',
       phone: student.user?.phone || '',
       nationalCode: student.nationalCode || '',
-      studentCode: student.studentCode || '',
+      studentCode: student.studentCode || student.studentNumber || '',
+      classroomId: currentClassroomId,
+      gradeLevel: currentGradeLevel,
       fatherName: student.fatherName || '',
-      gradeLevel: student.gradeLevel || 'دهم',
       birthDate: student.birthDate ? formatToJalali(student.birthDate) : '',
       birthPlace: student.birthPlace || '',
       certificateNumber: student.certificateNumber || '',
@@ -461,7 +466,7 @@ export const MembersPage: React.FC = () => {
       motherWorkAddress: student.motherWorkAddress || '',
       homeAddress: student.homeAddress || student.address || '',
       landlinePhone: student.landlinePhone || '',
-      studentMobile: student.studentMobile || '',
+      studentMobile: student.studentMobile || student.user?.phone || '',
       avatarUrl: student.user?.avatarUrl || '',
     });
   };
@@ -1488,9 +1493,11 @@ export const MembersPage: React.FC = () => {
                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex flex-wrap items-center gap-2 font-mono">
                   <span>کد ملی: <strong className="text-ink-dark dark:text-white">{selectedStudentDossier.nationalCode || '—'}</strong></span>
                   <span>•</span>
+                  <span>رشته: <strong className="text-primary">{selectedStudentDossier.enrollments?.[0]?.classroom?.field?.name || '—'}</strong></span>
+                  <span>•</span>
                   <span>کلاس: <strong className="text-primary">{selectedStudentDossier.enrollments?.[0]?.classroom?.name || 'کلاس عمومی'}</strong></span>
                   <span>•</span>
-                  <span>پایه: <strong className="text-primary">{selectedStudentDossier.gradeLevel || 'دهم'}</strong></span>
+                  <span>پایه: <strong className="text-primary">{selectedStudentDossier.enrollments?.[0]?.classroom?.level?.name || selectedStudentDossier.gradeLevel || 'دهم'}</strong></span>
                 </div>
               </div>
             </div>
@@ -1572,12 +1579,19 @@ export const MembersPage: React.FC = () => {
                       required
                     />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Input
-                      label="نام پدر"
-                      value={dossierEditForm.fatherName}
-                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, fatherName: e.target.value })}
+                      label="کد ملی دانش‌آموز"
+                      value={dossierEditForm.nationalCode}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, nationalCode: e.target.value })}
                     />
+                    <Input
+                      label="شماره / کد دانش‌آموزی"
+                      value={dossierEditForm.studentCode}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, studentCode: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Select
                       label="پایه تحصیلی"
                       value={dossierEditForm.gradeLevel}
@@ -1587,8 +1601,34 @@ export const MembersPage: React.FC = () => {
                       <option value="یازدهم">یازدهم</option>
                       <option value="دوازدهم">دوازدهم</option>
                     </Select>
+                    <Select
+                      label="کلاس و رشته تحصیلی"
+                      value={dossierEditForm.classroomId}
+                      onChange={(e) => {
+                        const selClass = classrooms.find((c) => c.id === e.target.value);
+                        setDossierEditForm({
+                          ...dossierEditForm,
+                          classroomId: e.target.value,
+                          ...(selClass?.level?.name ? { gradeLevel: selClass.level.name.replace('پایه', '').trim() } : {}),
+                        });
+                      }}
+                    >
+                      <option value="">-- بدون انتساب به کلاس --</option>
+                      {classrooms.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} {c.field?.name ? `(${c.field.name})` : ''} {c.level?.name ? `- ${c.level.name}` : ''}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Input
-                      label="وضعیت جسمانی"
+                      label="نام پدر"
+                      value={dossierEditForm.fatherName}
+                      onChange={(e) => setDossierEditForm({ ...dossierEditForm, fatherName: e.target.value })}
+                    />
+                    <Input
+                      label="وضعیت جسمانی و سلامت"
                       value={dossierEditForm.physicalCondition}
                       onChange={(e) => setDossierEditForm({ ...dossierEditForm, physicalCondition: e.target.value })}
                     />
@@ -1598,6 +1638,7 @@ export const MembersPage: React.FC = () => {
                       label="تاریخ تولد (شمسی)"
                       value={dossierEditForm.birthDate}
                       onChange={(e) => setDossierEditForm({ ...dossierEditForm, birthDate: e.target.value })}
+                      placeholder="مثال: 1387/05/14"
                     />
                     <Input
                       label="محل تولد"
@@ -1754,15 +1795,39 @@ export const MembersPage: React.FC = () => {
               {dossierTab === 'IDENTITY' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
-                    <span className="text-gray-500 block mb-1">نام پدر:</span>
-                    <strong className="text-sm text-ink-darker dark:text-white">
-                      {selectedStudentDossier.fatherName || selectedStudentDossier.fatherFullName || '—'}
+                    <span className="text-gray-500 block mb-1">کد ملی:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white font-mono">
+                      {selectedStudentDossier.nationalCode || '—'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">کد / شماره دانش‌آموزی:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white font-mono">
+                      {selectedStudentDossier.studentCode || selectedStudentDossier.studentNumber || '—'}
                     </strong>
                   </div>
                   <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
                     <span className="text-gray-500 block mb-1">پایه تحصیلی:</span>
                     <strong className="text-sm text-primary">
-                      {selectedStudentDossier.gradeLevel || 'دهم'}
+                      {selectedStudentDossier.enrollments?.[0]?.classroom?.level?.name || selectedStudentDossier.gradeLevel || 'دهم'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">رشته تحصیلی:</span>
+                    <strong className="text-sm text-primary">
+                      {selectedStudentDossier.enrollments?.[0]?.classroom?.field?.name || selectedStudentDossier.fieldOfStudy || '—'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">کلاس انتصابی:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white">
+                      {selectedStudentDossier.enrollments?.[0]?.classroom?.name || 'بدون کلاس'}
+                    </strong>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
+                    <span className="text-gray-500 block mb-1">نام پدر:</span>
+                    <strong className="text-sm text-ink-darker dark:text-white">
+                      {selectedStudentDossier.fatherName || selectedStudentDossier.fatherFullName || '—'}
                     </strong>
                   </div>
                   <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60">
