@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { apiClient } from '../../../lib/api/client';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
@@ -21,6 +21,7 @@ import {
   TableCell,
 } from '../../../components/ui/Table';
 import { MobileDataTable } from '../../../components/ui/MobileDataTable';
+import { Select } from '../../../components/ui/Select';
 import {
   GraduationCap,
   Calendar,
@@ -34,6 +35,13 @@ import {
   Trash2,
   Check,
   X,
+  Users,
+  UserCheck,
+  UserPlus,
+  Search,
+  ArrowRightLeft,
+  Save,
+  Filter,
 } from 'lucide-react';
 import { toast } from '../../../components/ui/toast/toast';
 import { ResponsivePageHeader } from '@/components/ui/ResponsivePageHeader';
@@ -47,6 +55,20 @@ export const AcademicStructurePage: React.FC = () => {
   const [levels, setLevels] = useState<any[]>([]);
   const [fields, setFields] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Classroom Students Management Modal State
+  const [isClassStudentsModalOpen, setIsClassStudentsModalOpen] = useState(false);
+  const [selectedClassForStudents, setSelectedClassForStudents] = useState<any | null>(null);
+  const [allStudents, setAllStudents] = useState<any[]>([]);
+  const [isLoadingClassStudents, setIsLoadingClassStudents] = useState(false);
+  const [studentSearchQuery, setStudentSearchQuery] = useState('');
+  const [studentModalTab, setStudentModalTab] = useState<'MEMBERS' | 'ADD_STUDENT'>('MEMBERS');
+  const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
+  const [studentEditForm, setStudentEditForm] = useState<{ gradeLevel: string; classroomId: string }>({
+    gradeLevel: 'دهم',
+    classroomId: '',
+  });
+  const [isSavingStudentTransfer, setIsSavingStudentTransfer] = useState(false);
 
   // Modals
   const [isYearModalOpen, setIsYearModalOpen] = useState(false);
@@ -592,6 +614,116 @@ export const AcademicStructurePage: React.FC = () => {
     }
   };
 
+  // Classroom Students Handlers
+  const handleOpenClassStudents = async (classroom: any) => {
+    setSelectedClassForStudents(classroom);
+    setIsClassStudentsModalOpen(true);
+    setStudentModalTab('MEMBERS');
+    setStudentSearchQuery('');
+    setEditingStudentId(null);
+    setIsLoadingClassStudents(true);
+    try {
+      const res = await apiClient.get('/members/students');
+      setAllStudents(res.data || []);
+    } catch (err: any) {
+      toast.error('خطا در دریافت لیست دانش‌آموزان');
+    } finally {
+      setIsLoadingClassStudents(false);
+    }
+  };
+
+  const handleStartEditStudent = (student: any) => {
+    const enrolledClassId =
+      student.enrollments?.[0]?.classroom?.id ||
+      student.enrollments?.[0]?.classroomId ||
+      selectedClassForStudents?.id ||
+      '';
+    const currentGrade =
+      student.gradeLevel ||
+      student.enrollments?.[0]?.classroom?.level?.name ||
+      selectedClassForStudents?.level?.name ||
+      'دهم';
+    setStudentEditForm({
+      gradeLevel: currentGrade,
+      classroomId: enrolledClassId,
+    });
+    setEditingStudentId(student.id);
+  };
+
+  const handleSaveStudentChange = async (studentId: string) => {
+    setIsSavingStudentTransfer(true);
+    try {
+      await apiClient.put(`/members/students/${studentId}`, {
+        gradeLevel: studentEditForm.gradeLevel,
+        classroomId: studentEditForm.classroomId,
+      });
+      toast.success('پایه و کلاس دانش‌آموز با موفقیت تغییر یافت.');
+      const res = await apiClient.get('/members/students');
+      setAllStudents(res.data || []);
+      setEditingStudentId(null);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err.message || 'خطا در ویرایش اطلاعات دانش‌آموز.');
+    } finally {
+      setIsSavingStudentTransfer(false);
+    }
+  };
+
+  const handleQuickAssignStudentToClass = async (studentId: string) => {
+    if (!selectedClassForStudents) return;
+    setIsSavingStudentTransfer(true);
+    try {
+      await apiClient.put(`/members/students/${studentId}`, {
+        gradeLevel: selectedClassForStudents.level?.name || 'دهم',
+        classroomId: selectedClassForStudents.id,
+      });
+      toast.success('دانش‌آموز با موفقیت به این کلاس اضافه شد.');
+      const res = await apiClient.get('/members/students');
+      setAllStudents(res.data || []);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err.message || 'خطا در انتساب دانش‌آموز به کلاس.');
+    } finally {
+      setIsSavingStudentTransfer(false);
+    }
+  };
+
+  const classStudents = useMemo(() => {
+    if (!selectedClassForStudents) return [];
+    return allStudents.filter((s: any) =>
+      s.enrollments?.some(
+        (e: any) =>
+          e.classroomId === selectedClassForStudents.id ||
+          e.classroom?.id === selectedClassForStudents.id
+      )
+    );
+  }, [allStudents, selectedClassForStudents]);
+
+  const otherStudents = useMemo(() => {
+    if (!selectedClassForStudents) return [];
+    return allStudents.filter(
+      (s: any) =>
+        !s.enrollments?.some(
+          (e: any) =>
+            e.classroomId === selectedClassForStudents.id ||
+            e.classroom?.id === selectedClassForStudents.id
+        )
+    );
+  }, [allStudents, selectedClassForStudents]);
+
+  const displayedStudents = useMemo(() => {
+    const baseList = studentModalTab === 'MEMBERS' ? classStudents : otherStudents;
+    if (!studentSearchQuery.trim()) return baseList;
+    const q = studentSearchQuery.trim().toLowerCase();
+    return baseList.filter((s: any) => {
+      const fullName = `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.toLowerCase();
+      const nat = (s.nationalCode || s.user?.nationalId || '').toLowerCase();
+      const sc = (s.studentCode || '').toLowerCase();
+      const father = (s.fatherName || s.fatherFullName || '').toLowerCase();
+      return fullName.includes(q) || nat.includes(q) || sc.includes(q) || father.includes(q);
+    });
+  }, [studentModalTab, classStudents, otherStudents, studentSearchQuery]);
+
   return (
     <div className="space-y-6">
       {/* Responsive Header */}
@@ -678,17 +810,31 @@ export const AcademicStructurePage: React.FC = () => {
             </div>
           )}
           secondaryField={(c) => (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleOpenEditClass(c);
-              }}
-              className="p-2 rounded-xl text-blue-500 hover:text-white hover:bg-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 hover:border-blue-500 transition-all shrink-0 cursor-pointer shadow-2xs"
-              title="ویرایش کلاس"
-            >
-              <Edit3 className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenClassStudents(c);
+                }}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-primary hover:text-white hover:bg-primary dark:text-primary-light bg-primary/10 dark:bg-primary/20 border border-primary/20 hover:border-primary transition-all shrink-0 cursor-pointer shadow-2xs text-xs font-bold"
+                title="مشاهده دانش‌آموزان کلاس و تغییر رشته/پایه"
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>{c._count?.enrollments || c._count?.students || 0}</span>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenEditClass(c);
+                }}
+                className="p-2 rounded-xl text-blue-500 hover:text-white hover:bg-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 hover:border-blue-500 transition-all shrink-0 cursor-pointer shadow-2xs"
+                title="ویرایش کلاس"
+              >
+                <Edit3 className="w-4 h-4" />
+              </button>
+            </div>
           )}
           columns={[
             {
@@ -758,17 +904,31 @@ export const AcademicStructurePage: React.FC = () => {
               header: 'عملیات',
               mobilePriority: 'hidden',
               cell: (c) => (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenEditClass(c);
-                  }}
-                  className="p-2 rounded-xl text-blue-500 hover:text-white hover:bg-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 hover:border-blue-500 transition-all cursor-pointer shadow-2xs"
-                  title="ویرایش کلاس"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center justify-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenClassStudents(c);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-primary hover:text-white hover:bg-primary dark:text-primary-light bg-primary/10 dark:bg-primary/20 border border-primary/20 hover:border-primary transition-all cursor-pointer shadow-2xs text-xs font-bold"
+                    title="مشاهده و مدیریت دانش‌آموزان کلاس"
+                  >
+                    <Users className="w-4 h-4" />
+                    <span>دانش‌آموزان ({c._count?.enrollments || c._count?.students || 0})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenEditClass(c);
+                    }}
+                    className="p-2 rounded-xl text-blue-500 hover:text-white hover:bg-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 hover:border-blue-500 transition-all cursor-pointer shadow-2xs"
+                    title="ویرایش کلاس"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                </div>
               ),
             },
           ]}
@@ -2388,6 +2548,304 @@ export const AcademicStructurePage: React.FC = () => {
             >
               <Trash2 className="w-4 h-4 ml-1.5" />
               <span>بله، حذف شود</span>
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Classroom Students & Grade/Field Transfer Modal */}
+      <Modal
+        isOpen={isClassStudentsModalOpen}
+        onClose={() => {
+          setIsClassStudentsModalOpen(false);
+          setEditingStudentId(null);
+        }}
+        title={`دانش‌آموزان ${selectedClassForStudents?.name || 'کلاس'}`}
+        description="مشاهده لیست دانش‌آموزان کلاس و تغییر مقطع/پایه تحصیلی و رشته/کلاس"
+        maxWidth="3xl"
+      >
+        <div className="space-y-4">
+          {/* Classroom Overview Summary Card */}
+          {selectedClassForStudents && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Building className="w-5 h-5 text-primary" />
+                  <span className="font-extrabold text-ink-darker text-base">
+                    {selectedClassForStudents.name}
+                  </span>
+                  <span className="font-mono text-xs bg-white dark:bg-gray-800 px-2 py-0.5 rounded-lg border border-gray-200 text-gray-700">
+                    کد: {selectedClassForStudents.code}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap pt-0.5">
+                  <span>سال: {selectedClassForStudents.academicYear?.name || 'جاری'}</span>
+                  {selectedClassForStudents.roomNumber && <span>• شماره اتاق: {selectedClassForStudents.roomNumber}</span>}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="default" className="font-bold text-xs py-1 px-2.5">
+                  پایه {selectedClassForStudents.level?.name || 'دهم'}
+                </Badge>
+                <Badge variant="college" className="font-bold text-xs py-1 px-2.5">
+                  {selectedClassForStudents.field?.name || 'شبکه و نرم‌افزار رایانه'}
+                </Badge>
+                <Badge variant="neutral" className="font-bold text-xs py-1 px-2.5">
+                  {classStudents.length} از {selectedClassForStudents.capacity || 30} نفر
+                </Badge>
+              </div>
+            </div>
+          )}
+
+          {/* Tab Navigation inside Modal */}
+          <div className="flex items-center justify-between gap-2 border-b border-gray-200 pb-2 flex-wrap">
+            <div className="flex space-x-2 space-x-reverse">
+              <button
+                type="button"
+                onClick={() => {
+                  setStudentModalTab('MEMBERS');
+                  setEditingStudentId(null);
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  studentModalTab === 'MEMBERS'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>دانش‌آموزان این کلاس ({classStudents.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setStudentModalTab('ADD_STUDENT');
+                  setEditingStudentId(null);
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  studentModalTab === 'ADD_STUDENT'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
+                }`}
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>افزودن از سایر کلاس‌ها ({otherStudents.length})</span>
+              </button>
+            </div>
+
+            {/* Quick Search */}
+            <div className="relative w-full sm:w-64">
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
+                <Search className="w-3.5 h-3.5" />
+              </div>
+              <input
+                type="text"
+                value={studentSearchQuery}
+                onChange={(e) => setStudentSearchQuery(e.target.value)}
+                placeholder="جستجوی نام، کدملی یا کد دانش‌آموزی..."
+                className="w-full pl-3 pr-8 py-1.5 text-xs rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+              />
+              {studentSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setStudentSearchQuery('')}
+                  className="absolute inset-y-0 left-0 pl-2.5 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Student List Content */}
+          <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1">
+            {isLoadingClassStudents ? (
+              <div className="space-y-2 py-4">
+                <Skeleton className="h-16 w-full rounded-2xl" />
+                <Skeleton className="h-16 w-full rounded-2xl" />
+                <Skeleton className="h-16 w-full rounded-2xl" />
+              </div>
+            ) : displayedStudents.length === 0 ? (
+              <div className="text-center py-10 px-4 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 text-gray-400 text-xs">
+                <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                {studentModalTab === 'MEMBERS'
+                  ? 'هنوز دانش‌آموزی در این کلاس ثبت نشده است. از تب «افزودن از سایر کلاس‌ها» برای انتساب دانش‌آموز استفاده کنید.'
+                  : 'دانش‌آموزی برای انتساب یافت نشد.'}
+              </div>
+            ) : (
+              displayedStudents.map((s: any) => {
+                const isEditing = editingStudentId === s.id;
+                const currentEnrolledClass = s.enrollments?.[0]?.classroom;
+                const studentGrade = s.gradeLevel || currentEnrolledClass?.level?.name || 'دهم';
+                const studentField = currentEnrolledClass?.field?.name || 'بدون رشته';
+
+                return (
+                  <div
+                    key={s.id}
+                    className={`p-3.5 rounded-2xl border transition-all ${
+                      isEditing
+                        ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-sm'
+                        : 'border-gray-200/80 hover:border-gray-300 bg-white dark:bg-gray-800/80 shadow-2xs'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      {/* Student Info */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0 border border-primary/20">
+                          {s.user?.firstName?.[0] || 'د'}{s.user?.lastName?.[0] || 'آ'}
+                        </div>
+                        <div className="space-y-0.5">
+                          <div className="font-bold text-ink-darker text-xs sm:text-sm flex items-center gap-2 flex-wrap">
+                            <span>{s.user?.firstName} {s.user?.lastName}</span>
+                            <Badge variant="default" className="text-[10px] py-0 px-1.5">
+                              پایه {studentGrade}
+                            </Badge>
+                            {currentEnrolledClass && (
+                              <Badge variant="college" className="text-[10px] py-0 px-1.5">
+                                {currentEnrolledClass.name} ({studentField})
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-[11px] text-gray-500 flex-wrap">
+                            <span>کد ملی: <span className="font-mono text-gray-700 dark:text-gray-300 font-semibold">{s.nationalCode || s.user?.nationalId || '-'}</span></span>
+                            <span>کد دانش‌آموزی: <span className="font-mono text-gray-700 dark:text-gray-300 font-semibold">{s.studentCode || '-'}</span></span>
+                            {(s.fatherName || s.fatherFullName) && (
+                              <span>نام پدر: <span className="text-gray-700 dark:text-gray-300 font-semibold">{s.fatherName || s.fatherFullName}</span></span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                        {studentModalTab === 'MEMBERS' ? (
+                          !isEditing ? (
+                            <button
+                              type="button"
+                              onClick={() => handleStartEditStudent(s)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition-all text-xs font-bold cursor-pointer"
+                              title="تغییر پایه و رشته / کلاس"
+                            >
+                              <ArrowRightLeft className="w-3.5 h-3.5" />
+                              <span>تغییر پایه و رشته</span>
+                            </button>
+                          ) : null
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="primary"
+                            isLoading={isSavingStudentTransfer}
+                            onClick={() => handleQuickAssignStudentToClass(s.id)}
+                            className="text-xs h-8 px-3 rounded-xl"
+                          >
+                            <UserPlus className="w-3.5 h-3.5 ml-1" />
+                            <span>افزودن به این کلاس</span>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Inline Edit Panel when editing this student */}
+                    {isEditing && (
+                      <div className="mt-3 pt-3 border-t border-primary/20 space-y-3 bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl">
+                        <div className="text-xs font-bold text-primary flex items-center gap-1.5">
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>تغییر مقطع/پایه تحصیلی و انتساب به رشته و کلاس</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {/* Grade Level Select */}
+                          <div>
+                            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                              پایه تحصیلی:
+                            </label>
+                            <select
+                              value={studentEditForm.gradeLevel}
+                              onChange={(e) =>
+                                setStudentEditForm((prev) => ({ ...prev, gradeLevel: e.target.value }))
+                              }
+                              className="w-full h-9 rounded-xl border border-gray-200 bg-white dark:bg-gray-800 px-3 text-xs font-medium text-ink-dark focus:outline-none focus:ring-1 focus:ring-primary"
+                            >
+                              {levels.length > 0
+                                ? levels.map((lvl) => (
+                                    <option key={lvl.id} value={lvl.name}>
+                                      پایه {lvl.name}
+                                    </option>
+                                  ))
+                                : ['دهم', 'یازدهم', 'دوازدهم', 'هفتم', 'هشتم', 'نهم'].map((lvl) => (
+                                    <option key={lvl} value={lvl}>
+                                      پایه {lvl}
+                                    </option>
+                                  ))}
+                            </select>
+                          </div>
+
+                          {/* Classroom & Field Select */}
+                          <div>
+                            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                              رشته و کلاس تحصیلی:
+                            </label>
+                            <select
+                              value={studentEditForm.classroomId}
+                              onChange={(e) =>
+                                setStudentEditForm((prev) => ({ ...prev, classroomId: e.target.value }))
+                              }
+                              className="w-full h-9 rounded-xl border border-gray-200 bg-white dark:bg-gray-800 px-3 text-xs font-medium text-ink-dark focus:outline-none focus:ring-1 focus:ring-primary"
+                            >
+                              <option value="">-- بدون کلاس انتصابی --</option>
+                              {classrooms.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                  {c.name} (پایه {c.level?.name || '-'} - {c.field?.name || 'بدون رشته'})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Save / Cancel buttons */}
+                        <div className="flex items-center justify-end gap-2 pt-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setEditingStudentId(null)}
+                            disabled={isSavingStudentTransfer}
+                            className="text-xs h-8 px-3"
+                          >
+                            انصراف
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="primary"
+                            isLoading={isSavingStudentTransfer}
+                            onClick={() => handleSaveStudentChange(s.id)}
+                            className="text-xs h-8 px-3"
+                          >
+                            <Save className="w-3.5 h-3.5 ml-1" />
+                            <span>ذخیره تغییرات</span>
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Modal Footer */}
+          <div className="flex justify-end pt-2 border-t border-gray-200">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setIsClassStudentsModalOpen(false);
+                setEditingStudentId(null);
+              }}
+              className="w-full sm:w-auto text-xs"
+            >
+              بستن
             </Button>
           </div>
         </div>
