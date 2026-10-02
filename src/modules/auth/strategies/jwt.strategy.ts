@@ -9,8 +9,11 @@ export interface JwtPayload {
   tenantId: string;
   role: string;
   isPlatformAdmin: boolean;
+  username?: string;
   email?: string;
   phone?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 @Injectable()
@@ -33,18 +36,29 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(payload: JwtPayload) {
+    const fallbackFirst =
+      payload.firstName ||
+      (payload.role === 'TEACHER'
+        ? 'مربی'
+        : payload.role === 'PARENT'
+        ? 'ولی'
+        : payload.role === 'STUDENT'
+        ? 'دانش‌آموز'
+        : 'راهبر');
+    const fallbackLast = payload.lastName || '';
+
     if (!this.prisma.isConnected) {
       return {
         id: payload.sub || 'user_offline_dev',
         tenantId: payload.tenantId || 'default-tenant',
-        username: payload.email || payload.phone || 'user',
+        username: payload.username || payload.email || payload.phone || 'user',
         email: payload.email || 'admin@school.com',
         phone: payload.phone || '09123456789',
         role: payload.role || 'SUPER_ADMIN',
         isPlatformAdmin: payload.isPlatformAdmin || false,
         twoFactorEnabled: false,
-        firstName: 'کاربر',
-        lastName: 'سیستم',
+        firstName: fallbackFirst,
+        lastName: fallbackLast,
         avatarUrl: null,
         tenant: {
           id: payload.tenantId || 'default-tenant',
@@ -96,14 +110,14 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     return {
       id: payload.sub || 'user_offline_dev',
       tenantId: payload.tenantId || 'tenant_default',
-      username: 'dev_user',
+      username: payload.username || payload.phone || 'dev_user',
       email: payload.email || 'admin@rokad.ir',
       phone: payload.phone || '09120000000',
       role: payload.role || 'SUPER_ADMIN',
       isPlatformAdmin: payload.isPlatformAdmin ?? true,
       twoFactorEnabled: false,
-      firstName: 'کاربر',
-      lastName: 'سیستم',
+      firstName: fallbackFirst,
+      lastName: fallbackLast,
       avatarUrl: null,
       tenant: {
         id: payload.tenantId || 'tenant_default',

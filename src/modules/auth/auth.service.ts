@@ -113,6 +113,7 @@ export class AuthService {
       result.user.isPlatformAdmin,
       ipAddress,
       userAgent,
+      result.user,
     );
 
     await this.sessionService.createSession(
@@ -270,7 +271,13 @@ export class AuthService {
 
       const devUserId = `dev-user-${cleanIdentifier || 'mock'}`;
       const devTenantId = tenantId || 'tenant-rokad-boys';
-      const accessToken = this.signAccessToken(devUserId, devTenantId, devRole, isPlatformAdmin);
+      const accessToken = this.signAccessToken(devUserId, devTenantId, devRole, isPlatformAdmin, {
+        firstName,
+        lastName,
+        username: cleanIdentifier,
+        phone: cleanIdentifier,
+        email: `${cleanIdentifier}@rokadschool.ir`,
+      });
       const refreshToken = this.generateSecureRandomToken();
 
       return {
@@ -425,6 +432,7 @@ export class AuthService {
       user.isPlatformAdmin,
       ipAddress,
       userAgent,
+      user,
     );
 
     // Register active user session
@@ -533,6 +541,7 @@ export class AuthService {
       user.isPlatformAdmin,
       ipAddress,
       userAgent,
+      user,
     );
 
     // Register active user session
@@ -791,8 +800,15 @@ export class AuthService {
     isPlatformAdmin: boolean,
     ipAddress?: string,
     userAgent?: string,
+    user?: {
+      firstName?: string | null;
+      lastName?: string | null;
+      username?: string | null;
+      phone?: string | null;
+      email?: string | null;
+    },
   ) {
-    const accessToken = this.signAccessToken(userId, tenantId, role, isPlatformAdmin);
+    const accessToken = this.signAccessToken(userId, tenantId, role, isPlatformAdmin, user);
 
     // Create a new Token Family
     const family = await this.prisma.refreshTokenFamily.create({
@@ -832,12 +848,24 @@ export class AuthService {
     tenantId: string,
     role: string,
     isPlatformAdmin: boolean,
+    user?: {
+      firstName?: string | null;
+      lastName?: string | null;
+      username?: string | null;
+      phone?: string | null;
+      email?: string | null;
+    },
   ): string {
     const payload = {
       sub: userId,
       tenantId,
       role,
       isPlatformAdmin,
+      ...(user?.firstName ? { firstName: user.firstName } : {}),
+      ...(user?.lastName ? { lastName: user.lastName } : {}),
+      ...(user?.username ? { username: user.username } : {}),
+      ...(user?.phone ? { phone: user.phone } : {}),
+      ...(user?.email ? { email: user.email } : {}),
     };
 
     return this.jwtService.sign(payload, {
@@ -957,6 +985,7 @@ export class AuthService {
       targetUser.isPlatformAdmin,
       ipAddress,
       userAgent,
+      targetUser,
     );
 
     await this.sessionService.createSession(
