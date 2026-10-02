@@ -1002,7 +1002,7 @@ export const AttendancePage: React.FC = () => {
               </div>
 
               {/* Action Buttons: Filter, Gradebook, Submit */}
-              <div className="flex items-center gap-2 w-full">
+              <div className="flex items-center gap-2 w-full sm:w-auto sm:justify-end">
                 {/* Filter Toggle Button - fixed icon */}
                 <button
                   type="button"
@@ -1023,7 +1023,7 @@ export const AttendancePage: React.FC = () => {
                     onClick={() =>
                       navigate(`/app/teacher/gradebook?classroomId=${activeSession.classroomId}&lessonId=${activeSession.lessonId}`)
                     }
-                    className="flex-1 h-10 px-3.5 rounded-xl border border-primary/30 dark:border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary dark:text-primary font-black text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
+                    className="flex-1 sm:flex-none h-10 px-3.5 rounded-xl border border-primary/30 dark:border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary dark:text-primary font-black text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
                     title="دفتر نمرات و ارزشیابی برای این کلاس و درس"
                   >
                     <BookOpen className="w-4 h-4 text-primary shrink-0" />
@@ -1035,7 +1035,7 @@ export const AttendancePage: React.FC = () => {
                   type="button"
                   onClick={() => saveAttendanceMutation.mutate()}
                   disabled={saveAttendanceMutation.isPending || studentsList.length === 0}
-                  className="flex-1 h-10 px-4 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs sm:text-sm border-[1.5px] border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] hover:shadow-[2.5px_2.5px_0_#438C83] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  className="flex-1 sm:flex-none h-10 px-4 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs sm:text-sm border-[1.5px] border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] hover:shadow-[2.5px_2.5px_0_#438C83] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
                   {saveAttendanceMutation.isPending ? (
                     <RefreshCw className="w-4 h-4 animate-spin ml-1.5" />
