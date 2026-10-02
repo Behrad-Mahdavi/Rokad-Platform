@@ -13,12 +13,10 @@ import { generateSchedulePdf } from '../../student-parent/schedule/schedulePdfGe
 import {
   CalendarDays,
   Clock,
-  User,
   BookOpen,
   Plus,
   Trash2,
   Edit2,
-  Printer,
   FileDown,
   AlertCircle,
   AlertTriangle,
@@ -34,6 +32,52 @@ import {
 import { DAYS, DayDef } from '../../student-parent/schedule/StudentSchedulePage';
 
 const PERIODS = OFFICIAL_PERIODS;
+
+export const getLessonTypeInfo = (type?: string) => {
+  switch (type) {
+    case 'NON_TECHNICAL_COMPETENCY':
+      return {
+        label: 'شایستگی‌های غیرفنی (پودمانی)',
+        className: 'text-purple-700 bg-purple-50 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800',
+      };
+    case 'BASIC_COMPETENCY':
+      return {
+        label: 'شایستگی‌های پایه (پودمانی)',
+        className: 'text-indigo-700 bg-indigo-50 border border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800',
+      };
+    case 'TECHNICAL_MODULAR_COMPETENCY':
+      return {
+        label: 'شایستگی‌های فنی / پودمانی',
+        className: 'text-purple-800 bg-purple-100 border border-purple-300 dark:bg-purple-900/50 dark:text-purple-200 dark:border-purple-700',
+      };
+    case 'TECHNICAL_PRACTICAL_COMPETENCY':
+      return {
+        label: 'شایستگی‌های فنی / عملی',
+        className: 'text-amber-700 bg-amber-50 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800',
+      };
+    case 'SPECIALIZED':
+      return {
+        label: 'تخصصی',
+        className: 'text-blue-700 bg-blue-50 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800',
+      };
+    case 'PRACTICAL':
+      return {
+        label: 'کارگاهی',
+        className: 'text-teal-700 bg-teal-50 border border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800',
+      };
+    case 'OPTIONAL':
+      return {
+        label: 'انتخابی',
+        className: 'text-gray-700 bg-gray-100 border border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700',
+      };
+    case 'GENERAL':
+    default:
+      return {
+        label: 'عمومی',
+        className: 'text-emerald-700 bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
+      };
+  }
+};
 
 interface ClassSchedulePageProps {
   readOnly?: boolean;
@@ -219,7 +263,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
     }));
   };
 
-  // Handle lesson 2 change in modal (Split Period)
+  // Handle lesson 2 change in modal (Alternating Week)
   const handleSecondLessonChange = (secondLessonId: string) => {
     const matchingTeachers = teachers.filter((t) =>
       t.teacherLessons?.some((tl: any) => (tl.lessonId || tl.lesson?.id) === secondLessonId),
@@ -233,7 +277,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
     }));
   };
 
-  // Swap Order between 45 min 1 and 45 min 2
+  // Swap Order between Odd Week and Even Week
   const handleSwapSplitOrder = () => {
     setForm((prev) => ({
       ...prev,
@@ -253,7 +297,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
       return;
     }
     if (form.isSplitPeriod && (!form.secondLessonId || !form.secondTeacherId)) {
-      setError('در حالت تک‌زنگ، لطفاً درس و دبیر بخش دوم (۴۵ دقیقه دوم) را نیز انتخاب نمایید.');
+      setError('در حالت یک هفته در میان، لطفاً درس و دبیر هفته دوم (هفته زوج) را نیز انتخاب نمایید.');
       return;
     }
 
@@ -346,11 +390,6 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
     });
   };
 
-  // Print Timetable
-  const handlePrint = () => {
-    window.print();
-  };
-
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -421,26 +460,15 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
             ) : null}
 
             {classrooms.length > 0 && (
-              <>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleDownloadPdf}
-                  className="flex items-center gap-1.5 text-xs shadow-xs"
-                >
-                  <FileDown className="h-3.5 w-3.5" />
-                  <span>دانلود PDF</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handlePrint}
-                  className="flex items-center gap-1.5 text-xs"
-                >
-                  <Printer className="h-3.5 w-3.5" />
-                  <span>چاپ مرورگر</span>
-                </Button>
-              </>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleDownloadPdf}
+                className="flex items-center gap-1.5 text-xs shadow-xs"
+              >
+                <FileDown className="h-3.5 w-3.5" />
+                <span>دانلود PDF</span>
+              </Button>
             )}
           </div>
         }
@@ -573,73 +601,68 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                           <div className="flex items-center gap-1.5">
                             <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
                               <Layers className="h-3 w-3" />
-                              منطق تک‌زنگ (۲ درس ۴۵ دقیقه‌ای)
+                              یک هفته در میان (هفته اول / هفته دوم)
                             </span>
                           </div>
 
-                          {/* 45 min 1 */}
-                          <div className="bg-primary-50/20 p-2.5 rounded-xl border border-primary/20 space-y-1">
-                            <div className="flex items-center justify-between gap-1">
-                              <span className="font-extrabold text-xs text-ink-darker truncate">
-                                ۱. {item.lesson?.name}
-                              </span>
-                              <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-white text-primary border border-primary/20 shrink-0">
-                                ۴۵ دقیقه اول
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1 text-xs text-gray-600">
-                              <User className="h-3 w-3 text-primary shrink-0" />
-                              <span className="truncate">
-                                {item.teacher?.user?.firstName} {item.teacher?.user?.lastName}
-                              </span>
-                            </div>
-                          </div>
+                          {/* Week 1 */}
+                          {(() => {
+                            const type1 = getLessonTypeInfo(item.lesson?.type);
+                            const type2 = getLessonTypeInfo(item.secondLesson?.type);
+                            return (
+                              <>
+                                <div className="bg-primary-50/20 p-2.5 rounded-xl border border-primary/20 space-y-1.5">
+                                  <div className="flex items-center justify-between gap-1 flex-wrap">
+                                    <span className="font-extrabold text-xs text-ink-darker truncate">
+                                      ۱. {item.lesson?.name}
+                                    </span>
+                                    <div className="flex items-center gap-1">
+                                      <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold ${type1.className}`}>
+                                        {type1.label}
+                                      </span>
+                                      <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-white text-primary border border-primary/20 shrink-0">
+                                        هفته اول
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
 
-                          {/* 45 min 2 */}
-                          <div className="bg-purple-50/30 p-2.5 rounded-xl border border-purple-200/60 space-y-1">
-                            <div className="flex items-center justify-between gap-1">
-                              <span className="font-extrabold text-xs text-ink-darker truncate">
-                                ۲. {item.secondLesson?.name || '—'}
-                              </span>
-                              <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-white text-purple-700 border border-purple-200 shrink-0">
-                                ۴۵ دقیقه دوم
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1 text-xs text-gray-600">
-                              <User className="h-3 w-3 text-purple-600 shrink-0" />
-                              <span className="truncate">
-                                {item.secondTeacher?.user?.firstName} {item.secondTeacher?.user?.lastName}
-                              </span>
-                            </div>
-                          </div>
+                                {/* Week 2 */}
+                                <div className="bg-purple-50/30 p-2.5 rounded-xl border border-purple-200/60 space-y-1.5">
+                                  <div className="flex items-center justify-between gap-1 flex-wrap">
+                                    <span className="font-extrabold text-xs text-ink-darker truncate">
+                                      ۲. {item.secondLesson?.name || '—'}
+                                    </span>
+                                    <div className="flex items-center gap-1">
+                                      <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold ${type2.className}`}>
+                                        {type2.label}
+                                      </span>
+                                      <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-white text-purple-700 border border-purple-200 shrink-0">
+                                        هفته دوم
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </>
+                            );
+                          })()}
                         </div>
                       ) : (
                         <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-xs sm:text-sm text-ink-darker truncate">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-xs sm:text-sm text-ink-darker">
                               {item.lesson?.name}
                             </span>
-                            <span
-                              className={`text-[9px] px-1.5 py-0.5 rounded font-medium shrink-0 ${
-                                item.lesson?.type === 'SPECIALIZED'
-                                  ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                                  : item.lesson?.type === 'PRACTICAL'
-                                  ? 'bg-purple-50 text-purple-800 border border-purple-200'
-                                  : 'bg-blue-50 text-blue-800 border border-blue-200'
-                              }`}
-                            >
-                              {item.lesson?.type === 'SPECIALIZED'
-                                ? 'تخصصی'
-                                : item.lesson?.type === 'PRACTICAL'
-                                ? 'کارگاهی'
-                                : 'عمومی'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                            <User className="h-3 w-3 text-primary shrink-0" />
-                            <span className="truncate">
-                              {item.teacher?.user?.firstName} {item.teacher?.user?.lastName}
-                            </span>
+                            {(() => {
+                              const typeInfo = getLessonTypeInfo(item.lesson?.type);
+                              return (
+                                <span
+                                  className={`text-[9.5px] px-1.5 py-0.5 rounded-md font-semibold shrink-0 ${typeInfo.className}`}
+                                >
+                                  {typeInfo.label}
+                                </span>
+                              );
+                            })()}
                           </div>
                         </div>
                       )}
@@ -763,78 +786,72 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                               <div className="flex items-center justify-between gap-1 pb-1 border-b border-gray-100">
                                 <span className="inline-flex items-center gap-1 text-[9px] font-extrabold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
                                   <Layers className="h-2.5 w-2.5" />
-                                  تک‌زنگ (۲×۴۵)
+                                  یک هفته در میان
                                 </span>
                                 <span className="font-mono text-[9px] text-gray-400 dir-ltr">
                                   {item.startTime} - {item.endTime}
                                 </span>
                               </div>
 
-                              {/* Split Half 1 */}
-                              <div className="bg-primary/5 rounded-lg p-1.5 border border-primary/15">
-                                <div className="flex items-center justify-between text-[10px]">
-                                  <span className="font-extrabold text-ink-darker truncate">
-                                    {item.lesson?.name}
-                                  </span>
-                                  <span className="text-[8px] bg-white text-primary px-1 rounded font-bold border border-primary/20 shrink-0">
-                                    ۴۵د اول
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1 text-[10px] text-gray-600 mt-0.5">
-                                  <User className="h-2.5 w-2.5 text-primary shrink-0" />
-                                  <span className="truncate">
-                                    {item.teacher?.user?.firstName} {item.teacher?.user?.lastName}
-                                  </span>
-                                </div>
-                              </div>
+                              {(() => {
+                                const type1 = getLessonTypeInfo(item.lesson?.type);
+                                const type2 = getLessonTypeInfo(item.secondLesson?.type);
+                                return (
+                                  <>
+                                    {/* Split Half 1 - Week 1 */}
+                                    <div className="bg-primary/5 rounded-lg p-1.5 border border-primary/15 space-y-1">
+                                      <div className="flex items-center justify-between text-[10px]">
+                                        <span className="font-extrabold text-ink-darker truncate">
+                                          {item.lesson?.name}
+                                        </span>
+                                        <span className="text-[8px] bg-white text-primary px-1 rounded font-bold border border-primary/20 shrink-0">
+                                          هفته اول
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className={`text-[8.5px] px-1 py-0.2 rounded font-medium ${type1.className}`}>
+                                          {type1.label}
+                                        </span>
+                                      </div>
+                                    </div>
 
-                              {/* Split Half 2 */}
-                              <div className="bg-purple-50/60 rounded-lg p-1.5 border border-purple-200/60">
-                                <div className="flex items-center justify-between text-[10px]">
-                                  <span className="font-extrabold text-ink-darker truncate">
-                                    {item.secondLesson?.name || '—'}
-                                  </span>
-                                  <span className="text-[8px] bg-white text-purple-700 px-1 rounded font-bold border border-purple-200 shrink-0">
-                                    ۴۵د دوم
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1 text-[10px] text-gray-600 mt-0.5">
-                                  <User className="h-2.5 w-2.5 text-purple-600 shrink-0" />
-                                  <span className="truncate">
-                                    {item.secondTeacher?.user?.firstName} {item.secondTeacher?.user?.lastName}
-                                  </span>
-                                </div>
-                              </div>
+                                    {/* Split Half 2 - Week 2 */}
+                                    <div className="bg-purple-50/60 rounded-lg p-1.5 border border-purple-200/60 space-y-1">
+                                      <div className="flex items-center justify-between text-[10px]">
+                                        <span className="font-extrabold text-ink-darker truncate">
+                                          {item.secondLesson?.name || '—'}
+                                        </span>
+                                        <span className="text-[8px] bg-white text-purple-700 px-1 rounded font-bold border border-purple-200 shrink-0">
+                                          هفته دوم
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className={`text-[8.5px] px-1 py-0.2 rounded font-medium ${type2.className}`}>
+                                          {type2.label}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </>
+                                );
+                              })()}
                             </div>
                           ) : (
-                            <div>
+                            <div className="space-y-1.5">
                               <div className="flex items-start justify-between gap-1">
                                 <span className="font-bold text-xs text-ink-darker line-clamp-1">
                                   {item.lesson?.name}
                                 </span>
-                                <span
-                                  className={`text-[9px] px-1.5 py-0.5 rounded font-medium shrink-0 ${
-                                    item.lesson?.type === 'SPECIALIZED'
-                                      ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                                      : item.lesson?.type === 'PRACTICAL'
-                                      ? 'bg-purple-50 text-purple-800 border border-purple-200'
-                                      : 'bg-blue-50 text-blue-800 border border-blue-200'
-                                  }`}
-                                >
-                                  {item.lesson?.type === 'SPECIALIZED'
-                                    ? 'تخصصی'
-                                    : item.lesson?.type === 'PRACTICAL'
-                                    ? 'کارگاهی'
-                                    : 'عمومی'}
-                                </span>
                               </div>
-
-                              <div className="flex items-center space-x-1 space-x-reverse text-[11px] text-gray-600 mt-1.5">
-                                <User className="h-3 w-3 text-primary shrink-0" />
-                                <span className="truncate">
-                                  {item.teacher?.user?.firstName} {item.teacher?.user?.lastName}
-                                </span>
-                              </div>
+                              {(() => {
+                                const typeInfo = getLessonTypeInfo(item.lesson?.type);
+                                return (
+                                  <span
+                                    className={`inline-block text-[9px] px-1.5 py-0.5 rounded-md font-medium ${typeInfo.className}`}
+                                  >
+                                    {typeInfo.label}
+                                  </span>
+                                );
+                              })()}
                             </div>
                           )}
 
@@ -846,7 +863,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                               </span>
                             ) : (
                               <span className="text-[9px] text-gray-400 font-medium">
-                                ترتیب: اول ⬅ دوم
+                                ترتیب: هفته اول ⬅ هفته دوم
                               </span>
                             )}
 
@@ -972,7 +989,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
           )}
 
           <form onSubmit={handleSaveSchedule} className="space-y-4">
-            {/* Single Bell (Split Period) Toggle Switch */}
+            {/* Single Bell (Alternating Weeks) Toggle Switch */}
             <div className="bg-white dark:bg-[#151C28] bg-gradient-to-l from-primary/10 via-primary/5 to-transparent dark:from-primary/20 dark:via-transparent dark:to-transparent rounded-2xl border border-primary/20 dark:border-[#242F42] p-4">
               <div
                 className="flex items-center justify-between cursor-pointer"
@@ -990,7 +1007,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                   </div>
                   <div>
                     <div className="font-extrabold text-sm text-ink-darker flex items-center gap-2">
-                      <span>فعال‌سازی منطق تک‌زنگ</span>
+                      <span>فعال‌سازی یک هفته در میان</span>
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-colors ${
                           form.isSplitPeriod
@@ -998,11 +1015,11 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                             : 'bg-gray-100 text-gray-600 border border-gray-200'
                         }`}
                       >
-                        {form.isSplitPeriod ? 'فعال (۲ درس ۴۵ دقیقه‌ای)' : 'غیرفعال (تک درس ۹۰ دقیقه‌ای)'}
+                        {form.isSplitPeriod ? 'فعال (هفته اول / هفته دوم)' : 'غیرفعال (ثابت هر هفته)'}
                       </span>
                     </div>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      امکان تخصیص این اسلات زمانی به ۲ درس مجزا (۴۵ دقیقه اول + ۴۵ دقیقه دوم) با ترتیب مشخص
+                      امکان تخصیص چرخشی این زنگ بین ۲ درس مجزا (یک هفته درس اول و یک هفته درس دوم)
                     </p>
                   </div>
                 </div>
@@ -1047,7 +1064,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                     </option>
                     {availableLessons.map((l) => (
                       <option key={l.id} value={l.id}>
-                        {l.name} ({l.code}) — {l.field?.name || 'عمومی'}
+                        {l.name} ({l.code}) — {getLessonTypeInfo(l.type).label}
                       </option>
                     ))}
                   </select>
@@ -1072,7 +1089,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                       );
                       return (
                         <option key={t.id} value={t.id}>
-                          {t.user?.firstName} {t.user?.lastName} ({t.specialization || 'عمومی'}){' '}
+                          {t.user?.firstName} {t.user?.lastName}{' '}
                           {teachesThisLesson ? '[مدرس مصوب این درس]' : ''}
                         </option>
                       );
@@ -1081,23 +1098,23 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                 </div>
               </div>
             ) : (
-              /* Split-Period Form (45 mins + 45 mins with Reordering) */
+              /* Alternating-Period Form (Week 1 + Week 2 with Reordering) */
               <div className="space-y-4">
-                {/* 1st Half (First 45 Minutes) */}
+                {/* 1st Half (Week 1) */}
                 <div className="bg-primary-50/20 border border-primary/25 rounded-2xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary text-white text-xs font-bold">
-                      <span>بخش اول (۴۵ دقیقه اول)</span>
+                      <span>درس هفته اول</span>
                     </span>
                     <span className="text-[11px] text-gray-500 font-mono">
-                      {form.startTime} تا ...
+                      {form.startTime} تا {form.endTime}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-ink-dark mb-1">
-                        درس ۴۵ دقیقه اول <span className="text-red-500">*</span>
+                        درس هفته اول <span className="text-red-500">*</span>
                       </label>
                       <select
                         value={form.lessonId}
@@ -1106,11 +1123,11 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                         required
                       >
                         <option value="" disabled>
-                          -- انتخاب درس ۱ --
+                          -- انتخاب درس هفته اول --
                         </option>
                         {availableLessons.map((l) => (
                           <option key={l.id} value={l.id}>
-                            {l.name} ({l.code})
+                            {l.name} ({l.code}) — {getLessonTypeInfo(l.type).label}
                           </option>
                         ))}
                       </select>
@@ -1118,7 +1135,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
 
                     <div>
                       <label className="block text-xs font-bold text-ink-dark mb-1">
-                        دبیر ۴۵ دقیقه اول <span className="text-red-500">*</span>
+                        دبیر هفته اول <span className="text-red-500">*</span>
                       </label>
                       <select
                         value={form.teacherId}
@@ -1127,11 +1144,11 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                         required
                       >
                         <option value="" disabled>
-                          -- انتخاب دبیر ۱ --
+                          -- انتخاب دبیر هفته اول --
                         </option>
                         {teachers.map((t) => (
                           <option key={t.id} value={t.id}>
-                            {t.user?.firstName} {t.user?.lastName} ({t.specialization || 'عمومی'})
+                            {t.user?.firstName} {t.user?.lastName}
                           </option>
                         ))}
                       </select>
@@ -1145,28 +1162,28 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                     type="button"
                     onClick={handleSwapSplitOrder}
                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 hover:text-primary transition-all text-xs font-bold shadow-xs active:scale-95"
-                    title="جابجایی درس و دبیر زنگ اول و زنگ دوم"
+                    title="جابجایی درس و دبیر هفته اول و هفته دوم"
                   >
                     <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
-                    <span>جابجایی ترتیب زنگ‌ها (بخش اول ⇄ بخش دوم)</span>
+                    <span>جابجایی ترتیب هفته‌ها (هفته اول ⇄ هفته دوم)</span>
                   </button>
                 </div>
 
-                {/* 2nd Half (Second 45 Minutes) */}
+                {/* 2nd Half (Week 2) */}
                 <div className="bg-purple-50/30 border border-purple-200/80 rounded-2xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-700 text-white text-xs font-bold">
-                      <span>بخش دوم (۴۵ دقیقه دوم)</span>
+                      <span>درس هفته دوم</span>
                     </span>
                     <span className="text-[11px] text-gray-500 font-mono">
-                      ... تا {form.endTime}
+                      {form.startTime} تا {form.endTime}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-ink-dark mb-1">
-                        درس ۴۵ دقیقه دوم <span className="text-red-500">*</span>
+                        درس هفته دوم <span className="text-red-500">*</span>
                       </label>
                       <select
                         value={form.secondLessonId}
@@ -1175,11 +1192,11 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                         required
                       >
                         <option value="" disabled>
-                          -- انتخاب درس ۲ --
+                          -- انتخاب درس هفته دوم --
                         </option>
                         {availableLessons.map((l) => (
                           <option key={l.id} value={l.id}>
-                            {l.name} ({l.code})
+                            {l.name} ({l.code}) — {getLessonTypeInfo(l.type).label}
                           </option>
                         ))}
                       </select>
@@ -1187,7 +1204,7 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
 
                     <div>
                       <label className="block text-xs font-bold text-ink-dark mb-1">
-                        دبیر ۴۵ دقیقه دوم <span className="text-red-500">*</span>
+                        دبیر هفته دوم <span className="text-red-500">*</span>
                       </label>
                       <select
                         value={form.secondTeacherId}
@@ -1196,11 +1213,11 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
                         required
                       >
                         <option value="" disabled>
-                          -- انتخاب دبیر ۲ --
+                          -- انتخاب دبیر هفته دوم --
                         </option>
                         {teachers.map((t) => (
                           <option key={t.id} value={t.id}>
-                            {t.user?.firstName} {t.user?.lastName} ({t.specialization || 'عمومی'})
+                            {t.user?.firstName} {t.user?.lastName}
                           </option>
                         ))}
                       </select>

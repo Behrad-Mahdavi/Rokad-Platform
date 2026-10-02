@@ -167,3 +167,42 @@ export function getCurrentJalaliYearMonth(): { year: number; month: number; day:
     day: j.jd,
   };
 }
+
+export interface JalaliWeekInfo {
+  weekNumber: number;
+  activeWeek: 1 | 2; // 1: هفته اول (هفته فرد سال), 2: هفته دوم (هفته زوج سال)
+  weekLabel: string; // "هفته اول" یا "هفته دوم"
+  dayOfYear: number;
+  jy: number;
+  jm: number;
+  jd: number;
+}
+
+/**
+ * محاسبه دقیق هفته جاری شمسی و تعیین تناوب هفته اول / هفته دوم
+ * این متد به صورت خودکار هر شنبه تغییر می‌کند (یک هفته هفته اول، هفته بعد هفته دوم)
+ */
+export function getCurrentJalaliWeekInfo(dateInput: Date | string = new Date()): JalaliWeekInfo {
+  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  const validDate = isNaN(date.getTime()) ? new Date() : date;
+  const j = jalaali.toJalaali(validDate.getFullYear(), validDate.getMonth() + 1, validDate.getDate());
+
+  const dayOfYear = (j.jm <= 6 ? (j.jm - 1) * 31 : 6 * 31 + (j.jm - 7) * 30) + j.jd;
+  const gFarvardin1 = jalaali.toGregorian(j.jy, 1, 1);
+  const dFarvardin1 = new Date(gFarvardin1.gy, gFarvardin1.gm - 1, gFarvardin1.gd);
+  const dowFarvardin1 = (dFarvardin1.getDay() + 1) % 7; // شنبه = 0, ..., جمعه = 6
+
+  const weekNumber = Math.floor((dayOfYear - 1 + dowFarvardin1) / 7) + 1;
+  const activeWeek: 1 | 2 = weekNumber % 2 === 1 ? 1 : 2;
+  const weekLabel = activeWeek === 1 ? 'هفته اول' : 'هفته دوم';
+
+  return {
+    weekNumber,
+    activeWeek,
+    weekLabel,
+    dayOfYear,
+    jy: j.jy,
+    jm: j.jm,
+    jd: j.jd,
+  };
+}

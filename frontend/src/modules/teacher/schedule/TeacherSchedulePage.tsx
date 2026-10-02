@@ -6,7 +6,7 @@ import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Skeleton } from '../../../components/ui/Skeleton';
-import { toPersianDigits } from '../../../utils/jalali';
+import { toPersianDigits, getCurrentJalaliWeekInfo } from '../../../utils/jalali';
 import { generateSchedulePdf } from '../../student-parent/schedule/schedulePdfGenerator';
 import {
   CalendarDays,
@@ -19,6 +19,7 @@ import {
   FileDown,
   ChevronRight,
   ChevronLeft,
+  Layers,
 } from 'lucide-react';
 
 export type DayOfWeekKey =
@@ -91,6 +92,9 @@ export const TeacherSchedulePage: React.FC = () => {
   const [teacherProfile, setTeacherProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Dynamic automatic calculation of current Jalali week & alternating week (Week 1 or Week 2)
+  const currentWeekInfo = getCurrentJalaliWeekInfo();
+
   // Determine today's day of week
   const currentJsDay = new Date().getDay();
   const todayDayDef = DAYS.find((d) => d.dayIndex === currentJsDay) || DAYS[0];
@@ -115,9 +119,24 @@ export const TeacherSchedulePage: React.FC = () => {
     fetchSchedule();
   }, []);
 
-  // Filter schedules for the selected day
+  // Filter schedules for the selected day based on automatic weekly alternation:
+  // If a slot is alternating (isSplitPeriod), only show if this teacher teaches in the active week!
   const daySchedules = schedules
-    .filter((s) => s.dayOfWeek === selectedDay)
+    .filter((s) => {
+      if (s.dayOfWeek !== selectedDay) return false;
+
+      // Regular full slot: teacher teaches every week
+      if (!s.isSplitPeriod) return true;
+
+      // Alternating week slot:
+      // Week 1 -> First teacher teaches
+      // Week 2 -> Second teacher teaches
+      if (currentWeekInfo.activeWeek === 1) {
+        return teacherProfile?.id ? s.teacherId === teacherProfile.id : true;
+      } else {
+        return teacherProfile?.id ? s.secondTeacherId === teacherProfile.id : false;
+      }
+    })
     .sort((a, b) => {
       if (a.periodNumber !== b.periodNumber) return a.periodNumber - b.periodNumber;
       return a.startTime.localeCompare(b.startTime);
@@ -170,10 +189,10 @@ export const TeacherSchedulePage: React.FC = () => {
 
   return (
     <div className="space-y-3.5 pb-12">
-      {/* 1. Header & Controls Master Panel (Aligned with Student Schedule & Messages Page) */}
+      {/* 1. Header & Controls Master Panel */}
       <div className="bg-white dark:bg-[#151C28] rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-[#242F42] shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] p-4 sm:p-5 print:hidden">
-        {/* Top Row: Title & Action Button side-by-side on all viewports */}
-        <div className="flex items-center justify-between gap-3">
+        {/* Top Row: Title & Action Button */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary dark:text-primary border border-primary/25 flex items-center justify-center font-black shadow-2xs shrink-0">
               <CalendarDays className="w-5 h-5" />
@@ -187,10 +206,15 @@ export const TeacherSchedulePage: React.FC = () => {
                   {user.firstName} {user.lastName}
                 </Badge>
               )}
+              {/* Active Jalali Week Indicator */}
+              <span className="inline-flex items-center gap-1 bg-primary/10 dark:bg-primary-950/50 text-primary dark:text-primary-light px-2.5 py-1 rounded-xl text-xs font-black border border-primary/25 shrink-0">
+                <Layers className="w-3.5 h-3.5" />
+                <span>هفته جاری: {currentWeekInfo.weekLabel}</span>
+              </span>
             </div>
           </div>
 
-          {/* Action Button: Top-Left (Left side of header) with Green Accent */}
+          {/* Action Button */}
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
@@ -205,9 +229,9 @@ export const TeacherSchedulePage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Day Navigation Bar: Arrow buttons flanking the Day Title Box */}
+      {/* 2. Day Navigation Bar */}
       <div className="flex items-center justify-between gap-3 p-2 sm:p-2.5 rounded-2xl bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-[#242F42] shadow-xs">
-        {/* Right Arrow: روز قبل (Previous Day in RTL) */}
+        {/* Right Arrow: روز قبل */}
         <button
           type="button"
           onClick={handlePrevDay}
@@ -232,7 +256,7 @@ export const TeacherSchedulePage: React.FC = () => {
           )}
         </div>
 
-        {/* Left Arrow: روز بعد (Next Day in RTL) */}
+        {/* Left Arrow: روز بعد */}
         <button
           type="button"
           onClick={handleNextDay}
@@ -257,10 +281,10 @@ export const TeacherSchedulePage: React.FC = () => {
           <div className="text-center py-14 bg-gray-50/50 dark:bg-[#151C28]/60 rounded-2xl border border-dashed border-gray-200 dark:border-[#242F42]">
             <CalendarDays className="w-10 h-10 text-muted-foreground dark:text-slate-500 mx-auto mb-2.5 opacity-60" />
             <h3 className="text-sm sm:text-base font-semibold text-foreground dark:text-white">
-              در روز {currentDayDef.label} هیچ کلاسی در برنامه تدریس شما ثبت نشده است
+              در روز {currentDayDef.label} ({currentWeekInfo.weekLabel}) کلاسی در برنامه تدریس شما وجود ندارد
             </h3>
             <p className="text-xs text-muted-foreground dark:text-slate-400 mt-1">
-              برای مشاهده زنگ‌های سایر ایام هفته، از دکمه‌های روز قبل یا روز بعد استفاده فرمایید.
+              در صورتی که کلاس یک هفته در میان دارید، این زنگ در هفته دیگر به دبیر مربوطه اختصاص دارد.
             </p>
           </div>
         ) : (
@@ -271,10 +295,11 @@ export const TeacherSchedulePage: React.FC = () => {
               const formattedStartTime = toPersianDigits(slot.startTime);
               const formattedEndTime = toPersianDigits(slot.endTime);
 
-              const isTeachingFirstHalf = !slot.isSplitPeriod || (teacherProfile?.id ? slot.teacherId === teacherProfile.id : true);
-              const isTeachingSecondHalf = slot.isSplitPeriod && Boolean(teacherProfile?.id && slot.secondTeacherId === teacherProfile.id);
-              const activeLessonId = (isTeachingSecondHalf && !isTeachingFirstHalf) ? (slot.secondLessonId || slot.lessonId) : slot.lessonId;
-              const activeLessonName = (isTeachingSecondHalf && !isTeachingFirstHalf) ? (slot.secondLesson?.name || slot.lesson?.name) : slot.lesson?.name;
+              // Determine active lesson for this teacher based on current active week
+              const isSecondWeek = slot.isSplitPeriod && currentWeekInfo.activeWeek === 2;
+              const activeLesson = isSecondWeek ? slot.secondLesson : slot.lesson;
+              const activeLessonId = isSecondWeek ? (slot.secondLessonId || slot.lessonId) : slot.lessonId;
+              const activeLessonName = activeLesson?.name || slot.lesson?.name || '';
 
               return (
                 <Card
@@ -311,7 +336,15 @@ export const TeacherSchedulePage: React.FC = () => {
                           </span>
                         </div>
 
-                        {/* Room Number Badge beside Time Badge */}
+                        {/* Alternating Week Tag */}
+                        {slot.isSplitPeriod && (
+                          <span className="inline-flex items-center gap-1 bg-primary/10 text-primary dark:text-primary-light border border-primary/25 px-2 py-0.5 rounded-md text-[11px] font-bold">
+                            <Layers className="w-3 h-3" />
+                            <span>یک هفته در میان ({currentWeekInfo.weekLabel})</span>
+                          </span>
+                        )}
+
+                        {/* Room Number Badge */}
                         {slot.classroom?.roomNumber && (
                           <span className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#1C2536] px-2.5 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42] text-xs font-semibold text-muted-foreground dark:text-slate-300">
                             <MapPin className="w-3.5 h-3.5 text-third-dark dark:text-third shrink-0" />
@@ -328,92 +361,25 @@ export const TeacherSchedulePage: React.FC = () => {
                       </div>
 
                       {/* Lesson Details */}
-                      {slot.isSplitPeriod ? (
-                        <div className="space-y-2 pt-0.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] bg-primary/10 dark:bg-primary-950/40 text-primary dark:text-primary-light border border-primary/20 dark:border-primary/40 px-2 py-0.5 rounded-md font-bold">
-                              تک‌زنگ (۲ درس ۴۵ دقیقه‌ای)
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {/* Part 1 */}
-                            <div className={`p-2.5 rounded-xl border space-y-1 ${
-                              isTeachingFirstHalf
-                                ? 'bg-primary-50/40 dark:bg-primary-950/40 border-primary/40 dark:border-primary/50'
-                                : 'bg-gray-50/50 dark:bg-[#1C2536]/40 border-gray-200 dark:border-[#242F42] opacity-85'
-                            }`}>
-                              <div className="flex items-center justify-between gap-1">
-                                <span className="text-[10px] font-bold text-primary dark:text-primary-light block">۴۵ دقیقه اول</span>
-                                {isTeachingFirstHalf && (
-                                  <span className="text-[9.5px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-300">
-                                    تدریس شما
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="font-extrabold text-base text-foreground dark:text-white flex items-center gap-1.5">
-                                  <BookOpen className="w-4 h-4 text-primary shrink-0" />
-                                  <span>{slot.lesson?.name}</span>
-                                </h3>
-                                {slot.classroom?.name && (
-                                  <span className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#1C2536] px-2 py-0.5 rounded-md border border-gray-200 dark:border-[#242F42] text-[11px] font-medium text-muted-foreground dark:text-slate-300">
-                                    <GraduationCap className="w-3 h-3 text-purple-500 shrink-0" />
-                                    <span>{slot.classroom.name}</span>
-                                  </span>
-                                )}
-                              </div>
-                            </div>
+                      <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
+                        <h2 className="text-lg sm:text-xl font-black text-foreground dark:text-white flex items-center gap-2">
+                          <BookOpen className="w-5 h-5 text-primary shrink-0" />
+                          <span>{activeLessonName}</span>
+                        </h2>
 
-                            {/* Part 2 */}
-                            <div className={`p-2.5 rounded-xl border space-y-1 ${
-                              isTeachingSecondHalf
-                                ? 'bg-purple-50/50 dark:bg-purple-950/40 border-purple-400 dark:border-purple-600'
-                                : 'bg-gray-50/50 dark:bg-[#1C2536]/40 border-gray-200 dark:border-[#242F42] opacity-85'
-                            }`}>
-                              <div className="flex items-center justify-between gap-1">
-                                <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 block">۴۵ دقیقه دوم</span>
-                                {isTeachingSecondHalf && (
-                                  <span className="text-[9.5px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-300">
-                                    تدریس شما
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="font-extrabold text-base text-foreground dark:text-white flex items-center gap-1.5">
-                                  <BookOpen className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
-                                  <span>{slot.secondLesson?.name || '—'}</span>
-                                </h3>
-                                {slot.classroom?.name && (
-                                  <span className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#1C2536] px-2 py-0.5 rounded-md border border-gray-200 dark:border-[#242F42] text-[11px] font-medium text-muted-foreground dark:text-slate-300">
-                                    <GraduationCap className="w-3 h-3 text-purple-500 shrink-0" />
-                                    <span>{slot.classroom.name}</span>
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
-                          <h2 className="text-lg sm:text-xl font-black text-foreground dark:text-white flex items-center gap-2">
-                            <BookOpen className="w-5 h-5 text-primary shrink-0" />
-                            <span>{slot.lesson?.name}</span>
-                          </h2>
-
-                          {/* Classroom Name beside lesson name (without 'کلاس:') */}
-                          {slot.classroom?.name && (
-                            <span className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#1C2536] px-2.5 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42] text-xs font-semibold text-muted-foreground dark:text-slate-300">
-                              <GraduationCap className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400 shrink-0" />
-                              <span>{slot.classroom.name}</span>
-                            </span>
-                          )}
-                        </div>
-                      )}
+                        {/* Classroom Name */}
+                        {slot.classroom?.name && (
+                          <span className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#1C2536] px-2.5 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42] text-xs font-semibold text-muted-foreground dark:text-slate-300">
+                            <GraduationCap className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400 shrink-0" />
+                            <span>{slot.classroom.name}</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Quick Actions for Teacher - Full width 3-column row */}
                     <div className="grid grid-cols-3 gap-2 pt-2.5 border-t border-gray-100 dark:border-[#242F42] w-full">
-                      {/* 1. Right Box (First in RTL): طرح درس (تم بنفش زنده) */}
+                      {/* 1. Right Box: طرح درس */}
                       <Button
                         variant="outline"
                         size="sm"
@@ -429,7 +395,7 @@ export const TeacherSchedulePage: React.FC = () => {
                         <span className="whitespace-nowrap">طرح درس</span>
                       </Button>
 
-                      {/* 2. Center Box: تکالیف کلاس (تم زرد دیزاین سیستم) */}
+                      {/* 2. Center Box: تکالیف کلاس */}
                       <Button
                         variant="outline"
                         size="sm"
@@ -445,7 +411,7 @@ export const TeacherSchedulePage: React.FC = () => {
                         <span className="whitespace-nowrap">تکالیف کلاس</span>
                       </Button>
 
-                      {/* 3. Left Box: ثبت حضور و غیاب (تم صورتی/قرمز دیزاین سیستم) */}
+                      {/* 3. Left Box: ثبت حضور و غیاب */}
                       <Button
                         variant="outline"
                         size="sm"

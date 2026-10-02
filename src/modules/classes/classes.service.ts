@@ -750,7 +750,7 @@ export class ClassesService {
 
     if (dto.isSplitPeriod) {
       if (!dto.secondLessonId || !dto.secondTeacherId) {
-        throw new BadRequestException('در حالت تک‌زنگ، مشخص کردن درس دوم و دبیر دوم الزامی است');
+        throw new BadRequestException('در حالت یک هفته در میان (هفته اول و دوم)، مشخص کردن درس دوم و دبیر دوم الزامی است');
       }
       const secondLesson = await this.prisma.lesson.findFirst({
         where: { id: dto.secondLessonId, tenantId },

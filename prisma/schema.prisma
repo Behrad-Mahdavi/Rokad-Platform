@@ -808,7 +808,7 @@ model ClassSchedule {
   teacherId   String
   teacher     TeacherProfile @relation("TeacherSchedules", fields: [teacherId], references: [id], onDelete: Cascade)
 
-  // منطق تک زنگ (دو درس و دو دبیر در یک زنگ ۹۰ دقیقه‌ای: ۴۵ دقیقه اول و ۴۵ دقیقه دوم)
+  // منطق یک هفته در میان (دو درس و دو دبیر چرخشی: هفته اول و هفته دوم)
   isSplitPeriod   Boolean         @default(false)
   secondLessonId  String?
   secondLesson    Lesson?         @relation("SecondLessonSchedules", fields: [secondLessonId], references: [id], onDelete: SetNull)

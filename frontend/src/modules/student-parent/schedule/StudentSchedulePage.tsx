@@ -6,7 +6,7 @@ import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Skeleton } from '../../../components/ui/Skeleton';
-import { toPersianDigits } from '../../../utils/jalali';
+import { toPersianDigits, getCurrentJalaliWeekInfo } from '../../../utils/jalali';
 import { generateSchedulePdf } from './schedulePdfGenerator';
 import {
   CalendarDays,
@@ -19,6 +19,7 @@ import {
   ChevronRight,
   ChevronLeft,
   FileDown,
+  Layers,
 } from 'lucide-react';
 
 export type DayOfWeekKey =
@@ -98,6 +99,9 @@ export const StudentSchedulePage: React.FC = () => {
   const currentJsDay = new Date().getDay();
   const todayDayDef = DAYS.find((d) => d.dayIndex === currentJsDay) || DAYS[0];
   const [selectedDay, setSelectedDay] = useState<DayOfWeekKey>(todayDayDef.key);
+
+  // Dynamic calculation of current Jalali week & alternating parity
+  const currentWeekInfo = getCurrentJalaliWeekInfo();
 
   const fetchSchedule = async (childId?: string) => {
     setIsLoading(true);
@@ -211,6 +215,11 @@ export const StudentSchedulePage: React.FC = () => {
                   {studentInfo.user?.firstName} {studentInfo.user?.lastName}
                 </Badge>
               )}
+              {/* Active Jalali Week Indicator */}
+              <span className="inline-flex items-center gap-1 bg-primary/10 dark:bg-primary-950/50 text-primary dark:text-primary-light px-2.5 py-1 rounded-xl text-xs font-black border border-primary/25 shrink-0">
+                <Layers className="w-3.5 h-3.5" />
+                <span>هفته جاری: {currentWeekInfo.weekLabel}</span>
+              </span>
             </div>
           </div>
 
@@ -375,13 +384,24 @@ export const StudentSchedulePage: React.FC = () => {
                         <div className="space-y-2 pt-0.5">
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] bg-primary/10 dark:bg-primary-950/40 text-primary dark:text-primary-light border border-primary/20 dark:border-primary/40 px-2 py-0.5 rounded-md font-bold">
-                              تک‌زنگ (۲ درس ۴۵ دقیقه‌ای)
+                              یک هفته در میان (هفته جاری: {currentWeekInfo.weekLabel})
                             </span>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {/* Part 1 */}
-                            <div className="p-2.5 bg-primary-50/30 dark:bg-primary-950/30 rounded-xl border border-primary/20 dark:border-primary/30 space-y-1">
-                              <span className="text-[10px] font-bold text-primary dark:text-primary-light block">۴۵ دقیقه اول</span>
+                            <div className={`p-2.5 rounded-xl border space-y-1 ${
+                              currentWeekInfo.activeWeek === 1
+                                ? 'bg-primary-50/50 dark:bg-primary-950/40 border-primary/50 ring-1 ring-primary/40 shadow-2xs'
+                                : 'bg-gray-50/40 dark:bg-[#1C2536]/40 border-gray-200 dark:border-[#242F42] opacity-75'
+                            }`}>
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-primary dark:text-primary-light block">هفته اول</span>
+                                {currentWeekInfo.activeWeek === 1 && (
+                                  <span className="text-[9.5px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-300">
+                                    درس این هفته
+                                  </span>
+                                )}
+                              </div>
                               <div className="flex flex-wrap items-center gap-2">
                                 <h3 className="font-extrabold text-base text-foreground dark:text-white flex items-center gap-1.5">
                                   <BookOpen className="w-4 h-4 text-primary shrink-0" />
@@ -399,8 +419,19 @@ export const StudentSchedulePage: React.FC = () => {
                             </div>
 
                             {/* Part 2 */}
-                            <div className="p-2.5 bg-purple-50/30 dark:bg-purple-950/30 rounded-xl border border-purple-200/60 dark:border-purple-800/40 space-y-1">
-                              <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 block">۴۵ دقیقه دوم</span>
+                            <div className={`p-2.5 rounded-xl border space-y-1 ${
+                              currentWeekInfo.activeWeek === 2
+                                ? 'bg-purple-50/60 dark:bg-purple-950/40 border-purple-400 dark:border-purple-600 ring-1 ring-purple-400/40 shadow-2xs'
+                                : 'bg-gray-50/40 dark:bg-[#1C2536]/40 border-gray-200 dark:border-[#242F42] opacity-75'
+                            }`}>
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 block">هفته دوم</span>
+                                {currentWeekInfo.activeWeek === 2 && (
+                                  <span className="text-[9.5px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-300">
+                                    درس این هفته
+                                  </span>
+                                )}
+                              </div>
                               <div className="flex flex-wrap items-center gap-2">
                                 <h3 className="font-extrabold text-base text-foreground dark:text-white flex items-center gap-1.5">
                                   <BookOpen className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
@@ -444,7 +475,7 @@ export const StudentSchedulePage: React.FC = () => {
                             {/* Part 1 Actions */}
                             <div className="space-y-1">
                               <span className="text-[10px] font-bold text-primary dark:text-primary-light block">
-                                دسترسی سریع ۴۵ دقیقه اول ({slot.lesson?.name}):
+                                دسترسی سریع هفته اول ({slot.lesson?.name}):
                               </span>
                               <div className="grid grid-cols-3 gap-2">
                                 <Button
@@ -497,7 +528,7 @@ export const StudentSchedulePage: React.FC = () => {
                             {/* Part 2 Actions */}
                             <div className="space-y-1 pt-1 border-t border-dashed border-gray-200 dark:border-[#242F42]">
                               <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 block">
-                                دسترسی سریع ۴۵ دقیقه دوم ({slot.secondLesson?.name}):
+                                دسترسی سریع هفته دوم ({slot.secondLesson?.name}):
                               </span>
                               <div className="grid grid-cols-3 gap-2">
                                 <Button
