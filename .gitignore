@@ -45,3 +45,6 @@ scratch/
 *.xlsx
 .polls_dev_store.json
 
+# Local scripts & templates (kept locally for reference)
+scripts/*
+!scripts/sync-version.js
