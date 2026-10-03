@@ -1862,9 +1862,6 @@ export const AttendancePage: React.FC = () => {
                             {isCurrent && (
                               <div className="absolute top-0 right-0 left-0 h-1.5 bg-primary shadow-xs rounded-t-2xl" />
                             )}
-                            {isPassed && (
-                              <div className="absolute top-0 right-0 left-0 h-1 bg-rose-400/70 dark:bg-rose-600/60 rounded-t-2xl" />
-                            )}
 
                             {/* Classroom Header */}
                             <div className="flex items-center justify-between gap-2 mb-2">
