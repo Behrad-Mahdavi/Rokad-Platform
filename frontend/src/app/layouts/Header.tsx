@@ -3,16 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../lib/auth/auth-store';
 import { apiClient } from '../../lib/api/client';
 import { toPersianDigits } from '../../lib/utils';
-import { Bell, User, Menu } from 'lucide-react';
+import { Bell, User } from 'lucide-react';
 import rokadLogoWhite from '../../assets/logo-rokad-white.png';
 import { useNotificationStore } from '../../lib/notifications/notification-store';
-import { useSidebarStore } from '../../lib/ui/sidebar-store';
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { unreadCount, fetchUnreadCount } = useNotificationStore();
-  const { toggle: toggleSidebar } = useSidebarStore();
 
   useEffect(() => {
     if (user) {
@@ -56,17 +54,8 @@ export const Header: React.FC = () => {
       {/* Pinned Fixed Header - Stays permanently fixed during scroll and respects safe-area-inset-top (notch/status bar) */}
       <header className="fixed top-0 inset-x-0 z-50 pt-[env(safe-area-inset-top,0px)] bg-primary dark:bg-[#121824] border-b-2 border-primary-dark dark:border-[#1E293B] text-white transition-colors shadow-xs select-none">
         <div className="relative h-16 sm:h-18 px-3.5 sm:px-6 flex items-center justify-between">
-          {/* Right side (RTL start) - Mobile Menu Drawer Toggle & User Profile Icon Button */}
+          {/* Right side (RTL start) - User Profile Icon Button */}
           <div className="flex items-center gap-1 z-10">
-            <button
-              type="button"
-              onClick={toggleSidebar}
-              title="منوی دسترسی"
-              aria-label="منوی دسترسی"
-              className="lg:hidden relative p-2 rounded-full text-white hover:bg-white/10 active:scale-90 transition-all flex items-center justify-center min-w-[44px] min-h-[44px] cursor-pointer"
-            >
-              <Menu className="w-6 h-6 text-white transition-transform" strokeWidth={2.2} />
-            </button>
             <button
               type="button"
               onClick={() => navigate('/app/profile')}

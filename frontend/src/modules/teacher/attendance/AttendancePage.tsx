@@ -124,21 +124,17 @@ const WEEK_DAYS_INFO = [
 const QUICK_GRADES = [20, 19.5, 19, 18.5, 18, 17, 16, 15, 14, 12, 10, 0];
 
 const REWARD_OPTIONS = [
-  { value: 'تشویقی کلی (+۲)', label: '🌟 تشویقی عمومی (+۲)', score: 2 },
-  { value: 'فعالیت و مشارکت کلاسی (+۲)', label: '🙋‍♂️ فعالیت و مشارکت کلاسی (+۲)', score: 2 },
-  { value: 'حل تمرین و پاسخ صحیح (+۲)', label: '✍️ حل تمرین و پاسخ صحیح (+۲)', score: 2 },
-  { value: 'نظم و اخلاق نمونه (+۲)', label: '⭐ نظم و اخلاق نمونه (+۲)', score: 2 },
-  { value: 'تکالیف کامل و عالی (+۲)', label: '📚 تکالیف کامل و عالی (+۲)', score: 2 },
-  { value: 'سایر موارد تشویقی (+۲)', label: '✨ سایر موارد تشویقی (+۲)', score: 2 },
+  { value: 'تشویقی', label: 'تشویقی (+۲)', score: 2 },
+  { value: 'فعالیت کلاسی', label: 'فعالیت (+۲)', score: 2 },
+  { value: 'تکالیف', label: 'تکلیف (+۲)', score: 2 },
+  { value: 'انضباط', label: 'انضباط (+۲)', score: 2 },
 ];
 
 const DISCIPLINE_OPTIONS = [
-  { value: 'مورد انضباطی کلی (-۲)', label: '⚠️ مورد انضباطی کلی (-۲)', score: -2 },
-  { value: 'بی‌نظمی در کلاس (-۲)', label: '🗣️ بی‌نظمی در کلاس (-۲)', score: -2 },
-  { value: 'عدم انجام تکالیف (-۲)', label: '❌ عدم انجام تکالیف (-۲)', score: -2 },
-  { value: 'تاخیر یا بی‌توجهی (-۲)', label: '⏰ تاخیر یا بی‌توجهی (-۲)', score: -2 },
-  { value: 'تذکر انضباطی (-۲)', label: '⚡ تذکر انضباطی (-۲)', score: -2 },
-  { value: 'سایر موارد انضباطی (-۲)', label: '🚨 سایر موارد انضباطی (-۲)', score: -2 },
+  { value: 'انضباطی', label: 'انضباطی (-۲)', score: -2 },
+  { value: 'بی‌نظمی', label: 'بی‌نظمی (-۲)', score: -2 },
+  { value: 'عدم انجام تکلیف', label: 'عدم تکلیف (-۲)', score: -2 },
+  { value: 'تاخیر', label: 'تاخیر (-۲)', score: -2 },
 ];
 
 export const AttendancePage: React.FC = () => {
@@ -1638,90 +1634,126 @@ export const AttendancePage: React.FC = () => {
           onClick={() => setEvaluationModalStudent(null)}
         >
           <div
-            className="bg-white dark:bg-[#151C28] border border-gray-200 dark:border-[#242F42] rounded-t-2xl sm:rounded-2xl p-4 sm:p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto overscroll-contain shadow-2xl space-y-4"
+            className="bg-white dark:bg-[#151C28] border border-gray-200 dark:border-[#242F42] rounded-t-2xl sm:rounded-2xl p-4 sm:p-5 max-w-md w-full max-h-[90vh] overflow-y-auto overscroll-contain shadow-2xl space-y-3"
             onClick={(e) => e.stopPropagation()}
             dir="rtl"
           >
             {/* Mobile Drag Pill */}
-            <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto sm:hidden -mt-1 mb-2" />
+            <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto sm:hidden -mt-1 mb-1.5" />
 
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-[#242F42]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/25 flex items-center justify-center font-bold text-base">
+            <div className="flex items-center justify-between pb-2.5 border-b border-gray-100 dark:border-[#242F42]">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary border border-primary/25 flex items-center justify-center font-bold text-sm shrink-0">
                   {evaluationModalStudent.user?.firstName?.[0] || 'د'}
                 </div>
-                <div>
-                  <h3 className="font-black text-sm sm:text-base text-foreground dark:text-white">
+                <div className="min-w-0">
+                  <h3 className="font-black text-sm text-foreground dark:text-white truncate">
                     {evaluationModalStudent.user?.firstName} {evaluationModalStudent.user?.lastName}
                   </h3>
-                  <div className="text-[11px] text-muted-foreground font-mono">
-                    کد دانش‌آموزی: {toPersianDigits(evaluationModalStudent.studentCode)}
+                  <div className="text-[10.5px] text-muted-foreground font-mono truncate">
+                    کد: {toPersianDigits(evaluationModalStudent.studentCode)}
                   </div>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setEvaluationModalStudent(null)}
-                className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#1C2536] rounded-xl text-muted-foreground transition-colors cursor-pointer"
+                className="p-1 hover:bg-gray-100 dark:hover:bg-[#1C2536] rounded-xl text-muted-foreground transition-colors cursor-pointer shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Modal Tabs: Evaluation vs History */}
-            <div className="grid grid-cols-2 gap-1.5 bg-gray-50 dark:bg-[#1C2536] p-1 rounded-xl border border-gray-200 dark:border-[#242F42]">
+            {/* Modal Tabs */}
+            <div className="grid grid-cols-2 gap-1 bg-gray-50 dark:bg-[#1C2536] p-1 rounded-xl border border-gray-200 dark:border-[#242F42]">
               <button
                 type="button"
                 onClick={() => setModalTab('EVALUATE')}
-                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
                   modalTab === 'EVALUATE'
                     ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs font-black'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <Award className="w-4 h-4 text-primary" />
-                ارزیابی جلسه امروز
+                ارزیابی جلسه
               </button>
               <button
                 type="button"
                 onClick={() => setModalTab('HISTORY')}
-                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
                   modalTab === 'HISTORY'
                     ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs font-black'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <History className="w-4 h-4 text-sky-500" />
-                سابقه در این درس
+                سوابق
               </button>
             </div>
 
             {/* Tab 1: Evaluate Current Session */}
             {modalTab === 'EVALUATE' ? (
-              <div className="space-y-4 pt-1">
-                {/* 1. Oral Grade (out of 20) */}
-                <div className="space-y-2 bg-gray-50/60 dark:bg-[#1C2536]/60 p-3.5 rounded-xl border border-gray-200/80 dark:border-[#242F42]">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-foreground dark:text-white flex items-center gap-1.5">
-                      <Award className="w-4 h-4 text-primary" />
-                      نمره پرسش کلاسی (از ۲۰):
+              <div className="space-y-3 pt-0.5">
+                {/* 1. Two Select Boxes in one row */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 block mb-1">
+                      تشویقی (+۲):
                     </label>
-                    {modalOralGrade !== '' && (
-                      <span className={`font-mono text-xs font-black px-2 py-0.5 rounded-md border ${
-                        Number(modalOralGrade) < 0
-                          ? 'text-rose-600 bg-rose-50 dark:bg-rose-950/60 border-rose-300'
-                          : Number(modalOralGrade) > 0 && (selectedRewardOption || selectedDisciplineOption)
-                          ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300'
-                          : 'text-primary bg-primary/10 border-primary/25'
-                      }`}>
-                        {toPersianDigits(modalOralGrade)} نمره
-                      </span>
-                    )}
+                    <select
+                      value={selectedRewardOption}
+                      onChange={(e) => handleSelectReward(e.target.value)}
+                      className="w-full h-9 px-2 rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] text-xs font-bold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer text-foreground dark:text-white"
+                    >
+                      <option value="">بدون انتخاب</option>
+                      {REWARD_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {/* دکمه فلش بالا (سمت راست در RTL) */}
+                  <div>
+                    <label className="text-[11px] font-bold text-rose-600 dark:text-rose-400 block mb-1">
+                      انضباطی (-۲):
+                    </label>
+                    <select
+                      value={selectedDisciplineOption}
+                      onChange={(e) => handleSelectDiscipline(e.target.value)}
+                      className="w-full h-9 px-2 rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] text-xs font-bold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer text-foreground dark:text-white"
+                    >
+                      <option value="">بدون انتخاب</option>
+                      {DISCIPLINE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* 2. Oral Grade */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-foreground dark:text-white">نمره:</label>
+                    {Boolean(selectedRewardOption || selectedDisciplineOption) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedRewardOption('');
+                          setSelectedDisciplineOption('');
+                          setModalDisciplineType('NONE');
+                          setModalDisciplineNote('');
+                          setModalOralGrade('');
+                        }}
+                        className="text-[10.5px] text-primary hover:underline font-bold cursor-pointer"
+                      >
+                        تنظیم دستی نمره
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       disabled={Boolean(selectedRewardOption || selectedDisciplineOption)}
@@ -1730,10 +1762,9 @@ export const AttendancePage: React.FC = () => {
                           String(Math.min(20, Math.round((parseFloat(v || '0') + 0.25) * 100) / 100))
                         )
                       }
-                      className="h-[44px] w-[44px] shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-all cursor-pointer text-foreground dark:text-gray-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-                      title="افزایش ۰.۲۵ نمره"
+                      className="h-9 w-9 shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#242F42] transition-all cursor-pointer text-foreground dark:text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      <ChevronUp className="w-5 h-5" />
+                      <ChevronUp className="w-4 h-4" />
                     </button>
 
                     <Input
@@ -1749,19 +1780,14 @@ export const AttendancePage: React.FC = () => {
                         if (e.target.value === '') setModalOralGrade('');
                         else if (!isNaN(v)) setModalOralGrade(String(Math.min(20, Math.max(-20, v))));
                       }}
-                      placeholder={
+                      placeholder="نمره (۰ تا ۲۰)"
+                      className={`rounded-xl border border-gray-200 dark:border-[#242F42] font-mono font-bold h-9 text-center text-sm flex-1 ${
                         selectedRewardOption || selectedDisciplineOption
-                          ? 'نمره بر اساس مورد انتخابی تعیین شده'
-                          : 'نمره مورد نظر را وارد کنید (مثلاً ۱۹.۵)'
-                      }
-                      className={`rounded-xl border border-gray-200 dark:border-[#242F42] font-bold min-h-[44px] h-[44px] text-center text-sm flex-1 ${
-                        selectedRewardOption || selectedDisciplineOption
-                          ? 'bg-gray-100/90 dark:bg-[#1C2536]/90 text-muted-foreground cursor-not-allowed opacity-90'
+                          ? 'bg-gray-100 dark:bg-[#1C2536] text-muted-foreground cursor-not-allowed'
                           : 'bg-white dark:bg-[#151C28]'
                       }`}
                     />
 
-                    {/* دکمه فلش پایین (سمت چپ در RTL) */}
                     <button
                       type="button"
                       disabled={Boolean(selectedRewardOption || selectedDisciplineOption)}
@@ -1770,223 +1796,108 @@ export const AttendancePage: React.FC = () => {
                           String(Math.max(-20, Math.round((parseFloat(v || '0') - 0.25) * 100) / 100))
                         )
                       }
-                      className="h-[44px] w-[44px] shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#242F42] transition-all cursor-pointer text-foreground dark:text-gray-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-                      title="کاهش ۰.۲۵ نمره"
+                      className="h-9 w-9 shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#242F42] transition-all cursor-pointer text-foreground dark:text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      <ChevronDown className="w-5 h-5" />
+                      <ChevronDown className="w-4 h-4" />
                     </button>
                   </div>
-
-                  {Boolean(selectedRewardOption || selectedDisciplineOption) && (
-                    <div className="flex items-center justify-between text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800/60">
-                      <span>اینپوت عدد به دلیل انتخاب مورد تشویقی/انضباطی قفل است.</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedRewardOption('');
-                          setSelectedDisciplineOption('');
-                          setModalDisciplineType('NONE');
-                          setModalDisciplineNote('');
-                          setModalOralGrade('');
-                        }}
-                        className="text-primary hover:underline font-black text-[11px] cursor-pointer"
-                      >
-                        حذف و ورود دستی
-                      </button>
-                    </div>
-                  )}
                 </div>
 
-                {/* 2. Disciplinary / Encouragement Selector (Two Select Boxes in one row) */}
-                <div className="space-y-2.5 bg-gray-50/60 dark:bg-[#1C2536]/60 p-3.5 rounded-xl border border-gray-200/80 dark:border-[#242F42]">
-                  <label className="text-xs font-bold text-foreground dark:text-white flex items-center gap-1.5">
-                    <Star className="w-4 h-4 text-emerald-500" />
-                    موارد انضباطی و تشویقی جلسه:
-                  </label>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {/* Select 1: تشویقی */}
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
-                        <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
-                        تشویقی (+۲):
-                      </label>
-                      <select
-                        value={selectedRewardOption}
-                        onChange={(e) => handleSelectReward(e.target.value)}
-                        className={`w-full h-10 px-3 rounded-xl border text-xs font-bold transition-all focus:outline-none focus:ring-1 cursor-pointer ${
-                          selectedRewardOption
-                            ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-400 dark:border-emerald-600 text-emerald-800 dark:text-emerald-200 ring-1 ring-emerald-400/40'
-                            : 'bg-white dark:bg-[#151C28] border-gray-200 dark:border-[#242F42] text-foreground dark:text-white'
-                        }`}
-                      >
-                        <option value="">انتخاب تشویقی...</option>
-                        {REWARD_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Select 2: انضباطی */}
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1">
-                        <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
-                        انضباطی (-۲):
-                      </label>
-                      <select
-                        value={selectedDisciplineOption}
-                        onChange={(e) => handleSelectDiscipline(e.target.value)}
-                        className={`w-full h-10 px-3 rounded-xl border text-xs font-bold transition-all focus:outline-none focus:ring-1 cursor-pointer ${
-                          selectedDisciplineOption
-                            ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-400 dark:border-rose-600 text-rose-800 dark:text-rose-200 ring-1 ring-rose-400/40'
-                            : 'bg-white dark:bg-[#151C28] border-gray-200 dark:border-[#242F42] text-foreground dark:text-white'
-                        }`}
-                      >
-                        <option value="">انتخاب انضباطی...</option>
-                        {DISCIPLINE_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {Boolean(selectedRewardOption || selectedDisciplineOption) && (
-                    <div className="space-y-1 pt-1">
-                      <label className="text-[10px] font-bold text-muted-foreground block">
-                        توضیحات تکمیلی (اختیاری):
-                      </label>
-                      <Input
-                        value={modalDisciplineNote}
-                        onChange={(e) => setModalDisciplineNote(e.target.value)}
-                        placeholder="شرح یا جزئیات مورد تشویقی/انضباطی..."
-                        className="rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] font-bold h-9 text-xs"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* 3. Session Teacher Note */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground dark:text-white flex items-center gap-1.5">
-                    <FileText className="w-4 h-4 text-blue-500" />
-                    یادداشت جلسه دبیر (خصوصی):
-                  </label>
-                  <textarea
-                    rows={3}
+                {/* 3. Note */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-muted-foreground">یادداشت (اختیاری):</label>
+                  <Input
                     value={modalSessionNote}
                     onChange={(e) => setModalSessionNote(e.target.value)}
-                    placeholder="یادداشت مشاهدات یا عملکرد تحصیلی دانش‌آموز در این جلسه..."
-                    className="w-full rounded-xl border border-gray-200 dark:border-[#242F42] p-3 font-bold text-xs bg-white dark:bg-[#151C28] text-foreground dark:text-white focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
+                    placeholder="توضیحات..."
+                    className="rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] font-bold h-9 text-xs"
                   />
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100 dark:border-[#242F42] flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setEvaluationModalStudent(null)}
-                      className="rounded-xl border border-gray-200 dark:border-[#242F42] text-xs font-bold h-9 cursor-pointer"
-                    >
-                      انصراف
-                    </Button>
-                    <Button
-                      size="sm"
-                      disabled={isSavingEvaluation}
-                      onClick={handleSaveModalEvaluation}
-                      className="rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs h-9 shadow-xs flex items-center gap-1.5 cursor-pointer"
-                    >
-                      {isSavingEvaluation && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                      تایید و ثبت
-                    </Button>
-                  </div>
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100 dark:border-[#242F42]">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEvaluationModalStudent(null)}
+                    className="rounded-xl border border-gray-200 dark:border-[#242F42] text-xs font-bold h-8.5 px-3 cursor-pointer"
+                  >
+                    انصراف
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={isSavingEvaluation}
+                    onClick={handleSaveModalEvaluation}
+                    className="rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs h-8.5 px-4 shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  >
+                    {isSavingEvaluation && <RefreshCw className="w-3 h-3 animate-spin" />}
+                    ثبت
+                  </Button>
                 </div>
               </div>
             ) : (
               /* Tab 2: Track Record / Subject History */
-              <div className="space-y-3.5 pt-1">
+              <div className="space-y-3 pt-0.5">
                 {isLoadingStudentHistory && !studentHistoryData ? (
-                  <div className="py-12 text-center space-y-2">
-                    <RefreshCw className="w-7 h-7 text-primary animate-spin mx-auto" />
-                    <p className="font-bold text-xs text-foreground dark:text-white">در حال بارگذاری سوابق دانش‌آموز...</p>
+                  <div className="py-8 text-center space-y-2">
+                    <RefreshCw className="w-6 h-6 text-primary animate-spin mx-auto" />
+                    <p className="font-bold text-xs text-muted-foreground">در حال بارگذاری سوابق...</p>
                   </div>
                 ) : (
                   <>
                     {/* Summary KPI Strip */}
-                    <div className="grid grid-cols-4 gap-2 bg-gray-50/60 dark:bg-[#1C2536]/60 p-2.5 rounded-xl border border-gray-200/80 dark:border-[#242F42] text-center">
-                      <div className="bg-white dark:bg-[#151C28] p-2 rounded-lg border border-gray-200/60 dark:border-[#242F42]">
-                        <div className="text-[10px] font-bold text-muted-foreground">میانگین نمرات</div>
-                        <div className="text-sm font-black text-primary">
+                    <div className="grid grid-cols-4 gap-1.5 bg-gray-50/60 dark:bg-[#1C2536]/60 p-2 rounded-xl border border-gray-200/80 dark:border-[#242F42] text-center">
+                      <div className="bg-white dark:bg-[#151C28] p-1.5 rounded-lg border border-gray-200/60 dark:border-[#242F42]">
+                        <div className="text-[9.5px] font-bold text-muted-foreground">میانگین</div>
+                        <div className="text-xs font-black text-primary">
                           {combinedHistory.summary?.oralAverage !== null
-                            ? `${toPersianDigits(combinedHistory.summary.oralAverage)} از ۲۰`
+                            ? toPersianDigits(combinedHistory.summary.oralAverage)
                             : 'ـ'}
                         </div>
                       </div>
 
-                      <div className="bg-white dark:bg-[#151C28] p-2 rounded-lg border border-gray-200/60 dark:border-[#242F42]">
-                        <div className="text-[10px] font-bold text-muted-foreground">حضور / غیبت</div>
-                        <div className="text-sm font-black text-foreground dark:text-white">
-                          {toPersianDigits(combinedHistory.summary?.presentCount)} / {toPersianDigits(combinedHistory.summary?.absentCount)}
+                      <div className="bg-white dark:bg-[#151C28] p-1.5 rounded-lg border border-gray-200/60 dark:border-[#242F42]">
+                        <div className="text-[9.5px] font-bold text-muted-foreground">حضور/غیبت</div>
+                        <div className="text-xs font-black text-foreground dark:text-white">
+                          {toPersianDigits(combinedHistory.summary?.presentCount)}/{toPersianDigits(combinedHistory.summary?.absentCount)}
                         </div>
                       </div>
 
-                      <div className="bg-white dark:bg-[#151C28] p-2 rounded-lg border border-gray-200/60 dark:border-[#242F42]">
-                        <div className="text-[10px] font-bold text-emerald-600">تشویقی</div>
-                        <div className="text-sm font-black text-emerald-700 dark:text-emerald-400">
-                          {toPersianDigits(combinedHistory.summary?.positiveRewardsCount || 0)} مورد
+                      <div className="bg-white dark:bg-[#151C28] p-1.5 rounded-lg border border-gray-200/60 dark:border-[#242F42]">
+                        <div className="text-[9.5px] font-bold text-emerald-600">تشویقی</div>
+                        <div className="text-xs font-black text-emerald-700 dark:text-emerald-400">
+                          {toPersianDigits(combinedHistory.summary?.positiveRewardsCount || 0)}
                         </div>
                       </div>
 
-                      <div className="bg-white dark:bg-[#151C28] p-2 rounded-lg border border-gray-200/60 dark:border-[#242F42]">
-                        <div className="text-[10px] font-bold text-rose-600">انضباطی</div>
-                        <div className="text-sm font-black text-rose-700 dark:text-rose-400">
-                          {toPersianDigits(combinedHistory.summary?.negativeDisciplineCount || 0)} مورد
+                      <div className="bg-white dark:bg-[#151C28] p-1.5 rounded-lg border border-gray-200/60 dark:border-[#242F42]">
+                        <div className="text-[9.5px] font-bold text-rose-600">انضباطی</div>
+                        <div className="text-xs font-black text-rose-700 dark:text-rose-400">
+                          {toPersianDigits(combinedHistory.summary?.negativeDisciplineCount || 0)}
                         </div>
                       </div>
                     </div>
 
                     {/* Timeline of Sessions */}
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                      <span className="text-xs font-black text-foreground dark:text-white block">
-                        جلسات ثبت‌شده ({toPersianDigits(combinedHistory.sessions?.length || 0)} جلسه):
-                      </span>
-
+                    <div className="space-y-1.5 max-h-[240px] overflow-y-auto pr-1">
                       {combinedHistory.sessions?.length === 0 ? (
                         <div className="py-6 text-center text-xs text-muted-foreground font-bold">
-                          هنوز جلسه‌ای برای این دانش‌آموز ثبت نشده است.
+                          سابقه‌ای ثبت نشده است.
                         </div>
                       ) : (
                         combinedHistory.sessions.map((sess: any) => (
                           <div
                             key={sess.id}
-                            className={`border p-2.5 rounded-xl space-y-1 text-xs transition-all ${
+                            className={`border p-2 rounded-xl text-xs transition-all ${
                               sess.isCurrent
                                 ? 'bg-primary/5 border-primary/40'
                                 : 'bg-gray-50/70 dark:bg-[#1C2536]/70 border-gray-200/70 dark:border-[#242F42]'
                             }`}
                           >
                             <div className="flex items-center justify-between flex-wrap gap-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-foreground dark:text-white">
-                                  {formatJalaliDisplay(sess.date, false)}
-                                </span>
-                                {sess.periodNumber && (
-                                  <span className="text-[10px] bg-gray-100 dark:bg-[#1C2536] px-1.5 py-0.5 rounded font-mono">
-                                    زنگ {toPersianDigits(sess.periodNumber)}
-                                  </span>
-                                )}
-                                {sess.isCurrent && (
-                                  <span className="text-[10px] font-bold bg-primary text-white px-1.5 py-0.5 rounded">
-                                    جلسه جاری
-                                  </span>
-                                )}
-                              </div>
-
+                              <span className="font-bold text-foreground dark:text-white">
+                                {formatJalaliDisplay(sess.date, false)}
+                              </span>
                               <Badge
                                 variant="neutral"
                                 className={`text-[10px] ${
@@ -2006,25 +1917,19 @@ export const AttendancePage: React.FC = () => {
                               </Badge>
                             </div>
 
-                            {/* Details row */}
-                            <div className="flex items-center gap-2 pt-1 flex-wrap text-[11px]">
-                              {sess.oralGrade !== null && sess.oralGrade !== undefined && (
-                                <span className="font-bold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/25">
-                                  نمره پرسش: {toPersianDigits(sess.oralGrade)} از ۲۰
-                                </span>
-                              )}
-
-                              {sess.rewardDisciplineType && sess.rewardDisciplineType !== 'NONE' && (
-                                <span className="font-bold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
-                                  مورد: {sess.rewardDisciplineType === 'POSITIVE' ? '🌟 مثبت' : sess.rewardDisciplineType === 'EXCELLENT' ? '🏆 عالی' : sess.rewardDisciplineType === 'NEGATIVE' ? '⚠️ منفی' : sess.rewardDisciplineType === 'WARNING' ? '⚡ تذکر' : sess.rewardDisciplineType === 'HOMEWORK_INCOMPLETE' ? '📝 بدون تکلیف' : sess.rewardDisciplineType} {sess.rewardDisciplineNote && `(${sess.rewardDisciplineNote})`}
-                                </span>
-                              )}
-                            </div>
-
-                            {sess.sessionNote && (
-                              <p className="text-[11px] text-muted-foreground pt-1 italic bg-white dark:bg-[#151C28] p-1.5 rounded border border-gray-100 dark:border-[#242F42]">
-                                «{sess.sessionNote}»
-                              </p>
+                            {(sess.oralGrade !== null && sess.oralGrade !== undefined || sess.rewardDisciplineType) && (
+                              <div className="flex items-center gap-1.5 pt-1 text-[10.5px]">
+                                {sess.oralGrade !== null && sess.oralGrade !== undefined && (
+                                  <span className="font-bold text-primary bg-primary/10 px-1.5 py-0.2 rounded">
+                                    نمره: {toPersianDigits(sess.oralGrade)}
+                                  </span>
+                                )}
+                                {sess.rewardDisciplineType && sess.rewardDisciplineType !== 'NONE' && (
+                                  <span className="font-bold text-foreground dark:text-white bg-gray-100 dark:bg-[#1C2536] px-1.5 py-0.2 rounded">
+                                    {sess.rewardDisciplineNote || sess.rewardDisciplineType}
+                                  </span>
+                                )}
+                              </div>
                             )}
                           </div>
                         ))
