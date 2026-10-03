@@ -717,7 +717,7 @@ export class PollsService {
         throw new NotFoundException('نظرسنجی یافت نشد');
       }
 
-      const votes = await this.prisma.pollVote.findMany({
+      let votes = await this.prisma.pollVote.findMany({
         where: { pollId, tenantId },
         orderBy: { createdAt: 'desc' },
         select: {
@@ -734,14 +734,98 @@ export class PollsService {
         },
       });
 
+      if (votes.length === 0 && poll.porscadFormId) {
+        const porscadVotes = await this.fetchPorscadLiveResponses(poll);
+        if (porscadVotes.length > 0) {
+          return this.formatAnalyticsData(poll, porscadVotes);
+        }
+      }
+
       return this.formatAnalyticsData(poll, votes);
     } catch (err: any) {
       if (err instanceof NotFoundException || err instanceof ForbiddenException) throw err;
       console.warn('⚠️ [PollsService.getAnalytics] DB offline fallback:', err?.message || err);
       const poll = inMemoryPolls.find((p) => p.id === pollId && p.tenantId === tenantId);
       if (!poll) throw new NotFoundException('نظرسنجی یافت نشد');
-      const votes = inMemoryVotes.filter((v) => v.pollId === pollId && v.tenantId === tenantId);
+      let votes = inMemoryVotes.filter((v) => v.pollId === pollId && v.tenantId === tenantId);
+
+      if (votes.length === 0 && poll.porscadFormId) {
+        const porscadVotes = await this.fetchPorscadLiveResponses(poll);
+        if (porscadVotes.length > 0) {
+          return this.formatAnalyticsData(poll, porscadVotes);
+        }
+      }
+
       return this.formatAnalyticsData(poll, votes);
+    }
+  }
+
+  private async fetchPorscadLiveResponses(poll: any): Promise<any[]> {
+    if (!poll.porscadFormId) return [];
+    try {
+      const questions = (poll.questions as unknown as SurveyQuestion[]) || [];
+      let qIds = questions.map((q) => q.porscadQuestionId).filter(Boolean) as string[];
+
+      if (qIds.length === 0) {
+        const qRes = await fetch(
+          `https://pivwmyacpxdywevccpmw.supabase.co/rest/v1/questions?form_id=eq.${poll.porscadFormId}&select=id,title,type,options,position&order=position.asc`,
+          {
+            headers: {
+              apikey:
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdndteWFjcHhkeXdldmNjcG13Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzY2MjU1MSwiZXhwIjoyMTAzMjM4NTUxfQ.WqnDBvpwIOtDOBn7pHKozf0WzpF-S7F5nq7FB4aCPl0',
+              Authorization:
+                'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdndteWFjcHhkeXdldmNjcG13Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzY2MjU1MSwiZXhwIjoyMTAzMjM4NTUxfQ.WqnDBvpwIOtDOBn7pHKozf0WzpF-S7F5nq7FB4aCPl0',
+            },
+          },
+        );
+        if (qRes.ok) {
+          const qRows = await qRes.json();
+          if (Array.isArray(qRows) && qRows.length > 0) {
+            qIds = qRows.map((r: any) => r.id);
+          }
+        }
+      }
+
+      if (qIds.length === 0) return [];
+
+      const aRes = await fetch(
+        `https://pivwmyacpxdywevccpmw.supabase.co/rest/v1/answers?question_id=in.("${qIds.join('","')}")&select=id,response_id,question_id,value,time_spent_seconds`,
+        {
+          headers: {
+            apikey:
+              'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdndteWFjcHhkeXdldmNjcG13Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzY2MjU1MSwiZXhwIjoyMTAzMjM4NTUxfQ.WqnDBvpwIOtDOBn7pHKozf0WzpF-S7F5nq7FB4aCPl0',
+            Authorization:
+              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdndteWFjcHhkeXdldmNjcG13Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzY2MjU1MSwiZXhwIjoyMTAzMjM4NTUxfQ.WqnDBvpwIOtDOBn7pHKozf0WzpF-S7F5nq7FB4aCPl0',
+          },
+        },
+      );
+
+      if (!aRes.ok) return [];
+      const aRows = await aRes.json();
+      if (!Array.isArray(aRows) || aRows.length === 0) return [];
+
+      const byResp: Record<string, any> = {};
+      for (const a of aRows) {
+        const rId = a.response_id || `r_${a.id}`;
+        if (!byResp[rId]) {
+          byResp[rId] = {
+            id: rId,
+            userId: null,
+            respondentName: 'کاربر پرس‌کاد',
+            answers: {},
+            porscadResponseId: rId,
+            createdAt: new Date(),
+          };
+        }
+        const qIdx = qIds.indexOf(a.question_id);
+        const key = qIdx >= 0 ? String(qIdx) : a.question_id;
+        byResp[rId].answers[key] = a.value;
+      }
+
+      return Object.values(byResp);
+    } catch (err) {
+      console.warn('⚠️ [PollsService.fetchPorscadLiveResponses] Live fetch error:', err);
+      return [];
     }
   }
 
