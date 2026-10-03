@@ -348,7 +348,7 @@ export const StudentSchedulePage: React.FC = () => {
                     {/* Slot Information */}
                     <div className="space-y-3 sm:space-y-3.5 flex-1 min-w-0">
                       {/* Period Badge & Teacher Badge (Right) | Time Badge & Live Status (Leftmost) */}
-                      <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 sm:pb-3 border-b border-gray-100 dark:border-[#242F42]">
+                      <div className="flex flex-wrap items-center justify-between gap-2.5">
                         {/* Right: Period & Teacher Badge */}
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge variant="default" className="font-bold text-xs py-0.5">
@@ -389,7 +389,7 @@ export const StudentSchedulePage: React.FC = () => {
 
                       {/* Lesson Details */}
                       {slot.isSplitPeriod ? (
-                        <div className="space-y-2.5 pt-1">
+                        <div className="space-y-2 pt-0.5">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             {/* Part 1 */}
                             <div className={`p-3 rounded-xl border space-y-1.5 ${
@@ -400,13 +400,13 @@ export const StudentSchedulePage: React.FC = () => {
                               <div className="flex items-center justify-between">
                                 <span className="text-[10px] font-bold text-primary dark:text-primary-light block">هفته فرد</span>
                                 {currentWeekInfo.activeWeek === 1 && (
-                                  <span className="text-[9.5px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-300">
+                                  <span className="text-[9.5px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-300">
                                     درس این هفته
                                   </span>
                                 )}
                               </div>
                               <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="font-extrabold text-base text-foreground dark:text-white flex items-center gap-1.5">
+                                <h3 className="font-bold text-sm sm:text-base text-foreground dark:text-white flex items-center gap-1.5">
                                   <BookOpen className="w-4 h-4 text-primary shrink-0" />
                                   <span>{slot.lesson?.name}</span>
                                 </h3>
@@ -430,13 +430,13 @@ export const StudentSchedulePage: React.FC = () => {
                               <div className="flex items-center justify-between">
                                 <span className="text-[10px] font-bold text-primary dark:text-primary-light block">هفته زوج</span>
                                 {currentWeekInfo.activeWeek === 2 && (
-                                  <span className="text-[9.5px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-300">
+                                  <span className="text-[9.5px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-300">
                                     درس این هفته
                                   </span>
                                 )}
                               </div>
                               <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="font-extrabold text-base text-foreground dark:text-white flex items-center gap-1.5">
+                                <h3 className="font-bold text-sm sm:text-base text-foreground dark:text-white flex items-center gap-1.5">
                                   <BookOpen className="w-4 h-4 text-primary shrink-0" />
                                   <span>{slot.secondLesson?.name || '—'}</span>
                                 </h3>
@@ -453,9 +453,9 @@ export const StudentSchedulePage: React.FC = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex flex-wrap items-center gap-2.5 py-1">
-                          <h2 className="text-lg sm:text-xl font-black text-foreground dark:text-white flex items-center gap-2">
-                            <BookOpen className="w-5 h-5 text-primary shrink-0" />
+                        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                          <h2 className="text-base sm:text-lg font-bold text-foreground dark:text-white flex items-center gap-2">
+                            <BookOpen className="w-4.5 h-4.5 text-primary shrink-0" />
                             <span>{slot.lesson?.name}</span>
                           </h2>
                         </div>
