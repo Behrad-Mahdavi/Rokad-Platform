@@ -42,6 +42,8 @@ import {
   ArrowRightLeft,
   Save,
   Filter,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { toast } from '../../../components/ui/toast/toast';
 import { ResponsivePageHeader } from '@/components/ui/ResponsivePageHeader';
@@ -64,6 +66,7 @@ export const AcademicStructurePage: React.FC = () => {
   const [studentSearchQuery, setStudentSearchQuery] = useState('');
   const [studentModalTab, setStudentModalTab] = useState<'MEMBERS' | 'ADD_STUDENT'>('MEMBERS');
   const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
+  const [expandedStudentIds, setExpandedStudentIds] = useState<Record<string, boolean>>({});
   const [studentEditForm, setStudentEditForm] = useState<{ gradeLevel: string; classroomId: string }>({
     gradeLevel: 'دهم',
     classroomId: '',
@@ -2576,14 +2579,11 @@ export const AcademicStructurePage: React.FC = () => {
                 </span>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
-                <Badge variant="default" className="text-[11px] py-0.5 px-2">
-                  پایه {selectedClassForStudents.level?.name || 'دهم'}
-                </Badge>
                 <Badge variant="college" className="text-[11px] py-0.5 px-2">
                   {selectedClassForStudents.field?.name || 'شبکه و نرم‌افزار'}
                 </Badge>
                 <Badge variant="neutral" className="text-[11px] py-0.5 px-2 font-mono">
-                  {classStudents.length} / {selectedClassForStudents.capacity || 30}
+                  {classStudents.length} / {selectedClassForStudents.capacity || 30} نفر
                 </Badge>
               </div>
             </div>
@@ -2663,8 +2663,8 @@ export const AcademicStructurePage: React.FC = () => {
             ) : (
               displayedStudents.map((s: any) => {
                 const isEditing = editingStudentId === s.id;
+                const isExpanded = !!expandedStudentIds[s.id];
                 const currentEnrolledClass = s.enrollments?.[0]?.classroom;
-                const studentGrade = s.gradeLevel || currentEnrolledClass?.level?.name || 'دهم';
                 const studentField = currentEnrolledClass?.field?.name || '';
 
                 return (
@@ -2685,20 +2685,10 @@ export const AcademicStructurePage: React.FC = () => {
                         <div className="space-y-0.5 min-w-0">
                           <div className="font-bold text-ink-darker text-xs sm:text-sm flex items-center gap-1.5 flex-wrap">
                             <span className="truncate">{s.user?.firstName} {s.user?.lastName}</span>
-                            <Badge variant="default" className="text-[10px] py-0 px-1.5">
-                              پایه {studentGrade}
-                            </Badge>
-                            {currentEnrolledClass && (
+                            {currentEnrolledClass && studentModalTab === 'ADD_STUDENT' && (
                               <Badge variant="college" className="text-[10px] py-0 px-1.5 truncate max-w-[150px]">
                                 {currentEnrolledClass.name} {studentField ? `(${studentField})` : ''}
                               </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2.5 text-[11px] text-gray-500 flex-wrap">
-                            <span>کد ملی: <span className="font-mono text-gray-700 dark:text-gray-300">{s.nationalCode || s.user?.nationalId || '-'}</span></span>
-                            <span>کد: <span className="font-mono text-gray-700 dark:text-gray-300">{s.studentCode || '-'}</span></span>
-                            {(s.fatherName || s.fatherFullName) && (
-                              <span>پدر: <span className="text-gray-700 dark:text-gray-300">{s.fatherName || s.fatherFullName}</span></span>
                             )}
                           </div>
                         </div>
@@ -2729,6 +2719,47 @@ export const AcademicStructurePage: React.FC = () => {
                           </button>
                         )}
                       </div>
+                    </div>
+
+                    {/* Collapsible Details */}
+                    <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700/60">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedStudentIds((prev) => ({ ...prev, [s.id]: !prev[s.id] }))
+                        }
+                        className="flex items-center gap-1 text-[11px] font-bold text-gray-500 dark:text-gray-400 hover:text-primary transition-colors cursor-pointer"
+                      >
+                        <span>جزئیات بیشتر</span>
+                        {isExpanded ? (
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        ) : (
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+
+                      {isExpanded && (
+                        <div className="mt-2 p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900/40 border border-gray-200/60 dark:border-gray-700/50 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                          <div className="flex items-center justify-between sm:justify-start gap-1 text-[11px]">
+                            <span className="text-gray-400">کد ملی:</span>
+                            <span className="font-mono font-bold text-gray-700 dark:text-gray-200">
+                              {s.nationalCode || s.user?.nationalId || '-'}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between sm:justify-start gap-1 text-[11px]">
+                            <span className="text-gray-400">کد دانش‌آموزی:</span>
+                            <span className="font-mono font-bold text-gray-700 dark:text-gray-200">
+                              {s.studentCode || '-'}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between sm:justify-start gap-1 text-[11px]">
+                            <span className="text-gray-400">نام پدر:</span>
+                            <span className="font-bold text-gray-700 dark:text-gray-200">
+                              {s.fatherName || s.fatherFullName || '-'}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Inline Edit Panel */}
