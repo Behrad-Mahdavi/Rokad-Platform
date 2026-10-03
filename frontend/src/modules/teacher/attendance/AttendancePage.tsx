@@ -1719,11 +1719,13 @@ export const AttendancePage: React.FC = () => {
             4. TEACHER'S PERIODS & DAILY SCHEDULE
         ───────────────────────────────────────────────────────────── */
         <div className="space-y-3.5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h2 className="text-base sm:text-lg font-black text-foreground dark:text-white">
-                برنامه درسی {currentDayOfWeekInfo.name} ({formatJalaliDisplay(selectedDate, false)})
-              </h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-base sm:text-lg font-black text-foreground dark:text-white">
+              برنامه درسی {currentDayOfWeekInfo.name}
+            </h2>
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground bg-gray-50 dark:bg-[#1C2536] px-3 py-1.5 rounded-xl border border-gray-200 dark:border-[#242F42] shadow-2xs shrink-0">
+              <CalendarDays className="w-3.5 h-3.5 text-primary" />
+              <span>{formatJalaliDisplay(selectedDate, false)}</span>
             </div>
           </div>
 
