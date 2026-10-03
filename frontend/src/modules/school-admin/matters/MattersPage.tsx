@@ -16,6 +16,7 @@ import {
   Scale,
   Plus,
   Trash2,
+  Edit3,
   Search,
   Filter,
   CheckCircle2,
@@ -27,6 +28,7 @@ import {
   X,
   Check,
   FileText,
+  NotebookPen,
   SlidersHorizontal,
   Building2,
   BookOpen,
@@ -49,6 +51,8 @@ interface DisciplinaryMatter {
   sessionDate?: string;
   oralGrade?: number | null;
   periodNumber?: number | null;
+  sessionNote?: string | null;
+  rewardDisciplineNote?: string | null;
   classroom?: {
     id: string;
     name: string;
@@ -108,6 +112,7 @@ export const MattersPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Create Modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -121,7 +126,23 @@ export const MattersPage: React.FC = () => {
     description: '',
     points: 2,
     actionTaken: '',
-    notifiedParents: true,
+    notifiedParents: false,
+  });
+
+  // Edit Modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingMatter, setEditingMatter] = useState<DisciplinaryMatter | null>(null);
+  const [isEditSubmitting, setIsEditSubmitting] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  const [editForm, setEditForm] = useState({
+    type: 'POSITIVE' as 'POSITIVE' | 'NEGATIVE' | 'WARNING' | 'SUSPENSION' | 'COUNSELING_REFERRAL',
+    title: '',
+    description: '',
+    points: 2,
+    actionTaken: '',
+    notifiedParents: false,
+    oralGrade: '' as string | number,
   });
 
   const fetchData = async () => {
@@ -182,13 +203,78 @@ export const MattersPage: React.FC = () => {
         description: '',
         points: 2,
         actionTaken: '',
-        notifiedParents: true,
+        notifiedParents: false,
       });
       await fetchData();
     } catch (err: any) {
       setCreateError(err.response?.data?.message || 'خطا در ثبت مورد انضباطی');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenEditMatter = (matter: DisciplinaryMatter) => {
+    setEditingMatter(matter);
+    setEditForm({
+      type: matter.type || 'POSITIVE',
+      title: matter.title || '',
+      description: matter.description || '',
+      points: matter.points !== undefined ? matter.points : 0,
+      actionTaken: matter.actionTaken || '',
+      notifiedParents: matter.notifiedParents !== undefined ? matter.notifiedParents : false,
+      oralGrade: matter.oralGrade !== null && matter.oralGrade !== undefined ? matter.oralGrade : '',
+    });
+    setEditError(null);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMatter) return;
+    if (!editForm.title.trim()) {
+      setEditError('عنوان مورد انضباطی یا تشویقی الزامی است');
+      return;
+    }
+
+    setIsEditSubmitting(true);
+    setEditError(null);
+
+    try {
+      const payload: any = {
+        type: editForm.type,
+        title: editForm.title.trim(),
+        description: editForm.description.trim(),
+        points: Number(editForm.points),
+        actionTaken: editForm.actionTaken.trim() || undefined,
+        notifiedParents: editForm.notifiedParents,
+      };
+      if (editForm.oralGrade !== '' && editForm.oralGrade !== null && editForm.oralGrade !== undefined) {
+        payload.oralGrade = Number(editForm.oralGrade);
+      }
+
+      await apiClient.put(`/matters/${editingMatter.id}`, payload);
+
+      setIsEditModalOpen(false);
+      setEditingMatter(null);
+      await fetchData();
+    } catch (err: any) {
+      setEditError(err.response?.data?.message || 'خطا در ویرایش مورد انضباطی');
+    } finally {
+      setIsEditSubmitting(false);
+    }
+  };
+
+  const handleToggleNotifyParents = async (matter: DisciplinaryMatter) => {
+    try {
+      const nextVal = !matter.notifiedParents;
+      await apiClient.put(`/matters/${matter.id}`, {
+        notifiedParents: nextVal,
+      });
+      setMatters((prev) =>
+        prev.map((m) => (m.id === matter.id ? { ...m, notifiedParents: nextVal } : m)),
+      );
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'خطا در تغییر وضعیت اطلاع‌رسانی');
     }
   };
 
@@ -213,21 +299,21 @@ export const MattersPage: React.FC = () => {
     }
   > = {
     POSITIVE: {
-      label: 'تشویق و تقدیر',
+      label: 'تشویقی',
       badgeStyle: 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
       iconBg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
       iconColor: 'text-emerald-600 dark:text-emerald-400',
       icon: Award,
     },
     NEGATIVE: {
-      label: 'مورد انضباطی منفی',
+      label: 'انضباطی',
       badgeStyle: 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border-rose-500/30',
       iconBg: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
       iconColor: 'text-rose-600 dark:text-rose-400',
       icon: ShieldAlert,
     },
     WARNING: {
-      label: 'اخطار کتبی / تذکر',
+      label: 'تذکر',
       badgeStyle: 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-500/30',
       iconBg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
       iconColor: 'text-amber-600 dark:text-amber-400',
@@ -277,19 +363,14 @@ export const MattersPage: React.FC = () => {
       {/* 1. Header Master Panel */}
       <div className="bg-white dark:bg-[#151C28] rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-[#242F42] shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] px-4 py-3 sm:px-5 sm:py-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary dark:text-primary border border-primary/25 flex items-center justify-center font-black shadow-2xs shrink-0">
-              <Scale className="w-5 h-5" />
-            </div>
-            <div className="flex flex-wrap items-center gap-2 min-w-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary dark:text-primary border border-primary/25 flex items-center justify-center font-black shadow-2xs shrink-0">
+                <Scale className="w-5 h-5" />
+              </div>
               <h1 className="text-lg sm:text-2xl font-black text-ink-darker dark:text-white truncate">
                 امور انضباطی و تشویقی
               </h1>
-              <Badge variant="college" className="text-[11px] sm:text-xs font-bold shrink-0">
-                {toPersianDigits(matters.length)} مورد ثبت‌شده
-              </Badge>
             </div>
-          </div>
 
           <div className="flex items-center gap-2 shrink-0">
             <Button
@@ -373,77 +454,169 @@ export const MattersPage: React.FC = () => {
       </div>
 
       {/* 3. Search and Category Filter Toolbar */}
-      <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-[#242F42] shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-          <button
-            onClick={() => setActiveFilter('ALL')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer select-none ${
-              activeFilter === 'ALL'
-                ? 'bg-primary text-white shadow-[2px_2px_0_#1F413D] dark:shadow-[2px_2px_0_#0F172A]'
-                : 'bg-gray-100/80 dark:bg-[#1C2536] text-muted-foreground hover:text-ink-darker dark:hover:text-white border border-transparent hover:border-gray-200 dark:hover:border-gray-700'
-            }`}
-          >
-            همه موارد ({toPersianDigits(matters.length)})
-          </button>
-          <button
-            onClick={() => setActiveFilter('POSITIVE')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer select-none ${
-              activeFilter === 'POSITIVE'
-                ? 'bg-emerald-600 text-white shadow-[2px_2px_0_#065F46]'
-                : 'bg-gray-100/80 dark:bg-[#1C2536] text-muted-foreground hover:text-ink-darker dark:hover:text-white border border-transparent hover:border-gray-200 dark:hover:border-gray-700'
-            }`}
-          >
-            تشویقی‌ها ({toPersianDigits(positiveTotal)})
-          </button>
-          <button
-            onClick={() => setActiveFilter('NEGATIVE')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer select-none ${
-              activeFilter === 'NEGATIVE'
-                ? 'bg-rose-600 text-white shadow-[2px_2px_0_#881337]'
-                : 'bg-gray-100/80 dark:bg-[#1C2536] text-muted-foreground hover:text-ink-darker dark:hover:text-white border border-transparent hover:border-gray-200 dark:hover:border-gray-700'
-            }`}
-          >
-            مورد منفی
-          </button>
-          <button
-            onClick={() => setActiveFilter('WARNING')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer select-none ${
-              activeFilter === 'WARNING'
-                ? 'bg-amber-500 text-white shadow-[2px_2px_0_#78350F]'
-                : 'bg-gray-100/80 dark:bg-[#1C2536] text-muted-foreground hover:text-ink-darker dark:hover:text-white border border-transparent hover:border-gray-200 dark:hover:border-gray-700'
-            }`}
-          >
-            اخطار کتبی
-          </button>
-          <button
-            onClick={() => setActiveFilter('COUNSELING_REFERRAL')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer select-none ${
-              activeFilter === 'COUNSELING_REFERRAL'
-                ? 'bg-purple-600 text-white shadow-[2px_2px_0_#4C1D95]'
-                : 'bg-gray-100/80 dark:bg-[#1C2536] text-muted-foreground hover:text-ink-darker dark:hover:text-white border border-transparent hover:border-gray-200 dark:hover:border-gray-700'
-            }`}
-          >
-            ارجاع مشاوره ({toPersianDigits(counselingTotal)})
-          </button>
+      <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-[#242F42] shadow-xs space-y-3">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          {/* Desktop Filter Chips */}
+          <div className="hidden md:flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <button
+              onClick={() => setActiveFilter('ALL')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer select-none ${
+                activeFilter === 'ALL'
+                  ? 'bg-primary text-white shadow-[2px_2px_0_#1F413D] dark:shadow-[2px_2px_0_#0F172A]'
+                  : 'bg-gray-100/80 dark:bg-[#1C2536] text-muted-foreground hover:text-ink-darker dark:hover:text-white border border-transparent hover:border-gray-200 dark:hover:border-gray-700'
+              }`}
+            >
+              همه موارد ({toPersianDigits(matters.length)})
+            </button>
+            <button
+              onClick={() => setActiveFilter('POSITIVE')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer select-none ${
+                activeFilter === 'POSITIVE'
+                  ? 'bg-emerald-600 text-white shadow-[2px_2px_0_#065F46]'
+                  : 'bg-gray-100/80 dark:bg-[#1C2536] text-muted-foreground hover:text-ink-darker dark:hover:text-white border border-transparent hover:border-gray-200 dark:hover:border-gray-700'
+              }`}
+            >
+              تشویقی‌ها ({toPersianDigits(positiveTotal)})
+            </button>
+            <button
+              onClick={() => setActiveFilter('NEGATIVE')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer select-none ${
+                activeFilter === 'NEGATIVE'
+                  ? 'bg-rose-600 text-white shadow-[2px_2px_0_#881337]'
+                  : 'bg-gray-100/80 dark:bg-[#1C2536] text-muted-foreground hover:text-ink-darker dark:hover:text-white border border-transparent hover:border-gray-200 dark:hover:border-gray-700'
+              }`}
+            >
+              انضباطی ({toPersianDigits(negativeTotal)})
+            </button>
+            <button
+              onClick={() => setActiveFilter('WARNING')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer select-none ${
+                activeFilter === 'WARNING'
+                  ? 'bg-amber-500 text-white shadow-[2px_2px_0_#78350F]'
+                  : 'bg-gray-100/80 dark:bg-[#1C2536] text-muted-foreground hover:text-ink-darker dark:hover:text-white border border-transparent hover:border-gray-200 dark:hover:border-gray-700'
+              }`}
+            >
+              تذکرات
+            </button>
+            <button
+              onClick={() => setActiveFilter('COUNSELING_REFERRAL')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer select-none ${
+                activeFilter === 'COUNSELING_REFERRAL'
+                  ? 'bg-purple-600 text-white shadow-[2px_2px_0_#4C1D95]'
+                  : 'bg-gray-100/80 dark:bg-[#1C2536] text-muted-foreground hover:text-ink-darker dark:hover:text-white border border-transparent hover:border-gray-200 dark:hover:border-gray-700'
+              }`}
+            >
+              مشاوره ({toPersianDigits(counselingTotal)})
+            </button>
+          </div>
+
+          {/* Search bar + Mobile Filter Trigger (Icon on the Right in RTL) */}
+          <div className="flex items-center gap-2 w-full md:w-auto md:ms-auto">
+            {/* Mobile Filter Toggle Button (Icon only on the Right) */}
+            <Button
+              type="button"
+              variant={activeFilter !== 'ALL' || showMobileFilters ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setShowMobileFilters(!showMobileFilters)}
+              className="md:hidden h-10 w-10 p-0 rounded-xl shrink-0 flex items-center justify-center shadow-2xs relative"
+              title="فیلترها"
+            >
+              <Filter className="w-4 h-4" />
+              {activeFilter !== 'ALL' && (
+                <span className="w-2 h-2 rounded-full bg-emerald-400 absolute top-2 left-2 ring-2 ring-white dark:ring-gray-900" />
+              )}
+            </Button>
+
+            <div className="relative flex-1 md:w-72">
+              <Search className="w-4 h-4 text-muted-foreground absolute right-3 top-3 pointer-events-none" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="جستجوی دانش‌آموز یا موضوع..."
+                className="pr-9 pl-8 h-10 text-xs rounded-xl w-full"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute left-2.5 top-2.5 text-muted-foreground hover:text-ink-darker dark:hover:text-white p-0.5"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
-        <div className="relative w-full md:w-72">
-          <Search className="w-4 h-4 text-muted-foreground absolute right-3 top-3 pointer-events-none" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="جستجوی دانش‌آموز یا موضوع..."
-            className="pr-9 pl-8 h-10 text-xs rounded-xl"
-          />
-          {searchQuery && (
+        {/* Mobile Filter Options Dropdown */}
+        {showMobileFilters && (
+          <div className="md:hidden pt-2.5 border-t border-gray-100 dark:border-gray-800 flex flex-wrap items-center gap-1.5 animate-in slide-in-from-top-2 duration-200">
             <button
-              onClick={() => setSearchQuery('')}
-              className="absolute left-2.5 top-2.5 text-muted-foreground hover:text-ink-darker dark:hover:text-white p-0.5"
+              onClick={() => {
+                setActiveFilter('ALL');
+                setShowMobileFilters(false);
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer select-none ${
+                activeFilter === 'ALL'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'bg-gray-100 dark:bg-[#1C2536] text-muted-foreground'
+              }`}
             >
-              <X className="w-3.5 h-3.5" />
+              همه موارد ({toPersianDigits(matters.length)})
             </button>
-          )}
-        </div>
+            <button
+              onClick={() => {
+                setActiveFilter('POSITIVE');
+                setShowMobileFilters(false);
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer select-none ${
+                activeFilter === 'POSITIVE'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-gray-100 dark:bg-[#1C2536] text-muted-foreground'
+              }`}
+            >
+              تشویقی‌ها ({toPersianDigits(positiveTotal)})
+            </button>
+            <button
+              onClick={() => {
+                setActiveFilter('NEGATIVE');
+                setShowMobileFilters(false);
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer select-none ${
+                activeFilter === 'NEGATIVE'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'bg-gray-100 dark:bg-[#1C2536] text-muted-foreground'
+              }`}
+            >
+              انضباطی ({toPersianDigits(negativeTotal)})
+            </button>
+            <button
+              onClick={() => {
+                setActiveFilter('WARNING');
+                setShowMobileFilters(false);
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer select-none ${
+                activeFilter === 'WARNING'
+                  ? 'bg-amber-500 text-white shadow-xs'
+                  : 'bg-gray-100 dark:bg-[#1C2536] text-muted-foreground'
+              }`}
+            >
+              تذکرات
+            </button>
+            <button
+              onClick={() => {
+                setActiveFilter('COUNSELING_REFERRAL');
+                setShowMobileFilters(false);
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer select-none ${
+                activeFilter === 'COUNSELING_REFERRAL'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'bg-gray-100 dark:bg-[#1C2536] text-muted-foreground'
+              }`}
+            >
+              مشاوره ({toPersianDigits(counselingTotal)})
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 4. Matters List Cards */}
@@ -464,156 +637,158 @@ export const MattersPage: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
           {filteredMatters.map((matter) => {
             const meta = typeMetaMap[matter.type] || typeMetaMap.POSITIVE;
             const Icon = meta.icon;
-            const isPos = matter.points > 0;
+
+            const isClassroomAction = matter.actionTaken?.startsWith('کلاس ') || matter.source === 'CLASSROOM_SESSION';
+            const displayActionTaken = !isClassroomAction && matter.actionTaken ? matter.actionTaken : null;
 
             return (
               <div
                 key={matter.id}
-                className="p-4 sm:p-5 rounded-2xl border border-gray-200/80 dark:border-[#28354A] bg-white dark:bg-[#1C2536] space-y-3.5 transition-all hover:border-primary/40 hover:-translate-y-0.5 shadow-2xs"
+                className="p-5 sm:p-6 rounded-2xl border border-gray-200/80 dark:border-[#28354A] bg-white dark:bg-[#1C2536] space-y-4 sm:space-y-5 transition-all hover:border-primary/40 hover:-translate-y-0.5 shadow-2xs flex flex-col justify-between"
               >
-                {/* Top Row: Student info, Type Badge, Points Chip, Notify Parents Pill */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100 dark:border-gray-800">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-primary-hover text-white flex items-center justify-center font-black text-sm shrink-0 shadow-2xs border border-white/20">
-                      {matter.student?.user?.firstName?.[0] || 'د'}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-black text-sm sm:text-base text-ink-darker dark:text-white">
-                          {matter.student?.user?.firstName} {matter.student?.user?.lastName}
-                        </span>
-                        {matter.student?.studentNumber && (
-                          <span className="text-[11px] font-mono font-bold text-muted-foreground bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
-                            کد: {toPersianDigits(matter.student.studentNumber)}
+                <div className="space-y-4 sm:space-y-4.5">
+                  {/* Top Row: Student info, Type Badge, Notify Parents Pill */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-3.5 sm:pb-4 border-b border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-primary to-primary-hover text-white flex items-center justify-center font-black text-sm shrink-0 shadow-2xs border border-white/20">
+                        {matter.student?.user?.firstName?.[0] || 'د'}
+                      </div>
+                      <div className="min-w-0 space-y-0.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-black text-base sm:text-lg text-ink-darker dark:text-white">
+                            {matter.student?.user?.firstName} {matter.student?.user?.lastName}
                           </span>
+                          {matter.student?.studentNumber && (
+                            <span className="text-[11px] font-mono font-bold text-muted-foreground bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
+                              کد: {toPersianDigits(matter.student.studentNumber)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+                      {/* Type Badge */}
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${meta.badgeStyle}`}>
+                        <Icon className="w-3.5 h-3.5" />
+                        <span>{meta.label}</span>
+                      </span>
+
+                      {/* Oral Grade Badge */}
+                      {matter.oralGrade !== null && matter.oralGrade !== undefined && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shadow-2xs">
+                          <GraduationCap className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                          <span>نمره پرسش: {toPersianDigits(matter.oralGrade)} از ۲۰</span>
+                        </span>
+                      )}
+
+                      {/* Classroom Session Tag */}
+                      {matter.source === 'CLASSROOM_SESSION' && (
+                        <span className="inline-flex items-center gap-1 text-xs text-amber-700 dark:text-amber-300 font-bold bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-2.5 py-1 rounded-md">
+                          دفتر کلاسی
+                        </span>
+                      )}
+
+                      {/* Notified Parents (clickable toggle for manager) */}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleNotifyParents(matter)}
+                        title={matter.notifiedParents ? 'گزارش برای اولیا ارسال شده (کلیک برای لغو)' : 'گزارش به اولیا ارسال نشده (کلیک برای ارسال به اولیا)'}
+                        className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full transition-all cursor-pointer ${
+                          matter.notifiedParents
+                            ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light border border-primary/30 hover:bg-primary/20 shadow-2xs'
+                            : 'bg-gray-100 dark:bg-gray-800/80 text-muted-foreground border border-gray-200/80 dark:border-gray-700 hover:bg-primary/10 hover:text-primary hover:border-primary/30'
+                        }`}
+                      >
+                        <Bell className={`w-3.5 h-3.5 ${matter.notifiedParents ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <span>{matter.notifiedParents ? 'ارسال به اولیا' : 'عدم ارسال به اولیا'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Title and Description */}
+                  <div className="space-y-2">
+                    <h4 className="font-black text-base text-ink-darker dark:text-white leading-snug">
+                      {matter.title}
+                    </h4>
+                    {matter.source !== 'CLASSROOM_SESSION' && matter.description && (
+                      <p className="text-xs sm:text-[13px] text-ink-normal/80 dark:text-gray-300 leading-relaxed">
+                        {matter.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Action Taken & Teacher Note Callout */}
+                  {(displayActionTaken || matter.sessionNote) && (
+                    <div className="p-3.5 sm:p-4 rounded-xl bg-primary-light/40 dark:bg-[#151C28] border-r-4 border-r-primary text-xs flex items-start gap-3">
+                      <NotebookPen className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                      <div className="leading-relaxed space-y-1.5 w-full">
+                        {displayActionTaken && (
+                          <div>
+                            <strong className="font-black text-ink-darker dark:text-white">اقدام صورت‌گرفته: </strong>
+                            <span className="text-ink-normal dark:text-gray-300">{displayActionTaken}</span>
+                          </div>
+                        )}
+                        {matter.sessionNote && (
+                          <div>
+                            <strong className="font-black text-ink-darker dark:text-white">یادداشت دبیر: </strong>
+                            <span className="text-ink-normal dark:text-gray-300">{matter.sessionNote}</span>
+                          </div>
                         )}
                       </div>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {/* Type Badge */}
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${meta.badgeStyle}`}>
-                      <Icon className="w-3.5 h-3.5" />
-                      <span>{meta.label}</span>
-                    </span>
-
-                    {/* Oral Grade Badge */}
-                    {matter.oralGrade !== null && matter.oralGrade !== undefined && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shadow-2xs">
-                        <GraduationCap className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                        <span>نمره پرسش: {toPersianDigits(matter.oralGrade)} از ۲۰</span>
-                      </span>
-                    )}
-
-                    {/* Points Chip */}
-                    {matter.points !== 0 && (
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black ${
-                          isPos
-                            ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
-                            : 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-500/30'
-                        }`}
-                      >
-                        {isPos ? `+${toPersianDigits(matter.points)} امتیاز` : `${toPersianDigits(matter.points)} امتیاز`}
-                      </span>
-                    )}
-
-                    {/* Classroom Session Tag */}
-                    {matter.source === 'CLASSROOM_SESSION' && (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-amber-700 dark:text-amber-300 font-bold bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-md">
-                        دفتر کلاسی
-                      </span>
-                    )}
-
-                    {/* Notified Parents */}
-                    {matter.notifiedParents && (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-primary dark:text-primary-light font-bold bg-primary/10 dark:bg-primary/20 border border-primary/25 px-2.5 py-1 rounded-full">
-                        <Bell className="w-3 h-3 text-primary" />
-                        <span>ارسال به اولیا</span>
-                      </span>
-                    )}
-                  </div>
+                  )}
                 </div>
 
-                {/* Title and Description */}
-                <div className="space-y-1.5">
-                  <h4 className="font-black text-sm sm:text-base text-ink-darker dark:text-white leading-snug">
-                    {matter.title}
-                  </h4>
-                  <p className="text-xs sm:text-[13px] text-ink-normal/80 dark:text-gray-300 leading-relaxed">
-                    {matter.description}
-                  </p>
-                </div>
-
-                {/* Classroom Session Details Strip (Classroom, Lesson, Period, Session Date) */}
-                {(matter.classroom || matter.lesson || matter.periodNumber || matter.sessionDate) && (
-                  <div className="p-3 rounded-xl bg-gray-50/90 dark:bg-[#151C28]/90 border border-gray-200/70 dark:border-[#242F42] flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
-                    {matter.classroom && (
-                      <div className="flex items-center gap-1.5 text-ink-darker dark:text-white font-bold">
-                        <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />
-                        <span>کلاس: {matter.classroom.name}</span>
-                      </div>
-                    )}
-                    {matter.lesson && (
-                      <div className="flex items-center gap-1.5 text-ink-darker dark:text-white font-bold">
-                        <BookOpen className="w-3.5 h-3.5 text-primary shrink-0" />
-                        <span>درس: {matter.lesson.name}</span>
-                      </div>
-                    )}
-                    {matter.periodNumber && (
-                      <div className="flex items-center gap-1.5 text-muted-foreground font-bold">
-                        <Layers className="w-3.5 h-3.5 text-primary shrink-0" />
-                        <span>زنگ {toPersianDigits(matter.periodNumber)}</span>
-                      </div>
-                    )}
-                    {matter.sessionDate && (
-                      <div className="flex items-center gap-1.5 text-muted-foreground font-bold">
-                        <Calendar className="w-3.5 h-3.5 text-primary shrink-0" />
-                        <span>تاریخ جلسه: {formatJalaliDisplay(matter.sessionDate, false)}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Action Taken Callout */}
-                {matter.actionTaken && (
-                  <div className="p-3 rounded-xl bg-primary-light/40 dark:bg-[#151C28] border-r-4 border-r-primary text-xs flex items-start gap-2.5">
-                    <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                    <div className="leading-relaxed">
-                      <strong className="font-black text-ink-darker dark:text-white">اقدام صورت‌گرفته: </strong>
-                      <span className="text-ink-normal dark:text-gray-300">{matter.actionTaken}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Footer */}
-                <div className="flex items-center justify-between pt-2.5 border-t border-gray-100 dark:border-gray-800 text-xs text-muted-foreground flex-wrap gap-2">
-                  <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
-                    <span className="inline-flex items-center gap-1.5 font-medium">
+                {/* Footer: Row 1 = Metadata in one line, Row 2 = Edit & Delete buttons */}
+                <div className="pt-3.5 mt-2.5 sm:mt-3 border-t border-gray-100 dark:border-gray-800 space-y-2">
+                  {/* Row 1: Single-line Metadata */}
+                  <div className="flex items-center gap-2 sm:gap-2.5 flex-nowrap overflow-x-auto no-scrollbar w-full text-[11px] sm:text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1 font-medium shrink-0 whitespace-nowrap">
                       <User className="w-3.5 h-3.5 text-primary shrink-0" />
                       <span>ثبت توسط: <strong className="font-bold text-ink-darker dark:text-white">{matter.reportedBy?.firstName} {matter.reportedBy?.lastName}</strong></span>
                     </span>
-                    <span className="text-gray-300 dark:text-gray-600 hidden sm:inline">•</span>
-                    <span className="inline-flex items-center gap-1.5 font-medium">
+                    <span className="text-gray-300 dark:text-gray-600 shrink-0">•</span>
+                    <span className="inline-flex items-center gap-1 font-medium shrink-0 whitespace-nowrap">
                       <Clock className="w-3.5 h-3.5 text-primary shrink-0" />
                       <span>{formatJalaliDisplay(matter.reportedAt, true)}</span>
                     </span>
+                    {matter.classroom?.name && (
+                      <>
+                        <span className="text-gray-300 dark:text-gray-600 shrink-0">•</span>
+                        <span className="inline-flex items-center gap-1 font-bold text-ink-darker dark:text-gray-200 shrink-0 whitespace-nowrap">
+                          <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                          <span>کلاس {matter.classroom.name}</span>
+                        </span>
+                      </>
+                    )}
                   </div>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteMatter(matter.id)}
-                    className="h-8 px-2.5 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg gap-1"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>حذف</span>
-                  </Button>
+                  {/* Row 2: Action Buttons (left-aligned in RTL) */}
+                  <div className="flex items-center justify-end gap-1.5 pt-0.5">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleOpenEditMatter(matter)}
+                      className="h-7.5 px-2.5 text-xs text-primary hover:text-primary-dark hover:bg-primary/10 dark:hover:bg-primary/20 rounded-lg gap-1 font-bold cursor-pointer"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>ویرایش</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteMatter(matter.id)}
+                      className="h-7.5 px-2.5 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg gap-1 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>حذف</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             );
@@ -805,6 +980,212 @@ export const MattersPage: React.FC = () => {
               className="h-9 px-4 text-xs font-black rounded-xl"
             >
               {isSubmitting ? 'در حال ثبت...' : 'ثبت مورد'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* 6. Edit Matter Modal */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingMatter(null);
+        }}
+        title={`ویرایش مورد: ${editingMatter?.student?.user?.firstName || ''} ${editingMatter?.student?.user?.lastName || ''}`}
+        maxWidth="lg"
+      >
+        <form onSubmit={handleEditSubmit} className="space-y-3.5 pt-1">
+          {editError && (
+            <div className="p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 rounded-xl text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{editError}</span>
+            </div>
+          )}
+
+          {/* Student Info Notice (Readonly) */}
+          {editingMatter && (
+            <div className="p-2.5 rounded-xl bg-primary/10 dark:bg-primary/20 border border-primary/25 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4 text-primary" />
+                <span className="font-bold text-ink-darker dark:text-white">
+                  دانش‌آموز: {editingMatter.student?.user?.firstName} {editingMatter.student?.user?.lastName}
+                </span>
+              </div>
+              {editingMatter.source === 'CLASSROOM_SESSION' && (
+                <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-md border border-amber-300 dark:border-amber-800">
+                  دفتر کلاسی
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Type Selector Tabs */}
+          <div>
+            <label className="block text-xs font-bold text-ink-darker dark:text-white mb-1">
+              نوع مورد <span className="text-red-500">*</span>
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 p-1 bg-gray-100 dark:bg-[#151C28] rounded-xl border border-gray-200 dark:border-gray-800">
+              {(
+                [
+                  { key: 'POSITIVE', label: 'تشویق (+)', color: 'text-emerald-700 dark:text-emerald-300' },
+                  { key: 'WARNING', label: 'تذکر', color: 'text-amber-700 dark:text-amber-300' },
+                  { key: 'NEGATIVE', label: 'انضباطی (-)', color: 'text-rose-700 dark:text-rose-300' },
+                  { key: 'SUSPENSION', label: 'محرومیت', color: 'text-red-700 dark:text-red-300' },
+                  { key: 'COUNSELING_REFERRAL', label: 'مشاوره', color: 'text-purple-700 dark:text-purple-300' },
+                ] as const
+              ).map((t) => (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() =>
+                    setEditForm({
+                      ...editForm,
+                      type: t.key,
+                      points: t.key === 'POSITIVE' ? 2 : t.key === 'WARNING' ? -0.5 : -1,
+                    })
+                  }
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
+                    editForm.type === t.key
+                      ? 'bg-white dark:bg-[#1F293D] shadow-xs text-primary font-black border border-primary/30'
+                      : 'text-muted-foreground hover:text-ink-darker dark:hover:text-white'
+                  }`}
+                >
+                  <span className={t.color}>{t.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Title Input */}
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-ink-darker dark:text-white mb-1">
+                عنوان <span className="text-red-500">*</span>
+              </label>
+              <Input
+                value={editForm.title}
+                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                placeholder="عنوان تشویق یا تذکر..."
+                required
+                className="h-10 rounded-xl text-xs font-bold"
+              />
+            </div>
+
+            {/* Points Stepper */}
+            <div>
+              <label className="block text-xs font-bold text-ink-darker dark:text-white mb-1">
+                امتیاز
+              </label>
+              <Input
+                type="number"
+                step="0.5"
+                value={editForm.points}
+                onChange={(e) => setEditForm({ ...editForm, points: Number(e.target.value) })}
+                placeholder="+2 یا -1"
+                className="h-10 rounded-xl font-mono text-center font-bold text-xs"
+              />
+            </div>
+          </div>
+
+          {/* Oral Grade (if applicable) */}
+          {(editingMatter?.source === 'CLASSROOM_SESSION' || editForm.oralGrade !== '') && (
+            <div>
+              <label className="block text-xs font-bold text-ink-darker dark:text-white mb-1">
+                نمره پرسش کلاسی (۰ تا ۲۰)
+              </label>
+              <Input
+                type="number"
+                step="0.25"
+                min="0"
+                max="20"
+                value={editForm.oralGrade}
+                onChange={(e) => setEditForm({ ...editForm, oralGrade: e.target.value })}
+                placeholder="مثال: ۱۸.۵"
+                className="h-10 rounded-xl font-mono text-center font-bold text-xs"
+              />
+            </div>
+          )}
+
+          {/* Quick Presets */}
+          <div className="flex flex-wrap gap-1">
+            {(QUICK_PRESETS[editForm.type] || []).map((preset, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setEditForm({ ...editForm, title: preset })}
+                className="px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-primary/10 hover:text-primary text-[11px] font-medium text-muted-foreground transition-colors cursor-pointer"
+              >
+                {preset}
+              </button>
+            ))}
+          </div>
+
+          {/* Full Description */}
+          <div>
+            <label className="block text-xs font-bold text-ink-darker dark:text-white mb-1">
+              توضیحات <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={editForm.description}
+              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+              placeholder="شرح رویداد..."
+              rows={2}
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-hidden text-ink-darker dark:text-white placeholder:text-muted-foreground leading-relaxed"
+              required
+            />
+          </div>
+
+          {/* Action Taken */}
+          <div>
+            <label className="block text-xs font-bold text-ink-darker dark:text-white mb-1">
+              اقدام صورت‌گرفته
+            </label>
+            <Input
+              value={editForm.actionTaken}
+              onChange={(e) => setEditForm({ ...editForm, actionTaken: e.target.value })}
+              placeholder="مثال: تذکر شفاهی / لوح تقدیر"
+              className="h-10 rounded-xl text-xs"
+            />
+          </div>
+
+          {/* Notify Parents Switch */}
+          <label className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50/80 dark:bg-[#1C2536]/80 border border-gray-200/70 dark:border-gray-800 cursor-pointer">
+            <div className="flex items-center gap-2">
+              <Bell className="w-4 h-4 text-primary" />
+              <span className="text-xs font-bold text-ink-darker dark:text-white">
+                اطلاع‌رسانی به اولیا
+              </span>
+            </div>
+            <input
+              type="checkbox"
+              id="editNotifiedParents"
+              checked={editForm.notifiedParents}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, notifiedParents: e.target.checked }))}
+              className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer accent-primary"
+            />
+          </label>
+
+          {/* Modal Actions */}
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsEditModalOpen(false);
+                setEditingMatter(null);
+              }}
+              className="h-9 px-3 text-xs font-bold rounded-xl"
+            >
+              انصراف
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={isEditSubmitting}
+              className="h-9 px-4 text-xs font-black rounded-xl"
+            >
+              {isEditSubmitting ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
             </Button>
           </div>
         </form>

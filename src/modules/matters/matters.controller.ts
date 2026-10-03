@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Body,
   Param,
   Query,
@@ -12,6 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { MattersService } from './matters.service';
 import { CreateMatterDto } from './dto/create-matter.dto';
+import { UpdateMatterDto } from './dto/update-matter.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
@@ -72,6 +74,19 @@ export class MattersController {
   ) {
     const effectiveTenantId = tenantId || userTenantId;
     return this.mattersService.getMyMatters(effectiveTenantId, user);
+  }
+
+  @Put(':id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @ApiOperation({ summary: 'ویرایش مورد انضباطی یا تشویقی' })
+  async updateMatter(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') matterId: string,
+    @Body() dto: UpdateMatterDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.mattersService.updateMatter(effectiveTenantId, matterId, dto);
   }
 
   @Delete(':id')

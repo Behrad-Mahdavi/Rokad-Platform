@@ -857,24 +857,25 @@ export const AttendancePage: React.FC = () => {
   };
 
   const handleOpenEvaluationModal = (st: LocalStudentAttendance) => {
-    setEvaluationModalStudent(st);
+    const currentSt = studentsList.find((s) => s.studentId === st.studentId) || st;
+    setEvaluationModalStudent(currentSt);
     setModalTab('EVALUATE');
-    setModalOralGrade(st.oralGrade !== null && st.oralGrade !== undefined ? String(st.oralGrade) : '');
-    setModalDisciplineType(st.rewardDisciplineType || 'NONE');
-    setModalDisciplineNote(st.rewardDisciplineNote || '');
-    if (st.rewardDisciplineType === 'POSITIVE' || st.rewardDisciplineType === 'EXCELLENT') {
-      setSelectedRewardOption(st.rewardDisciplineNote || 'تشویقی کلی (+۲)');
+    setModalOralGrade(currentSt.oralGrade !== null && currentSt.oralGrade !== undefined ? String(currentSt.oralGrade) : '');
+    setModalDisciplineType(currentSt.rewardDisciplineType || 'NONE');
+    setModalDisciplineNote(currentSt.rewardDisciplineNote || '');
+    if (currentSt.rewardDisciplineType === 'POSITIVE' || currentSt.rewardDisciplineType === 'EXCELLENT') {
+      setSelectedRewardOption(currentSt.rewardDisciplineNote || 'تشویقی کلی (+۲)');
       setSelectedDisciplineOption('');
-    } else if (st.rewardDisciplineType && st.rewardDisciplineType !== 'NONE') {
-      setSelectedDisciplineOption(st.rewardDisciplineNote || 'مورد انضباطی کلی (-۲)');
+    } else if (currentSt.rewardDisciplineType && currentSt.rewardDisciplineType !== 'NONE') {
+      setSelectedDisciplineOption(currentSt.rewardDisciplineNote || 'مورد انضباطی کلی (-۲)');
       setSelectedRewardOption('');
     } else {
       setSelectedRewardOption('');
       setSelectedDisciplineOption('');
     }
-    setModalSessionNote(st.sessionNote || '');
-    setModalDelayMinutes(st.delayMinutes || 0);
-    setModalReason(st.reason || '');
+    setModalSessionNote(currentSt.sessionNote || '');
+    setModalDelayMinutes(currentSt.delayMinutes || 0);
+    setModalReason(currentSt.reason || '');
   };
 
   const handleSaveModalEvaluation = async () => {
@@ -889,14 +890,18 @@ export const AttendancePage: React.FC = () => {
       return;
     }
 
+    const currentSt = studentsList.find((s) => s.studentId === evaluationModalStudent.studentId) || evaluationModalStudent;
+
     const updatedStudent: LocalStudentAttendance = {
-      ...evaluationModalStudent,
+      ...currentSt,
       oralGrade: parsedGrade,
       rewardDisciplineType: modalDisciplineType,
       rewardDisciplineNote: modalDisciplineNote.trim(),
       sessionNote: modalSessionNote.trim(),
-      delayMinutes: modalDelayMinutes,
-      reason: modalReason.trim(),
+      // Preserve live attendance status without resetting
+      status: currentSt.status,
+      delayMinutes: currentSt.delayMinutes || 0,
+      reason: currentSt.reason || '',
     };
 
     const nextList = studentsList.map((s) =>
@@ -907,26 +912,26 @@ export const AttendancePage: React.FC = () => {
     if (activeSession) {
       try {
         setIsSavingEvaluation(true);
+        // Save ONLY this specific student's evaluation to avoid altering or recording other students' attendance
         await apiClient.post('/attendance/students/bulk', {
           classroomId: activeSession.classroomId,
           lessonId: activeSession.lessonId || undefined,
           date: selectedDate,
           periodNumber: activeSession.periodNumber || 1,
-          attendances: nextList.map((s) => ({
-            studentId: s.studentId,
-            status: s.status,
-            delayMinutes: s.status === 'TARDY' ? (Number(s.delayMinutes) || 0) : 0,
-            reason: s.reason?.trim() ? s.reason.trim() : undefined,
-            oralGrade: s.oralGrade !== null && s.oralGrade !== undefined && String(s.oralGrade).trim() !== '' ? Number(s.oralGrade) : null,
-            rewardDisciplineType: s.rewardDisciplineType && s.rewardDisciplineType !== 'NONE' ? s.rewardDisciplineType : null,
-            rewardDisciplineNote: s.rewardDisciplineNote?.trim() ? s.rewardDisciplineNote.trim() : null,
-            sessionNote: s.sessionNote?.trim() ? s.sessionNote.trim() : null,
-          })),
+          attendances: [{
+            studentId: updatedStudent.studentId,
+            status: updatedStudent.status,
+            delayMinutes: updatedStudent.status === 'TARDY' ? (Number(updatedStudent.delayMinutes) || 0) : 0,
+            reason: updatedStudent.reason?.trim() ? updatedStudent.reason.trim() : undefined,
+            oralGrade: updatedStudent.oralGrade !== null && updatedStudent.oralGrade !== undefined && String(updatedStudent.oralGrade).trim() !== '' ? Number(updatedStudent.oralGrade) : null,
+            rewardDisciplineType: updatedStudent.rewardDisciplineType && updatedStudent.rewardDisciplineType !== 'NONE' ? updatedStudent.rewardDisciplineType : null,
+            rewardDisciplineNote: updatedStudent.rewardDisciplineNote?.trim() ? updatedStudent.rewardDisciplineNote.trim() : null,
+            sessionNote: updatedStudent.sessionNote?.trim() ? updatedStudent.sessionNote.trim() : null,
+          }],
         });
 
-        queryClient.invalidateQueries({ queryKey: ['classroom-attendance'] });
         queryClient.invalidateQueries({ queryKey: ['student-subject-history'] });
-        setHasUnsavedChanges(false);
+        queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
         toast.success('ارزیابی و سوابق با موفقیت ذخیره شد');
         setEvaluationModalStudent(null);
       } catch (err: any) {
@@ -951,12 +956,17 @@ export const AttendancePage: React.FC = () => {
       return;
     }
 
+    const currentSt = studentsList.find((s) => s.studentId === evaluationModalStudent.studentId) || evaluationModalStudent;
+
     const updatedStudent: LocalStudentAttendance = {
-      ...evaluationModalStudent,
+      ...currentSt,
       oralGrade: null,
       rewardDisciplineType: 'NONE',
       rewardDisciplineNote: '',
       sessionNote: '',
+      status: currentSt.status,
+      delayMinutes: currentSt.delayMinutes || 0,
+      reason: currentSt.reason || '',
     };
 
     const nextList = studentsList.map((s) =>
@@ -972,21 +982,20 @@ export const AttendancePage: React.FC = () => {
           lessonId: activeSession.lessonId || undefined,
           date: selectedDate,
           periodNumber: activeSession.periodNumber || 1,
-          attendances: nextList.map((s) => ({
-            studentId: s.studentId,
-            status: s.status,
-            delayMinutes: s.status === 'TARDY' ? (Number(s.delayMinutes) || 0) : 0,
-            reason: s.reason?.trim() ? s.reason.trim() : undefined,
-            oralGrade: s.oralGrade !== null && s.oralGrade !== undefined && String(s.oralGrade).trim() !== '' ? Number(s.oralGrade) : null,
-            rewardDisciplineType: s.rewardDisciplineType && s.rewardDisciplineType !== 'NONE' ? s.rewardDisciplineType : null,
-            rewardDisciplineNote: s.rewardDisciplineNote?.trim() ? s.rewardDisciplineNote.trim() : null,
-            sessionNote: s.sessionNote?.trim() ? s.sessionNote.trim() : null,
-          })),
+          attendances: [{
+            studentId: updatedStudent.studentId,
+            status: updatedStudent.status,
+            delayMinutes: updatedStudent.status === 'TARDY' ? (Number(updatedStudent.delayMinutes) || 0) : 0,
+            reason: updatedStudent.reason?.trim() ? updatedStudent.reason.trim() : undefined,
+            oralGrade: null,
+            rewardDisciplineType: null,
+            rewardDisciplineNote: null,
+            sessionNote: null,
+          }],
         });
 
-        queryClient.invalidateQueries({ queryKey: ['classroom-attendance'] });
         queryClient.invalidateQueries({ queryKey: ['student-subject-history'] });
-        setHasUnsavedChanges(false);
+        queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
         toast.success('ارزیابی، نمرات و یادداشت این جلسه حذف شد');
         setEvaluationModalStudent(null);
       } catch (err: any) {

@@ -5,6 +5,7 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateMatterDto } from './dto/create-matter.dto';
+import { UpdateMatterDto } from './dto/update-matter.dto';
 
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -51,7 +52,7 @@ export class MattersService {
       academicYearId = currentYear ? currentYear.id : (await this.prisma.academicYear.findFirst({ where: { tenantId } }))?.id || '';
     }
 
-    const shouldNotifyParents = dto.notifiedParents !== undefined ? dto.notifiedParents : true;
+    const shouldNotifyParents = dto.notifiedParents !== undefined ? dto.notifiedParents : false;
 
     const matter = await this.prisma.disciplinaryMatter.create({
       data: {
@@ -128,6 +129,80 @@ export class MattersService {
     }
 
     return matter;
+  }
+
+  async updateMatter(
+    tenantId: string,
+    matterId: string,
+    dto: UpdateMatterDto,
+  ) {
+    if (matterId.startsWith('att-')) {
+      const attId = matterId.replace('att-', '');
+      const att = await this.prisma.studentAttendance.findFirst({
+        where: { id: attId, tenantId },
+      });
+      if (!att) {
+        throw new NotFoundException('مورد انضباطی یا ارزیابی جلسه یافت نشد');
+      }
+
+      let rewardDisciplineType = att.rewardDisciplineType;
+      if (dto.type) {
+        if (dto.type === 'POSITIVE') {
+          rewardDisciplineType = (dto.points && dto.points >= 2) ? 'EXCELLENT' : 'POSITIVE';
+        } else if (dto.type === 'WARNING') {
+          rewardDisciplineType = 'WARNING';
+        } else if (dto.type === 'NEGATIVE' || dto.type === 'SUSPENSION' || dto.type === 'COUNSELING_REFERRAL') {
+          rewardDisciplineType = 'NEGATIVE';
+        }
+      }
+
+      const updated = await this.prisma.studentAttendance.update({
+        where: { id: attId },
+        data: {
+          ...(dto.oralGrade !== undefined ? { oralGrade: dto.oralGrade } : {}),
+          rewardDisciplineType,
+          ...(dto.title || dto.description
+            ? {
+                rewardDisciplineNote: dto.title || dto.description || '',
+                sessionNote: dto.description || att.sessionNote,
+              }
+            : {}),
+        },
+        include: {
+          student: { include: { user: true } },
+          recordedBy: { select: { firstName: true, lastName: true, role: true } },
+          classroom: { select: { id: true, name: true, roomNumber: true } },
+          lesson: { select: { id: true, name: true, code: true } },
+        },
+      });
+
+      return this.mapAttendanceToMatter(updated);
+    }
+
+    const matter = await this.prisma.disciplinaryMatter.findFirst({
+      where: { id: matterId, tenantId },
+    });
+    if (!matter) {
+      throw new NotFoundException('مورد انضباطی مورد نظر یافت نشد');
+    }
+
+    const updatedMatter = await this.prisma.disciplinaryMatter.update({
+      where: { id: matterId },
+      data: {
+        ...(dto.type ? { type: dto.type } : {}),
+        ...(dto.title ? { title: dto.title.trim() } : {}),
+        ...(dto.description !== undefined ? { description: dto.description.trim() } : {}),
+        ...(dto.points !== undefined ? { points: dto.points } : {}),
+        ...(dto.actionTaken !== undefined ? { actionTaken: dto.actionTaken?.trim() || null } : {}),
+        ...(dto.notifiedParents !== undefined ? { notifiedParents: dto.notifiedParents } : {}),
+      },
+      include: {
+        student: { include: { user: true } },
+        reportedBy: { select: { firstName: true, lastName: true, role: true } },
+      },
+    });
+
+    return this.mapDirectMatter(updatedMatter);
   }
 
   async deleteMatter(tenantId: string, matterId: string) {
@@ -208,11 +283,7 @@ export class MattersService {
     const descParts: string[] = [];
     if (att.rewardDisciplineNote?.trim()) {
       descParts.push(att.rewardDisciplineNote.trim());
-    }
-    if (att.sessionNote?.trim()) {
-      descParts.push(`یادداشت دبیر: ${att.sessionNote.trim()}`);
-    }
-    if (descParts.length === 0 && grade !== null && grade !== undefined) {
+    } else if (grade !== null && grade !== undefined) {
       descParts.push(`ثبت نمره پرسش کلاسی ${grade} از ۲۰ در دفتر کلاسی`);
     }
 
@@ -239,7 +310,7 @@ export class MattersService {
       reportedById: att.recordedById,
       reportedBy: att.recordedBy,
       reportedAt: att.createdAt || new Date(att.date),
-      notifiedParents: true,
+      notifiedParents: false,
     };
   }
 
