@@ -708,10 +708,10 @@ export const AttendancePage: React.FC = () => {
           status: s.status,
           delayMinutes: s.status === 'TARDY' ? (Number(s.delayMinutes) || 0) : 0,
           reason: s.reason?.trim() ? s.reason.trim() : undefined,
-          oralGrade: s.oralGrade !== null && s.oralGrade !== undefined && String(s.oralGrade).trim() !== '' ? Number(s.oralGrade) : undefined,
-          rewardDisciplineType: s.rewardDisciplineType && s.rewardDisciplineType !== 'NONE' ? s.rewardDisciplineType : undefined,
-          rewardDisciplineNote: s.rewardDisciplineNote?.trim() ? s.rewardDisciplineNote.trim() : undefined,
-          sessionNote: s.sessionNote?.trim() ? s.sessionNote.trim() : undefined,
+          oralGrade: s.oralGrade !== null && s.oralGrade !== undefined && String(s.oralGrade).trim() !== '' ? Number(s.oralGrade) : null,
+          rewardDisciplineType: s.rewardDisciplineType && s.rewardDisciplineType !== 'NONE' ? s.rewardDisciplineType : null,
+          rewardDisciplineNote: s.rewardDisciplineNote?.trim() ? s.rewardDisciplineNote.trim() : null,
+          sessionNote: s.sessionNote?.trim() ? s.sessionNote.trim() : null,
         })),
       };
       const res: any = await apiClient.post('/attendance/students/bulk', payload);
@@ -925,10 +925,10 @@ export const AttendancePage: React.FC = () => {
             status: s.status,
             delayMinutes: s.status === 'TARDY' ? (Number(s.delayMinutes) || 0) : 0,
             reason: s.reason?.trim() ? s.reason.trim() : undefined,
-            oralGrade: parsedGrade !== null ? parsedGrade : null,
-            rewardDisciplineType: modalDisciplineType && modalDisciplineType !== 'NONE' ? modalDisciplineType : null,
-            rewardDisciplineNote: modalDisciplineNote.trim() ? modalDisciplineNote.trim() : null,
-            sessionNote: modalSessionNote.trim() ? modalSessionNote.trim() : null,
+            oralGrade: s.oralGrade !== null && s.oralGrade !== undefined && String(s.oralGrade).trim() !== '' ? Number(s.oralGrade) : null,
+            rewardDisciplineType: s.rewardDisciplineType && s.rewardDisciplineType !== 'NONE' ? s.rewardDisciplineType : null,
+            rewardDisciplineNote: s.rewardDisciplineNote?.trim() ? s.rewardDisciplineNote.trim() : null,
+            sessionNote: s.sessionNote?.trim() ? s.sessionNote.trim() : null,
           })),
         });
 
@@ -985,10 +985,10 @@ export const AttendancePage: React.FC = () => {
             status: s.status,
             delayMinutes: s.status === 'TARDY' ? (Number(s.delayMinutes) || 0) : 0,
             reason: s.reason?.trim() ? s.reason.trim() : undefined,
-            oralGrade: null,
-            rewardDisciplineType: null,
-            rewardDisciplineNote: null,
-            sessionNote: null,
+            oralGrade: s.oralGrade !== null && s.oralGrade !== undefined && String(s.oralGrade).trim() !== '' ? Number(s.oralGrade) : null,
+            rewardDisciplineType: s.rewardDisciplineType && s.rewardDisciplineType !== 'NONE' ? s.rewardDisciplineType : null,
+            rewardDisciplineNote: s.rewardDisciplineNote?.trim() ? s.rewardDisciplineNote.trim() : null,
+            sessionNote: s.sessionNote?.trim() ? s.sessionNote.trim() : null,
           })),
         });
 
