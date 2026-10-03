@@ -753,59 +753,63 @@ export const MembersPage: React.FC = () => {
           title="مدیریت دانش‌آموزان"
           description="ثبت پرونده تحصیلی، اطلاعات اولیاء، پرونده‌های الکترونیکی و ورود دسته‌جمعی"
           actions={
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Link to="/app/admin/vault" className="shrink-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  type="button"
-                  className="text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30 font-bold px-2.5 sm:px-3 text-xs justify-center h-9"
-                  title="گاوصندوق رمزها"
-                >
-                  <KeyRound className="h-3.5 w-3.5 ml-1 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span>رمز ها</span>
-                </Button>
-              </Link>
-
-              <Button
-                variant="outline"
-                size="sm"
-                type="button"
-                onClick={handleExportStudentsExcel}
-                className="shrink-0 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30 font-bold px-2.5 sm:px-3 text-xs justify-center h-9"
-                title="خروجی کامل اکسل از کلیه دانش‌آموزان"
-              >
-                <Download className="h-3.5 w-3.5 ml-1 text-blue-600 dark:text-blue-400 shrink-0" />
-                <span>خروجی اکسل</span>
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                type="button"
-                onClick={() => {
-                  setIsExcelModalOpen(true);
-                  setExcelResult(null);
-                  setExcelFile(null);
-                  setExcelRows([]);
-                  setError(null);
-                }}
-                className="shrink-0 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-bold px-2.5 sm:px-3 text-xs justify-center h-9"
-                title="ورود گروهی اطلاعات با اکسل"
-              >
-                <UploadCloud className="h-3.5 w-3.5 ml-1 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span>ورود با اکسل</span>
-              </Button>
-
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+              {/* Primary Action Button (Full width on mobile) */}
               <Button
                 variant="primary"
                 size="sm"
                 onClick={() => setIsStudentModalOpen(true)}
-                className="flex-1 sm:flex-initial px-4 sm:px-5 text-xs sm:text-sm justify-center font-black h-9 shadow-sm"
+                className="w-full sm:w-auto px-4 sm:px-5 text-xs sm:text-sm justify-center font-black h-9.5 sm:h-9 shadow-sm order-1 sm:order-4"
               >
                 <UserPlus className="h-4 w-4 ml-1.5 shrink-0" />
                 <span>ثبت دانش‌آموز</span>
               </Button>
+
+              {/* 3 Secondary Utility Buttons (3-column grid on mobile, horizontal flex on desktop) */}
+              <div className="grid grid-cols-3 gap-1.5 sm:flex sm:items-center sm:gap-2 w-full sm:w-auto order-2 sm:order-1">
+                <Link to="/app/admin/vault" className="w-full sm:w-auto">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    className="w-full sm:w-auto text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30 font-bold px-2 sm:px-3 text-[11px] sm:text-xs justify-center h-9"
+                    title="گاوصندوق رمزها"
+                  >
+                    <KeyRound className="h-3.5 w-3.5 ml-1 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <span>رمزها</span>
+                  </Button>
+                </Link>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  onClick={() => {
+                    setIsExcelModalOpen(true);
+                    setExcelResult(null);
+                    setExcelFile(null);
+                    setExcelRows([]);
+                    setError(null);
+                  }}
+                  className="w-full sm:w-auto text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-bold px-2 sm:px-3 text-[11px] sm:text-xs justify-center h-9"
+                  title="ورود گروهی اطلاعات با اکسل"
+                >
+                  <UploadCloud className="h-3.5 w-3.5 ml-1 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="truncate">ورود اکسل</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  onClick={handleExportStudentsExcel}
+                  className="w-full sm:w-auto text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30 font-bold px-2 sm:px-3 text-[11px] sm:text-xs justify-center h-9"
+                  title="خروجی کامل اکسل از کلیه دانش‌آموزان"
+                >
+                  <Download className="h-3.5 w-3.5 ml-1 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <span className="truncate">خروجی اکسل</span>
+                </Button>
+              </div>
             </div>
           }
         />
