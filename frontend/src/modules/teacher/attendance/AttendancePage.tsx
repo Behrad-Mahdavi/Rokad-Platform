@@ -325,6 +325,106 @@ export const AttendancePage: React.FC = () => {
     });
   }, [dailyScheduleData]);
 
+  // Categorize classrooms by Grade Series (300s, 200s, 100s) for school manager/admin
+  const getGradeCategory = (slot: ScheduleSlot): { id: string; title: string; badge: string; order: number } => {
+    const name = slot.classroomName || '';
+    const grade = slot.classroomGrade || '';
+    const combined = `${name} ${grade}`;
+
+    // 300s (پایه دوازدهم)
+    if (
+      /(?:^|\D)(?:3\d\d|۳\d\d)(?:\D|$)/.test(name) ||
+      combined.includes('دوازدهم') ||
+      combined.includes('12') ||
+      combined.includes('۱۲') ||
+      combined.includes('300') ||
+      combined.includes('۳۰۰')
+    ) {
+      return {
+        id: 'grade-300',
+        title: 'کلاس‌های ۳۰۰ (پایه دوازدهم)',
+        badge: 'دوازدهم',
+        order: 1,
+      };
+    }
+
+    // 200s (پایه یازدهم)
+    if (
+      /(?:^|\D)(?:2\d\d|۲\d\d)(?:\D|$)/.test(name) ||
+      combined.includes('یازدهم') ||
+      combined.includes('11') ||
+      combined.includes('۱۱') ||
+      combined.includes('200') ||
+      combined.includes('۲۰۰')
+    ) {
+      return {
+        id: 'grade-200',
+        title: 'کلاس‌های ۲۰۰ (پایه یازدهم)',
+        badge: 'یازدهم',
+        order: 2,
+      };
+    }
+
+    // 100s (پایه دهم)
+    if (
+      /(?:^|\D)(?:1\d\d|۱\d\d)(?:\D|$)/.test(name) ||
+      combined.includes('دهم') ||
+      combined.includes('10') ||
+      combined.includes('۱۰') ||
+      combined.includes('100') ||
+      combined.includes('۱۰۰')
+    ) {
+      return {
+        id: 'grade-100',
+        title: 'کلاس‌های ۱۰۰ (پایه دهم)',
+        badge: 'دهم',
+        order: 3,
+      };
+    }
+
+    // Fallback for other classes / grades
+    return {
+      id: grade ? `grade-${grade}` : 'grade-other',
+      title: grade ? `کلاس‌های پایه ${grade}` : (name || 'سایر کلاس‌ها'),
+      badge: grade || 'عمومی',
+      order: 4,
+    };
+  };
+
+  const groupedSchedules = useMemo(() => {
+    if (schedulesList.length === 0) return [];
+
+    const groupsMap = new Map<
+      string,
+      { id: string; title: string; badge: string; order: number; slots: ScheduleSlot[] }
+    >();
+
+    for (const slot of schedulesList) {
+      const cat = getGradeCategory(slot);
+      if (!groupsMap.has(cat.id)) {
+        groupsMap.set(cat.id, {
+          ...cat,
+          slots: [],
+        });
+      }
+      groupsMap.get(cat.id)!.slots.push(slot);
+    }
+
+    const sortedGroups = Array.from(groupsMap.values()).sort((a, b) => a.order - b.order);
+
+    for (const group of sortedGroups) {
+      group.slots.sort((a, b) => {
+        if (a.periodNumber !== b.periodNumber) return a.periodNumber - b.periodNumber;
+        if (a.startTime && b.startTime && a.startTime !== b.startTime) {
+          return a.startTime.localeCompare(b.startTime);
+        }
+        return (a.classroomName || '').localeCompare(b.classroomName || '');
+      });
+    }
+
+    return sortedGroups;
+  }, [schedulesList]);
+
   const activeNowSlot = useMemo(() => {
     if (!isSelectedDateToday) return null;
     return schedulesList.find((s) => checkSlotStatus(s.startTime, s.endTime) === 'CURRENT') || null;
@@ -1477,102 +1577,124 @@ export const AttendancePage: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-              {schedulesList.map((slot) => {
-                const slotTimingStatus = checkSlotStatus(slot.startTime, slot.endTime);
-                const isCurrent = slotTimingStatus === 'CURRENT';
-                const isPassed = slotTimingStatus === 'PASSED';
-                const isRecorded = !!slot.stats?.isRecorded;
-
-                return (
-                  <div
-                    key={slot.id}
-                    onClick={() =>
-                      setActiveSession({
-                        classroomId: slot.classroomId,
-                        classroomName: slot.classroomName,
-                        lessonId: slot.lessonId,
-                        lessonName: slot.lessonName,
-                        periodNumber: slot.periodNumber,
-                        startTime: slot.startTime,
-                        endTime: slot.endTime,
-                      })
-                    }
-                    className={`cursor-pointer group relative rounded-2xl p-4 sm:p-5 border transition-all hover:border-primary/50 hover:shadow-sm ${
-                      isCurrent
-                        ? 'border-emerald-500/70 dark:border-emerald-500/50 bg-gradient-to-r from-emerald-500/10 via-white to-white dark:from-emerald-950/30 dark:via-[#151C28] dark:to-[#151C28] ring-1 ring-emerald-500/40 dark:ring-emerald-500/30'
-                        : isRecorded
-                        ? 'bg-emerald-50/20 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-800/40'
-                        : 'bg-white dark:bg-[#151C28] border-gray-200/80 dark:border-[#242F42]'
-                    }`}
-                  >
-                    {isCurrent && (
-                      <div className="absolute top-0 right-0 left-0 h-1 bg-emerald-500 shadow-sm rounded-t-2xl" />
-                    )}
-
-                    {/* Period Header */}
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-xs px-2.5 py-0.5 rounded-lg bg-gray-50 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] text-foreground dark:text-white">
-                          زنگ {toPersianDigits(slot.periodNumber)}
-                        </span>
-                        <span className="text-xs font-mono font-bold text-muted-foreground flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-primary" />
-                          {toPersianDigits(slot.startTime)} - {toPersianDigits(slot.endTime)}
-                        </span>
+            <div className="space-y-6">
+              {groupedSchedules.map((group) => (
+                <div key={group.id} className="space-y-3">
+                  {/* Group Header */}
+                  <div className="flex items-center justify-between gap-2 pb-2 border-b border-gray-100 dark:border-[#242F42]">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-black text-xs shrink-0">
+                        <GraduationCap className="w-4 h-4" />
                       </div>
-
-                      {/* Live Badge */}
-                      {isCurrent ? (
-                        <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                          زنگ جاری
-                        </span>
-                      ) : isPassed ? (
-                        <span className="text-[10px] font-bold text-muted-foreground bg-gray-50 dark:bg-[#1C2536] px-2 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42]">
-                          سپری شده
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/50 px-2 py-0.5 rounded-lg border border-sky-200 dark:border-sky-800">
-                          زنگ آینده
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Class & Lesson Title */}
-                    <div className="space-y-1 my-2">
-                      <h3 className="font-black text-base text-foreground dark:text-white group-hover:text-primary transition-colors truncate">
-                        {slot.classroomName}
+                      <h3 className="text-sm sm:text-base font-black text-foreground dark:text-white">
+                        {group.title}
                       </h3>
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground truncate">
-                        <BookOpen className="w-3.5 h-3.5 text-primary shrink-0" />
-                        <span className="truncate">درس: {slot.lessonName}</span>
-                      </div>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="mt-4 pt-3 border-t border-gray-100 dark:border-[#242F42] flex items-center justify-between text-xs font-bold">
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Users className="w-3.5 h-3.5 text-primary" />
-                        <span>{toPersianDigits(slot.stats?.totalStudents || 0)} دانش‌آموز</span>
-                      </div>
-
-                      <div>
-                        {isRecorded ? (
-                          <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800 flex items-center gap-1 font-bold">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            ثبت شده
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground bg-gray-50 dark:bg-[#1C2536] px-2 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42]">
-                            در انتظار ثبت
-                          </span>
-                        )}
-                      </div>
+                      <span className="text-[11px] font-bold text-muted-foreground">
+                        ({toPersianDigits(group.slots.length)} زنگ کلاس)
+                      </span>
                     </div>
                   </div>
-                );
-              })}
+
+                  {/* Cards Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                    {group.slots.map((slot) => {
+                      const slotTimingStatus = checkSlotStatus(slot.startTime, slot.endTime);
+                      const isCurrent = slotTimingStatus === 'CURRENT';
+                      const isPassed = slotTimingStatus === 'PASSED';
+                      const isRecorded = !!slot.stats?.isRecorded;
+
+                      return (
+                        <div
+                          key={slot.id}
+                          onClick={() =>
+                            setActiveSession({
+                              classroomId: slot.classroomId,
+                              classroomName: slot.classroomName,
+                              lessonId: slot.lessonId,
+                              lessonName: slot.lessonName,
+                              periodNumber: slot.periodNumber,
+                              startTime: slot.startTime,
+                              endTime: slot.endTime,
+                            })
+                          }
+                          className={`cursor-pointer group relative rounded-2xl p-4 sm:p-5 border transition-all hover:border-primary/50 hover:shadow-sm ${
+                            isCurrent
+                              ? 'border-emerald-500/70 dark:border-emerald-500/50 bg-gradient-to-r from-emerald-500/10 via-white to-white dark:from-emerald-950/30 dark:via-[#151C28] dark:to-[#151C28] ring-1 ring-emerald-500/40 dark:ring-emerald-500/30'
+                              : isRecorded
+                              ? 'bg-emerald-50/20 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-800/40'
+                              : 'bg-white dark:bg-[#151C28] border-gray-200/80 dark:border-[#242F42]'
+                          }`}
+                        >
+                          {isCurrent && (
+                            <div className="absolute top-0 right-0 left-0 h-1 bg-emerald-500 shadow-sm rounded-t-2xl" />
+                          )}
+
+                          {/* Period Header */}
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-xs px-2.5 py-0.5 rounded-lg bg-gray-50 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] text-foreground dark:text-white">
+                                زنگ {toPersianDigits(slot.periodNumber)}
+                              </span>
+                              <span className="text-xs font-mono font-bold text-muted-foreground flex items-center gap-1">
+                                <Clock className="w-3.5 h-3.5 text-primary" />
+                                {toPersianDigits(slot.startTime)} - {toPersianDigits(slot.endTime)}
+                              </span>
+                            </div>
+
+                            {/* Live Badge */}
+                            {isCurrent ? (
+                              <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                                زنگ جاری
+                              </span>
+                            ) : isPassed ? (
+                              <span className="text-[10px] font-bold text-muted-foreground bg-gray-50 dark:bg-[#1C2536] px-2 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42]">
+                                سپری شده
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/50 px-2 py-0.5 rounded-lg border border-sky-200 dark:border-sky-800">
+                                زنگ آینده
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Class & Lesson Title */}
+                          <div className="space-y-1 my-2">
+                            <h3 className="font-black text-base text-foreground dark:text-white group-hover:text-primary transition-colors truncate">
+                              {slot.classroomName}
+                            </h3>
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground truncate">
+                              <BookOpen className="w-3.5 h-3.5 text-primary shrink-0" />
+                              <span className="truncate">درس: {slot.lessonName}</span>
+                            </div>
+                          </div>
+
+                          {/* Footer */}
+                          <div className="mt-4 pt-3 border-t border-gray-100 dark:border-[#242F42] flex items-center justify-between text-xs font-bold">
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <Users className="w-3.5 h-3.5 text-primary" />
+                              <span>{toPersianDigits(slot.stats?.totalStudents || 0)} دانش‌آموز</span>
+                            </div>
+
+                            <div>
+                              {isRecorded ? (
+                                <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800 flex items-center gap-1 font-bold">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  ثبت شده
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground bg-gray-50 dark:bg-[#1C2536] px-2 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42]">
+                                  در انتظار ثبت
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
