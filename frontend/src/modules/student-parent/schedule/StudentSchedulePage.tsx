@@ -303,12 +303,12 @@ export const StudentSchedulePage: React.FC = () => {
       </div>
 
       {/* 3. Daily Class Slots Section */}
-      <div className="space-y-2.5">
+      <div className="space-y-3.5 sm:space-y-4">
         {isLoading ? (
-          <div className="space-y-2.5">
-            <Skeleton className="h-24 rounded-2xl" />
-            <Skeleton className="h-24 rounded-2xl" />
-            <Skeleton className="h-24 rounded-2xl" />
+          <div className="space-y-3.5 sm:space-y-4">
+            <Skeleton className="h-28 rounded-2xl" />
+            <Skeleton className="h-28 rounded-2xl" />
+            <Skeleton className="h-28 rounded-2xl" />
           </div>
         ) : daySchedules.length === 0 ? (
           <div className="text-center py-14 bg-gray-50/50 dark:bg-[#151C28]/60 rounded-2xl border border-dashed border-gray-200 dark:border-[#242F42]">
@@ -321,7 +321,7 @@ export const StudentSchedulePage: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-2.5">
+          <div className="space-y-3.5 sm:space-y-4">
             {daySchedules.map((slot) => {
               const isNow = isSlotActiveNow(slot);
               const periodLabel = PERIOD_LABELS[slot.periodNumber] || `زنگ ${slot.periodNumber}`;
@@ -334,7 +334,7 @@ export const StudentSchedulePage: React.FC = () => {
               return (
                 <Card
                   key={slot.id}
-                  className={`p-3 sm:p-4 border shadow-xs relative overflow-hidden rounded-2xl transition-colors ${
+                  className={`p-4 sm:p-5 border shadow-xs relative overflow-hidden rounded-2xl transition-colors ${
                     isNow
                       ? 'border-emerald-500/70 dark:border-emerald-500/50 bg-gradient-to-r from-emerald-500/10 via-white to-white dark:from-emerald-950/30 dark:via-[#151C28] dark:to-[#151C28] ring-1 ring-emerald-500/40 dark:ring-emerald-500/30'
                       : 'border-gray-200/80 dark:border-[#242F42] bg-white dark:bg-[#151C28]'
@@ -344,11 +344,11 @@ export const StudentSchedulePage: React.FC = () => {
                     <div className="absolute top-0 right-0 left-0 h-1 bg-emerald-500 shadow-sm" />
                   )}
 
-                  <div className="flex flex-col justify-between gap-3">
+                  <div className="flex flex-col justify-between gap-3.5 sm:gap-4">
                     {/* Slot Information */}
-                    <div className="space-y-2 flex-1 min-w-0">
+                    <div className="space-y-3 sm:space-y-3.5 flex-1 min-w-0">
                       {/* Period Badge & Teacher Badge (Right) | Time Badge & Live Status (Leftmost) */}
-                      <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 sm:pb-3 border-b border-gray-100 dark:border-[#242F42]">
                         {/* Right: Period & Teacher Badge */}
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge variant="default" className="font-bold text-xs py-0.5">
@@ -362,7 +362,7 @@ export const StudentSchedulePage: React.FC = () => {
                           )}
 
                           {!slot.isSplitPeriod && teacherFullName && (
-                            <span className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#1C2536] px-2.5 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42] text-xs font-semibold text-muted-foreground dark:text-slate-300">
+                            <span className="inline-flex items-center gap-1.5 bg-gray-50 dark:bg-[#1C2536] px-2.5 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42] text-xs font-semibold text-muted-foreground dark:text-slate-300">
                               <UserCheck className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 shrink-0" />
                               <span>{teacherFullName}</span>
                             </span>
@@ -372,7 +372,7 @@ export const StudentSchedulePage: React.FC = () => {
                         {/* Left: Time Badge & Live Status */}
                         <div className="flex items-center gap-2 mr-auto shrink-0">
                           {isNow && (
-                            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                               کلاس در حال برگزاری
                             </span>
@@ -389,10 +389,10 @@ export const StudentSchedulePage: React.FC = () => {
 
                       {/* Lesson Details */}
                       {slot.isSplitPeriod ? (
-                        <div className="space-y-2 pt-0.5">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="space-y-2.5 pt-1">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             {/* Part 1 */}
-                            <div className={`p-2.5 rounded-xl border space-y-1 ${
+                            <div className={`p-3 rounded-xl border space-y-1.5 ${
                               currentWeekInfo.activeWeek === 1
                                 ? 'bg-primary-50/50 dark:bg-primary-950/40 border-primary/50 ring-1 ring-primary/40 shadow-2xs'
                                 : 'bg-gray-50/40 dark:bg-[#1C2536]/40 border-gray-200 dark:border-[#242F42] opacity-75'
@@ -422,7 +422,7 @@ export const StudentSchedulePage: React.FC = () => {
                             </div>
 
                             {/* Part 2 */}
-                            <div className={`p-2.5 rounded-xl border space-y-1 ${
+                            <div className={`p-3 rounded-xl border space-y-1.5 ${
                               currentWeekInfo.activeWeek === 2
                                 ? 'bg-primary-50/50 dark:bg-primary-950/40 border-primary/50 ring-1 ring-primary/40 shadow-2xs'
                                 : 'bg-gray-50/40 dark:bg-[#1C2536]/40 border-gray-200 dark:border-[#242F42] opacity-75'
@@ -453,7 +453,7 @@ export const StudentSchedulePage: React.FC = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
+                        <div className="flex flex-wrap items-center gap-2.5 py-1">
                           <h2 className="text-lg sm:text-xl font-black text-foreground dark:text-white flex items-center gap-2">
                             <BookOpen className="w-5 h-5 text-primary shrink-0" />
                             <span>{slot.lesson?.name}</span>
@@ -464,7 +464,7 @@ export const StudentSchedulePage: React.FC = () => {
 
                     {/* Quick Actions for Student */}
                     {!isParent && (
-                      <div className="pt-2.5 border-t border-gray-100 dark:border-[#242F42] w-full space-y-2">
+                      <div className="pt-3 sm:pt-3.5 border-t border-gray-100 dark:border-[#242F42] w-full space-y-2">
                         {slot.isSplitPeriod && slot.secondLesson ? (
                           <>
                             {/* Part 1 Actions */}
