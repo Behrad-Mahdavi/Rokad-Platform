@@ -58,6 +58,16 @@ async function bootstrap() {
   );
 
   app.use(cookieParser());
+
+  // Prevent proxies, CDNs, and browsers from caching authenticated API responses
+  app.use((req: any, res: any, next: any) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Vary', 'Authorization, Origin, x-tenant-id');
+    next();
+  });
+
   app.use(json({ limit: '150mb' }));
   app.use(urlencoded({ extended: true, limit: '150mb' }));
 

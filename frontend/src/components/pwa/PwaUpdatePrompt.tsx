@@ -16,12 +16,39 @@ export const PwaUpdatePrompt: React.FC = () => {
   });
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
 
-  // ۱. بررسی نسخه از طریق هوک نسخه سرور
+  // متد امن و بدون حلقه برای به‌روزرسانی سرویس‌ورکر و کش
+  const forceAppUpdate = async () => {
+    const reg = await navigator.serviceWorker?.getRegistration();
+    if (reg) {
+      await reg.update().catch(() => {});
+      const pending = reg.installing ?? reg.waiting;
+      if (pending && pending.state === 'installing') {
+        await Promise.race([
+          new Promise<void>((resolve) =>
+            pending.addEventListener('statechange', () => {
+              if (pending.state === 'installed') resolve();
+            })
+          ),
+          new Promise<void>((resolve) => setTimeout(resolve, 8000)),
+        ]);
+      }
+      if (reg.waiting && updateServiceWorker) {
+        await updateServiceWorker(true);
+        return;
+      }
+    }
+    // مسیر نهایی در صورت عدم وجود SW در انتظار: پاکسازی کامل کش‌ها و رفرش
+    const regs = (await navigator.serviceWorker?.getRegistrations()) ?? [];
+    await Promise.all(regs.map((r) => r.unregister()));
+    await Promise.all((await caches.keys()).map((k) => caches.delete(k)));
+    window.location.reload();
+  };
+
+  // ۱. بررسی نسخه از طریق نسخه استاتیک
   const {
     hasUpdate: hasApiVersionUpdate,
     serverVersion,
     currentVersion,
-    updateApp,
   } = useAppVersionCheck();
 
   // ۲. بررسی از طریق سرویس‌ورکر Workbox
@@ -33,7 +60,14 @@ export const PwaUpdatePrompt: React.FC = () => {
       if (r) {
         setInterval(() => {
           r.update();
-        }, 30 * 60 * 1000);
+        }, 15 * 60 * 1000);
+
+        // بررسی خودکار آپدیت هنگام فعال‌شدن مجدد تب یا بازگشت به اپلیکیشن روی گوشی
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            r.update();
+          }
+        });
       }
     },
     onRegisterError(error) {
@@ -47,9 +81,7 @@ export const PwaUpdatePrompt: React.FC = () => {
   }
 
   // آیا آپدیت جدید کشف شده است؟
-  // آپدیت زمانی معتبر است که یا SW اعلام نیاز کند یا سرور نسخه‌ای واقعاً متفاوت برگرداند
-  const isVersionMismatch = serverVersion && serverVersion !== currentVersion;
-  const isUpdateDetected = isVersionMismatch || needSwRefresh || (hasApiVersionUpdate && isVersionMismatch);
+  const isUpdateDetected = hasApiVersionUpdate || needSwRefresh;
 
   // آیا کاربر موقتاً به تعویق انداخته است؟
   const isSnoozed = Date.now() < snoozedUntil;
@@ -57,10 +89,7 @@ export const PwaUpdatePrompt: React.FC = () => {
   const handleUpdateNow = async () => {
     setIsUpdating(true);
     try {
-      if (updateServiceWorker) {
-        await updateServiceWorker(true);
-      }
-      await updateApp();
+      await forceAppUpdate();
     } catch (e) {
       console.error('[PWA Update] Force reload fallback:', e);
       window.location.reload();

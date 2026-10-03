@@ -1,17 +1,19 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 
-interface VersionResponse {
+interface VersionJsonResponse {
   version: string;
-  buildTime?: string;
-  environment?: string;
+  buildId: string;
 }
+
+declare const __BUILD_ID__: string;
 
 export const CURRENT_APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0';
 export const CURRENT_BUILD_TIME = typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : '';
+export const CURRENT_BUILD_ID = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : CURRENT_BUILD_TIME;
 
-const CHECK_INTERVAL_MS = 5 * 60 * 1000; // هر ۵ دقیقه یک‌بار
-const MIN_FOCUS_CHECK_GAP_MS = 60 * 1000; // حداقل ۶۰ ثانیه فاصله بین چک‌های فوکوس تب
+const CHECK_INTERVAL_MS = 3 * 60 * 1000; // هر ۳ دقیقه یک‌بار
+const MIN_FOCUS_CHECK_GAP_MS = 30 * 1000; // حداقل ۳۰ ثانیه فاصله بین چک‌های فوکوس تب
 
 export function useAppVersionCheck() {
   const [hasUpdate, setHasUpdate] = useState<boolean>(false);
@@ -31,25 +33,26 @@ export function useAppVersionCheck() {
       setIsChecking(true);
       lastCheckTimeRef.current = Date.now();
 
-      // استفاده از پارامتر زمان تصادفی برای جلوگیری کامل از کش شدن توسط مرورگر یا پروکسی
-      const res = await axios.get<VersionResponse>(`/api/v1/version?_t=${Date.now()}`, {
+      // واکشی مستقیم نسخه استاتیک با جلوگیری کامل از کش
+      const res = await axios.get<VersionJsonResponse>(`/version.json?t=${Date.now()}`, {
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           Pragma: 'no-cache',
           Expires: '0',
         },
-        timeout: 10000,
+        timeout: 8000,
       });
 
-      if (res.data && res.data.version) {
-        const remoteVersion = res.data.version.trim();
+      if (res.data && res.data.buildId) {
+        const remoteBuildId = res.data.buildId.trim();
+        const remoteVersion = res.data.version ? res.data.version.trim() : CURRENT_APP_VERSION;
         setServerVersion(remoteVersion);
-        setServerBuildTime(res.data.buildTime || null);
+        setServerBuildTime(remoteBuildId);
 
-        // Only flag update if remote is valid and strictly different from current version
-        if (remoteVersion && remoteVersion !== CURRENT_APP_VERSION) {
+        // ملاک آپدیت فرانت، تفاوت buildId یونیک زمان بیلد است
+        if (remoteBuildId && remoteBuildId !== CURRENT_BUILD_ID) {
           console.info(
-            `[Version Check] New version detected: ${remoteVersion} (Current: ${CURRENT_APP_VERSION})`,
+            `[Version Check] New build detected: ${remoteBuildId} (Current: ${CURRENT_BUILD_ID})`,
           );
           setHasUpdate(true);
         } else {
@@ -57,8 +60,7 @@ export function useAppVersionCheck() {
         }
       }
     } catch (err) {
-      // در صورت قطعی شبکه یا خطای موقت، تجربه کاربر قطع نمی‌شود
-      console.warn('[Version Check] Failed to query version from server:', err);
+      console.warn('[Version Check] Failed to query version.json:', err);
     } finally {
       setIsChecking(false);
     }

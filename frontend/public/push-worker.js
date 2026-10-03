@@ -3,6 +3,13 @@
  * Supports iOS 16.4+ (PWA Standalone) and Android / Desktop Web Push
  */
 
+// Purge any legacy API runtime caches on activation
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.delete('api-metadata-cache').catch(() => {})
+  );
+});
+
 self.addEventListener('push', (event) => {
   let payload = {
     title: 'سامانه رُکاد',

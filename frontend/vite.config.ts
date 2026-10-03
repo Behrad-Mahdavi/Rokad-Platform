@@ -24,8 +24,19 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
     __BUILD_TIME__: JSON.stringify(buildTime),
+    __BUILD_ID__: JSON.stringify(buildTime),
   },
   plugins: [
+    {
+      name: 'emit-version-json',
+      generateBundle() {
+        this.emitFile({
+          type: 'asset',
+          fileName: 'version.json',
+          source: JSON.stringify({ version: appVersion, buildId: buildTime }),
+        });
+      },
+    },
     react(),
     // Always load so `virtual:pwa-register/*` resolves in dev.
     // SW stays off in dev (devOptions.enabled=false); App.tsx unregisters stale SWs.
@@ -120,12 +131,21 @@ export default defineConfig({
         ],
       },
       workbox: {
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         importScripts: ['/push-worker.js'],
         globPatterns: ['**/*.{js,css,html,svg,png,ttf,woff,woff2,webmanifest}'],
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//],
+        navigateFallbackDenylist: [/^\/api\//, /^https:\/\/api\.rokadschool\.ir/i],
         runtimeCaching: [
+          {
+            // Critical: ALL API calls must ALWAYS go directly to the network and NEVER be cached by ServiceWorker
+            urlPattern: ({ url }) =>
+              url.hostname === 'api.rokadschool.ir' ||
+              url.pathname.startsWith('/api/'),
+            handler: 'NetworkOnly',
+          },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
@@ -162,21 +182,6 @@ export default defineConfig({
               expiration: {
                 maxEntries: 80,
                 maxAgeSeconds: 60 * 60 * 24 * 30,
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-          {
-            urlPattern: /\/api\/v1\/(auth\/me|profiles\/school|academic-years)/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-metadata-cache',
-              networkTimeoutSeconds: 3,
-              expiration: {
-                maxEntries: 30,
-                maxAgeSeconds: 60 * 60 * 24,
               },
               cacheableResponse: {
                 statuses: [0, 200],
