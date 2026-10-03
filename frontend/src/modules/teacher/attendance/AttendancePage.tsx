@@ -325,104 +325,70 @@ export const AttendancePage: React.FC = () => {
     });
   }, [dailyScheduleData]);
 
-  // Categorize classrooms by Grade Series (300s, 200s, 100s) for school manager/admin
-  const getGradeCategory = (slot: ScheduleSlot): { id: string; title: string; badge: string; order: number } => {
+  // Sort weight helper: 300s (پایه دوازدهم), then 200s (پایه یازدهم), then 100s (پایه دهم)
+  const getClassroomSortWeight = (slot: ScheduleSlot): number => {
     const name = slot.classroomName || '';
     const grade = slot.classroomGrade || '';
     const combined = `${name} ${grade}`;
 
-    // 300s (پایه دوازدهم)
-    if (
-      /(?:^|\D)(?:3\d\d|۳\d\d)(?:\D|$)/.test(name) ||
-      combined.includes('دوازدهم') ||
-      combined.includes('12') ||
-      combined.includes('۱۲') ||
-      combined.includes('300') ||
-      combined.includes('۳۰۰')
-    ) {
-      return {
-        id: 'grade-300',
-        title: 'کلاس‌های ۳۰۰ (پایه دوازدهم)',
-        badge: 'دوازدهم',
-        order: 1,
-      };
+    const match = name.match(/(\d{3})/) || name.match(/([۱-۹][۰-۹]{2})/);
+    if (match) {
+      const enDigits = match[1].replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
+      const num = parseInt(enDigits, 10);
+      if (num >= 300 && num < 400) return 1000 + num;
+      if (num >= 200 && num < 300) return 2000 + num;
+      if (num >= 100 && num < 200) return 3000 + num;
+      return 4000 + num;
     }
 
-    // 200s (پایه یازدهم)
-    if (
-      /(?:^|\D)(?:2\d\d|۲\d\d)(?:\D|$)/.test(name) ||
-      combined.includes('یازدهم') ||
-      combined.includes('11') ||
-      combined.includes('۱۱') ||
-      combined.includes('200') ||
-      combined.includes('۲۰۰')
-    ) {
-      return {
-        id: 'grade-200',
-        title: 'کلاس‌های ۲۰۰ (پایه یازدهم)',
-        badge: 'یازدهم',
-        order: 2,
-      };
-    }
+    if (combined.includes('دوازدهم') || combined.includes('12') || combined.includes('۱۲') || combined.includes('300') || combined.includes('۳۰۰')) return 1999;
+    if (combined.includes('یازدهم') || combined.includes('11') || combined.includes('۱۱') || combined.includes('200') || combined.includes('۲۰۰')) return 2999;
+    if (combined.includes('دهم') || combined.includes('10') || combined.includes('۱۰') || combined.includes('100') || combined.includes('۱۰۰')) return 3999;
 
-    // 100s (پایه دهم)
-    if (
-      /(?:^|\D)(?:1\d\d|۱\d\d)(?:\D|$)/.test(name) ||
-      combined.includes('دهم') ||
-      combined.includes('10') ||
-      combined.includes('۱۰') ||
-      combined.includes('100') ||
-      combined.includes('۱۰۰')
-    ) {
-      return {
-        id: 'grade-100',
-        title: 'کلاس‌های ۱۰۰ (پایه دهم)',
-        badge: 'دهم',
-        order: 3,
-      };
-    }
-
-    // Fallback for other classes / grades
-    return {
-      id: grade ? `grade-${grade}` : 'grade-other',
-      title: grade ? `کلاس‌های پایه ${grade}` : (name || 'سایر کلاس‌ها'),
-      badge: grade || 'عمومی',
-      order: 4,
-    };
+    return 9999;
   };
 
-  const groupedSchedules = useMemo(() => {
+  // Group by Period (زنگ ۱، زنگ ۲، زنگ ۳، ...) and inside each period order 300s, 200s, 100s
+  const groupedByPeriod = useMemo(() => {
     if (schedulesList.length === 0) return [];
 
-    const groupsMap = new Map<
-      string,
-      { id: string; title: string; badge: string; order: number; slots: ScheduleSlot[] }
+    const periodMap = new Map<
+      number,
+      {
+        periodNumber: number;
+        startTime?: string;
+        endTime?: string;
+        slots: ScheduleSlot[];
+      }
     >();
 
     for (const slot of schedulesList) {
-      const cat = getGradeCategory(slot);
-      if (!groupsMap.has(cat.id)) {
-        groupsMap.set(cat.id, {
-          ...cat,
+      if (!periodMap.has(slot.periodNumber)) {
+        periodMap.set(slot.periodNumber, {
+          periodNumber: slot.periodNumber,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
           slots: [],
         });
       }
-      groupsMap.get(cat.id)!.slots.push(slot);
+      const p = periodMap.get(slot.periodNumber)!;
+      if (!p.startTime && slot.startTime) p.startTime = slot.startTime;
+      if (!p.endTime && slot.endTime) p.endTime = slot.endTime;
+      p.slots.push(slot);
     }
 
-    const sortedGroups = Array.from(groupsMap.values()).sort((a, b) => a.order - b.order);
+    const sortedPeriods = Array.from(periodMap.values()).sort((a, b) => a.periodNumber - b.periodNumber);
 
-    for (const group of sortedGroups) {
-      group.slots.sort((a, b) => {
-        if (a.periodNumber !== b.periodNumber) return a.periodNumber - b.periodNumber;
-        if (a.startTime && b.startTime && a.startTime !== b.startTime) {
-          return a.startTime.localeCompare(b.startTime);
-        }
+    for (const period of sortedPeriods) {
+      period.slots.sort((a, b) => {
+        const weightA = getClassroomSortWeight(a);
+        const weightB = getClassroomSortWeight(b);
+        if (weightA !== weightB) return weightA - weightB;
         return (a.classroomName || '').localeCompare(b.classroomName || '');
       });
     }
 
-    return sortedGroups;
+    return sortedPeriods;
   }, [schedulesList]);
 
   const activeNowSlot = useMemo(() => {
@@ -1578,26 +1544,31 @@ export const AttendancePage: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-6">
-              {groupedSchedules.map((group) => (
-                <div key={group.id} className="space-y-3">
-                  {/* Group Header */}
-                  <div className="flex items-center justify-between gap-2 pb-2 border-b border-gray-100 dark:border-[#242F42]">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-black text-xs shrink-0">
-                        <GraduationCap className="w-4 h-4" />
+              {groupedByPeriod.map((period) => (
+                <div key={period.periodNumber} className="space-y-3">
+                  {/* Period Header */}
+                  <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-gray-200/80 dark:border-[#242F42]">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs shrink-0">
+                        <Clock className="w-4 h-4" />
                       </div>
-                      <h3 className="text-sm sm:text-base font-black text-foreground dark:text-white">
-                        {group.title}
+                      <h3 className="text-base font-black text-foreground dark:text-white">
+                        زنگ {toPersianDigits(period.periodNumber)}
                       </h3>
+                      {period.startTime && period.endTime && (
+                        <span className="text-xs font-mono font-bold text-muted-foreground px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42]">
+                          {toPersianDigits(period.startTime)} تا {toPersianDigits(period.endTime)}
+                        </span>
+                      )}
                       <span className="text-[11px] font-bold text-muted-foreground">
-                        ({toPersianDigits(group.slots.length)} زنگ کلاس)
+                        ({toPersianDigits(period.slots.length)} کلاس)
                       </span>
                     </div>
                   </div>
 
-                  {/* Cards Grid */}
+                  {/* Cards Grid: 300s, 200s, 100s */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                    {group.slots.map((slot) => {
+                    {period.slots.map((slot) => {
                       const slotTimingStatus = checkSlotStatus(slot.startTime, slot.endTime);
                       const isCurrent = slotTimingStatus === 'CURRENT';
                       const isPassed = slotTimingStatus === 'PASSED';
@@ -1629,43 +1600,41 @@ export const AttendancePage: React.FC = () => {
                             <div className="absolute top-0 right-0 left-0 h-1 bg-emerald-500 shadow-sm rounded-t-2xl" />
                           )}
 
-                          {/* Period Header */}
+                          {/* Classroom & Status Header */}
                           <div className="flex items-center justify-between gap-2 mb-2">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-xs px-2.5 py-0.5 rounded-lg bg-gray-50 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] text-foreground dark:text-white">
-                                زنگ {toPersianDigits(slot.periodNumber)}
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="font-black text-sm sm:text-base text-foreground dark:text-white group-hover:text-primary transition-colors truncate">
+                                {slot.classroomName}
                               </span>
-                              <span className="text-xs font-mono font-bold text-muted-foreground flex items-center gap-1">
-                                <Clock className="w-3.5 h-3.5 text-primary" />
-                                {toPersianDigits(slot.startTime)} - {toPersianDigits(slot.endTime)}
-                              </span>
+                              {slot.classroomGrade && (
+                                <span className="text-[10px] font-bold text-muted-foreground bg-gray-50 dark:bg-[#1C2536] px-1.5 py-0.5 rounded border border-gray-200 dark:border-[#242F42] shrink-0">
+                                  {slot.classroomGrade}
+                                </span>
+                              )}
                             </div>
 
                             {/* Live Badge */}
                             {isCurrent ? (
-                              <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
                                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
                                 زنگ جاری
                               </span>
                             ) : isPassed ? (
-                              <span className="text-[10px] font-bold text-muted-foreground bg-gray-50 dark:bg-[#1C2536] px-2 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42]">
+                              <span className="text-[10px] font-bold text-muted-foreground bg-gray-50 dark:bg-[#1C2536] px-2 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42] shrink-0">
                                 سپری شده
                               </span>
                             ) : (
-                              <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/50 px-2 py-0.5 rounded-lg border border-sky-200 dark:border-sky-800">
-                                زنگ آینده
+                              <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/50 px-2 py-0.5 rounded-lg border border-sky-200 dark:border-sky-800 shrink-0">
+                                آینده
                               </span>
                             )}
                           </div>
 
-                          {/* Class & Lesson Title */}
+                          {/* Lesson Title */}
                           <div className="space-y-1 my-2">
-                            <h3 className="font-black text-base text-foreground dark:text-white group-hover:text-primary transition-colors truncate">
-                              {slot.classroomName}
-                            </h3>
                             <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground truncate">
                               <BookOpen className="w-3.5 h-3.5 text-primary shrink-0" />
-                              <span className="truncate">درس: {slot.lessonName}</span>
+                              <span className="truncate text-foreground dark:text-slate-200 font-extrabold">{slot.lessonName}</span>
                             </div>
                           </div>
 
