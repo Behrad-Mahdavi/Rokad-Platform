@@ -88,11 +88,7 @@ export const ScheduleDesktopGrid: React.FC<ScheduleDesktopGridProps> = ({
                         }}
                         className={`group relative ${
                           item.isSplitPeriod ? 'min-h-[145px]' : 'h-28'
-                        } rounded-xl p-2.5 bg-white dark:bg-[#151C28] border ${
-                          item.isSplitPeriod
-                            ? 'border-primary/40 bg-gradient-to-b from-primary-50/15 via-white to-purple-50/15 dark:from-primary-950/20 dark:via-[#151C28] dark:to-purple-950/20'
-                            : 'border-primary/30 dark:border-[#242F42]'
-                        } flex flex-col justify-between transition-all ${
+                        } rounded-xl p-2.5 bg-white dark:bg-[#151C28] border border-primary/30 dark:border-[#242F42] flex flex-col justify-between transition-all ${
                           canManageSchedule
                             ? 'cursor-pointer hover:border-primary hover:shadow-md'
                             : 'cursor-default shadow-2xs'
@@ -134,12 +130,12 @@ export const ScheduleDesktopGrid: React.FC<ScheduleDesktopGridProps> = ({
                                   </div>
 
                                   {/* Split Half 2 - Week 2 */}
-                                  <div className="bg-purple-50/60 dark:bg-purple-950/30 rounded-lg p-1.5 border border-purple-200/60 dark:border-purple-800/60 space-y-1">
+                                  <div className="bg-primary/5 dark:bg-primary-950/20 rounded-lg p-1.5 border border-primary/15 dark:border-primary/30 space-y-1">
                                     <div className="flex items-center justify-between text-[10px]">
                                       <span className="font-extrabold text-ink-darker dark:text-white truncate">
                                         {item.secondLesson?.name || '—'}
                                       </span>
-                                      <span className="text-[8px] bg-white dark:bg-[#151C28] text-purple-700 dark:text-purple-300 px-1 rounded font-bold border border-purple-200 dark:border-purple-800 shrink-0">
+                                      <span className="text-[8px] bg-white dark:bg-[#151C28] text-primary px-1 rounded font-bold border border-primary/20 shrink-0">
                                         هفته زوج
                                       </span>
                                     </div>

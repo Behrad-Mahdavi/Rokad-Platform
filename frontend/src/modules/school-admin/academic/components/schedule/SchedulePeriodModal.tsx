@@ -284,9 +284,9 @@ export const SchedulePeriodModal: React.FC<SchedulePeriodModalProps> = ({
             </div>
 
             {/* 2nd Half (Week 2) */}
-            <div className="bg-purple-50/30 dark:bg-purple-950/30 border border-purple-200/80 dark:border-purple-800/80 rounded-2xl p-3.5 space-y-2.5">
+            <div className="bg-primary-50/20 dark:bg-primary-950/20 border border-primary/20 dark:border-primary/30 rounded-2xl p-3.5 space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-purple-700 text-white text-[11px] font-bold">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-primary text-white text-[11px] font-bold">
                   هفته زوج
                 </span>
               </div>
@@ -299,7 +299,7 @@ export const SchedulePeriodModal: React.FC<SchedulePeriodModalProps> = ({
                   <select
                     value={form.secondLessonId}
                     onChange={(e) => onSecondLessonChange(e.target.value)}
-                    className="flex h-10 w-full rounded-xl border border-gray-300 bg-white dark:bg-[#151C28] dark:border-[#242F42] px-3 text-xs text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-600 font-bold"
+                    className="flex h-10 w-full rounded-xl border border-gray-300 bg-white dark:bg-[#151C28] dark:border-[#242F42] px-3 text-xs text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
                     required
                   >
                     <option value="" disabled>
@@ -320,7 +320,7 @@ export const SchedulePeriodModal: React.FC<SchedulePeriodModalProps> = ({
                   <select
                     value={form.secondTeacherId}
                     onChange={(e) => setForm({ ...form, secondTeacherId: e.target.value })}
-                    className="flex h-10 w-full rounded-xl border border-gray-300 bg-white dark:bg-[#151C28] dark:border-[#242F42] px-3 text-xs text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-600 font-bold"
+                    className="flex h-10 w-full rounded-xl border border-gray-300 bg-white dark:bg-[#151C28] dark:border-[#242F42] px-3 text-xs text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
                     required
                   >
                     <option value="" disabled>

@@ -143,7 +143,7 @@ export const ScheduleMobileView: React.FC<ScheduleMobileViewProps> = ({
                               </div>
 
                               {/* Week 2 */}
-                              <div className="bg-purple-50/30 dark:bg-purple-950/30 p-2.5 rounded-xl border border-purple-200/60 dark:border-purple-800/60 space-y-1.5">
+                              <div className="bg-primary-50/20 dark:bg-primary-950/30 p-2.5 rounded-xl border border-primary/20 dark:border-primary/30 space-y-1.5">
                                 <div className="flex items-center justify-between gap-1 flex-wrap">
                                   <span className="font-extrabold text-xs text-ink-darker dark:text-white truncate">
                                     ۲. {item.secondLesson?.name || '—'}
@@ -154,14 +154,14 @@ export const ScheduleMobileView: React.FC<ScheduleMobileViewProps> = ({
                                     >
                                       {type2.label}
                                     </span>
-                                    <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-white dark:bg-[#151C28] text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 shrink-0">
+                                    <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-white dark:bg-[#151C28] text-primary border border-primary/20 shrink-0">
                                       هفته زوج
                                     </span>
                                   </div>
                                 </div>
                                 {item.secondTeacher?.user && (
                                   <div className="flex items-center gap-1 text-[11px] text-muted-foreground dark:text-slate-400 font-bold">
-                                    <GraduationCap className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                                    <GraduationCap className="h-3.5 w-3.5 text-primary shrink-0" />
                                     <span>
                                       استاد: {item.secondTeacher.user.firstName}{' '}
                                       {item.secondTeacher.user.lastName}
