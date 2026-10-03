@@ -40,6 +40,8 @@ import {
   AlertTriangle,
   GraduationCap,
   MessageSquare,
+  Trash2,
+  Edit3,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '../../../lib/api/client';
@@ -927,17 +929,17 @@ export const AttendancePage: React.FC = () => {
             status: s.status,
             delayMinutes: s.status === 'TARDY' ? (Number(s.delayMinutes) || 0) : 0,
             reason: s.reason?.trim() ? s.reason.trim() : undefined,
-            oralGrade: s.oralGrade !== null && s.oralGrade !== undefined && String(s.oralGrade).trim() !== '' ? Number(s.oralGrade) : undefined,
-            rewardDisciplineType: s.rewardDisciplineType && s.rewardDisciplineType !== 'NONE' ? s.rewardDisciplineType : undefined,
-            rewardDisciplineNote: s.rewardDisciplineNote?.trim() ? s.rewardDisciplineNote.trim() : undefined,
-            sessionNote: s.sessionNote?.trim() ? s.sessionNote.trim() : undefined,
+            oralGrade: parsedGrade !== null ? parsedGrade : null,
+            rewardDisciplineType: modalDisciplineType && modalDisciplineType !== 'NONE' ? modalDisciplineType : null,
+            rewardDisciplineNote: modalDisciplineNote.trim() ? modalDisciplineNote.trim() : null,
+            sessionNote: modalSessionNote.trim() ? modalSessionNote.trim() : null,
           })),
         });
 
         queryClient.invalidateQueries({ queryKey: ['classroom-attendance'] });
         queryClient.invalidateQueries({ queryKey: ['student-subject-history'] });
         setHasUnsavedChanges(false);
-        toast.success('ارزیابی و سابقه دانش‌آموز با موفقیت در سیستم ثبت شد');
+        toast.success('ارزیابی و سوابق با موفقیت ذخیره شد');
         setEvaluationModalStudent(null);
       } catch (err: any) {
         console.error('Error saving session evaluation:', err);
@@ -951,6 +953,66 @@ export const AttendancePage: React.FC = () => {
       setHasUnsavedChanges(true);
       setEvaluationModalStudent(null);
       toast.success('ارزیابی دانش‌آموز ثبت شد');
+    }
+  };
+
+  const handleDeleteModalEvaluation = async () => {
+    if (!evaluationModalStudent) return;
+    if (isReadOnly) {
+      toast.error('امکان تغییر در تاریخ‌های گذشته وجود ندارد');
+      return;
+    }
+
+    const updatedStudent: LocalStudentAttendance = {
+      ...evaluationModalStudent,
+      oralGrade: null,
+      rewardDisciplineType: 'NONE',
+      rewardDisciplineNote: '',
+      sessionNote: '',
+    };
+
+    const nextList = studentsList.map((s) =>
+      s.studentId === evaluationModalStudent.studentId ? updatedStudent : s,
+    );
+    setStudentsList(nextList);
+
+    if (activeSession) {
+      try {
+        setIsSavingEvaluation(true);
+        await apiClient.post('/attendance/students/bulk', {
+          classroomId: activeSession.classroomId,
+          lessonId: activeSession.lessonId || undefined,
+          date: selectedDate,
+          periodNumber: activeSession.periodNumber || 1,
+          attendances: nextList.map((s) => ({
+            studentId: s.studentId,
+            status: s.status,
+            delayMinutes: s.status === 'TARDY' ? (Number(s.delayMinutes) || 0) : 0,
+            reason: s.reason?.trim() ? s.reason.trim() : undefined,
+            oralGrade: null,
+            rewardDisciplineType: null,
+            rewardDisciplineNote: null,
+            sessionNote: null,
+          })),
+        });
+
+        queryClient.invalidateQueries({ queryKey: ['classroom-attendance'] });
+        queryClient.invalidateQueries({ queryKey: ['student-subject-history'] });
+        setHasUnsavedChanges(false);
+        toast.success('ارزیابی، نمرات و یادداشت این جلسه حذف شد');
+        setEvaluationModalStudent(null);
+      } catch (err: any) {
+        console.error('Error deleting session evaluation:', err);
+        setHasUnsavedChanges(true);
+        setEvaluationModalStudent(null);
+        toast.info('ارزیابی در لیست پاک شد (نیازمند ثبت نهایی)');
+      } finally {
+        setIsSavingEvaluation(false);
+      }
+    } else {
+      setHasUnsavedChanges(true);
+      setEvaluationModalStudent(null);
+      toast.info('ارزیابی دانش‌آموز پاک شد');
     }
   };
 
@@ -1529,6 +1591,19 @@ export const AttendancePage: React.FC = () => {
                               یادداشت
                             </span>
                           )}
+
+                          {/* Edit / Add Indicator */}
+                          {hasOralGrade || hasDiscipline || hasSessionNote ? (
+                            <span className="text-[10px] font-bold text-primary/80 group-hover:text-primary transition-colors flex items-center gap-0.5 mr-0.5" title="ویرایش یا حذف نمرات و موارد انضباطی">
+                              <Edit3 className="w-2.5 h-2.5" />
+                              <span className="hidden sm:inline">ویرایش</span>
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-muted-foreground/60 group-hover:text-primary transition-colors flex items-center gap-0.5 mr-0.5" title="ثبت نمره پرسش، انضباطی یا یادداشت">
+                              <Award className="w-2.5 h-2.5" />
+                              <span className="hidden sm:inline">ارزیابی / نمره</span>
+                            </span>
+                          )}
                         </div>
 
                         <div className="text-[10px] sm:text-xs text-muted-foreground font-mono truncate mt-0.5">
@@ -2007,9 +2082,18 @@ export const AttendancePage: React.FC = () => {
                   {evaluationModalStudent.user?.firstName?.[0] || 'د'}
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-black text-sm text-foreground dark:text-white truncate">
-                    {evaluationModalStudent.user?.firstName} {evaluationModalStudent.user?.lastName}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-black text-sm text-foreground dark:text-white truncate">
+                      {evaluationModalStudent.user?.firstName} {evaluationModalStudent.user?.lastName}
+                    </h3>
+                    {(evaluationModalStudent.oralGrade !== null && evaluationModalStudent.oralGrade !== undefined ||
+                      (evaluationModalStudent.rewardDisciplineType && evaluationModalStudent.rewardDisciplineType !== 'NONE') ||
+                      Boolean(evaluationModalStudent.sessionNote?.trim())) && (
+                      <span className="text-[9.5px] font-black px-1.5 py-0.2 rounded-md bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shrink-0">
+                        دارای ثبت قبلی
+                      </span>
+                    )}
+                  </div>
                   <div className="text-[10.5px] text-muted-foreground font-mono truncate">
                     کد: {toPersianDigits(evaluationModalStudent.studentCode)}
                   </div>
@@ -2035,7 +2119,7 @@ export const AttendancePage: React.FC = () => {
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                ارزیابی جلسه
+                ارزیابی و نمرات
               </button>
               <button
                 type="button"
@@ -2046,57 +2130,18 @@ export const AttendancePage: React.FC = () => {
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                سوابق
+                سوابق گذشته
               </button>
             </div>
 
             {/* Tab 1: Evaluate Current Session */}
             {modalTab === 'EVALUATE' ? (
-              <div className="space-y-3 pt-0.5">
-                {/* 1. Two Select Boxes in one row */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 block mb-1">
-                      تشویقی (+۲):
-                    </label>
-                    <select
-                      value={selectedRewardOption}
-                      onChange={(e) => handleSelectReward(e.target.value)}
-                      className="w-full h-9 px-2 rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] text-xs font-bold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer text-foreground dark:text-white"
-                    >
-                      <option value="">بدون انتخاب</option>
-                      {REWARD_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-bold text-rose-600 dark:text-rose-400 block mb-1">
-                      انضباطی (-۲):
-                    </label>
-                    <select
-                      value={selectedDisciplineOption}
-                      onChange={(e) => handleSelectDiscipline(e.target.value)}
-                      className="w-full h-9 px-2 rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] text-xs font-bold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer text-foreground dark:text-white"
-                    >
-                      <option value="">بدون انتخاب</option>
-                      {DISCIPLINE_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* 2. Oral Grade */}
-                <div className="space-y-1">
+              <div className="space-y-3.5 pt-0.5">
+                {/* 1. Reward & Discipline Section */}
+                <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-foreground dark:text-white">نمره:</label>
-                    {Boolean(selectedRewardOption || selectedDisciplineOption) && (
+                    <span className="text-[11px] font-bold text-foreground dark:text-slate-300">موارد تشویقی یا انضباطی:</span>
+                    {(selectedRewardOption || selectedDisciplineOption) && (
                       <button
                         type="button"
                         onClick={() => {
@@ -2104,13 +2149,87 @@ export const AttendancePage: React.FC = () => {
                           setSelectedDisciplineOption('');
                           setModalDisciplineType('NONE');
                           setModalDisciplineNote('');
-                          setModalOralGrade('');
                         }}
-                        className="text-[10.5px] text-primary hover:underline font-bold cursor-pointer"
+                        className="text-[10px] text-rose-500 hover:text-rose-600 font-bold inline-flex items-center gap-0.5 cursor-pointer"
+                        title="حذف مورد تشویقی یا انضباطی"
                       >
-                        تنظیم دستی نمره
+                        <Trash2 className="w-3 h-3" />
+                        <span>پاک کردن مورد</span>
                       </button>
                     )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400 block mb-0.5">
+                        تشویقی (+۲):
+                      </label>
+                      <select
+                        value={selectedRewardOption}
+                        onChange={(e) => handleSelectReward(e.target.value)}
+                        className="w-full h-9 px-2 rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] text-xs font-bold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer text-foreground dark:text-white"
+                      >
+                        <option value="">بدون انتخاب</option>
+                        {REWARD_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[10.5px] font-bold text-rose-600 dark:text-rose-400 block mb-0.5">
+                        انضباطی (-۲):
+                      </label>
+                      <select
+                        value={selectedDisciplineOption}
+                        onChange={(e) => handleSelectDiscipline(e.target.value)}
+                        className="w-full h-9 px-2 rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] text-xs font-bold focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer text-foreground dark:text-white"
+                      >
+                        <option value="">بدون انتخاب</option>
+                        {DISCIPLINE_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Oral Grade */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-foreground dark:text-white">نمره پرسش کلاسی:</label>
+                    <div className="flex items-center gap-2">
+                      {modalOralGrade.trim() !== '' && (
+                        <button
+                          type="button"
+                          onClick={() => setModalOralGrade('')}
+                          className="text-[10px] text-rose-500 hover:text-rose-600 font-bold inline-flex items-center gap-0.5 cursor-pointer"
+                          title="حذف نمره ثبت‌شده"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>حذف نمره</span>
+                        </button>
+                      )}
+                      {Boolean(selectedRewardOption || selectedDisciplineOption) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedRewardOption('');
+                            setSelectedDisciplineOption('');
+                            setModalDisciplineType('NONE');
+                            setModalDisciplineNote('');
+                            setModalOralGrade('');
+                          }}
+                          className="text-[10.5px] text-primary hover:underline font-bold cursor-pointer"
+                        >
+                          تنظیم دستی نمره
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <button
@@ -2164,34 +2283,80 @@ export const AttendancePage: React.FC = () => {
 
                 {/* 3. Note */}
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-muted-foreground">یادداشت (اختیاری):</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-muted-foreground">یادداشت جلسه (اختیاری):</label>
+                    {modalSessionNote.trim() !== '' && (
+                      <button
+                        type="button"
+                        onClick={() => setModalSessionNote('')}
+                        className="text-[10px] text-rose-500 hover:text-rose-600 font-bold inline-flex items-center gap-0.5 cursor-pointer"
+                        title="حذف یادداشت"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>حذف متن</span>
+                      </button>
+                    )}
+                  </div>
                   <Input
                     value={modalSessionNote}
                     onChange={(e) => setModalSessionNote(e.target.value)}
-                    placeholder="توضیحات..."
+                    placeholder="توضیحات و نکات دبیر درباره دانش‌آموز در این جلسه..."
                     className="rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] font-bold h-9 text-xs"
                   />
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100 dark:border-[#242F42]">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEvaluationModalStudent(null)}
-                    className="rounded-xl border border-gray-200 dark:border-[#242F42] text-xs font-bold h-8.5 px-3 cursor-pointer"
-                  >
-                    انصراف
-                  </Button>
-                  <Button
-                    size="sm"
-                    disabled={isSavingEvaluation}
-                    onClick={handleSaveModalEvaluation}
-                    className="rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs h-8.5 px-4 shadow-xs flex items-center gap-1.5 cursor-pointer"
-                  >
-                    {isSavingEvaluation && <RefreshCw className="w-3 h-3 animate-spin" />}
-                    ثبت
-                  </Button>
+                {/* Action Buttons: Delete All, Cancel, Save */}
+                <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-gray-100 dark:border-[#242F42]">
+                  <div>
+                    {(evaluationModalStudent.oralGrade !== null && evaluationModalStudent.oralGrade !== undefined ||
+                      (evaluationModalStudent.rewardDisciplineType && evaluationModalStudent.rewardDisciplineType !== 'NONE') ||
+                      Boolean(evaluationModalStudent.sessionNote?.trim())) && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isSavingEvaluation || isReadOnly}
+                        onClick={handleDeleteModalEvaluation}
+                        className="rounded-xl border-rose-300 dark:border-rose-900 bg-rose-50/80 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 font-black text-xs h-8.5 px-2.5 inline-flex items-center gap-1 cursor-pointer"
+                        title="حذف کامل تمام نمرات و موارد انضباطی این جلسه"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>حذف کل ارزیابی</span>
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEvaluationModalStudent(null)}
+                      className="rounded-xl border border-gray-200 dark:border-[#242F42] text-xs font-bold h-8.5 px-3 cursor-pointer"
+                    >
+                      انصراف
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={isSavingEvaluation || isReadOnly}
+                      onClick={handleSaveModalEvaluation}
+                      className="rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs h-8.5 px-4 shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      {isSavingEvaluation ? (
+                        <>
+                          <RefreshCw className="w-3 h-3 animate-spin" />
+                          <span>در حال ذخیره...</span>
+                        </>
+                      ) : (
+                        <span>
+                          {(evaluationModalStudent.oralGrade !== null && evaluationModalStudent.oralGrade !== undefined ||
+                            (evaluationModalStudent.rewardDisciplineType && evaluationModalStudent.rewardDisciplineType !== 'NONE') ||
+                            Boolean(evaluationModalStudent.sessionNote?.trim()))
+                            ? 'ذخیره تغییرات'
+                            : 'ثبت'}
+                        </span>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             ) : (
