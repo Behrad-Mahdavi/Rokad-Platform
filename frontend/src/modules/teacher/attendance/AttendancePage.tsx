@@ -1757,13 +1757,7 @@ export const AttendancePage: React.FC = () => {
                 return (
                   <div
                     key={period.periodNumber}
-                    className={`space-y-3 rounded-2xl transition-all p-3.5 sm:p-4.5 ${
-                      isPeriodCurrent
-                        ? 'bg-emerald-500/[0.04] dark:bg-emerald-950/20 border-2 border-emerald-500/50 dark:border-emerald-500/40 shadow-xs ring-1 ring-emerald-500/20'
-                        : isPeriodPassed
-                        ? 'bg-gray-50/50 dark:bg-[#151C28]/40 border border-gray-200/50 dark:border-[#242F42]/50'
-                        : 'bg-white dark:bg-[#151C28]/60 border border-gray-200/80 dark:border-[#242F42]'
-                    }`}
+                    className="space-y-3.5"
                   >
                     {/* Period Header */}
                     <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-gray-200/60 dark:border-[#242F42]/60 flex-wrap">
