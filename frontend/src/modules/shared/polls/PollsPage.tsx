@@ -24,6 +24,11 @@ import {
 } from '../../../utils/jalali';
 import { PersianDatePicker } from '../../../components/ui/PersianDatePicker';
 import {
+  canViewPollResults,
+  canManagePolls,
+  canCreatePolls,
+} from './poll-access';
+import {
   Vote,
   Plus,
   CheckCircle2,
@@ -259,15 +264,9 @@ export const PollsPage: React.FC = () => {
   const [deleteTarget, setDeleteTarget] = useState<Poll | null>(null);
   const [isStatusBusy, setIsStatusBusy] = useState(false);
 
-  const isAdmin = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF', 'TEACHER', 'COACH'].includes(
-    user?.role || '',
-  );
-  const canCreate =
-    user?.role === 'SUPER_ADMIN' ||
-    user?.role === 'SCHOOL_ADMIN' ||
-    user?.role === 'STAFF' ||
-    user?.role === 'TEACHER' ||
-    user?.role === 'COACH';
+  const canViewResults = canViewPollResults(user?.role);
+  const isAdmin = canManagePolls(user?.role);
+  const canCreate = canCreatePolls(user?.role);
 
   const respondentName = useMemo(
     () =>
@@ -961,6 +960,10 @@ export const PollsPage: React.FC = () => {
 
   // ——— Analytics ———
   const openAnalytics = async (poll: Poll) => {
+    if (!canViewResults) {
+      toast.error('شما دسترسی لازم برای مشاهده نتایج و آمار این نظرسنجی را ندارید');
+      return;
+    }
     setAnalyticsPollId(poll.id);
     setAnalytics(null);
     setLiveAnalytics(null);
@@ -1511,6 +1514,7 @@ export const PollsPage: React.FC = () => {
   };
 
   const renderAnalyticsView = () => {
+    if (!canViewResults) return null;
     const poll = polls.find((p) => p.id === analyticsPollId);
     const shown = liveAnalytics || analytics;
     return (
@@ -2003,7 +2007,7 @@ export const PollsPage: React.FC = () => {
                           <Send className="w-4 h-4 shrink-0" />
                           <span>شرکت در نظرسنجی</span>
                         </Button>
-                      ) : (
+                      ) : canViewResults ? (
                         <Button
                           variant="outline"
                           onClick={() => openAnalytics(poll)}
@@ -2012,6 +2016,11 @@ export const PollsPage: React.FC = () => {
                           <BarChart3 className="w-4 h-4 text-primary shrink-0" />
                           <span>مشاهده نتایج و آمار</span>
                         </Button>
+                      ) : (
+                        <div className="flex-1 text-xs flex items-center justify-center gap-1.5 h-9 sm:h-10 px-3 rounded-xl font-bold bg-gray-100/80 dark:bg-[#1C2536] text-muted-foreground border border-gray-200/80 dark:border-[#242F42] select-none">
+                          <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          <span>نظرسنجی به پایان رسیده است</span>
+                        </div>
                       )
                     )}
 

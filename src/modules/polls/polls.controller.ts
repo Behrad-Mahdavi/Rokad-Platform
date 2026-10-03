@@ -23,6 +23,10 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentTenant } from '../../common/decorators/current-tenant.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Role } from '../../common/constants';
+import {
+  POLL_RESULTS_VIEW_ROLES,
+  POLL_MANAGEMENT_ROLES,
+} from './polls.permissions';
 
 @ApiTags('Daily Operations — Polls & Surveys')
 @ApiBearerAuth()
@@ -32,7 +36,7 @@ export class PollsController {
   constructor(private readonly pollsService: PollsService) {}
 
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF, Role.TEACHER, Role.COACH)
+  @Roles(...POLL_MANAGEMENT_ROLES)
   @ApiOperation({ summary: 'ایجاد نظرسنجی / فرم پرس‌کاد' })
   async createPoll(
     @CurrentUser('id') userId: string,
@@ -45,7 +49,7 @@ export class PollsController {
   }
 
   @Patch(':id/status')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF, Role.TEACHER, Role.COACH)
+  @Roles(...POLL_MANAGEMENT_ROLES)
   @ApiOperation({ summary: 'تغییر وضعیت نظرسنجی (بستن/بازگشایی/آرشیو/خروج از آرشیو)' })
   async updatePollStatus(
     @CurrentUser('tenantId') userTenantId: string,
@@ -58,7 +62,7 @@ export class PollsController {
   }
 
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF, Role.TEACHER, Role.COACH)
+  @Roles(...POLL_MANAGEMENT_ROLES)
   @ApiOperation({ summary: 'حذف نظرسنجی' })
   async deletePoll(
     @CurrentUser('tenantId') userTenantId: string,
@@ -82,15 +86,16 @@ export class PollsController {
   }
 
   @Get(':id/analytics')
-  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF, Role.TEACHER, Role.COACH)
-  @ApiOperation({ summary: 'آنالیتیکس نظرسنجی برای ادمین' })
+  @Roles(...POLL_RESULTS_VIEW_ROLES)
+  @ApiOperation({ summary: 'آنالیتیکس و نتایج نظرسنجی برای کاربران مجاز' })
   async getAnalytics(
     @CurrentUser('tenantId') userTenantId: string,
+    @CurrentUser('role') role: string,
     @CurrentTenant('id') tenantId: string,
     @Param('id') pollId: string,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
-    return this.pollsService.getAnalytics(effectiveTenantId, pollId);
+    return this.pollsService.getAnalytics(effectiveTenantId, pollId, role);
   }
 
   @Get(':id')
@@ -98,11 +103,12 @@ export class PollsController {
   async getPollDetails(
     @CurrentUser('id') userId: string,
     @CurrentUser('tenantId') userTenantId: string,
+    @CurrentUser('role') role: string,
     @CurrentTenant('id') tenantId: string,
     @Param('id') pollId: string,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
-    return this.pollsService.getPollDetails(effectiveTenantId, pollId, userId);
+    return this.pollsService.getPollDetails(effectiveTenantId, pollId, userId, role);
   }
 
   @Post(':id/answers')

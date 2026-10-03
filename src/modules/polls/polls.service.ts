@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
@@ -12,6 +13,7 @@ import {
   PollStatusAction,
 } from './dto/create-poll.dto';
 import { Role } from '../../common/constants';
+import { canViewPollResults } from './polls.permissions';
 
 export interface SurveyQuestion {
   type: string;
@@ -68,6 +70,20 @@ function savePersistedPolls(polls: any[]) {
 
 const inMemoryPolls: any[] = loadPersistedPolls();
 const inMemoryVotes: any[] = [];
+
+function sanitizePollForRole(poll: any, role?: string) {
+  if (!poll) return poll;
+  if (canViewPollResults(role)) return poll;
+
+  const sanitizedOptions = Array.isArray(poll.options)
+    ? poll.options.map((opt: any) => ({ ...opt, voteCount: 0 }))
+    : poll.options;
+
+  return {
+    ...poll,
+    options: sanitizedOptions,
+  };
+}
 
 @Injectable()
 export class PollsService {
@@ -200,13 +216,13 @@ export class PollsService {
         pollType: dto.pollType || 'SINGLE_CHOICE',
         targetAudience: dto.targetAudience || 'ALL',
         targetClassIds: dto.targetClassIds || [],
-        startDate: new Date(dto.startDate),
-        endDate: new Date(dto.endDate),
+        startDate: validStart,
+        endDate: validEnd,
         isClosed: false,
         isArchived: false,
         isAnonymous: dto.isAnonymous || false,
         createdById,
-        questions: questionsJson,
+        questions: questions as any,
         porscadFormId: dto.porscadFormId || null,
         porscadFormPublicId: dto.porscadFormPublicId || null,
         options: (options.length > 0 ? options : questions.flatMap((q) => (q.options || []).map((text) => ({ text })))).map((opt, i) => ({
@@ -305,15 +321,16 @@ export class PollsService {
         }
       }
 
-      return list.filter((p) => {
+      const filtered = list.filter((p) => {
         if (p.isArchived) return false;
         if (!audience) return true;
         return p.targetAudience === 'ALL' || p.targetAudience === audience;
       });
+      return filtered.map((p) => sanitizePollForRole(p, role));
     }
 
     try {
-      return await this.prisma.poll.findMany({
+      const items = await this.prisma.poll.findMany({
         where,
         include: {
           options: { orderBy: { orderIndex: 'asc' } },
@@ -324,6 +341,7 @@ export class PollsService {
         },
         orderBy: { createdAt: 'desc' },
       });
+      return items.map((p) => sanitizePollForRole(p, role));
     } catch (err: any) {
       console.warn('⚠️ [PollsService.listPolls] DB offline fallback:', err?.message || err);
       let list = inMemoryPolls.length > 0 ? inMemoryPolls : loadPersistedPolls();
@@ -397,11 +415,12 @@ export class PollsService {
         }
       }
 
-      return list.filter((p) => {
+      const filtered = list.filter((p) => {
         if (p.isArchived) return false;
         if (!audience) return true;
         return p.targetAudience === 'ALL' || p.targetAudience === audience;
       });
+      return filtered.map((p) => sanitizePollForRole(p, role));
     }
   }
 
@@ -507,7 +526,7 @@ export class PollsService {
     }
   }
 
-  async getPollDetails(tenantId: string, pollId: string, userId?: string) {
+  async getPollDetails(tenantId: string, pollId: string, userId?: string, role?: string) {
     try {
       const poll = await this.prisma.poll.findFirst({
         where: { id: pollId, tenantId },
@@ -531,9 +550,10 @@ export class PollsService {
         : null;
 
       const { votes: _votes, ...rest } = poll as any;
+      const sanitizedPoll = sanitizePollForRole(rest, role);
 
       return {
-        poll: rest,
+        poll: sanitizedPoll,
         hasVoted: !!userVote,
         userVote: userVote
           ? {
@@ -551,8 +571,9 @@ export class PollsService {
       const userVote = userId
         ? inMemoryVotes.find((v) => v.pollId === pollId && v.userId === userId)
         : null;
+      const sanitizedPoll = sanitizePollForRole(poll, role);
       return {
-        poll,
+        poll: sanitizedPoll,
         hasVoted: !!userVote,
         userVote: userVote
           ? {
@@ -679,7 +700,11 @@ export class PollsService {
     }
   }
 
-  async getAnalytics(tenantId: string, pollId: string) {
+  async getAnalytics(tenantId: string, pollId: string, role?: string) {
+    if (role && !canViewPollResults(role)) {
+      throw new ForbiddenException('شما دسترسی لازم برای مشاهده نتایج و آمار این نظرسنجی را ندارید');
+    }
+
     try {
       const poll = await this.prisma.poll.findFirst({
         where: { id: pollId, tenantId },
@@ -711,7 +736,7 @@ export class PollsService {
 
       return this.formatAnalyticsData(poll, votes);
     } catch (err: any) {
-      if (err instanceof NotFoundException) throw err;
+      if (err instanceof NotFoundException || err instanceof ForbiddenException) throw err;
       console.warn('⚠️ [PollsService.getAnalytics] DB offline fallback:', err?.message || err);
       const poll = inMemoryPolls.find((p) => p.id === pollId && p.tenantId === tenantId);
       if (!poll) throw new NotFoundException('نظرسنجی یافت نشد');
