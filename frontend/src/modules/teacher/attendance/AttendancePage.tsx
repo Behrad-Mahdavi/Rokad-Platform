@@ -696,6 +696,37 @@ export const AttendancePage: React.FC = () => {
     },
   });
 
+  const isModifiedFromDefault = useMemo(() => {
+    if (studentsList.length === 0) return false;
+    return studentsList.some(
+      (s) =>
+        s.status !== 'PRESENT' ||
+        (s.delayMinutes && s.delayMinutes > 0) ||
+        (s.reason && s.reason.trim() !== '') ||
+        (s.oralGrade !== null && s.oralGrade !== undefined && String(s.oralGrade).trim() !== '') ||
+        (s.rewardDisciplineType && s.rewardDisciplineType !== 'NONE') ||
+        (s.rewardDisciplineNote && s.rewardDisciplineNote.trim() !== '') ||
+        (s.sessionNote && s.sessionNote.trim() !== '')
+    );
+  }, [studentsList]);
+
+  const handleResetToDefault = () => {
+    setStudentsList((prev) =>
+      prev.map((s) => ({
+        ...s,
+        status: 'PRESENT',
+        delayMinutes: 0,
+        reason: '',
+        oralGrade: null,
+        rewardDisciplineType: 'NONE',
+        rewardDisciplineNote: '',
+        sessionNote: '',
+      }))
+    );
+    setHasUnsavedChanges(true);
+    toast.info('تمامی وضعیت‌ها به حالت پیش‌فرض (حضور همه) بازنشانی شد');
+  };
+
   const handleMarkAllPresent = () => {
     setStudentsList((prev) =>
       prev.map((s) => ({
@@ -1150,6 +1181,22 @@ export const AttendancePage: React.FC = () => {
                   </button>
                 )}
 
+                {/* Reset to Default Button */}
+                <button
+                  type="button"
+                  onClick={handleResetToDefault}
+                  disabled={!isModifiedFromDefault}
+                  className={`flex-1 sm:flex-none h-10 px-3.5 rounded-xl border font-black text-xs sm:text-sm inline-flex items-center justify-center gap-1.5 transition-all shadow-2xs ${
+                    isModifiedFromDefault
+                      ? 'border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 cursor-pointer active:scale-95'
+                      : 'border-gray-200 dark:border-[#242F42] bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 dark:text-gray-600 cursor-not-allowed opacity-50'
+                  }`}
+                  title={isModifiedFromDefault ? 'ریست تمامی وضعیت‌ها به حالت پیش‌فرض (حضور همه)' : 'در حالت پیش‌فرض (حضور همه) قرار دارد'}
+                >
+                  <RotateCcw className="w-4 h-4 shrink-0" />
+                  <span>ریست</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => saveAttendanceMutation.mutate()}
@@ -1481,7 +1528,7 @@ export const AttendancePage: React.FC = () => {
               <div className="flex-1" />
             )}
 
-            {/* فیلترها - Center */}
+            {/* فیلترها */}
             <button
               type="button"
               onClick={() => setShowFilterStats(!showFilterStats)}
@@ -1493,6 +1540,22 @@ export const AttendancePage: React.FC = () => {
               title="فیلترها"
             >
               <Filter className="w-4 h-4" />
+            </button>
+
+            {/* ریست - Reset Button (Mobile) */}
+            <button
+              type="button"
+              onClick={handleResetToDefault}
+              disabled={!isModifiedFromDefault}
+              className={`h-10 px-3 rounded-xl border font-black text-xs inline-flex items-center justify-center gap-1 transition-all shrink-0 ${
+                isModifiedFromDefault
+                  ? 'border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 active:bg-rose-100 cursor-pointer'
+                  : 'border-gray-200 dark:border-[#242F42] bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 dark:text-gray-600 cursor-not-allowed opacity-50'
+              }`}
+              title={isModifiedFromDefault ? 'ریست تمامی وضعیت‌ها به حالت پیش‌فرض (حضور همه)' : 'در حالت پیش‌فرض (حضور همه) قرار دارد'}
+            >
+              <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+              <span>ریست</span>
             </button>
 
             {/* ثبت نهایی - Left */}
