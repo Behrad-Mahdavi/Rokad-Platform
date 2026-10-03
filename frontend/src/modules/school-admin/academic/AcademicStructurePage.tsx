@@ -901,6 +901,7 @@ export const AcademicStructurePage: React.FC = () => {
             },
             {
               header: 'عملیات',
+              className: 'text-center w-28',
               mobilePriority: 'hidden',
               cell: (c) => (
                 <div className="flex items-center justify-center gap-1.5">

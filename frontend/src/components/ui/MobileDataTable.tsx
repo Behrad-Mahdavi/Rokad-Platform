@@ -241,13 +241,19 @@ export function MobileDataTable<T>({
         <Table>
           <TableHeader>
             <TableRow>
-              {columns.map((col, idx) => (
-                <TableHead key={getColKey(col, idx)} className={col.className}>
-                  {col.header}
-                </TableHead>
-              ))}
+              {columns.map((col, idx) => {
+                const isActionCol = col.key === 'actions' || col.header === 'عملیات' || col.className?.includes('text-center');
+                return (
+                  <TableHead
+                    key={getColKey(col, idx)}
+                    className={`${isActionCol ? 'text-center' : ''} ${col.className || ''}`}
+                  >
+                    {col.header}
+                  </TableHead>
+                );
+              })}
               {cardActions && !columns.some((c) => c.key === 'actions' || c.header === 'عملیات') && (
-                <TableHead className="text-center w-24">عملیات</TableHead>
+                <TableHead className="text-center w-28">عملیات</TableHead>
               )}
             </TableRow>
           </TableHeader>
@@ -256,11 +262,17 @@ export function MobileDataTable<T>({
               const key = keyExtractor(item, index);
               return (
                 <TableRow key={key}>
-                  {columns.map((col, idx) => (
-                    <TableCell key={getColKey(col, idx)} className={col.className}>
-                      {renderCell(col, item, index)}
-                    </TableCell>
-                  ))}
+                  {columns.map((col, idx) => {
+                    const isActionCol = col.key === 'actions' || col.header === 'عملیات' || col.className?.includes('text-center');
+                    return (
+                      <TableCell
+                        key={getColKey(col, idx)}
+                        className={`${isActionCol ? 'text-center' : ''} ${col.className || ''}`}
+                      >
+                        {renderCell(col, item, index)}
+                      </TableCell>
+                    );
+                  })}
                   {cardActions && !columns.some((c) => c.key === 'actions' || c.header === 'عملیات') && (
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1.5">
