@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
@@ -22,6 +22,8 @@ import {
   RefreshCw,
   LogOut,
   Lock,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 interface SessionItem {
@@ -62,6 +64,25 @@ export const SecuritySection: React.FC = () => {
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [isRevokingAll, setIsRevokingAll] = useState(false);
+  const [isExpandedSessions, setIsExpandedSessions] = useState(false);
+
+  const sortedSessions = useMemo(() => {
+    return [...sessions].sort((a, b) => {
+      if (a.isCurrent && !b.isCurrent) return -1;
+      if (!a.isCurrent && b.isCurrent) return 1;
+      return (
+        new Date(b.lastActiveAt || b.createdAt).getTime() -
+        new Date(a.lastActiveAt || a.createdAt).getTime()
+      );
+    });
+  }, [sessions]);
+
+  const visibleSessions = useMemo(() => {
+    if (isExpandedSessions || sortedSessions.length <= 3) {
+      return sortedSessions;
+    }
+    return sortedSessions.slice(0, 3);
+  }, [sortedSessions, isExpandedSessions]);
 
   // Change Password State
   const [passForm, setPassForm] = useState({
@@ -347,9 +368,16 @@ export const SecuritySection: React.FC = () => {
                 <Laptop className="w-5 h-5" />
               </div>
               <div>
-                <CardTitle className="text-sm sm:text-base font-black text-ink-darker dark:text-white">
-                  دستگاه‌های فعال
-                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-sm sm:text-base font-black text-ink-darker dark:text-white">
+                    دستگاه‌های فعال
+                  </CardTitle>
+                  {sessions.length > 0 && (
+                    <Badge variant="outline" className="text-[10px] font-bold px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700">
+                      {toPersianDigits(sessions.length)} دستگاه
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -395,57 +423,83 @@ export const SecuritySection: React.FC = () => {
               هیچ نشستی ثبت نشده است
             </div>
           ) : (
-            sessions.map((s) => (
-              <div
-                key={s.id}
-                className={`p-3 sm:p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-all ${
-                  s.isCurrent
-                    ? 'border-emerald-500/40 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-2xs'
-                    : 'border-gray-200/80 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1C2536]/30 hover:border-gray-300 dark:hover:border-gray-700'
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-2.5 rounded-xl bg-white dark:bg-[#1C2536] border border-gray-200/80 dark:border-gray-700/80 shadow-2xs shrink-0">
-                    {getDeviceIcon(s.deviceType)}
-                  </div>
+            <>
+              {visibleSessions.map((s) => (
+                <div
+                  key={s.id}
+                  className={`p-3 sm:p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-all ${
+                    s.isCurrent
+                      ? 'border-emerald-500/40 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-2xs'
+                      : 'border-gray-200/80 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1C2536]/30 hover:border-gray-300 dark:hover:border-gray-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="p-2.5 rounded-xl bg-white dark:bg-[#1C2536] border border-gray-200/80 dark:border-gray-700/80 shadow-2xs shrink-0">
+                      {getDeviceIcon(s.deviceType)}
+                    </div>
 
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-xs sm:text-sm text-ink-darker dark:text-white truncate">
-                        {s.browser} روی {s.os}
-                      </span>
-                      {s.isCurrent && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300/50 dark:border-emerald-800/50">
-                          دستگاه فعلی شما
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-xs sm:text-sm text-ink-darker dark:text-white truncate">
+                          {s.browser} روی {s.os}
                         </span>
-                      )}
-                    </div>
+                        {s.isCurrent && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300/50 dark:border-emerald-800/50">
+                            دستگاه فعلی شما
+                          </span>
+                        )}
+                      </div>
 
-                    <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 font-mono dir-ltr flex-wrap">
-                      <span>IP: {s.ipAddress}</span>
-                      <span className="text-gray-300 dark:text-gray-600">•</span>
-                      <span className="dir-rtl">
-                        آخرین فعالیت: {formatToJalali(s.lastActiveAt)}
-                      </span>
+                      <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 font-mono dir-ltr flex-wrap">
+                        <span>IP: {s.ipAddress}</span>
+                        <span className="text-gray-300 dark:text-gray-600">•</span>
+                        <span className="dir-rtl">
+                          آخرین فعالیت: {formatToJalali(s.lastActiveAt)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {!s.isCurrent && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRevokeSession(s.id)}
-                    isLoading={revokingId === s.id}
-                    className="text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 min-h-[36px] px-2.5 rounded-xl shrink-0"
-                    title="خاتمه این نشست"
+                  {!s.isCurrent && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRevokeSession(s.id)}
+                      isLoading={revokingId === s.id}
+                      className="text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 min-h-[36px] px-2.5 rounded-xl shrink-0"
+                      title="خاتمه این نشست"
+                    >
+                      <LogOut className="w-3.5 h-3.5 ml-1" />
+                      <span>خاتمه</span>
+                    </Button>
+                  )}
+                </div>
+              ))}
+
+              {sessions.length > 3 && (
+                <div className="pt-2 border-t border-gray-100 dark:border-gray-800/80 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setIsExpandedSessions((prev) => !prev)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-primary hover:bg-primary/10 dark:hover:bg-primary/20 transition-all cursor-pointer"
                   >
-                    <LogOut className="w-3.5 h-3.5 ml-1" />
-                    <span>خاتمه</span>
-                  </Button>
-                )}
-              </div>
-            ))
+                    {isExpandedSessions ? (
+                      <>
+                        <ChevronUp className="w-4 h-4" />
+                        <span>بستن و نمایش خلاصه ({toPersianDigits(3)} دستگاه اخیر)</span>
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-4 h-4" />
+                        <span>
+                          مشاهده سایر دستگاه‌ها ({toPersianDigits(sessions.length - 3)} نشست دیگر)
+                        </span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
