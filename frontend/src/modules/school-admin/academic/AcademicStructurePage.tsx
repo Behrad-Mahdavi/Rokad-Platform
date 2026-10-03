@@ -817,11 +817,10 @@ export const AcademicStructurePage: React.FC = () => {
                   e.stopPropagation();
                   handleOpenClassStudents(c);
                 }}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-primary hover:text-white hover:bg-primary dark:text-primary-light bg-primary/10 dark:bg-primary/20 border border-primary/20 hover:border-primary transition-all shrink-0 cursor-pointer shadow-2xs text-xs font-bold"
-                title="مشاهده دانش‌آموزان کلاس و تغییر رشته/پایه"
+                className="p-2 rounded-xl text-primary hover:text-white hover:bg-primary dark:text-primary-light bg-primary/10 dark:bg-primary/20 border border-primary/20 hover:border-primary transition-all shrink-0 cursor-pointer shadow-2xs"
+                title="دانش‌آموزان کلاس"
               >
-                <Users className="w-3.5 h-3.5" />
-                <span>{c._count?.enrollments || c._count?.students || 0}</span>
+                <Users className="w-4 h-4" />
               </button>
               <button
                 type="button"
@@ -911,11 +910,10 @@ export const AcademicStructurePage: React.FC = () => {
                       e.stopPropagation();
                       handleOpenClassStudents(c);
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-primary hover:text-white hover:bg-primary dark:text-primary-light bg-primary/10 dark:bg-primary/20 border border-primary/20 hover:border-primary transition-all cursor-pointer shadow-2xs text-xs font-bold"
-                    title="مشاهده و مدیریت دانش‌آموزان کلاس"
+                    className="p-2 rounded-xl text-primary hover:text-white hover:bg-primary dark:text-primary-light bg-primary/10 dark:bg-primary/20 border border-primary/20 hover:border-primary transition-all cursor-pointer shadow-2xs"
+                    title="دانش‌آموزان کلاس"
                   >
                     <Users className="w-4 h-4" />
-                    <span>دانش‌آموزان ({c._count?.enrollments || c._count?.students || 0})</span>
                   </button>
                   <button
                     type="button"
@@ -2560,61 +2558,53 @@ export const AcademicStructurePage: React.FC = () => {
           setIsClassStudentsModalOpen(false);
           setEditingStudentId(null);
         }}
-        title={`دانش‌آموزان ${selectedClassForStudents?.name || 'کلاس'}`}
-        description="مشاهده لیست دانش‌آموزان کلاس و تغییر مقطع/پایه تحصیلی و رشته/کلاس"
+        title={`دانش‌آموزان ${selectedClassForStudents?.name || ''}`}
         maxWidth="3xl"
       >
-        <div className="space-y-4">
-          {/* Classroom Overview Summary Card */}
+        <div className="space-y-3">
+          {/* Classroom Summary */}
           {selectedClassForStudents && (
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Building className="w-5 h-5 text-primary" />
-                  <span className="font-extrabold text-ink-darker text-base">
-                    {selectedClassForStudents.name}
-                  </span>
-                  <span className="font-mono text-xs bg-white dark:bg-gray-800 px-2 py-0.5 rounded-lg border border-gray-200 text-gray-700">
-                    کد: {selectedClassForStudents.code}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap pt-0.5">
-                  <span>سال: {selectedClassForStudents.academicYear?.name || 'جاری'}</span>
-                  {selectedClassForStudents.roomNumber && <span>• شماره اتاق: {selectedClassForStudents.roomNumber}</span>}
-                </div>
+            <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/80 dark:border-gray-700 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Building className="w-4 h-4 text-primary shrink-0" />
+                <span className="font-bold text-ink-darker text-xs sm:text-sm">
+                  {selectedClassForStudents.name}
+                </span>
+                <span className="font-mono text-[11px] bg-white dark:bg-gray-700 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300">
+                  {selectedClassForStudents.code}
+                </span>
               </div>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="default" className="font-bold text-xs py-1 px-2.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Badge variant="default" className="text-[11px] py-0.5 px-2">
                   پایه {selectedClassForStudents.level?.name || 'دهم'}
                 </Badge>
-                <Badge variant="college" className="font-bold text-xs py-1 px-2.5">
-                  {selectedClassForStudents.field?.name || 'شبکه و نرم‌افزار رایانه'}
+                <Badge variant="college" className="text-[11px] py-0.5 px-2">
+                  {selectedClassForStudents.field?.name || 'شبکه و نرم‌افزار'}
                 </Badge>
-                <Badge variant="neutral" className="font-bold text-xs py-1 px-2.5">
-                  {classStudents.length} از {selectedClassForStudents.capacity || 30} نفر
+                <Badge variant="neutral" className="text-[11px] py-0.5 px-2 font-mono">
+                  {classStudents.length} / {selectedClassForStudents.capacity || 30}
                 </Badge>
               </div>
             </div>
           )}
 
-          {/* Tab Navigation inside Modal */}
+          {/* Tab Navigation & Search */}
           <div className="flex items-center justify-between gap-2 border-b border-gray-200 pb-2 flex-wrap">
-            <div className="flex space-x-2 space-x-reverse">
+            <div className="flex space-x-1.5 space-x-reverse">
               <button
                 type="button"
                 onClick={() => {
                   setStudentModalTab('MEMBERS');
                   setEditingStudentId(null);
                 }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
                   studentModalTab === 'MEMBERS'
                     ? 'bg-primary text-white shadow-xs'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
                 }`}
               >
                 <Users className="w-3.5 h-3.5" />
-                <span>دانش‌آموزان این کلاس ({classStudents.length})</span>
+                <span>دانش‌آموزان ({classStudents.length})</span>
               </button>
               <button
                 type="button"
@@ -2622,34 +2612,34 @@ export const AcademicStructurePage: React.FC = () => {
                   setStudentModalTab('ADD_STUDENT');
                   setEditingStudentId(null);
                 }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
                   studentModalTab === 'ADD_STUDENT'
                     ? 'bg-primary text-white shadow-xs'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
                 }`}
               >
                 <UserPlus className="w-3.5 h-3.5" />
-                <span>افزودن از سایر کلاس‌ها ({otherStudents.length})</span>
+                <span>افزودن ({otherStudents.length})</span>
               </button>
             </div>
 
             {/* Quick Search */}
-            <div className="relative w-full sm:w-64">
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
+            <div className="relative w-full sm:w-56">
+              <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-gray-400">
                 <Search className="w-3.5 h-3.5" />
               </div>
               <input
                 type="text"
                 value={studentSearchQuery}
                 onChange={(e) => setStudentSearchQuery(e.target.value)}
-                placeholder="جستجوی نام، کدملی یا کد دانش‌آموزی..."
+                placeholder="جستجو..."
                 className="w-full pl-3 pr-8 py-1.5 text-xs rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
               />
               {studentSearchQuery && (
                 <button
                   type="button"
                   onClick={() => setStudentSearchQuery('')}
-                  className="absolute inset-y-0 left-0 pl-2.5 flex items-center text-gray-400 hover:text-gray-600"
+                  className="absolute inset-y-0 left-0 pl-2 flex items-center text-gray-400 hover:text-gray-600"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -2658,105 +2648,94 @@ export const AcademicStructurePage: React.FC = () => {
           </div>
 
           {/* Student List Content */}
-          <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
             {isLoadingClassStudents ? (
-              <div className="space-y-2 py-4">
-                <Skeleton className="h-16 w-full rounded-2xl" />
-                <Skeleton className="h-16 w-full rounded-2xl" />
-                <Skeleton className="h-16 w-full rounded-2xl" />
+              <div className="space-y-2 py-3">
+                <Skeleton className="h-14 w-full rounded-xl" />
+                <Skeleton className="h-14 w-full rounded-xl" />
+                <Skeleton className="h-14 w-full rounded-xl" />
               </div>
             ) : displayedStudents.length === 0 ? (
-              <div className="text-center py-10 px-4 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 text-gray-400 text-xs">
-                <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                {studentModalTab === 'MEMBERS'
-                  ? 'هنوز دانش‌آموزی در این کلاس ثبت نشده است. از تب «افزودن از سایر کلاس‌ها» برای انتساب دانش‌آموز استفاده کنید.'
-                  : 'دانش‌آموزی برای انتساب یافت نشد.'}
+              <div className="text-center py-8 px-4 text-gray-400 text-xs">
+                دانش‌آموزی یافت نشد.
               </div>
             ) : (
               displayedStudents.map((s: any) => {
                 const isEditing = editingStudentId === s.id;
                 const currentEnrolledClass = s.enrollments?.[0]?.classroom;
                 const studentGrade = s.gradeLevel || currentEnrolledClass?.level?.name || 'دهم';
-                const studentField = currentEnrolledClass?.field?.name || 'بدون رشته';
+                const studentField = currentEnrolledClass?.field?.name || '';
 
                 return (
                   <div
                     key={s.id}
-                    className={`p-3.5 rounded-2xl border transition-all ${
+                    className={`p-3 rounded-xl border transition-all ${
                       isEditing
-                        ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-sm'
+                        ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-xs'
                         : 'border-gray-200/80 hover:border-gray-300 bg-white dark:bg-gray-800/80 shadow-2xs'
                     }`}
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center justify-between gap-2.5">
                       {/* Student Info */}
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0 border border-primary/20">
-                          {s.user?.firstName?.[0] || 'د'}{s.user?.lastName?.[0] || 'آ'}
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0 border border-primary/20">
+                          {s.user?.firstName?.[0] || 'د'}
                         </div>
-                        <div className="space-y-0.5">
-                          <div className="font-bold text-ink-darker text-xs sm:text-sm flex items-center gap-2 flex-wrap">
-                            <span>{s.user?.firstName} {s.user?.lastName}</span>
+                        <div className="space-y-0.5 min-w-0">
+                          <div className="font-bold text-ink-darker text-xs sm:text-sm flex items-center gap-1.5 flex-wrap">
+                            <span className="truncate">{s.user?.firstName} {s.user?.lastName}</span>
                             <Badge variant="default" className="text-[10px] py-0 px-1.5">
                               پایه {studentGrade}
                             </Badge>
                             {currentEnrolledClass && (
-                              <Badge variant="college" className="text-[10px] py-0 px-1.5">
-                                {currentEnrolledClass.name} ({studentField})
+                              <Badge variant="college" className="text-[10px] py-0 px-1.5 truncate max-w-[150px]">
+                                {currentEnrolledClass.name} {studentField ? `(${studentField})` : ''}
                               </Badge>
                             )}
                           </div>
-                          <div className="flex items-center gap-3 text-[11px] text-gray-500 flex-wrap">
-                            <span>کد ملی: <span className="font-mono text-gray-700 dark:text-gray-300 font-semibold">{s.nationalCode || s.user?.nationalId || '-'}</span></span>
-                            <span>کد دانش‌آموزی: <span className="font-mono text-gray-700 dark:text-gray-300 font-semibold">{s.studentCode || '-'}</span></span>
+                          <div className="flex items-center gap-2.5 text-[11px] text-gray-500 flex-wrap">
+                            <span>کد ملی: <span className="font-mono text-gray-700 dark:text-gray-300">{s.nationalCode || s.user?.nationalId || '-'}</span></span>
+                            <span>کد: <span className="font-mono text-gray-700 dark:text-gray-300">{s.studentCode || '-'}</span></span>
                             {(s.fatherName || s.fatherFullName) && (
-                              <span>نام پدر: <span className="text-gray-700 dark:text-gray-300 font-semibold">{s.fatherName || s.fatherFullName}</span></span>
+                              <span>پدر: <span className="text-gray-700 dark:text-gray-300">{s.fatherName || s.fatherFullName}</span></span>
                             )}
                           </div>
                         </div>
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         {studentModalTab === 'MEMBERS' ? (
                           !isEditing ? (
                             <button
                               type="button"
                               onClick={() => handleStartEditStudent(s)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition-all text-xs font-bold cursor-pointer"
-                              title="تغییر پایه و رشته / کلاس"
+                              className="p-2 rounded-xl text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white border border-blue-200 dark:border-blue-800 transition-all shrink-0 cursor-pointer shadow-2xs"
+                              title="تغییر پایه و رشته"
                             >
-                              <ArrowRightLeft className="w-3.5 h-3.5" />
-                              <span>تغییر پایه و رشته</span>
+                              <ArrowRightLeft className="w-4 h-4" />
                             </button>
                           ) : null
                         ) : (
-                          <Button
-                            size="sm"
-                            variant="primary"
-                            isLoading={isSavingStudentTransfer}
+                          <button
+                            type="button"
                             onClick={() => handleQuickAssignStudentToClass(s.id)}
-                            className="text-xs h-8 px-3 rounded-xl"
+                            disabled={isSavingStudentTransfer}
+                            className="p-2 rounded-xl text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-600 hover:text-white dark:hover:bg-emerald-600 dark:hover:text-white border border-emerald-200 dark:border-emerald-800 transition-all shrink-0 cursor-pointer shadow-2xs"
+                            title="افزودن به این کلاس"
                           >
-                            <UserPlus className="w-3.5 h-3.5 ml-1" />
-                            <span>افزودن به این کلاس</span>
-                          </Button>
+                            <UserPlus className="w-4 h-4" />
+                          </button>
                         )}
                       </div>
                     </div>
 
-                    {/* Inline Edit Panel when editing this student */}
+                    {/* Inline Edit Panel */}
                     {isEditing && (
-                      <div className="mt-3 pt-3 border-t border-primary/20 space-y-3 bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl">
-                        <div className="text-xs font-bold text-primary flex items-center gap-1.5">
-                          <Edit3 className="w-3.5 h-3.5" />
-                          <span>تغییر مقطع/پایه تحصیلی و انتساب به رشته و کلاس</span>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {/* Grade Level Select */}
+                      <div className="mt-2.5 pt-2.5 border-t border-primary/20 space-y-2.5 bg-gray-50/80 dark:bg-gray-900/60 p-2.5 rounded-xl">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <div>
-                            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                            <label className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-1">
                               پایه تحصیلی:
                             </label>
                             <select
@@ -2764,7 +2743,7 @@ export const AcademicStructurePage: React.FC = () => {
                               onChange={(e) =>
                                 setStudentEditForm((prev) => ({ ...prev, gradeLevel: e.target.value }))
                               }
-                              className="w-full h-9 rounded-xl border border-gray-200 bg-white dark:bg-gray-800 px-3 text-xs font-medium text-ink-dark focus:outline-none focus:ring-1 focus:ring-primary"
+                              className="w-full h-8.5 rounded-lg border border-gray-200 bg-white dark:bg-gray-800 px-2.5 text-xs font-medium text-ink-dark focus:outline-none focus:ring-1 focus:ring-primary"
                             >
                               {levels.length > 0
                                 ? levels.map((lvl) => (
@@ -2780,17 +2759,16 @@ export const AcademicStructurePage: React.FC = () => {
                             </select>
                           </div>
 
-                          {/* Classroom & Field Select */}
                           <div>
-                            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                              رشته و کلاس تحصیلی:
+                            <label className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-1">
+                              رشته و کلاس:
                             </label>
                             <select
                               value={studentEditForm.classroomId}
                               onChange={(e) =>
                                 setStudentEditForm((prev) => ({ ...prev, classroomId: e.target.value }))
                               }
-                              className="w-full h-9 rounded-xl border border-gray-200 bg-white dark:bg-gray-800 px-3 text-xs font-medium text-ink-dark focus:outline-none focus:ring-1 focus:ring-primary"
+                              className="w-full h-8.5 rounded-lg border border-gray-200 bg-white dark:bg-gray-800 px-2.5 text-xs font-medium text-ink-dark focus:outline-none focus:ring-1 focus:ring-primary"
                             >
                               <option value="">-- بدون کلاس انتصابی --</option>
                               {classrooms.map((c) => (
@@ -2802,15 +2780,14 @@ export const AcademicStructurePage: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Save / Cancel buttons */}
-                        <div className="flex items-center justify-end gap-2 pt-1">
+                        <div className="flex items-center justify-end gap-1.5 pt-1">
                           <Button
                             type="button"
                             size="sm"
                             variant="ghost"
                             onClick={() => setEditingStudentId(null)}
                             disabled={isSavingStudentTransfer}
-                            className="text-xs h-8 px-3"
+                            className="text-xs h-7.5 px-2.5"
                           >
                             انصراف
                           </Button>
@@ -2820,10 +2797,10 @@ export const AcademicStructurePage: React.FC = () => {
                             variant="primary"
                             isLoading={isSavingStudentTransfer}
                             onClick={() => handleSaveStudentChange(s.id)}
-                            className="text-xs h-8 px-3"
+                            className="text-xs h-7.5 px-3"
                           >
                             <Save className="w-3.5 h-3.5 ml-1" />
-                            <span>ذخیره تغییرات</span>
+                            <span>ذخیره</span>
                           </Button>
                         </div>
                       </div>
@@ -2835,7 +2812,7 @@ export const AcademicStructurePage: React.FC = () => {
           </div>
 
           {/* Modal Footer */}
-          <div className="flex justify-end pt-2 border-t border-gray-200">
+          <div className="flex justify-end pt-1 border-t border-gray-200">
             <Button
               type="button"
               variant="secondary"
@@ -2843,7 +2820,7 @@ export const AcademicStructurePage: React.FC = () => {
                 setIsClassStudentsModalOpen(false);
                 setEditingStudentId(null);
               }}
-              className="w-full sm:w-auto text-xs"
+              className="w-full sm:w-auto text-xs h-8 px-4"
             >
               بستن
             </Button>
