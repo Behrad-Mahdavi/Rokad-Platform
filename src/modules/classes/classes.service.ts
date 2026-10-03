@@ -14,6 +14,7 @@ import {
   UpdateClassroomDto,
   EnrollStudentDto,
   CreateScheduleDto,
+  UpdateScheduleDto,
 } from './dto/create-lesson.dto';
 
 @Injectable()
@@ -896,6 +897,196 @@ export class ClassesService {
         periodNumber: dto.periodNumber,
         startTime: dto.startTime,
         endTime: dto.endTime,
+      },
+      include: scheduleInclude,
+    });
+  }
+
+  async updateSchedule(tenantId: string, scheduleId: string, dto: UpdateScheduleDto) {
+    const existing = await this.prisma.classSchedule.findFirst({
+      where: { id: scheduleId, tenantId },
+    });
+    if (!existing) {
+      throw new NotFoundException('برنامه کلاسی مورد نظر یافت نشد');
+    }
+
+    const classroomId = dto.classroomId || existing.classroomId;
+    const lessonId = dto.lessonId || existing.lessonId;
+    const teacherId = dto.teacherId || existing.teacherId;
+    const dayOfWeek = dto.dayOfWeek || existing.dayOfWeek;
+    const periodNumber = dto.periodNumber !== undefined ? dto.periodNumber : existing.periodNumber;
+    const startTime = dto.startTime || existing.startTime;
+    const endTime = dto.endTime || existing.endTime;
+    const isSplitPeriod = dto.isSplitPeriod !== undefined ? Boolean(dto.isSplitPeriod) : existing.isSplitPeriod;
+    const secondLessonId = isSplitPeriod ? (dto.secondLessonId !== undefined ? dto.secondLessonId : existing.secondLessonId) : null;
+    const secondTeacherId = isSplitPeriod ? (dto.secondTeacherId !== undefined ? dto.secondTeacherId : existing.secondTeacherId) : null;
+
+    if (!periodNumber || periodNumber < 1 || periodNumber > 10) {
+      throw new BadRequestException('شماره زنگ کلاسی باید بین ۱ تا ۱۰ باشد');
+    }
+
+    // Verify entities belong to tenant
+    const classroom = await this.prisma.classroom.findFirst({
+      where: { id: classroomId, tenantId },
+    });
+    if (!classroom) {
+      throw new NotFoundException('کلاس درس مورد نظر در این مدرسه یافت نشد');
+    }
+
+    const lesson = await this.prisma.lesson.findFirst({
+      where: { id: lessonId, tenantId },
+    });
+    if (!lesson) {
+      throw new NotFoundException('درس مورد نظر در این مدرسه یافت نشد');
+    }
+
+    const teacher = await this.prisma.teacherProfile.findFirst({
+      where: { id: teacherId, tenantId },
+    });
+    if (!teacher) {
+      throw new NotFoundException('دبیر مورد نظر در این مدرسه یافت نشد');
+    }
+
+    if (isSplitPeriod) {
+      if (!secondLessonId || !secondTeacherId) {
+        throw new BadRequestException('در حالت یک هفته در میان (هفته فرد و زوج)، مشخص کردن درس دوم و دبیر دوم الزامی است');
+      }
+      const secondLesson = await this.prisma.lesson.findFirst({
+        where: { id: secondLessonId, tenantId },
+      });
+      if (!secondLesson) {
+        throw new NotFoundException('درس دوم مورد نظر در این مدرسه یافت نشد');
+      }
+
+      const secondTeacher = await this.prisma.teacherProfile.findFirst({
+        where: { id: secondTeacherId, tenantId },
+      });
+      if (!secondTeacher) {
+        throw new NotFoundException('دبیر دوم مورد نظر در این مدرسه یافت نشد');
+      }
+    }
+
+    // Check slot conflict with other schedules in this classroom
+    const slotConflict = await this.prisma.classSchedule.findFirst({
+      where: {
+        tenantId,
+        id: { not: scheduleId },
+        classroomId,
+        dayOfWeek,
+        periodNumber,
+      },
+    });
+
+    if (slotConflict && !dto.replaceExisting) {
+      throw new ConflictException(
+        `تداخل برنامه: در زنگ ${periodNumber} از روز ${dayOfWeek} قبلاً درسی برای این کلاس تعریف شده است`,
+      );
+    }
+
+    // Check teacher conflict in other classrooms
+    const teacherConflict = await this.prisma.classSchedule.findFirst({
+      where: {
+        tenantId,
+        id: { not: scheduleId },
+        classroomId: { not: classroomId },
+        OR: [{ teacherId }, { secondTeacherId: teacherId }],
+        dayOfWeek,
+        periodNumber,
+      },
+      include: {
+        classroom: true,
+        teacher: { include: { user: true } },
+        secondTeacher: { include: { user: true } },
+      },
+    });
+
+    let secondTeacherConflict: any = null;
+    if (isSplitPeriod && secondTeacherId) {
+      secondTeacherConflict = await this.prisma.classSchedule.findFirst({
+        where: {
+          tenantId,
+          id: { not: scheduleId },
+          classroomId: { not: classroomId },
+          OR: [{ teacherId: secondTeacherId }, { secondTeacherId }],
+          dayOfWeek,
+          periodNumber,
+        },
+        include: {
+          classroom: true,
+          teacher: { include: { user: true } },
+          secondTeacher: { include: { user: true } },
+        },
+      });
+    }
+
+    if ((teacherConflict || secondTeacherConflict) && !dto.allowTeacherConflict) {
+      let conflictingTeacher = '';
+      if (teacherConflict) {
+        if (teacherConflict.teacherId === teacherId && teacherConflict.teacher?.user) {
+          conflictingTeacher = `${teacherConflict.teacher.user.firstName || ''} ${teacherConflict.teacher.user.lastName || ''}`.trim();
+        } else if (teacherConflict.secondTeacherId === teacherId && teacherConflict.secondTeacher?.user) {
+          conflictingTeacher = `${teacherConflict.secondTeacher.user.firstName || ''} ${teacherConflict.secondTeacher.user.lastName || ''}`.trim();
+        }
+      }
+      if (!conflictingTeacher && secondTeacherConflict) {
+        if (secondTeacherConflict.teacherId === secondTeacherId && secondTeacherConflict.teacher?.user) {
+          conflictingTeacher = `${secondTeacherConflict.teacher.user.firstName || ''} ${secondTeacherConflict.teacher.user.lastName || ''}`.trim();
+        } else if (secondTeacherConflict.secondTeacherId === secondTeacherId && secondTeacherConflict.secondTeacher?.user) {
+          conflictingTeacher = `${secondTeacherConflict.secondTeacher.user.firstName || ''} ${secondTeacherConflict.secondTeacher.user.lastName || ''}`.trim();
+        }
+      }
+      if (!conflictingTeacher) {
+        conflictingTeacher = 'دبیر انتخابی';
+      }
+
+      const conflictingClassroom =
+        teacherConflict?.classroom?.name || secondTeacherConflict?.classroom?.name || 'کلاس دیگر';
+
+      throw new ConflictException(
+        `تداخل برنامه دبیر: ${conflictingTeacher} در این روز و زنگ کلاسی، در کلاس '${conflictingClassroom}' تدریس دارد`,
+      );
+    }
+
+    const scheduleInclude = {
+      lesson: {
+        include: {
+          level: true,
+          field: true,
+        },
+      },
+      teacher: {
+        include: { user: true },
+      },
+      secondLesson: {
+        include: {
+          level: true,
+          field: true,
+        },
+      },
+      secondTeacher: {
+        include: { user: true },
+      },
+    };
+
+    if (slotConflict && dto.replaceExisting) {
+      await this.prisma.classSchedule.delete({
+        where: { id: slotConflict.id },
+      });
+    }
+
+    return this.prisma.classSchedule.update({
+      where: { id: scheduleId },
+      data: {
+        classroomId,
+        lessonId,
+        teacherId,
+        isSplitPeriod,
+        secondLessonId,
+        secondTeacherId,
+        dayOfWeek,
+        periodNumber,
+        startTime,
+        endTime,
       },
       include: scheduleInclude,
     });

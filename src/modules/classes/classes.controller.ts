@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Put,
   Delete,
   Body,
   Param,
@@ -19,6 +20,7 @@ import {
   UpdateClassroomDto,
   EnrollStudentDto,
   CreateScheduleDto,
+  UpdateScheduleDto,
 } from './dto/create-lesson.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -228,6 +230,21 @@ export class ClassesController {
   ) {
     const effectiveTenantId = tenantId || userTenantId;
     return this.classesService.getTeacherSchedule(effectiveTenantId, teacherId);
+  }
+
+  @Patch('schedules/:id')
+  @Put('schedules/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.SCHEDULE_WRITE)
+  @ApiOperation({ summary: 'ویرایش زنگ کلاسی در برنامه هفتگی' })
+  async updateSchedule(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') scheduleId: string,
+    @Body() dto: UpdateScheduleDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.classesService.updateSchedule(effectiveTenantId, scheduleId, dto);
   }
 
   @Delete('schedules/:id')

@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsEnum,
@@ -318,3 +318,5 @@ export class CreateScheduleDto {
   @IsString()
   secondTeacherId?: string;
 }
+
+export class UpdateScheduleDto extends PartialType(CreateScheduleDto) {}
