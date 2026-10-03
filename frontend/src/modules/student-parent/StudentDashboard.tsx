@@ -277,12 +277,6 @@ export const StudentDashboard: React.FC = () => {
             <h2 className="text-sm font-black text-ink-darker dark:text-white">
               جریان کلاس‌های امروز ({DAY_NAMES[todayKey]})
             </h2>
-            {activePeriod && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/50 animate-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                زنگ جاری: {activePeriod.lesson?.name || 'کلاس'}
-              </span>
-            )}
           </div>
 
           <button
