@@ -6,6 +6,7 @@ import {
   UserCheck,
   UserX,
   Clock,
+  Lock,
   ShieldAlert,
   CalendarCheck,
   Search,
@@ -210,6 +211,7 @@ export const AttendancePage: React.FC = () => {
 
   // 3. Date Navigation Helpers
   const isSelectedDateToday = selectedDate === todayJalali;
+  const isPastDate = selectedDate < todayJalali;
 
   const navigateDate = (deltaDays: number) => {
     try {
@@ -271,8 +273,8 @@ export const AttendancePage: React.FC = () => {
   }, []);
 
   const checkSlotStatus = (startTimeStr?: string, endTimeStr?: string) => {
-    if (!startTimeStr || !endTimeStr) return 'INACTIVE';
-    if (!isSelectedDateToday) return 'OTHER_DAY';
+    if (!startTimeStr || !endTimeStr) return isPastDate ? 'PASSED' : 'INACTIVE';
+    if (!isSelectedDateToday) return isPastDate ? 'PASSED' : 'UPCOMING';
 
     const parseMinutes = (t: string) => {
       const [h, m] = t.split(':').map(Number);
@@ -289,6 +291,35 @@ export const AttendancePage: React.FC = () => {
     } else {
       return 'UPCOMING';
     }
+  };
+
+  const getPeriodTimingStatus = (periodItem: {
+    periodNumber: number;
+    startTime?: string;
+    endTime?: string;
+    slots: ScheduleSlot[];
+  }) => {
+    if (!isSelectedDateToday) {
+      return isPastDate ? 'PASSED' : 'UPCOMING';
+    }
+
+    const parseMinutes = (t: string) => {
+      const [h, m] = t.split(':').map(Number);
+      return (h || 0) * 60 + (m || 0);
+    };
+
+    if (periodItem.startTime && periodItem.endTime) {
+      const start = parseMinutes(periodItem.startTime);
+      const end = parseMinutes(periodItem.endTime);
+      if (currentMinutes >= start && currentMinutes <= end) return 'CURRENT';
+      if (currentMinutes > end) return 'PASSED';
+      return 'UPCOMING';
+    }
+
+    const slotStatuses = periodItem.slots.map((s) => checkSlotStatus(s.startTime, s.endTime));
+    if (slotStatuses.includes('CURRENT')) return 'CURRENT';
+    if (slotStatuses.every((st) => st === 'PASSED')) return 'PASSED';
+    return 'UPCOMING';
   };
 
   // 4.5. Query: Teachers List (For Admin & Staff)
@@ -660,6 +691,9 @@ export const AttendancePage: React.FC = () => {
   const saveAttendanceMutation = useMutation({
     mutationFn: async () => {
       if (!activeSession) return;
+      if (isPastDate) {
+        throw new Error('امکان تغییر یا ثبت اطلاعات برای روزهای گذشته وجود ندارد');
+      }
       const payload = {
         classroomId: activeSession.classroomId,
         lessonId: activeSession.lessonId || undefined,
@@ -711,6 +745,10 @@ export const AttendancePage: React.FC = () => {
   }, [studentsList]);
 
   const handleResetToDefault = () => {
+    if (isPastDate) {
+      toast.error('تغییر وضعیت برای تاریخ‌های گذشته امکان‌پذیر نیست');
+      return;
+    }
     setStudentsList((prev) =>
       prev.map((s) => ({
         ...s,
@@ -728,6 +766,10 @@ export const AttendancePage: React.FC = () => {
   };
 
   const handleMarkAllPresent = () => {
+    if (isPastDate) {
+      toast.error('تغییر وضعیت برای تاریخ‌های گذشته امکان‌پذیر نیست');
+      return;
+    }
     setStudentsList((prev) =>
       prev.map((s) => ({
         ...s,
@@ -746,6 +788,10 @@ export const AttendancePage: React.FC = () => {
   };
 
   const handleUpdateStudentStatus = (studentId: string, newStatus: AttendanceStatus) => {
+    if (isPastDate) {
+      toast.error('حضور و غیاب روزهای گذشته قابل تغییر نیست');
+      return;
+    }
     setStudentsList((prev) =>
       prev.map((s) => {
         if (s.studentId === studentId) {
@@ -762,12 +808,16 @@ export const AttendancePage: React.FC = () => {
   };
 
   const handleOpenTardyModal = (st: LocalStudentAttendance) => {
+    if (isPastDate) {
+      toast.error('امکان تغییر تاخیر برای روزهای گذشته وجود ندارد');
+      return;
+    }
     setTardyModalStudent(st);
     setTardyInputMinutes(st.delayMinutes && st.delayMinutes > 0 ? st.delayMinutes : 15);
   };
 
   const handleConfirmTardy = () => {
-    if (!tardyModalStudent) return;
+    if (!tardyModalStudent || isPastDate) return;
     const mins = Number(tardyInputMinutes) || 15;
     setStudentsList((prev) =>
       prev.map((s) => {
@@ -837,6 +887,10 @@ export const AttendancePage: React.FC = () => {
 
   const handleSaveModalEvaluation = async () => {
     if (!evaluationModalStudent) return;
+    if (isPastDate) {
+      toast.error('ارزشیابی روزهای گذشته قابل تغییر نیست');
+      return;
+    }
     const parsedGrade = modalOralGrade.trim() !== '' ? parseFloat(modalOralGrade) : null;
     if (parsedGrade !== null && (isNaN(parsedGrade) || parsedGrade < -20 || parsedGrade > 20)) {
       toast.error('نمره پرسش کلاسی باید عددی بین ۲۰- تا ۲۰ باشد');
@@ -1185,13 +1239,13 @@ export const AttendancePage: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleResetToDefault}
-                  disabled={!isModifiedFromDefault}
+                  disabled={isPastDate || !isModifiedFromDefault}
                   className={`flex-1 sm:flex-none h-10 px-3.5 rounded-xl border font-black text-xs sm:text-sm inline-flex items-center justify-center gap-1.5 transition-all shadow-2xs ${
-                    isModifiedFromDefault
+                    !isPastDate && isModifiedFromDefault
                       ? 'border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 cursor-pointer active:scale-95'
                       : 'border-gray-200 dark:border-[#242F42] bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 dark:text-gray-600 cursor-not-allowed opacity-50'
                   }`}
-                  title={isModifiedFromDefault ? 'ریست تمامی وضعیت‌ها به حالت پیش‌فرض (حضور همه)' : 'در حالت پیش‌فرض (حضور همه) قرار دارد'}
+                  title={isPastDate ? 'امکان تغییر در تاریخ‌های گذشته وجود ندارد' : isModifiedFromDefault ? 'ریست تمامی وضعیت‌ها به حالت پیش‌فرض (حضور همه)' : 'در حالت پیش‌فرض (حضور همه) قرار دارد'}
                 >
                   <RotateCcw className="w-4 h-4 shrink-0" />
                   <span>ریست</span>
@@ -1199,20 +1253,54 @@ export const AttendancePage: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => saveAttendanceMutation.mutate()}
-                  disabled={saveAttendanceMutation.isPending || studentsList.length === 0}
-                  className="flex-1 sm:flex-none h-10 px-4 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs sm:text-sm border-[1.5px] border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] hover:shadow-[2.5px_2.5px_0_#438C83] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  onClick={() => {
+                    if (isPastDate) {
+                      toast.error('ثبت اطلاعات برای روزهای گذشته امکان‌پذیر نیست');
+                      return;
+                    }
+                    saveAttendanceMutation.mutate();
+                  }}
+                  disabled={isPastDate || saveAttendanceMutation.isPending || studentsList.length === 0}
+                  className={`flex-1 sm:flex-none h-10 px-4 rounded-xl font-black text-xs sm:text-sm border-[1.5px] inline-flex items-center justify-center gap-1.5 transition-all ${
+                    isPastDate
+                      ? 'bg-gray-100 dark:bg-[#1C2536] border-gray-300 dark:border-[#242F42] text-muted-foreground cursor-not-allowed opacity-75'
+                      : 'bg-primary hover:bg-primary-hover text-white border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] hover:shadow-[2.5px_2.5px_0_#438C83] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer disabled:opacity-50'
+                  }`}
+                  title={isPastDate ? 'تاریخ گذشته در حالت فقط مشاهده است' : 'ثبت نهایی حضور و غیاب'}
                 >
-                  {saveAttendanceMutation.isPending ? (
-                    <RefreshCw className="w-4 h-4 animate-spin ml-1.5" />
+                  {isPastDate ? (
+                    <>
+                      <Lock className="w-4 h-4 ml-1.5 text-muted-foreground" />
+                      ثبت شده (فقط مشاهده)
+                    </>
+                  ) : saveAttendanceMutation.isPending ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin ml-1.5" />
+                      در حال ثبت...
+                    </>
                   ) : (
-                    <Send className="w-4 h-4 ml-1.5" />
+                    <>
+                      <Send className="w-4 h-4 ml-1.5" />
+                      ثبت نهایی
+                    </>
                   )}
-                  ثبت نهایی
                 </button>
               </div>
 
             </div>
+
+            {/* Read-only Alert Banner for Past Dates */}
+            {isPastDate && (
+              <div className="bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/30 dark:border-amber-800/50 rounded-xl p-3 flex items-center justify-between gap-3 text-amber-800 dark:text-amber-300 animate-in fade-in">
+                <div className="flex items-center gap-2 min-w-0 text-xs font-bold">
+                  <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span className="truncate">این جلسه مربوط به تاریخ گذشته است و در وضعیت «فقط مشاهده (غیرقابل تغییر)» قرار دارد.</span>
+                </div>
+                <span className="text-[10.5px] font-black px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30 shrink-0">
+                  قفل شده
+                </span>
+              </div>
+            )}
 
             {/* Collapsible Filter & Stats Bar + Search Bar (Toggled via Filter Icon) */}
             {showFilterStats && (
@@ -1451,11 +1539,16 @@ export const AttendancePage: React.FC = () => {
                       {/* PRESENT */}
                       <button
                         type="button"
+                        disabled={isPastDate}
                         onClick={() => handleUpdateStudentStatus(st.studentId, 'PRESENT')}
-                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer ${
-                          st.status === 'PRESENT'
-                            ? 'bg-emerald-600 text-white shadow-2xs font-black'
-                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground'
+                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap ${
+                          isPastDate
+                            ? st.status === 'PRESENT'
+                              ? 'bg-emerald-600 text-white font-black opacity-90 cursor-default'
+                              : 'bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 border border-gray-200/50 dark:border-[#242F42]/50 cursor-not-allowed'
+                            : st.status === 'PRESENT'
+                            ? 'bg-emerald-600 text-white shadow-2xs font-black cursor-pointer'
+                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground cursor-pointer'
                         }`}
                       >
                         <Check className="w-3 h-3 shrink-0" />
@@ -1465,11 +1558,16 @@ export const AttendancePage: React.FC = () => {
                       {/* ABSENT */}
                       <button
                         type="button"
+                        disabled={isPastDate}
                         onClick={() => handleUpdateStudentStatus(st.studentId, 'ABSENT')}
-                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer ${
-                          st.status === 'ABSENT'
-                            ? 'bg-rose-600 text-white shadow-2xs font-black'
-                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground'
+                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap ${
+                          isPastDate
+                            ? st.status === 'ABSENT'
+                              ? 'bg-rose-600 text-white font-black opacity-90 cursor-default'
+                              : 'bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 border border-gray-200/50 dark:border-[#242F42]/50 cursor-not-allowed'
+                            : st.status === 'ABSENT'
+                            ? 'bg-rose-600 text-white shadow-2xs font-black cursor-pointer'
+                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground cursor-pointer'
                         }`}
                       >
                         <UserX className="w-3 h-3 shrink-0" />
@@ -1479,11 +1577,16 @@ export const AttendancePage: React.FC = () => {
                       {/* TARDY */}
                       <button
                         type="button"
+                        disabled={isPastDate}
                         onClick={() => handleOpenTardyModal(st)}
-                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer ${
-                          st.status === 'TARDY'
-                            ? 'bg-orange-500 text-white shadow-2xs font-black'
-                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground'
+                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap ${
+                          isPastDate
+                            ? st.status === 'TARDY'
+                              ? 'bg-orange-500 text-white font-black opacity-90 cursor-default'
+                              : 'bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 border border-gray-200/50 dark:border-[#242F42]/50 cursor-not-allowed'
+                            : st.status === 'TARDY'
+                            ? 'bg-orange-500 text-white shadow-2xs font-black cursor-pointer'
+                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground cursor-pointer'
                         }`}
                       >
                         <Clock className="w-3 h-3 shrink-0" />
@@ -1493,11 +1596,16 @@ export const AttendancePage: React.FC = () => {
                       {/* EXCUSED_ABSENT - No modal popup */}
                       <button
                         type="button"
+                        disabled={isPastDate}
                         onClick={() => handleUpdateStudentStatus(st.studentId, 'EXCUSED_ABSENT')}
-                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer ${
-                          st.status === 'EXCUSED_ABSENT'
-                            ? 'bg-sky-600 text-white shadow-2xs font-black'
-                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground'
+                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap ${
+                          isPastDate
+                            ? st.status === 'EXCUSED_ABSENT'
+                              ? 'bg-sky-600 text-white font-black opacity-90 cursor-default'
+                              : 'bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 border border-gray-200/50 dark:border-[#242F42]/50 cursor-not-allowed'
+                            : st.status === 'EXCUSED_ABSENT'
+                            ? 'bg-sky-600 text-white shadow-2xs font-black cursor-pointer'
+                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground cursor-pointer'
                         }`}
                       >
                         <ShieldAlert className="w-3 h-3 shrink-0" />
@@ -1546,13 +1654,13 @@ export const AttendancePage: React.FC = () => {
             <button
               type="button"
               onClick={handleResetToDefault}
-              disabled={!isModifiedFromDefault}
+              disabled={isPastDate || !isModifiedFromDefault}
               className={`h-10 px-3 rounded-xl border font-black text-xs inline-flex items-center justify-center gap-1 transition-all shrink-0 ${
-                isModifiedFromDefault
+                !isPastDate && isModifiedFromDefault
                   ? 'border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 active:bg-rose-100 cursor-pointer'
                   : 'border-gray-200 dark:border-[#242F42] bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 dark:text-gray-600 cursor-not-allowed opacity-50'
               }`}
-              title={isModifiedFromDefault ? 'ریست تمامی وضعیت‌ها به حالت پیش‌فرض (حضور همه)' : 'در حالت پیش‌فرض (حضور همه) قرار دارد'}
+              title={isPastDate ? 'امکان تغییر در تاریخ گذشته وجود ندارد' : isModifiedFromDefault ? 'ریست تمامی وضعیت‌ها به حالت پیش‌فرض (حضور همه)' : 'در حالت پیش‌فرض (حضور همه) قرار دارد'}
             >
               <RotateCcw className="w-3.5 h-3.5 shrink-0" />
               <span>ریست</span>
@@ -1561,16 +1669,36 @@ export const AttendancePage: React.FC = () => {
             {/* ثبت نهایی - Left */}
             <button
               type="button"
-              onClick={() => saveAttendanceMutation.mutate()}
-              disabled={saveAttendanceMutation.isPending || studentsList.length === 0}
-              className="flex-1 h-10 rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs border-[1.5px] border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              onClick={() => {
+                if (isPastDate) {
+                  toast.error('ثبت اطلاعات برای روزهای گذشته امکان‌پذیر نیست');
+                  return;
+                }
+                saveAttendanceMutation.mutate();
+              }}
+              disabled={isPastDate || saveAttendanceMutation.isPending || studentsList.length === 0}
+              className={`flex-1 h-10 rounded-xl font-black text-xs border-[1.5px] inline-flex items-center justify-center gap-1.5 ${
+                isPastDate
+                  ? 'bg-gray-100 dark:bg-[#1C2536] border-gray-300 dark:border-[#242F42] text-muted-foreground cursor-not-allowed opacity-75'
+                  : 'bg-primary hover:bg-primary-hover text-white border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] cursor-pointer disabled:opacity-50'
+              }`}
             >
-              {saveAttendanceMutation.isPending ? (
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              {isPastDate ? (
+                <>
+                  <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span>ثبت شده (مشاهده)</span>
+                </>
+              ) : saveAttendanceMutation.isPending ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>در حال ثبت...</span>
+                </>
               ) : (
-                <Send className="w-3.5 h-3.5" />
+                <>
+                  <Send className="w-3.5 h-3.5" />
+                  <span>ثبت نهایی</span>
+                </>
               )}
-              <span>ثبت نهایی</span>
             </button>
           </div>
         </div>
@@ -1607,126 +1735,187 @@ export const AttendancePage: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-6">
-              {groupedByPeriod.map((period) => (
-                <div key={period.periodNumber} className="space-y-3">
-                  {/* Period Header */}
-                  <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-gray-200/80 dark:border-[#242F42]">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs shrink-0">
-                        <Clock className="w-4 h-4" />
-                      </div>
-                      <h3 className="text-base font-black text-foreground dark:text-white">
-                        زنگ {toPersianDigits(period.periodNumber)}
-                      </h3>
-                      {period.startTime && period.endTime && (
-                        <span className="text-xs font-mono font-bold text-muted-foreground px-2 py-0.5 rounded-lg bg-gray-50 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42]">
-                          {toPersianDigits(period.startTime)} تا {toPersianDigits(period.endTime)}
-                        </span>
-                      )}
-                      <span className="text-[11px] font-bold text-muted-foreground">
-                        ({toPersianDigits(period.slots.length)} کلاس)
-                      </span>
-                    </div>
-                  </div>
+              {groupedByPeriod.map((period) => {
+                const periodTiming = getPeriodTimingStatus(period);
+                const isPeriodCurrent = periodTiming === 'CURRENT';
+                const isPeriodPassed = periodTiming === 'PASSED';
 
-                  {/* Cards Grid: 300s, 200s, 100s */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                    {period.slots.map((slot) => {
-                      const slotTimingStatus = checkSlotStatus(slot.startTime, slot.endTime);
-                      const isCurrent = slotTimingStatus === 'CURRENT';
-                      const isPassed = slotTimingStatus === 'PASSED';
-                      const isRecorded = !!slot.stats?.isRecorded;
-
-                      return (
+                return (
+                  <div
+                    key={period.periodNumber}
+                    className={`space-y-3 rounded-2xl transition-all p-3.5 sm:p-4.5 ${
+                      isPeriodCurrent
+                        ? 'bg-emerald-500/[0.04] dark:bg-emerald-950/20 border-2 border-emerald-500/50 dark:border-emerald-500/40 shadow-xs ring-1 ring-emerald-500/20'
+                        : isPeriodPassed
+                        ? 'bg-gray-50/50 dark:bg-[#151C28]/40 border border-gray-200/50 dark:border-[#242F42]/50'
+                        : 'bg-white dark:bg-[#151C28]/60 border border-gray-200/80 dark:border-[#242F42]'
+                    }`}
+                  >
+                    {/* Period Header */}
+                    <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-gray-200/60 dark:border-[#242F42]/60 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <div
-                          key={slot.id}
-                          onClick={() =>
-                            setActiveSession({
-                              classroomId: slot.classroomId,
-                              classroomName: slot.classroomName,
-                              lessonId: slot.lessonId,
-                              lessonName: slot.lessonName,
-                              periodNumber: slot.periodNumber,
-                              startTime: slot.startTime,
-                              endTime: slot.endTime,
-                            })
-                          }
-                          className={`cursor-pointer group relative rounded-2xl p-4 sm:p-5 border transition-all hover:border-primary/50 hover:shadow-sm ${
-                            isCurrent
-                              ? 'border-emerald-500/70 dark:border-emerald-500/50 bg-gradient-to-r from-emerald-500/10 via-white to-white dark:from-emerald-950/30 dark:via-[#151C28] dark:to-[#151C28] ring-1 ring-emerald-500/40 dark:ring-emerald-500/30'
-                              : isRecorded
-                              ? 'bg-emerald-50/20 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-800/40'
-                              : 'bg-white dark:bg-[#151C28] border-gray-200/80 dark:border-[#242F42]'
+                          className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
+                            isPeriodCurrent
+                              ? 'bg-emerald-600 text-white shadow-xs'
+                              : isPeriodPassed
+                              ? 'bg-gray-200/70 dark:bg-[#1C2536] text-muted-foreground'
+                              : 'bg-primary/10 text-primary'
                           }`}
                         >
-                          {isCurrent && (
-                            <div className="absolute top-0 right-0 left-0 h-1 bg-emerald-500 shadow-sm rounded-t-2xl" />
-                          )}
+                          <Clock className="w-4 h-4" />
+                        </div>
+                        <h3
+                          className={`text-base font-black ${
+                            isPeriodCurrent
+                              ? 'text-emerald-700 dark:text-emerald-400'
+                              : isPeriodPassed
+                              ? 'text-foreground/75 dark:text-slate-300'
+                              : 'text-foreground dark:text-white'
+                          }`}
+                        >
+                          زنگ {toPersianDigits(period.periodNumber)}
+                        </h3>
+                        {period.startTime && period.endTime && (
+                          <span
+                            className={`text-xs font-mono font-bold px-2 py-0.5 rounded-lg border ${
+                              isPeriodCurrent
+                                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800'
+                                : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42]'
+                            }`}
+                          >
+                            {toPersianDigits(period.startTime)} تا {toPersianDigits(period.endTime)}
+                          </span>
+                        )}
+                        <span className="text-[11px] font-bold text-muted-foreground">
+                          ({toPersianDigits(period.slots.length)} کلاس)
+                        </span>
+                      </div>
 
-                          {/* Classroom & Status Header */}
-                          <div className="flex items-center justify-between gap-2 mb-2">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <span className="font-black text-sm sm:text-base text-foreground dark:text-white group-hover:text-primary transition-colors truncate">
-                                {slot.classroomName}
-                              </span>
-                              {slot.classroomGrade && (
-                                <span className="text-[10px] font-bold text-muted-foreground bg-gray-50 dark:bg-[#1C2536] px-1.5 py-0.5 rounded border border-gray-200 dark:border-[#242F42] shrink-0">
-                                  {slot.classroomGrade}
-                                </span>
-                              )}
-                            </div>
+                      {/* Period Timing Badge */}
+                      <div>
+                        {isPeriodCurrent ? (
+                          <span className="bg-emerald-600 text-white text-[11px] font-black px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-xs">
+                            <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                            زنگ فعال هم‌اکنون
+                          </span>
+                        ) : isPeriodPassed ? (
+                          <span className="text-[11px] font-bold text-muted-foreground bg-gray-100 dark:bg-[#1C2536] px-2.5 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42]">
+                            سپری شده
+                          </span>
+                        ) : (
+                          <span className="text-[11px] font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/50 px-2.5 py-0.5 rounded-lg border border-sky-200 dark:border-sky-800">
+                            آینده
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
-                            {/* Live Badge */}
-                            {isCurrent ? (
-                              <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
-                                <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                                زنگ جاری
-                              </span>
-                            ) : isPassed ? (
-                              <span className="text-[10px] font-bold text-muted-foreground bg-gray-50 dark:bg-[#1C2536] px-2 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42] shrink-0">
-                                سپری شده
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/50 px-2 py-0.5 rounded-lg border border-sky-200 dark:border-sky-800 shrink-0">
-                                آینده
-                              </span>
+                    {/* Cards Grid: 300s, 200s, 100s */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                      {period.slots.map((slot) => {
+                        const slotTimingStatus = isPeriodPassed
+                          ? 'PASSED'
+                          : isPeriodCurrent
+                          ? 'CURRENT'
+                          : checkSlotStatus(slot.startTime, slot.endTime);
+                        const isCurrent = slotTimingStatus === 'CURRENT';
+                        const isPassed = slotTimingStatus === 'PASSED';
+                        const isRecorded = !!slot.stats?.isRecorded;
+
+                        return (
+                          <div
+                            key={slot.id}
+                            onClick={() =>
+                              setActiveSession({
+                                classroomId: slot.classroomId,
+                                classroomName: slot.classroomName,
+                                lessonId: slot.lessonId,
+                                lessonName: slot.lessonName,
+                                periodNumber: slot.periodNumber,
+                                startTime: slot.startTime,
+                                endTime: slot.endTime,
+                              })
+                            }
+                            className={`cursor-pointer group relative rounded-2xl p-4 sm:p-5 border transition-all ${
+                              isCurrent
+                                ? 'border-emerald-500/80 dark:border-emerald-500/60 bg-gradient-to-br from-emerald-500/15 via-white to-white dark:from-emerald-950/40 dark:via-[#151C28] dark:to-[#151C28] ring-2 ring-emerald-500/30 hover:border-emerald-600 hover:shadow-md'
+                                : isPassed
+                                ? 'bg-gray-50/70 dark:bg-[#151C28]/50 border-gray-200/70 dark:border-[#242F42]/60 opacity-80 hover:opacity-100 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-white dark:hover:bg-[#151C28]'
+                                : isRecorded
+                                ? 'bg-emerald-50/20 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-800/40 hover:border-primary/50'
+                                : 'bg-white dark:bg-[#151C28] border-gray-200/80 dark:border-[#242F42] hover:border-primary/50 hover:shadow-sm'
+                            }`}
+                          >
+                            {isCurrent && (
+                              <div className="absolute top-0 right-0 left-0 h-1 bg-emerald-500 shadow-sm rounded-t-2xl" />
                             )}
-                          </div>
 
-                          {/* Lesson Title */}
-                          <div className="space-y-1 my-2">
-                            <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground truncate">
-                              <BookOpen className="w-3.5 h-3.5 text-primary shrink-0" />
-                              <span className="truncate text-foreground dark:text-slate-200 font-extrabold">{slot.lessonName}</span>
-                            </div>
-                          </div>
+                            {/* Classroom & Status Header */}
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="font-black text-sm sm:text-base text-foreground dark:text-white group-hover:text-primary transition-colors truncate">
+                                  {slot.classroomName}
+                                </span>
+                                {slot.classroomGrade && (
+                                  <span className="text-[10px] font-bold text-muted-foreground bg-gray-50 dark:bg-[#1C2536] px-1.5 py-0.5 rounded border border-gray-200 dark:border-[#242F42] shrink-0">
+                                    {slot.classroomGrade}
+                                  </span>
+                                )}
+                              </div>
 
-                          {/* Footer */}
-                          <div className="mt-4 pt-3 border-t border-gray-100 dark:border-[#242F42] flex items-center justify-between text-xs font-bold">
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                              <Users className="w-3.5 h-3.5 text-primary" />
-                              <span>{toPersianDigits(slot.stats?.totalStudents || 0)} دانش‌آموز</span>
-                            </div>
-
-                            <div>
-                              {isRecorded ? (
-                                <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800 flex items-center gap-1 font-bold">
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  ثبت شده
+                              {/* Live Badge */}
+                              {isCurrent ? (
+                                <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                                  زنگ جاری
+                                </span>
+                              ) : isPassed ? (
+                                <span className="text-[10px] font-bold text-muted-foreground bg-gray-100 dark:bg-[#1C2536] px-2 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42] shrink-0">
+                                  سپری شده
                                 </span>
                               ) : (
-                                <span className="text-muted-foreground bg-gray-50 dark:bg-[#1C2536] px-2 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42]">
-                                  در انتظار ثبت
+                                <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/50 px-2 py-0.5 rounded-lg border border-sky-200 dark:border-sky-800 shrink-0">
+                                  آینده
                                 </span>
                               )}
                             </div>
+
+                            {/* Lesson Title */}
+                            <div className="space-y-1 my-2">
+                              <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground truncate">
+                                <BookOpen className="w-3.5 h-3.5 text-primary shrink-0" />
+                                <span className="truncate text-foreground dark:text-slate-200 font-extrabold">{slot.lessonName}</span>
+                              </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="mt-4 pt-3 border-t border-gray-100 dark:border-[#242F42] flex items-center justify-between text-xs font-bold">
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <Users className="w-3.5 h-3.5 text-primary" />
+                                <span>{toPersianDigits(slot.stats?.totalStudents || 0)} دانش‌آموز</span>
+                              </div>
+
+                              <div>
+                                {isRecorded ? (
+                                  <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800 flex items-center gap-1 font-bold">
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    ثبت شده
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground bg-gray-50 dark:bg-[#1C2536] px-2 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42]">
+                                    در انتظار ثبت
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
