@@ -99,130 +99,151 @@ export const ScheduleMobileView: React.FC<ScheduleMobileViewProps> = ({
               </div>
 
               {item ? (
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0 flex-1 space-y-2">
-                    {item.isSplitPeriod ? (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
-                            <Layers className="h-3 w-3" />
-                            یک هفته در میان
-                          </span>
+                item.isSplitPeriod ? (
+                  <div className="w-full space-y-2.5">
+                    {/* Header: Alternating Week Badge & Action Buttons Aligned */}
+                    <div className="flex items-center justify-between gap-2 pb-0.5">
+                      <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
+                        <Layers className="h-3 w-3" />
+                        یک هفته در میان
+                      </span>
+
+                      {canManageSchedule && (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => onOpenSlotModal(mobileSelectedDay, period.number, item)}
+                            className="p-1.5 rounded-lg text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-[#1C2536] transition-colors cursor-pointer"
+                            title="ویرایش"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => onDeleteSlot(item.id, e)}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                            title="حذف"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
+                      )}
+                    </div>
 
-                        {/* Week 1 */}
+                    {/* Full Width Cards for Week 1 and Week 2 */}
+                    {(() => {
+                      const type1 = getLessonTypeInfo(item.lesson?.type);
+                      const type2 = getLessonTypeInfo(item.secondLesson?.type);
+                      return (
+                        <div className="space-y-2.5 w-full">
+                          {/* Week 1 */}
+                          <div className="w-full bg-primary-50/20 dark:bg-primary-950/30 p-3 rounded-xl border border-primary/20 dark:border-primary/30 space-y-1.5">
+                            <div className="flex items-center justify-between gap-1 flex-wrap">
+                              <span className="font-extrabold text-xs text-ink-darker dark:text-white truncate">
+                                ۱. {item.lesson?.name}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <span
+                                  className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold ${type1.className}`}
+                                >
+                                  {type1.label}
+                                </span>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-white dark:bg-[#151C28] text-primary border border-primary/20 shrink-0">
+                                  هفته فرد
+                                </span>
+                              </div>
+                            </div>
+                            {item.teacher?.user && (
+                              <div className="flex items-center gap-1 text-[11px] text-muted-foreground dark:text-slate-400 font-bold">
+                                <GraduationCap className="h-3.5 w-3.5 text-primary shrink-0" />
+                                <span>
+                                  استاد: {item.teacher.user.firstName} {item.teacher.user.lastName}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Week 2 */}
+                          <div className="w-full bg-primary-50/20 dark:bg-primary-950/30 p-3 rounded-xl border border-primary/20 dark:border-primary/30 space-y-1.5">
+                            <div className="flex items-center justify-between gap-1 flex-wrap">
+                              <span className="font-extrabold text-xs text-ink-darker dark:text-white truncate">
+                                ۲. {item.secondLesson?.name || '—'}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <span
+                                  className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold ${type2.className}`}
+                                >
+                                  {type2.label}
+                                </span>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-white dark:bg-[#151C28] text-primary border border-primary/20 shrink-0">
+                                  هفته زوج
+                                </span>
+                              </div>
+                            </div>
+                            {item.secondTeacher?.user && (
+                              <div className="flex items-center gap-1 text-[11px] text-muted-foreground dark:text-slate-400 font-bold">
+                                <GraduationCap className="h-3.5 w-3.5 text-primary shrink-0" />
+                                <span>
+                                  استاد: {item.secondTeacher.user.firstName}{' '}
+                                  {item.secondTeacher.user.lastName}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-3 w-full">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-bold text-xs sm:text-sm text-ink-darker dark:text-white">
+                          {item.lesson?.name}
+                        </span>
                         {(() => {
-                          const type1 = getLessonTypeInfo(item.lesson?.type);
-                          const type2 = getLessonTypeInfo(item.secondLesson?.type);
+                          const typeInfo = getLessonTypeInfo(item.lesson?.type);
                           return (
-                            <>
-                              <div className="bg-primary-50/20 dark:bg-primary-950/30 p-2.5 rounded-xl border border-primary/20 dark:border-primary/30 space-y-1.5">
-                                <div className="flex items-center justify-between gap-1 flex-wrap">
-                                  <span className="font-extrabold text-xs text-ink-darker dark:text-white truncate">
-                                    ۱. {item.lesson?.name}
-                                  </span>
-                                  <div className="flex items-center gap-1">
-                                    <span
-                                      className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold ${type1.className}`}
-                                    >
-                                      {type1.label}
-                                    </span>
-                                    <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-white dark:bg-[#151C28] text-primary border border-primary/20 shrink-0">
-                                      هفته فرد
-                                    </span>
-                                  </div>
-                                </div>
-                                {item.teacher?.user && (
-                                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground dark:text-slate-400 font-bold">
-                                    <GraduationCap className="h-3.5 w-3.5 text-primary shrink-0" />
-                                    <span>
-                                      استاد: {item.teacher.user.firstName} {item.teacher.user.lastName}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Week 2 */}
-                              <div className="bg-primary-50/20 dark:bg-primary-950/30 p-2.5 rounded-xl border border-primary/20 dark:border-primary/30 space-y-1.5">
-                                <div className="flex items-center justify-between gap-1 flex-wrap">
-                                  <span className="font-extrabold text-xs text-ink-darker dark:text-white truncate">
-                                    ۲. {item.secondLesson?.name || '—'}
-                                  </span>
-                                  <div className="flex items-center gap-1">
-                                    <span
-                                      className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold ${type2.className}`}
-                                    >
-                                      {type2.label}
-                                    </span>
-                                    <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-white dark:bg-[#151C28] text-primary border border-primary/20 shrink-0">
-                                      هفته زوج
-                                    </span>
-                                  </div>
-                                </div>
-                                {item.secondTeacher?.user && (
-                                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground dark:text-slate-400 font-bold">
-                                    <GraduationCap className="h-3.5 w-3.5 text-primary shrink-0" />
-                                    <span>
-                                      استاد: {item.secondTeacher.user.firstName}{' '}
-                                      {item.secondTeacher.user.lastName}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            </>
+                            <span
+                              className={`text-[9.5px] px-1.5 py-0.5 rounded-md font-semibold shrink-0 ${typeInfo.className}`}
+                            >
+                              {typeInfo.label}
+                            </span>
                           );
                         })()}
                       </div>
-                    ) : (
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-bold text-xs sm:text-sm text-ink-darker dark:text-white">
-                            {item.lesson?.name}
+                      {item.teacher?.user && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground dark:text-slate-400 font-bold">
+                          <GraduationCap className="h-3.5 w-3.5 text-primary shrink-0" />
+                          <span>
+                            استاد: {item.teacher.user.firstName} {item.teacher.user.lastName}
                           </span>
-                          {(() => {
-                            const typeInfo = getLessonTypeInfo(item.lesson?.type);
-                            return (
-                              <span
-                                className={`text-[9.5px] px-1.5 py-0.5 rounded-md font-semibold shrink-0 ${typeInfo.className}`}
-                              >
-                                {typeInfo.label}
-                              </span>
-                            );
-                          })()}
                         </div>
-                        {item.teacher?.user && (
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground dark:text-slate-400 font-bold">
-                            <GraduationCap className="h-3.5 w-3.5 text-primary shrink-0" />
-                            <span>
-                              استاد: {item.teacher.user.firstName} {item.teacher.user.lastName}
-                            </span>
-                          </div>
-                        )}
+                      )}
+                    </div>
+
+                    {canManageSchedule && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => onOpenSlotModal(mobileSelectedDay, period.number, item)}
+                          className="p-1.5 rounded-lg text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-[#1C2536] transition-colors cursor-pointer"
+                          title="ویرایش"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => onDeleteSlot(item.id, e)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                          title="حذف"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     )}
                   </div>
-
-                  {canManageSchedule && (
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => onOpenSlotModal(mobileSelectedDay, period.number, item)}
-                        className="p-1.5 rounded-lg text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-[#1C2536] transition-colors cursor-pointer"
-                        title="ویرایش"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => onDeleteSlot(item.id, e)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-                        title="حذف"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
+                )
               ) : canManageSchedule ? (
                 <button
                   type="button"
