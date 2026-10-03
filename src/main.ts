@@ -102,7 +102,7 @@ async function bootstrap() {
       `- \`x-tenant-slug\`: اسلاگ مدرسه (مانند \`rokad-boys\` یا \`rokad-girls\`)\n` +
       `- \`x-tenant-id\`: شناسه UUID تننت`,
     )
-    .setVersion('1.0.0')
+    .setVersion('1.0.1')
     .addBearerAuth(
       {
         type: 'http',

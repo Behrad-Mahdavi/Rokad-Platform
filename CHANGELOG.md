@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.1] - 2026-10-03
+
+### 🚀 Fixed & Improved
+- **همگام‌سازی لحظه‌ای داده‌ها و رفع مغایرت کش بین دستگاه‌ها (Data Sync & Cache Elimination):**
+  - حذف کامل قانون کشینگ `api-metadata-cache` از Workbox و الزام قطعی ارسال کلیه درخواست‌های API به شبکه (`NetworkOnly`).
+  - افزودن هدرهای ضد کش استاندارد (`Cache-Control: no-store, no-cache, must-revalidate`) و `Vary: Authorization, Origin, x-tenant-id` در کلیه پاسخ‌های API بک‌اند.
+  - کاهش زمان ماندگاری کش React Query (`staleTime: 15s`) و فعال‌سازی بازیابی مجدد با فوکوس پنجره و اتصال مجدد شبکه (`refetchOnWindowFocus: true` و `refetchOnReconnect: true`).
+  - افزودن پیکربندی اختصاصی `frontend/nginx.conf` برای هاست لیارا جهت تضمین عدم کش شدن فایل‌های ورودی PWA (`index.html`, `sw.js`, `push-worker.js`, `version.json`).
+- **سیستم ارتقایافته کشف و اعمال آپدیت‌های PWA:**
+  - استخراج خودکار فایل استاتیک `version.json` با شناسه یکتای زمان بیلد (`buildId`) در هر بار کامپایل برای تشخیص آنی نسخه جدید.
+  - بازنویسی مکانیزم `forceAppUpdate` جهت جلوگیری از ایجاد لوپ ریفرش و تضمین ارتقای روان سرویس‌ورکر.
+  - افزودن لیسنر فعال‌شدن صفحه گوشی (`visibilitychange`) جهت بررسی فوری نسخه به محض باز کردن برنامه.
+- **تفکیک اکانت‌های چندنقشه و ورود همزمان (Multi-Role Support):**
+  - پشتیبانی از پیشوند نام کاربری معلمی (`t09154489820`) و اولویت‌بندی تطابق نام کاربری در فرآیند احراز هویت.
+
 ## [0.7.14] - 2026-09-21
 
 ### 🚀 Fixed & Improved

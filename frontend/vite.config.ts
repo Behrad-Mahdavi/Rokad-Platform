@@ -5,7 +5,7 @@ import path from 'path';
 import fs from 'fs';
 
 // Read version from package.json for synchronized build-time injection
-let appVersion = '1.0.0';
+let appVersion = '1.0.1';
 try {
   const localPkgPath = path.resolve(__dirname, 'package.json');
   const rootPkgPath = path.resolve(__dirname, '../package.json');
@@ -15,7 +15,7 @@ try {
     appVersion = pkg.version;
   }
 } catch (e) {
-  console.warn('[Vite Config] Could not read package.json, using fallback version 1.0.0');
+  console.warn('[Vite Config] Could not read package.json, using fallback version 1.0.1');
 }
 
 const buildTime = new Date().toISOString();
