@@ -27,6 +27,7 @@ interface EventStepWizardProps {
   eventTitle: string;
   workflowModules?: WorkflowModuleEntry[];
   initialStep?: number;
+  isEventEnded?: boolean;
 }
 
 const DEFAULT_WORKFLOW: WorkflowModuleEntry[] = [
@@ -47,9 +48,11 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
   eventTitle,
   workflowModules,
   initialStep = 1,
+  isEventEnded = false,
 }) => {
   const currentUser = useAuthStore((s) => s.user);
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(currentUser?.role || '');
+  const isParent = currentUser?.role === 'PARENT';
 
   const [selectedIdeaForVote, setSelectedIdeaForVote] = useState<string | null>(null);
 
@@ -335,6 +338,40 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Event Inactive / Ended Notice Banner */}
+      {isEventEnded && (
+        <div className="p-4 sm:p-5 rounded-2xl border-2 border-amber-400 bg-amber-50/95 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 shadow-sm flex items-start gap-3.5">
+          <div className="w-8 h-8 rounded-xl bg-amber-400 text-amber-950 flex items-center justify-center shrink-0 mt-0.5 font-bold">
+            <Lock className="w-4 h-4" />
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-sm font-black text-amber-950 dark:text-amber-100">
+              مهلت زمانی رویداد به اتمام رسیده است
+            </h4>
+            <p className="text-xs font-medium text-amber-800/90 dark:text-amber-300/90 leading-relaxed">
+              این رویداد به پایان رسیده و کلیه ماژول‌ها و گام‌های آن در حالت فقط خواندنی (Read-Only) قرار دارند. امکان ثبت ایده، رأی یا تغییر تیم و وظایف وجود ندارد.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Parent Spectator Notice Banner */}
+      {isParent && (
+        <div className="p-4 rounded-2xl border border-blue-300 dark:border-blue-800 bg-blue-50/90 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200 shadow-2xs flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-blue-500 text-white flex items-center justify-center shrink-0 font-bold">
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+          <div className="space-y-0.5">
+            <h4 className="text-xs font-black text-blue-950 dark:text-blue-100">
+              حالت مشاهده‌گر اولیاء گرامی
+            </h4>
+            <p className="text-[11px] font-medium text-blue-800/90 dark:text-blue-300/90">
+              شما دسترسی مشاهده و پیگیری فعالیت‌های رویداد و ایده‌های دانش‌آموزان را دارید؛ ثبت و ایجاد تغییرات مستقیم برای اولیاء غیرفعال است.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Horizontal Step-by-Step Roadmap */}
       <div className="relative group/roadmap">
         {/* Scroll Left Button */}
@@ -469,7 +506,8 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                   eventId={eventId}
                   eventTitle={eventTitle}
                   ideas={ideas}
-                  isLocked={isStep1Locked}
+                  isLocked={isStep1Locked || isEventEnded}
+                  isEventEnded={isEventEnded}
                   onToggleLock={handleToggleIdeaLock}
                   onIdeaSubmitted={handleIdeaSubmitted}
                   onUpdateIdea={handleUpdateIdea}
@@ -481,7 +519,11 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                 <EventIdeasListStep
                   key={cfg.key}
                   ideas={ideas}
+                  eventId={eventId}
+                  isEventEnded={isEventEnded}
+                  onAddIdea={handleIdeaSubmitted}
                   onUpdateIdea={handleUpdateIdea}
+                  onDeleteIdea={handleDeleteIdea}
                   onSelectIdeaForVote={(id) => setSelectedIdeaForVote(id)}
                 />
               );
@@ -492,6 +534,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                   eventId={eventId}
                   eventTitle={eventTitle}
                   ideas={ideas}
+                  isEventEnded={isEventEnded}
                   selectedIdeaId={selectedIdeaForVote}
                 />
               );
@@ -502,6 +545,10 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                   eventId={eventId}
                   eventTitle={eventTitle}
                   ideas={ideas}
+                  isEventEnded={isEventEnded}
+                  onAddIdea={handleIdeaSubmitted}
+                  onUpdateIdea={handleUpdateIdea}
+                  onDeleteIdea={handleDeleteIdea}
                 />
               );
             case 'EVENT_CANVAS':
@@ -510,6 +557,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                   key={cfg.key}
                   eventId={eventId}
                   eventTitle={eventTitle}
+                  isEventEnded={isEventEnded}
                 />
               );
             case 'TASK_DEFINITION':
@@ -519,6 +567,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                   eventId={eventId}
                   eventTitle={eventTitle}
                   ideas={ideas}
+                  isEventEnded={isEventEnded}
                 />
               );
             case 'PRESENTATION_UPLOAD':
@@ -528,6 +577,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                   eventId={eventId}
                   eventTitle={eventTitle}
                   ideas={ideas}
+                  isEventEnded={isEventEnded}
                 />
               );
             case 'LEADERBOARD':
@@ -537,6 +587,7 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
                   eventId={eventId}
                   eventTitle={eventTitle}
                   ideas={ideas}
+                  isEventEnded={isEventEnded}
                 />
               );
             default:

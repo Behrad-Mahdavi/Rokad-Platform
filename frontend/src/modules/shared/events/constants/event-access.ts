@@ -9,6 +9,45 @@ export function isWizardManagerRole(role?: string | null): boolean {
   return WIZARD_MANAGER_ROLES.includes((role || '') as any);
 }
 
+export function isParentRole(role?: string | null): boolean {
+  return (role || '').toUpperCase() === 'PARENT';
+}
+
+/** Check if role can submit ideas in an event */
+export function canSubmitIdeas(role?: string | null): boolean {
+  const r = (role || '').toUpperCase();
+  if (r === 'PARENT') return false;
+  return isWizardManagerRole(r) || r === 'STUDENT';
+}
+
+/** Check if role can vote on ideas in an event */
+export function canVoteInEvent(role?: string | null): boolean {
+  const r = (role || '').toUpperCase();
+  if (r === 'PARENT') return false;
+  return isWizardManagerRole(r) || r === 'STUDENT';
+}
+
+/** Check if role can create or join teams in an event */
+export function canManageTeams(role?: string | null): boolean {
+  const r = (role || '').toUpperCase();
+  if (r === 'PARENT') return false;
+  return isWizardManagerRole(r) || r === 'STUDENT';
+}
+
+/** Check if role can create, move, or edit tasks in taskboard */
+export function canManageTasks(role?: string | null): boolean {
+  const r = (role || '').toUpperCase();
+  if (r === 'PARENT') return false;
+  return isWizardManagerRole(r) || r === 'STUDENT';
+}
+
+/** Check if role can upload presentations or deliverables */
+export function canUploadPresentation(role?: string | null): boolean {
+  const r = (role || '').toUpperCase();
+  if (r === 'PARENT') return false;
+  return isWizardManagerRole(r) || r === 'STUDENT';
+}
+
 /** Audience gate for calendar events (ALL / STUDENTS / TEACHERS / PARENTS / STAFF / SPECIFIC_CLASSES). */
 export function canViewEventAudience(
   audience: string | null | undefined,

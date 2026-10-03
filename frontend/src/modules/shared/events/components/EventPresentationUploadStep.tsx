@@ -77,12 +77,14 @@ interface EventPresentationUploadStepProps {
   eventId: string;
   eventTitle: string;
   ideas: EventIdea[];
+  isEventEnded?: boolean;
 }
 
 export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepProps> = ({
   eventId,
   eventTitle,
   ideas,
+  isEventEnded = false,
 }) => {
   const currentUser = useAuthStore((s) => s.user);
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(
@@ -128,7 +130,7 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
     return () => clearInterval(timer);
   }, [config.deadline]);
 
-  const locked = isSubmissionLocked(config);
+  const locked = isSubmissionLocked(config) || isEventEnded;
 
   // Identify Student's Team & Captain status (strictly only for STUDENT role)
   const myTeamInfo = useMemo(() => {
@@ -574,7 +576,7 @@ export const EventPresentationUploadStep: React.FC<EventPresentationUploadStepPr
             </div>
 
             {/* Manager Actions Bar */}
-            {isManager && (
+            {isManager && !isEventEnded && (
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="primary"

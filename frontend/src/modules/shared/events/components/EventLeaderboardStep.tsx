@@ -32,17 +32,20 @@ interface EventLeaderboardStepProps {
   eventId: string;
   eventTitle: string;
   ideas: EventIdea[];
+  isEventEnded?: boolean;
 }
 
 export const EventLeaderboardStep: React.FC<EventLeaderboardStepProps> = ({
   eventId,
   eventTitle,
   ideas,
+  isEventEnded = false,
 }) => {
   const currentUser = useAuthStore((s) => s.user);
-  const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(
-    currentUser?.role || '',
-  );
+  const isManager =
+    ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(
+      currentUser?.role || '',
+    ) && !isEventEnded;
 
   const teamsMap = useMemo(() => loadTeamsMap(eventId), [eventId]);
   const allTeams = useMemo(

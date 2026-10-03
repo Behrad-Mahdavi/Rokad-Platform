@@ -57,6 +57,7 @@ interface EventIdeaSubmissionStepProps {
   eventTitle: string;
   ideas?: EventIdea[];
   isLocked?: boolean;
+  isEventEnded?: boolean;
   onToggleLock?: () => void;
   onIdeaSubmitted: (idea: EventIdea) => void;
   onUpdateIdea?: (updatedIdea: EventIdea) => void;
@@ -68,6 +69,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
   eventTitle,
   ideas = [],
   isLocked = false,
+  isEventEnded = false,
   onToggleLock,
   onIdeaSubmitted,
   onUpdateIdea,
@@ -210,13 +212,13 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
       toast.error('ثبت ایده فقط برای دانش‌آموزان مجاز است و دسترسی اولیاء به صورت مشاهده‌گر می‌باشد.');
       return;
     }
-    if (isLocked) {
+    if (!isManager && isLocked) {
       toast.error('مهلت ثبت ایده به پایان رسیده و قفل شده است.');
       return;
     }
 
     if (isManager && !adminSelectedStudent) {
-      toast.error('لطفاً دانش‌آموز صاحب ایده را انتخاب کنید. مدیر امکان ثبت ایده با نام خودش را ندارد.');
+      toast.error('لطفاً دانش‌آموز صاحب ایده را انتخاب کنید.');
       return;
     }
 
@@ -330,7 +332,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
           )}
         </div>
 
-        {/* Parent Spectator Notice vs Locked Notice vs Existing Submitted Idea vs New Submission Form */}
+        {/* Parent Spectator Notice vs Ended Notice vs Locked Notice vs Existing Submitted Idea vs New Submission Form */}
         {isParent ? (
           <div className="p-8 text-center bg-blue-50/70 dark:bg-blue-950/30 rounded-2xl border-2 border-blue-200 dark:border-blue-800 space-y-4 my-6 shadow-[2px_2px_0px_0px_#202A5A]">
             <div className="w-14 h-14 mx-auto rounded-2xl border-2 border-zinc-900 bg-blue-400 text-zinc-950 flex items-center justify-center shadow-[2px_2px_0px_0px_#202A5A]">
@@ -341,6 +343,18 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
             </h3>
             <p className="text-xs md:text-sm font-medium text-zinc-600 dark:text-zinc-400 max-w-lg mx-auto leading-relaxed">
               ثبت و ارسال ایده‌های رویداد مختص دانش‌آموزان و هنرجویان است. شما می‌توانید ایده‌های ارسال‌شده توسط شرکت‌کنندگان و فرآیند برگزاری را در تالار ایده‌ها و گام‌های بعدی مشاهده نمایید.
+            </p>
+          </div>
+        ) : isEventEnded ? (
+          <div className="p-8 text-center bg-amber-50/70 dark:bg-amber-950/30 rounded-2xl border-2 border-amber-300 dark:border-amber-800 space-y-3 my-6 shadow-2xs">
+            <div className="w-14 h-14 mx-auto rounded-2xl border-2 border-amber-500/40 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 flex items-center justify-center font-bold">
+              <Lock className="w-7 h-7" />
+            </div>
+            <h3 className="text-lg font-black text-amber-950 dark:text-amber-100">
+              مهلت ثبت ایده در این رویداد به پایان رسیده است
+            </h3>
+            <p className="text-xs md:text-sm font-medium text-amber-800 dark:text-amber-300 max-w-lg mx-auto leading-relaxed">
+              امکان ثبت ایده جدید در این رویداد وجود ندارد. کلیه ایده‌های ثبت‌شده در گام دوم (تالار ایده‌ها) قابل مشاهده هستند.
             </p>
           </div>
         ) : userSubmittedIdea && !isManager && !isLocked ? (
@@ -512,7 +526,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
               </form>
             )}
           </div>
-        ) : isLocked ? (
+        ) : isLocked && !isManager ? (
           <div className="p-8 text-center bg-gray-50/70 dark:bg-[#1C2536]/50 rounded-2xl border border-gray-200 dark:border-gray-800 space-y-4 my-4 shadow-2xs">
             <div className="w-14 h-14 mx-auto rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 flex items-center justify-center shadow-2xs">
               <Lock className="w-7 h-7 text-rose-600 dark:text-rose-400" />

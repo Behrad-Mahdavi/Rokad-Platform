@@ -36,6 +36,7 @@ interface EventTaskDefinitionStepProps {
   eventId: string;
   eventTitle: string;
   ideas: EventIdea[];
+  isEventEnded?: boolean;
 }
 
 interface TaskFormState {
@@ -58,6 +59,7 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
   eventId,
   eventTitle,
   ideas,
+  isEventEnded = false,
 }) => {
   const currentUser = useAuthStore((s) => s.user);
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(
@@ -65,6 +67,7 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
   );
   const isParent = currentUser?.role === 'PARENT';
   const isStudent = currentUser?.role === 'STUDENT';
+  const canManageTasks = isManager && !isEventEnded;
 
   const teamsMap = useMemo(() => loadTeamsMap(eventId), [eventId]);
   const allTeams = useMemo(
@@ -298,7 +301,7 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {isManager && (
+            {canManageTasks && (
               <>
                 <Button variant="outline" size="sm" onClick={() => setIsBulkOpen(true)} className="gap-1.5 text-xs font-bold">
                   <Copy className="w-3.5 h-3.5 text-primary" />
@@ -316,7 +319,11 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
         {isManager && (
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-primary/20 bg-primary/10 text-primary text-xs font-bold shadow-2xs">
             <ShieldCheck className="w-4 h-4 text-primary" />
-            <span>پنل مدیر: افزودن، ویرایش، حذف و تیک زدن تسک‌های همه تیم‌ها فعال است</span>
+            <span>
+              {isEventEnded
+                ? 'پنل مدیر: رویداد به پایان رسیده و تابلوی وظایف در حالت نمایشی است'
+                : 'پنل مدیر: افزودن، ویرایش، حذف و تیک زدن تسک‌های همه تیم‌ها فعال است'}
+            </span>
           </div>
         )}
 
@@ -371,7 +378,7 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
                     <Trophy className="w-3 h-3 text-amber-500" />
                     {toPersianDigits(score)} امتیاز
                   </span>
-                  {isManager && (
+                  {canManageTasks && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -411,19 +418,21 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
                       <button
                         type="button"
                         onClick={() => handleToggleComplete(task.id, team.key)}
-                        disabled={!isManager}
+                        disabled={!canManageTasks}
                         title={
-                          isManager
+                          canManageTasks
                             ? task.completed
                               ? 'برداشتن تیک (کسر امتیاز)'
                               : 'تیک زدن (اعطای امتیاز)'
+                            : isEventEnded
+                            ? 'رویداد به پایان رسیده است'
                             : 'فقط مدیر می‌تواند تیک بزند'
                         }
                         className={`flex-shrink-0 w-7 h-7 rounded-lg border flex items-center justify-center transition-all ${
                           task.completed
                             ? 'border-emerald-500 bg-emerald-500 text-white'
                             : 'border-gray-300 bg-white text-gray-300 dark:bg-[#1C2536] dark:border-gray-600'
-                        } ${isManager ? 'cursor-pointer hover:scale-105' : 'cursor-not-allowed opacity-70'}`}
+                        } ${canManageTasks ? 'cursor-pointer hover:scale-105' : 'cursor-not-allowed opacity-70'}`}
                       >
                         {task.completed ? (
                           <CheckCircle2 className="w-4 h-4" />
@@ -453,7 +462,7 @@ export const EventTaskDefinitionStep: React.FC<EventTaskDefinitionStepProps> = (
                         {toPersianDigits(task.points)} امتیاز
                       </span>
 
-                      {isManager && (
+                      {canManageTasks && (
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <button
                             type="button"

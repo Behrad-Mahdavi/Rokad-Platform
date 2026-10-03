@@ -46,6 +46,7 @@ interface EventVotingPorscadStepProps {
   eventTitle: string;
   ideas: EventIdea[];
   selectedIdeaId?: string | null;
+  isEventEnded?: boolean;
 }
 
 export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
@@ -53,12 +54,13 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
   eventTitle,
   ideas,
   selectedIdeaId,
+  isEventEnded = false,
 }) => {
   const currentUser = useAuthStore((s) => s.user);
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(currentUser?.role || '');
   const isParent = currentUser?.role === 'PARENT';
   const isStudent = currentUser?.role === 'STUDENT';
-  const canVote = isStudent || isManager;
+  const canVote = !isEventEnded && !isParent && (isStudent || isManager);
 
   const [porscadPoll, setPorscadPoll] = useState<PorscadPollData | null>(() => {
     const existing = porscadClient.getLocalPollData(eventId);
@@ -934,12 +936,19 @@ export const EventVotingPorscadStep: React.FC<EventVotingPorscadStepProps> = ({
                     })}
                   </div>
 
-                  {/* Manual Submit Button for All Question Types (or Parent Spectator View) */}
+                  {/* Manual Submit Button for All Question Types (or Parent Spectator / Ended View) */}
                   {isParent ? (
                     <div className="mt-4 p-3.5 rounded-xl border border-blue-200 bg-blue-50/70 dark:bg-blue-950/30 text-blue-950 dark:text-blue-200 flex items-center justify-between gap-3 text-xs font-bold shadow-2xs">
                       <div className="flex items-center gap-2">
                         <Users className="w-4 h-4 text-blue-600 flex-shrink-0" />
                         <span>حالت مشاهده‌گر اولیاء: امکان ثبت رای صرفاً برای دانش‌آموزان و داوران رویداد فعال است.</span>
+                      </div>
+                    </div>
+                  ) : isEventEnded ? (
+                    <div className="mt-4 p-3.5 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 flex items-center justify-between gap-3 text-xs font-bold shadow-2xs">
+                      <div className="flex items-center gap-2">
+                        <Lock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                        <span>مهلت رأی‌گیری در این رویداد به اتمام رسیده است و امکان ثبت رأی جدید وجود ندارد.</span>
                       </div>
                     </div>
                   ) : !hasVoted && !porscadPoll.isClosed && !isManager ? (

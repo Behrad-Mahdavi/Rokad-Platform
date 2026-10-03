@@ -31,6 +31,7 @@ import {
 interface EventCanvasMaterialsStepProps {
   eventId: string;
   eventTitle: string;
+  isEventEnded?: boolean;
 }
 
 interface CanvasBlock {
@@ -61,9 +62,10 @@ interface ChecklistItem {
 export const EventCanvasMaterialsStep: React.FC<EventCanvasMaterialsStepProps> = ({
   eventId,
   eventTitle,
+  isEventEnded = false,
 }) => {
   const currentUser = useAuthStore((s) => s.user);
-  const isManager = isWizardManagerRole(currentUser?.role);
+  const isManager = isWizardManagerRole(currentUser?.role) && !isEventEnded;
   const [activeTab, setActiveTab] = useState<'CANVAS' | 'MATERIALS' | 'CHECKLIST'>('CANVAS');
 
   const canvasStorageKey = `rokad_event_canvas_${eventId}`;
