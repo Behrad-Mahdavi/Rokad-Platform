@@ -846,11 +846,9 @@ export const AttendancePage: React.FC = () => {
     if (val) {
       setModalDisciplineType('POSITIVE');
       setModalDisciplineNote(val);
-      setModalOralGrade('2');
     } else {
       setModalDisciplineType('NONE');
       setModalDisciplineNote('');
-      setModalOralGrade('');
     }
   };
 
@@ -860,11 +858,9 @@ export const AttendancePage: React.FC = () => {
     if (val) {
       setModalDisciplineType('NEGATIVE');
       setModalDisciplineNote(val);
-      setModalOralGrade('-2');
     } else {
       setModalDisciplineType('NONE');
       setModalDisciplineNote('');
-      setModalOralGrade('');
     }
   };
 
@@ -896,8 +892,8 @@ export const AttendancePage: React.FC = () => {
       return;
     }
     const parsedGrade = modalOralGrade.trim() !== '' ? parseFloat(modalOralGrade) : null;
-    if (parsedGrade !== null && (isNaN(parsedGrade) || parsedGrade < -20 || parsedGrade > 20)) {
-      toast.error('نمره پرسش کلاسی باید عددی بین ۲۰- تا ۲۰ باشد');
+    if (parsedGrade !== null && (isNaN(parsedGrade) || parsedGrade < 0 || parsedGrade > 20)) {
+      toast.error('نمره پرسش کلاسی باید عددی بین ۰ تا ۲۰ باشد');
       return;
     }
 
@@ -2199,48 +2195,31 @@ export const AttendancePage: React.FC = () => {
                 </div>
 
                 {/* 2. Oral Grade */}
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-foreground dark:text-white">نمره پرسش کلاسی:</label>
-                    <div className="flex items-center gap-2">
-                      {modalOralGrade.trim() !== '' && (
-                        <button
-                          type="button"
-                          onClick={() => setModalOralGrade('')}
-                          className="text-[10px] text-rose-500 hover:text-rose-600 font-bold inline-flex items-center gap-0.5 cursor-pointer"
-                          title="حذف نمره ثبت‌شده"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          <span>حذف نمره</span>
-                        </button>
-                      )}
-                      {Boolean(selectedRewardOption || selectedDisciplineOption) && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedRewardOption('');
-                            setSelectedDisciplineOption('');
-                            setModalDisciplineType('NONE');
-                            setModalDisciplineNote('');
-                            setModalOralGrade('');
-                          }}
-                          className="text-[10.5px] text-primary hover:underline font-bold cursor-pointer"
-                        >
-                          تنظیم دستی نمره
-                        </button>
-                      )}
-                    </div>
+                    <label className="text-xs font-bold text-foreground dark:text-white">نمره پرسش کلاسی (۰ تا ۲۰):</label>
+                    {modalOralGrade.trim() !== '' && (
+                      <button
+                        type="button"
+                        onClick={() => setModalOralGrade('')}
+                        className="text-[10px] text-rose-500 hover:text-rose-600 font-bold inline-flex items-center gap-0.5 cursor-pointer"
+                        title="حذف نمره ثبت‌شده"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>حذف نمره</span>
+                      </button>
+                    )}
                   </div>
+
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
-                      disabled={Boolean(selectedRewardOption || selectedDisciplineOption)}
                       onClick={() =>
                         setModalOralGrade((v) =>
                           String(Math.min(20, Math.round((parseFloat(v || '0') + 0.25) * 100) / 100))
                         )
                       }
-                      className="h-9 w-9 shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#242F42] transition-all cursor-pointer text-foreground dark:text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="h-9 w-9 shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#242F42] transition-all cursor-pointer text-foreground dark:text-gray-200"
                     >
                       <ChevronUp className="w-4 h-4" />
                     </button>
@@ -2248,36 +2227,47 @@ export const AttendancePage: React.FC = () => {
                     <Input
                       type="number"
                       step="0.25"
-                      min="-20"
+                      min="0"
                       max="20"
-                      disabled={Boolean(selectedRewardOption || selectedDisciplineOption)}
                       value={modalOralGrade}
                       onChange={(e) => {
-                        if (selectedRewardOption || selectedDisciplineOption) return;
                         const v = parseFloat(e.target.value);
                         if (e.target.value === '') setModalOralGrade('');
-                        else if (!isNaN(v)) setModalOralGrade(String(Math.min(20, Math.max(-20, v))));
+                        else if (!isNaN(v)) setModalOralGrade(String(Math.min(20, Math.max(0, v))));
                       }}
                       placeholder="نمره (۰ تا ۲۰)"
-                      className={`rounded-xl border border-gray-200 dark:border-[#242F42] font-mono font-bold h-9 text-center text-sm flex-1 ${
-                        selectedRewardOption || selectedDisciplineOption
-                          ? 'bg-gray-100 dark:bg-[#1C2536] text-muted-foreground cursor-not-allowed'
-                          : 'bg-white dark:bg-[#151C28]'
-                      }`}
+                      className="rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] font-mono font-bold h-9 text-center text-sm flex-1"
                     />
 
                     <button
                       type="button"
-                      disabled={Boolean(selectedRewardOption || selectedDisciplineOption)}
                       onClick={() =>
                         setModalOralGrade((v) =>
-                          String(Math.max(-20, Math.round((parseFloat(v || '0') - 0.25) * 100) / 100))
+                          String(Math.max(0, Math.round((parseFloat(v || '0') - 0.25) * 100) / 100))
                         )
                       }
-                      className="h-9 w-9 shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#242F42] transition-all cursor-pointer text-foreground dark:text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="h-9 w-9 shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#242F42] transition-all cursor-pointer text-foreground dark:text-gray-200"
                     >
                       <ChevronDown className="w-4 h-4" />
                     </button>
+                  </div>
+
+                  {/* Quick Preset Grade Chips */}
+                  <div className="flex items-center gap-1 overflow-x-auto py-1 scrollbar-none">
+                    {QUICK_GRADES.map((g) => (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => setModalOralGrade(String(g))}
+                        className={`px-2 py-0.5 rounded-lg text-[10.5px] font-mono font-bold border transition-all shrink-0 cursor-pointer ${
+                          modalOralGrade === String(g)
+                            ? 'bg-primary text-white border-primary shadow-2xs font-black'
+                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border-gray-200 dark:border-[#242F42] hover:text-foreground hover:border-primary/40'
+                        }`}
+                      >
+                        {toPersianDigits(g)}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
