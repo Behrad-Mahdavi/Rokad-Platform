@@ -347,31 +347,44 @@ export const StudentSchedulePage: React.FC = () => {
                   <div className="flex flex-col justify-between gap-3">
                     {/* Slot Information */}
                     <div className="space-y-2 flex-1 min-w-0">
-                      {/* Period Badge & Time Badge */}
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="default" className="font-bold text-xs py-0.5">
-                          {periodLabel}
-                        </Badge>
+                      {/* Period Badge & Teacher Badge (Right) | Time Badge & Live Status (Leftmost) */}
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        {/* Right: Period & Teacher Badge */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="default" className="font-bold text-xs py-0.5">
+                            {periodLabel}
+                          </Badge>
 
-                        {slot.periodNumber >= 5 && (
-                          <span className="text-[11px] font-bold text-amber-900 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/20 px-2 py-0.5 rounded-md border border-amber-300/80 dark:border-amber-400/40">
-                            فوق برنامه (عصر)
-                          </span>
-                        )}
+                          {slot.periodNumber >= 5 && (
+                            <span className="text-[11px] font-bold text-amber-900 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/20 px-2 py-0.5 rounded-md border border-amber-300/80 dark:border-amber-400/40">
+                              فوق برنامه (عصر)
+                            </span>
+                          )}
 
-                        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-gray-50 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] text-xs font-bold text-foreground dark:text-slate-300">
-                          <Clock className="w-3.5 h-3.5 text-primary shrink-0" />
-                          <span>
-                            {formattedStartTime} تا {formattedEndTime}
-                          </span>
+                          {!slot.isSplitPeriod && teacherFullName && (
+                            <span className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#1C2536] px-2.5 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42] text-xs font-semibold text-muted-foreground dark:text-slate-300">
+                              <UserCheck className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 shrink-0" />
+                              <span>{teacherFullName}</span>
+                            </span>
+                          )}
                         </div>
 
-                        {isNow && (
-                          <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            کلاس در حال برگزاری
-                          </span>
-                        )}
+                        {/* Left: Time Badge & Live Status */}
+                        <div className="flex items-center gap-2 mr-auto shrink-0">
+                          {isNow && (
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              کلاس در حال برگزاری
+                            </span>
+                          )}
+
+                          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-gray-50 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] text-xs font-bold text-foreground dark:text-slate-300">
+                            <Clock className="w-3.5 h-3.5 text-primary shrink-0" />
+                            <span>
+                              {formattedStartTime} تا {formattedEndTime}
+                            </span>
+                          </div>
+                        </div>
                       </div>
 
                       {/* Lesson Details */}
@@ -445,14 +458,6 @@ export const StudentSchedulePage: React.FC = () => {
                             <BookOpen className="w-5 h-5 text-primary shrink-0" />
                             <span>{slot.lesson?.name}</span>
                           </h2>
-
-                          {/* Teacher Name beside lesson name (without 'استاد:') */}
-                          {teacherFullName && (
-                            <span className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#1C2536] px-2.5 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42] text-xs font-semibold text-muted-foreground dark:text-slate-300">
-                              <UserCheck className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 shrink-0" />
-                              <span>{teacherFullName}</span>
-                            </span>
-                          )}
                         </div>
                       )}
                     </div>
