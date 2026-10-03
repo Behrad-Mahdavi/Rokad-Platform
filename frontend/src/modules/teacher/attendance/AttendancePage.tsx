@@ -1837,44 +1837,39 @@ export const AttendancePage: React.FC = () => {
                             }
                             className={`cursor-pointer group relative rounded-2xl p-4 sm:p-5 border transition-all ${
                               isCurrent
-                                ? 'border-emerald-500/80 dark:border-emerald-500/60 bg-gradient-to-br from-emerald-500/15 via-white to-white dark:from-emerald-950/40 dark:via-[#151C28] dark:to-[#151C28] ring-2 ring-emerald-500/30 hover:border-emerald-600 hover:shadow-md'
+                                ? 'border-primary/80 dark:border-primary/60 bg-gradient-to-br from-primary/[0.12] via-white to-white dark:from-primary/20 dark:via-[#151C28] dark:to-[#151C28] ring-2 ring-primary/30 shadow-xs hover:border-primary hover:shadow-md'
                                 : isPassed
-                                ? 'bg-gray-50/70 dark:bg-[#151C28]/50 border-gray-200/70 dark:border-[#242F42]/60 opacity-80 hover:opacity-100 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-white dark:hover:bg-[#151C28]'
+                                ? 'border-rose-200/80 dark:border-rose-900/50 bg-gradient-to-br from-rose-500/[0.07] via-white to-white dark:from-rose-950/25 dark:via-[#151C28] dark:to-[#151C28] hover:border-rose-400 dark:hover:border-rose-700 hover:shadow-xs'
                                 : isRecorded
                                 ? 'bg-emerald-50/20 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-800/40 hover:border-primary/50'
                                 : 'bg-white dark:bg-[#151C28] border-gray-200/80 dark:border-[#242F42] hover:border-primary/50 hover:shadow-sm'
                             }`}
                           >
                             {isCurrent && (
-                              <div className="absolute top-0 right-0 left-0 h-1 bg-emerald-500 shadow-sm rounded-t-2xl" />
+                              <div className="absolute top-0 right-0 left-0 h-1.5 bg-primary shadow-xs rounded-t-2xl" />
+                            )}
+                            {isPassed && (
+                              <div className="absolute top-0 right-0 left-0 h-1 bg-rose-400/70 dark:bg-rose-600/60 rounded-t-2xl" />
                             )}
 
-                            {/* Classroom & Status Header */}
+                            {/* Classroom Header */}
                             <div className="flex items-center justify-between gap-2 mb-2">
                               <div className="flex items-center gap-1.5 min-w-0">
-                                <span className="font-black text-sm sm:text-base text-foreground dark:text-white group-hover:text-primary transition-colors truncate">
+                                <span
+                                  className={`font-black text-sm sm:text-base transition-colors truncate ${
+                                    isCurrent
+                                      ? 'text-primary dark:text-primary-light'
+                                      : isPassed
+                                      ? 'text-rose-950 dark:text-rose-200 group-hover:text-rose-600'
+                                      : 'text-foreground dark:text-white group-hover:text-primary'
+                                  }`}
+                                >
                                   {slot.classroomName}
                                 </span>
-                                {slot.classroomGrade && (
-                                  <span className="text-[10px] font-bold text-muted-foreground bg-gray-50 dark:bg-[#1C2536] px-1.5 py-0.5 rounded border border-gray-200 dark:border-[#242F42] shrink-0">
-                                    {slot.classroomGrade}
-                                  </span>
-                                )}
                               </div>
-
-                              {/* Live Badge */}
-                              {isCurrent ? (
-                                <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                                  زنگ جاری
-                                </span>
-                              ) : isPassed ? (
-                                <span className="text-[10px] font-bold text-muted-foreground bg-gray-100 dark:bg-[#1C2536] px-2 py-0.5 rounded-lg border border-gray-200 dark:border-[#242F42] shrink-0">
-                                  سپری شده
-                                </span>
-                              ) : (
-                                <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/50 px-2 py-0.5 rounded-lg border border-sky-200 dark:border-sky-800 shrink-0">
-                                  آینده
+                              {slot.classroomGrade && (
+                                <span className="text-[10px] font-bold text-muted-foreground bg-gray-50 dark:bg-[#1C2536] px-1.5 py-0.5 rounded border border-gray-200 dark:border-[#242F42] shrink-0">
+                                  {slot.classroomGrade}
                                 </span>
                               )}
                             </div>
@@ -1882,7 +1877,15 @@ export const AttendancePage: React.FC = () => {
                             {/* Lesson Title */}
                             <div className="space-y-1 my-2">
                               <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground truncate">
-                                <BookOpen className="w-3.5 h-3.5 text-primary shrink-0" />
+                                <BookOpen
+                                  className={`w-3.5 h-3.5 shrink-0 ${
+                                    isCurrent
+                                      ? 'text-primary'
+                                      : isPassed
+                                      ? 'text-rose-500/80'
+                                      : 'text-primary'
+                                  }`}
+                                />
                                 <span className="truncate text-foreground dark:text-slate-200 font-extrabold">{slot.lessonName}</span>
                               </div>
                             </div>
@@ -1890,7 +1893,15 @@ export const AttendancePage: React.FC = () => {
                             {/* Footer */}
                             <div className="mt-4 pt-3 border-t border-gray-100 dark:border-[#242F42] flex items-center justify-between text-xs font-bold">
                               <div className="flex items-center gap-1 text-muted-foreground">
-                                <Users className="w-3.5 h-3.5 text-primary" />
+                                <Users
+                                  className={`w-3.5 h-3.5 ${
+                                    isCurrent
+                                      ? 'text-primary'
+                                      : isPassed
+                                      ? 'text-rose-500/80'
+                                      : 'text-primary'
+                                  }`}
+                                />
                                 <span>{toPersianDigits(slot.stats?.totalStudents || 0)} دانش‌آموز</span>
                               </div>
 
