@@ -7,6 +7,7 @@ import {
   UserX,
   Clock,
   Lock,
+  Unlock,
   ShieldAlert,
   CalendarCheck,
   Search,
@@ -212,6 +213,7 @@ export const AttendancePage: React.FC = () => {
   // 3. Date Navigation Helpers
   const isSelectedDateToday = selectedDate === todayJalali;
   const isPastDate = selectedDate < todayJalali;
+  const isReadOnly = isPastDate && !isManagerOrAdmin;
 
   const navigateDate = (deltaDays: number) => {
     try {
@@ -691,7 +693,7 @@ export const AttendancePage: React.FC = () => {
   const saveAttendanceMutation = useMutation({
     mutationFn: async () => {
       if (!activeSession) return;
-      if (isPastDate) {
+      if (isReadOnly) {
         throw new Error('امکان تغییر یا ثبت اطلاعات برای روزهای گذشته وجود ندارد');
       }
       const payload = {
@@ -745,7 +747,7 @@ export const AttendancePage: React.FC = () => {
   }, [studentsList]);
 
   const handleResetToDefault = () => {
-    if (isPastDate) {
+    if (isReadOnly) {
       toast.error('تغییر وضعیت برای تاریخ‌های گذشته امکان‌پذیر نیست');
       return;
     }
@@ -766,7 +768,7 @@ export const AttendancePage: React.FC = () => {
   };
 
   const handleMarkAllPresent = () => {
-    if (isPastDate) {
+    if (isReadOnly) {
       toast.error('تغییر وضعیت برای تاریخ‌های گذشته امکان‌پذیر نیست');
       return;
     }
@@ -788,7 +790,7 @@ export const AttendancePage: React.FC = () => {
   };
 
   const handleUpdateStudentStatus = (studentId: string, newStatus: AttendanceStatus) => {
-    if (isPastDate) {
+    if (isReadOnly) {
       toast.error('حضور و غیاب روزهای گذشته قابل تغییر نیست');
       return;
     }
@@ -808,7 +810,7 @@ export const AttendancePage: React.FC = () => {
   };
 
   const handleOpenTardyModal = (st: LocalStudentAttendance) => {
-    if (isPastDate) {
+    if (isReadOnly) {
       toast.error('امکان تغییر تاخیر برای روزهای گذشته وجود ندارد');
       return;
     }
@@ -817,7 +819,7 @@ export const AttendancePage: React.FC = () => {
   };
 
   const handleConfirmTardy = () => {
-    if (!tardyModalStudent || isPastDate) return;
+    if (!tardyModalStudent || isReadOnly) return;
     const mins = Number(tardyInputMinutes) || 15;
     setStudentsList((prev) =>
       prev.map((s) => {
@@ -887,7 +889,7 @@ export const AttendancePage: React.FC = () => {
 
   const handleSaveModalEvaluation = async () => {
     if (!evaluationModalStudent) return;
-    if (isPastDate) {
+    if (isReadOnly) {
       toast.error('ارزشیابی روزهای گذشته قابل تغییر نیست');
       return;
     }
@@ -1239,13 +1241,13 @@ export const AttendancePage: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleResetToDefault}
-                  disabled={isPastDate || !isModifiedFromDefault}
+                  disabled={isReadOnly || !isModifiedFromDefault}
                   className={`h-10 w-10 shrink-0 rounded-xl border inline-flex items-center justify-center transition-all shadow-2xs ${
-                    !isPastDate && isModifiedFromDefault
+                    !isReadOnly && isModifiedFromDefault
                       ? 'border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 cursor-pointer active:scale-95'
                       : 'border-gray-200 dark:border-[#242F42] bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 dark:text-gray-600 cursor-not-allowed opacity-50'
                   }`}
-                  title={isPastDate ? 'امکان تغییر در تاریخ‌های گذشته وجود ندارد' : isModifiedFromDefault ? 'بازنشانی وضعیت‌ها (ریست)' : 'در حالت پیش‌فرض (حضور همه) قرار دارد'}
+                  title={isReadOnly ? 'امکان تغییر در تاریخ‌های گذشته وجود ندارد' : isModifiedFromDefault ? 'بازنشانی وضعیت‌ها (ریست)' : 'در حالت پیش‌فرض (حضور همه) قرار دارد'}
                 >
                   <RotateCcw className="w-4 h-4 shrink-0" />
                 </button>
@@ -1253,24 +1255,24 @@ export const AttendancePage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    if (isPastDate) {
-                      toast.error('ثبت اطلاعات برای روزهای گذشته امکان‌پذیر نیست');
+                    if (isReadOnly) {
+                      toast.error('امکان ثبت در تاریخ گذشته برای شما وجود ندارد');
                       return;
                     }
                     saveAttendanceMutation.mutate();
                   }}
-                  disabled={isPastDate || saveAttendanceMutation.isPending || studentsList.length === 0}
+                  disabled={isReadOnly || saveAttendanceMutation.isPending || studentsList.length === 0}
                   className={`flex-1 sm:flex-none h-10 px-4 rounded-xl font-black text-xs sm:text-sm border-[1.5px] inline-flex items-center justify-center gap-1.5 transition-all ${
-                    isPastDate
+                    isReadOnly
                       ? 'bg-gray-100 dark:bg-[#1C2536] border-gray-300 dark:border-[#242F42] text-muted-foreground cursor-not-allowed opacity-75'
                       : 'bg-primary hover:bg-primary-hover text-white border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] hover:shadow-[2.5px_2.5px_0_#438C83] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer disabled:opacity-50'
                   }`}
-                  title={isPastDate ? 'تاریخ گذشته در حالت فقط مشاهده است' : 'ثبت نهایی حضور و غیاب'}
+                  title={isReadOnly ? 'تاریخ گذشته در حالت فقط مشاهده است' : 'ثبت نهایی حضور و غیاب'}
                 >
-                  {isPastDate ? (
+                  {isReadOnly ? (
                     <>
                       <Lock className="w-4 h-4 ml-1.5 text-muted-foreground" />
-                      ثبت شده (فقط مشاهده)
+                      فقط مشاهده
                     </>
                   ) : saveAttendanceMutation.isPending ? (
                     <>
@@ -1288,17 +1290,29 @@ export const AttendancePage: React.FC = () => {
 
             </div>
 
-            {/* Read-only Alert Banner for Past Dates */}
+            {/* Read-only / Admin Edit Alert Banner for Past Dates */}
             {isPastDate && (
-              <div className="bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/30 dark:border-amber-800/50 rounded-xl p-3 flex items-center justify-between gap-3 text-amber-800 dark:text-amber-300 animate-in fade-in">
-                <div className="flex items-center gap-2 min-w-0 text-xs font-bold">
-                  <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span className="truncate">این جلسه مربوط به تاریخ گذشته است و در وضعیت «فقط مشاهده (غیرقابل تغییر)» قرار دارد.</span>
+              isReadOnly ? (
+                <div className="bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/30 dark:border-amber-800/50 rounded-xl p-3 flex items-center justify-between gap-3 text-amber-800 dark:text-amber-300 animate-in fade-in">
+                  <div className="flex items-center gap-2 min-w-0 text-xs font-bold">
+                    <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <span className="truncate">جلسه گذشته • فقط مشاهده</span>
+                  </div>
+                  <span className="text-[10.5px] font-black px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30 shrink-0">
+                    قفل شده
+                  </span>
                 </div>
-                <span className="text-[10.5px] font-black px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30 shrink-0">
-                  قفل شده
-                </span>
-              </div>
+              ) : (
+                <div className="bg-primary/10 dark:bg-primary/20 border border-primary/30 dark:border-primary/40 rounded-xl p-3 flex items-center justify-between gap-3 text-primary dark:text-primary-light animate-in fade-in">
+                  <div className="flex items-center gap-2 min-w-0 text-xs font-bold">
+                    <Unlock className="w-4 h-4 text-primary shrink-0" />
+                    <span className="truncate">جلسه گذشته • دسترسی ویرایش مدیر</span>
+                  </div>
+                  <span className="text-[10.5px] font-black px-2 py-0.5 rounded-lg bg-primary/20 text-primary border border-primary/30 shrink-0">
+                    دسترسی مدیر
+                  </span>
+                </div>
+              )
             )}
 
             {/* Collapsible Filter & Stats Bar + Search Bar (Toggled via Filter Icon) */}
@@ -1538,10 +1552,10 @@ export const AttendancePage: React.FC = () => {
                       {/* PRESENT */}
                       <button
                         type="button"
-                        disabled={isPastDate}
+                        disabled={isReadOnly}
                         onClick={() => handleUpdateStudentStatus(st.studentId, 'PRESENT')}
                         className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap ${
-                          isPastDate
+                          isReadOnly
                             ? st.status === 'PRESENT'
                               ? 'bg-emerald-600 text-white font-black opacity-90 cursor-default'
                               : 'bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 border border-gray-200/50 dark:border-[#242F42]/50 cursor-not-allowed'
@@ -1557,10 +1571,10 @@ export const AttendancePage: React.FC = () => {
                       {/* ABSENT */}
                       <button
                         type="button"
-                        disabled={isPastDate}
+                        disabled={isReadOnly}
                         onClick={() => handleUpdateStudentStatus(st.studentId, 'ABSENT')}
                         className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap ${
-                          isPastDate
+                          isReadOnly
                             ? st.status === 'ABSENT'
                               ? 'bg-rose-600 text-white font-black opacity-90 cursor-default'
                               : 'bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 border border-gray-200/50 dark:border-[#242F42]/50 cursor-not-allowed'
@@ -1576,10 +1590,10 @@ export const AttendancePage: React.FC = () => {
                       {/* TARDY */}
                       <button
                         type="button"
-                        disabled={isPastDate}
+                        disabled={isReadOnly}
                         onClick={() => handleOpenTardyModal(st)}
                         className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap ${
-                          isPastDate
+                          isReadOnly
                             ? st.status === 'TARDY'
                               ? 'bg-orange-500 text-white font-black opacity-90 cursor-default'
                               : 'bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 border border-gray-200/50 dark:border-[#242F42]/50 cursor-not-allowed'
@@ -1595,10 +1609,10 @@ export const AttendancePage: React.FC = () => {
                       {/* EXCUSED_ABSENT - No modal popup */}
                       <button
                         type="button"
-                        disabled={isPastDate}
+                        disabled={isReadOnly}
                         onClick={() => handleUpdateStudentStatus(st.studentId, 'EXCUSED_ABSENT')}
                         className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap ${
-                          isPastDate
+                          isReadOnly
                             ? st.status === 'EXCUSED_ABSENT'
                               ? 'bg-sky-600 text-white font-black opacity-90 cursor-default'
                               : 'bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 border border-gray-200/50 dark:border-[#242F42]/50 cursor-not-allowed'
@@ -1653,13 +1667,13 @@ export const AttendancePage: React.FC = () => {
             <button
               type="button"
               onClick={handleResetToDefault}
-              disabled={isPastDate || !isModifiedFromDefault}
+              disabled={isReadOnly || !isModifiedFromDefault}
               className={`h-10 w-10 shrink-0 rounded-xl border inline-flex items-center justify-center transition-all ${
-                !isPastDate && isModifiedFromDefault
+                !isReadOnly && isModifiedFromDefault
                   ? 'border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 active:bg-rose-100 cursor-pointer'
                   : 'border-gray-200 dark:border-[#242F42] bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 dark:text-gray-600 cursor-not-allowed opacity-50'
               }`}
-              title={isPastDate ? 'امکان تغییر در تاریخ گذشته وجود ندارد' : isModifiedFromDefault ? 'بازنشانی وضعیت‌ها (ریست)' : 'در حالت پیش‌فرض (حضور همه) قرار دارد'}
+              title={isReadOnly ? 'امکان تغییر در تاریخ گذشته وجود ندارد' : isModifiedFromDefault ? 'بازنشانی وضعیت‌ها (ریست)' : 'در حالت پیش‌فرض (حضور همه) قرار دارد'}
             >
               <RotateCcw className="w-4 h-4 shrink-0" />
             </button>
@@ -1668,23 +1682,23 @@ export const AttendancePage: React.FC = () => {
             <button
               type="button"
               onClick={() => {
-                if (isPastDate) {
-                  toast.error('ثبت اطلاعات برای روزهای گذشته امکان‌پذیر نیست');
+                if (isReadOnly) {
+                  toast.error('امکان ثبت در تاریخ گذشته برای شما وجود ندارد');
                   return;
                 }
                 saveAttendanceMutation.mutate();
               }}
-              disabled={isPastDate || saveAttendanceMutation.isPending || studentsList.length === 0}
+              disabled={isReadOnly || saveAttendanceMutation.isPending || studentsList.length === 0}
               className={`flex-1 h-10 rounded-xl font-black text-xs border-[1.5px] inline-flex items-center justify-center gap-1.5 ${
-                isPastDate
+                isReadOnly
                   ? 'bg-gray-100 dark:bg-[#1C2536] border-gray-300 dark:border-[#242F42] text-muted-foreground cursor-not-allowed opacity-75'
                   : 'bg-primary hover:bg-primary-hover text-white border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] cursor-pointer disabled:opacity-50'
               }`}
             >
-              {isPastDate ? (
+              {isReadOnly ? (
                 <>
                   <Lock className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span>ثبت شده (مشاهده)</span>
+                  <span>فقط مشاهده</span>
                 </>
               ) : saveAttendanceMutation.isPending ? (
                 <>
