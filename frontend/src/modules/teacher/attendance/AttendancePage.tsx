@@ -740,11 +740,7 @@ export const AttendancePage: React.FC = () => {
       (s) =>
         s.status !== 'PRESENT' ||
         (s.delayMinutes && s.delayMinutes > 0) ||
-        (s.reason && s.reason.trim() !== '') ||
-        (s.oralGrade !== null && s.oralGrade !== undefined && String(s.oralGrade).trim() !== '') ||
-        (s.rewardDisciplineType && s.rewardDisciplineType !== 'NONE') ||
-        (s.rewardDisciplineNote && s.rewardDisciplineNote.trim() !== '') ||
-        (s.sessionNote && s.sessionNote.trim() !== '')
+        (s.reason && s.reason.trim() !== '')
     );
   }, [studentsList]);
 
@@ -759,14 +755,10 @@ export const AttendancePage: React.FC = () => {
         status: 'PRESENT',
         delayMinutes: 0,
         reason: '',
-        oralGrade: null,
-        rewardDisciplineType: 'NONE',
-        rewardDisciplineNote: '',
-        sessionNote: '',
       }))
     );
     setHasUnsavedChanges(true);
-    toast.info('بازنشانی شد');
+    toast.info('حضور و غیاب بازنشانی شد');
   };
 
   const handleMarkAllPresent = () => {
