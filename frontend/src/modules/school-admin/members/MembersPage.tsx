@@ -52,6 +52,7 @@ import { PasswordRevealModal, TargetMember } from '../vault/PasswordRevealModal'
 import { toast } from '../../../components/ui/toast/toast';
 
 import { read, utils, writeFile } from 'xlsx';
+import jalaali from 'jalaali-js';
 
 export const MembersPage: React.FC = () => {
   const { currentTenant } = useTenantStore();
@@ -168,12 +169,97 @@ export const MembersPage: React.FC = () => {
   const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
   const [excelFile, setExcelFile] = useState<File | null>(null);
   const [excelRows, setExcelRows] = useState<any[]>([]);
-  const [excelResult, setExcelResult] = useState<{ total: number; success: number; failed: number; errors?: string[] } | null>(null);
+  const [excelResult, setExcelResult] = useState<{
+    total: number;
+    success: number;
+    created?: number;
+    updated?: number;
+    failed: number;
+    errors?: string[];
+  } | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Forms
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const formatJalaliForExcel = (dateVal: any): string => {
+    if (!dateVal) return '';
+    try {
+      const d = new Date(dateVal);
+      if (isNaN(d.getTime())) return '';
+      const j = jalaali.toJalaali(d.getFullYear(), d.getMonth() + 1, d.getDate());
+      const pad = (n: number) => String(n).padStart(2, '0');
+      return `${j.jy}/${pad(j.jm)}/${pad(j.jd)}`;
+    } catch {
+      return '';
+    }
+  };
+
+  const handleExportStudentsExcel = () => {
+    if (!students || students.length === 0) {
+      toast.error('هیچ دانش‌آموزی برای خروجی اکسل یافت نشد.');
+      return;
+    }
+
+    const exportData = students.map((student) => {
+      const currentClassroomId =
+        student.enrollments?.[0]?.classroomId ||
+        student.enrollments?.[0]?.classroom?.id ||
+        '';
+      const currentClassroom =
+        classrooms.find((c) => c.id === currentClassroomId) ||
+        student.enrollments?.[0]?.classroom;
+      const currentGradeLevel =
+        student.gradeLevel ||
+        (currentClassroom?.level?.name
+          ? currentClassroom.level.name.includes('پایه')
+            ? currentClassroom.level.name.replace('پایه', '').trim()
+            : currentClassroom.level.name
+          : '');
+
+      return {
+        'کد ملی:': student.nationalCode || student.studentCode || '',
+        'نام:': student.user?.firstName || '',
+        'نام خانوادگی:': student.user?.lastName || '',
+        'شماره کلاس:': currentClassroom?.name || '',
+        'پایه تحصیلی:': currentGradeLevel || '',
+        'شماره همراه دانش‌آموز:': student.studentMobile || student.user?.phone || '',
+        'نام پدر:': student.fatherName || '',
+        'تاریخ تولد:': formatJalaliForExcel(student.birthDate),
+        'محل تولد:': student.birthPlace || '',
+        'سریال شناسنامه:': student.certificateNumber || '',
+        'سری حرفی:': student.certificateSeriesLetter || '',
+        'سری عددی:': student.certificateSeriesNumber || '',
+        'محل صدور:': student.issuePlace || '',
+        'وضعیت جسمانی:': student.physicalCondition || student.medicalNotes || 'سالم',
+        'نام و نام‌خانوادگی پدر:': student.fatherFullName || '',
+        'کد ملی پدر:': student.fatherNationalId || '',
+        'تحصیلات پدر:': student.fatherEducation || '',
+        'شغل پدر:': student.fatherOccupation || '',
+        'شماره همراه پدر:': student.fatherPhone || '',
+        'آدرس محل کار پدر:': student.fatherWorkAddress || '',
+        'نام و نام‌خانوادگی مادر:': student.motherFullName || '',
+        'کد ملی مادر:': student.motherNationalId || '',
+        'تحصیلات مادر:': student.motherEducation || '',
+        'شغل مادر:': student.motherOccupation || '',
+        'شماره همراه مادر:': student.motherPhone || '',
+        'آدرس محل کار مادر:': student.motherWorkAddress || '',
+        'آدرس منزل:': student.homeAddress || student.address || '',
+        'شماره ثابت:': student.landlinePhone || '',
+        'عکس پرسنلی:': student.user?.avatarUrl || '',
+      };
+    });
+
+    const ws = utils.json_to_sheet(exportData);
+    const wb = utils.book_new();
+    utils.book_append_sheet(wb, ws, 'دانش‌آموزان');
+    const now = new Date();
+    const jNow = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    const dateStr = `${jNow.jy}${String(jNow.jm).padStart(2, '0')}${String(jNow.jd).padStart(2, '0')}`;
+    writeFile(wb, `لیست_دانش‌آموزان_${dateStr}.xlsx`);
+    toast.success(`خروجی اکسل با موفقیت برای ${toPersianDigits(students.length)} دانش‌آموز ایجاد شد.`);
+  };
 
   const handleDownloadExcelSample = () => {
     // نمونه فایل ۲۸ ستونی استاندارد منطبق بر SAMPLE.xlsx با ۲ سطر نمونه
@@ -183,6 +269,7 @@ export const MembersPage: React.FC = () => {
         'نام خانوادگی:': 'صادقی',
         'نام پدر:': 'رضا',
         'پایه تحصیلی:': 'دهم',
+        'شماره کلاس:': '۱۰۱',
         'تاریخ تولد:': '1388/05/12',
         'محل تولد:': 'مشهد',
         'کد ملی:': '0921234567',
@@ -213,6 +300,7 @@ export const MembersPage: React.FC = () => {
         'نام خانوادگی:': 'محمدی',
         'نام پدر:': 'علی',
         'پایه تحصیلی:': 'یازدهم',
+        'شماره کلاس:': '۲۰۲',
         'تاریخ تولد:': '1387/08/25',
         'محل تولد:': 'تهران',
         'کد ملی:': '0012345678',
@@ -683,6 +771,18 @@ export const MembersPage: React.FC = () => {
                 variant="outline"
                 size="sm"
                 type="button"
+                onClick={handleExportStudentsExcel}
+                className="shrink-0 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30 font-bold px-2.5 sm:px-3 text-xs justify-center h-9"
+                title="خروجی کامل اکسل از کلیه دانش‌آموزان"
+              >
+                <Download className="h-3.5 w-3.5 ml-1 text-blue-600 dark:text-blue-400 shrink-0" />
+                <span>خروجی اکسل</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
                 onClick={() => {
                   setIsExcelModalOpen(true);
                   setExcelResult(null);
@@ -690,11 +790,11 @@ export const MembersPage: React.FC = () => {
                   setExcelRows([]);
                   setError(null);
                 }}
-                className="shrink-0 text-emerald-700 border-emerald-300 hover:bg-emerald-50 font-bold px-2.5 sm:px-3 text-xs justify-center h-9"
+                className="shrink-0 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-bold px-2.5 sm:px-3 text-xs justify-center h-9"
                 title="ورود گروهی اطلاعات با اکسل"
               >
-                <FileSpreadsheet className="h-3.5 w-3.5 ml-1 text-emerald-600 shrink-0" />
-                <span>اکسل</span>
+                <UploadCloud className="h-3.5 w-3.5 ml-1 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>ورود با اکسل</span>
               </Button>
 
               <Button
@@ -2391,42 +2491,60 @@ export const MembersPage: React.FC = () => {
         maxWidth="md"
       >
         <div className="space-y-5">
-          {/* Download Template Banner */}
-          <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          {/* Download Template & Export Current Roster Banner */}
+          <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 flex flex-col gap-3">
             <div className="flex items-center space-x-2.5 space-x-reverse">
               <FileSpreadsheet className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <div>
-                <div className="text-xs font-bold text-emerald-900 dark:text-emerald-200">فایل نمونه استاندارد اکسل</div>
+                <div className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                  قالب استاندارد اکسل و خروجی داده‌ها
+                </div>
                 <div className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-0.5">
-                  ستون‌های فایل: «کد ملی» (جهت تولید نام کاربری و رمز عبور)، نام، نام خانوادگی، شماره کلاس و شماره تماس
+                  می‌توانید نمونه خام را دریافت کرده یا اطلاعات فعلی دانش‌آموزان را خروجی گرفته، ویرایش و مجدداً بارگذاری نمایید.
                 </div>
               </div>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleDownloadExcelSample}
-              className="text-xs shrink-0 bg-white dark:bg-emerald-900/50 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100"
-            >
-              <Download className="h-3.5 w-3.5 ml-1" />
-              <span>دانلود نمونه فایل</span>
-            </Button>
+            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-emerald-200/60 dark:border-emerald-800/60">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadExcelSample}
+                className="text-xs bg-white dark:bg-emerald-900/50 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100"
+              >
+                <Download className="h-3.5 w-3.5 ml-1" />
+                <span>دانلود نمونه خام</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleExportStudentsExcel}
+                className="text-xs bg-white dark:bg-emerald-900/50 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100"
+              >
+                <FileSpreadsheet className="h-3.5 w-3.5 ml-1 text-emerald-600 dark:text-emerald-400" />
+                <span>خروجی اطلاعات فعلی ({toPersianDigits(students.length)} دانش‌آموز)</span>
+              </Button>
+            </div>
           </div>
 
-          {/* Unified Login Standard Notice for Excel */}
-          <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-xs space-y-1.5">
+          {/* Smart Upsert & Unified Login Standard Notice for Excel */}
+          <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-xs space-y-2">
             <div className="font-bold text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
               <UserCheck className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <span>سامانه ورود یکپارچه رکاد در اکسل:</span>
+              <span>به‌روزرسانی هوشمند و سامانه ورود یکپارچه:</span>
             </div>
-            <p className="text-[11px] text-blue-800 dark:text-blue-300 leading-relaxed">
-              با بارگذاری فایل اکسل، اطلاعات ورود برای تک‌تک دانش‌آموزان به صورت کاملاً خودکار تولید می‌گردد:
-              <br />
-              • <strong>نام کاربری:</strong> کد ملی ۱۰ رقمی دانش‌آموز
-              <br />
-              • <strong>رمز عبور پیش‌فرض:</strong> پیش‌وند شعبه + کد ملی (<strong>{branchPrefix}</strong> + کد ملی، مثال: <strong>{branchPrefix}0012345678</strong>)
-            </p>
+            <ul className="text-[11px] text-blue-800 dark:text-blue-300 space-y-1 pr-3 list-disc list-inside leading-relaxed">
+              <li>
+                <strong>به‌روزرسانی خودکار:</strong> دانش‌آموزان موجود (بر اساس کد ملی / شماره دانش‌آموزی) شناسایی شده، مشخصات و کلاس آن‌ها به‌روزرسانی می‌شود و خطای تکراری رخ نخواهد داد.
+              </li>
+              <li>
+                <strong>نام کاربری:</strong> کد ملی ۱۰ رقمی دانش‌آموز
+              </li>
+              <li>
+                <strong>رمز عبور پیش‌فرض:</strong> پیش‌وند شعبه + کد ملی (<strong>{branchPrefix}</strong> + کد ملی، مثال: <strong>{branchPrefix}0012345678</strong>)
+              </li>
+            </ul>
           </div>
 
           {/* Hidden File Input */}
@@ -2466,22 +2584,44 @@ export const MembersPage: React.FC = () => {
             </div>
           )}
 
-          {/* Success Result Message */}
+          {/* Success Result Message with Detailed Metrics */}
           {excelResult && (
-            <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 space-y-1">
-              <div className="font-bold flex items-center space-x-1.5 space-x-reverse">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                <span>عملیات با موفقیت انجام شد:</span>
+            <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-900 dark:text-emerald-200 space-y-3">
+              <div className="font-bold flex items-center space-x-1.5 space-x-reverse text-sm text-emerald-800 dark:text-emerald-300">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>عملیات پردازش فایل اکسل با موفقیت انجام شد:</span>
               </div>
-              <div>تعداد موفق: <strong>{excelResult.success}</strong> نفر</div>
-              {excelResult.failed > 0 && (
-                <div className="text-amber-700">تعداد ناموفق: <strong>{excelResult.failed}</strong> نفر</div>
-              )}
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                <div className="bg-white/90 dark:bg-emerald-900/40 p-2.5 rounded-lg border border-emerald-100 dark:border-emerald-800/60 text-center">
+                  <span className="text-[10px] text-gray-500 dark:text-gray-400 block mb-1">مجموع ردیف‌ها</span>
+                  <span className="font-black text-sm text-gray-800 dark:text-gray-200">{toPersianDigits(excelResult.total || 0)}</span>
+                </div>
+                <div className="bg-white/90 dark:bg-emerald-900/40 p-2.5 rounded-lg border border-emerald-100 dark:border-emerald-800/60 text-center">
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block mb-1">دانش‌آموز جدید</span>
+                  <span className="font-black text-sm text-emerald-700 dark:text-emerald-300">{toPersianDigits(excelResult.created ?? excelResult.success ?? 0)}</span>
+                </div>
+                <div className="bg-white/90 dark:bg-emerald-900/40 p-2.5 rounded-lg border border-emerald-100 dark:border-emerald-800/60 text-center">
+                  <span className="text-[10px] text-blue-600 dark:text-blue-400 block mb-1">به‌روزرسانی‌شده</span>
+                  <span className="font-black text-sm text-blue-700 dark:text-blue-300">{toPersianDigits(excelResult.updated || 0)}</span>
+                </div>
+                <div className="bg-white/90 dark:bg-emerald-900/40 p-2.5 rounded-lg border border-emerald-100 dark:border-emerald-800/60 text-center">
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400 block mb-1">ناموفق / خطا</span>
+                  <span className="font-black text-sm text-amber-700 dark:text-amber-400">{toPersianDigits(excelResult.failed || 0)}</span>
+                </div>
+              </div>
+
               {excelResult.errors && excelResult.errors.length > 0 && (
-                <div className="mt-2 text-[11px] text-red-600 space-y-0.5">
-                  {excelResult.errors.slice(0, 3).map((err, idx) => (
-                    <div key={idx}>• {err}</div>
-                  ))}
+                <div className="mt-2.5 p-2.5 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/50 text-[11px] text-red-700 dark:text-red-300 space-y-1">
+                  <div className="font-bold flex items-center gap-1">
+                    <AlertCircle className="h-3.5 w-3.5 text-red-500" />
+                    <span>گزارش خطاهای رخ‌داده ({toPersianDigits(excelResult.errors.length)} مورد):</span>
+                  </div>
+                  <div className="max-h-28 overflow-y-auto space-y-1 pr-1 font-mono text-[10px] dir-ltr text-right">
+                    {excelResult.errors.map((err, idx) => (
+                      <div key={idx}>• {err}</div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

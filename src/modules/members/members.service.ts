@@ -24,6 +24,7 @@ import {
   normalizeNationalCode,
   deriveStudentCode,
 } from '../../common/utils/credential.util';
+import { normalizePersianDigits } from '../../common/utils/jalali.util';
 import { PasswordVaultService } from '../auth/password-vault.service';
 
 /**
@@ -32,7 +33,7 @@ import { PasswordVaultService } from '../auth/password-vault.service';
 export function parseBirthDate(val: any): Date | undefined {
   if (!val) return undefined;
   if (val instanceof Date && !isNaN(val.getTime())) return val;
-  const str = String(val).trim();
+  const str = normalizePersianDigits(String(val).trim());
   if (!str) return undefined;
 
   // الگوی تاریخ شمسی: 1388/05/12 یا 1388-5-12 یا 1388.05.12
@@ -103,6 +104,8 @@ export class MembersService {
     const results = {
       total: items.length,
       success: 0,
+      created: 0,
+      updated: 0,
       failed: 0,
       errors: [] as string[],
     };
@@ -229,11 +232,23 @@ export class MembersService {
                 ? 'FEMALE'
                 : 'MALE';
 
-        // جستجوی کلاس متناظر در صورت وجود
+        // جستجوی کلاس متناظر در صورت وجود با پشتیبانی از ارقام فارسی و انگلیسی
         let classroomId: string | undefined = undefined;
         if (className) {
+          const cleanClassName = className.trim();
+          const englishClassName = normalizePersianDigits(cleanClassName);
           const classroom = await this.prisma.classroom.findFirst({
-            where: { tenantId, name: { contains: className } },
+            where: {
+              tenantId,
+              OR: [
+                { name: cleanClassName },
+                { name: { contains: cleanClassName } },
+                { name: englishClassName },
+                { name: { contains: englishClassName } },
+                { code: cleanClassName },
+                { code: englishClassName },
+              ],
+            },
           });
           if (classroom) classroomId = classroom.id;
         }
@@ -244,132 +259,266 @@ export class MembersService {
           creds.finalPassword,
         );
 
+        let isNewStudent = false;
+
         await this.prisma.$transaction(async (tx) => {
-          // بررسی عدم تکراری بودن کاربر
-          const existingUser = await tx.user.findFirst({
+          // ۱. جستجوی هوشمند دانش‌آموز بر اساس کد ملی، نام کاربری یا کد دانش‌آموزی
+          let existingProfile = await tx.studentProfile.findFirst({
             where: {
               tenantId,
               OR: [
-                { phone },
-                ...(creds.username ? [{ username: creds.username }] : []),
-                ...(creds.nationalId ? [{ nationalId: creds.nationalId }] : []),
-              ],
-            },
-          });
-
-          if (existingUser) {
-            throw new Error(`کاربر با کد ملی یا شماره همراه ${creds.username || phone} تکراری است`);
-          }
-
-          const existingProfile = await tx.studentProfile.findFirst({
-            where: {
-              tenantId,
-              OR: [
-                { studentCode },
                 ...(nationalCode ? [{ nationalCode }] : []),
+                ...(studentCode ? [{ studentCode }] : []),
+                ...(creds.nationalId ? [{ nationalCode: creds.nationalId }] : []),
               ],
             },
-          });
-
-          if (existingProfile) {
-            throw new Error(`کد دانش‌آموزی یا کد ملی ${studentCode} تکراری است`);
-          }
-
-          const user = await tx.user.create({
-            data: {
-              tenantId,
-              firstName,
-              lastName,
-              phone,
-              username: creds.username,
-              gender,
-              nationalId: creds.nationalId || undefined,
-              avatarUrl: avatarUrl || undefined,
-              passwordHash,
-              encryptedPassword: encryptedPassword || undefined,
-              role: Role.STUDENT as any,
-              status: 'ACTIVE',
-            },
-          });
-
-          const profile = await tx.studentProfile.create({
-            data: {
-              tenantId,
-              userId: user.id,
-              studentCode,
-              nationalCode,
-              fatherName: fatherName || (fatherFullName ? fatherFullName.split(' ')[0] : undefined),
-              birthDate,
-              address: homeAddress,
-              medicalNotes: physicalCondition,
-              gradeLevel,
-              birthPlace,
-              certificateNumber,
-              certificateSeriesLetter,
-              certificateSeriesNumber,
-              issuePlace,
-              physicalCondition,
-              fatherFullName,
-              fatherNationalId,
-              fatherEducation,
-              fatherOccupation,
-              fatherPhone,
-              fatherWorkAddress,
-              motherFullName,
-              motherNationalId,
-              motherEducation,
-              motherOccupation,
-              motherPhone,
-              motherWorkAddress,
-              homeAddress,
-              landlinePhone,
-              studentMobile,
-            },
-          });
-
-          if (classroomId) {
-            const classroom = await tx.classroom.findUnique({ where: { id: classroomId } });
-            if (classroom) {
-              await tx.classEnrollment.create({
-                data: {
-                  tenantId,
-                  studentId: profile.id,
-                  classroomId: classroom.id,
-                  academicYearId: classroom.academicYearId,
+            include: {
+              user: true,
+              enrollments: {
+                include: {
+                  classroom: true,
                 },
-              });
+              },
+            },
+          });
+
+          if (!existingProfile && (creds.nationalId || creds.username)) {
+            const matchedUser = await tx.user.findFirst({
+              where: {
+                tenantId,
+                role: Role.STUDENT as any,
+                OR: [
+                  ...(creds.nationalId ? [{ nationalId: creds.nationalId }] : []),
+                  ...(creds.username ? [{ username: creds.username }] : []),
+                ],
+              },
+              include: {
+                studentProfile: {
+                  include: {
+                    enrollments: {
+                      include: {
+                        classroom: true,
+                      },
+                    },
+                  },
+                },
+              },
+            });
+
+            if (matchedUser?.studentProfile) {
+              existingProfile = {
+                ...matchedUser.studentProfile,
+                user: matchedUser,
+              };
             }
           }
 
-          // Automatically sync unified single parent account for imported student
-          await this.syncParentForStudent(tx, tenantId, profile, {
-            studentNationalCode: nationalCode,
-            fatherFullName,
-            motherFullName,
-            fatherPhone,
-            motherPhone,
-            phone,
-            studentFirstName: firstName,
-            studentLastName: lastName,
-            occupation: fatherOccupation || motherOccupation,
-            education: fatherEducation || motherEducation,
-          });
+          if (existingProfile) {
+            // به‌روزرسانی مشخصات دانش‌آموز موجود (Smart Upsert - بدون خطا)
+            await tx.user.update({
+              where: { id: existingProfile.user.id },
+              data: {
+                ...(firstName && firstName !== 'دانش‌آموز' ? { firstName } : {}),
+                ...(lastName && lastName !== 'بدون فامیل' ? { lastName } : {}),
+                ...(phone && !phone.startsWith('0900000000') ? { phone } : {}),
+                ...(gender ? { gender } : {}),
+                ...(avatarUrl ? { avatarUrl } : {}),
+                ...(nationalCode ? { nationalId: nationalCode } : {}),
+              },
+            });
+
+            await tx.studentProfile.update({
+              where: { id: existingProfile.id },
+              data: {
+                ...(nationalCode ? { nationalCode } : {}),
+                ...(studentCode ? { studentCode } : {}),
+                ...(fatherName ? { fatherName } : {}),
+                ...(birthDate ? { birthDate } : {}),
+                ...(homeAddress ? { address: homeAddress, homeAddress } : {}),
+                ...(physicalCondition ? { medicalNotes: physicalCondition, physicalCondition } : {}),
+                ...(gradeLevel ? { gradeLevel } : {}),
+                ...(birthPlace ? { birthPlace } : {}),
+                ...(certificateNumber ? { certificateNumber } : {}),
+                ...(certificateSeriesLetter ? { certificateSeriesLetter } : {}),
+                ...(certificateSeriesNumber ? { certificateSeriesNumber } : {}),
+                ...(issuePlace ? { issuePlace } : {}),
+                ...(fatherFullName ? { fatherFullName } : {}),
+                ...(fatherNationalId ? { fatherNationalId } : {}),
+                ...(fatherEducation ? { fatherEducation } : {}),
+                ...(fatherOccupation ? { fatherOccupation } : {}),
+                ...(fatherPhone ? { fatherPhone } : {}),
+                ...(fatherWorkAddress ? { fatherWorkAddress } : {}),
+                ...(motherFullName ? { motherFullName } : {}),
+                ...(motherNationalId ? { motherNationalId } : {}),
+                ...(motherEducation ? { motherEducation } : {}),
+                ...(motherOccupation ? { motherOccupation } : {}),
+                ...(motherPhone ? { motherPhone } : {}),
+                ...(motherWorkAddress ? { motherWorkAddress } : {}),
+                ...(landlinePhone ? { landlinePhone } : {}),
+                ...(studentMobile ? { studentMobile } : {}),
+              },
+            });
+
+            // مدیریت تغییر کلاس یا انتساب به کلاس جدید
+            if (classroomId) {
+              const classroom = await tx.classroom.findUnique({ where: { id: classroomId } });
+              if (classroom) {
+                const activeEnrollment = existingProfile.enrollments?.find(
+                  (e: any) => e.status === 'ACTIVE',
+                ) || existingProfile.enrollments?.[0];
+
+                if (activeEnrollment) {
+                  if (activeEnrollment.classroomId !== classroom.id) {
+                    await tx.classEnrollment.update({
+                      where: { id: activeEnrollment.id },
+                      data: {
+                        classroomId: classroom.id,
+                        academicYearId: classroom.academicYearId,
+                      },
+                    });
+                  }
+                } else {
+                  await tx.classEnrollment.create({
+                    data: {
+                      tenantId,
+                      studentId: existingProfile.id,
+                      classroomId: classroom.id,
+                      academicYearId: classroom.academicYearId,
+                    },
+                  });
+                }
+              }
+            }
+
+            // همگام‌سازی اطلاعات اولیاء
+            await this.syncParentForStudent(tx, tenantId, existingProfile, {
+              studentNationalCode: nationalCode || existingProfile.nationalCode,
+              fatherFullName: fatherFullName || existingProfile.fatherFullName,
+              motherFullName: motherFullName || existingProfile.motherFullName,
+              fatherPhone: fatherPhone || existingProfile.fatherPhone,
+              motherPhone: motherPhone || existingProfile.motherPhone,
+              phone: phone || existingProfile.user.phone,
+              studentFirstName: firstName || existingProfile.user.firstName,
+              studentLastName: lastName || existingProfile.user.lastName,
+              occupation: fatherOccupation || motherOccupation || existingProfile.fatherOccupation,
+              education: fatherEducation || motherEducation || existingProfile.fatherEducation,
+            });
+
+            results.updated++;
+            results.success++;
+          } else {
+            isNewStudent = true;
+
+            // بررسی عدم تکراری بودن شماره همراه برای جلوگیری از خطای یونیک
+            const phoneConflict = await tx.user.findFirst({
+              where: {
+                tenantId,
+                phone,
+              },
+            });
+
+            const safePhone = phoneConflict
+              ? `09${Math.floor(Math.random() * 1000000000).toString().padStart(9, '0')}`
+              : phone;
+
+            const user = await tx.user.create({
+              data: {
+                tenantId,
+                firstName,
+                lastName,
+                phone: safePhone,
+                username: creds.username,
+                gender,
+                nationalId: creds.nationalId || undefined,
+                avatarUrl: avatarUrl || undefined,
+                passwordHash,
+                encryptedPassword: encryptedPassword || undefined,
+                role: Role.STUDENT as any,
+                status: 'ACTIVE',
+              },
+            });
+
+            const profile = await tx.studentProfile.create({
+              data: {
+                tenantId,
+                userId: user.id,
+                studentCode,
+                nationalCode,
+                fatherName: fatherName || (fatherFullName ? fatherFullName.split(' ')[0] : undefined),
+                birthDate,
+                address: homeAddress,
+                medicalNotes: physicalCondition,
+                gradeLevel,
+                birthPlace,
+                certificateNumber,
+                certificateSeriesLetter,
+                certificateSeriesNumber,
+                issuePlace,
+                physicalCondition,
+                fatherFullName,
+                fatherNationalId,
+                fatherEducation,
+                fatherOccupation,
+                fatherPhone,
+                fatherWorkAddress,
+                motherFullName,
+                motherNationalId,
+                motherEducation,
+                motherOccupation,
+                motherPhone,
+                motherWorkAddress,
+                homeAddress,
+                landlinePhone,
+                studentMobile: studentMobile || (phone !== safePhone ? phone : undefined),
+              },
+            });
+
+            if (classroomId) {
+              const classroom = await tx.classroom.findUnique({ where: { id: classroomId } });
+              if (classroom) {
+                await tx.classEnrollment.create({
+                  data: {
+                    tenantId,
+                    studentId: profile.id,
+                    classroomId: classroom.id,
+                    academicYearId: classroom.academicYearId,
+                  },
+                });
+              }
+            }
+
+            await this.syncParentForStudent(tx, tenantId, profile, {
+              studentNationalCode: nationalCode,
+              fatherFullName,
+              motherFullName,
+              fatherPhone,
+              motherPhone,
+              phone,
+              studentFirstName: firstName,
+              studentLastName: lastName,
+              occupation: fatherOccupation || motherOccupation,
+              education: fatherEducation || motherEducation,
+            });
+
+            results.created++;
+            results.success++;
+          }
         });
 
-        // Dispatch credentials SMS event if phone is valid
-        const notificationPhone = fatherPhone || motherPhone || (phone && !phone.startsWith('0900000000') ? phone : undefined);
-        if (notificationPhone && notificationPhone.length >= 10) {
-          this.eventEmitter.emit('member.credentials_generated', {
-            tenantId,
-            name: `${firstName} ${lastName}`,
-            phone: notificationPhone,
-            username: creds.username,
-            password: creds.finalPassword,
-            role: 'دانش‌آموز',
-          });
+        // ارسال پیامک خوش‌آمد و رمز عبور فقط برای دانش‌آموزان جدید
+        if (isNewStudent) {
+          const notificationPhone = fatherPhone || motherPhone || (phone && !phone.startsWith('0900000000') ? phone : undefined);
+          if (notificationPhone && notificationPhone.length >= 10) {
+            this.eventEmitter.emit('member.credentials_generated', {
+              tenantId,
+              name: `${firstName} ${lastName}`,
+              phone: notificationPhone,
+              username: creds.username,
+              password: creds.finalPassword,
+              role: 'دانش‌آموز',
+            });
+          }
         }
-
-        results.success++;
       } catch (err: any) {
         results.failed++;
         results.errors.push(`ردیف ${i + 1} (${item['نام'] || item['نام:'] || ''} ${item['نام خانوادگی'] || item['نام خانوادگی:'] || ''}): ${err.message}`);
