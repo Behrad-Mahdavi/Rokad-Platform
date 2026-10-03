@@ -195,6 +195,8 @@ export class AuthService {
             { username: cleanIdentifier },
             { username: `p${cleanIdentifier}` },
             { username: `p_${cleanIdentifier}` },
+            { username: `t${cleanIdentifier}` },
+            { username: `t_${cleanIdentifier}` },
             ...(strippedPIdentifier ? [{ username: strippedPIdentifier }] : []),
             ...(strippedZeroIdentifier ? [{ username: strippedZeroIdentifier }, { username: `p${strippedZeroIdentifier}` }] : []),
             ...(strippedZeroPIdentifier ? [{ username: strippedZeroPIdentifier }, { username: `p${strippedZeroPIdentifier}` }] : []),
@@ -316,6 +318,13 @@ export class AuthService {
     let authenticatedUser: any = null;
     const cleanPassword = normalizePersianDigits(dto.password || '');
 
+    // Prioritize exact username match
+    candidateUsers.sort((a, b) => {
+      if (a.username === cleanIdentifier) return -1;
+      if (b.username === cleanIdentifier) return 1;
+      return 0;
+    });
+
     for (const candidate of candidateUsers) {
       if (candidate.status !== 'ACTIVE') continue;
       let isValid = false;
@@ -341,6 +350,8 @@ export class AuthService {
               { username: cleanIdentifier },
               { username: `p${cleanIdentifier}` },
               { username: `p_${cleanIdentifier}` },
+              { username: `t${cleanIdentifier}` },
+              { username: `t_${cleanIdentifier}` },
               ...(strippedPIdentifier ? [{ username: strippedPIdentifier }] : []),
               ...(strippedZeroIdentifier ? [{ username: strippedZeroIdentifier }, { username: `p${strippedZeroIdentifier}` }] : []),
               ...(strippedZeroPIdentifier ? [{ username: strippedZeroPIdentifier }, { username: `p${strippedZeroPIdentifier}` }] : []),
@@ -366,6 +377,13 @@ export class AuthService {
           include: {
             tenant: true,
           },
+        });
+
+        // Prioritize exact username match
+        otherTenantCandidates.sort((a, b) => {
+          if (a.username === cleanIdentifier) return -1;
+          if (b.username === cleanIdentifier) return 1;
+          return 0;
         });
 
         for (const candidate of otherTenantCandidates) {

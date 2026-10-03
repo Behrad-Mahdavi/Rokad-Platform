@@ -1063,7 +1063,9 @@ export const MembersPage: React.FC = () => {
               mobilePriority: 'detail',
               render: (t) => (
                 <div className="text-xs flex items-center gap-2 flex-wrap justify-end">
-                  <span className="font-mono text-gray-700 dark:text-gray-300 font-bold" dir="ltr">{t.user?.phone || '—'}</span>
+                  <span className="font-mono text-gray-700 dark:text-gray-300 font-bold" dir="ltr">
+                    {t.user?.phone || (t.user?.metadata as any)?.phone || '—'}
+                  </span>
                   {t.landlinePhone && (
                     <span className="font-mono text-[10px] text-gray-500 bg-gray-200/70 dark:bg-gray-700 px-1.5 py-0.5 rounded" dir="ltr">ثابت: {t.landlinePhone}</span>
                   )}
