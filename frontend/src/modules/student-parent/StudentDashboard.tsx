@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../lib/auth/auth-store';
 import { apiClient } from '../../lib/api/client';
 import { Card } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import {
   GraduationCap,
@@ -241,9 +240,6 @@ export const StudentDashboard: React.FC = () => {
                 <h1 className="text-base sm:text-xl font-black text-ink-darker dark:text-white truncate">
                   روزنگاشت تحصیلی • {liveDate}
                 </h1>
-                <Badge variant="college" className="text-[11px] font-black shrink-0">
-                  امروز {DAY_NAMES[todayKey]}
-                </Badge>
               </div>
 
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
@@ -269,13 +265,13 @@ export const StudentDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Today's Live Flow Timeline (خط زمانی جریان کلاس‌های امروز) */}
+      {/* 2. Today's Live Flow Timeline (خط زمانی کلاس‌های امروز) */}
       <Card className="p-4 sm:p-5 bg-white dark:bg-[#151C28] border border-gray-200/80 dark:border-[#242F42] shadow-xs">
         <div className="flex items-center justify-between gap-3 mb-3.5 pb-2.5 border-b border-gray-100 dark:border-[#242F42]">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-primary shrink-0" />
             <h2 className="text-sm font-black text-ink-darker dark:text-white">
-              جریان کلاس‌های امروز ({DAY_NAMES[todayKey]})
+              کلاس‌های امروز
             </h2>
           </div>
 
