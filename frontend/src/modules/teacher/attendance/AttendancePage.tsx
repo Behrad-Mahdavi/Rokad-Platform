@@ -762,7 +762,7 @@ export const AttendancePage: React.FC = () => {
       }))
     );
     setHasUnsavedChanges(true);
-    toast.info('تمامی وضعیت‌ها به حالت پیش‌فرض (حضور همه) بازنشانی شد');
+    toast.info('بازنشانی شد');
   };
 
   const handleMarkAllPresent = () => {
@@ -1235,20 +1235,19 @@ export const AttendancePage: React.FC = () => {
                   </button>
                 )}
 
-                {/* Reset to Default Button */}
+                {/* Reset to Default Button (Icon Only) */}
                 <button
                   type="button"
                   onClick={handleResetToDefault}
                   disabled={isPastDate || !isModifiedFromDefault}
-                  className={`flex-1 sm:flex-none h-10 px-3.5 rounded-xl border font-black text-xs sm:text-sm inline-flex items-center justify-center gap-1.5 transition-all shadow-2xs ${
+                  className={`h-10 w-10 shrink-0 rounded-xl border inline-flex items-center justify-center transition-all shadow-2xs ${
                     !isPastDate && isModifiedFromDefault
                       ? 'border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 cursor-pointer active:scale-95'
                       : 'border-gray-200 dark:border-[#242F42] bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 dark:text-gray-600 cursor-not-allowed opacity-50'
                   }`}
-                  title={isPastDate ? 'امکان تغییر در تاریخ‌های گذشته وجود ندارد' : isModifiedFromDefault ? 'ریست تمامی وضعیت‌ها به حالت پیش‌فرض (حضور همه)' : 'در حالت پیش‌فرض (حضور همه) قرار دارد'}
+                  title={isPastDate ? 'امکان تغییر در تاریخ‌های گذشته وجود ندارد' : isModifiedFromDefault ? 'بازنشانی وضعیت‌ها (ریست)' : 'در حالت پیش‌فرض (حضور همه) قرار دارد'}
                 >
                   <RotateCcw className="w-4 h-4 shrink-0" />
-                  <span>ریست</span>
                 </button>
 
                 <button
@@ -1650,20 +1649,19 @@ export const AttendancePage: React.FC = () => {
               <Filter className="w-4 h-4" />
             </button>
 
-            {/* ریست - Reset Button (Mobile) */}
+            {/* ریست - Reset Button (Mobile Icon Only) */}
             <button
               type="button"
               onClick={handleResetToDefault}
               disabled={isPastDate || !isModifiedFromDefault}
-              className={`h-10 px-3 rounded-xl border font-black text-xs inline-flex items-center justify-center gap-1 transition-all shrink-0 ${
+              className={`h-10 w-10 shrink-0 rounded-xl border inline-flex items-center justify-center transition-all ${
                 !isPastDate && isModifiedFromDefault
                   ? 'border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 active:bg-rose-100 cursor-pointer'
                   : 'border-gray-200 dark:border-[#242F42] bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 dark:text-gray-600 cursor-not-allowed opacity-50'
               }`}
-              title={isPastDate ? 'امکان تغییر در تاریخ گذشته وجود ندارد' : isModifiedFromDefault ? 'ریست تمامی وضعیت‌ها به حالت پیش‌فرض (حضور همه)' : 'در حالت پیش‌فرض (حضور همه) قرار دارد'}
+              title={isPastDate ? 'امکان تغییر در تاریخ گذشته وجود ندارد' : isModifiedFromDefault ? 'بازنشانی وضعیت‌ها (ریست)' : 'در حالت پیش‌فرض (حضور همه) قرار دارد'}
             >
-              <RotateCcw className="w-3.5 h-3.5 shrink-0" />
-              <span>ریست</span>
+              <RotateCcw className="w-4 h-4 shrink-0" />
             </button>
 
             {/* ثبت نهایی - Left */}
