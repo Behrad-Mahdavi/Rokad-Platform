@@ -2251,24 +2251,6 @@ export const AttendancePage: React.FC = () => {
                       <ChevronDown className="w-4 h-4" />
                     </button>
                   </div>
-
-                  {/* Quick Preset Grade Chips */}
-                  <div className="flex items-center gap-1 overflow-x-auto py-1 scrollbar-none">
-                    {QUICK_GRADES.map((g) => (
-                      <button
-                        key={g}
-                        type="button"
-                        onClick={() => setModalOralGrade(String(g))}
-                        className={`px-2 py-0.5 rounded-lg text-[10.5px] font-mono font-bold border transition-all shrink-0 cursor-pointer ${
-                          modalOralGrade === String(g)
-                            ? 'bg-primary text-white border-primary shadow-2xs font-black'
-                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border-gray-200 dark:border-[#242F42] hover:text-foreground hover:border-primary/40'
-                        }`}
-                      >
-                        {toPersianDigits(g)}
-                      </button>
-                    ))}
-                  </div>
                 </div>
 
                 {/* 3. Note */}
