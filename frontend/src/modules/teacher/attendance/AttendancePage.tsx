@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -122,6 +123,24 @@ const WEEK_DAYS_INFO = [
 
 const QUICK_GRADES = [20, 19.5, 19, 18.5, 18, 17, 16, 15, 14, 12, 10, 0];
 
+const REWARD_OPTIONS = [
+  { value: 'تشویقی کلی (+۲)', label: '🌟 تشویقی عمومی (+۲)', score: 2 },
+  { value: 'فعالیت و مشارکت کلاسی (+۲)', label: '🙋‍♂️ فعالیت و مشارکت کلاسی (+۲)', score: 2 },
+  { value: 'حل تمرین و پاسخ صحیح (+۲)', label: '✍️ حل تمرین و پاسخ صحیح (+۲)', score: 2 },
+  { value: 'نظم و اخلاق نمونه (+۲)', label: '⭐ نظم و اخلاق نمونه (+۲)', score: 2 },
+  { value: 'تکالیف کامل و عالی (+۲)', label: '📚 تکالیف کامل و عالی (+۲)', score: 2 },
+  { value: 'سایر موارد تشویقی (+۲)', label: '✨ سایر موارد تشویقی (+۲)', score: 2 },
+];
+
+const DISCIPLINE_OPTIONS = [
+  { value: 'مورد انضباطی کلی (-۲)', label: '⚠️ مورد انضباطی کلی (-۲)', score: -2 },
+  { value: 'بی‌نظمی در کلاس (-۲)', label: '🗣️ بی‌نظمی در کلاس (-۲)', score: -2 },
+  { value: 'عدم انجام تکالیف (-۲)', label: '❌ عدم انجام تکالیف (-۲)', score: -2 },
+  { value: 'تاخیر یا بی‌توجهی (-۲)', label: '⏰ تاخیر یا بی‌توجهی (-۲)', score: -2 },
+  { value: 'تذکر انضباطی (-۲)', label: '⚡ تذکر انضباطی (-۲)', score: -2 },
+  { value: 'سایر موارد انضباطی (-۲)', label: '🚨 سایر موارد انضباطی (-۲)', score: -2 },
+];
+
 export const AttendancePage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -174,6 +193,8 @@ export const AttendancePage: React.FC = () => {
   // Evaluation Form State
   const [modalOralGrade, setModalOralGrade] = useState<string>('');
   const [modalDisciplineType, setModalDisciplineType] = useState<DisciplinaryRewardType>('NONE');
+  const [selectedRewardOption, setSelectedRewardOption] = useState<string>('');
+  const [selectedDisciplineOption, setSelectedDisciplineOption] = useState<string>('');
   const [modalDisciplineNote, setModalDisciplineNote] = useState<string>('');
   const [modalSessionNote, setModalSessionNote] = useState<string>('');
   const [modalDelayMinutes, setModalDelayMinutes] = useState<number>(0);
@@ -672,12 +693,50 @@ export const AttendancePage: React.FC = () => {
     toast.success(`تاخیر ${toPersianDigits(mins)} دقیقه‌ای ثبت شد`);
   };
 
+  const handleSelectReward = (val: string) => {
+    setSelectedRewardOption(val);
+    setSelectedDisciplineOption('');
+    if (val) {
+      setModalDisciplineType('POSITIVE');
+      setModalDisciplineNote(val);
+      setModalOralGrade('2');
+    } else {
+      setModalDisciplineType('NONE');
+      setModalDisciplineNote('');
+      setModalOralGrade('');
+    }
+  };
+
+  const handleSelectDiscipline = (val: string) => {
+    setSelectedDisciplineOption(val);
+    setSelectedRewardOption('');
+    if (val) {
+      setModalDisciplineType('NEGATIVE');
+      setModalDisciplineNote(val);
+      setModalOralGrade('-2');
+    } else {
+      setModalDisciplineType('NONE');
+      setModalDisciplineNote('');
+      setModalOralGrade('');
+    }
+  };
+
   const handleOpenEvaluationModal = (st: LocalStudentAttendance) => {
     setEvaluationModalStudent(st);
     setModalTab('EVALUATE');
     setModalOralGrade(st.oralGrade !== null && st.oralGrade !== undefined ? String(st.oralGrade) : '');
     setModalDisciplineType(st.rewardDisciplineType || 'NONE');
     setModalDisciplineNote(st.rewardDisciplineNote || '');
+    if (st.rewardDisciplineType === 'POSITIVE' || st.rewardDisciplineType === 'EXCELLENT') {
+      setSelectedRewardOption(st.rewardDisciplineNote || 'تشویقی کلی (+۲)');
+      setSelectedDisciplineOption('');
+    } else if (st.rewardDisciplineType && st.rewardDisciplineType !== 'NONE') {
+      setSelectedDisciplineOption(st.rewardDisciplineNote || 'مورد انضباطی کلی (-۲)');
+      setSelectedRewardOption('');
+    } else {
+      setSelectedRewardOption('');
+      setSelectedDisciplineOption('');
+    }
     setModalSessionNote(st.sessionNote || '');
     setModalDelayMinutes(st.delayMinutes || 0);
     setModalReason(st.reason || '');
@@ -686,8 +745,8 @@ export const AttendancePage: React.FC = () => {
   const handleSaveModalEvaluation = async () => {
     if (!evaluationModalStudent) return;
     const parsedGrade = modalOralGrade.trim() !== '' ? parseFloat(modalOralGrade) : null;
-    if (parsedGrade !== null && (isNaN(parsedGrade) || parsedGrade < 0 || parsedGrade > 20)) {
-      toast.error('نمره پرسش کلاسی باید عددی بین ۰ تا ۲۰ باشد');
+    if (parsedGrade !== null && (isNaN(parsedGrade) || parsedGrade < -20 || parsedGrade > 20)) {
+      toast.error('نمره پرسش کلاسی باید عددی بین ۲۰- تا ۲۰ باشد');
       return;
     }
 
@@ -1573,14 +1632,15 @@ export const AttendancePage: React.FC = () => {
       {/* ─────────────────────────────────────────────────────────────
           7. STUDENT EVALUATION & TRACK RECORD BOTTOM SHEET / MODAL
       ───────────────────────────────────────────────────────────── */}
-      {evaluationModalStudent && (
+      {evaluationModalStudent && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in"
+          className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in"
           onClick={() => setEvaluationModalStudent(null)}
         >
           <div
             className="bg-white dark:bg-[#151C28] border border-gray-200 dark:border-[#242F42] rounded-t-2xl sm:rounded-2xl p-4 sm:p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto overscroll-contain shadow-2xl space-y-4"
             onClick={(e) => e.stopPropagation()}
+            dir="rtl"
           >
             {/* Mobile Drag Pill */}
             <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto sm:hidden -mt-1 mb-2" />
@@ -1603,7 +1663,7 @@ export const AttendancePage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setEvaluationModalStudent(null)}
-                className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#1C2536] rounded-xl text-muted-foreground transition-colors"
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#1C2536] rounded-xl text-muted-foreground transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1614,7 +1674,7 @@ export const AttendancePage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setModalTab('EVALUATE')}
-                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   modalTab === 'EVALUATE'
                     ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs font-black'
                     : 'text-muted-foreground hover:text-foreground'
@@ -1626,7 +1686,7 @@ export const AttendancePage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setModalTab('HISTORY')}
-                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   modalTab === 'HISTORY'
                     ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs font-black'
                     : 'text-muted-foreground hover:text-foreground'
@@ -1647,9 +1707,15 @@ export const AttendancePage: React.FC = () => {
                       <Award className="w-4 h-4 text-primary" />
                       نمره پرسش کلاسی (از ۲۰):
                     </label>
-                    {modalOralGrade && (
-                      <span className="font-mono text-xs font-black text-primary bg-primary/10 px-2 py-0.5 rounded-md border border-primary/25">
-                        {toPersianDigits(modalOralGrade)} از ۲۰
+                    {modalOralGrade !== '' && (
+                      <span className={`font-mono text-xs font-black px-2 py-0.5 rounded-md border ${
+                        Number(modalOralGrade) < 0
+                          ? 'text-rose-600 bg-rose-50 dark:bg-rose-950/60 border-rose-300'
+                          : Number(modalOralGrade) > 0 && (selectedRewardOption || selectedDisciplineOption)
+                          ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300'
+                          : 'text-primary bg-primary/10 border-primary/25'
+                      }`}>
+                        {toPersianDigits(modalOralGrade)} نمره
                       </span>
                     )}
                   </div>
@@ -1658,8 +1724,13 @@ export const AttendancePage: React.FC = () => {
                     {/* دکمه فلش بالا (سمت راست در RTL) */}
                     <button
                       type="button"
-                      onClick={() => setModalOralGrade(v => String(Math.min(20, Math.round((parseFloat(v || '0') + 0.25) * 100) / 100)))}
-                      className="h-[44px] w-[44px] shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-all cursor-pointer text-foreground dark:text-gray-200 active:scale-95"
+                      disabled={Boolean(selectedRewardOption || selectedDisciplineOption)}
+                      onClick={() =>
+                        setModalOralGrade((v) =>
+                          String(Math.min(20, Math.round((parseFloat(v || '0') + 0.25) * 100) / 100))
+                        )
+                      }
+                      className="h-[44px] w-[44px] shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-all cursor-pointer text-foreground dark:text-gray-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                       title="افزایش ۰.۲۵ نمره"
                     >
                       <ChevronUp className="w-5 h-5" />
@@ -1668,71 +1739,133 @@ export const AttendancePage: React.FC = () => {
                     <Input
                       type="number"
                       step="0.25"
-                      min="0"
+                      min="-20"
                       max="20"
+                      disabled={Boolean(selectedRewardOption || selectedDisciplineOption)}
                       value={modalOralGrade}
                       onChange={(e) => {
+                        if (selectedRewardOption || selectedDisciplineOption) return;
                         const v = parseFloat(e.target.value);
                         if (e.target.value === '') setModalOralGrade('');
-                        else if (!isNaN(v)) setModalOralGrade(String(Math.min(20, Math.max(0, v))));
+                        else if (!isNaN(v)) setModalOralGrade(String(Math.min(20, Math.max(-20, v))));
                       }}
-                      placeholder="نمره مورد نظر را وارد کنید (مثلاً ۱۹.۵)"
-                      className="rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] font-bold min-h-[44px] h-[44px] text-center text-sm flex-1"
+                      placeholder={
+                        selectedRewardOption || selectedDisciplineOption
+                          ? 'نمره بر اساس مورد انتخابی تعیین شده'
+                          : 'نمره مورد نظر را وارد کنید (مثلاً ۱۹.۵)'
+                      }
+                      className={`rounded-xl border border-gray-200 dark:border-[#242F42] font-bold min-h-[44px] h-[44px] text-center text-sm flex-1 ${
+                        selectedRewardOption || selectedDisciplineOption
+                          ? 'bg-gray-100/90 dark:bg-[#1C2536]/90 text-muted-foreground cursor-not-allowed opacity-90'
+                          : 'bg-white dark:bg-[#151C28]'
+                      }`}
                     />
 
                     {/* دکمه فلش پایین (سمت چپ در RTL) */}
                     <button
                       type="button"
-                      onClick={() => setModalOralGrade(v => String(Math.max(0, Math.round((parseFloat(v || '0') - 0.25) * 100) / 100)))}
-                      className="h-[44px] w-[44px] shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#242F42] transition-all cursor-pointer text-foreground dark:text-gray-200 active:scale-95"
+                      disabled={Boolean(selectedRewardOption || selectedDisciplineOption)}
+                      onClick={() =>
+                        setModalOralGrade((v) =>
+                          String(Math.max(-20, Math.round((parseFloat(v || '0') - 0.25) * 100) / 100))
+                        )
+                      }
+                      className="h-[44px] w-[44px] shrink-0 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-[#242F42] transition-all cursor-pointer text-foreground dark:text-gray-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                       title="کاهش ۰.۲۵ نمره"
                     >
                       <ChevronDown className="w-5 h-5" />
                     </button>
                   </div>
 
-
-
+                  {Boolean(selectedRewardOption || selectedDisciplineOption) && (
+                    <div className="flex items-center justify-between text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800/60">
+                      <span>اینپوت عدد به دلیل انتخاب مورد تشویقی/انضباطی قفل است.</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedRewardOption('');
+                          setSelectedDisciplineOption('');
+                          setModalDisciplineType('NONE');
+                          setModalDisciplineNote('');
+                          setModalOralGrade('');
+                        }}
+                        className="text-primary hover:underline font-black text-[11px] cursor-pointer"
+                      >
+                        حذف و ورود دستی
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                {/* 2. Disciplinary / Encouragement Selector */}
-                <div className="space-y-2 bg-gray-50/60 dark:bg-[#1C2536]/60 p-3.5 rounded-xl border border-gray-200/80 dark:border-[#242F42]">
+                {/* 2. Disciplinary / Encouragement Selector (Two Select Boxes in one row) */}
+                <div className="space-y-2.5 bg-gray-50/60 dark:bg-[#1C2536]/60 p-3.5 rounded-xl border border-gray-200/80 dark:border-[#242F42]">
                   <label className="text-xs font-bold text-foreground dark:text-white flex items-center gap-1.5">
                     <Star className="w-4 h-4 text-emerald-500" />
                     موارد انضباطی و تشویقی جلسه:
                   </label>
 
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-                    {[
-                      { key: 'POSITIVE', label: 'مثبت', activeClass: 'bg-emerald-500 text-white' },
-                      { key: 'EXCELLENT', label: 'عالی', activeClass: 'bg-purple-600 text-white' },
-                      { key: 'NEGATIVE', label: 'منفی', activeClass: 'bg-rose-500 text-white' },
-                      { key: 'WARNING', label: 'تذکر', activeClass: 'bg-orange-500 text-white' },
-                      { key: 'HOMEWORK_INCOMPLETE', label: 'بدون تکلیف', activeClass: 'bg-purple-500 text-white' },
-                      { key: 'NONE', label: 'عادی', activeClass: 'bg-gray-400 text-white' },
-                    ].map((item) => (
-                      <button
-                        key={item.key}
-                        type="button"
-                        onClick={() => setModalDisciplineType(item.key as DisciplinaryRewardType)}
-                        className={`py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all text-center border ${
-                          modalDisciplineType === item.key
-                            ? `${item.activeClass} border-transparent shadow-xs font-black`
-                            : 'bg-white dark:bg-[#151C28] text-muted-foreground border-gray-200 dark:border-[#242F42] hover:text-foreground'
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {/* Select 1: تشویقی */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                        تشویقی (+۲):
+                      </label>
+                      <select
+                        value={selectedRewardOption}
+                        onChange={(e) => handleSelectReward(e.target.value)}
+                        className={`w-full h-10 px-3 rounded-xl border text-xs font-bold transition-all focus:outline-none focus:ring-1 cursor-pointer ${
+                          selectedRewardOption
+                            ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-400 dark:border-emerald-600 text-emerald-800 dark:text-emerald-200 ring-1 ring-emerald-400/40'
+                            : 'bg-white dark:bg-[#151C28] border-gray-200 dark:border-[#242F42] text-foreground dark:text-white'
                         }`}
                       >
-                        {item.label}
-                      </button>
-                    ))}
+                        <option value="">انتخاب تشویقی...</option>
+                        {REWARD_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Select 2: انضباطی */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1">
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
+                        انضباطی (-۲):
+                      </label>
+                      <select
+                        value={selectedDisciplineOption}
+                        onChange={(e) => handleSelectDiscipline(e.target.value)}
+                        className={`w-full h-10 px-3 rounded-xl border text-xs font-bold transition-all focus:outline-none focus:ring-1 cursor-pointer ${
+                          selectedDisciplineOption
+                            ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-400 dark:border-rose-600 text-rose-800 dark:text-rose-200 ring-1 ring-rose-400/40'
+                            : 'bg-white dark:bg-[#151C28] border-gray-200 dark:border-[#242F42] text-foreground dark:text-white'
+                        }`}
+                      >
+                        <option value="">انتخاب انضباطی...</option>
+                        {DISCIPLINE_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
-                  {modalDisciplineType !== 'NONE' && (
-                    <Input
-                      value={modalDisciplineNote}
-                      onChange={(e) => setModalDisciplineNote(e.target.value)}
-                      placeholder="شرح یا علت تشویق/تذکر..."
-                      className="rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] font-bold h-9 text-xs mt-2"
-                    />
+                  {Boolean(selectedRewardOption || selectedDisciplineOption) && (
+                    <div className="space-y-1 pt-1">
+                      <label className="text-[10px] font-bold text-muted-foreground block">
+                        توضیحات تکمیلی (اختیاری):
+                      </label>
+                      <Input
+                        value={modalDisciplineNote}
+                        onChange={(e) => setModalDisciplineNote(e.target.value)}
+                        placeholder="شرح یا جزئیات مورد تشویقی/انضباطی..."
+                        className="rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] font-bold h-9 text-xs"
+                      />
+                    </div>
                   )}
                 </div>
 
@@ -1753,13 +1886,12 @@ export const AttendancePage: React.FC = () => {
 
                 {/* Action Buttons */}
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100 dark:border-[#242F42] flex-wrap">
-
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setEvaluationModalStudent(null)}
-                      className="rounded-xl border border-gray-200 dark:border-[#242F42] text-xs font-bold h-9"
+                      className="rounded-xl border border-gray-200 dark:border-[#242F42] text-xs font-bold h-9 cursor-pointer"
                     >
                       انصراف
                     </Button>
@@ -1767,7 +1899,7 @@ export const AttendancePage: React.FC = () => {
                       size="sm"
                       disabled={isSavingEvaluation}
                       onClick={handleSaveModalEvaluation}
-                      className="rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs h-9 shadow-xs flex items-center gap-1.5"
+                      className="rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs h-9 shadow-xs flex items-center gap-1.5 cursor-pointer"
                     >
                       {isSavingEvaluation && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                       تایید و ثبت
@@ -1903,15 +2035,16 @@ export const AttendancePage: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ─────────────────────────────────────────────────────────────
           8. DEDICATED TARDY TIME MODAL
       ───────────────────────────────────────────────────────────── */}
-      {tardyModalStudent && (
+      {tardyModalStudent && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 animate-in fade-in"
+          className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
           onClick={() => setTardyModalStudent(null)}
         >
           <div
@@ -1987,20 +2120,21 @@ export const AttendancePage: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => setTardyModalStudent(null)}
-                className="rounded-xl border border-gray-200 dark:border-[#242F42] text-xs font-bold h-9"
+                className="rounded-xl border border-gray-200 dark:border-[#242F42] text-xs font-bold h-9 cursor-pointer"
               >
                 انصراف
               </Button>
               <Button
                 size="sm"
                 onClick={handleConfirmTardy}
-                className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black text-xs h-9 shadow-xs"
+                className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black text-xs h-9 shadow-xs cursor-pointer"
               >
                 ثبت تاخیر
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
