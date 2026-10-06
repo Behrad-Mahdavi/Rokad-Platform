@@ -218,6 +218,8 @@ export const router = createBrowserRouter([
               { index: true, element: <Navigate to="dashboard" replace /> },
               { path: 'dashboard', element: <ParentDashboard /> },
               { path: 'schedule', element: <StudentSchedulePage /> },
+              { path: 'homework', element: <StudentHomeworkPage /> },
+              { path: 'exams', element: <StudentExamsPage /> },
               { path: 'fees', element: <ParentFeesPage /> },
               { path: 'reports', element: <StudentGradesPage /> },
               { path: 'matters', element: <StudentMattersPage /> },

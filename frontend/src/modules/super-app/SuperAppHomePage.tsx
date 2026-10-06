@@ -1162,6 +1162,117 @@ export const SuperAppHomePage: React.FC = () => {
     },
   ];
 
+  // ==========================================
+  // Parent Rows (4 Custom Rows)
+  // ==========================================
+  // 1. پیام ها - شهریه
+  const parentRow1: SuperAppCard[] = [
+    {
+      id: 'parent-messages',
+      title: 'پیام‌ها',
+      href: '/app/messages',
+      icon: MessageSquare,
+      iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+      iconColor: 'text-primary-dark dark:text-primary',
+      badge: unreadMessagesCount > 0 ? toPersianDigits(unreadMessagesCount) : undefined,
+    },
+    {
+      id: 'parent-fees',
+      title: 'شهریه',
+      href: '/app/parent/fees',
+      icon: CreditCard,
+      iconBg: 'bg-club-light dark:bg-[#2A173E]',
+      iconColor: 'text-club dark:text-[#C084FC]',
+    },
+  ];
+
+  // 2. برنامه هفتگی - تکالیف - ازمون ها
+  const parentRow2: SuperAppCard[] = [
+    {
+      id: 'parent-schedule',
+      title: 'برنامه هفتگی',
+      href: '/app/parent/schedule',
+      icon: CalendarDays,
+      iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+      iconColor: 'text-primary-dark dark:text-primary',
+    },
+    {
+      id: 'parent-homework',
+      title: 'تکالیف',
+      href: '/app/parent/homework',
+      icon: FileCheck,
+      iconBg: 'bg-club-light dark:bg-[#2A173E]',
+      iconColor: 'text-club dark:text-[#C084FC]',
+      badge: homeworkCount > 0 ? toPersianDigits(homeworkCount) : undefined,
+    },
+    {
+      id: 'parent-exams',
+      title: 'آزمون‌ها',
+      href: '/app/parent/exams',
+      icon: HelpCircle,
+      iconBg: 'bg-college-light dark:bg-[#38260D]',
+      iconColor: 'text-third dark:text-[#FBBF24]',
+      badge: examsCount > 0 ? toPersianDigits(examsCount) : undefined,
+    },
+  ];
+
+  // 3. کارنامه نمرات - انضباطی تشویقی - ملاقات با کادر اموزشی
+  const parentRow3: SuperAppCard[] = [
+    {
+      id: 'parent-reports',
+      title: 'کارنامه و نمرات',
+      href: '/app/parent/reports',
+      icon: BarChart3,
+      iconBg: 'bg-male-light dark:bg-[#182346]',
+      iconColor: 'text-sec dark:text-[#8194EE]',
+    },
+    {
+      id: 'parent-matters',
+      title: 'انضباطی/تشویقی',
+      href: '/app/parent/matters',
+      icon: Scale,
+      iconBg: 'bg-female-light dark:bg-[#3D1426]',
+      iconColor: 'text-girl dark:text-[#F472B6]',
+    },
+    {
+      id: 'parent-visits',
+      title: 'ملاقات با کادر آموزشی',
+      href: '/app/parent/visits',
+      icon: Users,
+      iconBg: 'bg-club-light dark:bg-[#2A173E]',
+      iconColor: 'text-club dark:text-[#C084FC]',
+    },
+  ];
+
+  // 4. رویداد ها - کوچینگ - نظرسنجی ها
+  const parentRow4: SuperAppCard[] = [
+    {
+      id: 'parent-events',
+      title: 'رویدادها',
+      href: '/app/events',
+      icon: CalendarRange,
+      iconBg: 'bg-college-light dark:bg-[#38260D]',
+      iconColor: 'text-third dark:text-[#FBBF24]',
+      badge: eventsCount > 0 ? toPersianDigits(eventsCount) : undefined,
+    },
+    {
+      id: 'parent-coaching',
+      title: 'کوچینگ',
+      href: '/app/coaching',
+      icon: Compass,
+      iconBg: 'bg-club-light dark:bg-[#2A173E]',
+      iconColor: 'text-club dark:text-[#C084FC]',
+    },
+    {
+      id: 'parent-polls',
+      title: 'نظرسنجی',
+      href: '/app/polls',
+      icon: Vote,
+      iconBg: 'bg-college-light dark:bg-[#38260D]',
+      iconColor: 'text-third dark:text-[#FBBF24]',
+    },
+  ];
+
   const renderCard = (card: SuperAppCard) => (
     <button
       key={card.id}
@@ -1298,6 +1409,28 @@ export const SuperAppHomePage: React.FC = () => {
           {/* 6. ملاقات با اولیا - فیش حقوقی */}
           <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
             {teacherRow6.map(renderCard)}
+          </div>
+        </div>
+      ) : user?.role === 'PARENT' ? (
+        <div className="space-y-2.5 sm:space-y-3.5">
+          {/* 1. پیام ها - شهریه */}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
+            {parentRow1.map(renderCard)}
+          </div>
+
+          {/* 2. برنامه هفتگی - تکالیف - ازمون ها */}
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+            {parentRow2.map(renderCard)}
+          </div>
+
+          {/* 3. کارنامه نمرات - انضباطی تشویقی - ملاقات با کادر اموزشی */}
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+            {parentRow3.map(renderCard)}
+          </div>
+
+          {/* 4. رویداد ها - کوچینگ - نظرسنجی ها */}
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+            {parentRow4.map(renderCard)}
           </div>
         </div>
       ) : (
