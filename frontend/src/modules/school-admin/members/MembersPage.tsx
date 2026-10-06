@@ -76,6 +76,7 @@ export const MembersPage: React.FC = () => {
     setSearchParams({ tab: newTab === 'TEACHERS' ? 'staff' : 'students' });
     setSearch('');
     setSelectedGrade('ALL');
+    setIsFilterOpen(false);
   };
 
   const [students, setStudents] = useState<any[]>([]);
@@ -85,6 +86,7 @@ export const MembersPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedGrade, setSelectedGrade] = useState<string>('ALL');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const availableGrades = useMemo(() => {
     const gradesSet = new Set<string>();
@@ -967,34 +969,73 @@ export const MembersPage: React.FC = () => {
 
           {activeTab === 'STUDENTS' && (
             <div className="relative shrink-0">
-              <div
-                className={`relative h-[44px] w-[44px] rounded-xl border flex items-center justify-center transition-all shadow-2xs ${
-                  selectedGrade !== 'ALL'
-                    ? 'border-primary bg-primary/10 text-primary font-bold'
+              <button
+                type="button"
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                className={`h-[44px] w-[44px] rounded-xl border flex items-center justify-center transition-all shadow-2xs cursor-pointer ${
+                  isFilterOpen || selectedGrade !== 'ALL'
+                    ? 'border-primary bg-primary text-white shadow-xs'
                     : 'border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-ink-darker dark:hover:text-white'
                 }`}
-                title={selectedGrade === 'ALL' ? 'فیلتر پایه' : `فیلتر: پایه ${selectedGrade}`}
+                title={isFilterOpen ? 'بستن فیلترها' : 'فیلتر بر اساس پایه'}
               >
                 <Filter className="w-4 h-4" />
-                {selectedGrade !== 'ALL' && (
+                {selectedGrade !== 'ALL' && !isFilterOpen && (
                   <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full ring-2 ring-white dark:ring-[#151C28]" />
                 )}
-                <select
-                  value={selectedGrade}
-                  onChange={(e) => setSelectedGrade(e.target.value)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-xs"
-                >
-                  <option value="ALL">همه پایه‌ها</option>
-                  {availableGrades.map((g) => (
-                    <option key={g} value={g}>
-                      پایه {g}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              </button>
             </div>
           )}
         </div>
+
+        {/* Expandable Grade Filter Bar */}
+        {activeTab === 'STUDENTS' && isFilterOpen && (
+          <div className="pt-2 border-t border-gray-100 dark:border-gray-800 animate-in fade-in duration-150">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setSelectedGrade('ALL')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border select-none ${
+                  selectedGrade === 'ALL'
+                    ? 'bg-primary text-white border-primary shadow-xs'
+                    : 'bg-white dark:bg-[#151C28] text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                همه ({toPersianDigits(students.length)})
+              </button>
+              {availableGrades.map((grade) => {
+                const count = students.filter((s) => {
+                  const g = (s.enrollments?.[0]?.classroom?.level?.name || s.gradeLevel || '').replace('پایه', '').trim();
+                  return g === grade || g.includes(grade);
+                }).length;
+                const isSelected = selectedGrade === grade;
+                return (
+                  <button
+                    key={grade}
+                    type="button"
+                    onClick={() => setSelectedGrade(isSelected ? 'ALL' : grade)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border flex items-center gap-1.5 select-none ${
+                      isSelected
+                        ? 'bg-primary text-white border-primary shadow-xs'
+                        : 'bg-white dark:bg-[#151C28] text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    <span>{grade}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono ${
+                        isSelected
+                          ? 'bg-white/20 text-white'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                      }`}
+                    >
+                      {toPersianDigits(count)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tab 1: Students */}
@@ -1016,10 +1057,10 @@ export const MembersPage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
                   <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary-dark dark:text-primary-light border border-primary/20">
-                    پایه {s.enrollments?.[0]?.classroom?.level?.name?.replace('پایه', '').trim() || s.gradeLevel || 'دهم'}
+                    {s.enrollments?.[0]?.classroom?.level?.name?.replace('پایه', '').trim() || s.gradeLevel?.replace('پایه', '').trim() || 'دهم'}
                   </span>
                   <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-ink-normal dark:text-gray-200 border border-gray-200/80 dark:border-gray-700">
-                    کلاس {s.enrollments?.[0]?.classroom?.name || s.classroom?.name || '—'}
+                    {s.enrollments?.[0]?.classroom?.name?.replace('کلاس', '').trim() || s.classroom?.name?.replace('کلاس', '').trim() || '—'}
                   </span>
                 </div>
               </div>
