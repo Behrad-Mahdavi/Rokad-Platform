@@ -1,6 +1,9 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { ScrollToTop } from '../../components/common/ScrollToTop';
+import union1 from '../../assets/images/Union.svg';
+import union2 from '../../assets/images/Union2.svg';
+import union3 from '../../assets/images/Union3.svg';
 
 export const AuthLayout: React.FC = () => {
   return (
@@ -11,28 +14,19 @@ export const AuthLayout: React.FC = () => {
         <img
           className="absolute bottom-10 -right-[110px] scale-140 pointer-events-none"
           alt=""
-          src="/src/assets/images/Union.png"
-          onError={(e) => {
-            (e.target as HTMLElement).style.display = 'none';
-          }}
+          src={union1}
         />
         <img
           className="absolute scale-60 -left-[100px] bottom-0 pointer-events-none"
           alt=""
-          src="/src/assets/images/Union2.png"
-          onError={(e) => {
-            (e.target as HTMLElement).style.display = 'none';
-          }}
+          src={union2}
         />
         <img
-          className="absolute left-[70px] pointer-events-none"
+          className="absolute left-[70px] top-10 pointer-events-none"
           alt=""
-          src="/src/assets/images/Union3.png"
-          onError={(e) => {
-            (e.target as HTMLElement).style.display = 'none';
-          }}
+          src={union3}
         />
-        <div className="absolute left-15 bottom-40 text-left" dir="ltr">
+        <div className="absolute left-15 bottom-40 text-left z-10" dir="ltr">
           <h2 className="text-white text-4xl font-gilory">Welcome To</h2>
           <h1 className="text-white text-5xl font-bold-gilory mt-1">KA Platform</h1>
         </div>
