@@ -946,18 +946,18 @@ export const MembersPage: React.FC = () => {
         {/* Live Search Input & Grade Filter */}
         <div className="flex items-center gap-2 w-full">
           <div className="relative flex-1">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
+              icon={Search}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={activeTab === 'STUDENTS' ? 'جستجو در دانش‌آموزان...' : 'جستجو در کادر آموزشی...'}
-              className="pr-9 pl-8 text-xs h-9 w-full"
+              className="text-xs"
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch('')}
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-white text-xs p-1 cursor-pointer"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-white text-xs p-1 cursor-pointer z-10"
                 title="پاک کردن جستجو"
               >
                 ✕
@@ -968,10 +968,10 @@ export const MembersPage: React.FC = () => {
           {activeTab === 'STUDENTS' && (
             <div className="relative shrink-0">
               <div
-                className={`relative w-9 h-9 rounded-xl border flex items-center justify-center transition-all shadow-2xs ${
+                className={`relative h-[44px] w-[44px] rounded-xl border flex items-center justify-center transition-all shadow-2xs ${
                   selectedGrade !== 'ALL'
                     ? 'border-primary bg-primary/10 text-primary font-bold'
-                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-ink-darker dark:hover:text-white'
+                    : 'border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-ink-darker dark:hover:text-white'
                 }`}
                 title={selectedGrade === 'ALL' ? 'فیلتر پایه' : `فیلتر: پایه ${selectedGrade}`}
               >
