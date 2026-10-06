@@ -426,7 +426,7 @@ export const SuperAppHomePage: React.FC = () => {
             cards: [
               {
                 id: 'teacher-attendance',
-                title: 'دفتر کلاسی و حضور غیاب',
+                title: 'دفتر کلاسی',
                 href: '/app/teacher/attendance',
                 icon: UserCheck,
                 iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
@@ -434,7 +434,7 @@ export const SuperAppHomePage: React.FC = () => {
               },
               {
                 id: 'teacher-gradebook',
-                title: 'ارزشیابی و ثبت نمرات',
+                title: 'ارزشیابی و نمرات',
                 href: '/app/teacher/gradebook',
                 icon: BookOpen,
                 iconBg: 'bg-male-light dark:bg-[#182346]',
@@ -442,7 +442,7 @@ export const SuperAppHomePage: React.FC = () => {
               },
               {
                 id: 'teacher-homework',
-                title: 'تکالیف و بازخورد',
+                title: 'تکالیف',
                 href: '/app/teacher/homework',
                 icon: FileCheck,
                 iconBg: 'bg-club-light dark:bg-[#2A173E]',
@@ -450,7 +450,7 @@ export const SuperAppHomePage: React.FC = () => {
               },
               {
                 id: 'teacher-exams',
-                title: 'آزمون‌های آنلاین',
+                title: 'آزمون‌ها',
                 href: '/app/teacher/exams',
                 icon: HelpCircle,
                 iconBg: 'bg-college-light dark:bg-[#38260D]',
@@ -458,7 +458,7 @@ export const SuperAppHomePage: React.FC = () => {
               },
               {
                 id: 'teacher-question-bank',
-                title: 'بانک سوالات متمرکز',
+                title: 'بانک سوالات',
                 href: '/app/teacher/question-bank',
                 icon: FileQuestion,
                 iconBg: 'bg-male-light dark:bg-[#182346]',
@@ -466,7 +466,7 @@ export const SuperAppHomePage: React.FC = () => {
               },
               {
                 id: 'teacher-lessons',
-                title: 'طرح درس و محتوا',
+                title: 'محتوای آموزشی',
                 href: '/app/teacher/lessons',
                 icon: BookOpen,
                 iconBg: 'bg-female-light dark:bg-[#3D1426]',
@@ -480,7 +480,7 @@ export const SuperAppHomePage: React.FC = () => {
             cards: [
               {
                 id: 'teacher-schedule',
-                title: 'برنامه هفتگی کلاس‌ها',
+                title: 'برنامه هفتگی',
                 href: '/app/teacher/schedule',
                 icon: CalendarDays,
                 iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
@@ -504,7 +504,7 @@ export const SuperAppHomePage: React.FC = () => {
               },
               {
                 id: 'teacher-payroll',
-                title: 'فیش‌های حقوقی من',
+                title: 'فیش حقوقی',
                 href: '/app/teacher/payroll',
                 icon: Wallet,
                 iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
@@ -512,7 +512,7 @@ export const SuperAppHomePage: React.FC = () => {
               },
               {
                 id: 'teacher-club-approvals',
-                title: 'تأییدیه‌های باشگاه رُکاد',
+                title: 'تأییدیه‌ها',
                 href: '/app/teacher/club-approvals',
                 icon: Award,
                 iconBg: 'bg-amber-100 dark:bg-amber-950/60',
@@ -526,7 +526,7 @@ export const SuperAppHomePage: React.FC = () => {
             cards: [
               {
                 id: 'teacher-messages',
-                title: 'پیام‌ها و مکاتبات',
+                title: 'پیام‌ها',
                 href: '/app/messages',
                 icon: MessageSquare,
                 iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
@@ -534,16 +534,8 @@ export const SuperAppHomePage: React.FC = () => {
                 badge: unreadMessagesCount > 0 ? toPersianDigits(unreadMessagesCount) : undefined,
               },
               {
-                id: 'teacher-calendar',
-                title: 'تقویم آموزشی',
-                href: '/app/calendar',
-                icon: CalendarDays,
-                iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-                iconColor: 'text-primary-dark dark:text-primary',
-              },
-              {
                 id: 'teacher-events',
-                title: 'رودمپ رویدادها',
+                title: 'رویدادها',
                 href: '/app/events',
                 icon: CalendarRange,
                 iconBg: 'bg-college-light dark:bg-[#38260D]',
@@ -551,16 +543,8 @@ export const SuperAppHomePage: React.FC = () => {
                 badge: eventsCount > 0 ? toPersianDigits(eventsCount) : undefined,
               },
               {
-                id: 'teacher-media',
-                title: 'رسانه هنرستان',
-                href: '/app/media',
-                icon: Sparkles,
-                iconBg: 'bg-female-light dark:bg-[#3D1426]',
-                iconColor: 'text-girl dark:text-[#F472B6]',
-              },
-              {
                 id: 'teacher-coaching',
-                title: 'کوچینگ و مربی‌گری',
+                title: 'کوچینگ',
                 href: '/app/coaching',
                 icon: Compass,
                 iconBg: 'bg-club-light dark:bg-[#2A173E]',
@@ -568,27 +552,11 @@ export const SuperAppHomePage: React.FC = () => {
               },
               {
                 id: 'teacher-polls',
-                title: 'پرس‌کاد (نظرسنجی و آراء)',
+                title: 'نظرسنجی‌ها',
                 href: '/app/polls',
                 icon: Vote,
                 iconBg: 'bg-college-light dark:bg-[#38260D]',
                 iconColor: 'text-third dark:text-[#FBBF24]',
-              },
-              {
-                id: 'teacher-club',
-                title: 'باشگاه کارآفرینی رُکاد',
-                href: '/app/club',
-                icon: Award,
-                iconBg: 'bg-amber-100 dark:bg-amber-950/60',
-                iconColor: 'text-amber-600 dark:text-amber-400',
-              },
-              {
-                id: 'teacher-ka',
-                title: 'پلتفرم کا',
-                href: '/app/ka-platform',
-                icon: CoinStackIcon,
-                iconBg: 'bg-amber-50 dark:bg-[#2A2010]',
-                iconColor: 'text-amber-500',
               },
             ],
           },
