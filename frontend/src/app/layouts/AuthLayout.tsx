@@ -4,26 +4,42 @@ import { ScrollToTop } from '../../components/common/ScrollToTop';
 
 export const AuthLayout: React.FC = () => {
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-gray-50 dark:bg-[#0B0F17] text-ink-normal dark:text-gray-100 font-sans transition-colors">
+    <div className="min-h-screen flex bg-gray-50 dark:bg-[#0B0F17] text-ink-normal dark:text-gray-100 font-sans transition-colors overflow-hidden">
       <ScrollToTop />
-      {/* Brand Panel (right side visually in RTL) */}
-      <div className="hidden lg:flex lg:col-span-5 bg-primary p-12 xl:p-16 text-white flex-col justify-end relative overflow-hidden select-none">
-        {/* Soft, silky ambient glow */}
-        <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-white/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/3 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-black/10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3 pointer-events-none" />
-
-        {/* Clean, bold headline */}
-        <div className="relative z-10 text-right">
-          <h2 className="text-4xl lg:text-5xl xl:text-6xl font-black text-white leading-tight tracking-tight">
-            به رکاد
-            <br />
-            خوش آمدید!
-          </h2>
+      {/* Brand Panel */}
+      <div className="hidden lg:block w-[45%] h-screen overflow-hidden relative bg-black bg-gradient-to-t from-[#19A297] to-[#59BBAF] select-none">
+        <img
+          className="absolute bottom-10 -right-[110px] scale-140 pointer-events-none"
+          alt=""
+          src="/src/assets/images/Union.png"
+          onError={(e) => {
+            (e.target as HTMLElement).style.display = 'none';
+          }}
+        />
+        <img
+          className="absolute scale-60 -left-[100px] bottom-0 pointer-events-none"
+          alt=""
+          src="/src/assets/images/Union2.png"
+          onError={(e) => {
+            (e.target as HTMLElement).style.display = 'none';
+          }}
+        />
+        <img
+          className="absolute left-[70px] pointer-events-none"
+          alt=""
+          src="/src/assets/images/Union3.png"
+          onError={(e) => {
+            (e.target as HTMLElement).style.display = 'none';
+          }}
+        />
+        <div className="absolute left-15 bottom-40 text-left" dir="ltr">
+          <h2 className="text-white text-4xl font-gilory">Welcome To</h2>
+          <h1 className="text-white text-5xl font-bold-gilory mt-1">KA Platform</h1>
         </div>
       </div>
 
       {/* Main Form Container */}
-      <main className="col-span-1 lg:col-span-7 flex items-center justify-center p-6 md:p-12">
+      <main className="flex-1 flex items-center justify-center p-6 md:p-12 min-h-screen overflow-y-auto">
         <div className="w-full max-w-md">
           <Outlet />
         </div>
@@ -31,3 +47,4 @@ export const AuthLayout: React.FC = () => {
     </div>
   );
 };
+
