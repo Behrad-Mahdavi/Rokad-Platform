@@ -76,8 +76,7 @@ export const ReportsPage: React.FC = () => {
       {/* Header */}
       <ResponsivePageHeader
         icon={BarChart3}
-        title="گزارش‌های جامع و تحلیلی هنرستان"
-        description="تراز مالی وصول شهریه، آمار تجمیعی حضور و غیاب، کارنامه‌های پودمانی و فایل پرداخت پایا بانکی"
+        title="گزارش‌های جامع"
       />
 
       {downloadSuccess && (

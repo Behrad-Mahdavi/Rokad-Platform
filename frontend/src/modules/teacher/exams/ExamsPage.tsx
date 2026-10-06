@@ -492,8 +492,7 @@ export const ExamsPage: React.FC = () => {
       {/* Header & CTA */}
       <ResponsivePageHeader
         icon={HelpCircle}
-        title="موتور آزمون آنلاین و تصحیح هوشمند"
-        description="طراحی آزمون، تصحیح دستی سوالات تشریحی، اعطای نمره ارفاقی و مدیریت انتشار کارنامه‌ها"
+        title="آزمون‌ها"
         actions={
           <Button
             variant="primary"

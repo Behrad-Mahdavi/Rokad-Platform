@@ -332,8 +332,7 @@ export const LessonPlansPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <ResponsivePageHeader
-        title="طرح درس و مدیریت محتوای آموزشی (Lesson Plans & Materials)"
-        subtitle="بارگذاری جزوات و ویدیوهای آموزشی، تدوین طرح درس‌های کلاسی و اشتراک فایل با دانش‌آموزان"
+        title="محتوای آموزشی"
         icon={<BookOpen className="h-5 w-5 text-primary" />}
         actions={
           <div className="flex flex-wrap items-center gap-2">

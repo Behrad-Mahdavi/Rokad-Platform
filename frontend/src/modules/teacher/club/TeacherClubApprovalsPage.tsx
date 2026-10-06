@@ -114,7 +114,7 @@ export const TeacherClubApprovalsPage: React.FC = () => {
               <span>پذیرش و ارزیابی شایستگی‌های باشگاه کسب‌وکار رُکاد</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-              تأییدیه‌های ورود به باشگاه دانش‌آموزی
+              تأییدیه‌ها
             </h1>
           </div>
 

@@ -181,8 +181,7 @@ export const SchoolProfilePage: React.FC = () => {
       {/* Header */}
       <ResponsivePageHeader
         icon={School}
-        title="پروفایل و هویت رسمی مدرسه"
-        description="مدیریت اطلاعات عمومی، پیام مدیریت، شبکه‌های اجتماعی و برندینگ رسمی هنرستان"
+        title="پروفایل رسمی مدرسه"
         actions={
           <div className="flex items-center space-x-2 space-x-reverse">
             <Button

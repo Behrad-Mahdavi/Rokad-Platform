@@ -732,8 +732,7 @@ export const AcademicStructurePage: React.FC = () => {
       {/* Responsive Header */}
       <ResponsivePageHeader
         icon={GraduationCap}
-        title="ساختار آموزشی و کلاس‌های درس"
-        description="مدیریت سال‌های تحصیلی، نیم‌سال‌ها، کلاس‌های درس، دروس و تخصیص سرفصل‌ها"
+        title="ساختار سال و کلاس‌ها"
         actions={
           <>
             {activeTab === 'YEARS' && (

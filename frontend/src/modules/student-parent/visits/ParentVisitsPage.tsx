@@ -209,8 +209,7 @@ export const ParentVisitsPage: React.FC = () => {
       {/* Header Banner */}
       <ResponsivePageHeader
         icon={UserCheck}
-        title="سامانه ملاقات اولیا و مربیان"
-        description="رزرو وقت ملاقات حضوری یا جلسات برخط با مربیان و مشاوران مدرسه"
+        title="ملاقات با اولیاء"
         actions={
           <div className="flex items-center gap-1.5">
             <button

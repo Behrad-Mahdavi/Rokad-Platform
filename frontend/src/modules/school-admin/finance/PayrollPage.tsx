@@ -507,8 +507,7 @@ export const PayrollPage: React.FC = () => {
 
       {/* Page Header */}
       <ResponsivePageHeader
-        title="حقوق و دستمزد مدرسین و کادر مدرسه"
-        description="محاسبه هوشمند بر اساس حضور واقعی، بازبینی شفاف مدیر، مدیریت سقف قرارداد، تعدیلات و صدور رسمی"
+        title="حقوق و دستمزد"
         icon={<Wallet className="w-6 h-6 text-primary-dark dark:text-primary" />}
         actions={
           <div className="flex flex-wrap items-center gap-2">

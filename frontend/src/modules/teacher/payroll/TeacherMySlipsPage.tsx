@@ -86,8 +86,7 @@ export const TeacherMySlipsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <ResponsivePageHeader
-        title="فیش‌های حقوق و دستمزد من"
-        description="مشاهده کارکرد ماهانه تاییدشده، ریز محاسبات تدریس، کسورات و چاپ رسمی فیش حقوقی"
+        title="فیش حقوقی"
         icon={<Wallet className="w-6 h-6 text-primary-dark dark:text-primary" />}
       />
 

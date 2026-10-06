@@ -368,7 +368,7 @@ export const MattersPage: React.FC = () => {
                 <Scale className="w-5 h-5" />
               </div>
               <h1 className="text-lg sm:text-2xl font-black text-ink-darker dark:text-white truncate">
-                امور انضباطی و تشویقی
+                انضباطی/تشویقی
               </h1>
             </div>
 

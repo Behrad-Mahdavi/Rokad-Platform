@@ -126,8 +126,7 @@ export const ParentFeesPage: React.FC = () => {
       {/* Header */}
       <ResponsivePageHeader
         icon={CreditCard}
-        title="شهریه، اقساط و پرداخت آنلاین اولیا"
-        description="مشاهده صورت‌حساب تحصیلی فرزندان، وضعیت تسویه اقساط و ثبت اسناد مالی"
+        title="پرداخت شهریه و اقساط"
         actions={
           children.length > 1 ? (
             <div className="flex items-center space-x-2 space-x-reverse bg-white p-1.5 rounded-xl border shadow-sm">

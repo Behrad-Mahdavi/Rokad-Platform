@@ -664,7 +664,7 @@ export const GradebookPage: React.FC = () => {
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-lg sm:text-2xl font-black text-ink-darker dark:text-white truncate">
-                  ارزشیابی و کارنامه تحصیلی
+                  ارزشیابی و نمرات
                 </h1>
                 <Badge variant="college" className="text-[11px] sm:text-xs font-bold shrink-0">
                   {isTeacher ? 'پنل اختصاصی مربی' : 'سامانه مدیریت آموزشی'}

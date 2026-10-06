@@ -157,7 +157,7 @@ export const StudentMattersPage: React.FC = () => {
             <Scale className="w-5 h-5" />
           </div>
           <h1 className="text-lg sm:text-xl font-black text-ink-darker dark:text-white truncate">
-            موارد انضباطی و تشویقی
+            انضباطی/تشویقی
           </h1>
         </div>
       </div>

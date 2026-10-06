@@ -35,7 +35,7 @@ export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
   return (
     <ResponsivePageHeader
       icon={CalendarDays}
-      title={isStudent ? 'برنامه هفتگی کلاس من' : 'برنامه هفتگی و ساعات درسی'}
+      title="برنامه هفتگی"
       badge={
         isStudent ? (
           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 text-[11px] font-bold">

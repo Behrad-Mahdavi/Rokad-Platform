@@ -162,8 +162,7 @@ export const TeacherVisitsPage: React.FC = () => {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <ResponsivePageHeader
-        title="مدیریت اوقات ملاقات با اولیاء"
-        subtitle="تعریف ساعات آزاد جهت گفت‌وگو با اولیای گرامی به صورت حضوری یا برخط"
+        title="ملاقات با اولیاء"
         icon={<UserCheck className="h-5 w-5 text-purple-600" />}
         actions={
           <Button

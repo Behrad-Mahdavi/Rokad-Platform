@@ -360,7 +360,7 @@ export const CoachingPage: React.FC = () => {
             </div>
             <div className="flex flex-wrap items-center gap-2 min-w-0">
               <h1 className="text-lg sm:text-2xl font-black text-ink-darker dark:text-white truncate">
-                {isStudent ? 'کوچینگ' : 'داشبورد مربی‌گری و کوچینگ'}
+                کوچینگ
               </h1>
               <Badge variant="college" className="text-[11px] sm:text-xs font-bold shrink-0">
                 {isStudent

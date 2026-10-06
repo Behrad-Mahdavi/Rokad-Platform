@@ -819,8 +819,7 @@ export const MembersPage: React.FC = () => {
       {activeTab === 'STUDENTS' ? (
         <ResponsivePageHeader
           icon={GraduationCap}
-          title="مدیریت دانش‌آموزان"
-          description="ثبت پرونده تحصیلی، اطلاعات اولیاء، پرونده‌های الکترونیکی و ورود دسته‌جمعی"
+          title="دانش‌آموزان"
           actions={
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
               {/* Primary Action Button (Full width on mobile) */}
@@ -885,8 +884,7 @@ export const MembersPage: React.FC = () => {
       ) : (
         <ResponsivePageHeader
           icon={Briefcase}
-          title="مدیریت کادر آموزشی"
-          description="مدیریت مربیان، کادر اجرایی، تخصص تدریس و تخصیص دروس مدرسه"
+          title="کادر آموزشی"
           actions={
             <Button variant="primary" size="sm" onClick={() => setIsTeacherModalOpen(true)} className="w-full sm:w-auto justify-center font-bold">
               <Plus className="h-4 w-4 ml-1" />

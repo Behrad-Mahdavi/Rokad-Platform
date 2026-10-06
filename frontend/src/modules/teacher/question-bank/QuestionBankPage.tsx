@@ -338,7 +338,7 @@ export const QuestionBankPage: React.FC = () => {
           </div>
           <div>
             <h1 className="text-base sm:text-lg md:text-xl font-bold text-foreground tracking-tight">
-              بانک سوالات متمرکز و آزمون‌ساز هوشمند
+              بانک سوالات
             </h1>
           </div>
         </div>

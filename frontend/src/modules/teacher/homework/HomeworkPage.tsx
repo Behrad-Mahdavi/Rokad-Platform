@@ -1476,7 +1476,7 @@ export const HomeworkPage: React.FC = () => {
             </div>
             <div className="flex items-center gap-2 min-w-0">
               <h1 className="text-lg sm:text-2xl font-black text-ink-darker dark:text-white truncate">
-                مدیریت تکالیف درسی
+                تکالیف
               </h1>
             </div>
           </div>

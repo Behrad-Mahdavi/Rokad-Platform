@@ -1664,7 +1664,7 @@ export const PollsPage: React.FC = () => {
             </div>
             <div className="flex items-center gap-2 min-w-0">
               <h1 className="text-lg sm:text-2xl font-black text-ink-darker dark:text-white truncate">
-                نظرسنجی‌ها
+                نظرسنجی
               </h1>
               {filterCounts.active > 0 && (
                 <span className="min-w-[20px] h-[20px] px-1.5 rounded-full bg-rose-500 text-white text-[11px] font-black flex items-center justify-center leading-none animate-pulse shadow-xs select-none">

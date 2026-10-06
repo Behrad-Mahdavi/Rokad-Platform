@@ -430,8 +430,7 @@ export const FeesPage: React.FC = () => {
       {/* Page Header */}
       <ResponsivePageHeader
         icon={Receipt}
-        title="مدیریت جامع شهریه و اسناد مالی"
-        description="تخصیص گروهی و موردی شهریه، ثبت پرداخت نقدی و چک صیادی، مدیریت وصول و ورود گروهی با اکسل"
+        title="شهریه و اقساط"
         actions={
           <div className="flex items-center space-x-2 space-x-reverse flex-wrap gap-2">
             <Button
