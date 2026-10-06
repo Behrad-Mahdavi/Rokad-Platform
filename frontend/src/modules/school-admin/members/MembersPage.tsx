@@ -44,6 +44,7 @@ import {
   KeyRound,
   Trash2,
   Lock,
+  Filter,
 } from 'lucide-react';
 import { ResponsivePageHeader } from '../../../components/ui/ResponsivePageHeader';
 import { useTenantStore } from '../../../lib/auth/tenant-store';
@@ -74,6 +75,7 @@ export const MembersPage: React.FC = () => {
   const handleTabChange = (newTab: 'STUDENTS' | 'TEACHERS') => {
     setSearchParams({ tab: newTab === 'TEACHERS' ? 'staff' : 'students' });
     setSearch('');
+    setSelectedGrade('ALL');
   };
 
   const [students, setStudents] = useState<any[]>([]);
@@ -82,16 +84,50 @@ export const MembersPage: React.FC = () => {
   const [lessons, setLessons] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [selectedGrade, setSelectedGrade] = useState<string>('ALL');
+
+  const availableGrades = useMemo(() => {
+    const gradesSet = new Set<string>();
+    classrooms.forEach((c) => {
+      const name = c.level?.name || '';
+      const clean = name.replace('پایه', '').trim();
+      if (clean) gradesSet.add(clean);
+    });
+    students.forEach((s) => {
+      const gName = (s.enrollments?.[0]?.classroom?.level?.name || s.gradeLevel || '').replace('پایه', '').trim();
+      if (gName) gradesSet.add(gName);
+    });
+    if (gradesSet.size === 0) {
+      return ['دهم', 'یازدهم', 'دوازدهم'];
+    }
+    const order = ['دهم', 'یازدهم', 'دوازدهم'];
+    const arr = Array.from(gradesSet);
+    arr.sort((a, b) => {
+      const idxA = order.indexOf(a);
+      const idxB = order.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b);
+    });
+    return arr;
+  }, [classrooms, students]);
 
   const filteredStudents = useMemo(() => {
-    if (!search.trim()) return students;
-    const query = search.trim().toLowerCase();
     return students.filter((s) => {
+      if (selectedGrade !== 'ALL') {
+        const studentGrade = (s.enrollments?.[0]?.classroom?.level?.name || s.gradeLevel || '').replace('پایه', '').trim();
+        if (studentGrade !== selectedGrade && !studentGrade.includes(selectedGrade)) {
+          return false;
+        }
+      }
+      if (!search.trim()) return true;
+      const query = search.trim().toLowerCase();
       const fullName = `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.toLowerCase();
       const nationalCode = (s.nationalCode || '').toLowerCase();
       const studentNumber = (s.studentNumber || s.studentCode || '').toLowerCase();
-      const classroom = (s.classroom?.name || '').toLowerCase();
-      const phone = (s.user?.phone || '').toLowerCase();
+      const classroom = (s.classroom?.name || s.enrollments?.[0]?.classroom?.name || '').toLowerCase();
+      const phone = (s.user?.phone || s.studentMobile || s.fatherPhone || '').toLowerCase();
       const father = (s.fatherName || s.fatherFullName || '').toLowerCase();
       const mother = (s.motherFullName || '').toLowerCase();
       return (
@@ -104,7 +140,7 @@ export const MembersPage: React.FC = () => {
         mother.includes(query)
       );
     });
-  }, [students, search]);
+  }, [students, search, selectedGrade]);
 
   const filteredTeachers = useMemo(() => {
     if (!search.trim()) return teachers;
@@ -907,24 +943,47 @@ export const MembersPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Live Search Input */}
-        <div className="relative w-full">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={activeTab === 'STUDENTS' ? 'جستجو در دانش‌آموزان...' : 'جستجو در کادر آموزشی...'}
-            className="pr-9 pl-8 text-xs h-9 w-full"
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => setSearch('')}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-white text-xs p-1 cursor-pointer"
-              title="پاک کردن جستجو"
-            >
-              ✕
-            </button>
+        {/* Live Search Input & Grade Filter */}
+        <div className="flex items-center gap-2 w-full">
+          <div className="relative flex-1">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={activeTab === 'STUDENTS' ? 'جستجو در دانش‌آموزان...' : 'جستجو در کادر آموزشی...'}
+              className="pr-9 pl-8 text-xs h-9 w-full"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-white text-xs p-1 cursor-pointer"
+                title="پاک کردن جستجو"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {activeTab === 'STUDENTS' && (
+            <div className="relative shrink-0">
+              <div className="relative flex items-center">
+                <Filter className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                <select
+                  value={selectedGrade}
+                  onChange={(e) => setSelectedGrade(e.target.value)}
+                  className="h-9 pr-8 pl-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-ink-normal dark:text-white text-xs font-bold focus:border-primary focus:outline-none transition-all cursor-pointer shadow-2xs hover:border-gray-300 dark:hover:border-gray-600 appearance-none"
+                  title="فیلتر بر اساس پایه تحصیلی"
+                >
+                  <option value="ALL">همه پایه‌ها</option>
+                  {availableGrades.map((g) => (
+                    <option key={g} value={g}>
+                      پایه {g}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           )}
         </div>
       </div>
@@ -946,15 +1005,13 @@ export const MembersPage: React.FC = () => {
                 <div className="font-black text-ink-darker dark:text-white text-sm">
                   {s.user?.firstName} {s.user?.lastName}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5 flex-wrap">
-                  <span className="text-gray-400">پایه:</span>
-                  <span className="font-bold text-primary">{s.enrollments?.[0]?.classroom?.level?.name || s.gradeLevel || 'دهم'}</span>
-                  {s.fatherName && (
-                    <>
-                      <span className="text-gray-300 dark:text-gray-600">•</span>
-                      <span>فرزند: <strong className="text-ink-dark dark:text-gray-200 font-medium">{s.fatherName}</strong></span>
-                    </>
-                  )}
+                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary-dark dark:text-primary-light border border-primary/20">
+                    پایه {s.enrollments?.[0]?.classroom?.level?.name?.replace('پایه', '').trim() || s.gradeLevel || 'دهم'}
+                  </span>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-ink-normal dark:text-gray-200 border border-gray-200/80 dark:border-gray-700">
+                    کلاس {s.enrollments?.[0]?.classroom?.name || s.classroom?.name || '—'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -1016,7 +1073,7 @@ export const MembersPage: React.FC = () => {
             {
               key: 'classroom',
               header: 'کلاس درس',
-              mobilePriority: 'secondary',
+              mobilePriority: 'hidden',
               render: (s) => (
                 <span className="text-xs bg-primary/10 text-primary-dark dark:text-primary-light px-2.5 py-0.5 rounded-full font-bold">
                   {s.enrollments?.[0]?.classroom?.name || s.classroom?.name || 'کلاس عمومی'}
@@ -1026,7 +1083,7 @@ export const MembersPage: React.FC = () => {
             {
               key: 'studentNumber',
               header: 'شماره دانش‌آموزی',
-              mobilePriority: 'secondary',
+              mobilePriority: 'hidden',
               render: (s) => (
                 <span className="font-mono text-xs font-bold text-ink-dark dark:text-gray-200">
                   {s.studentCode || s.studentNumber || '—'}
@@ -1034,20 +1091,20 @@ export const MembersPage: React.FC = () => {
               ),
             },
             {
-              key: 'nationalCode',
-              header: 'کد ملی',
-              mobilePriority: 'detail',
-              render: (s) => <span className="font-mono text-xs text-gray-600 dark:text-gray-400">{s.nationalCode || '—'}</span>,
-            },
-            {
               key: 'phone',
-              header: 'شماره همراه',
-              mobilePriority: 'detail',
+              header: 'شماره تماس',
+              mobilePriority: 'secondary',
               render: (s) => (
-                <span className="font-mono text-xs text-gray-600 dark:text-gray-400">
+                <span className="font-mono text-xs text-gray-600 dark:text-gray-400" dir="ltr">
                   {s.studentMobile || s.user?.phone || s.fatherPhone || '—'}
                 </span>
               ),
+            },
+            {
+              key: 'nationalCode',
+              header: 'کد ملی',
+              mobilePriority: 'secondary',
+              render: (s) => <span className="font-mono text-xs text-gray-600 dark:text-gray-400">{s.nationalCode || '—'}</span>,
             },
             {
               key: 'actions',
