@@ -72,12 +72,11 @@ export const MembersPage: React.FC = () => {
       ? 'TEACHERS'
       : 'STUDENTS';
 
-  const handleTabChange = (newTab: 'STUDENTS' | 'TEACHERS') => {
-    setSearchParams({ tab: newTab === 'TEACHERS' ? 'staff' : 'students' });
+  useEffect(() => {
     setSearch('');
     setSelectedGrade('ALL');
     setIsFilterOpen(false);
-  };
+  }, [activeTab]);
 
   const [students, setStudents] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
@@ -897,55 +896,8 @@ export const MembersPage: React.FC = () => {
         />
       )}
 
-      {/* Modern Tabs Bar & Live Search */}
-      <div className="space-y-3 border-b border-gray-200 dark:border-gray-800 pb-3">
-        <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-gray-100/90 dark:bg-gray-800/80 w-full">
-          <button
-            type="button"
-            onClick={() => handleTabChange('STUDENTS')}
-            className={`w-full py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-2 cursor-pointer select-none ${
-              activeTab === 'STUDENTS'
-                ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs ring-1 ring-black/5 dark:ring-white/10'
-                : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
-            }`}
-          >
-            <GraduationCap className="h-4 w-4 shrink-0" />
-            <span>دانش‌آموزان</span>
-            <span
-              className={`text-[11px] px-2 py-0.5 rounded-lg font-mono font-bold ${
-                activeTab === 'STUDENTS'
-                  ? 'bg-primary/10 text-primary'
-                  : 'bg-gray-200/70 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-              }`}
-            >
-              {toPersianDigits(students.length)}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleTabChange('TEACHERS')}
-            className={`w-full py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-2 cursor-pointer select-none ${
-              activeTab === 'TEACHERS'
-                ? 'bg-white dark:bg-[#151C28] text-club-normal dark:text-club-light shadow-xs ring-1 ring-black/5 dark:ring-white/10'
-                : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
-            }`}
-          >
-            <Briefcase className="h-4 w-4 shrink-0" />
-            <span>کادر آموزشی</span>
-            <span
-              className={`text-[11px] px-2 py-0.5 rounded-lg font-mono font-bold ${
-                activeTab === 'TEACHERS'
-                  ? 'bg-club-light dark:bg-club-darker text-club-normal dark:text-club-light'
-                  : 'bg-gray-200/70 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-              }`}
-            >
-              {toPersianDigits(teachers.length)}
-            </span>
-          </button>
-        </div>
-
-        {/* Live Search Input & Grade Filter */}
+      {/* Live Search & Filter Bar */}
+      <div className="space-y-3">
         <div className="flex items-center gap-2 w-full">
           <div className="relative flex-1">
             <Input
