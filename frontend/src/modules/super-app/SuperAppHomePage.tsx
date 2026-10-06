@@ -1011,6 +1011,157 @@ export const SuperAppHomePage: React.FC = () => {
     },
   ];
 
+  // ==========================================
+  // Teacher Rows (6 Custom Rows)
+  // ==========================================
+  // 1. دفتر کلاسی - پیام ها
+  const teacherRow1: SuperAppCard[] = [
+    {
+      id: 'teacher-attendance',
+      title: 'دفتر کلاسی',
+      href: '/app/teacher/attendance',
+      icon: UserCheck,
+      iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+      iconColor: 'text-primary-dark dark:text-primary',
+    },
+    {
+      id: 'teacher-messages',
+      title: 'پیام‌ها',
+      href: '/app/messages',
+      icon: MessageSquare,
+      iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+      iconColor: 'text-primary-dark dark:text-primary',
+      badge: unreadMessagesCount > 0 ? toPersianDigits(unreadMessagesCount) : undefined,
+    },
+  ];
+
+  // 2. محتوای اموزشی - ارزشیابی و نمرات - برنامه هفتگی
+  const teacherRow2: SuperAppCard[] = [
+    {
+      id: 'teacher-lessons',
+      title: 'محتوای آموزشی',
+      href: '/app/teacher/lessons',
+      icon: BookOpen,
+      iconBg: 'bg-female-light dark:bg-[#3D1426]',
+      iconColor: 'text-girl dark:text-[#F472B6]',
+    },
+    {
+      id: 'teacher-gradebook',
+      title: 'ارزشیابی و نمرات',
+      href: '/app/teacher/gradebook',
+      icon: BarChart3,
+      iconBg: 'bg-male-light dark:bg-[#182346]',
+      iconColor: 'text-sec dark:text-[#8194EE]',
+    },
+    {
+      id: 'teacher-schedule',
+      title: 'برنامه هفتگی',
+      href: '/app/teacher/schedule',
+      icon: CalendarDays,
+      iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+      iconColor: 'text-primary-dark dark:text-primary',
+    },
+  ];
+
+  // 3. تکالیف - آزمون ها
+  const teacherRow3: SuperAppCard[] = [
+    {
+      id: 'teacher-homework',
+      title: 'تکالیف',
+      href: '/app/teacher/homework',
+      icon: FileCheck,
+      iconBg: 'bg-club-light dark:bg-[#2A173E]',
+      iconColor: 'text-club dark:text-[#C084FC]',
+      badge: homeworkCount > 0 ? toPersianDigits(homeworkCount) : undefined,
+    },
+    {
+      id: 'teacher-exams',
+      title: 'آزمون‌ها',
+      href: '/app/teacher/exams',
+      icon: HelpCircle,
+      iconBg: 'bg-college-light dark:bg-[#38260D]',
+      iconColor: 'text-third dark:text-[#FBBF24]',
+      badge: examsCount > 0 ? toPersianDigits(examsCount) : undefined,
+    },
+  ];
+
+  // 4. انضباطی/ تشویقی - کوچینگ - بانک سوالات
+  const teacherRow4: SuperAppCard[] = [
+    {
+      id: 'teacher-matters',
+      title: 'انضباطی/تشویقی',
+      href: '/app/teacher/matters',
+      icon: Scale,
+      iconBg: 'bg-female-light dark:bg-[#3D1426]',
+      iconColor: 'text-girl dark:text-[#F472B6]',
+    },
+    {
+      id: 'teacher-coaching',
+      title: 'کوچینگ',
+      href: '/app/coaching',
+      icon: Compass,
+      iconBg: 'bg-club-light dark:bg-[#2A173E]',
+      iconColor: 'text-club dark:text-[#C084FC]',
+    },
+    {
+      id: 'teacher-question-bank',
+      title: 'بانک سوالات',
+      href: '/app/teacher/question-bank',
+      icon: FileQuestion,
+      iconBg: 'bg-male-light dark:bg-[#182346]',
+      iconColor: 'text-sec dark:text-[#8194EE]',
+    },
+  ];
+
+  // 5. رویداد ها - تاییدیه ها - نظرسنجی
+  const teacherRow5: SuperAppCard[] = [
+    {
+      id: 'teacher-events',
+      title: 'رویدادها',
+      href: '/app/events',
+      icon: CalendarRange,
+      iconBg: 'bg-college-light dark:bg-[#38260D]',
+      iconColor: 'text-third dark:text-[#FBBF24]',
+      badge: eventsCount > 0 ? toPersianDigits(eventsCount) : undefined,
+    },
+    {
+      id: 'teacher-club-approvals',
+      title: 'تأییدیه‌ها',
+      href: '/app/teacher/club-approvals',
+      icon: Award,
+      iconBg: 'bg-amber-100 dark:bg-amber-950/60',
+      iconColor: 'text-amber-600 dark:text-amber-400',
+    },
+    {
+      id: 'teacher-polls',
+      title: 'نظرسنجی',
+      href: '/app/polls',
+      icon: Vote,
+      iconBg: 'bg-college-light dark:bg-[#38260D]',
+      iconColor: 'text-third dark:text-[#FBBF24]',
+    },
+  ];
+
+  // 6. ملاقات با اولیا - فیش حقوقی
+  const teacherRow6: SuperAppCard[] = [
+    {
+      id: 'teacher-visits',
+      title: 'ملاقات با اولیاء',
+      href: '/app/teacher/visits',
+      icon: Users,
+      iconBg: 'bg-club-light dark:bg-[#2A173E]',
+      iconColor: 'text-club dark:text-[#C084FC]',
+    },
+    {
+      id: 'teacher-payroll',
+      title: 'فیش حقوقی',
+      href: '/app/teacher/payroll',
+      icon: Wallet,
+      iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+      iconColor: 'text-primary-dark dark:text-primary',
+    },
+  ];
+
   const renderCard = (card: SuperAppCard) => (
     <button
       key={card.id}
@@ -1094,7 +1245,7 @@ export const SuperAppHomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Student Cards (4 Custom Rows) vs Other Roles */}
+      {/* Student Cards (4 Custom Rows) vs Teacher Cards (6 Custom Rows) vs Other Roles */}
       {user?.role === 'STUDENT' || !user?.role ? (
         <div className="space-y-2.5 sm:space-y-3.5">
           {/* 1- پیام ها و برنامه هفتگی */}
@@ -1115,6 +1266,38 @@ export const SuperAppHomePage: React.FC = () => {
           {/* 4- رویدادها و نظرسنجی */}
           <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
             {studentRow4.map(renderCard)}
+          </div>
+        </div>
+      ) : user?.role === 'TEACHER' ? (
+        <div className="space-y-2.5 sm:space-y-3.5">
+          {/* 1. دفتر کلاسی - پیام ها */}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
+            {teacherRow1.map(renderCard)}
+          </div>
+
+          {/* 2. محتوای اموزشی - ارزشیابی و نمرات - برنامه هفتگی */}
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+            {teacherRow2.map(renderCard)}
+          </div>
+
+          {/* 3. تکالیف - آزمون ها */}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
+            {teacherRow3.map(renderCard)}
+          </div>
+
+          {/* 4. انضباطی/ تشویقی - کوچینگ - بانک سوالات */}
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+            {teacherRow4.map(renderCard)}
+          </div>
+
+          {/* 5. رویداد ها - تاییدیه ها - نظرسنجی */}
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+            {teacherRow5.map(renderCard)}
+          </div>
+
+          {/* 6. ملاقات با اولیا - فیش حقوقی */}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
+            {teacherRow6.map(renderCard)}
           </div>
         </div>
       ) : (
