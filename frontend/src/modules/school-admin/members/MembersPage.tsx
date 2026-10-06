@@ -967,13 +967,22 @@ export const MembersPage: React.FC = () => {
 
           {activeTab === 'STUDENTS' && (
             <div className="relative shrink-0">
-              <div className="relative flex items-center">
-                <Filter className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+              <div
+                className={`relative w-9 h-9 rounded-xl border flex items-center justify-center transition-all shadow-2xs ${
+                  selectedGrade !== 'ALL'
+                    ? 'border-primary bg-primary/10 text-primary font-bold'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-ink-darker dark:hover:text-white'
+                }`}
+                title={selectedGrade === 'ALL' ? 'فیلتر پایه' : `فیلتر: پایه ${selectedGrade}`}
+              >
+                <Filter className="w-4 h-4" />
+                {selectedGrade !== 'ALL' && (
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full ring-2 ring-white dark:ring-[#151C28]" />
+                )}
                 <select
                   value={selectedGrade}
                   onChange={(e) => setSelectedGrade(e.target.value)}
-                  className="h-9 pr-8 pl-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-ink-normal dark:text-white text-xs font-bold focus:border-primary focus:outline-none transition-all cursor-pointer shadow-2xs hover:border-gray-300 dark:hover:border-gray-600 appearance-none"
-                  title="فیلتر بر اساس پایه تحصیلی"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-xs"
                 >
                   <option value="ALL">همه پایه‌ها</option>
                   {availableGrades.map((g) => (
