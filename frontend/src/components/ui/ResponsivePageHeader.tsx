@@ -51,7 +51,7 @@ export const ResponsivePageHeader: React.FC<ResponsivePageHeaderProps> = ({
       </div>
 
       {actions && (
-        <div className="flex flex-wrap items-center gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-gray-800">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           {actions}
         </div>
       )}
