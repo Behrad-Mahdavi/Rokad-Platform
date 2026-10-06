@@ -210,7 +210,7 @@ export const ParentVisitsPage: React.FC = () => {
       <ResponsivePageHeader
         icon={UserCheck}
         title="سامانه ملاقات اولیا و مربیان"
-        description="رزرو وقت ملاقات حضوری یا جلسات برخط با دبیران، مربیان و مشاوران مدرسه"
+        description="رزرو وقت ملاقات حضوری یا جلسات برخط با مربیان و مشاوران مدرسه"
         actions={
           <div className="flex items-center gap-1.5">
             <button
@@ -261,7 +261,7 @@ export const ParentVisitsPage: React.FC = () => {
                 onChange={(e) => setSelectedTeacherId(e.target.value)}
                 className="w-full h-9 px-3 text-xs bg-surface/50 border border-border rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-hidden"
               >
-                <option value="">همه دبیران و مشاوران</option>
+                <option value="">همه مربیان و مشاوران</option>
                 {uniqueTeachers.map(([tId, tName]) => (
                   <option key={tId} value={tId}>
                     {tName}
@@ -297,7 +297,7 @@ export const ParentVisitsPage: React.FC = () => {
               <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-40" />
               <h3 className="text-base font-semibold text-foreground">نوبت آزادی برای رزرو یافت نشد</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                دبیران هنوز برای این بازه زمانی اسلات ملاقات جدیدی ثبت نکرده‌اند.
+                مربیان هنوز برای این بازه زمانی اسلات ملاقات جدیدی ثبت نکرده‌اند.
               </p>
             </div>
           ) : (
@@ -317,7 +317,7 @@ export const ParentVisitsPage: React.FC = () => {
                           <h3 className="font-bold text-foreground text-base">
                             {slot.teacher.user.firstName} {slot.teacher.user.lastName}
                           </h3>
-                          <span className="text-xs text-muted-foreground">دبیر / مشاور آموزشی</span>
+                          <span className="text-xs text-muted-foreground">مربی / مشاور آموزشی</span>
                         </div>
                         <Badge variant={slot.isVirtual ? 'college' : 'default'}>
                           {slot.isVirtual ? 'جلسه آنلاین' : 'حضوری'}
@@ -389,7 +389,7 @@ export const ParentVisitsPage: React.FC = () => {
                 هنوز نوبت ملاقاتی رزرو نکرده‌اید
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                از تب «نوبت‌های آزاد» دبیر مورد نظر را انتخاب و وقت ملاقات ثبت فرمایید.
+                از تب «نوبت‌های آزاد» مربی مورد نظر را انتخاب و وقت ملاقات ثبت فرمایید.
               </p>
             </div>
           ) : (

@@ -165,6 +165,11 @@ export const MembersPage: React.FC = () => {
   const [deletingTeacher, setDeletingTeacher] = useState<any | null>(null);
   const [isDeletingTeacher, setIsDeletingTeacher] = useState(false);
 
+  // Student Delete States
+  const [isDeleteStudentModalOpen, setIsDeleteStudentModalOpen] = useState(false);
+  const [deletingStudent, setDeletingStudent] = useState<any | null>(null);
+  const [isDeletingStudent, setIsDeletingStudent] = useState(false);
+
   // Excel Bulk Import States
   const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
   const [excelFile, setExcelFile] = useState<File | null>(null);
@@ -622,7 +627,7 @@ export const MembersPage: React.FC = () => {
     } catch (err: any) {
       setError(
         err.message ||
-          (Array.isArray(err.message) ? err.message.join('، ') : 'خطا در ثبت دبیر جدید.'),
+          (Array.isArray(err.message) ? err.message.join('، ') : 'خطا در ثبت مربی جدید.'),
       );
     } finally {
       setIsSubmitting(false);
@@ -649,7 +654,7 @@ export const MembersPage: React.FC = () => {
       setEditingTeacher(null);
       fetchData();
     } catch (err: any) {
-      setError(err.message || 'خطا در ذخیره دروس دبیر.');
+      setError(err.message || 'خطا در ذخیره دروس مربی.');
     } finally {
       setIsSubmitting(false);
     }
@@ -707,14 +712,14 @@ export const MembersPage: React.FC = () => {
       }
 
       await apiClient.put(`/members/teachers/${editingTeacher.id}`, payload);
-      toast.success('اطلاعات دبیر با موفقیت به‌روزرسانی شد');
+      toast.success('اطلاعات مربی با موفقیت به‌روزرسانی شد');
       setIsEditTeacherModalOpen(false);
       setEditingTeacher(null);
       await fetchData();
     } catch (err: any) {
       setError(
         err.message ||
-          (Array.isArray(err.message) ? err.message.join('، ') : 'خطا در به‌روزرسانی مشخصات دبیر.'),
+          (Array.isArray(err.message) ? err.message.join('، ') : 'خطا در به‌روزرسانی مشخصات مربی.'),
       );
     } finally {
       setIsSubmitting(false);
@@ -732,15 +737,42 @@ export const MembersPage: React.FC = () => {
     try {
       await apiClient.delete(`/members/teachers/${deletingTeacher.id}`);
       toast.success(
-        `دبیر «${deletingTeacher.user?.firstName || ''} ${deletingTeacher.user?.lastName || ''}» با موفقیت از سیستم حذف شد`,
+        `مربی «${deletingTeacher.user?.firstName || ''} ${deletingTeacher.user?.lastName || ''}» با موفقیت از سیستم حذف شد`,
       );
       setIsDeleteTeacherModalOpen(false);
       setDeletingTeacher(null);
       await fetchData();
     } catch (err: any) {
-      toast.error(err.message || 'خطا در حذف دبیر از کادر آموزشی');
+      toast.error(err.message || 'خطا در حذف مربی از کادر آموزشی');
     } finally {
       setIsDeletingTeacher(false);
+    }
+  };
+
+  const handleOpenDeleteStudent = (student: any) => {
+    setDeletingStudent(student);
+    setIsDeleteStudentModalOpen(true);
+  };
+
+  const handleConfirmDeleteStudent = async () => {
+    if (!deletingStudent) return;
+    setIsDeletingStudent(true);
+    try {
+      await apiClient.delete(`/members/students/${deletingStudent.id}`);
+      toast.success(
+        `دانش‌آموز «${deletingStudent.user?.firstName || ''} ${deletingStudent.user?.lastName || ''}» با موفقیت از سیستم حذف شد`,
+      );
+      setIsDeleteStudentModalOpen(false);
+      setDeletingStudent(null);
+      if (selectedStudentDossier && selectedStudentDossier.id === deletingStudent.id) {
+        setSelectedStudentDossier(null);
+        setIsEditingDossier(false);
+      }
+      await fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'خطا در حذف دانش‌آموز از سیستم');
+    } finally {
+      setIsDeletingStudent(false);
     }
   };
 
@@ -817,7 +849,7 @@ export const MembersPage: React.FC = () => {
         <ResponsivePageHeader
           icon={Briefcase}
           title="مدیریت کادر آموزشی"
-          description="مدیریت دبیران، کادر اجرایی، تخصص تدریس و تخصیص دروس مدرسه"
+          description="مدیریت مربیان، کادر اجرایی، تخصص تدریس و تخصیص دروس مدرسه"
           actions={
             <Button variant="primary" size="sm" onClick={() => setIsTeacherModalOpen(true)} className="w-full sm:w-auto justify-center font-bold">
               <Plus className="h-4 w-4 ml-1" />
@@ -1042,6 +1074,14 @@ export const MembersPage: React.FC = () => {
                     <KeyRound className="w-3.5 h-3.5" />
                     <span>رمز</span>
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenDeleteStudent(s)}
+                    className="inline-flex items-center justify-center p-1.5 rounded-xl text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white transition-all shadow-2xs border border-rose-500/20 cursor-pointer"
+                    title="حذف دانش‌آموز"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               ),
             },
@@ -1070,7 +1110,7 @@ export const MembersPage: React.FC = () => {
                   {t.user?.firstName} {t.user?.lastName}
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5 flex-wrap">
-                  <span className="font-medium text-gray-600 dark:text-gray-300">{t.degree || 'دبیر'}</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-300">{t.degree || 'مربی'}</span>
                   {t.studyField && (
                     <>
                       <span className="text-gray-300 dark:text-gray-600">•</span>
@@ -1087,7 +1127,7 @@ export const MembersPage: React.FC = () => {
                 type="button"
                 onClick={() => handleOpenEditTeacher(t)}
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white transition-all shadow-2xs border border-blue-500/20 cursor-pointer"
-                title="ویرایش کامل مشخصات دبیر و دروس تدریسی"
+                title="ویرایش کامل مشخصات مربی و دروس تدریسی"
               >
                 <Edit3 className="w-3.5 h-3.5" />
                 <span>ویرایش</span>
@@ -1106,7 +1146,7 @@ export const MembersPage: React.FC = () => {
           columns={[
             {
               key: 'name',
-              header: 'نام دبیر / پرسنل',
+              header: 'نام مربی / پرسنل',
               mobilePriority: 'hidden',
               render: (t) => (
                 <div className="font-bold text-ink-darker text-sm">
@@ -1188,11 +1228,11 @@ export const MembersPage: React.FC = () => {
                   CONTRACT: 'قراردادی',
                   HOURLY: 'حق‌التدریس',
                 };
-                const empLabel = empTypeMap[t.employmentType] || 'دبیر';
+                const empLabel = empTypeMap[t.employmentType] || 'مربی';
                 return (
                   <div className="flex items-center gap-2 justify-end">
                     <Badge variant={isSuspended ? 'destructive' : 'male'} className="text-[10px] px-2 py-0.5">
-                      {isSuspended ? 'حساب معلق' : 'دبیر فعال'}
+                      {isSuspended ? 'حساب معلق' : 'مربی فعال'}
                     </Badge>
                     <span className="text-[11px] text-gray-600 dark:text-gray-300 font-bold">{empLabel}</span>
                   </div>
@@ -1210,7 +1250,7 @@ export const MembersPage: React.FC = () => {
                     type="button"
                     onClick={() => handleOpenEditTeacher(t)}
                     className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white transition-all shadow-2xs border border-blue-500/20 cursor-pointer"
-                    title="ویرایش کامل مشخصات دبیر"
+                    title="ویرایش کامل مشخصات مربی"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
                     <span>ویرایش</span>
@@ -1238,7 +1278,7 @@ export const MembersPage: React.FC = () => {
                     type="button"
                     onClick={() => handleOpenDeleteTeacher(t)}
                     className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white transition-all shadow-2xs border border-red-500/20 cursor-pointer"
-                    title="حذف دبیر از کادر آموزشی"
+                    title="حذف مربی از کادر آموزشی"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>حذف</span>
@@ -1249,7 +1289,7 @@ export const MembersPage: React.FC = () => {
           ]}
           keyExtractor={(t) => t.id}
           isLoading={isLoading}
-          emptyMessage="هنوز دبیری ثبت نشده است."
+          emptyMessage="هنوز مربی‌ای ثبت نشده است."
         />
       )}
 
@@ -1273,50 +1313,50 @@ export const MembersPage: React.FC = () => {
 
         <form onSubmit={handleEnrollStudent} className="space-y-4">
         {/* Tab switcher inside Student Modal */}
-        <div className="flex items-center gap-1.5 p-1 mb-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold">
+        <div className="grid grid-cols-4 gap-1 p-1 mb-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-[11px] sm:text-xs font-bold">
           <button
             type="button"
             onClick={() => setStudentModalTab('IDENTITY')}
-            className={`flex-1 py-1.5 px-2 rounded-lg transition-all ${
+            className={`py-1.5 px-0.5 sm:px-2 rounded-lg transition-all text-center whitespace-nowrap ${
               studentModalTab === 'IDENTITY'
                 ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs'
                 : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
             }`}
           >
-            هویتی و تحصیلی
+            اطلاعات پایه
           </button>
           <button
             type="button"
             onClick={() => setStudentModalTab('FATHER')}
-            className={`flex-1 py-1.5 px-2 rounded-lg transition-all ${
+            className={`py-1.5 px-0.5 sm:px-2 rounded-lg transition-all text-center whitespace-nowrap ${
               studentModalTab === 'FATHER'
                 ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs'
                 : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
             }`}
           >
-            مشخصات پدر
+            اطلاعات پدر
           </button>
           <button
             type="button"
             onClick={() => setStudentModalTab('MOTHER')}
-            className={`flex-1 py-1.5 px-2 rounded-lg transition-all ${
+            className={`py-1.5 px-0.5 sm:px-2 rounded-lg transition-all text-center whitespace-nowrap ${
               studentModalTab === 'MOTHER'
                 ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs'
                 : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
             }`}
           >
-            مشخصات مادر
+            اطلاعات مادر
           </button>
           <button
             type="button"
             onClick={() => setStudentModalTab('CONTACT')}
-            className={`flex-1 py-1.5 px-2 rounded-lg transition-all ${
+            className={`py-1.5 px-0.5 sm:px-2 rounded-lg transition-all text-center whitespace-nowrap ${
               studentModalTab === 'CONTACT'
                 ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs'
                 : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
             }`}
           >
-            سکونت و تماس
+            اطلاعات تماس
           </button>
         </div>
 
@@ -1549,7 +1589,7 @@ export const MembersPage: React.FC = () => {
                 />
                 <Input
                   label="شغل مادر"
-                  placeholder="مثال: دبیر"
+                  placeholder="مثال: مربی"
                   value={studentForm.motherOccupation}
                   onChange={(e) => setStudentForm({ ...studentForm, motherOccupation: e.target.value })}
                 />
@@ -1653,8 +1693,7 @@ export const MembersPage: React.FC = () => {
             setSelectedStudentDossier(null);
             setIsEditingDossier(false);
           }}
-          title={`شناسنامه و پرونده تحصیلی: ${selectedStudentDossier.user?.firstName || ''} ${selectedStudentDossier.user?.lastName || ''}`}
-          description={`شماره دانش‌آموزی: ${selectedStudentDossier.studentCode || selectedStudentDossier.studentNumber || '—'} | کد ملی: ${selectedStudentDossier.nationalCode || '—'}`}
+          title="پرونده دانش‌آموز"
           maxWidth="2xl"
         >
           {error && (
@@ -1665,88 +1704,89 @@ export const MembersPage: React.FC = () => {
           )}
 
           {/* Dossier Header Summary Card */}
-          <div className="p-4 rounded-2xl bg-gradient-to-l from-primary/10 via-primary/5 to-transparent border border-primary/20 mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-primary/30 bg-white dark:bg-[#151C28] flex items-center justify-center font-black text-xl text-primary shrink-0 shadow-sm">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-l from-primary/10 via-primary/5 to-transparent border border-primary/20 mb-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden border-2 border-primary/30 bg-white dark:bg-[#151C28] flex items-center justify-center font-black text-lg sm:text-xl text-primary shrink-0 shadow-sm">
                 {selectedStudentDossier.user?.avatarUrl ? (
                   <img src={selectedStudentDossier.user.avatarUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
                   selectedStudentDossier.user?.firstName?.[0] || 'د'
                 )}
               </div>
-              <div>
-                <h3 className="font-black text-base text-ink-darker dark:text-white flex items-center gap-2">
-                  <span>{selectedStudentDossier.user?.firstName} {selectedStudentDossier.user?.lastName}</span>
-                  <Badge variant="success" className="text-[10px]">ثبت‌نام رسمی</Badge>
-                </h3>
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex flex-wrap items-center gap-2 font-mono">
-                  <span>کد ملی: <strong className="text-ink-dark dark:text-white">{selectedStudentDossier.nationalCode || '—'}</strong></span>
-                  <span>•</span>
-                  <span>رشته: <strong className="text-primary">{selectedStudentDossier.enrollments?.[0]?.classroom?.field?.name || '—'}</strong></span>
-                  <span>•</span>
-                  <span>کلاس: <strong className="text-primary">{selectedStudentDossier.enrollments?.[0]?.classroom?.name || 'کلاس عمومی'}</strong></span>
-                  <span>•</span>
-                  <span>پایه: <strong className="text-primary">{selectedStudentDossier.enrollments?.[0]?.classroom?.level?.name || selectedStudentDossier.gradeLevel || 'دهم'}</strong></span>
-                </div>
-              </div>
+              <h3 className="font-black text-base sm:text-lg text-ink-darker dark:text-white truncate">
+                {selectedStudentDossier.user?.firstName} {selectedStudentDossier.user?.lastName}
+              </h3>
             </div>
 
-            <Button
-              variant={isEditingDossier ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setIsEditingDossier(!isEditingDossier)}
-              className="text-xs shrink-0 self-end sm:self-center"
-            >
-              <Edit3 className="w-3.5 h-3.5 ml-1" />
-              <span>{isEditingDossier ? 'مشاهده شناسنامه' : 'ویرایش اطلاعات'}</span>
-            </Button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsEditingDossier(!isEditingDossier)}
+                className={`inline-flex items-center justify-center w-9 h-9 rounded-xl text-xs font-bold transition-all shadow-2xs border cursor-pointer ${
+                  isEditingDossier
+                    ? 'bg-primary text-white border-primary shadow-sm'
+                    : 'bg-white dark:bg-[#151C28] text-ink-normal dark:text-gray-200 border-gray-200 dark:border-gray-700 hover:bg-primary/10 hover:text-primary hover:border-primary/30'
+                }`}
+                title={isEditingDossier ? 'مشاهده پرونده' : 'ویرایش پرونده'}
+              >
+                <Edit3 className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleOpenDeleteStudent(selectedStudentDossier)}
+                className="inline-flex items-center justify-center w-9 h-9 rounded-xl text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white transition-all shadow-2xs border border-rose-500/20 cursor-pointer"
+                title="حذف دانش‌آموز"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Dossier Tabs */}
-          <div className="flex items-center gap-1.5 p-1 mb-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold">
+          <div className="grid grid-cols-4 gap-1 p-1 mb-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-[11px] sm:text-xs font-bold">
             <button
               type="button"
               onClick={() => setDossierTab('IDENTITY')}
-              className={`flex-1 py-1.5 px-2 rounded-lg transition-all ${
+              className={`py-1.5 px-0.5 sm:px-2 rounded-lg transition-all text-center whitespace-nowrap ${
                 dossierTab === 'IDENTITY'
                   ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs'
                   : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
               }`}
             >
-              هویتی و شناسنامه‌ای
+              اطلاعات پایه
             </button>
             <button
               type="button"
               onClick={() => setDossierTab('FATHER')}
-              className={`flex-1 py-1.5 px-2 rounded-lg transition-all ${
+              className={`py-1.5 px-0.5 sm:px-2 rounded-lg transition-all text-center whitespace-nowrap ${
                 dossierTab === 'FATHER'
                   ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs'
                   : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
               }`}
             >
-              مشخصات پدر
+              اطلاعات پدر
             </button>
             <button
               type="button"
               onClick={() => setDossierTab('MOTHER')}
-              className={`flex-1 py-1.5 px-2 rounded-lg transition-all ${
+              className={`py-1.5 px-0.5 sm:px-2 rounded-lg transition-all text-center whitespace-nowrap ${
                 dossierTab === 'MOTHER'
                   ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs'
                   : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
               }`}
             >
-              مشخصات مادر
+              اطلاعات مادر
             </button>
             <button
               type="button"
               onClick={() => setDossierTab('CONTACT')}
-              className={`flex-1 py-1.5 px-2 rounded-lg transition-all ${
+              className={`py-1.5 px-0.5 sm:px-2 rounded-lg transition-all text-center whitespace-nowrap ${
                 dossierTab === 'CONTACT'
                   ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs'
                   : 'text-gray-500 hover:text-ink-darker dark:hover:text-white'
               }`}
             >
-              سکونت و تماس
+              اطلاعات تماس
             </button>
           </div>
 
@@ -2159,7 +2199,7 @@ export const MembersPage: React.FC = () => {
             </div>
           )}
 
-          <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-800">
+          <div className="flex justify-end pt-3">
             <Button
               type="button"
               variant="ghost"
@@ -2181,7 +2221,7 @@ export const MembersPage: React.FC = () => {
           setIsTeacherModalOpen(false);
           setError(null);
         }}
-        title="ثبت دبیر یا پرسنل جدید"
+        title="ثبت مربی یا پرسنل جدید"
         description="ایجاد حساب کاربری آموزشی و ثبت کد پرسنلی"
         maxWidth="lg"
       >
@@ -2269,7 +2309,7 @@ export const MembersPage: React.FC = () => {
           <div className="p-3 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 space-y-1 text-xs">
             <div className="font-bold text-ink-dark dark:text-white flex items-center gap-1.5">
               <UserCheck className="h-4 w-4 text-primary" />
-              <span>شناسه ورود یکپارچه دبیر:</span>
+              <span>شناسه ورود یکپارچه مربی:</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
               <div className="bg-white dark:bg-[#1E293B] p-2 rounded border border-gray-200 dark:border-gray-700">
@@ -2294,10 +2334,10 @@ export const MembersPage: React.FC = () => {
           {/* Multi-Select Lessons */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-ink-normal text-right">
-              دروس تدریسی دبیر (انتخاب یک یا چند درس)
+              دروس تدریسی مربی (انتخاب یک یا چند درس)
             </label>
             <p className="text-[11px] text-gray-500">
-              یک درس می‌تواند چندین دبیر داشته باشد و این دبیر هم می‌تواند چندین درس مختلف را تدریس کند:
+              یک درس می‌تواند چندین مربی داشته باشد و این مربی هم می‌تواند چندین درس مختلف را تدریس کند:
             </p>
             <div className="max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-2.5 space-y-1.5">
               {lessons.length === 0 ? (
@@ -2369,7 +2409,7 @@ export const MembersPage: React.FC = () => {
               انصراف
             </Button>
             <Button type="submit" variant="primary" isLoading={isSubmitting}>
-              ثبت دبیر
+              ثبت مربی
             </Button>
           </div>
         </form>
@@ -2384,7 +2424,7 @@ export const MembersPage: React.FC = () => {
           setError(null);
         }}
         title={`مدیریت دروس تخصیص‌یافته به ${editingTeacher?.user?.firstName || ''} ${editingTeacher?.user?.lastName || ''}`}
-        description="تخصیص، افزودن یا حذف دروس تدریسی این دبیر"
+        description="تخصیص، افزودن یا حذف دروس تدریسی این مربی"
         maxWidth="lg"
       >
         {error && (
@@ -2397,10 +2437,10 @@ export const MembersPage: React.FC = () => {
         <form onSubmit={handleSaveTeacherLessons} className="space-y-4">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-ink-normal text-right">
-              دروس تدریسی دبیر
+              دروس تدریسی مربی
             </label>
             <p className="text-[11px] text-gray-500">
-              هر کدام از درس‌های زیر را می‌توانید برای این دبیر فعال یا غیرفعال کنید:
+              هر کدام از درس‌های زیر را می‌توانید برای این مربی فعال یا غیرفعال کنید:
             </p>
             <div className="max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-2.5 space-y-1.5">
               {lessons.length === 0 ? (
@@ -2667,7 +2707,7 @@ export const MembersPage: React.FC = () => {
           setEditingTeacher(null);
           setError(null);
         }}
-        title={`ویرایش مشخصات دبیر: ${editingTeacher?.user?.firstName || ''} ${editingTeacher?.user?.lastName || ''}`}
+        title={`ویرایش مشخصات مربی: ${editingTeacher?.user?.firstName || ''} ${editingTeacher?.user?.lastName || ''}`}
         description="ویرایش جامع اطلاعات هویتی، پرسنلی، شغلی، امنیت و دروس تخصیص‌یافته"
         maxWidth="2xl"
       >
@@ -2879,7 +2919,7 @@ export const MembersPage: React.FC = () => {
               <div className="p-3.5 rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 space-y-2">
                 <div className="font-bold text-amber-900 dark:text-amber-200 text-xs flex items-center gap-1.5">
                   <KeyRound className="w-4 h-4 text-amber-600" />
-                  <span>تغییر رمز عبور دبیر:</span>
+                  <span>تغییر رمز عبور مربی:</span>
                 </div>
                 <Input
                   label="رمز عبور جدید"
@@ -2889,7 +2929,7 @@ export const MembersPage: React.FC = () => {
                   placeholder="در صورت عدم تمایل به تغییر رمز، این فیلد را خالی بگذارید"
                 />
                 <p className="text-[10px] text-amber-800 dark:text-amber-300">
-                  ⚠️ اگر این فیلد را پر کنید، رمز عبور دبیر تغییر کرده و در گاوصندوق رمزهای سامانه نیز به‌روز خواهد شد.
+                  ⚠️ اگر این فیلد را پر کنید، رمز عبور مربی تغییر کرده و در گاوصندوق رمزهای سامانه نیز به‌روز خواهد شد.
                 </p>
               </div>
             </div>
@@ -2899,10 +2939,10 @@ export const MembersPage: React.FC = () => {
           {teacherEditTab === 'LESSONS' && (
             <div className="space-y-2">
               <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">
-                دروس تخصیص‌یافته به دبیر
+                دروس تخصیص‌یافته به مربی
               </label>
               <p className="text-[11px] text-gray-500">
-                دروس مورد نظر را برای این دبیر انتخاب کنید:
+                دروس مورد نظر را برای این مربی انتخاب کنید:
               </p>
               <div className="max-h-60 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 dark:bg-gray-800/40 p-2.5 space-y-1.5">
                 {lessons.length === 0 ? (
@@ -2973,7 +3013,7 @@ export const MembersPage: React.FC = () => {
               className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-900/40"
             >
               <Trash2 className="w-3.5 h-3.5 ml-1" />
-              <span>حذف دبیر</span>
+              <span>حذف مربی</span>
             </Button>
             <div className="flex items-center gap-2">
               <Button
@@ -3002,17 +3042,17 @@ export const MembersPage: React.FC = () => {
           setIsDeleteTeacherModalOpen(false);
           setDeletingTeacher(null);
         }}
-        title="حذف دبیر از کادر آموزشی"
-        description="تایید عملیات حذف حساب و پروفایل دبیر"
+        title="حذف مربی از کادر آموزشی"
+        description="تایید عملیات حذف حساب و پروفایل مربی"
         maxWidth="md"
       >
         <div className="space-y-4">
           <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 flex items-start space-x-2.5 space-x-reverse">
             <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
             <div className="text-xs text-red-800 dark:text-red-300 space-y-1">
-              <div className="font-bold">هشدار حذف دبیر:</div>
+              <div className="font-bold">هشدار حذف مربی:</div>
               <p className="leading-relaxed">
-                آیا از حذف دبیر{' '}
+                آیا از حذف مربی{' '}
                 <strong>
                   {deletingTeacher?.user?.firstName} {deletingTeacher?.user?.lastName}
                 </strong>{' '}
@@ -3067,7 +3107,86 @@ export const MembersPage: React.FC = () => {
               isLoading={isDeletingTeacher}
             >
               <Trash2 className="w-3.5 h-3.5 ml-1" />
-              <span>بله، حذف قطعی دبیر</span>
+              <span>بله، حذف قطعی مربی</span>
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 7. Modal: Delete Student Confirmation */}
+      <Modal
+        isOpen={isDeleteStudentModalOpen}
+        onClose={() => {
+          setIsDeleteStudentModalOpen(false);
+          setDeletingStudent(null);
+        }}
+        title="حذف پرونده دانش‌آموز"
+        description="تایید عملیات حذف حساب و پرونده تحصیلی دانش‌آموز"
+        maxWidth="md"
+      >
+        <div className="space-y-4">
+          <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 flex items-start space-x-2.5 space-x-reverse">
+            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+            <div className="text-xs text-red-800 dark:text-red-300 space-y-1">
+              <div className="font-bold">هشدار حذف دانش‌آموز:</div>
+              <p className="leading-relaxed">
+                آیا از حذف دانش‌آموز{' '}
+                <strong>
+                  {deletingStudent?.user?.firstName} {deletingStudent?.user?.lastName}
+                </strong>{' '}
+                اطمینان دارید؟ با تایید این عملیات، پرونده تحصیلی، سوابق کلاسی و دسترسی ورود ایشان از این مدرسه حذف خواهد شد.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-xs space-y-1.5 font-medium">
+            <div className="flex justify-between">
+              <span className="text-gray-500">نام و نام‌خانوادگی:</span>
+              <strong className="text-ink-darker dark:text-white">
+                {deletingStudent?.user?.firstName} {deletingStudent?.user?.lastName}
+              </strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">شماره دانش‌آموزی:</span>
+              <strong className="font-mono text-ink-darker dark:text-white">
+                {deletingStudent?.studentCode || deletingStudent?.studentNumber || '—'}
+              </strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">کد ملی:</span>
+              <strong className="font-mono text-ink-darker dark:text-white">
+                {deletingStudent?.nationalCode || '—'}
+              </strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">کلاس و پایه:</span>
+              <strong className="text-primary font-bold">
+                {deletingStudent?.enrollments?.[0]?.classroom?.name || deletingStudent?.classroom?.name || 'کلاس عمومی'} (
+                {deletingStudent?.enrollments?.[0]?.classroom?.level?.name || deletingStudent?.gradeLevel || 'دهم'})
+              </strong>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setIsDeleteStudentModalOpen(false);
+                setDeletingStudent(null);
+              }}
+              disabled={isDeletingStudent}
+            >
+              انصراف
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleConfirmDeleteStudent}
+              isLoading={isDeletingStudent}
+            >
+              <Trash2 className="w-3.5 h-3.5 ml-1" />
+              <span>حذف دانش‌آموز</span>
             </Button>
           </div>
         </div>

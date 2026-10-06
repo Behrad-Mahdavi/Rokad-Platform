@@ -1160,7 +1160,7 @@ export const AcademicStructurePage: React.FC = () => {
                 ),
               },
               {
-                header: 'دبیران مدرس',
+                header: 'مربیان مدرس',
                 cell: (l) => (
                   l.teacherLessons && l.teacherLessons.length > 0 ? (
                     <div className="flex flex-wrap gap-1 max-w-xs">
@@ -1174,7 +1174,7 @@ export const AcademicStructurePage: React.FC = () => {
                       ))}
                     </div>
                   ) : (
-                    <span className="text-xs text-gray-400">بدون دبیر</span>
+                    <span className="text-xs text-gray-400">بدون مربی</span>
                   )
                 ),
                 mobileDetail: true,
@@ -2134,7 +2134,7 @@ export const AcademicStructurePage: React.FC = () => {
           setError(null);
         }}
         title="ویرایش درس آموزشی"
-        description="ویرایش مشخصات درس، دبیران مدرس، نوع ارزشیابی و عناوین پودمان‌ها"
+        description="ویرایش مشخصات درس، مربیان مدرس، نوع ارزشیابی و عناوین پودمان‌ها"
         maxWidth="2xl"
       >
         {error && (
@@ -2447,7 +2447,7 @@ export const AcademicStructurePage: React.FC = () => {
           <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-sm">
             <p className="font-bold mb-1">نام درس: {deleteConfirmLesson?.name}</p>
             <p className="text-xs text-rose-600 leading-relaxed">
-              با حذف این درس، ارتباطات مربوط به برنامه‌های درسی و دبیران این درس حذف خواهند شد.
+              با حذف این درس، ارتباطات مربوط به برنامه‌های درسی و مربیان این درس حذف خواهند شد.
             </p>
           </div>
 

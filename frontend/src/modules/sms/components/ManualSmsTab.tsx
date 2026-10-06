@@ -226,7 +226,7 @@ export const ManualSmsTab: React.FC<ManualSmsTabProps> = ({
                 {[
                   { role: 'PARENTS', label: 'اولیای تمام دانش‌آموزان' },
                   { role: 'STUDENTS', label: 'تمام دانش‌آموزان' },
-                  { role: 'TEACHERS', label: 'کادر آموزشی و دبیران' },
+                  { role: 'TEACHERS', label: 'کادر آموزشی و مربیان' },
                   { role: 'STAFF', label: 'کادر اجرایی و اداری' },
                   { role: 'ALL', label: 'تمامی اعضای مدرسه' },
                 ].map((item) => (
@@ -314,7 +314,7 @@ export const ManualSmsTab: React.FC<ManualSmsTabProps> = ({
                     { key: 'ALL', label: 'همه' },
                     { key: 'PARENTS', label: 'اولیا' },
                     { key: 'STUDENTS', label: 'دانش‌آموزان' },
-                    { key: 'TEACHERS', label: 'دبیران' },
+                    { key: 'TEACHERS', label: 'مربیان' },
                     { key: 'MANAGEMENT', label: 'مدیریت' },
                   ].map((f) => (
                     <button

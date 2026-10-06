@@ -330,7 +330,7 @@ export const StudentDashboard: React.FC = () => {
                   <div className="flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400 mt-2 pt-1.5 border-t border-gray-100 dark:border-gray-800">
                     <User className="w-3 h-3 text-primary shrink-0" />
                     <span className="truncate">
-                      {slot.teacher?.user ? cleanUserFullName(slot.teacher.user.firstName, slot.teacher.user.lastName) : 'دبیر'}
+                      {slot.teacher?.user ? cleanUserFullName(slot.teacher.user.firstName, slot.teacher.user.lastName) : 'مربی'}
                     </span>
                   </div>
                 </div>

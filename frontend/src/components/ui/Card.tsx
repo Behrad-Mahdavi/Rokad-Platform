@@ -63,7 +63,11 @@ export const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={twMerge(clsx('p-4 sm:p-5 md:p-6 pt-0', className))} {...props} />
+  <div
+    ref={ref}
+    className={twMerge(clsx('px-4 sm:px-5 md:px-6 pb-4 sm:pb-5 md:pb-6 pt-0', className))}
+    {...props}
+  />
 ));
 CardContent.displayName = 'CardContent';
 
@@ -73,7 +77,7 @@ export const CardFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={twMerge(clsx('flex items-center p-4 sm:p-5 md:p-6 pt-0', className))}
+    className={twMerge(clsx('flex items-center px-4 sm:px-5 md:px-6 pb-4 sm:pb-5 md:pb-6 pt-0', className))}
     {...props}
   />
 ));

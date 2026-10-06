@@ -82,8 +82,8 @@ export const Modal: React.FC<ModalProps> = ({
 
         <div
           className={`flex items-center justify-between ${
-            hideHeaderBorder
-              ? 'mb-2'
+            hideHeaderBorder || !description
+              ? 'mb-3'
               : 'pb-3.5 border-b border-gray-100 dark:border-gray-800 mb-4'
           }`}
         >

@@ -86,7 +86,7 @@ export const SchedulePeriodModal: React.FC<SchedulePeriodModalProps> = ({
           <div className="flex items-start gap-2.5 text-amber-900 dark:text-amber-200">
             <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <h4 className="font-extrabold text-sm text-amber-900 dark:text-amber-200">هشدار تداخل دبیر</h4>
+              <h4 className="font-extrabold text-sm text-amber-900 dark:text-amber-200">هشدار تداخل مربی</h4>
               <p className="text-amber-800 dark:text-amber-300 leading-relaxed font-medium">{conflictWarning}</p>
             </div>
           </div>
@@ -195,7 +195,7 @@ export const SchedulePeriodModal: React.FC<SchedulePeriodModalProps> = ({
 
             <div>
               <label className="block text-xs font-bold text-ink-dark dark:text-gray-200 mb-1 text-right">
-                دبیر <span className="text-red-500">*</span>
+                مربی <span className="text-red-500">*</span>
               </label>
               <select
                 value={form.teacherId}
@@ -204,7 +204,7 @@ export const SchedulePeriodModal: React.FC<SchedulePeriodModalProps> = ({
                 required
               >
                 <option value="" disabled>
-                  -- انتخاب دبیر --
+                  -- انتخاب مربی --
                 </option>
                 {teachers.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -249,7 +249,7 @@ export const SchedulePeriodModal: React.FC<SchedulePeriodModalProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-ink-dark dark:text-gray-200 mb-1">
-                    دبیر <span className="text-red-500">*</span>
+                    مربی <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={form.teacherId}
@@ -258,7 +258,7 @@ export const SchedulePeriodModal: React.FC<SchedulePeriodModalProps> = ({
                     required
                   >
                     <option value="" disabled>
-                      -- انتخاب دبیر --
+                      -- انتخاب مربی --
                     </option>
                     {teachers.map((t) => (
                       <option key={t.id} value={t.id}>
@@ -276,7 +276,7 @@ export const SchedulePeriodModal: React.FC<SchedulePeriodModalProps> = ({
                 type="button"
                 onClick={onSwapSplitOrder}
                 className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-300 dark:border-[#242F42] bg-white dark:bg-[#151C28] hover:bg-gray-100 dark:hover:bg-[#1C2536] hover:text-primary transition-all text-xs font-bold shadow-xs active:scale-95 cursor-pointer"
-                title="جابجایی درس و دبیر هفته فرد و هفته زوج"
+                title="جابجایی درس و مربی هفته فرد و هفته زوج"
               >
                 <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
                 <span>جابجایی هفته‌ها</span>
@@ -315,7 +315,7 @@ export const SchedulePeriodModal: React.FC<SchedulePeriodModalProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-ink-dark dark:text-gray-200 mb-1">
-                    دبیر <span className="text-red-500">*</span>
+                    مربی <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={form.secondTeacherId}
@@ -324,7 +324,7 @@ export const SchedulePeriodModal: React.FC<SchedulePeriodModalProps> = ({
                     required
                   >
                     <option value="" disabled>
-                      -- انتخاب دبیر --
+                      -- انتخاب مربی --
                     </option>
                     {teachers.map((t) => (
                       <option key={t.id} value={t.id}>
@@ -403,7 +403,7 @@ export const SchedulePeriodModal: React.FC<SchedulePeriodModalProps> = ({
             onChange={(e) => setForm((prev) => ({ ...prev, allowTeacherConflict: e.target.checked }))}
             className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500 border-amber-300"
           />
-          <span className="font-bold">ثبت حتی در صورت تداخل زمانی دبیر</span>
+          <span className="font-bold">ثبت حتی در صورت تداخل زمانی مربی</span>
         </label>
 
         <div className="flex justify-end space-x-2 space-x-reverse pt-3 border-t border-gray-100 dark:border-[#242F42]">

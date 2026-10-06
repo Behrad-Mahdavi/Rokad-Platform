@@ -150,7 +150,7 @@ export const MessageDetailModal: React.FC<Props> = ({
       case 'SCHOOL_ADMIN':
         return 'راهبری مجتمع آموزشی';
       case 'TEACHER':
-        return 'استاد / دبیر';
+        return 'استاد / مربی';
       case 'STUDENT':
         return 'دانش‌آموز';
       case 'PARENT':

@@ -419,7 +419,7 @@ export const NotificationsPage: React.FC = () => {
                 <div className="grid grid-cols-4 gap-1.5 bg-gray-100 dark:bg-[#1C2536] p-1 rounded-xl text-xs">
                   {[
                     { id: 'ALL', label: 'همه' },
-                    { id: 'TEACHER', label: 'دبیران' },
+                    { id: 'TEACHER', label: 'مربیان' },
                     { id: 'STUDENT', label: 'دانش‌آموزان' },
                     { id: 'PARENT', label: 'اولیا' },
                   ].map((target) => (

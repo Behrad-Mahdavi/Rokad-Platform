@@ -55,7 +55,7 @@ export const NoticeboardPage: React.FC = () => {
         {
           id: 'note-1',
           title: 'دستورالعمل برگزاری امتحانات میان‌ترم نوبت اول',
-          description: 'کلیه دانش‌آموزان و دبیران گرامی توجه فرمایید امتحانات از تاریخ ۱۵ آبان به صورت حضوری و آنلاین آغاز می‌گردد.',
+          description: 'کلیه دانش‌آموزان و مربیان گرامی توجه فرمایید امتحانات از تاریخ ۱۵ آبان به صورت حضوری و آنلاین آغاز می‌گردد.',
           isPinned: true,
           audience: 'ALL',
           createdAt: new Date().toISOString(),
@@ -289,7 +289,7 @@ export const NoticeboardPage: React.FC = () => {
               <option value="ALL">همه اعضای مدرسه (عمومی)</option>
               <option value="STUDENTS">فقط دانش‌آموزان</option>
               <option value="PARENTS">فقط اولیاء گرامی</option>
-              <option value="TEACHERS">فقط دبیران و کادر</option>
+              <option value="TEACHERS">فقط مربیان و کادر</option>
             </select>
           </div>
 

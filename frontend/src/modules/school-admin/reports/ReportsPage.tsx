@@ -61,9 +61,9 @@ export const ReportsPage: React.FC = () => {
   ];
 
   const payaEmployees = [
-    { name: 'دکتر بهزاد کاظمی', role: 'دبیر ریاضی', sheba: 'IR120120000000001234567890', netPay: 23250000 },
-    { name: 'مهندس محمدرضا شجاعی', role: 'دبیر فیزیک', sheba: 'IR560170000000009876543210', netPay: 21500000 },
-    { name: 'خانم فاطمه سلیمانی', role: 'دبیر شیمی', sheba: 'IR880190000000004561237890', netPay: 22000000 },
+    { name: 'دکتر بهزاد کاظمی', role: 'مربی ریاضی', sheba: 'IR120120000000001234567890', netPay: 23250000 },
+    { name: 'مهندس محمدرضا شجاعی', role: 'مربی فیزیک', sheba: 'IR560170000000009876543210', netPay: 21500000 },
+    { name: 'خانم فاطمه سلیمانی', role: 'مربی شیمی', sheba: 'IR880190000000004561237890', netPay: 22000000 },
   ];
 
   const handleSimulateDownload = (msg: string) => {

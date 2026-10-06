@@ -878,6 +878,57 @@ export class MembersService {
     });
   }
 
+  async deleteStudent(tenantId: string, studentId: string): Promise<any> {
+    const student = await this.prisma.studentProfile.findFirst({
+      where: { id: studentId, tenantId },
+      include: { user: true },
+    });
+    if (!student) {
+      throw new NotFoundException('دانش‌آموز مورد نظر در این مدرسه یافت نشد');
+    }
+
+    const userId = student.userId;
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Delete student profile (Cascade takes care of enrollments, attendances, matters, homeworks, etc.)
+      await tx.studentProfile.delete({
+        where: { id: student.id },
+      });
+
+      // 2. If user has no other profiles in the system, clean up user account
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        include: {
+          teacherProfile: true,
+          staffProfile: true,
+          coachProfile: true,
+          parentProfile: true,
+        },
+      });
+
+      if (
+        user &&
+        !user.teacherProfile &&
+        !user.staffProfile &&
+        !user.coachProfile &&
+        !user.parentProfile
+      ) {
+        try {
+          await tx.user.delete({
+            where: { id: userId },
+          });
+        } catch {
+          await tx.user.update({
+            where: { id: userId },
+            data: { status: 'SUSPENDED' },
+          });
+        }
+      }
+
+      return { success: true, message: 'دانش‌آموز با موفقیت حذف گردید' };
+    });
+  }
+
   // 2. Teachers
   async listTeachers(tenantId: string): Promise<any> {
     return this.prisma.teacherProfile.findMany({

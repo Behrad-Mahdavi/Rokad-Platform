@@ -129,18 +129,15 @@ export const LoginPage: React.FC = () => {
 
   return (
     <Card className="shadow-lg border-gray-200">
-      <CardHeader className="text-right space-y-1.5 pb-3">
+      <CardHeader className="text-right pb-1">
         <div className="flex items-center space-x-2.5 space-x-reverse">
           <img
             src="/logo.svg"
             alt="لوگوی رکاد"
             className="h-8 w-8 rounded-xl object-cover shadow-2xs shrink-0"
           />
-          <CardTitle className="text-lg sm:text-xl">ورود به سامانه رکاد</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">ورود به پلتفرم رکاد</CardTitle>
         </div>
-        <CardDescription className="text-xs">
-          سامانه یکپارچه هوشمند هنرستان‌های رکاد
-        </CardDescription>
       </CardHeader>
 
       <CardContent>
@@ -153,7 +150,7 @@ export const LoginPage: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <Input
-            label="نام کاربری یا شماره همراه"
+            label="نام کاربری"
             placeholder="کد ملی یا شماره همراه"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}

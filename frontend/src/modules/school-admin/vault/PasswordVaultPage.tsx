@@ -214,7 +214,7 @@ export const PasswordVaultPage: React.FC = () => {
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
             <UserCheck className="w-3.5 h-3.5" />
-            <span>دبیر</span>
+            <span>مربی</span>
           </span>
         );
       case 'STAFF':
@@ -358,7 +358,7 @@ export const PasswordVaultPage: React.FC = () => {
               { id: 'ALL', label: 'همه نقش‌ها' },
               { id: 'STUDENT', label: 'دانش‌آموزان' },
               { id: 'PARENT', label: 'اولیا' },
-              { id: 'TEACHER', label: 'دبیران' },
+              { id: 'TEACHER', label: 'مربیان' },
               { id: 'STAFF', label: 'کادر اداری' },
             ].map((tab) => (
               <button

@@ -285,7 +285,7 @@ export const TeacherSchedulePage: React.FC = () => {
               در روز {currentDayDef.label} ({currentWeekInfo.weekLabel}) کلاسی در برنامه تدریس شما وجود ندارد
             </h3>
             <p className="text-xs text-muted-foreground dark:text-slate-400 mt-1">
-              در صورتی که کلاس یک هفته در میان دارید، این زنگ در هفته دیگر به دبیر مربوطه اختصاص دارد.
+              در صورتی که کلاس یک هفته در میان دارید، این زنگ در هفته دیگر به مربی مربوطه اختصاص دارد.
             </p>
           </div>
         ) : (

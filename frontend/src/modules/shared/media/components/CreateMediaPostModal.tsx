@@ -929,7 +929,7 @@ export const CreateMediaPostModal: React.FC<CreateMediaPostModalProps> = ({
               {[
                 { key: 'STUDENT', label: 'دانش‌آموزان', icon: GraduationCap },
                 { key: 'PARENT', label: 'اولیاء گرامی', icon: Users },
-                { key: 'TEACHER', label: 'دبیران و اساتید', icon: School },
+                { key: 'TEACHER', label: 'مربیان و اساتید', icon: School },
               ].map((role) => {
                 const isSelected = targetRoles.includes(role.key);
                 const Icon = role.icon;

@@ -490,7 +490,7 @@ export const ComposeMessageModal: React.FC<Props> = ({
 
   // Role audience options (no English words)
   const roleAudienceOptions: CustomDropdownOption[] = [
-    { value: 'TEACHERS', label: 'تمامی دبیران و اساتید مدرسه' },
+    { value: 'TEACHERS', label: 'تمامی مربیان و اساتید مدرسه' },
     { value: 'STUDENTS', label: 'تمامی دانش‌آموزان مدرسه' },
     { value: 'PARENTS', label: 'تمامی اولیاء محترم' },
     { value: 'STAFF', label: 'تمامی کادر اجرایی مدرسه' },

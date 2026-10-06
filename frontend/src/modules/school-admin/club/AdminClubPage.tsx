@@ -728,7 +728,7 @@ export const AdminClubPage: React.FC = () => {
             <div>
               <h2 className="text-base font-black text-stone-900 dark:text-white">مراحل و چک‌لیست نقشه راه پذیرش</h2>
               <p className="text-xs text-stone-500 mt-0.5">
-                مراحل سنجش، تأییدیه دبیران دروس و چالش ورودی که دانش‌آموز برای ورود به باشگاه باید طی کند. مجموع وزن‌ها
+                مراحل سنجش، تأییدیه مربیان دروس و چالش ورودی که دانش‌آموز برای ورود به باشگاه باید طی کند. مجموع وزن‌ها
                 باید ۱۰۰٪ باشد.
               </p>
             </div>
@@ -1220,7 +1220,7 @@ export const AdminClubPage: React.FC = () => {
                   onChange={(e) => setMilestoneForm({ ...milestoneForm, type: e.target.value as ClubMilestoneType })}
                   className="w-full text-xs font-bold h-10 px-3 rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900"
                 >
-                  <option value="TEACHER_APPROVAL">تأییدیه دبیر درس (TEACHER_APPROVAL)</option>
+                  <option value="TEACHER_APPROVAL">تأییدیه مربی درس (TEACHER_APPROVAL)</option>
                   <option value="PLACEMENT_CHALLENGE">چالش ورودی تعیین سطح (PLACEMENT_CHALLENGE)</option>
                   <option value="ADMIN_CHECKLIST">چک‌لیست مصاحبه لید (ADMIN_CHECKLIST)</option>
                   <option value="LESSON_GRADE">نمره کلاسی درس (LESSON_GRADE)</option>

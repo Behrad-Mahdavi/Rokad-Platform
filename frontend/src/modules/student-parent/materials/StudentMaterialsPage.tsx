@@ -199,9 +199,9 @@ export const StudentMaterialsPage: React.FC = () => {
   const getTeacherName = (mat: any): string => {
     if (mat?.teacher?.user) {
       const u = mat.teacher.user;
-      return `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'دبیر محترم';
+      return `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'مربی محترم';
     }
-    return mat?.teacherName || 'دبیر محترم';
+    return mat?.teacherName || 'مربی محترم';
   };
 
   // Helper to determine type categorization and UI config
@@ -484,7 +484,7 @@ export const StudentMaterialsPage: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="جستجو در عنوان محتوا، توضیحات، نام درس یا نام دبیر..."
+                placeholder="جستجو در عنوان محتوا، توضیحات، نام درس یا نام مربی..."
                 className="w-full h-10 pr-10 pl-9 rounded-xl text-xs sm:text-sm font-bold bg-gray-50 dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] text-foreground dark:text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
               {searchQuery && (
@@ -789,7 +789,7 @@ export const StudentMaterialsPage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-3 border-t border-gray-200/70 dark:border-[#242F42]/80 text-xs text-muted-foreground dark:text-slate-300">
                   <div className="flex items-center gap-2 min-w-0">
                     <User className="w-4 h-4 text-primary shrink-0" />
-                    <span className="truncate">دبیر: {getTeacherName(selectedMaterial)}</span>
+                    <span className="truncate">مربی: {getTeacherName(selectedMaterial)}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -806,7 +806,7 @@ export const StudentMaterialsPage: React.FC = () => {
                   <span>توضیحات و راهنمای مطالعه:</span>
                 </div>
                 <div className="text-xs sm:text-sm text-ink-darker dark:text-slate-100 font-medium leading-relaxed whitespace-pre-wrap">
-                  {selectedMaterial.description || 'توضیحات بیشتری توسط دبیر محترم برای این فایل ثبت نشده است.'}
+                  {selectedMaterial.description || 'توضیحات بیشتری توسط مربی محترم برای این فایل ثبت نشده است.'}
                 </div>
               </div>
 

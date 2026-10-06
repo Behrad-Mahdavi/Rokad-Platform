@@ -1656,11 +1656,11 @@ export const ExamsPage: React.FC = () => {
               })}
             </div>
 
-            {/* Grace Score Section (نمره ارفاقی دبیر) */}
+            {/* Grace Score Section (نمره ارفاقی مربی) */}
             <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/60 space-y-3">
               <div className="flex items-center space-x-2 space-x-reverse text-amber-800">
                 <Sparkles className="h-4 w-4 text-amber-600" />
-                <span className="font-bold text-xs">نمره ارفاقی دبیر:</span>
+                <span className="font-bold text-xs">نمره ارفاقی مربی:</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

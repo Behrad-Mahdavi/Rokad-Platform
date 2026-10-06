@@ -481,7 +481,7 @@ export const ClubPage: React.FC = () => {
                           </span>
                           {m.type === 'TEACHER_APPROVAL' && (
                             <span className="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold">
-                              نیازمند تأییدیه دبیر
+                              نیازمند تأییدیه مربی
                             </span>
                           )}
                           {m.type === 'PLACEMENT_CHALLENGE' && (

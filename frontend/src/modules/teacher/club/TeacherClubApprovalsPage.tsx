@@ -301,7 +301,7 @@ export const TeacherClubApprovalsPage: React.FC = () => {
                     {item.notes && (
                       <div className="pt-1.5 border-t border-stone-200/60 dark:border-stone-700/60 text-stone-600 dark:text-stone-300 flex items-start gap-1.5">
                         <MessageSquare className="w-3.5 h-3.5 text-stone-400 mt-0.5 shrink-0" />
-                        <span>یادداشت دبیر: {item.notes}</span>
+                        <span>یادداشت مربی: {item.notes}</span>
                       </div>
                     )}
                   </div>
@@ -354,7 +354,7 @@ export const TeacherClubApprovalsPage: React.FC = () => {
 
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-stone-700 dark:text-stone-300">
-                توضیحات و بازخورد دبیر (اختیاری):
+                توضیحات و بازخورد مربی (اختیاری):
               </label>
               <textarea
                 value={teacherNotes}

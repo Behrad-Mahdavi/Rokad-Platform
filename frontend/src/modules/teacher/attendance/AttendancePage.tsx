@@ -1052,7 +1052,7 @@ export const AttendancePage: React.FC = () => {
             }}
             className="w-full h-9 px-3 text-xs font-bold rounded-xl border border-gray-200 dark:border-[#242F42] bg-gray-50 dark:bg-[#1C2536] text-foreground dark:text-white cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
           >
-            <option value="">همه دبیران / برنامه کلی</option>
+            <option value="">همه مربیان / برنامه کلی</option>
             {teachersData?.map((t: any) => (
               <option key={t.id} value={t.id}>
                 {t.user?.firstName} {t.user?.lastName} {t.speciality ? `(${t.speciality})` : ''}
@@ -2273,7 +2273,7 @@ export const AttendancePage: React.FC = () => {
                   <Input
                     value={modalSessionNote}
                     onChange={(e) => setModalSessionNote(e.target.value)}
-                    placeholder="توضیحات و نکات دبیر درباره دانش‌آموز در این جلسه..."
+                    placeholder="توضیحات و نکات مربی درباره دانش‌آموز در این جلسه..."
                     className="rounded-xl border border-gray-200 dark:border-[#242F42] bg-white dark:bg-[#151C28] font-bold h-9 text-xs"
                   />
                 </div>

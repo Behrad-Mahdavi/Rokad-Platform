@@ -330,7 +330,7 @@ export const SmsCenterPage: React.FC = () => {
       case 'ROLE':
         if (targetRole === 'PARENTS') return 'اولیای تمام دانش‌آموزان';
         if (targetRole === 'STUDENTS') return 'تمامی دانش‌آموزان';
-        if (targetRole === 'TEACHERS') return 'کادر آموزشی و دبیران';
+        if (targetRole === 'TEACHERS') return 'کادر آموزشی و مربیان';
         if (targetRole === 'STAFF') return 'کادر اجرایی';
         return 'تمامی اعضای مجتمع';
       case 'CLASS':

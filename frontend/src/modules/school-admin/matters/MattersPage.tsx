@@ -735,7 +735,7 @@ export const MattersPage: React.FC = () => {
                         )}
                         {matter.sessionNote && (
                           <div>
-                            <strong className="font-black text-ink-darker dark:text-white">یادداشت دبیر: </strong>
+                            <strong className="font-black text-ink-darker dark:text-white">یادداشت مربی: </strong>
                             <span className="text-ink-normal dark:text-gray-300">{matter.sessionNote}</span>
                           </div>
                         )}

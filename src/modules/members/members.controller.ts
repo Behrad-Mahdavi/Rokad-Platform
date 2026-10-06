@@ -91,6 +91,19 @@ export class MembersController {
     return this.membersService.updateStudent(effectiveTenantId, id, dto);
   }
 
+  @Delete('students/:id')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @RequirePermissions(AppPermission.STUDENT_WRITE)
+  @ApiOperation({ summary: 'حذف دانش‌آموز از مدرسه' })
+  async deleteStudent(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') studentId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.membersService.deleteStudent(effectiveTenantId, studentId);
+  }
+
   // 2. Teachers
   @Get('teachers')
   @ApiOperation({ summary: 'لیست اساتید و معلمان مدرسه' })

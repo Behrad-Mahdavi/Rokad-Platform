@@ -36,7 +36,7 @@ export const RolesListTab: React.FC<Props> = ({
             <span>نقش‌های سازمانی مدرسه ({toPersianDigits(roles.length)} نقش)</span>
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            نقش‌های سفارشی تعریف‌شده در این آموزشگاه جهت تجمیع مجوزهای پرسنل و دبیران
+            نقش‌های سفارشی تعریف‌شده در این آموزشگاه جهت تجمیع مجوزهای پرسنل و مربیان
           </p>
         </div>
 

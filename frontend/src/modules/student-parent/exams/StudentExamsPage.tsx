@@ -658,10 +658,10 @@ export const StudentExamsPage: React.FC = () => {
 
             <div className="bg-gray-50 dark:bg-[#1C2536] p-6 rounded-2xl border border-gray-200 dark:border-[#242F42] space-y-3">
               <div className="text-sm sm:text-base font-bold text-ink-dark dark:text-white">
-                پاسخ‌برگ در انتظار بررسی و ثبت نمره توسط دبیر است
+                پاسخ‌برگ در انتظار بررسی و ثبت نمره توسط مربی است
               </div>
               <p className="text-xs text-muted-foreground dark:text-slate-400 leading-relaxed max-w-md mx-auto">
-                پس از اتمام مهلت آزمون، بررسی پاسخ‌های تشریحی و انتشار کارنامه توسط دبیر محترم، نمره نهایی و بازخوردها در این بخش قابل مشاهده خواهد بود.
+                پس از اتمام مهلت آزمون، بررسی پاسخ‌های تشریحی و انتشار کارنامه توسط مربی محترم، نمره نهایی و بازخوردها در این بخش قابل مشاهده خواهد بود.
               </p>
 
               {tabSwitches > 0 && (
@@ -728,7 +728,7 @@ export const StudentExamsPage: React.FC = () => {
             </div>
             <h4 className="font-black text-base text-ink-darker dark:text-white">سوالی برای این آزمون ثبت نشده است</h4>
             <p className="text-xs text-muted-foreground dark:text-slate-400 leading-relaxed">
-              دبیر محترم هنوز سوالات این آزمون را در سامانه بارگذاری نکرده است. لطفاً پس از ثبت سوالات توسط دبیر مجدداً مراجعه فرمایید.
+              مربی محترم هنوز سوالات این آزمون را در سامانه بارگذاری نکرده است. لطفاً پس از ثبت سوالات توسط مربی مجدداً مراجعه فرمایید.
             </p>
             <Button
               variant="outline"
@@ -1057,7 +1057,7 @@ export const StudentExamsPage: React.FC = () => {
             const teacherName =
               exam.teacher?.user?.firstName || exam.teacher?.user?.lastName
                 ? `${exam.teacher?.user?.firstName || ''} ${exam.teacher?.user?.lastName || ''}`.trim()
-                : 'دبیر مربوطه';
+                : 'مربی مربوطه';
 
             const statusInfo = getExamStatusInfo(exam);
             const hasScore = participation?.totalScore !== null && participation?.totalScore !== undefined;
@@ -1678,7 +1678,7 @@ export const StudentExamsPage: React.FC = () => {
                     پاسخ‌برگ با موفقیت تحویل داده شده است
                   </div>
                   <p className="text-[11px] text-muted-foreground dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
-                    پاسخ‌های شما ثبت شده و پس از بررسی و نمره‌گذاری توسط دبیر، کارنامه شما در این بخش فعال خواهد شد.
+                    پاسخ‌های شما ثبت شده و پس از بررسی و نمره‌گذاری توسط مربی، کارنامه شما در این بخش فعال خواهد شد.
                   </p>
                 </div>
               ) : (

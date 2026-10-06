@@ -294,7 +294,7 @@ export const SubscriptionsPage: React.FC = () => {
                 <div className="flex items-center space-x-3 space-x-reverse">
                   <div className="text-xs text-left">
                     <div className="font-bold">{t._count?.studentProfiles || 0} دانش‌آموز</div>
-                    <div className="text-[11px] text-gray-500">{t._count?.teacherProfiles || 0} دبیر</div>
+                    <div className="text-[11px] text-gray-500">{t._count?.teacherProfiles || 0} مربی</div>
                   </div>
 
                   <Button

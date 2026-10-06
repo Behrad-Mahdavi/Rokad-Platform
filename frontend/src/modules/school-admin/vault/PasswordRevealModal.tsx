@@ -145,7 +145,7 @@ export const PasswordRevealModal: React.FC<PasswordRevealModalProps> = ({
       case 'PARENT':
         return 'ولی دانش‌آموز';
       case 'TEACHER':
-        return 'دبیر / هنرآموز';
+        return 'مربی / هنرآموز';
       case 'STAFF':
         return 'کادر اجرایی / پرسنل';
       case 'COACH':

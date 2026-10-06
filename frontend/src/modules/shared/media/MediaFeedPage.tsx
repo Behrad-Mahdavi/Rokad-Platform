@@ -338,7 +338,7 @@ export const MediaFeedPage: React.FC = () => {
       case 'STAFF':
         return <Badge variant="sec" className="text-[10px]">کادر اجرایی</Badge>;
       case 'TEACHER':
-        return <Badge variant="male" className="text-[10px]">مربی / دبیر</Badge>;
+        return <Badge variant="male" className="text-[10px]">مربی</Badge>;
       case 'STUDENT':
         return <Badge variant="college" className="text-[10px]">دانش‌آموز</Badge>;
       case 'PARENT':

@@ -231,13 +231,13 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
     }
 
     if (!form.lessonId || !form.teacherId) {
-      setError('انتخاب درس و دبیر هفته فرد الزامی است');
+      setError('انتخاب درس و مربی هفته فرد الزامی است');
       return;
     }
 
     if (form.isSplitPeriod) {
       if (!form.secondLessonId || !form.secondTeacherId) {
-        setError('در حالت یک هفته در میان، تعیین درس و دبیر هفته زوج الزامی است');
+        setError('در حالت یک هفته در میان، تعیین درس و مربی هفته زوج الزامی است');
         return;
       }
     }
