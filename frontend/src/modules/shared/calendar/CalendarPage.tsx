@@ -285,15 +285,30 @@ export const CalendarPage: React.FC = () => {
     setSelectedMonth((prev) => (prev < 12 ? prev + 1 : 1));
   };
 
-  // Check if a day has school events
+  // Check if a day has school events (supporting multi-day event date ranges)
   const getDaySchoolEvents = (jalaliStr: string) => {
     return events.filter((ev) => {
-      if (ev.jalaliDate && ev.jalaliDate.startsWith(jalaliStr)) return true;
+      if (ev.isArchived || ev.isCancelled || ev.status === 'CANCELLED') return false;
+
+      let startJalali = '';
       if (ev.startDate) {
-        const evJalali = gregorianToJalaliStr(ev.startDate);
-        return evJalali === jalaliStr;
+        startJalali = gregorianToJalaliStr(ev.startDate);
+      } else if (ev.jalaliDate) {
+        startJalali = ev.jalaliDate.slice(0, 10);
       }
-      return false;
+
+      if (!startJalali) return false;
+
+      let endJalali = startJalali;
+      if (ev.endDate) {
+        endJalali = gregorianToJalaliStr(ev.endDate);
+      }
+
+      if (endJalali < startJalali) {
+        endJalali = startJalali;
+      }
+
+      return jalaliStr >= startJalali && jalaliStr <= endJalali;
     });
   };
 
