@@ -591,6 +591,11 @@ export const EventSinglePage: React.FC = () => {
     return getEventStatus(event.startDate, event.endDate);
   }, [event?.startDate, event?.endDate]);
 
+  const isEventEnded = useMemo(() => {
+    if (!event?.endDate) return false;
+    return new Date(event.endDate).getTime() < Date.now();
+  }, [event?.endDate]);
+
   const attachmentsList = useMemo(() => {
     const list: Array<{
       id: string;
@@ -694,6 +699,23 @@ export const EventSinglePage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Event Inactivity / Ended Notice Banner */}
+      {isEventEnded && (
+        <div className="p-4 sm:p-5 rounded-2xl border-2 border-amber-400 bg-amber-50/95 dark:bg-amber-950/50 text-amber-950 dark:text-amber-200 shadow-sm flex items-start gap-3.5 animate-in fade-in duration-300">
+          <div className="w-9 h-9 rounded-xl bg-amber-400 text-amber-950 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs font-bold">
+            <Clock className="w-5 h-5 stroke-[2.5]" />
+          </div>
+          <div className="space-y-1 min-w-0">
+            <h3 className="text-sm sm:text-base font-black text-amber-950 dark:text-amber-100">
+              زمان این رویداد به پایان رسیده است
+            </h3>
+            <p className="text-xs sm:text-sm font-medium text-amber-800/90 dark:text-amber-300/90 leading-relaxed">
+              مهلت برگزاری و مشارکت در این رویداد در تاریخ {jalaliEnd} به اتمام رسیده است. کلیه ماژول‌ها و گام‌های رویداد در حالت آرشیو و فقط خواندنی (Read-Only) قرار گرفته و امکان ثبت ایده، رأی‌گیری یا ایجاد تغییرات جدید وجود ندارد.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* 2. Hero Card with Cover Image */}
       <div className="overflow-hidden rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-gray-800 bg-white dark:bg-[#151C28] shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17]">
@@ -833,6 +855,7 @@ export const EventSinglePage: React.FC = () => {
           eventId={event.id}
           eventTitle={event.title}
           workflowModules={workflowModules}
+          isEventEnded={isEventEnded}
         />
       ) : (
         <div className="space-y-6">

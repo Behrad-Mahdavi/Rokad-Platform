@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
@@ -12,6 +13,7 @@ import {
   PollStatusAction,
 } from './dto/create-poll.dto';
 import { Role } from '../../common/constants';
+import { canViewPollResults } from './polls.permissions';
 
 export interface SurveyQuestion {
   type: string;
@@ -37,12 +39,24 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const DEV_STORE_PATH = path.join(process.cwd(), '.polls_dev_store.json');
+const DEFAULT_PORSCAD_USER_ID = '3d7a922f-f553-44c2-8591-7c12bb95278d';
 
 function loadPersistedPolls(): any[] {
   try {
     if (fs.existsSync(DEV_STORE_PATH)) {
       const raw = fs.readFileSync(DEV_STORE_PATH, 'utf-8');
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        // Filter out legacy forms from old test accounts
+        return parsed.filter(
+          (p: any) =>
+            !p.createdById ||
+            p.createdById === DEFAULT_PORSCAD_USER_ID ||
+            p.createdById === 'admin' ||
+            p.createdById.startsWith('usr_') ||
+            p.createdById.startsWith('usr-'),
+        );
+      }
     }
   } catch {}
   return [];
@@ -56,6 +70,20 @@ function savePersistedPolls(polls: any[]) {
 
 const inMemoryPolls: any[] = loadPersistedPolls();
 const inMemoryVotes: any[] = [];
+
+function sanitizePollForRole(poll: any, role?: string) {
+  if (!poll) return poll;
+  if (canViewPollResults(role)) return poll;
+
+  const sanitizedOptions = Array.isArray(poll.options)
+    ? poll.options.map((opt: any) => ({ ...opt, voteCount: 0 }))
+    : poll.options;
+
+  return {
+    ...poll,
+    options: sanitizedOptions,
+  };
+}
 
 @Injectable()
 export class PollsService {
@@ -79,17 +107,53 @@ export class PollsService {
   }
 
   async createPoll(tenantId: string, createdById: string, dto: CreatePollDto) {
-    const questions = Array.isArray(dto.questions) ? dto.questions : [];
+    const rawQuestions = Array.isArray(dto.questions) ? dto.questions : [];
     const options = dto.options || [];
+
+    const questionIds =
+      (dto.porscadMeta?.questionIds as string[] | undefined) ||
+      (dto as { porscadQuestionIds?: string[] }).porscadQuestionIds ||
+      [];
+
+    const questions = rawQuestions.map((q, index) => {
+      let qOptions = Array.isArray(q.options) ? q.options.filter((o: any) => typeof o === 'string' && o.trim() !== '') : [];
+      if (q.type === 'likert' && qOptions.length < 2) {
+        qOptions = [
+          'کاملاً موافق',
+          'موافق',
+          'ممتنع / خنثی',
+          'مخالف',
+          'کاملاً مخالف',
+        ];
+      } else if (q.type === 'yes_no' && qOptions.length < 2) {
+        qOptions = ['بله', 'خیر'];
+      } else if (q.type === 'statement' || q.type === 'group') {
+        qOptions = [];
+      }
+
+      const porscadQId =
+        (q as any).porscadQuestionId ||
+        questionIds[index] ||
+        null;
+
+      return {
+        ...q,
+        options: qOptions,
+        maxSelections: q.maxSelections ?? (q.type === 'choice' ? 1 : undefined),
+        required: q.type === 'statement' || q.type === 'group' ? false : (q.required ?? true),
+        displayMode: q.displayMode ?? 'buttons',
+        porscadQuestionId: porscadQId,
+      };
+    });
 
     if (questions.length === 0) {
       if (options.length < 2 && dto.pollType !== 'RATING_SCALE') {
         throw new BadRequestException('نظرسنجی باید حداقل دارای ۲ گزینه باشد');
       }
     } else {
+      const MUST_HAVE_OPTIONS = new Set(['choice', 'picture_choice', 'dropdown', 'ranking', 'matrix']);
       for (const q of questions) {
-        const needsOptions = OPTION_TYPES.has(q.type);
-        if (needsOptions && (!q.options || q.options.length < 2)) {
+        if (MUST_HAVE_OPTIONS.has(q.type) && (!q.options || q.options.length < 2)) {
           throw new BadRequestException(
             `سوال «${q.title}» باید حداقل ۲ گزینه داشته باشد`,
           );
@@ -97,18 +161,10 @@ export class PollsService {
       }
     }
 
-    const questionIds =
-      (dto.porscadMeta?.questionIds as string[] | undefined) ||
-      (dto as { porscadQuestionIds?: string[] }).porscadQuestionIds ||
-      [];
-
-    const questionsJson = questions.map((q, index) => ({
-      ...q,
-      maxSelections: q.maxSelections ?? (q.type === 'choice' ? 1 : undefined),
-      required: q.required ?? true,
-      displayMode: q.displayMode ?? 'buttons',
-      porscadQuestionId: questionIds[index] || null,
-    }));
+    const start = dto.startDate ? new Date(dto.startDate) : new Date();
+    const end = dto.endDate ? new Date(dto.endDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const validStart = isNaN(start.getTime()) ? new Date() : start;
+    const validEnd = isNaN(end.getTime()) ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : end;
 
     try {
       const created = await this.prisma.poll.create({
@@ -119,11 +175,11 @@ export class PollsService {
           pollType: dto.pollType || 'SINGLE_CHOICE',
           targetAudience: dto.targetAudience || 'ALL',
           targetClassIds: dto.targetClassIds || [],
-          startDate: new Date(dto.startDate),
-          endDate: new Date(dto.endDate),
+          startDate: validStart,
+          endDate: validEnd,
           isAnonymous: dto.isAnonymous || false,
           createdById,
-          questions: questionsJson as any,
+          questions: questions as any,
           porscadFormId: dto.porscadFormId,
           porscadFormPublicId: dto.porscadFormPublicId,
           options: {
@@ -160,13 +216,13 @@ export class PollsService {
         pollType: dto.pollType || 'SINGLE_CHOICE',
         targetAudience: dto.targetAudience || 'ALL',
         targetClassIds: dto.targetClassIds || [],
-        startDate: new Date(dto.startDate),
-        endDate: new Date(dto.endDate),
+        startDate: validStart,
+        endDate: validEnd,
         isClosed: false,
         isArchived: false,
         isAnonymous: dto.isAnonymous || false,
         createdById,
-        questions: questionsJson,
+        questions: questions as any,
         porscadFormId: dto.porscadFormId || null,
         porscadFormPublicId: dto.porscadFormPublicId || null,
         options: (options.length > 0 ? options : questions.flatMap((q) => (q.options || []).map((text) => ({ text })))).map((opt, i) => ({
@@ -198,7 +254,7 @@ export class PollsService {
       if (list.length === 0) {
         try {
           const res = await fetch(
-            'https://pivwmyacpxdywevccpmw.supabase.co/rest/v1/forms?select=*,questions(*)&deleted_at=is.null&order=created_at.desc&limit=30',
+            `https://pivwmyacpxdywevccpmw.supabase.co/rest/v1/forms?select=*,questions(*)&created_by=eq.${DEFAULT_PORSCAD_USER_ID}&deleted_at=is.null&order=created_at.desc&limit=30`,
             {
               headers: {
                 apikey:
@@ -265,15 +321,16 @@ export class PollsService {
         }
       }
 
-      return list.filter((p) => {
+      const filtered = list.filter((p) => {
         if (p.isArchived) return false;
         if (!audience) return true;
         return p.targetAudience === 'ALL' || p.targetAudience === audience;
       });
+      return filtered.map((p) => sanitizePollForRole(p, role));
     }
 
     try {
-      return await this.prisma.poll.findMany({
+      const items = await this.prisma.poll.findMany({
         where,
         include: {
           options: { orderBy: { orderIndex: 'asc' } },
@@ -284,13 +341,14 @@ export class PollsService {
         },
         orderBy: { createdAt: 'desc' },
       });
+      return items.map((p) => sanitizePollForRole(p, role));
     } catch (err: any) {
       console.warn('⚠️ [PollsService.listPolls] DB offline fallback:', err?.message || err);
       let list = inMemoryPolls.length > 0 ? inMemoryPolls : loadPersistedPolls();
       if (list.length === 0) {
         try {
           const res = await fetch(
-            'https://pivwmyacpxdywevccpmw.supabase.co/rest/v1/forms?select=*,questions(*)&deleted_at=is.null&order=created_at.desc&limit=30',
+            `https://pivwmyacpxdywevccpmw.supabase.co/rest/v1/forms?select=*,questions(*)&created_by=eq.${DEFAULT_PORSCAD_USER_ID}&deleted_at=is.null&order=created_at.desc&limit=30`,
             {
               headers: {
                 apikey:
@@ -357,11 +415,12 @@ export class PollsService {
         }
       }
 
-      return list.filter((p) => {
+      const filtered = list.filter((p) => {
         if (p.isArchived) return false;
         if (!audience) return true;
         return p.targetAudience === 'ALL' || p.targetAudience === audience;
       });
+      return filtered.map((p) => sanitizePollForRole(p, role));
     }
   }
 
@@ -467,7 +526,7 @@ export class PollsService {
     }
   }
 
-  async getPollDetails(tenantId: string, pollId: string, userId?: string) {
+  async getPollDetails(tenantId: string, pollId: string, userId?: string, role?: string) {
     try {
       const poll = await this.prisma.poll.findFirst({
         where: { id: pollId, tenantId },
@@ -491,9 +550,10 @@ export class PollsService {
         : null;
 
       const { votes: _votes, ...rest } = poll as any;
+      const sanitizedPoll = sanitizePollForRole(rest, role);
 
       return {
-        poll: rest,
+        poll: sanitizedPoll,
         hasVoted: !!userVote,
         userVote: userVote
           ? {
@@ -511,8 +571,9 @@ export class PollsService {
       const userVote = userId
         ? inMemoryVotes.find((v) => v.pollId === pollId && v.userId === userId)
         : null;
+      const sanitizedPoll = sanitizePollForRole(poll, role);
       return {
-        poll,
+        poll: sanitizedPoll,
         hasVoted: !!userVote,
         userVote: userVote
           ? {
@@ -531,6 +592,7 @@ export class PollsService {
     userId: string,
     respondentName: string,
     dto: SubmitPollAnswersDto,
+    role?: string,
   ) {
     try {
       const poll = await this.prisma.poll.findFirst({
@@ -540,13 +602,22 @@ export class PollsService {
         throw new NotFoundException('نظرسنجی یافت نشد');
       }
 
+      if (poll.targetAudience !== 'ALL' && role) {
+        const aud = this.audienceForRole(role);
+        if (aud && poll.targetAudience !== aud) {
+          throw new BadRequestException(
+            `شما دسترسی لازم برای شرکت در این نظرسنجی را ندارید (مختص ${poll.targetAudience === 'STUDENTS' ? 'دانش‌آموزان' : poll.targetAudience === 'PARENTS' ? 'اولیا' : poll.targetAudience === 'TEACHERS' ? 'معلمان' : 'کادر مدرسه'})`,
+          );
+        }
+      }
+
       const now = new Date();
       if (poll.isArchived) {
         throw new BadRequestException('این نظرسنجی آرشیو شده و پذیرش پاسخ نیست');
       }
       if (now < poll.startDate || now > poll.endDate || poll.isClosed) {
         throw new BadRequestException(
-          'مهلت شرکت در این نظرسنجی به پایان رسیده یا هنوز آغاز نشده است',
+          'مهلت شرکت در این نظرسنجی به پایان رسیده یا نظرسنجی غیرفعال شده است',
         );
       }
 
@@ -573,7 +644,7 @@ export class PollsService {
             pollId,
             userId,
             selectedOptionIds,
-            ratingValue: typeof firstNumeric === 'number' ? firstNumeric : null,
+            ratingValue: typeof firstNumeric === 'number' && Number.isFinite(firstNumeric) ? Math.round(firstNumeric) : null,
             textResponse:
               typeof dto.answers?.comment === 'string'
                 ? dto.answers.comment
@@ -629,7 +700,11 @@ export class PollsService {
     }
   }
 
-  async getAnalytics(tenantId: string, pollId: string) {
+  async getAnalytics(tenantId: string, pollId: string, role?: string) {
+    if (role && !canViewPollResults(role)) {
+      throw new ForbiddenException('شما دسترسی لازم برای مشاهده نتایج و آمار این نظرسنجی را ندارید');
+    }
+
     try {
       const poll = await this.prisma.poll.findFirst({
         where: { id: pollId, tenantId },
@@ -642,7 +717,7 @@ export class PollsService {
         throw new NotFoundException('نظرسنجی یافت نشد');
       }
 
-      const votes = await this.prisma.pollVote.findMany({
+      let votes = await this.prisma.pollVote.findMany({
         where: { pollId, tenantId },
         orderBy: { createdAt: 'desc' },
         select: {
@@ -659,14 +734,98 @@ export class PollsService {
         },
       });
 
+      if (votes.length === 0 && poll.porscadFormId) {
+        const porscadVotes = await this.fetchPorscadLiveResponses(poll);
+        if (porscadVotes.length > 0) {
+          return this.formatAnalyticsData(poll, porscadVotes);
+        }
+      }
+
       return this.formatAnalyticsData(poll, votes);
     } catch (err: any) {
-      if (err instanceof NotFoundException) throw err;
+      if (err instanceof NotFoundException || err instanceof ForbiddenException) throw err;
       console.warn('⚠️ [PollsService.getAnalytics] DB offline fallback:', err?.message || err);
       const poll = inMemoryPolls.find((p) => p.id === pollId && p.tenantId === tenantId);
       if (!poll) throw new NotFoundException('نظرسنجی یافت نشد');
-      const votes = inMemoryVotes.filter((v) => v.pollId === pollId && v.tenantId === tenantId);
+      let votes = inMemoryVotes.filter((v) => v.pollId === pollId && v.tenantId === tenantId);
+
+      if (votes.length === 0 && poll.porscadFormId) {
+        const porscadVotes = await this.fetchPorscadLiveResponses(poll);
+        if (porscadVotes.length > 0) {
+          return this.formatAnalyticsData(poll, porscadVotes);
+        }
+      }
+
       return this.formatAnalyticsData(poll, votes);
+    }
+  }
+
+  private async fetchPorscadLiveResponses(poll: any): Promise<any[]> {
+    if (!poll.porscadFormId) return [];
+    try {
+      const questions = (poll.questions as unknown as SurveyQuestion[]) || [];
+      let qIds = questions.map((q) => q.porscadQuestionId).filter(Boolean) as string[];
+
+      if (qIds.length === 0) {
+        const qRes = await fetch(
+          `https://pivwmyacpxdywevccpmw.supabase.co/rest/v1/questions?form_id=eq.${poll.porscadFormId}&select=id,title,type,options,position&order=position.asc`,
+          {
+            headers: {
+              apikey:
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdndteWFjcHhkeXdldmNjcG13Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzY2MjU1MSwiZXhwIjoyMTAzMjM4NTUxfQ.WqnDBvpwIOtDOBn7pHKozf0WzpF-S7F5nq7FB4aCPl0',
+              Authorization:
+                'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdndteWFjcHhkeXdldmNjcG13Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzY2MjU1MSwiZXhwIjoyMTAzMjM4NTUxfQ.WqnDBvpwIOtDOBn7pHKozf0WzpF-S7F5nq7FB4aCPl0',
+            },
+          },
+        );
+        if (qRes.ok) {
+          const qRows = await qRes.json();
+          if (Array.isArray(qRows) && qRows.length > 0) {
+            qIds = qRows.map((r: any) => r.id);
+          }
+        }
+      }
+
+      if (qIds.length === 0) return [];
+
+      const aRes = await fetch(
+        `https://pivwmyacpxdywevccpmw.supabase.co/rest/v1/answers?question_id=in.("${qIds.join('","')}")&select=id,response_id,question_id,value,time_spent_seconds`,
+        {
+          headers: {
+            apikey:
+              'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdndteWFjcHhkeXdldmNjcG13Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzY2MjU1MSwiZXhwIjoyMTAzMjM4NTUxfQ.WqnDBvpwIOtDOBn7pHKozf0WzpF-S7F5nq7FB4aCPl0',
+            Authorization:
+              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdndteWFjcHhkeXdldmNjcG13Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzY2MjU1MSwiZXhwIjoyMTAzMjM4NTUxfQ.WqnDBvpwIOtDOBn7pHKozf0WzpF-S7F5nq7FB4aCPl0',
+          },
+        },
+      );
+
+      if (!aRes.ok) return [];
+      const aRows = await aRes.json();
+      if (!Array.isArray(aRows) || aRows.length === 0) return [];
+
+      const byResp: Record<string, any> = {};
+      for (const a of aRows) {
+        const rId = a.response_id || `r_${a.id}`;
+        if (!byResp[rId]) {
+          byResp[rId] = {
+            id: rId,
+            userId: null,
+            respondentName: 'کاربر پرس‌کاد',
+            answers: {},
+            porscadResponseId: rId,
+            createdAt: new Date(),
+          };
+        }
+        const qIdx = qIds.indexOf(a.question_id);
+        const key = qIdx >= 0 ? String(qIdx) : a.question_id;
+        byResp[rId].answers[key] = a.value;
+      }
+
+      return Object.values(byResp);
+    } catch (err) {
+      console.warn('⚠️ [PollsService.fetchPorscadLiveResponses] Live fetch error:', err);
+      return [];
     }
   }
 
@@ -778,6 +937,7 @@ export class PollsService {
     pollId: string,
     userId: string,
     dto: CastVoteDto,
+    role?: string,
   ) {
     try {
       const poll = await this.prisma.poll.findFirst({
@@ -787,13 +947,22 @@ export class PollsService {
         throw new NotFoundException('نظرسنجی یافت نشد');
       }
 
+      if (poll.targetAudience !== 'ALL' && role) {
+        const aud = this.audienceForRole(role);
+        if (aud && poll.targetAudience !== aud) {
+          throw new BadRequestException(
+            `شما دسترسی لازم برای شرکت در این نظرسنجی را ندارید (مختص ${poll.targetAudience === 'STUDENTS' ? 'دانش‌آموزان' : poll.targetAudience === 'PARENTS' ? 'اولیا' : poll.targetAudience === 'TEACHERS' ? 'معلمان' : 'کادر مدرسه'})`,
+          );
+        }
+      }
+
       const now = new Date();
       if (poll.isArchived) {
         throw new BadRequestException('این نظرسنجی آرشیو شده و پذیرش رأی نیست');
       }
       if (now < poll.startDate || now > poll.endDate || poll.isClosed) {
         throw new BadRequestException(
-          'مهلت شرکت در این نظرسنجی به پایان رسیده یا هنوز آغاز نشده است',
+          'مهلت شرکت در این نظرسنجی به پایان رسیده یا نظرسنجی غیرفعال شده است',
         );
       }
 
@@ -811,7 +980,7 @@ export class PollsService {
             pollId,
             userId,
             selectedOptionIds: dto.selectedOptionIds || [],
-            ratingValue: dto.ratingValue,
+            ratingValue: typeof dto.ratingValue === 'number' && Number.isFinite(dto.ratingValue) ? Math.round(dto.ratingValue) : null,
             textResponse: dto.textResponse,
           },
         });

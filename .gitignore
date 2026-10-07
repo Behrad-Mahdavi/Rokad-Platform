@@ -44,6 +44,8 @@ scratch/
 *.sql
 *.xlsx
 .polls_dev_store.json
+.calendar_events_dev_store.json
+.*_dev_store.json
 
 # Local scripts & templates (kept locally for reference)
 scripts/*

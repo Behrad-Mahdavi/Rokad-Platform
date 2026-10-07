@@ -60,6 +60,10 @@ interface EventTeamFormationStepProps {
   eventId: string;
   eventTitle: string;
   ideas: EventIdea[];
+  isEventEnded?: boolean;
+  onAddIdea?: (newIdea: EventIdea) => void;
+  onUpdateIdea?: (updatedIdea: EventIdea) => void;
+  onDeleteIdea?: (ideaId: string) => void;
 }
 
 // Default Fallback Database Students List (names only — no class labels)
@@ -113,14 +117,56 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
   eventId,
   eventTitle,
   ideas,
+  isEventEnded = false,
+  onAddIdea,
+  onUpdateIdea,
+  onDeleteIdea,
 }) => {
   const currentUser = useAuthStore((s) => s.user);
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(currentUser?.role || '');
+  const isParent = currentUser?.role === 'PARENT';
+  const isStudent = currentUser?.role === 'STUDENT';
   const currentUserName = currentUser ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() : 'دانش‌آموز';
 
   // DB Students list state
   const [dbStudents, setDbStudents] = useState<Array<{ id: string; name: string }>>(FALLBACK_DB_STUDENTS);
   const [searchStudentQuery, setSearchStudentQuery] = useState('');
+
+  // Admin Custom Activated Teams State
+  const customTeamsKey = `rokad_event_custom_teams_${eventId}`;
+  const [customActiveIdeaIds, setCustomActiveIdeaIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(customTeamsKey);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(customTeamsKey, JSON.stringify(customActiveIdeaIds));
+    } catch {}
+  }, [customActiveIdeaIds, customTeamsKey]);
+
+  const [showAllIdeasForAdmin, setShowAllIdeasForAdmin] = useState(false);
+
+  // Change Leader Modal State
+  const [isChangeLeaderModalOpen, setIsChangeLeaderModalOpen] = useState(false);
+  const [activeIdeaForLeaderChange, setActiveIdeaForLeaderChange] = useState<EventIdea | null>(null);
+  const [selectedNewLeaderName, setSelectedNewLeaderName] = useState('');
+  const [customNewLeaderInput, setCustomNewLeaderInput] = useState('');
+  const [leaderSearchQuery, setLeaderSearchQuery] = useState('');
+
+  // Add Team Modal State
+  const [isAddTeamModalOpen, setIsAddTeamModalOpen] = useState(false);
+  const [addTeamTab, setAddTeamTab] = useState<'EXISTING' | 'NEW'>('EXISTING');
+  const [selectedExistingIdeaId, setSelectedExistingIdeaId] = useState('');
+  const [newTeamTitle, setNewTeamTitle] = useState('');
+  const [newTeamDescription, setNewTeamDescription] = useState('');
+  const [newTeamLeaderStudentId, setNewTeamLeaderStudentId] = useState('');
+  const [newTeamLeaderCustomName, setNewTeamLeaderCustomName] = useState('');
+  const [newTeamIdeaNumber, setNewTeamIdeaNumber] = useState<number>(1);
 
   // Teams state per idea
   const teamsStorageKey = `rokad_event_teams_${eventId}`;
@@ -158,10 +204,17 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
     }
     const baseList = Array.from(dedupMap.values());
 
-    // 2. If this is the specific girls event, strictly show ONLY the 7 winning teams!
+    // If manager toggles Show All Ideas, show all ideas in teams grid
+    if (showAllIdeasForAdmin) {
+      return [...baseList].sort((a, b) => (a.ideaNumber || 0) - (b.ideaNumber || 0));
+    }
+
+    // 2. If this is the specific girls event, strictly show winning teams + any custom added teams
     if (eventId === '609775c5-ad77-43bb-8065-1aafc5bad547') {
       const targetWinningNumbers = new Set(WINNING_IDEA_NUMBERS_609775C5);
-      const filtered = baseList.filter((i) => i.ideaNumber && targetWinningNumbers.has(i.ideaNumber));
+      const filtered = baseList.filter(
+        (i) => (i.ideaNumber && targetWinningNumbers.has(i.ideaNumber)) || customActiveIdeaIds.includes(i.id)
+      );
 
       for (const winNum of WINNING_IDEA_NUMBERS_609775C5) {
         if (!filtered.some((i) => i.ideaNumber === winNum)) {
@@ -213,6 +266,8 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
     const matched = baseList.filter(
       (idea) =>
         winningIdeaIds.has(idea.id) ||
+        customActiveIdeaIds.includes(idea.id) ||
+        Boolean(teamsMap[idea.id]?.members?.length) ||
         topWinningOptions.some((o) => o.text && o.text.includes(idea.title))
     );
 
@@ -226,7 +281,7 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
       if (!aIsOwn && bIsOwn) return 1;
       return (a.ideaNumber || 0) - (b.ideaNumber || 0);
     });
-  }, [eventId, ideas, currentUser, teamsMap]);
+  }, [eventId, ideas, currentUser, teamsMap, customActiveIdeaIds, showAllIdeasForAdmin]);
 
   // Save teams state to localStorage & sync to server
   useEffect(() => {
@@ -350,8 +405,154 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
     };
   };
 
+  // Open change leader modal
+  const handleOpenChangeLeaderModal = (idea: EventIdea, team: IdeaTeam) => {
+    setActiveIdeaForLeaderChange(idea);
+    setSelectedNewLeaderName(team.leaderName || idea.authorName);
+    setCustomNewLeaderInput('');
+    setLeaderSearchQuery('');
+    setIsChangeLeaderModalOpen(true);
+  };
+
+  // Save leader change
+  const handleSaveLeaderChange = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeIdeaForLeaderChange) return;
+
+    const newLeader = customNewLeaderInput.trim() || selectedNewLeaderName.trim();
+    if (!newLeader) {
+      toast.error('لطفاً نام سرگروه جدید را مشخص نمایید.');
+      return;
+    }
+
+    const currentTeam = getIdeaTeam(activeIdeaForLeaderChange);
+    // Remove new leader from member list if they were an existing member
+    const updatedMembers = currentTeam.members.filter(
+      (m) => m.name.trim().toLowerCase() !== newLeader.trim().toLowerCase()
+    );
+
+    const updatedTeam: IdeaTeam = {
+      ...currentTeam,
+      leaderName: newLeader,
+      members: updatedMembers,
+    };
+
+    setTeamsMap((prev) => ({
+      ...prev,
+      [activeIdeaForLeaderChange.id]: updatedTeam,
+    }));
+
+    if (onUpdateIdea) {
+      onUpdateIdea({
+        ...activeIdeaForLeaderChange,
+        authorName: newLeader,
+      });
+    }
+
+    setIsChangeLeaderModalOpen(false);
+    setActiveIdeaForLeaderChange(null);
+    toast.success(`سرگروه تیم «${activeIdeaForLeaderChange.title}» با موفقیت به «${newLeader}» تغییر یافت.`);
+  };
+
+  // Add existing idea to team formation
+  const handleAddExistingIdeaAsTeam = () => {
+    if (!selectedExistingIdeaId) {
+      toast.error('لطفاً یکی از ایده‌ها را انتخاب نمایید.');
+      return;
+    }
+    const targetIdea = ideas.find((i) => i.id === selectedExistingIdeaId);
+    if (!targetIdea) return;
+
+    if (!customActiveIdeaIds.includes(targetIdea.id)) {
+      setCustomActiveIdeaIds((prev) => [...prev, targetIdea.id]);
+    }
+
+    if (!teamsMap[targetIdea.id]) {
+      setTeamsMap((prev) => ({
+        ...prev,
+        [targetIdea.id]: {
+          ideaId: targetIdea.id,
+          ideaNumber: targetIdea.ideaNumber || 1,
+          ideaTitle: targetIdea.title,
+          leaderName: targetIdea.authorName,
+          members: [],
+          isApprovedByAdmin: false,
+        },
+      }));
+    }
+
+    setIsAddTeamModalOpen(false);
+    setSelectedExistingIdeaId('');
+    toast.success(`ایده شماره ${toPersianDigits(targetIdea.ideaNumber || 1)} به لیست تیم‌های فعال افزوده شد.`);
+  };
+
+  // Create brand new idea and team directly
+  const handleCreateBrandNewTeam = (e: React.FormEvent) => {
+    e.preventDefault();
+    const leaderStudent = dbStudents.find((s) => s.id === newTeamLeaderStudentId);
+    const leaderName = leaderStudent ? leaderStudent.name : newTeamLeaderCustomName.trim();
+
+    if (!newTeamTitle.trim()) {
+      toast.error('لطفاً عنوان ایده/تیم را وارد کنید.');
+      return;
+    }
+    if (!leaderName) {
+      toast.error('لطفاً نام سرگروه تیم را مشخص کنید.');
+      return;
+    }
+
+    const nextNum =
+      newTeamIdeaNumber > 0
+        ? newTeamIdeaNumber
+        : Math.max(0, ...ideas.map((i) => i.ideaNumber || 0)) + 1;
+    const newIdeaId = 'idea_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+
+    const newIdea: EventIdea = {
+      id: newIdeaId,
+      eventId,
+      ideaNumber: nextNum,
+      title: newTeamTitle.trim(),
+      description: newTeamDescription.trim() || 'ایده ثبت‌شده در مرحله تشکیل تیم توسط ادمین',
+      authorName: leaderName,
+      authorRole: 'دانش‌آموز',
+      createdAt: new Date().toISOString(),
+      status: 'APPROVED',
+      starRatings: [],
+    };
+
+    if (onAddIdea) {
+      onAddIdea(newIdea);
+    }
+
+    setTeamsMap((prev) => ({
+      ...prev,
+      [newIdeaId]: {
+        ideaId: newIdeaId,
+        ideaNumber: nextNum,
+        ideaTitle: newTeamTitle.trim(),
+        leaderName: leaderName,
+        members: [],
+        isApprovedByAdmin: false,
+      },
+    }));
+
+    setCustomActiveIdeaIds((prev) => [...prev, newIdeaId]);
+
+    setIsAddTeamModalOpen(false);
+    setNewTeamTitle('');
+    setNewTeamDescription('');
+    setNewTeamLeaderStudentId('');
+    setNewTeamLeaderCustomName('');
+    toast.success(`تیم و ایده جدید «${newIdea.title}» با سرگروهی «${leaderName}» ایجاد شد.`);
+  };
+
   // Add Member to Idea Team
   const handleAddMember = (idea: EventIdea) => {
+    if (isParent || (!isStudent && !isManager)) {
+      toast.error('انتخاب و مدیریت اعضای تیم فقط مختص سرپرست تیم (دانش‌آموز) و مدیران است.');
+      return;
+    }
+
     const targetStudent = dbStudents.find((s) => s.id === selectedStudentId);
     const candidateName = targetStudent ? targetStudent.name : customStudentName.trim();
     const candidateId = targetStudent ? targetStudent.id : 'custom_' + Date.now();
@@ -403,6 +604,11 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
 
   // Add Member directly from list without closing modal
   const handleAddMemberDirectly = (idea: EventIdea, student: { id: string; name: string }) => {
+    if (isParent || (!isStudent && !isManager)) {
+      toast.error('انتخاب و مدیریت اعضای تیم فقط مختص سرپرست تیم (دانش‌آموز) و مدیران است.');
+      return;
+    }
+
     const candidateName = student.name;
     const candidateId = student.id;
 
@@ -446,6 +652,11 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
 
   // Remove Member from Idea Team
   const handleRemoveMember = (ideaId: string, memberId: string, memberName: string) => {
+    if (isParent || (!isStudent && !isManager)) {
+      toast.error('ویرایش ترکیب تیم فقط مختص سرپرست تیم و مدیران است.');
+      return;
+    }
+
     const currentTeam = teamsMap[ideaId];
     if (!currentTeam) return;
 
@@ -549,12 +760,46 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
               اعضای تیم ایده خود را مشخص و ترکیب تیم را نهایی کنید.
             </p>
           </div>
+
+          {isManager && !isEventEnded && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAllIdeasForAdmin((prev) => !prev)}
+                className="gap-1.5 text-xs font-bold"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                <span>{showAllIdeasForAdmin ? 'نمایش فقط برگزیدگان' : 'نمایش تمام ایده‌ها'}</span>
+              </Button>
+
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  setIsAddTeamModalOpen(true);
+                  setNewTeamIdeaNumber(Math.max(0, ...ideas.map((i) => i.ideaNumber || 0)) + 1);
+                }}
+                className="gap-1.5 text-xs font-bold"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>افزودن تیم جدید</span>
+              </Button>
+            </div>
+          )}
         </div>
 
         {isManager && (
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-primary/20 bg-primary/10 text-primary text-xs font-bold shadow-2xs">
             <ShieldCheck className="w-4 h-4 text-primary" />
-            <span>پنل راهبر: امکان ویرایش اعضا و تایید نهایی برای شما فعال است</span>
+            <span>پنل راهبر: افزودن تیم جدید، تغییر سرگروه، ویرایش اعضا و تایید نهایی برای شما فعال است</span>
+          </div>
+        )}
+
+        {isParent && (
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-blue-600 bg-blue-50 text-blue-900 dark:bg-blue-950 dark:text-blue-200 text-xs font-black">
+            <Users className="w-4 h-4 text-blue-600" />
+            <span>حالت مشاهده‌گر اولیاء: ترکیب تیم‌ها و اعضا در حالت نمایشی</span>
           </div>
         )}
       </div>
@@ -569,13 +814,26 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
           <p className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
             بخش تشکیل تیم صرفاً برای ایده‌های منتخب پس از پایان نظرسنجی فعال می‌شود. پس از اتمام رای‌گیری و تعیین ایده‌های برتر توسط راهبر، ایده‌های برگزیده جهت تیم‌سازی در این بخش قرار خواهند گرفت.
           </p>
+          {isManager && !isEventEnded && (
+            <div className="pt-2">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setIsAddTeamModalOpen(true)}
+                className="gap-1.5 text-xs font-bold mx-auto"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>افزودن تیم جدید توسط ادمین</span>
+              </Button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {winningIdeas.map((idea) => {
             const team = getIdeaTeam(idea);
-            const isLeader = !isManager && !!currentUser && isOwnedByUser(idea.authorName, currentUser);
-            const canEditTeam = isManager || (isLeader && !team.isApprovedByAdmin);
+            const isLeader = isStudent && !!currentUser && isOwnedByUser(idea.authorName, currentUser);
+            const canEditTeam = !isEventEnded && !isParent && (isManager || (isLeader && !team.isApprovedByAdmin));
 
             return (
               <div
@@ -617,26 +875,42 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                   </div>
 
                   {/* Leader Info */}
-                  <div className="p-3.5 rounded-xl border border-amber-200/80 dark:border-amber-900/60 bg-gradient-to-r from-amber-50/80 to-amber-50/30 dark:from-amber-950/30 dark:to-transparent flex items-center justify-between shadow-2xs">
-                    <div className="flex items-center gap-3">
+                  <div className="p-3.5 rounded-xl border border-amber-200/80 dark:border-amber-900/60 bg-gradient-to-r from-amber-50/80 to-amber-50/30 dark:from-amber-950/30 dark:to-transparent flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div className="w-9 h-9 rounded-xl border border-amber-400/40 bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold shadow-2xs shrink-0">
                         <Crown className="w-4 h-4" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <div className="text-[11px] font-bold text-amber-800/80 dark:text-amber-400/80">
                           سرگروه / صاحب ایده:
                         </div>
-                        <div className="text-xs sm:text-sm font-black text-ink-darker dark:text-white mt-0.5">
-                          {idea.authorName}
+                        <div className="text-xs sm:text-sm font-black text-ink-darker dark:text-white mt-0.5 truncate">
+                          {team.leaderName || idea.authorName}
                         </div>
                       </div>
                     </div>
 
-                    {isLeader && (
-                      <span className="px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-300 text-xs font-black border border-amber-500/30 shadow-2xs">
-                        شما سرگروه هستید
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {isLeader && (
+                        <span className="px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-300 text-xs font-black border border-amber-500/30 shadow-2xs">
+                          شما سرگروه هستید
+                        </span>
+                      )}
+
+                      {isManager && !isEventEnded && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenChangeLeaderModal(idea, team)}
+                          className="gap-1.5 text-xs font-bold py-1 px-2.5 rounded-xl h-8 border-amber-400/50 text-amber-800 dark:text-amber-200 hover:bg-amber-100/50 dark:hover:bg-amber-950/50"
+                          title="تغییر سرگروه این ایده/تیم"
+                        >
+                          <Crown className="w-3.5 h-3.5 text-amber-500" />
+                          <span>تغییر سرگروه</span>
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Team Members List */}
@@ -977,6 +1251,373 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
           </Modal>
         );
       })()}
+
+      {/* ================= MODAL: CHANGE TEAM LEADER (ADMIN) ================= */}
+      <Modal
+        isOpen={isChangeLeaderModalOpen}
+        onClose={() => {
+          setIsChangeLeaderModalOpen(false);
+          setActiveIdeaForLeaderChange(null);
+        }}
+        title={`تغییر سرگروه تیم «${activeIdeaForLeaderChange?.title || ''}»`}
+      >
+        {activeIdeaForLeaderChange && (() => {
+          const currentTeam = getIdeaTeam(activeIdeaForLeaderChange);
+          const filteredStudents = dbStudents.filter((std) =>
+            std.name.toLowerCase().includes(leaderSearchQuery.trim().toLowerCase())
+          );
+
+          return (
+            <form onSubmit={handleSaveLeaderChange} className="space-y-4 pt-1">
+              <div className="p-3.5 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-xs text-amber-900 dark:text-amber-200 space-y-1">
+                <div className="font-black flex items-center gap-1.5">
+                  <Crown className="w-4 h-4 text-amber-600" />
+                  <span>سرگروه فعلی: {currentTeam.leaderName || activeIdeaForLeaderChange.authorName}</span>
+                </div>
+                <p className="text-[11px] opacity-80">
+                  با تغییر سرگروه، دسترسی‌های مدیریت این تیم در پنل دانش‌آموزی به سرگروه جدید منتقل خواهد شد.
+                </p>
+              </div>
+
+              {/* Quick Select From Current Team Members */}
+              {currentTeam.members.length > 0 && (
+                <div className="space-y-2">
+                  <label className="block text-xs font-black text-ink-darker dark:text-white">
+                    انتخاب از میان اعضای فعلی تیم:
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {currentTeam.members.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedNewLeaderName(m.name);
+                          setCustomNewLeaderInput('');
+                        }}
+                        className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                          selectedNewLeaderName === m.name && !customNewLeaderInput
+                            ? 'border-primary bg-primary text-white shadow-2xs'
+                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-ink-darker dark:text-white hover:border-primary/40'
+                        }`}
+                      >
+                        <User className="w-3.5 h-3.5" />
+                        <span>{m.name}</span>
+                        <span className="text-[10px] opacity-70">({m.roleInTeam})</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Select from DB Students */}
+              <div className="space-y-2">
+                <label className="block text-xs font-black text-ink-darker dark:text-white">
+                  یا جستجو و انتخاب دانش‌آموز دیگر از سامانه:
+                </label>
+                <div className="relative">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="جستجوی نام دانش‌آموز..."
+                    value={leaderSearchQuery}
+                    onChange={(e) => setLeaderSearchQuery(e.target.value)}
+                    className="w-full pr-9 pl-3.5 h-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-xs font-medium text-ink-darker dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-2xs"
+                  />
+                </div>
+
+                <div className="max-h-36 overflow-y-auto border border-gray-200 dark:border-gray-800 rounded-xl p-1.5 space-y-1 bg-gray-50/50 dark:bg-[#1C2536]/30">
+                  {filteredStudents.length === 0 ? (
+                    <div className="p-3 text-center text-xs text-gray-400">دانش‌آموزی یافت نشد.</div>
+                  ) : (
+                    filteredStudents.map((std) => {
+                      const isSelected = selectedNewLeaderName === std.name && !customNewLeaderInput;
+                      return (
+                        <button
+                          key={std.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedNewLeaderName(std.name);
+                            setCustomNewLeaderInput('');
+                          }}
+                          className={`w-full flex items-center justify-between p-2 rounded-lg text-xs font-bold transition-all text-right cursor-pointer ${
+                            isSelected
+                              ? 'bg-primary/15 text-primary border border-primary/30'
+                              : 'text-ink-darker dark:text-white hover:bg-gray-100 dark:hover:bg-[#151C28]'
+                          }`}
+                        >
+                          <span>{std.name}</span>
+                          {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Manual Custom Input */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-black text-ink-darker dark:text-white">
+                  یا ورود دستی نام سرگروه جدید:
+                </label>
+                <input
+                  type="text"
+                  placeholder="نام و نام خانوادگی سرگروه جدید..."
+                  value={customNewLeaderInput}
+                  onChange={(e) => {
+                    setCustomNewLeaderInput(e.target.value);
+                    if (e.target.value) setSelectedNewLeaderName('');
+                  }}
+                  className="w-full px-3.5 h-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-xs font-medium text-ink-darker dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-2xs"
+                />
+              </div>
+
+              {/* Modal Footer Actions */}
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsChangeLeaderModalOpen(false);
+                    setActiveIdeaForLeaderChange(null);
+                  }}
+                  className="text-xs font-bold"
+                >
+                  انصراف
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className="text-xs font-black gap-1.5"
+                >
+                  <Crown className="w-3.5 h-3.5" />
+                  <span>ثبت و تغییر سرگروه</span>
+                </Button>
+              </div>
+            </form>
+          );
+        })()}
+      </Modal>
+
+      {/* ================= MODAL: ADD TEAM (ADMIN) ================= */}
+      <Modal
+        isOpen={isAddTeamModalOpen}
+        onClose={() => setIsAddTeamModalOpen(false)}
+        title="افزودن و فعال‌سازی تیم جدید (ادمین)"
+      >
+        <div className="space-y-4 pt-1">
+          {/* Tabs */}
+          <div className="flex gap-1 p-1 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200/60 dark:border-gray-700/60">
+            <button
+              type="button"
+              onClick={() => setAddTeamTab('EXISTING')}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                addTeamTab === 'EXISTING'
+                  ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs border border-primary/20'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-ink-darker dark:hover:text-white'
+              }`}
+            >
+              انتخاب از ایده‌های ثبت‌شده
+            </button>
+            <button
+              type="button"
+              onClick={() => setAddTeamTab('NEW')}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                addTeamTab === 'NEW'
+                  ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs border border-primary/20'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-ink-darker dark:hover:text-white'
+              }`}
+            >
+              ایجاد ایده و تیم جدید
+            </button>
+          </div>
+
+          {addTeamTab === 'EXISTING' ? (
+            /* Tab 1: Pick from existing ideas */
+            <div className="space-y-3">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                یکی از ایده‌های ثبت‌شده در رویداد را انتخاب نمایید تا به‌عنوان تیم فعال به این بخش اضافه گردد:
+              </p>
+
+              <div className="max-h-60 overflow-y-auto space-y-2 border border-gray-200 dark:border-gray-800 rounded-xl p-2 bg-gray-50/50 dark:bg-[#1C2536]/30">
+                {ideas.length === 0 ? (
+                  <div className="p-4 text-center text-xs text-gray-400">ایده‌ای در رویداد ثبت نشده است.</div>
+                ) : (
+                  ideas.map((idea) => {
+                    const isAlreadyTeam = winningIdeas.some((w) => w.id === idea.id);
+                    const isSelected = selectedExistingIdeaId === idea.id;
+
+                    return (
+                      <div
+                        key={idea.id}
+                        onClick={() => {
+                          if (!isAlreadyTeam) setSelectedExistingIdeaId(idea.id);
+                        }}
+                        className={`p-3 rounded-xl border flex items-center justify-between gap-3 transition-all ${
+                          isAlreadyTeam
+                            ? 'border-gray-200/60 dark:border-gray-800 bg-gray-100/60 dark:bg-gray-800/40 opacity-60'
+                            : isSelected
+                            ? 'border-primary bg-primary/10 ring-2 ring-primary/30 cursor-pointer'
+                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] hover:border-primary/40 cursor-pointer'
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[11px] font-bold">
+                              ایده #{toPersianDigits(idea.ideaNumber || 1)}
+                            </span>
+                            <span className="text-xs font-bold text-ink-darker dark:text-white truncate">
+                              {idea.title}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-gray-400 mt-1">
+                            سرگروه / صاحب ایده: {idea.authorName}
+                          </div>
+                        </div>
+
+                        <div className="shrink-0">
+                          {isAlreadyTeam ? (
+                            <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>تیم فعال</span>
+                            </span>
+                          ) : isSelected ? (
+                            <span className="px-2.5 py-1 rounded-lg bg-primary text-white text-xs font-bold">
+                              انتخاب شد
+                            </span>
+                          ) : (
+                            <span className="text-xs font-bold text-primary">انتخاب</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddTeamModalOpen(false)}
+                  className="text-xs font-bold"
+                >
+                  انصراف
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  disabled={!selectedExistingIdeaId}
+                  onClick={handleAddExistingIdeaAsTeam}
+                  className="text-xs font-black"
+                >
+                  افزودن ایده انتخابی به تیم‌ها
+                </Button>
+              </div>
+            </div>
+          ) : (
+            /* Tab 2: Create Brand New Team and Idea */
+            <form onSubmit={handleCreateBrandNewTeam} className="space-y-3.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-black text-ink-darker dark:text-white mb-1">
+                    شماره ایده:
+                  </label>
+                  <input
+                    type="number"
+                    value={newTeamIdeaNumber}
+                    onChange={(e) => setNewTeamIdeaNumber(Number(e.target.value))}
+                    className="w-full px-3.5 h-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-xs font-medium text-ink-darker dark:text-white focus:border-primary outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black text-ink-darker dark:text-white mb-1">
+                    عنوان ایده و تیم:
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="عنوان تیم یا پروژه..."
+                    value={newTeamTitle}
+                    onChange={(e) => setNewTeamTitle(e.target.value)}
+                    className="w-full px-3.5 h-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-xs font-medium text-ink-darker dark:text-white focus:border-primary outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Select Leader */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-black text-ink-darker dark:text-white">
+                  سرگروه تیم (انتخاب از لیست دانش‌آموزان):
+                </label>
+                <select
+                  value={newTeamLeaderStudentId}
+                  onChange={(e) => {
+                    setNewTeamLeaderStudentId(e.target.value);
+                    if (e.target.value) setNewTeamLeaderCustomName('');
+                  }}
+                  className="w-full px-3.5 h-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-xs font-medium text-ink-darker dark:text-white focus:border-primary outline-none"
+                >
+                  <option value="">انتخاب از لیست دانش‌آموزان...</option>
+                  {dbStudents.map((std) => (
+                    <option key={std.id} value={std.id}>
+                      {std.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Or manual leader name */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-black text-ink-darker dark:text-white">
+                  یا ورود دستی نام سرگروه:
+                </label>
+                <input
+                  type="text"
+                  placeholder="نام و نام خانوادگی سرگروه..."
+                  value={newTeamLeaderCustomName}
+                  onChange={(e) => {
+                    setNewTeamLeaderCustomName(e.target.value);
+                    if (e.target.value) setNewTeamLeaderStudentId('');
+                  }}
+                  className="w-full px-3.5 h-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-xs font-medium text-ink-darker dark:text-white focus:border-primary outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-ink-darker dark:text-white mb-1">
+                  شرح و توضیحات ایده:
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="توضیحات کوتاه درباره ایده و تیم..."
+                  value={newTeamDescription}
+                  onChange={(e) => setNewTeamDescription(e.target.value)}
+                  className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#151C28] text-xs font-medium text-ink-darker dark:text-white focus:border-primary outline-none"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddTeamModalOpen(false)}
+                  className="text-xs font-bold"
+                >
+                  انصراف
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className="text-xs font-black"
+                >
+                  ایجاد و ثبت تیم
+                </Button>
+              </div>
+            </form>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 };

@@ -83,20 +83,23 @@ export const SuperAppHomePage: React.FC = () => {
   const [homeworkCount, setHomeworkCount] = useState<number>(0);
   const [examsCount, setExamsCount] = useState<number>(0);
   const [eventsCount, setEventsCount] = useState<number>(0);
+  const [pollsCount, setPollsCount] = useState<number>(0);
 
   useEffect(() => {
     const fetchQuickStats = async () => {
       try {
-        const [hwRes, exRes, messagesRes, eventsRes] = await Promise.allSettled([
+        const [hwRes, exRes, messagesRes, eventsRes, pollsRes] = await Promise.allSettled([
           apiClient.get('/homework'),
           apiClient.get('/exams'),
           apiClient.get('/messages/inbox?unreadOnly=true'),
           apiClient.get('/calendar/events'),
+          apiClient.get('/polls'),
         ]);
+
+        const now = Date.now();
 
         if (hwRes.status === 'fulfilled') {
           const list = Array.isArray(hwRes.value.data) ? hwRes.value.data : [];
-          const now = Date.now();
           const pendingCount = list.filter((hw: any) => {
             const hasSub = hw.submissions && hw.submissions.length > 0;
             if (hasSub) return false;
@@ -107,7 +110,6 @@ export const SuperAppHomePage: React.FC = () => {
         }
         if (exRes.status === 'fulfilled') {
           const list = Array.isArray(exRes.value.data) ? exRes.value.data : [];
-          const now = Date.now();
           const holdingCount = list.filter((e: any) => {
             const start = new Date(e.startTime).getTime();
             const end = new Date(e.endTime).getTime();
@@ -125,7 +127,24 @@ export const SuperAppHomePage: React.FC = () => {
         }
         if (eventsRes.status === 'fulfilled') {
           const list = Array.isArray(eventsRes.value.data) ? eventsRes.value.data : [];
-          setEventsCount(list.length);
+          const activeEvents = list.filter((ev: any) => {
+            if (ev.isArchived || ev.isCancelled || ev.status === 'CANCELLED' || ev.status === 'COMPLETED') {
+              return false;
+            }
+            const end = ev.endDate ? new Date(ev.endDate).getTime() : (ev.endTime ? new Date(ev.endTime).getTime() : 0);
+            return end ? end >= now : true;
+          }).length;
+          setEventsCount(activeEvents);
+        }
+        if (pollsRes.status === 'fulfilled') {
+          const list = Array.isArray(pollsRes.value.data) ? pollsRes.value.data : [];
+          const activePolls = list.filter((p: any) => {
+            if (p.isArchived || p.isClosed) return false;
+            const start = p.startDate ? new Date(p.startDate).getTime() : 0;
+            const end = p.endDate ? new Date(p.endDate).getTime() : 0;
+            return (start === 0 || now >= start) && (end === 0 || now <= end);
+          }).length;
+          setPollsCount(activePolls);
         }
       } catch {
         // silent fallback
@@ -397,6 +416,7 @@ export const SuperAppHomePage: React.FC = () => {
                 icon: Vote,
                 iconBg: 'bg-college-light dark:bg-[#38260D]',
                 iconColor: 'text-third dark:text-[#FBBF24]',
+                badge: pollsCount > 0 ? toPersianDigits(pollsCount) : undefined,
               },
               {
                 id: 'admin-club',
@@ -557,6 +577,7 @@ export const SuperAppHomePage: React.FC = () => {
                 icon: Vote,
                 iconBg: 'bg-college-light dark:bg-[#38260D]',
                 iconColor: 'text-third dark:text-[#FBBF24]',
+                badge: pollsCount > 0 ? toPersianDigits(pollsCount) : undefined,
               },
             ],
           },
@@ -663,6 +684,7 @@ export const SuperAppHomePage: React.FC = () => {
                 icon: Vote,
                 iconBg: 'bg-college-light dark:bg-[#38260D]',
                 iconColor: 'text-third dark:text-[#FBBF24]',
+                badge: pollsCount > 0 ? toPersianDigits(pollsCount) : undefined,
               },
               {
                 id: 'parent-club',
@@ -745,6 +767,7 @@ export const SuperAppHomePage: React.FC = () => {
                 icon: Vote,
                 iconBg: 'bg-college-light dark:bg-[#38260D]',
                 iconColor: 'text-third dark:text-[#FBBF24]',
+                badge: pollsCount > 0 ? toPersianDigits(pollsCount) : undefined,
               },
               {
                 id: 'coach-club',
@@ -867,6 +890,7 @@ export const SuperAppHomePage: React.FC = () => {
                 icon: Vote,
                 iconBg: 'bg-college-light dark:bg-[#38260D]',
                 iconColor: 'text-third dark:text-[#FBBF24]',
+                badge: pollsCount > 0 ? toPersianDigits(pollsCount) : undefined,
               },
               {
                 id: 'super-ka',
@@ -1008,6 +1032,7 @@ export const SuperAppHomePage: React.FC = () => {
       icon: Vote,
       iconBg: 'bg-college-light dark:bg-[#38260D]',
       iconColor: 'text-third dark:text-[#FBBF24]',
+      badge: pollsCount > 0 ? toPersianDigits(pollsCount) : undefined,
     },
   ];
 

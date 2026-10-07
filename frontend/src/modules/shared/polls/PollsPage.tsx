@@ -24,6 +24,11 @@ import {
 } from '../../../utils/jalali';
 import { PersianDatePicker } from '../../../components/ui/PersianDatePicker';
 import {
+  canViewPollResults,
+  canManagePolls,
+  canCreatePolls,
+} from './poll-access';
+import {
   Vote,
   Plus,
   CheckCircle2,
@@ -235,7 +240,8 @@ export const PollsPage: React.FC = () => {
   const { user } = useAuthStore();
   const [polls, setPolls] = useState<Poll[]>(() => {
     try {
-      const cached = sessionStorage.getItem('rokad_polls_cache');
+      sessionStorage.removeItem('rokad_polls_cache');
+      const cached = sessionStorage.getItem('rokad_polls_cache_v2');
       return cached ? JSON.parse(cached) : [];
     } catch {
       return [];
@@ -243,7 +249,7 @@ export const PollsPage: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState<boolean>(() => {
     try {
-      const cached = sessionStorage.getItem('rokad_polls_cache');
+      const cached = sessionStorage.getItem('rokad_polls_cache_v2');
       return !cached || JSON.parse(cached).length === 0;
     } catch {
       return true;
@@ -258,15 +264,9 @@ export const PollsPage: React.FC = () => {
   const [deleteTarget, setDeleteTarget] = useState<Poll | null>(null);
   const [isStatusBusy, setIsStatusBusy] = useState(false);
 
-  const isAdmin = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF', 'TEACHER', 'COACH'].includes(
-    user?.role || '',
-  );
-  const canCreate =
-    user?.role === 'SUPER_ADMIN' ||
-    user?.role === 'SCHOOL_ADMIN' ||
-    user?.role === 'STAFF' ||
-    user?.role === 'TEACHER' ||
-    user?.role === 'COACH';
+  const canViewResults = canViewPollResults(user?.role);
+  const isAdmin = canManagePolls(user?.role);
+  const canCreate = canCreatePolls(user?.role);
 
   const respondentName = useMemo(
     () =>
@@ -322,7 +322,7 @@ export const PollsPage: React.FC = () => {
       const data = res.data || [];
       setPolls(data);
       try {
-        sessionStorage.setItem('rokad_polls_cache', JSON.stringify(data));
+        sessionStorage.setItem('rokad_polls_cache_v2', JSON.stringify(data));
       } catch {}
     } catch (err) {
       console.error('Failed to fetch polls:', err);
@@ -471,8 +471,15 @@ export const PollsPage: React.FC = () => {
     }
   };
 
+  const createdPorscadSessionRef = React.useRef<{
+    formId: string;
+    formPublicId?: string;
+    questionIds: string[];
+  } | null>(null);
+
   // ——— Create wizard ———
   const openCreate = () => {
+    createdPorscadSessionRef.current = null;
     setCreateStep(0);
     setCreateError(null);
     setForm({
@@ -490,6 +497,7 @@ export const PollsPage: React.FC = () => {
   };
 
   const updateDraft = (index: number, patch: Partial<QuestionDraft>) => {
+    createdPorscadSessionRef.current = null;
     setDrafts((prev) =>
       prev.map((d, i) => {
         if (i !== index) return d;
@@ -520,10 +528,11 @@ export const PollsPage: React.FC = () => {
     }
     if (step === 1) {
       if (drafts.length === 0) return 'حداقل یک سوال اضافه کنید';
+      const MUST_HAVE_OPTIONS = new Set(['choice', 'picture_choice', 'dropdown', 'ranking', 'matrix']);
       for (let i = 0; i < drafts.length; i++) {
         const d = drafts[i];
         if (!d.title.trim()) return `متن سوال ${toPersianDigits(i + 1)} الزامی است`;
-        if (questionNeedsOptions(d.type)) {
+        if (MUST_HAVE_OPTIONS.has(d.type)) {
           const opts = d.options.filter((o) => o.trim());
           if (opts.length < 2) {
             return `سوال ${toPersianDigits(i + 1)} باید حداقل ۲ گزینه داشته باشد`;
@@ -563,33 +572,52 @@ export const PollsPage: React.FC = () => {
     setCreateError(null);
 
     try {
-      const questions: SurveyQuestion[] = drafts.map((d) => ({
-        type: d.type,
-        title: d.title.trim(),
-        description: d.description.trim() || undefined,
-        placeholder: d.placeholder?.trim() || undefined,
-        options: questionNeedsOptions(d.type)
-          ? d.options.filter((o) => o.trim())
-          : undefined,
-        maxSelections:
-          d.type === 'choice' ? Math.max(1, d.maxSelections) : 1,
-        required: INFORMATIONAL_TYPES.has(d.type) ? false : d.required,
-        displayMode: 'buttons',
-        validation:
-          d.validation && Object.values(d.validation).some((v) => v !== undefined && (v as any) !== '')
-            ? d.validation
-            : undefined,
-        jump_actions:
-          d.jump_actions && d.jump_actions.length > 0 ? d.jump_actions : undefined,
-        points: d.points || 0,
-      }));
+      const questions: SurveyQuestion[] = drafts.map((d) => {
+        let opts = d.options?.filter((o) => o.trim()) || [];
+        if (d.type === 'likert' && opts.length < 2) {
+          opts = ['کاملاً موافق', 'موافق', 'ممتنع / خنثی', 'مخالف', 'کاملاً مخالف'];
+        } else if (d.type === 'yes_no' && opts.length < 2) {
+          opts = ['بله', 'خیر'];
+        } else if (!questionNeedsOptions(d.type)) {
+          opts = [];
+        }
+
+        return {
+          type: d.type,
+          title: d.title.trim(),
+          description: d.description.trim() || undefined,
+          placeholder: d.placeholder?.trim() || undefined,
+          options: opts.length > 0 ? opts : undefined,
+          maxSelections: d.type === 'choice' ? Math.max(1, d.maxSelections) : 1,
+          required: INFORMATIONAL_TYPES.has(d.type) ? false : d.required,
+          displayMode: 'buttons',
+          validation:
+            d.validation && Object.values(d.validation).some((v) => v !== undefined && (v as any) !== '')
+              ? d.validation
+              : undefined,
+          jump_actions:
+            d.jump_actions && d.jump_actions.length > 0 ? d.jump_actions : undefined,
+          points: d.points || 0,
+        };
+      });
 
       let formId: string | undefined;
       let formPublicId: string | undefined;
       let questionIds: string[] = [];
       let porscadOk = false;
 
-      if (porscadSurvey.getToken()) {
+      // Check if we already created a Porscad form in this modal session (prevents duplicate forms on retry)
+      if (createdPorscadSessionRef.current?.formId) {
+        formId = createdPorscadSessionRef.current.formId;
+        formPublicId = createdPorscadSessionRef.current.formPublicId;
+        questionIds = createdPorscadSessionRef.current.questionIds;
+        questions.forEach((q, idx) => {
+          if (questionIds[idx]) {
+            q.porscadQuestionId = questionIds[idx];
+          }
+        });
+        porscadOk = true;
+      } else if (porscadSurvey.getToken()) {
         try {
           const created = await porscadSurvey.createSurveyForm({
             title: form.title.trim(),
@@ -599,6 +627,14 @@ export const PollsPage: React.FC = () => {
           formId = created.formId;
           formPublicId = created.formPublicId;
           questionIds = created.questionIds;
+          createdPorscadSessionRef.current = { formId, formPublicId, questionIds };
+          if (questionIds.length > 0) {
+            questions.forEach((q, idx) => {
+              if (questionIds[idx]) {
+                q.porscadQuestionId = questionIds[idx];
+              }
+            });
+          }
           porscadOk = true;
         } catch (e: any) {
           toast.error(
@@ -639,6 +675,7 @@ export const PollsPage: React.FC = () => {
       };
 
       await apiClient.post('/polls', payload);
+      createdPorscadSessionRef.current = null;
       setIsCreateOpen(false);
       setCreateStep(0);
       setCreateError(null);
@@ -879,8 +916,7 @@ export const PollsPage: React.FC = () => {
       let porscadResponseId: string | undefined;
       let porscadError: string | null = null;
 
-      const questionIds =
-        questions.map((q) => q.porscadQuestionId).filter(Boolean) as string[];
+      const questionIds = questions.map((q) => q.porscadQuestionId || '');
 
       if (activePoll.porscadFormId) {
         const result = await porscadSurvey.submitSurveyAnswers({
@@ -924,6 +960,10 @@ export const PollsPage: React.FC = () => {
 
   // ——— Analytics ———
   const openAnalytics = async (poll: Poll) => {
+    if (!canViewResults) {
+      toast.error('شما دسترسی لازم برای مشاهده نتایج و آمار این نظرسنجی را ندارید');
+      return;
+    }
     setAnalyticsPollId(poll.id);
     setAnalytics(null);
     setLiveAnalytics(null);
@@ -935,9 +975,7 @@ export const PollsPage: React.FC = () => {
       // Auto-fetch live Porscad analytics if linked to Porscad
       if (poll.porscadFormId) {
         const questions = legacyQuestionsFromPoll(poll);
-        const questionIds = questions
-          .map((q) => q.porscadQuestionId)
-          .filter(Boolean) as string[];
+        const questionIds = questions.map((q) => q.porscadQuestionId || '');
         try {
           const live = await porscadSurvey.fetchLiveAnalytics({
             formId: poll.porscadFormId,
@@ -961,9 +999,7 @@ export const PollsPage: React.FC = () => {
     const poll = polls.find((p) => p.id === analyticsPollId);
     if (!poll) return;
     const questions = legacyQuestionsFromPoll(poll);
-    const questionIds = questions
-      .map((q) => q.porscadQuestionId)
-      .filter(Boolean) as string[];
+    const questionIds = questions.map((q) => q.porscadQuestionId || '');
     setIsRefreshingLive(true);
     try {
       const live = await porscadSurvey.fetchLiveAnalytics({
@@ -1478,6 +1514,7 @@ export const PollsPage: React.FC = () => {
   };
 
   const renderAnalyticsView = () => {
+    if (!canViewResults) return null;
     const poll = polls.find((p) => p.id === analyticsPollId);
     const shown = liveAnalytics || analytics;
     return (
@@ -1970,7 +2007,7 @@ export const PollsPage: React.FC = () => {
                           <Send className="w-4 h-4 shrink-0" />
                           <span>شرکت در نظرسنجی</span>
                         </Button>
-                      ) : (
+                      ) : canViewResults ? (
                         <Button
                           variant="outline"
                           onClick={() => openAnalytics(poll)}
@@ -1979,6 +2016,11 @@ export const PollsPage: React.FC = () => {
                           <BarChart3 className="w-4 h-4 text-primary shrink-0" />
                           <span>مشاهده نتایج و آمار</span>
                         </Button>
+                      ) : (
+                        <div className="flex-1 text-xs flex items-center justify-center gap-1.5 h-9 sm:h-10 px-3 rounded-xl font-bold bg-gray-100/80 dark:bg-[#1C2536] text-muted-foreground border border-gray-200/80 dark:border-[#242F42] select-none">
+                          <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          <span>نظرسنجی به پایان رسیده است</span>
+                        </div>
                       )
                     )}
 

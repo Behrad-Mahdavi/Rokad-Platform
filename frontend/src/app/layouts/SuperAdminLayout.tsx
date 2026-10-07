@@ -16,10 +16,10 @@ export const SuperAdminLayout: React.FC = () => {
   }, [pathname]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#0B0F17] text-ink-normal dark:text-gray-100 flex flex-col font-sans transition-colors">
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden bg-gray-50 dark:bg-[#0B0F17] text-ink-normal dark:text-gray-100 flex flex-col font-sans transition-colors">
       <ScrollToTop />
       <Header />
-      <div className="flex flex-1 relative">
+      <div className="flex flex-1 relative lg:overflow-hidden">
         <Sidebar role="SUPER_ADMIN" />
         <main
           ref={mainRef}

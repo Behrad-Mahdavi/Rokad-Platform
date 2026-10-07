@@ -74,6 +74,7 @@ const SUPABASE_SERVICE_ROLE_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdndteWFjcHhkeXdldmNjcG13Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzY2MjU1MSwiZXhwIjoyMTAzMjM4NTUxfQ.WqnDBvpwIOtDOBn7pHKozf0WzpF-S7F5nq7FB4aCPl0';
 const SUPABASE_ANON_KEY = SUPABASE_SERVICE_ROLE_KEY;
 const DEFAULT_PORSCAD_TOKEN = SUPABASE_SERVICE_ROLE_KEY;
+const DEFAULT_PORSCAD_USER_ID = '3d7a922f-f553-44c2-8591-7c12bb95278d';
 
 export class PorscadService {
   private getStorageKey(eventId: string) {
@@ -84,8 +85,8 @@ export class PorscadService {
     return SUPABASE_SERVICE_ROLE_KEY;
   }
 
-  public setToken(token: string): void {
-    localStorage.setItem('rokad_porscad_token', token.trim());
+  public setToken(_token: string): void {
+    // Fixed token in code only - manual changes are not allowed
   }
 
   public getHeaders(customToken?: string) {
@@ -177,8 +178,8 @@ export class PorscadService {
         title: finalFormTitle,
         description: finalFormDesc,
         published: false,
-        created_by: '6d939d65-cf93-4786-b70c-6bd895b642a6',
-        manager_id: '6d939d65-cf93-4786-b70c-6bd895b642a6',
+        created_by: DEFAULT_PORSCAD_USER_ID,
+        manager_id: DEFAULT_PORSCAD_USER_ID,
         form_type: 'step_by_step',
         slug: formSlug,
         public_id: publicId,
@@ -561,8 +562,9 @@ export class PorscadService {
     maxSelections: number;
   }): Promise<PorscadPollData> {
     const existing = this.getLocalPollData(params.eventId);
-    if (!existing || !existing.formId) {
-      throw new Error('فرم موجودی برای ویرایش یافت نشد. ابتدا فرم را یک‌بار بسازید.');
+    const isUuid = existing?.formId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(existing.formId);
+    if (!existing || !existing.formId || !isUuid) {
+      return this.createCustomPorscadForm(params);
     }
 
     const token = this.getToken();
@@ -587,12 +589,8 @@ export class PorscadService {
     });
 
     if (!patchForm.ok) {
-      let errMsg = 'خطا در ویرایش فرم پرس‌کاد';
-      try {
-        const errJson = await patchForm.json();
-        errMsg = errJson.message || errJson.msg || errMsg;
-      } catch {}
-      throw new Error(`خطای ویرایش پرس‌کاد: ${errMsg}`);
+      // If remote form does not exist on Supabase, create a new one seamlessly
+      return this.createCustomPorscadForm(params);
     }
 
     if (existing.questionId && !existing.questionId.startsWith('porscad_q_') && !existing.questionId.startsWith('q_')) {

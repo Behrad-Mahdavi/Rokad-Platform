@@ -12,21 +12,31 @@ import {
   ArrowLeft,
   PlusCircle,
   Edit3,
+  Trash2,
   ShieldCheck,
   Hash,
   Eye,
   FileText,
 } from 'lucide-react';
+import { toast } from '../../../../components/ui/toast/toast';
 
 interface EventIdeasListStepProps {
   ideas: EventIdea[];
+  eventId?: string;
+  isEventEnded?: boolean;
+  onAddIdea?: (newIdea: EventIdea) => void;
   onUpdateIdea?: (updatedIdea: EventIdea) => void;
+  onDeleteIdea?: (ideaId: string) => void;
   onSelectIdeaForVote?: (ideaId: string) => void;
 }
 
 export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
   ideas,
+  eventId = '',
+  isEventEnded = false,
+  onAddIdea,
   onUpdateIdea,
+  onDeleteIdea,
   onSelectIdeaForVote,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,6 +53,56 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
     ideaNumber: 1,
     status: 'APPROVED' as EventIdea['status'],
   });
+
+  // Admin Add Idea Modal State
+  const [isAddIdeaModalOpen, setIsAddIdeaModalOpen] = useState(false);
+  const [newIdeaForm, setNewIdeaForm] = useState({
+    title: '',
+    description: '',
+    authorName: '',
+    ideaNumber: 1,
+  });
+
+  const nextAutoIdeaNumber = useMemo(() => {
+    return ideas.reduce((max, item) => Math.max(max, item.ideaNumber || 0), 0) + 1;
+  }, [ideas]);
+
+  const handleOpenAddIdeaModal = () => {
+    setNewIdeaForm({
+      title: '',
+      description: '',
+      authorName: '',
+      ideaNumber: nextAutoIdeaNumber,
+    });
+    setIsAddIdeaModalOpen(true);
+  };
+
+  const handleSaveAdminNewIdea = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newIdeaForm.title.trim() || !newIdeaForm.description.trim() || !newIdeaForm.authorName.trim()) {
+      toast.error('لطفاً تمام فیلدهای عنوان، شرح و نام ایده‌پرداز را تکمیل کنید.');
+      return;
+    }
+
+    const created: EventIdea = {
+      id: 'idea_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      eventId,
+      ideaNumber: Number(newIdeaForm.ideaNumber) || nextAutoIdeaNumber,
+      title: newIdeaForm.title.trim(),
+      description: newIdeaForm.description.trim(),
+      authorName: newIdeaForm.authorName.trim(),
+      authorRole: 'دانش‌آموز',
+      createdAt: new Date().toISOString(),
+      status: 'APPROVED',
+      starRatings: [],
+    };
+
+    if (onAddIdea) {
+      onAddIdea(created);
+    }
+    setIsAddIdeaModalOpen(false);
+    toast.success(`ایده شماره ${toPersianDigits(created.ideaNumber || 1)} با موفقیت افزوده شد.`);
+  };
 
   const filteredIdeas = useMemo(() => {
     return ideas
@@ -93,20 +153,34 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
     <div className="space-y-6">
       {/* Header & Controls */}
       <div className="rounded-2xl border-[1.5px] border-primary-dark/30 dark:border-gray-800 bg-white dark:bg-[#151C28] shadow-[2px_2px_0_#59BBAF] dark:shadow-[2px_2px_0_#0B0F17] p-5 sm:p-7 space-y-2">
-        <div>
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-lg md:text-xl font-black text-ink-darker dark:text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary shrink-0" />
-              <span>گام دوم: تالار ایده‌ها</span>
-            </h2>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-primary/20 bg-primary/10 text-primary text-xs font-bold shadow-2xs">
-              <Lightbulb className="w-3.5 h-3.5" />
-              <span>{toPersianDigits(ideas.length)} ایده ثبت‌شده</span>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-lg md:text-xl font-black text-ink-darker dark:text-white flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary shrink-0" />
+                <span>گام دوم: تالار ایده‌ها</span>
+              </h2>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-primary/20 bg-primary/10 text-primary text-xs font-bold shadow-2xs">
+                <Lightbulb className="w-3.5 h-3.5" />
+                <span>{toPersianDigits(ideas.length)} ایده ثبت‌شده</span>
+              </div>
             </div>
+            <p className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 mt-3">
+              ایده‌های ارسال‌شده توسط شرکت‌کنندگان را مرور و بررسی کنید.
+            </p>
           </div>
-          <p className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 mt-3">
-            ایده‌های ارسال‌شده توسط شرکت‌کنندگان را مرور و بررسی کنید.
-          </p>
+
+          {isManager && !isEventEnded && onAddIdea && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleOpenAddIdeaModal}
+              className="gap-2 text-xs font-bold"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>ثبت ایده جدید (ادمین)</span>
+            </Button>
+          )}
         </div>
 
         {/* Search Bar */}
@@ -136,10 +210,12 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredIdeas.map((idea) => {
+            const isStudent = currentUser?.role === 'STUDENT';
             const ownerLast = (currentUser?.lastName || '').trim();
             const ownerFirst = (currentUser?.firstName || '').trim();
             const authorLower = (idea.authorName || '').toLowerCase();
             const isCurrentUserIdea =
+              isStudent &&
               !!currentUser &&
               ((ownerLast && authorLower.includes(ownerLast.toLowerCase())) ||
                 (ownerFirst && authorLower.includes(ownerFirst.toLowerCase())));
@@ -167,7 +243,7 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
                       </div>
 
                       {/* Admin Edit Button */}
-                      {isManager && (
+                      {isManager && !isEventEnded && (
                         <button
                           type="button"
                           onClick={(e) => handleOpenEditModal(idea, e)}
@@ -233,7 +309,7 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
                   <span>{selectedIdeaDetail.authorName}</span>
                 </div>
 
-                {isManager && (
+                {isManager && !isEventEnded && (
                   <Button
                     type="button"
                     variant="outline"
@@ -355,25 +431,136 @@ export const EventIdeasListStep: React.FC<EventIdeasListStepProps> = ({
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setEditingIdea(null)}
-                className="font-bold"
-              >
-                انصراف
-              </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                className="font-black"
-              >
-                ذخیره تغییرات ادمین
-              </Button>
+            <div className="flex items-center justify-between gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+              {onDeleteIdea ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    if (window.confirm('آیا از حذف این ایده اطمینان دارید؟')) {
+                      onDeleteIdea(editingIdea.id);
+                      setEditingIdea(null);
+                      toast.info('ایده با موفقیت حذف شد.');
+                    }
+                  }}
+                  className="text-rose-600 border-rose-300 hover:bg-rose-50 dark:border-rose-800 dark:hover:bg-rose-950/40 font-bold gap-1 text-xs"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>حذف ایده</span>
+                </Button>
+              ) : (
+                <div />
+              )}
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingIdea(null)}
+                  className="font-bold text-xs"
+                >
+                  انصراف
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className="font-black text-xs"
+                >
+                  ذخیره تغییرات ادمین
+                </Button>
+              </div>
             </div>
           </form>
         )}
+      </Modal>
+
+      {/* ADMIN ADD IDEA MODAL */}
+      <Modal
+        isOpen={isAddIdeaModalOpen}
+        onClose={() => setIsAddIdeaModalOpen(false)}
+        title="ثبت مستقیم ایده جدید توسط ادمین"
+      >
+        <form onSubmit={handleSaveAdminNewIdea} className="space-y-4">
+          <div className="p-3 rounded-xl border border-primary/30 bg-primary/10 text-primary text-xs font-black flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4" />
+            <span>مدیر محترم رویداد، می‌توانید ایده جدید را با مشخصات دلخواه ثبت کنید.</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1">
+                شماره ایده:
+              </label>
+              <input
+                type="number"
+                required
+                value={newIdeaForm.ideaNumber}
+                onChange={(e) => setNewIdeaForm({ ...newIdeaForm, ideaNumber: Number(e.target.value) })}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-darker dark:text-white text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1">
+                نام دانش‌آموز (ایده‌پرداز):
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="مثال: علیرضا محمدی"
+                value={newIdeaForm.authorName}
+                onChange={(e) => setNewIdeaForm({ ...newIdeaForm, authorName: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-darker dark:text-white text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1">
+              عنوان ایده:
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="عنوان ایده جدید..."
+              value={newIdeaForm.title}
+              onChange={(e) => setNewIdeaForm({ ...newIdeaForm, title: e.target.value })}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-darker dark:text-white text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-black text-zinc-800 dark:text-zinc-200 mb-1">
+              شرح کامل ایده:
+            </label>
+            <textarea
+              required
+              rows={4}
+              placeholder="توضیحات و نیازمندی‌های ایده..."
+              value={newIdeaForm.description}
+              onChange={(e) => setNewIdeaForm({ ...newIdeaForm, description: e.target.value })}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-ink-darker dark:text-white text-xs font-medium focus:border-primary focus:bg-white dark:focus:bg-[#1C2536] focus:outline-none transition-all"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsAddIdeaModalOpen(false)}
+              className="font-bold text-xs"
+            >
+              انصراف
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              className="font-black text-xs"
+            >
+              ثبت نهایی ایده
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

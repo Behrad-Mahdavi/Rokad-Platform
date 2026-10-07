@@ -12,6 +12,7 @@ import {
   Send,
   Sparkles,
   User,
+  Users,
   CheckCircle2,
   FileText,
   Lock,
@@ -56,6 +57,7 @@ interface EventIdeaSubmissionStepProps {
   eventTitle: string;
   ideas?: EventIdea[];
   isLocked?: boolean;
+  isEventEnded?: boolean;
   onToggleLock?: () => void;
   onIdeaSubmitted: (idea: EventIdea) => void;
   onUpdateIdea?: (updatedIdea: EventIdea) => void;
@@ -67,6 +69,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
   eventTitle,
   ideas = [],
   isLocked = false,
+  isEventEnded = false,
   onToggleLock,
   onIdeaSubmitted,
   onUpdateIdea,
@@ -74,6 +77,9 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
 }) => {
   const currentUser = useAuthStore((s) => s.user);
   const isManager = ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STAFF'].includes(currentUser?.role || '');
+  const isParent = currentUser?.role === 'PARENT';
+  const isStudent = currentUser?.role === 'STUDENT';
+  const canSubmitIdea = isStudent || isManager;
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -130,15 +136,15 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
     fetchStudents();
   }, []);
 
-  // Find if current student has already submitted an idea for this event
+  // Find if current student has already submitted an idea for this event (exclude PARENT and manager)
   const userSubmittedIdea = useMemo(() => {
-    if (!currentUser || isManager) return null;
+    if (!currentUser || isParent || isManager) return null;
     const exact = ideas.find(
       (item) => item.authorName.trim().toLowerCase() === studentName.trim().toLowerCase(),
     );
     if (exact) return exact;
     return ideas.find((item) => isOwnedByUser(item.authorName, currentUser)) || null;
-  }, [ideas, currentUser, studentName, isManager]);
+  }, [ideas, currentUser, studentName, isParent, isManager]);
 
   const [studentEditTitle, setStudentEditTitle] = useState('');
   const [studentEditDescription, setStudentEditDescription] = useState('');
@@ -155,6 +161,10 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
 
   const handleSaveStudentEdit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isParent || !canSubmitIdea) {
+      toast.error('ویرایش ایده فقط برای دانش‌آموزان و هنرجویان مجاز است.');
+      return;
+    }
     if (isLocked) {
       toast.error('مهلت ویرایش ایده به پایان رسیده و قفل شده است.');
       return;
@@ -198,13 +208,17 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLocked) {
+    if (isParent || !canSubmitIdea) {
+      toast.error('ثبت ایده فقط برای دانش‌آموزان مجاز است و دسترسی اولیاء به صورت مشاهده‌گر می‌باشد.');
+      return;
+    }
+    if (!isManager && isLocked) {
       toast.error('مهلت ثبت ایده به پایان رسیده و قفل شده است.');
       return;
     }
 
     if (isManager && !adminSelectedStudent) {
-      toast.error('لطفاً دانش‌آموز صاحب ایده را انتخاب کنید. مدیر امکان ثبت ایده با نام خودش را ندارد.');
+      toast.error('لطفاً دانش‌آموز صاحب ایده را انتخاب کنید.');
       return;
     }
 
@@ -318,8 +332,32 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
           )}
         </div>
 
-        {/* Locked Notice vs Existing Submitted Idea vs New Submission Form */}
-        {userSubmittedIdea && !isManager && !isLocked ? (
+        {/* Parent Spectator Notice vs Ended Notice vs Locked Notice vs Existing Submitted Idea vs New Submission Form */}
+        {isParent ? (
+          <div className="p-8 text-center bg-blue-50/70 dark:bg-blue-950/30 rounded-2xl border-2 border-blue-200 dark:border-blue-800 space-y-4 my-6 shadow-[2px_2px_0px_0px_#202A5A]">
+            <div className="w-14 h-14 mx-auto rounded-2xl border-2 border-zinc-900 bg-blue-400 text-zinc-950 flex items-center justify-center shadow-[2px_2px_0px_0px_#202A5A]">
+              <Users className="w-7 h-7" />
+            </div>
+            <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
+              مشاهده‌گر اولیاء گرامی (دسترسی نمایشی)
+            </h3>
+            <p className="text-xs md:text-sm font-medium text-zinc-600 dark:text-zinc-400 max-w-lg mx-auto leading-relaxed">
+              ثبت و ارسال ایده‌های رویداد مختص دانش‌آموزان و هنرجویان است. شما می‌توانید ایده‌های ارسال‌شده توسط شرکت‌کنندگان و فرآیند برگزاری را در تالار ایده‌ها و گام‌های بعدی مشاهده نمایید.
+            </p>
+          </div>
+        ) : isEventEnded ? (
+          <div className="p-8 text-center bg-amber-50/70 dark:bg-amber-950/30 rounded-2xl border-2 border-amber-300 dark:border-amber-800 space-y-3 my-6 shadow-2xs">
+            <div className="w-14 h-14 mx-auto rounded-2xl border-2 border-amber-500/40 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 flex items-center justify-center font-bold">
+              <Lock className="w-7 h-7" />
+            </div>
+            <h3 className="text-lg font-black text-amber-950 dark:text-amber-100">
+              مهلت ثبت ایده در این رویداد به پایان رسیده است
+            </h3>
+            <p className="text-xs md:text-sm font-medium text-amber-800 dark:text-amber-300 max-w-lg mx-auto leading-relaxed">
+              امکان ثبت ایده جدید در این رویداد وجود ندارد. کلیه ایده‌های ثبت‌شده در گام دوم (تالار ایده‌ها) قابل مشاهده هستند.
+            </p>
+          </div>
+        ) : userSubmittedIdea && !isManager && !isLocked ? (
           <div className="space-y-4">
             {/* Status notification banner */}
             <div className="flex items-center gap-2.5 p-4 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 shadow-2xs">
@@ -488,7 +526,7 @@ export const EventIdeaSubmissionStep: React.FC<EventIdeaSubmissionStepProps> = (
               </form>
             )}
           </div>
-        ) : isLocked ? (
+        ) : isLocked && !isManager ? (
           <div className="p-8 text-center bg-gray-50/70 dark:bg-[#1C2536]/50 rounded-2xl border border-gray-200 dark:border-gray-800 space-y-4 my-4 shadow-2xs">
             <div className="w-14 h-14 mx-auto rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 flex items-center justify-center shadow-2xs">
               <Lock className="w-7 h-7 text-rose-600 dark:text-rose-400" />
