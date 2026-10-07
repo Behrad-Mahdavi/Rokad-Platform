@@ -816,8 +816,8 @@ export const EventSinglePage: React.FC = () => {
             </div>
           )}
 
-          {/* Main Tabs Navigation (Inside the Hero Box, 2 inline options: right = اطلاعات رویداد, left = مراحل رویداد) */}
-          {hasWorkflow && (
+          {/* Main Tabs Navigation (Inside the Hero Box, only shown for active events with workflow) */}
+          {hasWorkflow && !isEventEnded && (
             <div className="p-1 rounded-xl bg-gray-100 dark:bg-[#1C2536] border border-gray-200/70 dark:border-gray-700/70 flex flex-row gap-1 shadow-2xs w-full">
               <button
                 type="button"
@@ -850,7 +850,7 @@ export const EventSinglePage: React.FC = () => {
       </div>
 
       {/* 4. Render Active Tab Content */}
-      {hasWorkflow && activeMainTab === 'WORKFLOW' ? (
+      {hasWorkflow && !isEventEnded && activeMainTab === 'WORKFLOW' ? (
         <EventStepWizard
           eventId={event.id}
           eventTitle={event.title}
