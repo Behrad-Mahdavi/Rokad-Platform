@@ -127,14 +127,56 @@ export const SuperAppHomePage: React.FC = () => {
         }
         if (eventsRes.status === 'fulfilled') {
           const list = Array.isArray(eventsRes.value.data) ? eventsRes.value.data : [];
-          const activeEvents = list.filter((ev: any) => {
-            if (ev.isArchived || ev.isCancelled || ev.status === 'CANCELLED' || ev.status === 'COMPLETED') {
+          const currentlyLiveEvents = list.filter((ev: any) => {
+            if (
+              ev.isArchived ||
+              ev.isCancelled ||
+              ev.status === 'CANCELLED' ||
+              ev.status === 'COMPLETED' ||
+              ev.eventType === 'HOLIDAY' ||
+              ev.type === 'HOLIDAY'
+            ) {
               return false;
             }
-            const end = ev.endDate ? new Date(ev.endDate).getTime() : (ev.endTime ? new Date(ev.endTime).getTime() : 0);
-            return end ? end >= now : true;
+
+            // Start timestamp
+            let start = 0;
+            if (ev.startDate) {
+              const d = new Date(ev.startDate);
+              if (!isNaN(d.getTime())) {
+                if (ev.isAllDay || (typeof ev.startDate === 'string' && ev.startDate.length === 10)) {
+                  d.setHours(0, 0, 0, 0);
+                }
+                start = d.getTime();
+              }
+            } else if (ev.startTime) {
+              const d = new Date(ev.startTime);
+              if (!isNaN(d.getTime())) start = d.getTime();
+            }
+
+            // End timestamp
+            let end = 0;
+            if (ev.endDate) {
+              const d = new Date(ev.endDate);
+              if (!isNaN(d.getTime())) {
+                if (ev.isAllDay || (typeof ev.endDate === 'string' && ev.endDate.length === 10)) {
+                  d.setHours(23, 59, 59, 999);
+                }
+                end = d.getTime();
+              }
+            } else if (ev.endTime) {
+              const d = new Date(ev.endTime);
+              if (!isNaN(d.getTime())) end = d.getTime();
+            } else if (start > 0) {
+              const d = new Date(start);
+              d.setHours(23, 59, 59, 999);
+              end = d.getTime();
+            }
+
+            // Event is actively taking place right now
+            return start > 0 && end > 0 && now >= start && now <= end;
           }).length;
-          setEventsCount(activeEvents);
+          setEventsCount(currentlyLiveEvents);
         }
         if (pollsRes.status === 'fulfilled') {
           const list = Array.isArray(pollsRes.value.data) ? pollsRes.value.data : [];
