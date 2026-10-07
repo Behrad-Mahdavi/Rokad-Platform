@@ -8,12 +8,13 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreatePollDto,
+  UpdatePollDto,
   SubmitPollAnswersDto,
   CastVoteDto,
   PollStatusAction,
 } from './dto/create-poll.dto';
 import { Role } from '../../common/constants';
-import { canViewPollResults } from './polls.permissions';
+import { canViewPollResults, canUserViewPollResults } from './polls.permissions';
 
 export interface SurveyQuestion {
   type: string;
@@ -24,6 +25,82 @@ export interface SurveyQuestion {
   required?: boolean;
   displayMode?: 'buttons' | 'list';
   porscadQuestionId?: string | null;
+}
+
+export function extractPollMetadata(rawQuestions: any): {
+  questions: SurveyQuestion[];
+  resultsVisibleToRoles: string[];
+  isResultsPublic: boolean;
+  isMandatory?: boolean;
+  preventDuplicate?: boolean;
+} {
+  let questions: SurveyQuestion[] = [];
+  let resultsVisibleToRoles: string[] = [];
+  let isResultsPublic = false;
+  let isMandatory: boolean | undefined = undefined;
+  let preventDuplicate: boolean | undefined = undefined;
+
+  if (Array.isArray(rawQuestions)) {
+    questions = rawQuestions;
+  } else if (rawQuestions && typeof rawQuestions === 'object') {
+    questions = Array.isArray(rawQuestions.questions)
+      ? rawQuestions.questions
+      : Array.isArray(rawQuestions.items)
+        ? rawQuestions.items
+        : [];
+    resultsVisibleToRoles = Array.isArray(rawQuestions.resultsVisibleToRoles)
+      ? rawQuestions.resultsVisibleToRoles
+      : [];
+    isResultsPublic = !!rawQuestions.isResultsPublic;
+    if (typeof rawQuestions.isMandatory === 'boolean') {
+      isMandatory = rawQuestions.isMandatory;
+    }
+    if (typeof rawQuestions.preventDuplicate === 'boolean') {
+      preventDuplicate = rawQuestions.preventDuplicate;
+    }
+  }
+
+  return {
+    questions,
+    resultsVisibleToRoles,
+    isResultsPublic,
+    isMandatory,
+    preventDuplicate,
+  };
+}
+
+export function formatPollResponse(poll: any) {
+  if (!poll) return poll;
+  const {
+    questions,
+    resultsVisibleToRoles,
+    isResultsPublic,
+    isMandatory,
+    preventDuplicate,
+  } = extractPollMetadata(poll.questions);
+
+  return {
+    ...poll,
+    questions,
+    resultsVisibleToRoles:
+      Array.isArray(poll.resultsVisibleToRoles) && poll.resultsVisibleToRoles.length > 0
+        ? poll.resultsVisibleToRoles
+        : resultsVisibleToRoles,
+    isResultsPublic:
+      typeof poll.isResultsPublic === 'boolean' ? poll.isResultsPublic : isResultsPublic,
+    isMandatory:
+      typeof poll.isMandatory === 'boolean'
+        ? poll.isMandatory
+        : isMandatory !== undefined
+          ? isMandatory
+          : false,
+    preventDuplicate:
+      typeof poll.preventDuplicate === 'boolean'
+        ? poll.preventDuplicate
+        : preventDuplicate !== undefined
+          ? preventDuplicate
+          : true,
+  };
 }
 
 const OPTION_TYPES = new Set([
@@ -55,7 +132,7 @@ function loadPersistedPolls(): any[] {
             p.createdById === 'admin' ||
             p.createdById.startsWith('usr_') ||
             p.createdById.startsWith('usr-'),
-        );
+        ).map(formatPollResponse);
       }
     }
   } catch {}
@@ -71,17 +148,26 @@ function savePersistedPolls(polls: any[]) {
 const inMemoryPolls: any[] = loadPersistedPolls();
 const inMemoryVotes: any[] = [];
 
-function sanitizePollForRole(poll: any, role?: string) {
+function sanitizePollForRole(poll: any, role?: string, userId?: string) {
   if (!poll) return poll;
-  if (canViewPollResults(role)) return poll;
+  const formatted = formatPollResponse(poll);
+  const canView = canUserViewPollResults(role, formatted, userId);
 
-  const sanitizedOptions = Array.isArray(poll.options)
-    ? poll.options.map((opt: any) => ({ ...opt, voteCount: 0 }))
-    : poll.options;
+  const sanitizedOptions = Array.isArray(formatted.options)
+    ? formatted.options.map((opt: any) => ({
+        ...opt,
+        voteCount: canView ? (opt.voteCount ?? 0) : 0,
+      }))
+    : formatted.options;
 
   return {
-    ...poll,
+    ...formatted,
     options: sanitizedOptions,
+    _count: {
+      ...formatted._count,
+      votes: canView ? (formatted._count?.votes ?? 0) : 0,
+    },
+    userCanViewResults: canView,
   };
 }
 
@@ -166,6 +252,21 @@ export class PollsService {
     const validStart = isNaN(start.getTime()) ? new Date() : start;
     const validEnd = isNaN(end.getTime()) ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : end;
 
+    const resultsVisibleToRoles = Array.isArray(dto.resultsVisibleToRoles)
+      ? dto.resultsVisibleToRoles
+      : ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF', 'TEACHER', 'COACH'];
+    const isResultsPublic = !!dto.isResultsPublic;
+    const isMandatory = !!dto.isMandatory;
+    const preventDuplicate = dto.preventDuplicate !== false;
+
+    const questionsJsonPayload = {
+      questions,
+      resultsVisibleToRoles,
+      isResultsPublic,
+      isMandatory,
+      preventDuplicate,
+    };
+
     try {
       const created = await this.prisma.poll.create({
         data: {
@@ -179,7 +280,7 @@ export class PollsService {
           endDate: validEnd,
           isAnonymous: dto.isAnonymous || false,
           createdById,
-          questions: questions as any,
+          questions: questionsJsonPayload as any,
           porscadFormId: dto.porscadFormId,
           porscadFormPublicId: dto.porscadFormPublicId,
           options: {
@@ -203,9 +304,10 @@ export class PollsService {
           options: { orderBy: { orderIndex: 'asc' } },
         },
       });
-      inMemoryPolls.unshift(created);
+      const formatted = formatPollResponse(created);
+      inMemoryPolls.unshift(formatted);
       savePersistedPolls(inMemoryPolls);
-      return created;
+      return sanitizePollForRole(formatted, 'SUPER_ADMIN', createdById);
     } catch (err: any) {
       console.warn('⚠️ [PollsService.createPoll] DB offline fallback:', err?.message || err);
       const newPoll = {
@@ -221,8 +323,12 @@ export class PollsService {
         isClosed: false,
         isArchived: false,
         isAnonymous: dto.isAnonymous || false,
+        isMandatory,
+        preventDuplicate,
+        isResultsPublic,
+        resultsVisibleToRoles,
         createdById,
-        questions: questions as any,
+        questions: questionsJsonPayload as any,
         porscadFormId: dto.porscadFormId || null,
         porscadFormPublicId: dto.porscadFormPublicId || null,
         options: (options.length > 0 ? options : questions.flatMap((q) => (q.options || []).map((text) => ({ text })))).map((opt, i) => ({
@@ -236,9 +342,10 @@ export class PollsService {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      inMemoryPolls.unshift(newPoll);
+      const formatted = formatPollResponse(newPoll);
+      inMemoryPolls.unshift(formatted);
       savePersistedPolls(inMemoryPolls);
-      return newPoll;
+      return sanitizePollForRole(formatted, 'SUPER_ADMIN', createdById);
     }
   }
 
@@ -258,9 +365,9 @@ export class PollsService {
             {
               headers: {
                 apikey:
-                  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdndteWFjcHhkeXdldmNjcG13Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzY2MjU1MSwiZXhwIjoyMTAzMjM4NTUxfQ.WqnDBvpwIOtDOBn7pHKozf0WzpF-S7F5nq7FB4aCPl0',
+                  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdndteWFjcHhkeXdldmNjcG13Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjQ0NDExMywiZXhwIjoyMDg4MDIwMTEzfQ.1PZ9r_iLqjYlD-5g5X1f_v6J1e3B9k_gK5hG5d-CPl0',
                 Authorization:
-                  'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdndteWFjcHhkeXdldmNjcG13Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzY2MjU1MSwiZXhwIjoyMTAzMjM4NTUxfQ.WqnDBvpwIOtDOBn7pHKozf0WzpF-S7F5nq7FB4aCPl0',
+                  'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdndteWFjcHhkeXdldmNjcG13Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjQ0NDExMywiZXhwIjoyMDg4MDIwMTEzfQ.1PZ9r_iLqjYlD-5g5X1f_v6J1e3B9k_gK5hG5d-CPl0',
               },
             },
           );
@@ -326,7 +433,7 @@ export class PollsService {
         if (!audience) return true;
         return p.targetAudience === 'ALL' || p.targetAudience === audience;
       });
-      return filtered.map((p) => sanitizePollForRole(p, role));
+      return filtered.map((p) => sanitizePollForRole(p, role, userId));
     }
 
     try {
@@ -336,12 +443,12 @@ export class PollsService {
           options: { orderBy: { orderIndex: 'asc' } },
           _count: { select: { votes: true } },
           createdBy: {
-            select: { firstName: true, lastName: true, role: true },
+            select: { id: true, firstName: true, lastName: true, role: true },
           },
         },
         orderBy: { createdAt: 'desc' },
       });
-      return items.map((p) => sanitizePollForRole(p, role));
+      return items.map((p) => sanitizePollForRole(p, role, userId));
     } catch (err: any) {
       console.warn('⚠️ [PollsService.listPolls] DB offline fallback:', err?.message || err);
       let list = inMemoryPolls.length > 0 ? inMemoryPolls : loadPersistedPolls();
@@ -352,9 +459,9 @@ export class PollsService {
             {
               headers: {
                 apikey:
-                  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdndteWFjcHhkeXdldmNjcG13Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzY2MjU1MSwiZXhwIjoyMTAzMjM4NTUxfQ.WqnDBvpwIOtDOBn7pHKozf0WzpF-S7F5nq7FB4aCPl0',
+                  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdndteWFjcHhkeXdldmNjcG13Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjQ0NDExMywiZXhwIjoyMDg4MDIwMTEzfQ.1PZ9r_iLqjYlD-5g5X1f_v6J1e3B9k_gK5hG5d-CPl0',
                 Authorization:
-                  'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdndteWFjcHhkeXdldmNjcG13Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzY2MjU1MSwiZXhwIjoyMTAzMjM4NTUxfQ.WqnDBvpwIOtDOBn7pHKozf0WzpF-S7F5nq7FB4aCPl0',
+                  'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdndteWFjcHhkeXdldmNjcG13Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjQ0NDExMywiZXhwIjoyMDg4MDIwMTEzfQ.1PZ9r_iLqjYlD-5g5X1f_v6J1e3B9k_gK5hG5d-CPl0',
               },
             },
           );
@@ -420,7 +527,7 @@ export class PollsService {
         if (!audience) return true;
         return p.targetAudience === 'ALL' || p.targetAudience === audience;
       });
-      return filtered.map((p) => sanitizePollForRole(p, role));
+      return filtered.map((p) => sanitizePollForRole(p, role, userId));
     }
   }
 
@@ -495,6 +602,138 @@ export class PollsService {
     }
   }
 
+  async updatePoll(
+    tenantId: string,
+    pollId: string,
+    dto: UpdatePollDto,
+  ) {
+    try {
+      const existing = await this.prisma.poll.findFirst({
+        where: { id: pollId, tenantId },
+        include: {
+          options: { orderBy: { orderIndex: 'asc' } },
+          _count: { select: { votes: true } },
+        },
+      });
+
+      if (!existing) {
+        throw new NotFoundException('نظرسنجی یافت نشد');
+      }
+
+      const existingMeta = extractPollMetadata(existing.questions);
+
+      let updatedQuestions = existingMeta.questions;
+      if (Array.isArray(dto.questions) && dto.questions.length > 0) {
+        updatedQuestions = dto.questions.map((q, index) => {
+          let qOptions = Array.isArray(q.options)
+            ? q.options.filter((o: any) => typeof o === 'string' && o.trim() !== '')
+            : [];
+          if (q.type === 'likert' && qOptions.length < 2) {
+            qOptions = ['کاملاً موافق', 'موافق', 'ممتنع / خنثی', 'مخالف', 'کاملاً مخالف'];
+          } else if (q.type === 'yes_no' && qOptions.length < 2) {
+            qOptions = ['بله', 'خیر'];
+          } else if (q.type === 'statement' || q.type === 'group') {
+            qOptions = [];
+          }
+          return {
+            ...q,
+            options: qOptions,
+            maxSelections: q.maxSelections ?? (q.type === 'choice' ? 1 : undefined),
+            required: q.type === 'statement' || q.type === 'group' ? false : (q.required ?? true),
+            displayMode: q.displayMode ?? 'buttons',
+          };
+        });
+      }
+
+      const updatedResultsVisibleToRoles = Array.isArray(dto.resultsVisibleToRoles)
+        ? dto.resultsVisibleToRoles
+        : existingMeta.resultsVisibleToRoles;
+
+      const updatedIsResultsPublic =
+        dto.isResultsPublic !== undefined ? !!dto.isResultsPublic : existingMeta.isResultsPublic;
+
+      const updatedIsMandatory =
+        dto.isMandatory !== undefined ? !!dto.isMandatory : existingMeta.isMandatory;
+
+      const updatedPreventDuplicate =
+        dto.preventDuplicate !== undefined ? !!dto.preventDuplicate : existingMeta.preventDuplicate;
+
+      const questionsJsonPayload = {
+        questions: updatedQuestions,
+        resultsVisibleToRoles: updatedResultsVisibleToRoles,
+        isResultsPublic: updatedIsResultsPublic,
+        isMandatory: updatedIsMandatory,
+        preventDuplicate: updatedPreventDuplicate,
+      };
+
+      const dataToUpdate: any = {
+        questions: questionsJsonPayload,
+      };
+
+      if (dto.title !== undefined) dataToUpdate.title = dto.title;
+      if (dto.description !== undefined) dataToUpdate.description = dto.description;
+      if (dto.pollType !== undefined) dataToUpdate.pollType = dto.pollType;
+      if (dto.targetAudience !== undefined) dataToUpdate.targetAudience = dto.targetAudience;
+      if (dto.targetClassIds !== undefined) dataToUpdate.targetClassIds = dto.targetClassIds;
+      if (dto.isAnonymous !== undefined) dataToUpdate.isAnonymous = dto.isAnonymous;
+
+      if (dto.startDate) {
+        const start = new Date(dto.startDate);
+        if (!isNaN(start.getTime())) dataToUpdate.startDate = start;
+      }
+      if (dto.endDate) {
+        const end = new Date(dto.endDate);
+        if (!isNaN(end.getTime())) dataToUpdate.endDate = end;
+      }
+
+      const updated = await this.prisma.poll.update({
+        where: { id: pollId },
+        data: dataToUpdate,
+        include: {
+          options: { orderBy: { orderIndex: 'asc' } },
+          _count: { select: { votes: true } },
+          createdBy: { select: { id: true, firstName: true, lastName: true, role: true } },
+        },
+      });
+
+      const formatted = formatPollResponse(updated);
+
+      const memIdx = inMemoryPolls.findIndex((p) => p.id === pollId);
+      if (memIdx >= 0) {
+        inMemoryPolls[memIdx] = { ...inMemoryPolls[memIdx], ...formatted };
+        savePersistedPolls(inMemoryPolls);
+      }
+
+      return formatted;
+    } catch (err: any) {
+      if (err instanceof NotFoundException) throw err;
+      console.warn('⚠️ [PollsService.updatePoll] DB offline fallback:', err?.message || err);
+      const poll = inMemoryPolls.find((p) => p.id === pollId && p.tenantId === tenantId);
+      if (!poll) throw new NotFoundException('نظرسنجی یافت نشد');
+
+      if (dto.title !== undefined) poll.title = dto.title;
+      if (dto.description !== undefined) poll.description = dto.description;
+      if (dto.targetAudience !== undefined) poll.targetAudience = dto.targetAudience;
+      if (dto.isAnonymous !== undefined) poll.isAnonymous = dto.isAnonymous;
+      if (dto.isMandatory !== undefined) poll.isMandatory = dto.isMandatory;
+      if (dto.preventDuplicate !== undefined) poll.preventDuplicate = dto.preventDuplicate;
+      if (dto.isResultsPublic !== undefined) poll.isResultsPublic = dto.isResultsPublic;
+      if (dto.resultsVisibleToRoles !== undefined) poll.resultsVisibleToRoles = dto.resultsVisibleToRoles;
+      if (dto.startDate) {
+        const s = new Date(dto.startDate);
+        if (!isNaN(s.getTime())) poll.startDate = s;
+      }
+      if (dto.endDate) {
+        const e = new Date(dto.endDate);
+        if (!isNaN(e.getTime())) poll.endDate = e;
+      }
+
+      const formatted = formatPollResponse(poll);
+      savePersistedPolls(inMemoryPolls);
+      return formatted;
+    }
+  }
+
   async deletePoll(tenantId: string, pollId: string) {
     try {
       const poll = await this.prisma.poll.findFirst({
@@ -550,7 +789,7 @@ export class PollsService {
         : null;
 
       const { votes: _votes, ...rest } = poll as any;
-      const sanitizedPoll = sanitizePollForRole(rest, role);
+      const sanitizedPoll = sanitizePollForRole(rest, role, userId);
 
       return {
         poll: sanitizedPoll,
@@ -571,7 +810,7 @@ export class PollsService {
       const userVote = userId
         ? inMemoryVotes.find((v) => v.pollId === pollId && v.userId === userId)
         : null;
-      const sanitizedPoll = sanitizePollForRole(poll, role);
+      const sanitizedPoll = sanitizePollForRole(poll, role, userId);
       return {
         poll: sanitizedPoll,
         hasVoted: !!userVote,
@@ -602,6 +841,8 @@ export class PollsService {
         throw new NotFoundException('نظرسنجی یافت نشد');
       }
 
+      const meta = extractPollMetadata(poll.questions);
+
       if (poll.targetAudience !== 'ALL' && role) {
         const aud = this.audienceForRole(role);
         if (aud && poll.targetAudience !== aud) {
@@ -621,11 +862,13 @@ export class PollsService {
         );
       }
 
-      const existing = await this.prisma.pollVote.findUnique({
-        where: { pollId_userId: { pollId, userId } },
-      });
-      if (existing) {
-        throw new ConflictException('شما قبلاً در این نظرسنجی پاسخ داده‌اید');
+      if (meta.preventDuplicate !== false) {
+        const existing = await this.prisma.pollVote.findUnique({
+          where: { pollId_userId: { pollId, userId } },
+        });
+        if (existing) {
+          throw new ConflictException('شما قبلاً در این نظرسنجی پاسخ داده‌اید');
+        }
       }
 
       const answers = dto.answers || {};
@@ -700,11 +943,7 @@ export class PollsService {
     }
   }
 
-  async getAnalytics(tenantId: string, pollId: string, role?: string) {
-    if (role && !canViewPollResults(role)) {
-      throw new ForbiddenException('شما دسترسی لازم برای مشاهده نتایج و آمار این نظرسنجی را ندارید');
-    }
-
+  async getAnalytics(tenantId: string, pollId: string, role?: string, userId?: string) {
     try {
       const poll = await this.prisma.poll.findFirst({
         where: { id: pollId, tenantId },
@@ -715,6 +954,13 @@ export class PollsService {
       });
       if (!poll) {
         throw new NotFoundException('نظرسنجی یافت نشد');
+      }
+
+      const formatted = formatPollResponse(poll);
+      if (!canUserViewPollResults(role, formatted, userId)) {
+        throw new ForbiddenException(
+          'شما دسترسی لازم برای مشاهده نتایج و آمار این نظرسنجی را ندارید',
+        );
       }
 
       let votes = await this.prisma.pollVote.findMany({
@@ -747,6 +993,14 @@ export class PollsService {
       console.warn('⚠️ [PollsService.getAnalytics] DB offline fallback:', err?.message || err);
       const poll = inMemoryPolls.find((p) => p.id === pollId && p.tenantId === tenantId);
       if (!poll) throw new NotFoundException('نظرسنجی یافت نشد');
+
+      const formatted = formatPollResponse(poll);
+      if (!canUserViewPollResults(role, formatted, userId)) {
+        throw new ForbiddenException(
+          'شما دسترسی لازم برای مشاهده نتایج و آمار این نظرسنجی را ندارید',
+        );
+      }
+
       let votes = inMemoryVotes.filter((v) => v.pollId === pollId && v.tenantId === tenantId);
 
       if (votes.length === 0 && poll.porscadFormId) {

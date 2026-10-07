@@ -25,6 +25,7 @@ import {
 import { PersianDatePicker } from '../../../components/ui/PersianDatePicker';
 import {
   canViewPollResults,
+  canUserViewPollResults,
   canManagePolls,
   canCreatePolls,
 } from './poll-access';
@@ -63,6 +64,8 @@ import {
   HelpCircle,
   User,
   Eye,
+  Edit3,
+  Shield,
 } from 'lucide-react';
 
 type QuestionType = PorscadQuestionType;
@@ -84,6 +87,10 @@ interface Poll {
   endDate: string;
   isAnonymous: boolean;
   isMandatory?: boolean;
+  preventDuplicate?: boolean;
+  isResultsPublic?: boolean;
+  resultsVisibleToRoles?: string[];
+  userCanViewResults?: boolean;
   isClosed: boolean;
   isArchived?: boolean;
   createdAt: string;
@@ -92,7 +99,8 @@ interface Poll {
   porscadFormPublicId?: string | null;
   options: PollOption[];
   _count?: { votes: number };
-  createdBy?: { firstName?: string; lastName?: string; role?: string };
+  createdById?: string;
+  createdBy?: { id?: string; firstName?: string; lastName?: string; role?: string };
 }
 
 interface QuestionDraft {
@@ -155,6 +163,38 @@ const AUDIENCE_LABEL: Record<string, string> = {
   TEACHERS: 'معلمان',
   STAFF: 'کارکنان',
 };
+
+const SELECTABLE_RESULTS_ROLES: Array<{
+  value: string;
+  label: string;
+  desc: string;
+}> = [
+  {
+    value: 'TEACHER',
+    label: 'معلمان و دبیران (TEACHER)',
+    desc: 'مشاهده آمار، درصد و نمودار پاسخ‌ها برای دبیران',
+  },
+  {
+    value: 'COACH',
+    label: 'مربیان تربیتی و پرورشی (COACH)',
+    desc: 'مشاهده نتایج و آمار برای مربیان',
+  },
+  {
+    value: 'STAFF',
+    label: 'کادر مدرسه و معاونین (STAFF)',
+    desc: 'مشاهده نتایج برای معاونین و کارکنان مدرسه',
+  },
+  {
+    value: 'STUDENT',
+    label: 'دانش‌آموزان (STUDENT)',
+    desc: 'امکان مشاهده نتایج نهایی برای دانش‌آموزان',
+  },
+  {
+    value: 'PARENT',
+    label: 'اولیا و والدین (PARENT)',
+    desc: 'امکان مشاهده نتایج و آمار برای اولیای دانش‌آموزان',
+  },
+];
 
 const TYPE_LABEL: Record<QuestionType, string> = {
   choice: 'چندگزینه‌ای',
@@ -292,10 +332,35 @@ export const PollsPage: React.FC = () => {
     isMandatory: false,
     preventDuplicate: true,
     isAnonymous: false,
+    isResultsPublic: false,
+    resultsVisibleToRoles: ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF', 'TEACHER', 'COACH'] as string[],
     startDate: gregorianToJalaliStr(new Date()),
     endDate: gregorianToJalaliStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
   });
   const [drafts, setDrafts] = useState<QuestionDraft[]>([emptyDraft()]);
+
+  // Edit modal state
+  const [editingPoll, setEditingPoll] = useState<Poll | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isEditSubmitting, setIsEditSubmitting] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    targetAudience: 'ALL' as
+      | 'ALL'
+      | 'STUDENTS'
+      | 'PARENTS'
+      | 'TEACHERS'
+      | 'STAFF',
+    isMandatory: false,
+    preventDuplicate: true,
+    isAnonymous: false,
+    isResultsPublic: false,
+    resultsVisibleToRoles: ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF', 'TEACHER', 'COACH'] as string[],
+    startDate: gregorianToJalaliStr(new Date()),
+    endDate: gregorianToJalaliStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
+  });
 
   // Fill (step-by-step) state
   const [activePoll, setActivePoll] = useState<Poll | null>(null);
@@ -489,11 +554,122 @@ export const PollsPage: React.FC = () => {
       isMandatory: false,
       preventDuplicate: true,
       isAnonymous: false,
+      isResultsPublic: false,
+      resultsVisibleToRoles: ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF', 'TEACHER', 'COACH'],
       startDate: gregorianToJalaliStr(new Date()),
       endDate: gregorianToJalaliStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
     });
     setDrafts([emptyDraft()]);
     setIsCreateOpen(true);
+  };
+
+  // ——— Edit Modal Handler ———
+  const openEdit = (poll: Poll) => {
+    setEditingPoll(poll);
+    setEditError(null);
+    let startJalali = gregorianToJalaliStr(new Date());
+    let endJalali = gregorianToJalaliStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+    try {
+      if (poll.startDate) startJalali = gregorianToJalaliStr(new Date(poll.startDate));
+      if (poll.endDate) endJalali = gregorianToJalaliStr(new Date(poll.endDate));
+    } catch {}
+
+    const initialRoles =
+      Array.isArray(poll.resultsVisibleToRoles) && poll.resultsVisibleToRoles.length > 0
+        ? poll.resultsVisibleToRoles
+        : ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF', 'TEACHER', 'COACH'];
+
+    setEditForm({
+      title: poll.title || '',
+      description: poll.description || '',
+      targetAudience: poll.targetAudience || 'ALL',
+      isMandatory: !!poll.isMandatory,
+      preventDuplicate: poll.preventDuplicate !== false,
+      isAnonymous: !!poll.isAnonymous,
+      isResultsPublic: !!poll.isResultsPublic,
+      resultsVisibleToRoles: initialRoles,
+      startDate: startJalali,
+      endDate: endJalali,
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleEditSubmit = async () => {
+    if (!editingPoll) return;
+    if (!editForm.title.trim()) {
+      setEditError('عنوان نظرسنجی الزامی است');
+      toast.error('عنوان نظرسنجی الزامی است');
+      return;
+    }
+    if (!editForm.startDate || !editForm.endDate) {
+      setEditError('تاریخ شروع و پایان را مشخص کنید');
+      toast.error('تاریخ شروع و پایان را مشخص کنید');
+      return;
+    }
+    try {
+      if (jalaliToGregorianDate(editForm.endDate) < jalaliToGregorianDate(editForm.startDate)) {
+        setEditError('تاریخ پایان باید بعد از تاریخ شروع باشد');
+        toast.error('تاریخ پایان باید بعد از تاریخ شروع باشد');
+        return;
+      }
+    } catch {
+      setEditError('تاریخ شروع یا پایان نامعتبر است');
+      toast.error('تاریخ شروع یا پایان نامعتبر است');
+      return;
+    }
+
+    setIsEditSubmitting(true);
+    setEditError(null);
+    try {
+      const startDate = (() => {
+        const d = jalaliToGregorianDate(editForm.startDate);
+        d.setHours(0, 0, 0, 0);
+        return d.toISOString();
+      })();
+      const endDate = (() => {
+        const d = jalaliToGregorianDate(editForm.endDate);
+        d.setHours(23, 59, 59, 999);
+        return d.toISOString();
+      })();
+
+      const patchPayload = {
+        title: editForm.title.trim(),
+        description: editForm.description.trim() || undefined,
+        targetAudience: editForm.targetAudience,
+        isMandatory: editForm.isMandatory,
+        preventDuplicate: editForm.preventDuplicate,
+        isAnonymous: editForm.isAnonymous,
+        isResultsPublic: editForm.isResultsPublic,
+        resultsVisibleToRoles: editForm.resultsVisibleToRoles,
+        startDate,
+        endDate,
+      };
+
+      await apiClient.patch(`/polls/${editingPoll.id}`, patchPayload);
+
+      if (editingPoll.porscadFormId && porscadSurvey.getToken()) {
+        try {
+          await porscadSurvey.updateFormState(editingPoll.porscadFormId, {
+            title: editForm.title.trim(),
+            description: editForm.description.trim() || undefined,
+          } as any);
+        } catch (syncErr) {
+          console.warn('Could not sync title edit to Porscad:', syncErr);
+        }
+      }
+
+      toast.success('مشخصات و تنظیمات دسترسی نظرسنجی با موفقیت ویرایش شد');
+      setIsEditOpen(false);
+      setEditingPoll(null);
+      await fetchPolls();
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e?.message || 'خطا در ویرایش نظرسنجی';
+      const strMsg = typeof msg === 'string' ? msg : 'خطا در ویرایش نظرسنجی';
+      toast.error(strMsg);
+      setEditError(strMsg);
+    } finally {
+      setIsEditSubmitting(false);
+    }
   };
 
   const updateDraft = (index: number, patch: Partial<QuestionDraft>) => {
@@ -656,6 +832,8 @@ export const PollsPage: React.FC = () => {
         isMandatory: form.isMandatory,
         preventDuplicate: form.preventDuplicate,
         isAnonymous: form.isAnonymous,
+        isResultsPublic: form.isResultsPublic,
+        resultsVisibleToRoles: form.resultsVisibleToRoles,
         startDate: (() => {
           const d = jalaliToGregorianDate(form.startDate);
           d.setHours(0, 0, 0, 0);
@@ -687,6 +865,8 @@ export const PollsPage: React.FC = () => {
         isMandatory: false,
         preventDuplicate: true,
         isAnonymous: false,
+        isResultsPublic: false,
+        resultsVisibleToRoles: ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'STAFF', 'TEACHER', 'COACH'],
         startDate: gregorianToJalaliStr(new Date()),
         endDate: gregorianToJalaliStr(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
       });
@@ -2007,7 +2187,7 @@ export const PollsPage: React.FC = () => {
                           <Send className="w-4 h-4 shrink-0" />
                           <span>شرکت در نظرسنجی</span>
                         </Button>
-                      ) : canViewResults ? (
+                      ) : canUserViewPollResults(user?.role, poll, user?.id) ? (
                         <Button
                           variant="outline"
                           onClick={() => openAnalytics(poll)}
@@ -2027,6 +2207,16 @@ export const PollsPage: React.FC = () => {
                     {/* Admin Tools */}
                     {isAdmin && (
                       <div className={`flex items-center gap-1 shrink-0 ${isFuture ? 'mr-auto' : ''}`}>
+                        {/* Edit Poll & Results Visibility — Available in ALL states (Active, Closed, Archived) */}
+                        <button
+                          type="button"
+                          onClick={() => openEdit(poll)}
+                          className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-white dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors shadow-2xs cursor-pointer"
+                          title="ویرایش نظرسنجی و دسترسی به نتایج"
+                        >
+                          <Edit3 className="w-4 h-4 text-slate-600 dark:text-slate-300 hover:text-primary" />
+                        </button>
+
                         {!archived && !isClosed && !isFuture && (
                           <button
                             type="button"
@@ -2243,6 +2433,87 @@ export const PollsPage: React.FC = () => {
                   value={form.endDate}
                   onChange={(d) => setForm({ ...form, endDate: d })}
                 />
+              </div>
+
+              {/* Results Visibility Settings */}
+              <div className="space-y-3 p-3.5 rounded-xl border border-border/80 bg-surface/30">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-primary shrink-0" />
+                    <label className="text-xs font-bold text-foreground">
+                      دسترسی به مشاهده نتایج و آمار:
+                    </label>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">
+                    کنترل نمایش درصدها و نمودارها
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-foreground cursor-pointer p-2.5 rounded-lg border border-border/60 bg-background hover:bg-surface/40 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={form.isResultsPublic}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          isResultsPublic: e.target.checked,
+                        })
+                      }
+                      className="w-4 h-4 rounded text-primary"
+                    />
+                    <div>
+                      <span className="text-foreground">مشاهده نتایج برای تمام مخاطبان آزاد باشد</span>
+                      <p className="text-[10px] text-muted-foreground font-normal">
+                        در صورت فعال‌بودن، تمامی کاربران پس از ثبت پاسخ یا اتمام نظرسنجی می‌توانند آمار را ببینند.
+                      </p>
+                    </div>
+                  </label>
+
+                  {!form.isResultsPublic && (
+                    <div className="space-y-1.5 pt-1.5 border-t border-border/40">
+                      <p className="text-[11px] font-bold text-foreground mb-1">
+                        نقش‌های مجاز برای مشاهده آمار و نتایج:
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {SELECTABLE_RESULTS_ROLES.map((r) => {
+                          const isChecked = form.resultsVisibleToRoles.includes(r.value);
+                          return (
+                            <label
+                              key={r.value}
+                              className={`flex items-start gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                isChecked
+                                  ? 'border-primary/50 bg-primary/10 text-primary-dark dark:text-primary font-bold'
+                                  : 'border-border/60 bg-background text-muted-foreground hover:border-border'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  const nextRoles = e.target.checked
+                                    ? [...form.resultsVisibleToRoles, r.value]
+                                    : form.resultsVisibleToRoles.filter((x) => x !== r.value);
+                                  setForm({ ...form, resultsVisibleToRoles: nextRoles });
+                                }}
+                                className="w-3.5 h-3.5 rounded text-primary mt-0.5"
+                              />
+                              <div>
+                                <span className="text-foreground">{r.label}</span>
+                                <p className="text-[10px] text-muted-foreground font-normal">
+                                  {r.desc}
+                                </p>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground/80 mt-1">
+                        * مدیران مدرسه و مدیر کل سیستم همواره به آمار کامل دسترسی دارند.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -2828,6 +3099,245 @@ export const PollsPage: React.FC = () => {
                 {isSubmitting ? 'در حال ذخیره…' : 'ذخیره و ساخت فرم'}
               </Button>
             )}
+          </div>
+        </div>
+      </Modal>
+
+      {/* ——— Edit Poll Modal ——— */}
+      <Modal
+        isOpen={isEditOpen}
+        onClose={() => {
+          if (!isEditSubmitting) {
+            setIsEditOpen(false);
+            setEditingPoll(null);
+          }
+        }}
+        title="ویرایش نظرسنجی و دسترسی‌ها"
+        description="ویرایش عنوان، توضیحات، تاریخ‌ها و سطوح دسترسی مشاهده نتایج"
+        maxWidth="2xl"
+      >
+        <div className="space-y-4">
+          {editError && (
+            <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{editError}</span>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-semibold text-foreground mb-1.5">
+              عنوان نظرسنجی *
+            </label>
+            <Input
+              value={editForm.title}
+              onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+              placeholder="عنوان نظرسنجی..."
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-foreground mb-1.5">
+              توضیحات
+            </label>
+            <textarea
+              value={editForm.description}
+              onChange={(e) =>
+                setEditForm({ ...editForm, description: e.target.value })
+              }
+              rows={2}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[#FAFAFA] dark:bg-[#1C2536] text-sm font-medium focus:border-primary focus:outline-none"
+              placeholder="توضیح کوتاه درباره هدف نظرسنجی…"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-foreground mb-2">
+              جامعه مخاطبان نظرسنجی:
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {AUDIENCE_OPTIONS.map((opt) => {
+                const selected = editForm.targetAudience === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() =>
+                      setEditForm({
+                        ...editForm,
+                        targetAudience: opt.value as typeof editForm.targetAudience,
+                      })
+                    }
+                    className={`text-right p-3 rounded-xl border transition-all ${
+                      selected
+                        ? 'border-primary bg-primary/10 shadow-[2px_2px_0_#202A5A] dark:shadow-[2px_2px_0_#59BBAF]'
+                        : 'border-border bg-surface/30 hover:border-primary/40'
+                    }`}
+                  >
+                    <p className="text-sm font-black text-foreground">{opt.label}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {opt.desc}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Dates */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <PersianDatePicker
+              label="تاریخ شروع"
+              value={editForm.startDate}
+              onChange={(d) => setEditForm({ ...editForm, startDate: d })}
+            />
+            <PersianDatePicker
+              label="مهلت پایان"
+              value={editForm.endDate}
+              onChange={(d) => setEditForm({ ...editForm, endDate: d })}
+            />
+          </div>
+
+          {/* Results Visibility Settings */}
+          <div className="space-y-3 p-3.5 rounded-xl border border-border/80 bg-surface/30">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-primary shrink-0" />
+                <label className="text-xs font-bold text-foreground">
+                  دسترسی به مشاهده نتایج و آمار:
+                </label>
+              </div>
+              <span className="text-[10px] text-muted-foreground">
+                کنترل نمایش آمار و نمودارها
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-xs font-bold text-foreground cursor-pointer p-2.5 rounded-lg border border-border/60 bg-background hover:bg-surface/40 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={editForm.isResultsPublic}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      isResultsPublic: e.target.checked,
+                    })
+                  }
+                  className="w-4 h-4 rounded text-primary"
+                />
+                <div>
+                  <span className="text-foreground">مشاهده نتایج برای تمام مخاطبان آزاد باشد</span>
+                  <p className="text-[10px] text-muted-foreground font-normal">
+                    در صورت فعال‌بودن، تمامی کاربران پس از ثبت پاسخ یا اتمام نظرسنجی می‌توانند آمار را ببینند.
+                  </p>
+                </div>
+              </label>
+
+              {!editForm.isResultsPublic && (
+                <div className="space-y-1.5 pt-1.5 border-t border-border/40">
+                  <p className="text-[11px] font-bold text-foreground mb-1">
+                    نقش‌های مجاز برای مشاهده آمار و نتایج:
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {SELECTABLE_RESULTS_ROLES.map((r) => {
+                      const isChecked = editForm.resultsVisibleToRoles.includes(r.value);
+                      return (
+                        <label
+                          key={r.value}
+                          className={`flex items-start gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                            isChecked
+                              ? 'border-primary/50 bg-primary/10 text-primary-dark dark:text-primary font-bold'
+                              : 'border-border/60 bg-background text-muted-foreground hover:border-border'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              const nextRoles = e.target.checked
+                                ? [...editForm.resultsVisibleToRoles, r.value]
+                                : editForm.resultsVisibleToRoles.filter((x) => x !== r.value);
+                              setEditForm({ ...editForm, resultsVisibleToRoles: nextRoles });
+                            }}
+                            className="w-3.5 h-3.5 rounded text-primary mt-0.5"
+                          />
+                          <div>
+                            <span className="text-foreground">{r.label}</span>
+                            <p className="text-[10px] text-muted-foreground font-normal">
+                              {r.desc}
+                            </p>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground/80 mt-1">
+                    * مدیران مدرسه و مدیر کل سیستم همواره به آمار کامل دسترسی دارند.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Options: Mandatory & Anonymous */}
+          <div className="space-y-2 p-3.5 rounded-xl border border-border/80 bg-surface/30">
+            <label className="block text-xs font-bold text-foreground">
+              سایر تنظیمات:
+            </label>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-1">
+              <label className="flex items-center gap-2 text-xs font-bold text-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editForm.isAnonymous}
+                  onChange={(e) => setEditForm({ ...editForm, isAnonymous: e.target.checked })}
+                  className="w-4 h-4 rounded text-primary"
+                />
+                <span>ثبت پاسخ‌ها به‌صورت ناشناس</span>
+              </label>
+
+              <label className="flex items-center gap-2 text-xs font-bold text-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editForm.isMandatory}
+                  onChange={(e) => setEditForm({ ...editForm, isMandatory: e.target.checked })}
+                  className="w-4 h-4 rounded text-primary"
+                />
+                <span>تکمیل الزامی (تکلیفی)</span>
+              </label>
+
+              <label className="flex items-center gap-2 text-xs font-bold text-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editForm.preventDuplicate}
+                  onChange={(e) => setEditForm({ ...editForm, preventDuplicate: e.target.checked })}
+                  className="w-4 h-4 rounded text-primary"
+                />
+                <span>جلوگیری از پاسخ تکراری</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="flex justify-between gap-2 pt-3 border-t border-border/50">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsEditOpen(false);
+                setEditingPoll(null);
+              }}
+              disabled={isEditSubmitting}
+            >
+              انصراف
+            </Button>
+            <Button
+              type="button"
+              onClick={handleEditSubmit}
+              disabled={isEditSubmitting}
+              className="gap-1.5"
+            >
+              <Check className="w-4 h-4" />
+              {isEditSubmitting ? 'در حال ذخیره…' : 'ذخیره تغییرات'}
+            </Button>
           </div>
         </div>
       </Modal>
