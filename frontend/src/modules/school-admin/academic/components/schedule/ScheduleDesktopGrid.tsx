@@ -137,7 +137,7 @@ export const ScheduleDesktopGrid: React.FC<ScheduleDesktopGridProps> = ({
                                   }`}>
                                     <div className="flex items-center justify-between text-[10px]">
                                       <span className={`font-extrabold truncate ${item.secondLesson ? 'text-ink-darker dark:text-white' : 'text-gray-400 dark:text-gray-500 font-medium'}`}>
-                                        {item.secondLesson?.name || 'بدون کلاس (آزاد)'}
+                                        {item.secondLesson?.name || 'بدون کلاس'}
                                       </span>
                                       <span className="text-[8px] bg-white dark:bg-[#151C28] text-primary px-1 rounded font-bold border border-primary/20 shrink-0">
                                         هفته زوج

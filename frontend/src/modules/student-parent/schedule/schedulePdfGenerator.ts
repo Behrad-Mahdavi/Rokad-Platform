@@ -64,7 +64,7 @@ export function generateSchedulePdf({
                   </div>
                   <div class="split-divider"></div>
                   <div class="split-half ${!hasSecondWeek ? 'empty-half' : ''}">
-                    <div class="lesson-name ${!hasSecondWeek ? 'text-muted-empty' : ''}">${hasSecondWeek ? (slot.secondLesson?.name || '—') : 'بدون کلاس (آزاد)'}</div>
+                    <div class="lesson-name ${!hasSecondWeek ? 'text-muted-empty' : ''}">${hasSecondWeek ? (slot.secondLesson?.name || '—') : 'بدون کلاس'}</div>
                     ${hasSecondWeek && subLabel2 ? `<div class="teacher-name">${subLabel2}</div>` : ''}
                     <span class="split-tag">هفته زوج</span>
                   </div>

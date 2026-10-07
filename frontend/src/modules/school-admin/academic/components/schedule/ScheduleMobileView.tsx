@@ -171,7 +171,7 @@ export const ScheduleMobileView: React.FC<ScheduleMobileViewProps> = ({
                           }`}>
                             <div className="flex items-center justify-between gap-1 flex-wrap">
                               <span className={`font-extrabold text-xs truncate ${item.secondLesson ? 'text-ink-darker dark:text-white' : 'text-gray-400 dark:text-gray-500 font-medium'}`}>
-                                ۲. {item.secondLesson?.name || 'بدون کلاس (آزاد)'}
+                                ۲. {item.secondLesson?.name || 'بدون کلاس'}
                               </span>
                               <div className="flex items-center gap-1">
                                 {item.secondLesson && (

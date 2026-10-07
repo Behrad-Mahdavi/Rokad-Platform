@@ -442,7 +442,7 @@ export const StudentSchedulePage: React.FC = () => {
                               <div className="flex flex-wrap items-center gap-2">
                                 <h3 className={`font-bold text-sm sm:text-base flex items-center gap-1.5 ${slot.secondLesson ? 'text-foreground dark:text-white' : 'text-muted-foreground dark:text-gray-400 font-medium'}`}>
                                   <BookOpen className="w-4 h-4 text-primary shrink-0" />
-                                  <span>{slot.secondLesson?.name || 'بدون کلاس (آزاد)'}</span>
+                                  <span>{slot.secondLesson?.name || 'بدون کلاس'}</span>
                                 </h3>
                                 {slot.secondTeacher?.user && (
                                   <span className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#1C2536] px-2 py-0.5 rounded-md border border-gray-200 dark:border-[#242F42] text-[11px] font-medium text-muted-foreground dark:text-slate-300">

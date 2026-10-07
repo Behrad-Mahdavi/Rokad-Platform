@@ -301,7 +301,7 @@ export const SchedulePeriodModal: React.FC<SchedulePeriodModalProps> = ({
                     onChange={(e) => onSecondLessonChange(e.target.value)}
                     className="flex h-10 w-full rounded-xl border border-gray-300 bg-white dark:bg-[#151C28] dark:border-[#242F42] px-3 text-xs text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
                   >
-                    <option value="">-- بدون کلاس (آزاد) --</option>
+                    <option value="">-- بدون کلاس --</option>
                     {availableLessons.map((l) => (
                       <option key={l.id} value={l.id}>
                         {l.name} ({l.code})
