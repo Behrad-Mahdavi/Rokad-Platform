@@ -66,6 +66,9 @@ import {
   Eye,
   Edit3,
   Shield,
+  Share2,
+  ExternalLink,
+  Copy,
 } from 'lucide-react';
 
 type QuestionType = PorscadQuestionType;
@@ -2236,6 +2239,22 @@ export const PollsPage: React.FC = () => {
                     {/* Admin Tools */}
                     {isAdmin && (
                       <div className={`flex items-center gap-1 shrink-0 ${isFuture ? 'mr-auto' : ''}`}>
+                        {/* Copy Public Porscad Link */}
+                        {poll.porscadFormPublicId && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const pLink = `https://porskad.ir/f/${poll.porscadFormPublicId}`;
+                              navigator.clipboard.writeText(pLink);
+                              toast.success('لینک عمومی پرس‌کاد کپی شد: ' + pLink);
+                            }}
+                            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-white dark:bg-[#1C2536] border border-gray-200 dark:border-[#242F42] text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors shadow-2xs cursor-pointer"
+                            title="کپی لینک مستقیم پرس‌کاد جهت اشتراک‌گذاری"
+                          >
+                            <Share2 className="w-4 h-4 text-primary" />
+                          </button>
+                        )}
+
                         {/* Edit Poll & Results Visibility — Available in ALL states (Active, Closed, Archived) */}
                         <button
                           type="button"

@@ -1015,9 +1015,21 @@ export class PollsService {
         },
       });
 
-      if (votes.length === 0 && poll.porscadFormId) {
+      if (poll.porscadFormId) {
         const porscadVotes = await this.fetchPorscadLiveResponses(poll);
         if (porscadVotes.length > 0) {
+          // Merge local registered user details with Porscad live responses
+          const localMapByRespId = new Map(
+            votes.map((v) => [v.porscadResponseId, v]),
+          );
+          for (const pv of porscadVotes) {
+            const local = localMapByRespId.get(pv.porscadResponseId);
+            if (local) {
+              if (local.respondentName) pv.respondentName = local.respondentName;
+              if (local.user) pv.user = local.user;
+              if (local.createdAt) pv.createdAt = local.createdAt;
+            }
+          }
           return this.formatAnalyticsData(poll, porscadVotes);
         }
       }
@@ -1038,7 +1050,7 @@ export class PollsService {
 
       let votes = inMemoryVotes.filter((v) => v.pollId === pollId && v.tenantId === tenantId);
 
-      if (votes.length === 0 && poll.porscadFormId) {
+      if (poll.porscadFormId) {
         const porscadVotes = await this.fetchPorscadLiveResponses(poll);
         if (porscadVotes.length > 0) {
           return this.formatAnalyticsData(poll, porscadVotes);
