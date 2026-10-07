@@ -1921,7 +1921,7 @@ export const AttendancePage: React.FC = () => {
                               isCurrent
                                 ? 'border-primary/80 dark:border-primary/60 bg-gradient-to-br from-primary/[0.12] via-white to-white dark:from-primary/20 dark:via-[#151C28] dark:to-[#151C28] ring-2 ring-primary/30 shadow-xs hover:border-primary hover:shadow-md'
                                 : isPassed
-                                ? 'border-rose-200/80 dark:border-rose-900/50 bg-gradient-to-br from-rose-500/[0.07] via-white to-white dark:from-rose-950/25 dark:via-[#151C28] dark:to-[#151C28] hover:border-rose-400 dark:hover:border-rose-700 hover:shadow-xs'
+                                ? 'bg-gray-100/75 dark:bg-[#151C28]/60 border-gray-200/80 dark:border-[#242F42]/60 opacity-65 hover:opacity-90 hover:border-gray-300 dark:hover:border-gray-700'
                                 : isRecorded
                                 ? 'bg-emerald-50/20 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-800/40 hover:border-primary/50'
                                 : 'bg-white dark:bg-[#151C28] border-gray-200/80 dark:border-[#242F42] hover:border-primary/50 hover:shadow-sm'
@@ -1939,7 +1939,7 @@ export const AttendancePage: React.FC = () => {
                                     isCurrent
                                       ? 'text-primary dark:text-primary-light'
                                       : isPassed
-                                      ? 'text-rose-950 dark:text-rose-200 group-hover:text-rose-600'
+                                      ? 'text-muted-foreground dark:text-gray-400 group-hover:text-foreground dark:group-hover:text-white'
                                       : 'text-foreground dark:text-white group-hover:text-primary'
                                   }`}
                                 >
@@ -1961,11 +1961,13 @@ export const AttendancePage: React.FC = () => {
                                     isCurrent
                                       ? 'text-primary'
                                       : isPassed
-                                      ? 'text-rose-500/80'
+                                      ? 'text-muted-foreground/60 dark:text-gray-500'
                                       : 'text-primary'
                                   }`}
                                 />
-                                <span className="truncate text-foreground dark:text-slate-200 font-extrabold">{slot.lessonName}</span>
+                                <span className={`truncate font-extrabold ${isPassed ? 'text-muted-foreground dark:text-gray-300' : 'text-foreground dark:text-slate-200'}`}>
+                                  {slot.lessonName}
+                                </span>
                               </div>
                             </div>
 
@@ -1977,7 +1979,7 @@ export const AttendancePage: React.FC = () => {
                                     isCurrent
                                       ? 'text-primary'
                                       : isPassed
-                                      ? 'text-rose-500/80'
+                                      ? 'text-muted-foreground/60 dark:text-gray-500'
                                       : 'text-primary'
                                   }`}
                                 />
