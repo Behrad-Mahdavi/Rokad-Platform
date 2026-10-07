@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { ScrollToTop } from '../../components/common/ScrollToTop';
+import loginPattern from '../../assets/images/login-pattern.svg';
 
 export const AuthLayout: React.FC = () => {
   return (
@@ -8,6 +9,11 @@ export const AuthLayout: React.FC = () => {
       <ScrollToTop />
       {/* Brand Panel */}
       <div className="hidden lg:block w-[45%] h-screen overflow-hidden relative bg-black bg-gradient-to-t from-[#19A297] to-[#59BBAF] select-none">
+        <img
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity-30"
+          alt=""
+          src={loginPattern}
+        />
         <div className="absolute right-12 sm:right-14 bottom-40 text-right z-10" dir="rtl">
           <h2 className="text-white text-4xl font-semibold">به پلتفرم رکاد</h2>
           <h1 className="text-white text-5xl font-black mt-2">خوش آمدید !</h1>
