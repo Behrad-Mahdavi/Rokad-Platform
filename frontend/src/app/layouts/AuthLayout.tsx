@@ -26,9 +26,9 @@ export const AuthLayout: React.FC = () => {
           alt=""
           src={union3}
         />
-        <div className="absolute left-15 bottom-40 text-left z-10" dir="ltr">
-          <h2 className="text-white text-4xl font-gilory">Welcome To</h2>
-          <h1 className="text-white text-5xl font-bold-gilory mt-1">KA Platform</h1>
+        <div className="absolute right-12 sm:right-14 bottom-40 text-right z-10" dir="rtl">
+          <h2 className="text-white text-4xl font-semibold font-gilory">به پلتفرم رکاد</h2>
+          <h1 className="text-white text-5xl font-black font-bold-gilory mt-2">خوش آمدید !</h1>
         </div>
       </div>
 
