@@ -87,16 +87,78 @@ export const MembersPage: React.FC = () => {
   const [selectedGrade, setSelectedGrade] = useState<string>('ALL');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
+  const getStudentGradeLevel = (student: any, allClassrooms: any[] = []): string => {
+    if (!student) return 'دهم';
+
+    const currentClassroomId =
+      student.enrollments?.[0]?.classroomId ||
+      student.enrollments?.[0]?.classroom?.id ||
+      student.classroomId ||
+      student.classroom?.id;
+
+    const currentClassroom =
+      allClassrooms.find((c) => c.id === currentClassroomId) ||
+      student.enrollments?.[0]?.classroom ||
+      student.classroom;
+
+    const levelName = currentClassroom?.level?.name || '';
+    if (levelName) {
+      const clean = levelName.replace('پایه', '').trim();
+      if (clean.includes('یازدهم')) return 'یازدهم';
+      if (clean.includes('دوازدهم')) return 'دوازدهم';
+      if (clean.includes('دهم')) return 'دهم';
+      if (clean === '10' || clean === '۱۰') return 'دهم';
+      if (clean === '11' || clean === '۱۱') return 'یازدهم';
+      if (clean === '12' || clean === '۱۲') return 'دوازدهم';
+      if (clean) return clean;
+    }
+
+    const className = currentClassroom?.name || '';
+    if (className) {
+      const clean = className.trim();
+      if (clean.includes('یازدهم')) return 'یازدهم';
+      if (clean.includes('دوازدهم')) return 'دوازدهم';
+      if (clean.includes('دهم')) return 'دهم';
+
+      const engDigits = clean.replace(/[۰-۹]/g, (d: string) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
+      const match = engDigits.match(/\b(1\d{2}|2\d{2}|3\d{2})\b/) || engDigits.match(/(1\d{2}|2\d{2}|3\d{2})/);
+      if (match) {
+        const code = parseInt(match[1], 10);
+        if (code >= 100 && code < 200) return 'دهم';
+        if (code >= 200 && code < 300) return 'یازدهم';
+        if (code >= 300 && code < 400) return 'دوازدهم';
+      }
+    }
+
+    const rawGrade = student.gradeLevel || '';
+    if (rawGrade) {
+      const clean = String(rawGrade).replace('پایه', '').trim();
+      if (clean.includes('یازدهم')) return 'یازدهم';
+      if (clean.includes('دوازدهم')) return 'دوازدهم';
+      if (clean.includes('دهم')) return 'دهم';
+      if (clean === '10' || clean === '۱۰') return 'دهم';
+      if (clean === '11' || clean === '۱۱') return 'یازدهم';
+      if (clean === '12' || clean === '۱۲') return 'دوازدهم';
+      if (clean) return clean;
+    }
+
+    return 'دهم';
+  };
+
   const availableGrades = useMemo(() => {
     const gradesSet = new Set<string>();
     classrooms.forEach((c) => {
       const name = c.level?.name || '';
       const clean = name.replace('پایه', '').trim();
       if (clean) gradesSet.add(clean);
+      const cName = c.name || '';
+      if (cName.includes('دهم') || /1\d{2}/.test(cName)) gradesSet.add('دهم');
+      if (cName.includes('یازدهم') || /2\d{2}/.test(cName)) gradesSet.add('یازدهم');
+      if (cName.includes('دوازدهم') || /3\d{2}/.test(cName)) gradesSet.add('دوازدهم');
     });
     students.forEach((s) => {
-      const gName = (s.enrollments?.[0]?.classroom?.level?.name || s.gradeLevel || '').replace('پایه', '').trim();
-      if (gName) gradesSet.add(gName);
+      const g = getStudentGradeLevel(s, classrooms);
+      if (g) gradesSet.add(g);
     });
     if (gradesSet.size === 0) {
       return ['دهم', 'یازدهم', 'دوازدهم'];
@@ -117,8 +179,8 @@ export const MembersPage: React.FC = () => {
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
       if (selectedGrade !== 'ALL') {
-        const studentGrade = (s.enrollments?.[0]?.classroom?.level?.name || s.gradeLevel || '').replace('پایه', '').trim();
-        if (studentGrade !== selectedGrade && !studentGrade.includes(selectedGrade)) {
+        const studentGrade = getStudentGradeLevel(s, classrooms);
+        if (studentGrade !== selectedGrade) {
           return false;
         }
       }
@@ -127,7 +189,16 @@ export const MembersPage: React.FC = () => {
       const fullName = `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.toLowerCase();
       const nationalCode = (s.nationalCode || '').toLowerCase();
       const studentNumber = (s.studentNumber || s.studentCode || '').toLowerCase();
-      const classroom = (s.classroom?.name || s.enrollments?.[0]?.classroom?.name || '').toLowerCase();
+      const currentClassroomId =
+        s.enrollments?.[0]?.classroomId ||
+        s.enrollments?.[0]?.classroom?.id ||
+        s.classroomId ||
+        s.classroom?.id;
+      const currentClassroom =
+        classrooms.find((c) => c.id === currentClassroomId) ||
+        s.enrollments?.[0]?.classroom ||
+        s.classroom;
+      const classroom = (currentClassroom?.name || '').toLowerCase();
       const phone = (s.user?.phone || s.studentMobile || s.fatherPhone || '').toLowerCase();
       const father = (s.fatherName || s.fatherFullName || '').toLowerCase();
       const mother = (s.motherFullName || '').toLowerCase();
@@ -141,7 +212,7 @@ export const MembersPage: React.FC = () => {
         mother.includes(query)
       );
     });
-  }, [students, search, selectedGrade]);
+  }, [students, classrooms, search, selectedGrade]);
 
   const filteredTeachers = useMemo(() => {
     if (!search.trim()) return teachers;
@@ -252,13 +323,7 @@ export const MembersPage: React.FC = () => {
       const currentClassroom =
         classrooms.find((c) => c.id === currentClassroomId) ||
         student.enrollments?.[0]?.classroom;
-      const currentGradeLevel =
-        student.gradeLevel ||
-        (currentClassroom?.level?.name
-          ? currentClassroom.level.name.includes('پایه')
-            ? currentClassroom.level.name.replace('پایه', '').trim()
-            : currentClassroom.level.name
-          : '');
+      const currentGradeLevel = getStudentGradeLevel(student, classrooms);
 
       return {
         'کد ملی:': student.nationalCode || student.studentCode || '',
@@ -955,8 +1020,7 @@ export const MembersPage: React.FC = () => {
               </button>
               {availableGrades.map((grade) => {
                 const count = students.filter((s) => {
-                  const g = (s.enrollments?.[0]?.classroom?.level?.name || s.gradeLevel || '').replace('پایه', '').trim();
-                  return g === grade || g.includes(grade);
+                  return getStudentGradeLevel(s, classrooms) === grade;
                 }).length;
                 const isSelected = selectedGrade === grade;
                 return (
@@ -1007,7 +1071,7 @@ export const MembersPage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
                   <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary-dark dark:text-primary-light border border-primary/20">
-                    {s.enrollments?.[0]?.classroom?.level?.name?.replace('پایه', '').trim() || s.gradeLevel?.replace('پایه', '').trim() || 'دهم'}
+                    {getStudentGradeLevel(s, classrooms)}
                   </span>
                   <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-ink-normal dark:text-gray-200 border border-gray-200/80 dark:border-gray-700">
                     {s.enrollments?.[0]?.classroom?.name?.replace('کلاس', '').trim() || s.classroom?.name?.replace('کلاس', '').trim() || '—'}
@@ -1058,7 +1122,7 @@ export const MembersPage: React.FC = () => {
                     </div>
                     <div className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1">
                       <span>پایه:</span>
-                      <span className="font-bold text-primary">{s.enrollments?.[0]?.classroom?.level?.name || s.gradeLevel || 'دهم'}</span>
+                      <span className="font-bold text-primary">{getStudentGradeLevel(s, classrooms)}</span>
                       {s.fatherName && (
                         <>
                           <span className="text-gray-300 dark:text-gray-600">•</span>
