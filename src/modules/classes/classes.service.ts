@@ -751,21 +751,22 @@ export class ClassesService {
     }
 
     if (dto.isSplitPeriod) {
-      if (!dto.secondLessonId || !dto.secondTeacherId) {
-        throw new BadRequestException('در حالت یک هفته در میان (هفته فرد و زوج)، مشخص کردن درس دوم و دبیر دوم الزامی است');
-      }
-      const secondLesson = await this.prisma.lesson.findFirst({
-        where: { id: dto.secondLessonId, tenantId },
-      });
-      if (!secondLesson) {
-        throw new NotFoundException('درس دوم مورد نظر در این مدرسه یافت نشد');
+      if (dto.secondLessonId) {
+        const secondLesson = await this.prisma.lesson.findFirst({
+          where: { id: dto.secondLessonId, tenantId },
+        });
+        if (!secondLesson) {
+          throw new NotFoundException('درس دوم مورد نظر در این مدرسه یافت نشد');
+        }
       }
 
-      const secondTeacher = await this.prisma.teacherProfile.findFirst({
-        where: { id: dto.secondTeacherId, tenantId },
-      });
-      if (!secondTeacher) {
-        throw new NotFoundException('دبیر دوم مورد نظر در این مدرسه یافت نشد');
+      if (dto.secondTeacherId) {
+        const secondTeacher = await this.prisma.teacherProfile.findFirst({
+          where: { id: dto.secondTeacherId, tenantId },
+        });
+        if (!secondTeacher) {
+          throw new NotFoundException('دبیر دوم مورد نظر در این مدرسه یافت نشد');
+        }
       }
     }
 
@@ -948,21 +949,22 @@ export class ClassesService {
     }
 
     if (isSplitPeriod) {
-      if (!secondLessonId || !secondTeacherId) {
-        throw new BadRequestException('در حالت یک هفته در میان (هفته فرد و زوج)، مشخص کردن درس دوم و دبیر دوم الزامی است');
-      }
-      const secondLesson = await this.prisma.lesson.findFirst({
-        where: { id: secondLessonId, tenantId },
-      });
-      if (!secondLesson) {
-        throw new NotFoundException('درس دوم مورد نظر در این مدرسه یافت نشد');
+      if (secondLessonId) {
+        const secondLesson = await this.prisma.lesson.findFirst({
+          where: { id: secondLessonId, tenantId },
+        });
+        if (!secondLesson) {
+          throw new NotFoundException('درس دوم مورد نظر در این مدرسه یافت نشد');
+        }
       }
 
-      const secondTeacher = await this.prisma.teacherProfile.findFirst({
-        where: { id: secondTeacherId, tenantId },
-      });
-      if (!secondTeacher) {
-        throw new NotFoundException('دبیر دوم مورد نظر در این مدرسه یافت نشد');
+      if (secondTeacherId) {
+        const secondTeacher = await this.prisma.teacherProfile.findFirst({
+          where: { id: secondTeacherId, tenantId },
+        });
+        if (!secondTeacher) {
+          throw new NotFoundException('دبیر دوم مورد نظر در این مدرسه یافت نشد');
+        }
       }
     }
 

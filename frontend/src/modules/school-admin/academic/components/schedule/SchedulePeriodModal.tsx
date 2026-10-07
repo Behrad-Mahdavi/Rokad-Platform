@@ -289,22 +289,22 @@ export const SchedulePeriodModal: React.FC<SchedulePeriodModalProps> = ({
                 <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-primary text-white text-[11px] font-bold">
                   هفته زوج
                 </span>
+                <span className="text-[11px] text-ink-light dark:text-gray-400 font-medium">
+                  (اختیاری — در صورت خالی بودن، هفته زوج بدون کلاس است)
+                </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
                   <label className="block text-xs font-bold text-ink-dark dark:text-gray-200 mb-1">
-                    درس <span className="text-red-500">*</span>
+                    درس هفته زوج
                   </label>
                   <select
-                    value={form.secondLessonId}
+                    value={form.secondLessonId || ''}
                     onChange={(e) => onSecondLessonChange(e.target.value)}
                     className="flex h-10 w-full rounded-xl border border-gray-300 bg-white dark:bg-[#151C28] dark:border-[#242F42] px-3 text-xs text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
-                    required
                   >
-                    <option value="" disabled>
-                      -- انتخاب درس --
-                    </option>
+                    <option value="">-- بدون کلاس (آزاد) --</option>
                     {availableLessons.map((l) => (
                       <option key={l.id} value={l.id}>
                         {l.name} ({l.code})
@@ -315,17 +315,14 @@ export const SchedulePeriodModal: React.FC<SchedulePeriodModalProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-ink-dark dark:text-gray-200 mb-1">
-                    مربی <span className="text-red-500">*</span>
+                    مربی هفته زوج
                   </label>
                   <select
-                    value={form.secondTeacherId}
+                    value={form.secondTeacherId || ''}
                     onChange={(e) => setForm({ ...form, secondTeacherId: e.target.value })}
                     className="flex h-10 w-full rounded-xl border border-gray-300 bg-white dark:bg-[#151C28] dark:border-[#242F42] px-3 text-xs text-ink-normal dark:text-white focus:outline-none focus:ring-2 focus:ring-primary font-bold"
-                    required
                   >
-                    <option value="" disabled>
-                      -- انتخاب مربی --
-                    </option>
+                    <option value="">-- بدون مربی --</option>
                     {teachers.map((t) => (
                       <option key={t.id} value={t.id}>
                         {t.user?.firstName} {t.user?.lastName}

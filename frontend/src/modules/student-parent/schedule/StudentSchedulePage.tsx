@@ -430,15 +430,19 @@ export const StudentSchedulePage: React.FC = () => {
                               <div className="flex items-center justify-between">
                                 <span className="text-[10px] font-bold text-primary dark:text-primary-light block">هفته زوج</span>
                                 {currentWeekInfo.activeWeek === 2 && (
-                                  <span className="text-[9.5px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-300">
-                                    درس این هفته
+                                  <span className={`text-[9.5px] font-bold px-1.5 py-0.2 rounded border ${
+                                    slot.secondLesson
+                                      ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 border-emerald-300'
+                                      : 'text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/80 border-amber-300'
+                                  }`}>
+                                    {slot.secondLesson ? 'درس این هفته' : 'این هفته کلاس ندارید'}
                                   </span>
                                 )}
                               </div>
                               <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="font-bold text-sm sm:text-base text-foreground dark:text-white flex items-center gap-1.5">
+                                <h3 className={`font-bold text-sm sm:text-base flex items-center gap-1.5 ${slot.secondLesson ? 'text-foreground dark:text-white' : 'text-muted-foreground dark:text-gray-400 font-medium'}`}>
                                   <BookOpen className="w-4 h-4 text-primary shrink-0" />
-                                  <span>{slot.secondLesson?.name || '—'}</span>
+                                  <span>{slot.secondLesson?.name || 'بدون کلاس (آزاد)'}</span>
                                 </h3>
                                 {slot.secondTeacher?.user && (
                                   <span className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#1C2536] px-2 py-0.5 rounded-md border border-gray-200 dark:border-[#242F42] text-[11px] font-medium text-muted-foreground dark:text-slate-300">

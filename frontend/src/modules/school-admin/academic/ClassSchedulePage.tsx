@@ -235,13 +235,6 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
       return;
     }
 
-    if (form.isSplitPeriod) {
-      if (!form.secondLessonId || !form.secondTeacherId) {
-        setError('در حالت یک هفته در میان، تعیین درس و مربی هفته زوج الزامی است');
-        return;
-      }
-    }
-
     try {
       setIsSubmitting(true);
       setError(null);
@@ -251,8 +244,8 @@ export const ClassSchedulePage: React.FC<ClassSchedulePageProps> = ({
         lessonId: form.lessonId,
         teacherId: form.teacherId,
         isSplitPeriod: form.isSplitPeriod,
-        secondLessonId: form.isSplitPeriod ? form.secondLessonId : undefined,
-        secondTeacherId: form.isSplitPeriod ? form.secondTeacherId : undefined,
+        secondLessonId: form.isSplitPeriod && form.secondLessonId ? form.secondLessonId : null,
+        secondTeacherId: form.isSplitPeriod && form.secondTeacherId ? form.secondTeacherId : null,
         dayOfWeek: form.dayOfWeek,
         periodNumber: form.periodNumber,
         startTime: form.startTime,

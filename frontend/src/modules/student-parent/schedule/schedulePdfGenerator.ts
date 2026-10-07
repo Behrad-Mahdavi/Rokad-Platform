@@ -49,6 +49,7 @@ export function generateSchedulePdf({
             const subLabel1 = isTeacher
               ? (slot.classroom?.name || '')
               : (slot.teacher?.user ? `${slot.teacher.user.firstName} ${slot.teacher.user.lastName}` : '');
+            const hasSecondWeek = Boolean(slot.secondLesson?.name || slot.secondLessonId || (slot.secondTeacher?.user));
             const subLabel2 = isTeacher
               ? (slot.classroom?.name || '')
               : (slot.secondTeacher?.user ? `${slot.secondTeacher.user.firstName} ${slot.secondTeacher.user.lastName}` : '');
@@ -62,9 +63,9 @@ export function generateSchedulePdf({
                     <span class="split-tag">هفته فرد</span>
                   </div>
                   <div class="split-divider"></div>
-                  <div class="split-half">
-                    <div class="lesson-name">${slot.secondLesson?.name || '—'}</div>
-                    ${subLabel2 ? `<div class="teacher-name">${subLabel2}</div>` : ''}
+                  <div class="split-half ${!hasSecondWeek ? 'empty-half' : ''}">
+                    <div class="lesson-name ${!hasSecondWeek ? 'text-muted-empty' : ''}">${hasSecondWeek ? (slot.secondLesson?.name || '—') : 'بدون کلاس (آزاد)'}</div>
+                    ${hasSecondWeek && subLabel2 ? `<div class="teacher-name">${subLabel2}</div>` : ''}
                     <span class="split-tag">هفته زوج</span>
                   </div>
                 </div>
@@ -334,6 +335,14 @@ export function generateSchedulePdf({
       font-size: 7.5pt;
       margin-bottom: 1px;
       line-height: 1.15;
+    }
+    .split-half .lesson-name.text-muted-empty {
+      color: #94A3B8;
+      font-weight: 700;
+      font-size: 7pt;
+    }
+    .split-half.empty-half {
+      opacity: 0.85;
     }
     .split-half .teacher-name {
       font-size: 6.5pt;

@@ -164,17 +164,23 @@ export const ScheduleMobileView: React.FC<ScheduleMobileViewProps> = ({
                           </div>
 
                           {/* Week 2 */}
-                          <div className="w-full bg-primary-50/20 dark:bg-primary-950/30 p-3 rounded-xl border border-primary/20 dark:border-primary/30 space-y-1.5">
+                          <div className={`w-full p-3 rounded-xl border space-y-1.5 ${
+                            item.secondLesson
+                              ? 'bg-primary-50/20 dark:bg-primary-950/30 border-primary/20 dark:border-primary/30'
+                              : 'bg-gray-50/70 dark:bg-[#151C28]/60 border-dashed border-gray-200 dark:border-gray-700 opacity-80'
+                          }`}>
                             <div className="flex items-center justify-between gap-1 flex-wrap">
-                              <span className="font-extrabold text-xs text-ink-darker dark:text-white truncate">
-                                ۲. {item.secondLesson?.name || '—'}
+                              <span className={`font-extrabold text-xs truncate ${item.secondLesson ? 'text-ink-darker dark:text-white' : 'text-gray-400 dark:text-gray-500 font-medium'}`}>
+                                ۲. {item.secondLesson?.name || 'بدون کلاس (آزاد)'}
                               </span>
                               <div className="flex items-center gap-1">
-                                <span
-                                  className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold ${type2.className}`}
-                                >
-                                  {type2.label}
-                                </span>
+                                {item.secondLesson && (
+                                  <span
+                                    className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold ${type2.className}`}
+                                  >
+                                    {type2.label}
+                                  </span>
+                                )}
                                 <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-white dark:bg-[#151C28] text-primary border border-primary/20 shrink-0">
                                   هفته زوج
                                 </span>

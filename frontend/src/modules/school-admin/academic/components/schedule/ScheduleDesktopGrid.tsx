@@ -130,20 +130,26 @@ export const ScheduleDesktopGrid: React.FC<ScheduleDesktopGridProps> = ({
                                   </div>
 
                                   {/* Split Half 2 - Week 2 */}
-                                  <div className="bg-primary/5 dark:bg-primary-950/20 rounded-lg p-1.5 border border-primary/15 dark:border-primary/30 space-y-1">
+                                  <div className={`rounded-lg p-1.5 border space-y-1 ${
+                                    item.secondLesson
+                                      ? 'bg-primary/5 dark:bg-primary-950/20 border-primary/15 dark:border-primary/30'
+                                      : 'bg-gray-50 dark:bg-[#151C28]/60 border-dashed border-gray-200 dark:border-gray-700 opacity-80'
+                                  }`}>
                                     <div className="flex items-center justify-between text-[10px]">
-                                      <span className="font-extrabold text-ink-darker dark:text-white truncate">
-                                        {item.secondLesson?.name || '—'}
+                                      <span className={`font-extrabold truncate ${item.secondLesson ? 'text-ink-darker dark:text-white' : 'text-gray-400 dark:text-gray-500 font-medium'}`}>
+                                        {item.secondLesson?.name || 'بدون کلاس (آزاد)'}
                                       </span>
                                       <span className="text-[8px] bg-white dark:bg-[#151C28] text-primary px-1 rounded font-bold border border-primary/20 shrink-0">
                                         هفته زوج
                                       </span>
                                     </div>
-                                    <div>
-                                      <span className={`text-[8.5px] px-1 py-0.2 rounded font-medium ${type2.className}`}>
-                                        {type2.label}
-                                      </span>
-                                    </div>
+                                    {item.secondLesson && (
+                                      <div>
+                                        <span className={`text-[8.5px] px-1 py-0.2 rounded font-medium ${type2.className}`}>
+                                          {type2.label}
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
                                 </>
                               );
