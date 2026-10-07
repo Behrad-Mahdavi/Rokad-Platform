@@ -1079,7 +1079,36 @@ export const PollsPage: React.FC = () => {
     if (!activePoll) return;
     const questions = activeQuestions;
 
+    // Determine visited / reachable questions following jump branching logic
+    const reachableIndices = new Set<number>();
+    let curr = 0;
+    while (curr < questions.length) {
+      reachableIndices.add(curr);
+      const q = questions[curr];
+      const ans = fillAnswers[String(curr)];
+      if (q.jump_actions && q.jump_actions.length > 0) {
+        const matched = q.jump_actions.find((act) => {
+          if (Array.isArray(ans)) return ans.includes(act.conditionValue);
+          return String(ans) === String(act.conditionValue);
+        });
+        if (matched) {
+          if (matched.targetQuestionIndex === 'END') break;
+          const target = Number(matched.targetQuestionIndex);
+          if (!isNaN(target) && target >= 0 && target < questions.length) {
+            curr = target;
+            continue;
+          }
+        }
+      }
+      curr++;
+    }
+
+    // Also include any steps that the user actually navigated through in history
+    stepHistory.forEach((s) => reachableIndices.add(s));
+    reachableIndices.add(fillStep);
+
     for (let i = 0; i < questions.length; i++) {
+      if (!reachableIndices.has(i)) continue;
       if (questions[i].required === false) continue;
       if (INFORMATIONAL_TYPES.has(questions[i].type)) continue;
       if (!isQuestionAnswered(questions[i], i)) {

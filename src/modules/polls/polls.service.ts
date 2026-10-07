@@ -872,9 +872,36 @@ export class PollsService {
       }
 
       const answers = dto.answers || {};
-      const selectedOptionIds = Object.values(answers)
-        .flatMap((v) => (Array.isArray(v) ? v : [v]))
-        .filter((v): v is string => typeof v === 'string');
+      const questionsList = (meta.questions as SurveyQuestion[]) || [];
+      const choiceQuestionIndices = new Set(
+        questionsList
+          .map((q, idx) =>
+            ['choice', 'picture_choice', 'dropdown', 'yes_no', 'likert', 'ranking'].includes(
+              q.type,
+            )
+              ? String(idx)
+              : null,
+          )
+          .filter(Boolean),
+      );
+
+      const selectedOptionIds: string[] = [];
+      for (const [key, val] of Object.entries(answers)) {
+        if (key === 'comment') continue;
+        if (
+          choiceQuestionIndices.size === 0 ||
+          choiceQuestionIndices.has(key) ||
+          key.startsWith('opt_')
+        ) {
+          if (Array.isArray(val)) {
+            for (const item of val) {
+              if (typeof item === 'string' && item.trim()) selectedOptionIds.push(item);
+            }
+          } else if (typeof val === 'string' && val.trim()) {
+            selectedOptionIds.push(val);
+          }
+        }
+      }
 
       const firstNumeric = Object.values(answers).find(
         (v) => typeof v === 'number',
@@ -935,6 +962,14 @@ export class PollsService {
         createdAt: new Date(),
       };
       inMemoryVotes.push(vote);
+
+      const pollMem = inMemoryPolls.find((p) => p.id === pollId && p.tenantId === tenantId);
+      if (pollMem) {
+        if (!pollMem._count) pollMem._count = { votes: 0 };
+        pollMem._count.votes = (pollMem._count.votes || 0) + 1;
+        savePersistedPolls(inMemoryPolls);
+      }
+
       return {
         message: 'پاسخ شما با موفقیت ثبت گردید',
         voteId: vote.id,
