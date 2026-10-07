@@ -129,18 +129,18 @@ export const LoginPage: React.FC = () => {
 
   return (
     <Card className="shadow-lg border-gray-200">
-      <CardHeader className="text-right p-5 sm:p-6 pb-3.5 sm:pb-4">
-        <div className="flex items-center space-x-3 space-x-reverse">
+      <CardHeader className="text-right pb-3.5 sm:pb-1">
+        <div className="flex items-center space-x-2.5 space-x-reverse">
           <img
             src="/logo.svg"
             alt="لوگوی رکاد"
-            className="h-9 w-9 rounded-xl object-cover shadow-2xs shrink-0"
+            className="h-8 w-8 rounded-xl object-cover shadow-2xs shrink-0"
           />
           <CardTitle className="text-lg sm:text-xl">ورود به پلتفرم رکاد</CardTitle>
         </div>
       </CardHeader>
 
-      <CardContent className="p-5 sm:p-6 pt-0">
+      <CardContent>
         {error && (
           <div className="mb-4 flex items-center space-x-2 space-x-reverse rounded-xl bg-red-50 dark:bg-rose-950/40 p-3 text-xs text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
             <AlertCircle className="h-4 w-4 shrink-0" />
@@ -148,7 +148,7 @@ export const LoginPage: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           <Input
             label="نام کاربری"
             placeholder="کد ملی یا شماره همراه"
@@ -167,7 +167,7 @@ export const LoginPage: React.FC = () => {
             required
           />
 
-          <Button type="submit" variant="primary" className="w-full h-11 text-sm sm:text-base mt-3" isLoading={isLoading}>
+          <Button type="submit" variant="primary" className="w-full h-11 text-sm sm:text-base mt-2" isLoading={isLoading}>
             ورود به حساب
           </Button>
         </form>
