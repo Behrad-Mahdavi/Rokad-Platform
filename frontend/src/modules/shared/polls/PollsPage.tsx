@@ -2240,11 +2240,12 @@ export const PollsPage: React.FC = () => {
                     {isAdmin && (
                       <div className={`flex items-center gap-1 shrink-0 ${isFuture ? 'mr-auto' : ''}`}>
                         {/* Copy Public Porscad Link */}
-                        {poll.porscadFormPublicId && (
+                        {(poll.porscadFormPublicId || poll.porscadFormId) && (
                           <button
                             type="button"
                             onClick={() => {
-                              const pLink = `https://porskad.ir/f/${poll.porscadFormPublicId}`;
+                              const targetId = poll.porscadFormPublicId || poll.porscadFormId;
+                              const pLink = `https://porskad.vercel.app/f/${targetId}`;
                               navigator.clipboard.writeText(pLink);
                               toast.success('لینک عمومی پرس‌کاد کپی شد: ' + pLink);
                             }}
