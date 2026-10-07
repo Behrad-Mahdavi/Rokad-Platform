@@ -141,16 +141,25 @@
   }
 
   html,
-  body,
-  main {
+  body {
     font-family: 'IRANSansXFaNum', 'IRANSansX', sans-serif !important;
     background-color: var(--surface-sunken);
     color: var(--text-normal);
     direction: rtl;
     text-align: right;
     min-height: 100vh;
+    min-height: 100dvh;
     overflow-x: hidden;
     max-width: 100vw;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  main {
+    font-family: 'IRANSansXFaNum', 'IRANSansX', sans-serif !important;
+    color: var(--text-normal);
+    direction: rtl;
+    text-align: right;
     -webkit-font-smoothing: antialiased;
     -webkit-tap-highlight-color: transparent;
   }

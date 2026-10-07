@@ -16,14 +16,14 @@ export const SchoolAdminLayout: React.FC = () => {
   }, [pathname]);
 
   return (
-    <div className="min-h-screen lg:h-screen lg:overflow-hidden bg-gray-50 dark:bg-[#0B0F17] text-ink-normal dark:text-gray-100 flex flex-col font-sans transition-colors">
+    <div className="h-screen h-[100dvh] bg-gray-50 dark:bg-[#0B0F17] text-ink-normal dark:text-gray-100 flex flex-col font-sans transition-colors overflow-hidden">
       <ScrollToTop />
       <Header />
-      <div className="flex flex-1 relative lg:overflow-hidden">
+      <div className="flex flex-1 relative overflow-hidden min-h-0 w-full">
         <Sidebar role="SCHOOL_ADMIN" />
         <main
           ref={mainRef}
-          className="flex-1 p-3 sm:p-5 md:p-6 pb-[calc(4.25rem+env(safe-area-inset-bottom,0px))] md:pb-8 max-w-7xl mx-auto w-full min-w-0 overflow-y-auto"
+          className="flex-1 p-3 sm:p-5 md:p-6 pb-28 md:pb-12 max-w-7xl mx-auto w-full min-w-0 min-h-0 overflow-y-auto overscroll-contain"
         >
           <Outlet />
         </main>
