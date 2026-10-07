@@ -16,7 +16,7 @@ export const AuthLayout: React.FC = () => {
         />
         <div className="absolute right-12 sm:right-14 bottom-40 text-right z-10" dir="rtl">
           <h2 className="text-white text-4xl font-semibold">به پلتفرم رکاد</h2>
-          <h1 className="text-white text-5xl font-black mt-5">خوش آمدید !</h1>
+          <h1 className="text-white text-5xl font-black mt-3.5">خوش آمدید !</h1>
         </div>
       </div>
 
