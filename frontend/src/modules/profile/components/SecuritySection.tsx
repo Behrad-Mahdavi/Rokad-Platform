@@ -67,7 +67,27 @@ export const SecuritySection: React.FC = () => {
   const [isExpandedSessions, setIsExpandedSessions] = useState(false);
 
   const sortedSessions = useMemo(() => {
-    return [...sessions].sort((a, b) => {
+    // Deduplicate by device signature (browser + OS + deviceType)
+    const map = new Map<string, SessionItem>();
+    for (const s of sessions) {
+      const key = `${s.deviceType || 'DESKTOP'}_${s.os || 'OS'}_${s.browser || 'BROWSER'}`;
+      if (!map.has(key)) {
+        map.set(key, s);
+      } else {
+        const existing = map.get(key)!;
+        if (s.isCurrent) {
+          map.set(key, s);
+        } else if (
+          !existing.isCurrent &&
+          new Date(s.lastActiveAt || s.createdAt).getTime() >
+            new Date(existing.lastActiveAt || existing.createdAt).getTime()
+        ) {
+          map.set(key, s);
+        }
+      }
+    }
+
+    return Array.from(map.values()).sort((a, b) => {
       if (a.isCurrent && !b.isCurrent) return -1;
       if (!a.isCurrent && b.isCurrent) return 1;
       return (
@@ -120,7 +140,12 @@ export const SecuritySection: React.FC = () => {
   const fetchSessions = useCallback(async () => {
     try {
       setLoadingSessions(true);
-      const res: any = await apiClient.get('/auth/sessions');
+      const rt =
+        useAuthStore.getState().refreshToken ||
+        (typeof window !== 'undefined' ? sessionStorage.getItem('rokad_rt') : null);
+      const res: any = await apiClient.get('/auth/sessions', {
+        headers: rt ? { 'x-refresh-token': rt } : undefined,
+      });
       const list = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
       setSessions(list);
     } catch {
@@ -226,9 +251,18 @@ export const SecuritySection: React.FC = () => {
   const handleRevokeAllOthers = async () => {
     try {
       setIsRevokingAll(true);
-      await apiClient.post('/auth/sessions/revoke-others');
-      toast.success('تمامی نشست‌های فعال در سایر دستگاه‌ها با موفقیت باطل شدند');
-      fetchSessions();
+      const rt =
+        useAuthStore.getState().refreshToken ||
+        (typeof window !== 'undefined' ? sessionStorage.getItem('rokad_rt') : null);
+      await apiClient.post(
+        '/auth/sessions/revoke-others',
+        {},
+        {
+          headers: rt ? { 'x-refresh-token': rt } : undefined,
+        },
+      );
+      toast.success('تمامی نشست‌های فعال در سایر دستگاه‌ها با موفقیت خاتمه یافتند');
+      await fetchSessions();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'خطا در خاتمه نشست‌ها');
     } finally {
@@ -372,9 +406,9 @@ export const SecuritySection: React.FC = () => {
                   <CardTitle className="text-sm sm:text-base font-black text-ink-darker dark:text-white">
                     دستگاه‌های فعال
                   </CardTitle>
-                  {sessions.length > 0 && (
+                  {sortedSessions.length > 0 && (
                     <Badge variant="outline" className="text-[10px] font-bold px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700">
-                      {toPersianDigits(sessions.length)} دستگاه
+                      {toPersianDigits(sortedSessions.length)} دستگاه
                     </Badge>
                   )}
                 </div>
@@ -394,7 +428,7 @@ export const SecuritySection: React.FC = () => {
                 <RefreshCw className={`w-4 h-4 ${loadingSessions ? 'animate-spin text-primary' : ''}`} />
               </button>
 
-              {sessions.length > 1 ? (
+              {sortedSessions.length > 1 ? (
                 <Button
                   variant="outline"
                   size="sm"
@@ -418,65 +452,85 @@ export const SecuritySection: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent className="pt-3.5 space-y-2.5">
-          {sessions.length === 0 ? (
+          {sortedSessions.length === 0 ? (
             <div className="text-center py-6 text-xs text-gray-400 dark:text-gray-500">
               هیچ نشستی ثبت نشده است
             </div>
           ) : (
             <>
-              {visibleSessions.map((s) => (
-                <div
-                  key={s.id}
-                  className={`p-3 sm:p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-all ${
-                    s.isCurrent
-                      ? 'border-emerald-500/40 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-2xs'
-                      : 'border-gray-200/80 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1C2536]/30 hover:border-gray-300 dark:hover:border-gray-700'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2.5 rounded-xl bg-white dark:bg-[#1C2536] border border-gray-200/80 dark:border-gray-700/80 shadow-2xs shrink-0">
-                      {getDeviceIcon(s.deviceType)}
-                    </div>
+              {visibleSessions.map((s) => {
+                const isRecent = (() => {
+                  if (s.isCurrent) return true;
+                  try {
+                    const diff = Date.now() - new Date(s.lastActiveAt || s.createdAt).getTime();
+                    return diff < 3 * 60 * 1000;
+                  } catch {
+                    return false;
+                  }
+                })();
 
-                    <div className="space-y-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-xs sm:text-sm text-ink-darker dark:text-white truncate">
-                          {s.browser} روی {s.os}
-                        </span>
-                        {s.isCurrent && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300/50 dark:border-emerald-800/50">
-                            دستگاه فعلی شما
+                return (
+                  <div
+                    key={s.id}
+                    className={`p-3 sm:p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-all ${
+                      s.isCurrent
+                        ? 'border-emerald-500/40 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-2xs'
+                        : 'border-gray-200/80 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1C2536]/30 hover:border-gray-300 dark:hover:border-gray-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="p-2.5 rounded-xl bg-white dark:bg-[#1C2536] border border-gray-200/80 dark:border-gray-700/80 shadow-2xs shrink-0">
+                        {getDeviceIcon(s.deviceType)}
+                      </div>
+
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-xs sm:text-sm text-ink-darker dark:text-white truncate">
+                            {s.browser} روی {s.os}
                           </span>
-                        )}
-                      </div>
+                          {s.isCurrent && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300/50 dark:border-emerald-800/50">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              <span>دستگاه فعلی شما</span>
+                            </span>
+                          )}
+                        </div>
 
-                      <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 font-mono dir-ltr flex-wrap">
-                        <span>IP: {s.ipAddress}</span>
-                        <span className="text-gray-300 dark:text-gray-600">•</span>
-                        <span className="dir-rtl">
-                          آخرین فعالیت: {formatToJalali(s.lastActiveAt)}
-                        </span>
+                        <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 font-mono dir-ltr flex-wrap">
+                          <span>IP: {s.ipAddress}</span>
+                          <span className="text-gray-300 dark:text-gray-600">•</span>
+                          <span className="dir-rtl">
+                            {isRecent ? (
+                              <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+                                <span>آنلاین (هم‌اکنون)</span>
+                              </span>
+                            ) : (
+                              <span>آخرین فعالیت: {formatToJalali(s.lastActiveAt)}</span>
+                            )}
+                          </span>
+                        </div>
                       </div>
                     </div>
+
+                    {!s.isCurrent && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRevokeSession(s.id)}
+                        isLoading={revokingId === s.id}
+                        className="text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 min-h-[36px] px-2.5 rounded-xl shrink-0"
+                        title="خاتمه این نشست"
+                      >
+                        <LogOut className="w-3.5 h-3.5 ml-1" />
+                        <span>خاتمه</span>
+                      </Button>
+                    )}
                   </div>
+                );
+              })}
 
-                  {!s.isCurrent && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRevokeSession(s.id)}
-                      isLoading={revokingId === s.id}
-                      className="text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 min-h-[36px] px-2.5 rounded-xl shrink-0"
-                      title="خاتمه این نشست"
-                    >
-                      <LogOut className="w-3.5 h-3.5 ml-1" />
-                      <span>خاتمه</span>
-                    </Button>
-                  )}
-                </div>
-              ))}
-
-              {sessions.length > 3 && (
+              {sortedSessions.length > 3 && (
                 <div className="pt-2 border-t border-gray-100 dark:border-gray-800/80 flex justify-center">
                   <button
                     type="button"
@@ -492,7 +546,7 @@ export const SecuritySection: React.FC = () => {
                       <>
                         <ChevronDown className="w-4 h-4" />
                         <span>
-                          مشاهده سایر دستگاه‌ها ({toPersianDigits(sessions.length - 3)} نشست دیگر)
+                          مشاهده سایر دستگاه‌ها ({toPersianDigits(sortedSessions.length - 3)} نشست دیگر)
                         </span>
                       </>
                     )}

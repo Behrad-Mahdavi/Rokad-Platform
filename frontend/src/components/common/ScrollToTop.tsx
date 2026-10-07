@@ -2,8 +2,8 @@ import React, { useLayoutEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 /**
- * ScrollToTop ensures that navigating to any page (except events pages)
- * automatically resets all scroll containers (window, document, and layout <main>)
+ * ScrollToTop ensures that navigating to any page automatically resets
+ * all scroll containers (window, document, and layout <main>)
  * to the very top, preventing pages from opening in a scrolled position.
  */
 export const ScrollToTop: React.FC = () => {
@@ -13,11 +13,6 @@ export const ScrollToTop: React.FC = () => {
     // Ensure manual scroll restoration so browsers do not restore previous scroll positions
     if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
-    }
-
-    // Exclude events pages as explicitly requested: "(به جز صفحه رویدادها)"
-    if (pathname.includes('/events')) {
-      return;
     }
 
     const resetScroll = () => {

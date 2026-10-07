@@ -95,10 +95,17 @@ export const CalendarPage: React.FC = () => {
 
   // Selected Day Details Card Ref (for smooth auto-scroll into view on mobile)
   const selectedDayCardRef = useRef<HTMLDivElement>(null);
+  const userInitiatedSelectionRef = useRef(false);
 
   useEffect(() => {
-    if (selectedDay && selectedDayCardRef.current && window.innerWidth < 768) {
+    if (
+      userInitiatedSelectionRef.current &&
+      selectedDay &&
+      selectedDayCardRef.current &&
+      window.innerWidth < 768
+    ) {
       selectedDayCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      userInitiatedSelectionRef.current = false;
     }
   }, [selectedDay]);
 
@@ -878,7 +885,10 @@ export const CalendarPage: React.FC = () => {
                 return (
                   <div
                     key={day.jalaliStr}
-                    onClick={() => setSelectedDay(day)}
+                    onClick={() => {
+                      userInitiatedSelectionRef.current = true;
+                      setSelectedDay(day);
+                    }}
                     className={`bg-white dark:bg-[#151C28] rounded-2xl border p-3 sm:p-4 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs cursor-pointer ${
                       isSelected
                         ? 'border-primary dark:border-primary-light ring-2 ring-primary/20 dark:ring-primary-light/25 bg-primary/[0.04] dark:bg-primary/[0.12]'
@@ -1127,7 +1137,10 @@ export const CalendarPage: React.FC = () => {
                 return (
                   <div
                     key={day.day}
-                    onClick={() => setSelectedDay(day)}
+                    onClick={() => {
+                      userInitiatedSelectionRef.current = true;
+                      setSelectedDay(day);
+                    }}
                     className={`min-h-[48px] sm:min-h-[62px] md:min-h-[72px] p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border transition-all duration-150 cursor-pointer flex flex-col justify-between select-none relative group ${
                       isSelected
                         ? 'ring-2 ring-primary dark:ring-primary-light border-primary dark:border-primary-light bg-primary/5 dark:bg-primary/20 shadow-xs'

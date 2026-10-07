@@ -50,6 +50,24 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user) => set({ user }),
 
       logout: () => {
+        const rt =
+          get().refreshToken ||
+          (typeof window !== 'undefined' ? sessionStorage.getItem('rokad_rt') : null);
+        const at = get().accessToken;
+
+        if (rt || at) {
+          try {
+            fetch('/api/auth/logout', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(at ? { Authorization: `Bearer ${at}` } : {}),
+              },
+              body: JSON.stringify({ refreshToken: rt }),
+            }).catch(() => {});
+          } catch {}
+        }
+
         if (typeof window !== 'undefined') {
           sessionStorage.removeItem('rokad_rt');
         }

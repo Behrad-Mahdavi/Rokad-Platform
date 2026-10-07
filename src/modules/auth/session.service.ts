@@ -50,7 +50,11 @@ export class SessionService {
   }
 
   /**
-   * Record a new active session upon successful login or token issuance
+   * Record or update an active session upon successful login or token issuance.
+   * Follows Telegram's session model:
+   * - Deduplicates by device fingerprint (userId + browser + os + deviceType).
+   * - If an active session for the same device exists, updates its token hash, IP, and lastActiveAt.
+   * - Ensures only 1 active session entry per unique client device.
    */
   async createSession(
     userId: string,
@@ -61,21 +65,108 @@ export class SessionService {
   ) {
     const sessionTokenHash = this.hashToken(refreshToken);
     const { browser, os, deviceType } = this.parseUserAgent(userAgent);
+    const cleanIp =
+      ipAddress && ipAddress !== '::1' && ipAddress !== '::ffff:127.0.0.1' && ipAddress !== 'unknown'
+        ? ipAddress
+        : '127.0.0.1';
 
-    return this.prisma.userSession.create({
-      data: {
-        userId,
-        tenantId,
-        sessionTokenHash,
-        ipAddress: ipAddress || 'unknown',
-        userAgent: userAgent ? userAgent.slice(0, 255) : null,
-        browser,
-        os,
-        deviceType,
-        isRevoked: false,
-        lastActiveAt: new Date(),
-      },
-    });
+    try {
+      // Check if an existing active session already exists for this exact device (same browser, OS, deviceType)
+      const existingSession = await this.prisma.userSession.findFirst({
+        where: {
+          userId,
+          browser,
+          os,
+          deviceType,
+          isRevoked: false,
+        },
+        orderBy: { lastActiveAt: 'desc' },
+      });
+
+      if (existingSession) {
+        // Update existing active device session with the latest token, IP, and activity time
+        const updated = await this.prisma.userSession.update({
+          where: { id: existingSession.id },
+          data: {
+            sessionTokenHash,
+            ipAddress: cleanIp,
+            userAgent: userAgent ? userAgent.slice(0, 255) : existingSession.userAgent,
+            lastActiveAt: new Date(),
+            isRevoked: false,
+          },
+        });
+
+        // Revoke any older duplicate active rows for this device if any exist
+        await this.prisma.userSession.updateMany({
+          where: {
+            userId,
+            browser,
+            os,
+            deviceType,
+            id: { not: existingSession.id },
+            isRevoked: false,
+          },
+          data: { isRevoked: true },
+        });
+
+        return updated;
+      }
+
+      // New unique device login: create a fresh active session
+      return await this.prisma.userSession.create({
+        data: {
+          userId,
+          tenantId,
+          sessionTokenHash,
+          ipAddress: cleanIp,
+          userAgent: userAgent ? userAgent.slice(0, 255) : null,
+          browser,
+          os,
+          deviceType,
+          isRevoked: false,
+          lastActiveAt: new Date(),
+        },
+      });
+    } catch (err: any) {
+      this.logger.warn(`Failed to create or update user session: ${err?.message || err}`);
+    }
+  }
+
+  /**
+   * Rotate session token hash and update last activity on token refresh
+   */
+  async rotateSessionToken(
+    oldTokenHash: string,
+    newTokenHash: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
+    const cleanIp =
+      ipAddress && ipAddress !== '::1' && ipAddress !== '::ffff:127.0.0.1' && ipAddress !== 'unknown'
+        ? ipAddress
+        : undefined;
+
+    const updateData: any = {
+      sessionTokenHash: newTokenHash,
+      lastActiveAt: new Date(),
+    };
+    if (cleanIp) updateData.ipAddress = cleanIp;
+    if (userAgent) {
+      const { browser, os, deviceType } = this.parseUserAgent(userAgent);
+      updateData.browser = browser;
+      updateData.os = os;
+      updateData.deviceType = deviceType;
+      updateData.userAgent = userAgent.slice(0, 255);
+    }
+
+    try {
+      await this.prisma.userSession.updateMany({
+        where: { sessionTokenHash: oldTokenHash, isRevoked: false },
+        data: updateData,
+      });
+    } catch (err: any) {
+      this.logger.warn(`Failed to rotate session token: ${err?.message || err}`);
+    }
   }
 
   /**
@@ -90,30 +181,77 @@ export class SessionService {
   }
 
   /**
-   * Get all active sessions for a user
+   * Get all active sessions for a user (Deduplicated Telegram-style per device)
    */
   async getUserSessions(userId: string, currentRefreshToken?: string) {
     const currentHash = currentRefreshToken ? this.hashToken(currentRefreshToken) : null;
 
+    // Retrieve only non-revoked active sessions for this user
     const sessions = await this.prisma.userSession.findMany({
       where: {
         userId,
         isRevoked: false,
       },
       orderBy: { lastActiveAt: 'desc' },
-      take: 20,
     });
 
-    return sessions.map((s) => ({
-      id: s.id,
-      ipAddress: s.ipAddress,
-      browser: s.browser,
-      os: s.os,
-      deviceType: s.deviceType,
-      createdAt: s.createdAt,
-      lastActiveAt: s.lastActiveAt,
-      isCurrent: currentHash ? s.sessionTokenHash === currentHash : false,
-    }));
+    // Deduplicate by device fingerprint (deviceType + os + browser)
+    const deviceMap = new Map<string, typeof sessions[0]>();
+    const isCurrentMap = new Map<string, boolean>();
+
+    for (const s of sessions) {
+      const deviceKey = `${s.deviceType || 'DESKTOP'}_${s.os || 'UNKNOWN'}_${s.browser || 'BROWSER'}`;
+      const isThisTokenCurrent = Boolean(currentHash && s.sessionTokenHash === currentHash);
+
+      if (!deviceMap.has(deviceKey)) {
+        deviceMap.set(deviceKey, s);
+        isCurrentMap.set(deviceKey, isThisTokenCurrent);
+      } else {
+        const existing = deviceMap.get(deviceKey)!;
+        if (isThisTokenCurrent) {
+          deviceMap.set(deviceKey, s);
+          isCurrentMap.set(deviceKey, true);
+        } else if (
+          !isCurrentMap.get(deviceKey) &&
+          new Date(s.lastActiveAt).getTime() > new Date(existing.lastActiveAt).getTime()
+        ) {
+          deviceMap.set(deviceKey, s);
+        }
+      }
+    }
+
+    const uniqueSessions = Array.from(deviceMap.entries()).map(([deviceKey, s]) => {
+      const isCurrent =
+        isCurrentMap.get(deviceKey) ||
+        (currentHash ? s.sessionTokenHash === currentHash : false);
+
+      const cleanIp =
+        s.ipAddress === '::1' ||
+        s.ipAddress === '::ffff:127.0.0.1' ||
+        s.ipAddress === '127.0.0.1' ||
+        !s.ipAddress ||
+        s.ipAddress === 'unknown'
+          ? '127.0.0.1 (لوکال)'
+          : s.ipAddress;
+
+      return {
+        id: s.id,
+        ipAddress: cleanIp,
+        browser: s.browser || 'مرورگر وب',
+        os: s.os || 'نامشخص',
+        deviceType: s.deviceType || 'DESKTOP',
+        createdAt: s.createdAt,
+        lastActiveAt: s.lastActiveAt,
+        isCurrent,
+      };
+    });
+
+    // Sort so current active device is first, then by lastActiveAt descending
+    return uniqueSessions.sort((a, b) => {
+      if (a.isCurrent && !b.isCurrent) return -1;
+      if (!a.isCurrent && b.isCurrent) return 1;
+      return new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime();
+    });
   }
 
   /**

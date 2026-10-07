@@ -769,6 +769,14 @@ export class AuthService {
       }),
     ]);
 
+    // Keep active userSession in sync with newly rotated token
+    await this.sessionService.rotateSessionToken(
+      tokenRecord.tokenHash,
+      newTokenHash,
+      ipAddress,
+      userAgent,
+    );
+
     // 6. Generate new Access Token
     const user = family.user;
     const accessToken = this.signAccessToken(
@@ -802,11 +810,21 @@ export class AuthService {
           data: { isRevoked: true, revokedReason: 'USER_LOGOUT' },
         });
       }
+
+      // Mark the corresponding device session as revoked so it never displays again
+      await this.prisma.userSession.updateMany({
+        where: { sessionTokenHash: tokenHash },
+        data: { isRevoked: true },
+      });
     } else if (userId) {
-      // Invalidate all families for user
+      // Invalidate all families & sessions for user
       await this.prisma.refreshTokenFamily.updateMany({
         where: { userId },
         data: { isRevoked: true, revokedReason: 'USER_LOGOUT_ALL' },
+      });
+      await this.prisma.userSession.updateMany({
+        where: { userId },
+        data: { isRevoked: true },
       });
     }
 
