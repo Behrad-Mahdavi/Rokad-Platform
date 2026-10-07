@@ -289,9 +289,6 @@ export const SchedulePeriodModal: React.FC<SchedulePeriodModalProps> = ({
                 <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-primary text-white text-[11px] font-bold">
                   هفته زوج
                 </span>
-                <span className="text-[11px] text-ink-light dark:text-gray-400 font-medium">
-                  (اختیاری — در صورت خالی بودن، هفته زوج بدون کلاس است)
-                </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
