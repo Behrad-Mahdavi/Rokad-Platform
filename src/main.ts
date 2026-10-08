@@ -69,7 +69,13 @@ async function bootstrap() {
   });
 
   app.use(json({ limit: '150mb' }));
-  app.use(urlencoded({ extended: true, limit: '150mb' }));
+  // Support both /health and /api/v1/health transparently for external monitors and load balancers
+  app.use((req: any, res: any, next: any) => {
+    if (req.url === '/health' || req.url.startsWith('/health/')) {
+      req.url = '/api/v1' + req.url;
+    }
+    next();
+  });
 
   // Global Prefix (exclude root '/' for status/landing)
   app.setGlobalPrefix('api/v1', { exclude: ['/'] });
