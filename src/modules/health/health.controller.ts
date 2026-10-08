@@ -8,6 +8,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { Public } from '../../common/decorators/public.decorator';
 
+import { HeartbeatService } from './heartbeat.service';
+
 @ApiTags('Health Check')
 @Controller('health')
 export class HealthController {
@@ -15,6 +17,7 @@ export class HealthController {
     private readonly prisma: PrismaService,
     private readonly redisService: RedisService,
     private readonly configService: ConfigService,
+    private readonly heartbeatService: HeartbeatService,
   ) {}
 
   @Public()
@@ -34,6 +37,13 @@ export class HealthController {
   @ApiOperation({ summary: 'بررسی آمادگی کامل سرویس و اتصال به تمام وابستگی‌ها (Readiness Probe)' })
   async checkReady(@Res({ passthrough: true }) res: Response) {
     return this.check(res);
+  }
+
+  @Public()
+  @Get('heartbeat/ping')
+  @ApiOperation({ summary: 'ارسال دستی هارت‌بیت به Better Stack برای تست زنده اتصال' })
+  async triggerHeartbeat() {
+    return await this.heartbeatService.pingHeartbeat('manual-endpoint');
   }
 
   @Public()
