@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-10-09
+
+### 🚀 Added & Improved
+- **بازطراحی صفحه ورود (LoginPage Redesign & Orbit Showcase):**
+  - بازطراحی فرم ورود با چیدمان اسپلیت‌اسکرین مدرن و پنل دکوراتیو چرخشی انیمیشنی (Orbits) حاوی آیکون‌های پلتفرم و نماد رُکاد.
+  - پشتیبانی کامل از دارک‌مود، تشخیص هوشمند روشن بودن کلید Caps Lock، دکمه پیشرفته نمایش/مخفی‌سازی رمز عبور با پوزیشنینگ ایزوله، و ارزیابی فیلد به فیلد با فوکوس خودکار.
+  - تعبیه قابلیت `endAction` در مؤلفه ورودی [Input.tsx](file:///Users/behrad/Desktop/Projects/rokad-platform/frontend/src/components/ui/Input.tsx) و رفع هم‌پوشانی آیکون‌ها و خطاها.
+  - بهینه‌سازی کامل ریسپانسیو موبایل با واحدهای `min-h-dvh` و حذف لایوت‌های متداخل قدیمی.
+- **مشاهده‌پذیری و نظارت زنده (Observability & Health Checks):**
+  - ارتقای اندپوینت `/health` با کد وضعیت واقعی HTTP 503 در صورت اختلال در PostgreSQL یا Redis جهت اطلاع فوری سیستم‌های پایش آپ‌تایم خارجی.
+  - محاسبه و نمایش تاخیر میلی‌ثانیه‌ای دیتابیس و ردیس (`databaseMs`, `redisMs`).
+  - افزودن پروب لایونس `/health/live` و ریدینس `/health/ready` و سازگاری با هر دو روت `/health` و `/api/v1/health`.
+  - یکپارچه‌سازی سرویس دیده‌بان نبض (Dead Man's Snitch) با Better Stack Heartbeat جهت ارسال خودکار پالس‌های دوره‌ای و هشدار قطعی سرور یا دیتابیس.
+
 ## [1.0.1] - 2026-10-03
 
 ### 🚀 Fixed & Improved

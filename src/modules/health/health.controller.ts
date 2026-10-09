@@ -28,7 +28,7 @@ export class HealthController {
       status: 'alive',
       timestamp: new Date().toISOString(),
       uptimeSeconds: Math.floor(process.uptime()),
-      version: '1.0.1',
+      version: '1.1.0',
     };
   }
 
@@ -131,7 +131,7 @@ export class HealthController {
       status: isHealthy ? 'healthy' : 'degraded',
       timestamp: new Date().toISOString(),
       uptimeSeconds: Math.floor(process.uptime()),
-      version: '1.0.1',
+      version: '1.1.0',
       latencies: {
         databaseMs: dbLatencyMs,
         redisMs: redisLatencyMs,
