@@ -6,7 +6,6 @@
     "module": "ESNext",
     "skipLibCheck": true,
     "types": ["react", "react-dom", "vite/client", "vite-plugin-pwa/client"],
-    "typeRoots": ["./node_modules/@types"],
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -28,7 +27,8 @@
       "@/*": ["src/*"],
       "react": ["node_modules/@types/react"],
       "react/jsx-runtime": ["node_modules/@types/react/jsx-runtime"],
-      "react-dom": ["node_modules/@types/react-dom"]
+      "react-dom": ["node_modules/@types/react-dom"],
+      "react-router-dom": ["node_modules/react-router-dom"]
     }
   },
   "include": ["src"]
