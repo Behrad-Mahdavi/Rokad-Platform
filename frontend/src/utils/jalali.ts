@@ -178,6 +178,26 @@ export interface JalaliWeekInfo {
   jd: number;
 }
 
+const safeToJalaali = (gy: number, gm: number, gd: number) => {
+  if (typeof (jalaali as any).toJalaali === 'function') {
+    return (jalaali as any).toJalaali(gy, gm, gd);
+  }
+  if (typeof (jalaali as any).default?.toJalaali === 'function') {
+    return (jalaali as any).default.toJalaali(gy, gm, gd);
+  }
+  return { jy: 1404, jm: 1, jd: 1 };
+};
+
+const safeToGregorian = (jy: number, jm: number, jd: number) => {
+  if (typeof (jalaali as any).toGregorian === 'function') {
+    return (jalaali as any).toGregorian(jy, jm, jd);
+  }
+  if (typeof (jalaali as any).default?.toGregorian === 'function') {
+    return (jalaali as any).default.toGregorian(jy, jm, jd);
+  }
+  return { gy: 2025, gm: 3, gd: 21 };
+};
+
 /**
  * محاسبه دقیق هفته جاری شمسی و تعیین تناوب هفته فرد / هفته زوج
  * این متد به صورت خودکار هر شنبه تغییر می‌کند (یک هفته هفته فرد، هفته بعد هفته زوج)
@@ -185,10 +205,10 @@ export interface JalaliWeekInfo {
 export function getCurrentJalaliWeekInfo(dateInput: Date | string = new Date()): JalaliWeekInfo {
   const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
   const validDate = isNaN(date.getTime()) ? new Date() : date;
-  const j = jalaali.toJalaali(validDate.getFullYear(), validDate.getMonth() + 1, validDate.getDate());
+  const j = safeToJalaali(validDate.getFullYear(), validDate.getMonth() + 1, validDate.getDate());
 
   const dayOfYear = (j.jm <= 6 ? (j.jm - 1) * 31 : 6 * 31 + (j.jm - 7) * 30) + j.jd;
-  const gFarvardin1 = jalaali.toGregorian(j.jy, 1, 1);
+  const gFarvardin1 = safeToGregorian(j.jy, 1, 1);
   const dFarvardin1 = new Date(gFarvardin1.gy, gFarvardin1.gm - 1, gFarvardin1.gd);
   const dowFarvardin1 = (dFarvardin1.getDay() + 1) % 7; // شنبه = 0, ..., جمعه = 6
 

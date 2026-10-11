@@ -66,6 +66,30 @@ export function getDayOfWeekFromDate(dateStr?: string): DayOfWeek {
   return map[day] || DayOfWeek.SATURDAY;
 }
 
+export function getActiveWeekFromDate(dateStr?: string): 1 | 2 {
+  if (!dateStr || typeof dateStr !== 'string') return 1;
+  let jYear: number, jMonth: number, jDay: number;
+  const parts = dateStr.split('-').map(Number);
+  if (parts.length === 3 && parts[0] > 1300 && parts[0] < 1500) {
+    jYear = parts[0];
+    jMonth = parts[1];
+    jDay = parts[2];
+  } else {
+    const gDate = new Date(dateStr);
+    if (isNaN(gDate.getTime())) return 1;
+    const j = jalaali.toJalaali(gDate.getFullYear(), gDate.getMonth() + 1, gDate.getDate());
+    jYear = j.jy;
+    jMonth = j.jm;
+    jDay = j.jd;
+  }
+  const dayOfYear = (jMonth <= 6 ? (jMonth - 1) * 31 : 6 * 31 + (jMonth - 7) * 30) + jDay;
+  const gFarvardin1 = jalaali.toGregorian(jYear, 1, 1);
+  const dFarvardin1 = new Date(gFarvardin1.gy, gFarvardin1.gm - 1, gFarvardin1.gd);
+  const dowFarvardin1 = (dFarvardin1.getDay() + 1) % 7; // شنبه = 0
+  const weekNumber = Math.floor((dayOfYear - 1 + dowFarvardin1) / 7) + 1;
+  return weekNumber % 2 === 1 ? 1 : 2;
+}
+
 @Injectable()
 export class AttendanceService {
   constructor(
@@ -709,9 +733,27 @@ export class AttendanceService {
       orderBy: [{ periodNumber: 'asc' }],
     });
 
+    const activeWeek = getActiveWeekFromDate(dateStr);
+
+    // Filter alternating week slots: only include if this teacher teaches in the active week!
+    const applicableSchedules = schedules.filter((slot) => {
+      if (!slot.isSplitPeriod) return true;
+      if (teacherId) {
+        if (activeWeek === 1) {
+          return slot.teacherId === teacherId;
+        } else {
+          return slot.secondTeacherId === teacherId && Boolean(slot.secondLessonId || slot.secondLesson);
+        }
+      }
+      if (activeWeek === 2) {
+        return Boolean(slot.secondLessonId || slot.secondLesson);
+      }
+      return true;
+    });
+
     // Enrich each slot with attendance statistics
     const enrichedSchedules = await Promise.all(
-      schedules.map(async (slot) => {
+      applicableSchedules.map(async (slot) => {
         const totalStudents = await this.prisma.classEnrollment.count({
           where: {
             tenantId,
@@ -734,14 +776,18 @@ export class AttendanceService {
         const tardyCount = attendances.filter((a) => a.status === 'TARDY').length;
         const excusedCount = attendances.filter((a) => a.status === 'EXCUSED_ABSENT').length;
 
+        const isSecondWeek = slot.isSplitPeriod && activeWeek === 2;
+        const currentLesson = isSecondWeek ? slot.secondLesson || slot.lesson : slot.lesson;
+        const currentLessonId = isSecondWeek ? slot.secondLessonId || slot.lessonId : slot.lessonId;
+
         return {
           id: slot.id,
           classroomId: slot.classroomId,
           classroomName: slot.classroom.name,
           classroomGrade: slot.classroom.level?.name || '',
           classroomField: slot.classroom.field?.name || '',
-          lessonId: slot.lessonId,
-          lessonName: slot.lesson.name,
+          lessonId: currentLessonId,
+          lessonName: currentLesson?.name || '',
           periodNumber: slot.periodNumber,
           startTime: slot.startTime,
           endTime: slot.endTime,

@@ -14,6 +14,7 @@ import {
   Award,
 } from 'lucide-react';
 import { toPersianDigits, cleanUserFullName } from '../../lib/utils';
+import { getCurrentJalaliWeekInfo } from '../../utils/jalali';
 
 const getPersianDayKey = (): string => {
   const dayIndex = new Date().getDay(); // 0 is Sunday, 6 is Saturday
@@ -32,6 +33,7 @@ export const TeacherDashboard: React.FC = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const [schedules, setSchedules] = useState<any[]>([]);
+  const [teacherProfile, setTeacherProfile] = useState<any>(null);
   const [homeworkList, setHomeworkList] = useState<any[]>([]);
   const [examsList, setExamsList] = useState<any[]>([]);
   const [academicStats, setAcademicStats] = useState<any>(null);
@@ -49,8 +51,15 @@ export const TeacherDashboard: React.FC = () => {
         ]);
 
         if (schedRes.status === 'fulfilled') {
-          const sData = schedRes.value.data;
-          setSchedules(sData?.schedules || (Array.isArray(sData) ? sData : []));
+          const raw: any = schedRes.value;
+          const sData =
+            raw?.data?.schedules !== undefined
+              ? raw.data
+              : raw?.schedules !== undefined
+              ? raw
+              : raw?.data || raw;
+          setTeacherProfile(sData?.teacher || raw?.teacher || null);
+          setSchedules(sData?.schedules || raw?.schedules || (Array.isArray(sData) ? sData : []));
         }
         if (hwRes.status === 'fulfilled') {
           const hData = hwRes.value.data;
@@ -74,7 +83,38 @@ export const TeacherDashboard: React.FC = () => {
   }, []);
 
   const todayKey = getPersianDayKey();
-  const todaySchedules = schedules.filter((s: any) => s.dayOfWeek === todayKey);
+  const currentWeekInfo = getCurrentJalaliWeekInfo();
+  const currentTeacherProfileId = teacherProfile?.id;
+  const currentUserId = user?.id;
+
+  const todaySchedules = schedules.filter((s: any) => {
+    if (s.dayOfWeek !== todayKey) return false;
+
+    const isFirstTeacher = Boolean(
+      (currentTeacherProfileId && s.teacherId === currentTeacherProfileId) ||
+      (currentUserId && (s.teacher?.userId === currentUserId || s.teacherId === currentUserId))
+    );
+
+    const isSecondTeacher = Boolean(
+      (currentTeacherProfileId && s.secondTeacherId === currentTeacherProfileId) ||
+      (currentUserId && (s.secondTeacher?.userId === currentUserId || s.secondTeacherId === currentUserId))
+    );
+
+    if (!isFirstTeacher && !isSecondTeacher) {
+      return false;
+    }
+
+    if (!s.isSplitPeriod) {
+      return isFirstTeacher;
+    }
+
+    if (currentWeekInfo.activeWeek === 1) {
+      return isFirstTeacher;
+    } else {
+      const hasSecondLesson = Boolean(s.secondLessonId || s.secondLesson);
+      return isSecondTeacher && hasSecondLesson;
+    }
+  });
   const totalSubmissions = homeworkList.reduce((acc, hw) => acc + (hw._count?.submissions || 0), 0);
   const uniqueClassroomIds = new Set(schedules.map((s: any) => s.classroomId).filter(Boolean));
   const activeClassesCount = uniqueClassroomIds.size || academicStats?.classrooms?.length || 0;
@@ -210,25 +250,29 @@ export const TeacherDashboard: React.FC = () => {
                 امروز کلاسی ثبت نشده است.
               </div>
             ) : (
-              todaySchedules.map((s) => (
-                <div key={s.id} className="p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 flex items-center justify-between text-xs gap-3">
-                  <div>
-                    <div className="font-bold text-ink-darker dark:text-white">{s.classroom?.name}</div>
-                    <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 font-mono">
-                      {s.lesson?.name} • {s.startTime} تا {s.endTime}
+              todaySchedules.map((s) => {
+                const isSecondWeek = s.isSplitPeriod && currentWeekInfo.activeWeek === 2;
+                const lessonName = isSecondWeek ? (s.secondLesson?.name || s.lesson?.name) : s.lesson?.name;
+                return (
+                  <div key={s.id} className="p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 flex items-center justify-between text-xs gap-3">
+                    <div>
+                      <div className="font-bold text-ink-darker dark:text-white">{s.classroom?.name}</div>
+                      <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 font-mono">
+                        {lessonName} • {s.startTime} تا {s.endTime}
+                      </div>
                     </div>
-                  </div>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate(`/app/teacher/attendance?classroomId=${s.classroomId}`)}
-                    className="shrink-0"
-                  >
-                    ثبت حضور
-                  </Button>
-                </div>
-              ))
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/app/teacher/attendance?classroomId=${s.classroomId}`)}
+                      className="shrink-0"
+                    >
+                      ثبت حضور
+                    </Button>
+                  </div>
+                );
+              })
             )}
           </div>
         </Card>

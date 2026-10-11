@@ -54,6 +54,14 @@ export interface ClassScheduleItem {
   classroomId: string;
   lessonId: string;
   teacherId: string;
+  teacher?: {
+    id?: string;
+    userId?: string;
+    user?: {
+      firstName: string;
+      lastName: string;
+    };
+  };
   isSplitPeriod?: boolean;
   secondLessonId?: string;
   secondTeacherId?: string;
@@ -63,6 +71,8 @@ export interface ClassScheduleItem {
     code?: string;
   };
   secondTeacher?: {
+    id?: string;
+    userId?: string;
     user: {
       firstName: string;
       lastName: string;
@@ -94,6 +104,7 @@ export const TeacherSchedulePage: React.FC = () => {
 
   // Dynamic automatic calculation of current Jalali week & alternating week (Week 1 or Week 2)
   const currentWeekInfo = getCurrentJalaliWeekInfo();
+  const [selectedWeek, setSelectedWeek] = useState<1 | 2>(currentWeekInfo.activeWeek);
 
   // Determine today's day of week
   const currentJsDay = new Date().getDay();
@@ -105,10 +116,18 @@ export const TeacherSchedulePage: React.FC = () => {
       setIsLoading(true);
       try {
         const res = await apiClient.get<any>('/classes/my-schedule');
-        const data = res.data;
-        setTeacherProfile(data?.teacher || null);
-        const items = data?.schedules || (Array.isArray(data) ? data : []);
-        setSchedules(items);
+        const raw: any = res;
+        const data =
+          raw?.data?.schedules !== undefined
+            ? raw.data
+            : raw?.schedules !== undefined
+            ? raw
+            : raw?.data || raw;
+        const resolvedTeacher = data?.teacher || raw?.teacher || null;
+        const resolvedSchedules =
+          data?.schedules || raw?.schedules || (Array.isArray(data) ? data : []);
+        setTeacherProfile(resolvedTeacher);
+        setSchedules(resolvedSchedules);
       } catch (err: any) {
         console.error('Failed to load teacher schedule:', err);
       } finally {
@@ -119,24 +138,45 @@ export const TeacherSchedulePage: React.FC = () => {
     fetchSchedule();
   }, []);
 
-  // Filter schedules for the selected day based on automatic weekly alternation:
-  // If a slot is alternating (isSplitPeriod), only show if this teacher teaches in the active week!
+  // Determine whether a slot belongs to this teacher in the selected week
+  const isSlotForCurrentTeacher = (s: ClassScheduleItem, week: 1 | 2) => {
+    const currentTeacherProfileId = teacherProfile?.id;
+    const currentUserId = user?.id;
+
+    const isFirstTeacher = Boolean(
+      (currentTeacherProfileId && s.teacherId === currentTeacherProfileId) ||
+      (currentUserId && (s.teacher?.userId === currentUserId || s.teacherId === currentUserId))
+    );
+
+    const isSecondTeacher = Boolean(
+      (currentTeacherProfileId && s.secondTeacherId === currentTeacherProfileId) ||
+      (currentUserId && (s.secondTeacher?.userId === currentUserId || s.secondTeacherId === currentUserId))
+    );
+
+    // If teacher is neither first nor second teacher, they should not see this slot
+    if (!isFirstTeacher && !isSecondTeacher) {
+      return false;
+    }
+
+    // Regular full slot: teacher teaches every week
+    if (!s.isSplitPeriod) {
+      return isFirstTeacher;
+    }
+
+    // Alternating week slot:
+    // Week 1 -> Only the first teacher teaches! (second teacher has no class)
+    // Week 2 -> Only the second teacher teaches! (first teacher has no class, and second lesson must exist)
+    if (week === 1) {
+      return isFirstTeacher;
+    } else {
+      const hasSecondLesson = Boolean(s.secondLessonId || s.secondLesson);
+      return isSecondTeacher && hasSecondLesson;
+    }
+  };
+
+  // Filter schedules for the selected day based on weekly alternation
   const daySchedules = schedules
-    .filter((s) => {
-      if (s.dayOfWeek !== selectedDay) return false;
-
-      // Regular full slot: teacher teaches every week
-      if (!s.isSplitPeriod) return true;
-
-      // Alternating week slot:
-      // Week 1 -> First teacher teaches
-      // Week 2 -> Second teacher teaches
-      if (currentWeekInfo.activeWeek === 1) {
-        return teacherProfile?.id ? s.teacherId === teacherProfile.id : true;
-      } else {
-        return teacherProfile?.id ? s.secondTeacherId === teacherProfile.id : false;
-      }
-    })
+    .filter((s) => s.dayOfWeek === selectedDay && isSlotForCurrentTeacher(s, selectedWeek))
     .sort((a, b) => {
       if (a.periodNumber !== b.periodNumber) return a.periodNumber - b.periodNumber;
       return a.startTime.localeCompare(b.startTime);
@@ -166,7 +206,7 @@ export const TeacherSchedulePage: React.FC = () => {
       title: 'برنامه هفتگی تدریس',
       teacherName: teacherFullName,
       isTeacher: true,
-      schedules,
+      schedules: schedules.filter((s) => isSlotForCurrentTeacher(s, selectedWeek)),
       days: DAYS,
       periodLabels: PERIOD_LABELS,
     });
@@ -206,11 +246,37 @@ export const TeacherSchedulePage: React.FC = () => {
                   {user.firstName} {user.lastName}
                 </Badge>
               )}
-              {/* Active Jalali Week Indicator */}
-              <span className="inline-flex items-center gap-1 bg-primary/10 dark:bg-primary-950/50 text-primary dark:text-primary-light px-2.5 py-1 rounded-xl text-xs font-black border border-primary/25 shrink-0">
-                <Layers className="w-3.5 h-3.5" />
-                <span>{currentWeekInfo.weekLabel}</span>
-              </span>
+              {/* Interactive Jalali Week Selector */}
+              <div className="inline-flex items-center p-1 bg-gray-100 dark:bg-gray-800/80 rounded-xl gap-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedWeek(1)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    selectedWeek === 1
+                      ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs ring-1 ring-black/5 dark:ring-white/10'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  هفته فرد (۱)
+                  {currentWeekInfo.activeWeek === 1 && (
+                    <span className="mr-1 text-[9px] px-1 py-0.2 rounded bg-primary/10 text-primary font-bold">جاری</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedWeek(2)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    selectedWeek === 2
+                      ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs ring-1 ring-black/5 dark:ring-white/10'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  هفته زوج (۲)
+                  {currentWeekInfo.activeWeek === 2 && (
+                    <span className="mr-1 text-[9px] px-1 py-0.2 rounded bg-primary/10 text-primary font-bold">جاری</span>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -282,7 +348,7 @@ export const TeacherSchedulePage: React.FC = () => {
           <div className="text-center py-14 bg-gray-50/50 dark:bg-[#151C28]/60 rounded-2xl border border-dashed border-gray-200 dark:border-[#242F42]">
             <CalendarDays className="w-10 h-10 text-muted-foreground dark:text-slate-500 mx-auto mb-2.5 opacity-60" />
             <h3 className="text-sm sm:text-base font-semibold text-foreground dark:text-white">
-              در روز {currentDayDef.label} ({currentWeekInfo.weekLabel}) کلاسی در برنامه تدریس شما وجود ندارد
+              در روز {currentDayDef.label} ({selectedWeek === 1 ? 'هفته فرد' : 'هفته زوج'}) کلاسی در برنامه تدریس شما وجود ندارد
             </h3>
             <p className="text-xs text-muted-foreground dark:text-slate-400 mt-1">
               در صورتی که کلاس یک هفته در میان دارید، این زنگ در هفته دیگر به مربی مربوطه اختصاص دارد.
@@ -296,8 +362,8 @@ export const TeacherSchedulePage: React.FC = () => {
               const formattedStartTime = toPersianDigits(slot.startTime);
               const formattedEndTime = toPersianDigits(slot.endTime);
 
-              // Determine active lesson for this teacher based on current active week
-              const isSecondWeek = slot.isSplitPeriod && currentWeekInfo.activeWeek === 2;
+              // Determine active lesson for this teacher based on selected week
+              const isSecondWeek = slot.isSplitPeriod && selectedWeek === 2;
               const activeLesson = isSecondWeek ? slot.secondLesson : slot.lesson;
               const activeLessonId = isSecondWeek ? (slot.secondLessonId || slot.lessonId) : slot.lessonId;
               const activeLessonName = activeLesson?.name || slot.lesson?.name || '';
