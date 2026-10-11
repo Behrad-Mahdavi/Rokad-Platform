@@ -44,8 +44,9 @@ import {
   Edit3,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { apiClient } from '../../../lib/api/client';
+import { apiClient, API_BASE_URL } from '../../../lib/api/client';
 import { useAuthStore } from '../../../lib/auth/auth-store';
+import { useTenantStore } from '../../../lib/auth/tenant-store';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Input } from '../../../components/ui/Input';
@@ -140,6 +141,38 @@ const DISCIPLINE_OPTIONS = [
   { value: 'عدم انجام تکلیف', label: 'عدم تکلیف (-۲)', score: -2 },
   { value: 'تاخیر', label: 'تاخیر (-۲)', score: -2 },
 ];
+
+const getDraftKey = (classroomId?: string, date?: string, periodNumber?: number) => {
+  if (!classroomId || !date) return null;
+  return `attendance_draft_${classroomId}_${date}_${periodNumber || 1}`;
+};
+
+const buildAttendancePayload = (
+  session: { classroomId: string; lessonId?: string; periodNumber?: number },
+  date: string,
+  list: LocalStudentAttendance[],
+) => {
+  return {
+    classroomId: session.classroomId,
+    lessonId: session.lessonId || undefined,
+    date,
+    periodNumber: session.periodNumber || 1,
+    attendances: list.map((s) => ({
+      studentId: s.studentId,
+      status: s.status,
+      delayMinutes: s.status === 'TARDY' ? (Number(s.delayMinutes) || 0) : 0,
+      reason: s.reason?.trim() ? s.reason.trim() : undefined,
+      oralGrade:
+        s.oralGrade !== null && s.oralGrade !== undefined && String(s.oralGrade).trim() !== ''
+          ? Number(s.oralGrade)
+          : null,
+      rewardDisciplineType:
+        s.rewardDisciplineType && s.rewardDisciplineType !== 'NONE' ? s.rewardDisciplineType : null,
+      rewardDisciplineNote: s.rewardDisciplineNote?.trim() ? s.rewardDisciplineNote.trim() : null,
+      sessionNote: s.sessionNote?.trim() ? s.sessionNote.trim() : null,
+    })),
+  };
+};
 
 export const AttendancePage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -499,7 +532,7 @@ export const AttendancePage: React.FC = () => {
 
   useEffect(() => {
     if (sessionAttendanceData && Array.isArray(sessionAttendanceData.students)) {
-      const mapped = sessionAttendanceData.students.map((st: any) => ({
+      const serverMapped: LocalStudentAttendance[] = sessionAttendanceData.students.map((st: any) => ({
         studentId: st.studentId,
         studentCode: st.studentCode,
         nationalCode: st.nationalCode,
@@ -515,12 +548,143 @@ export const AttendancePage: React.FC = () => {
         rewardDisciplineNote: st.rewardDisciplineNote || '',
         sessionNote: st.sessionNote || '',
       }));
-      setStudentsList(mapped);
-      setHasUnsavedChanges(false);
+
+      // Check for saved local draft
+      const draftKey = getDraftKey(activeSession?.classroomId, selectedDate, activeSession?.periodNumber);
+      let restoredFromDraft = false;
+
+      if (draftKey) {
+        try {
+          const rawDraft = localStorage.getItem(draftKey);
+          if (rawDraft) {
+            const parsed = JSON.parse(rawDraft);
+            if (Array.isArray(parsed.students) && parsed.students.length > 0 && parsed.hasUnsavedChanges) {
+              const draftMap = new Map<string, any>(parsed.students.map((s: LocalStudentAttendance) => [s.studentId, s]));
+              const merged = serverMapped.map((serverSt) => {
+                const draftSt = draftMap.get(serverSt.studentId);
+                if (draftSt) {
+                  return {
+                    ...serverSt,
+                    status: draftSt.status ?? serverSt.status,
+                    delayMinutes: draftSt.delayMinutes ?? serverSt.delayMinutes,
+                    reason: draftSt.reason ?? serverSt.reason,
+                    oralGrade: draftSt.oralGrade !== undefined ? draftSt.oralGrade : serverSt.oralGrade,
+                    rewardDisciplineType: draftSt.rewardDisciplineType ?? serverSt.rewardDisciplineType,
+                    rewardDisciplineNote: draftSt.rewardDisciplineNote ?? serverSt.rewardDisciplineNote,
+                    sessionNote: draftSt.sessionNote ?? serverSt.sessionNote,
+                  };
+                }
+                return serverSt;
+              });
+
+              setStudentsList(merged);
+              setHasUnsavedChanges(true);
+              restoredFromDraft = true;
+              toast.info('پیش‌نویس ذخیره‌شده بازیابی شد');
+            }
+          }
+        } catch (e) {
+          console.error('Failed to parse draft from localStorage', e);
+        }
+      }
+
+      if (!restoredFromDraft) {
+        setStudentsList(serverMapped);
+        setHasUnsavedChanges(false);
+      }
     } else {
       setStudentsList([]);
     }
-  }, [sessionAttendanceData]);
+  }, [sessionAttendanceData, activeSession?.classroomId, activeSession?.periodNumber, selectedDate]);
+
+  // Persist local draft on every change
+  useEffect(() => {
+    if (!activeSession?.classroomId || !selectedDate) return;
+    const draftKey = getDraftKey(activeSession.classroomId, selectedDate, activeSession.periodNumber);
+    if (!draftKey) return;
+
+    if (hasUnsavedChanges && studentsList.length > 0) {
+      try {
+        localStorage.setItem(
+          draftKey,
+          JSON.stringify({
+            timestamp: Date.now(),
+            students: studentsList,
+            hasUnsavedChanges: true,
+          }),
+        );
+      } catch (e) {
+        console.error('Error saving attendance draft', e);
+      }
+    }
+  }, [hasUnsavedChanges, studentsList, activeSession?.classroomId, activeSession?.periodNumber, selectedDate]);
+
+  // Save changes even after closing tab / navigating away / backgrounding tab
+  useEffect(() => {
+    const handleSaveOnExit = () => {
+      if (!hasUnsavedChanges || !activeSession?.classroomId || studentsList.length === 0) return;
+
+      // 1. Immediately ensure localStorage draft is written synchronously
+      const draftKey = getDraftKey(activeSession.classroomId, selectedDate, activeSession.periodNumber);
+      if (draftKey) {
+        try {
+          localStorage.setItem(
+            draftKey,
+            JSON.stringify({
+              timestamp: Date.now(),
+              students: studentsList,
+              hasUnsavedChanges: true,
+            }),
+          );
+        } catch (e) {
+          console.error('Error writing draft on unload', e);
+        }
+      }
+
+      // 2. Fire background HTTP request using keepalive: true so browser delivers payload even after tab closes
+      try {
+        const url = `${API_BASE_URL}/attendance/students/bulk`;
+        const token = useAuthStore.getState().accessToken;
+        const tenantSlug = useTenantStore.getState().currentTenant?.slug;
+        const payload = buildAttendancePayload(activeSession, selectedDate, studentsList);
+
+        fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(tenantSlug ? { 'x-tenant-slug': tenantSlug } : {}),
+          },
+          body: JSON.stringify(payload),
+          keepalive: true,
+        }).catch((err) => {
+          console.error('Keepalive background save error:', err);
+        });
+      } catch (err) {
+        console.error('Failed to trigger background save on unload:', err);
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      handleSaveOnExit();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        handleSaveOnExit();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handleSaveOnExit);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handleSaveOnExit);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [hasUnsavedChanges, activeSession, selectedDate, studentsList]);
 
   // 8. Roster Summary Stats
   const rosterStats = useMemo(() => {
@@ -695,31 +859,17 @@ export const AttendancePage: React.FC = () => {
   const saveAttendanceMutation = useMutation({
     mutationFn: async () => {
       if (!activeSession) return;
-      if (isReadOnly) {
-        throw new Error('امکان تغییر یا ثبت اطلاعات برای روزهای گذشته وجود ندارد');
-      }
-      const payload = {
-        classroomId: activeSession.classroomId,
-        lessonId: activeSession.lessonId || undefined,
-        date: selectedDate,
-        periodNumber: activeSession.periodNumber || 1,
-        attendances: studentsList.map((s) => ({
-          studentId: s.studentId,
-          status: s.status,
-          delayMinutes: s.status === 'TARDY' ? (Number(s.delayMinutes) || 0) : 0,
-          reason: s.reason?.trim() ? s.reason.trim() : undefined,
-          oralGrade: s.oralGrade !== null && s.oralGrade !== undefined && String(s.oralGrade).trim() !== '' ? Number(s.oralGrade) : null,
-          rewardDisciplineType: s.rewardDisciplineType && s.rewardDisciplineType !== 'NONE' ? s.rewardDisciplineType : null,
-          rewardDisciplineNote: s.rewardDisciplineNote?.trim() ? s.rewardDisciplineNote.trim() : null,
-          sessionNote: s.sessionNote?.trim() ? s.sessionNote.trim() : null,
-        })),
-      };
+      const payload = buildAttendancePayload(activeSession, selectedDate, studentsList);
       const res: any = await apiClient.post('/attendance/students/bulk', payload);
       return res?.data || res;
     },
     onSuccess: (data: any) => {
       toast.success('ثبت شد');
       setHasUnsavedChanges(false);
+      if (activeSession?.classroomId) {
+        const draftKey = getDraftKey(activeSession.classroomId, selectedDate, activeSession.periodNumber);
+        if (draftKey) localStorage.removeItem(draftKey);
+      }
       queryClient.invalidateQueries({ queryKey: ['classroom-attendance'] });
       queryClient.invalidateQueries({ queryKey: ['teacher-daily-schedule'] });
       queryClient.invalidateQueries({ queryKey: ['attendance-stats'] });
@@ -745,10 +895,6 @@ export const AttendancePage: React.FC = () => {
   }, [studentsList]);
 
   const handleResetToDefault = () => {
-    if (isReadOnly) {
-      toast.error('تغییر وضعیت برای تاریخ‌های گذشته امکان‌پذیر نیست');
-      return;
-    }
     setStudentsList((prev) =>
       prev.map((s) => ({
         ...s,
@@ -762,10 +908,6 @@ export const AttendancePage: React.FC = () => {
   };
 
   const handleMarkAllPresent = () => {
-    if (isReadOnly) {
-      toast.error('تغییر وضعیت برای تاریخ‌های گذشته امکان‌پذیر نیست');
-      return;
-    }
     setStudentsList((prev) =>
       prev.map((s) => ({
         ...s,
@@ -778,16 +920,16 @@ export const AttendancePage: React.FC = () => {
   };
 
   const handleResetToSaved = () => {
+    if (activeSession?.classroomId) {
+      const draftKey = getDraftKey(activeSession.classroomId, selectedDate, activeSession.periodNumber);
+      if (draftKey) localStorage.removeItem(draftKey);
+    }
     refetchRoster();
     setHasUnsavedChanges(false);
     toast.info('تغییرات به آخرین وضعیت ذخیره‌شده بازگردانی شد');
   };
 
   const handleUpdateStudentStatus = (studentId: string, newStatus: AttendanceStatus) => {
-    if (isReadOnly) {
-      toast.error('حضور و غیاب روزهای گذشته قابل تغییر نیست');
-      return;
-    }
     setStudentsList((prev) =>
       prev.map((s) => {
         if (s.studentId === studentId) {
@@ -1286,6 +1428,14 @@ export const AttendancePage: React.FC = () => {
                     <BookOpen className="w-4 h-4 text-primary shrink-0" />
                     <span>دفتر نمرات</span>
                   </button>
+                )}
+
+                {/* Auto draft indicator */}
+                {hasUnsavedChanges && (
+                  <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 px-2.5 py-1 rounded-xl">
+                    <CheckCircle2 className="w-3 h-3 text-amber-500" />
+                    <span>پیش‌نویس خودکار</span>
+                  </span>
                 )}
 
                 {/* Reset to Default Button (Icon Only) */}
