@@ -313,9 +313,29 @@ export class AttendanceService {
       recordedAttendances.map((r) => [r.studentId, r]),
     );
 
+    // Carry forward attendance from earlier recorded periods of the same day in THIS classroom
+    const priorMap = new Map<string, any>();
+    if (effectivePeriod > 1 && recordedAttendances.length < enrollments.length) {
+      const priorAttendances = await this.prisma.studentAttendance.findMany({
+        where: {
+          tenantId,
+          classroomId,
+          date: { in: dateVariants },
+          periodNumber: { lt: effectivePeriod },
+        },
+        orderBy: { periodNumber: 'desc' },
+      });
+      for (const pa of priorAttendances) {
+        if (!priorMap.has(pa.studentId)) {
+          priorMap.set(pa.studentId, pa);
+        }
+      }
+    }
+
     // 3. Map students combining roster with attendance status
     const students = enrollments.map((en) => {
       const rec = recordedMap.get(en.studentId);
+      const priorRec = !rec ? priorMap.get(en.studentId) : null;
       return {
         studentId: en.studentId,
         studentCode: en.student.studentCode,
@@ -323,14 +343,15 @@ export class AttendanceService {
         fatherPhone: en.student.fatherPhone,
         motherPhone: en.student.motherPhone,
         user: en.student.user,
-        status: rec ? rec.status : 'PRESENT',
-        delayMinutes: rec ? rec.delayMinutes : 0,
-        reason: rec ? rec.reason : '',
+        status: rec ? rec.status : priorRec ? priorRec.status : 'PRESENT',
+        delayMinutes: rec ? rec.delayMinutes : priorRec ? priorRec.delayMinutes : 0,
+        reason: rec ? rec.reason : priorRec ? priorRec.reason : '',
         oralGrade: rec?.oralGrade !== undefined ? rec.oralGrade : null,
         rewardDisciplineType: rec?.rewardDisciplineType || 'NONE',
         rewardDisciplineNote: rec?.rewardDisciplineNote || '',
         sessionNote: rec?.sessionNote || '',
         isRecorded: !!rec,
+        inheritedFromPeriod: !rec && priorRec ? priorRec.periodNumber : null,
         recordedAt: rec?.updatedAt || rec?.createdAt || null,
         recordedBy: rec?.recordedBy || null,
         attendanceId: rec?.id || null,
