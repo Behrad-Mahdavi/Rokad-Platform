@@ -215,7 +215,7 @@ export const AttendancePage: React.FC = () => {
   // 3. Date Navigation Helpers
   const isSelectedDateToday = selectedDate === todayJalali;
   const isPastDate = selectedDate < todayJalali;
-  const isReadOnly = isPastDate && !isManagerOrAdmin;
+  const isReadOnly = false;
 
   const navigateDate = (deltaDays: number) => {
     try {
@@ -880,10 +880,6 @@ export const AttendancePage: React.FC = () => {
 
   const handleSaveModalEvaluation = async () => {
     if (!evaluationModalStudent) return;
-    if (isReadOnly) {
-      toast.error('ارزشیابی روزهای گذشته قابل تغییر نیست');
-      return;
-    }
     const parsedGrade = modalOralGrade.trim() !== '' ? parseFloat(modalOralGrade) : null;
     if (parsedGrade !== null && (isNaN(parsedGrade) || parsedGrade < 0 || parsedGrade > 20)) {
       toast.error('نمره پرسش کلاسی باید عددی بین ۰ تا ۲۰ باشد');
@@ -951,10 +947,6 @@ export const AttendancePage: React.FC = () => {
 
   const handleDeleteModalEvaluation = async () => {
     if (!evaluationModalStudent) return;
-    if (isReadOnly) {
-      toast.error('امکان تغییر در تاریخ‌های گذشته وجود ندارد');
-      return;
-    }
 
     const currentSt = studentsList.find((s) => s.studentId === evaluationModalStudent.studentId) || evaluationModalStudent;
 
@@ -1300,40 +1292,25 @@ export const AttendancePage: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleResetToDefault}
-                  disabled={isReadOnly || !isModifiedFromDefault}
+                  disabled={!isModifiedFromDefault}
                   className={`h-10 w-10 shrink-0 rounded-xl border inline-flex items-center justify-center transition-all shadow-2xs ${
-                    !isReadOnly && isModifiedFromDefault
+                    isModifiedFromDefault
                       ? 'border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 cursor-pointer active:scale-95'
                       : 'border-gray-200 dark:border-[#242F42] bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 dark:text-gray-600 cursor-not-allowed opacity-50'
                   }`}
-                  title={isReadOnly ? 'امکان تغییر در تاریخ‌های گذشته وجود ندارد' : isModifiedFromDefault ? 'بازنشانی وضعیت‌ها (ریست)' : 'در حالت پیش‌فرض (حضور همه) قرار دارد'}
+                  title={isModifiedFromDefault ? 'بازنشانی وضعیت‌ها (ریست)' : 'در حالت پیش‌فرض (حضور همه) قرار دارد'}
                 >
                   <RotateCcw className="w-4 h-4 shrink-0" />
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => {
-                    if (isReadOnly) {
-                      toast.error('امکان ثبت در تاریخ گذشته برای شما وجود ندارد');
-                      return;
-                    }
-                    saveAttendanceMutation.mutate();
-                  }}
-                  disabled={isReadOnly || saveAttendanceMutation.isPending || studentsList.length === 0}
-                  className={`flex-1 sm:flex-none h-10 px-4 rounded-xl font-black text-xs sm:text-sm border-[1.5px] inline-flex items-center justify-center gap-1.5 transition-all ${
-                    isReadOnly
-                      ? 'bg-gray-100 dark:bg-[#1C2536] border-gray-300 dark:border-[#242F42] text-muted-foreground cursor-not-allowed opacity-75'
-                      : 'bg-primary hover:bg-primary-hover text-white border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] hover:shadow-[2.5px_2.5px_0_#438C83] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer disabled:opacity-50'
-                  }`}
-                  title={isReadOnly ? 'تاریخ گذشته در حالت فقط مشاهده است' : 'ثبت نهایی حضور و غیاب'}
+                  onClick={() => saveAttendanceMutation.mutate()}
+                  disabled={saveAttendanceMutation.isPending || studentsList.length === 0}
+                  className="flex-1 sm:flex-none h-10 px-4 rounded-xl font-black text-xs sm:text-sm border-[1.5px] inline-flex items-center justify-center gap-1.5 transition-all bg-primary hover:bg-primary-hover text-white border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] hover:shadow-[2.5px_2.5px_0_#438C83] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer disabled:opacity-50"
+                  title="ثبت نهایی حضور و غیاب"
                 >
-                  {isReadOnly ? (
-                    <>
-                      <Lock className="w-4 h-4 ml-1.5 text-muted-foreground" />
-                      فقط مشاهده
-                    </>
-                  ) : saveAttendanceMutation.isPending ? (
+                  {saveAttendanceMutation.isPending ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin ml-1.5" />
                       در حال ثبت...
@@ -1349,30 +1326,7 @@ export const AttendancePage: React.FC = () => {
 
             </div>
 
-            {/* Read-only / Admin Edit Alert Banner for Past Dates */}
-            {isPastDate && (
-              isReadOnly ? (
-                <div className="bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/30 dark:border-amber-800/50 rounded-xl p-3 flex items-center justify-between gap-3 text-amber-800 dark:text-amber-300 animate-in fade-in">
-                  <div className="flex items-center gap-2 min-w-0 text-xs font-bold">
-                    <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                    <span className="truncate">جلسه گذشته • فقط مشاهده</span>
-                  </div>
-                  <span className="text-[10.5px] font-black px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30 shrink-0">
-                    قفل شده
-                  </span>
-                </div>
-              ) : (
-                <div className="bg-primary/10 dark:bg-primary/20 border border-primary/30 dark:border-primary/40 rounded-xl p-3 flex items-center justify-between gap-3 text-primary dark:text-primary-light animate-in fade-in">
-                  <div className="flex items-center gap-2 min-w-0 text-xs font-bold">
-                    <Unlock className="w-4 h-4 text-primary shrink-0" />
-                    <span className="truncate">جلسه گذشته • دسترسی ویرایش مدیر</span>
-                  </div>
-                  <span className="text-[10.5px] font-black px-2 py-0.5 rounded-lg bg-primary/20 text-primary border border-primary/30 shrink-0">
-                    دسترسی مدیر
-                  </span>
-                </div>
-              )
-            )}
+
 
             {/* Collapsible Filter & Stats Bar + Search Bar (Toggled via Filter Icon) */}
             {showFilterStats && (
@@ -1624,16 +1578,11 @@ export const AttendancePage: React.FC = () => {
                       {/* PRESENT */}
                       <button
                         type="button"
-                        disabled={isReadOnly}
                         onClick={() => handleUpdateStudentStatus(st.studentId, 'PRESENT')}
-                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap ${
-                          isReadOnly
-                            ? st.status === 'PRESENT'
-                              ? 'bg-emerald-600 text-white font-black opacity-90 cursor-default'
-                              : 'bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 border border-gray-200/50 dark:border-[#242F42]/50 cursor-not-allowed'
-                            : st.status === 'PRESENT'
-                            ? 'bg-emerald-600 text-white shadow-2xs font-black cursor-pointer'
-                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground cursor-pointer'
+                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer ${
+                          st.status === 'PRESENT'
+                            ? 'bg-emerald-600 text-white shadow-2xs font-black'
+                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground'
                         }`}
                       >
                         <Check className="w-3 h-3 shrink-0" />
@@ -1643,16 +1592,11 @@ export const AttendancePage: React.FC = () => {
                       {/* ABSENT */}
                       <button
                         type="button"
-                        disabled={isReadOnly}
                         onClick={() => handleUpdateStudentStatus(st.studentId, 'ABSENT')}
-                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap ${
-                          isReadOnly
-                            ? st.status === 'ABSENT'
-                              ? 'bg-rose-600 text-white font-black opacity-90 cursor-default'
-                              : 'bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 border border-gray-200/50 dark:border-[#242F42]/50 cursor-not-allowed'
-                            : st.status === 'ABSENT'
-                            ? 'bg-rose-600 text-white shadow-2xs font-black cursor-pointer'
-                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground cursor-pointer'
+                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer ${
+                          st.status === 'ABSENT'
+                            ? 'bg-rose-600 text-white shadow-2xs font-black'
+                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground'
                         }`}
                       >
                         <UserX className="w-3 h-3 shrink-0" />
@@ -1662,16 +1606,11 @@ export const AttendancePage: React.FC = () => {
                       {/* TARDY */}
                       <button
                         type="button"
-                        disabled={isReadOnly}
                         onClick={() => handleOpenTardyModal(st)}
-                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap ${
-                          isReadOnly
-                            ? st.status === 'TARDY'
-                              ? 'bg-orange-500 text-white font-black opacity-90 cursor-default'
-                              : 'bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 border border-gray-200/50 dark:border-[#242F42]/50 cursor-not-allowed'
-                            : st.status === 'TARDY'
-                            ? 'bg-orange-500 text-white shadow-2xs font-black cursor-pointer'
-                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground cursor-pointer'
+                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer ${
+                          st.status === 'TARDY'
+                            ? 'bg-orange-500 text-white shadow-2xs font-black'
+                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground'
                         }`}
                       >
                         <Clock className="w-3 h-3 shrink-0" />
@@ -1681,16 +1620,11 @@ export const AttendancePage: React.FC = () => {
                       {/* EXCUSED_ABSENT - No modal popup */}
                       <button
                         type="button"
-                        disabled={isReadOnly}
                         onClick={() => handleUpdateStudentStatus(st.studentId, 'EXCUSED_ABSENT')}
-                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap ${
-                          isReadOnly
-                            ? st.status === 'EXCUSED_ABSENT'
-                              ? 'bg-sky-600 text-white font-black opacity-90 cursor-default'
-                              : 'bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 border border-gray-200/50 dark:border-[#242F42]/50 cursor-not-allowed'
-                            : st.status === 'EXCUSED_ABSENT'
-                            ? 'bg-sky-600 text-white shadow-2xs font-black cursor-pointer'
-                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground cursor-pointer'
+                        className={`py-1.5 sm:py-1 px-1.5 sm:px-3 rounded-xl font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer ${
+                          st.status === 'EXCUSED_ABSENT'
+                            ? 'bg-sky-600 text-white shadow-2xs font-black'
+                            : 'bg-gray-50 dark:bg-[#1C2536] text-muted-foreground border border-gray-200 dark:border-[#242F42] hover:text-foreground'
                         }`}
                       >
                         <ShieldAlert className="w-3 h-3 shrink-0" />
@@ -1745,7 +1679,7 @@ export const AttendancePage: React.FC = () => {
                   ? 'border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 active:bg-rose-100 cursor-pointer'
                   : 'border-gray-200 dark:border-[#242F42] bg-gray-50/50 dark:bg-[#1C2536]/50 text-muted-foreground/40 dark:text-gray-600 cursor-not-allowed opacity-50'
               }`}
-              title={isReadOnly ? 'امکان تغییر در تاریخ گذشته وجود ندارد' : isModifiedFromDefault ? 'بازنشانی وضعیت‌ها (ریست)' : 'در حالت پیش‌فرض (حضور همه) قرار دارد'}
+              title={isModifiedFromDefault ? 'بازنشانی وضعیت‌ها (ریست)' : 'در حالت پیش‌فرض (حضور همه) قرار دارد'}
             >
               <RotateCcw className="w-4 h-4 shrink-0" />
             </button>
@@ -1753,26 +1687,11 @@ export const AttendancePage: React.FC = () => {
             {/* ثبت نهایی - Left */}
             <button
               type="button"
-              onClick={() => {
-                if (isReadOnly) {
-                  toast.error('امکان ثبت در تاریخ گذشته برای شما وجود ندارد');
-                  return;
-                }
-                saveAttendanceMutation.mutate();
-              }}
-              disabled={isReadOnly || saveAttendanceMutation.isPending || studentsList.length === 0}
-              className={`flex-1 h-10 rounded-xl font-black text-xs border-[1.5px] inline-flex items-center justify-center gap-1.5 ${
-                isReadOnly
-                  ? 'bg-gray-100 dark:bg-[#1C2536] border-gray-300 dark:border-[#242F42] text-muted-foreground cursor-not-allowed opacity-75'
-                  : 'bg-primary hover:bg-primary-hover text-white border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] cursor-pointer disabled:opacity-50'
-              }`}
+              onClick={() => saveAttendanceMutation.mutate()}
+              disabled={saveAttendanceMutation.isPending || studentsList.length === 0}
+              className="flex-1 h-10 rounded-xl font-black text-xs border-[1.5px] inline-flex items-center justify-center gap-1.5 bg-primary hover:bg-primary-hover text-white border-primary-dark shadow-[2px_2px_0_#438C83] dark:shadow-[2px_2px_0_#1F413D] cursor-pointer disabled:opacity-50"
             >
-              {isReadOnly ? (
-                <>
-                  <Lock className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span>فقط مشاهده</span>
-                </>
-              ) : saveAttendanceMutation.isPending ? (
+              {saveAttendanceMutation.isPending ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                   <span>در حال ثبت...</span>
@@ -2290,7 +2209,7 @@ export const AttendancePage: React.FC = () => {
                         type="button"
                         variant="outline"
                         size="sm"
-                        disabled={isSavingEvaluation || isReadOnly}
+                        disabled={isSavingEvaluation}
                         onClick={handleDeleteModalEvaluation}
                         className="rounded-xl border-rose-300 dark:border-rose-900 bg-rose-50/80 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 font-black text-xs h-8.5 px-2.5 inline-flex items-center gap-1 cursor-pointer"
                         title="حذف کامل تمام نمرات و موارد انضباطی این جلسه"
@@ -2312,7 +2231,7 @@ export const AttendancePage: React.FC = () => {
                     </Button>
                     <Button
                       size="sm"
-                      disabled={isSavingEvaluation || isReadOnly}
+                      disabled={isSavingEvaluation}
                       onClick={handleSaveModalEvaluation}
                       className="rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs h-8.5 px-4 shadow-xs flex items-center gap-1.5 cursor-pointer"
                     >
