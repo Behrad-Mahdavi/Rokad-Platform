@@ -104,7 +104,7 @@ export const TeacherSchedulePage: React.FC = () => {
 
   // Dynamic automatic calculation of current Jalali week & alternating week (Week 1 or Week 2)
   const currentWeekInfo = getCurrentJalaliWeekInfo();
-  const [selectedWeek, setSelectedWeek] = useState<1 | 2>(currentWeekInfo.activeWeek);
+  const activeWeek = currentWeekInfo.activeWeek;
 
   // Determine today's day of week
   const currentJsDay = new Date().getDay();
@@ -176,7 +176,7 @@ export const TeacherSchedulePage: React.FC = () => {
 
   // Filter schedules for the selected day based on weekly alternation
   const daySchedules = schedules
-    .filter((s) => s.dayOfWeek === selectedDay && isSlotForCurrentTeacher(s, selectedWeek))
+    .filter((s) => s.dayOfWeek === selectedDay && isSlotForCurrentTeacher(s, activeWeek))
     .sort((a, b) => {
       if (a.periodNumber !== b.periodNumber) return a.periodNumber - b.periodNumber;
       return a.startTime.localeCompare(b.startTime);
@@ -206,7 +206,7 @@ export const TeacherSchedulePage: React.FC = () => {
       title: 'برنامه هفتگی تدریس',
       teacherName: teacherFullName,
       isTeacher: true,
-      schedules: schedules.filter((s) => isSlotForCurrentTeacher(s, selectedWeek)),
+      schedules: schedules.filter((s) => isSlotForCurrentTeacher(s, activeWeek)),
       days: DAYS,
       periodLabels: PERIOD_LABELS,
     });
@@ -246,37 +246,6 @@ export const TeacherSchedulePage: React.FC = () => {
                   {user.firstName} {user.lastName}
                 </Badge>
               )}
-              {/* Interactive Jalali Week Selector */}
-              <div className="inline-flex items-center p-1 bg-gray-100 dark:bg-gray-800/80 rounded-xl gap-1">
-                <button
-                  type="button"
-                  onClick={() => setSelectedWeek(1)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                    selectedWeek === 1
-                      ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs ring-1 ring-black/5 dark:ring-white/10'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  هفته فرد (۱)
-                  {currentWeekInfo.activeWeek === 1 && (
-                    <span className="mr-1 text-[9px] px-1 py-0.2 rounded bg-primary/10 text-primary font-bold">جاری</span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedWeek(2)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                    selectedWeek === 2
-                      ? 'bg-white dark:bg-[#151C28] text-primary shadow-xs ring-1 ring-black/5 dark:ring-white/10'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  هفته زوج (۲)
-                  {currentWeekInfo.activeWeek === 2 && (
-                    <span className="mr-1 text-[9px] px-1 py-0.2 rounded bg-primary/10 text-primary font-bold">جاری</span>
-                  )}
-                </button>
-              </div>
             </div>
           </div>
 
@@ -348,11 +317,8 @@ export const TeacherSchedulePage: React.FC = () => {
           <div className="text-center py-14 bg-gray-50/50 dark:bg-[#151C28]/60 rounded-2xl border border-dashed border-gray-200 dark:border-[#242F42]">
             <CalendarDays className="w-10 h-10 text-muted-foreground dark:text-slate-500 mx-auto mb-2.5 opacity-60" />
             <h3 className="text-sm sm:text-base font-semibold text-foreground dark:text-white">
-              در روز {currentDayDef.label} ({selectedWeek === 1 ? 'هفته فرد' : 'هفته زوج'}) کلاسی در برنامه تدریس شما وجود ندارد
+              در روز {currentDayDef.label} کلاسی در برنامه تدریس شما وجود ندارد
             </h3>
-            <p className="text-xs text-muted-foreground dark:text-slate-400 mt-1">
-              در صورتی که کلاس یک هفته در میان دارید، این زنگ در هفته دیگر به مربی مربوطه اختصاص دارد.
-            </p>
           </div>
         ) : (
           <div className="space-y-2.5">
@@ -362,8 +328,8 @@ export const TeacherSchedulePage: React.FC = () => {
               const formattedStartTime = toPersianDigits(slot.startTime);
               const formattedEndTime = toPersianDigits(slot.endTime);
 
-              // Determine active lesson for this teacher based on selected week
-              const isSecondWeek = slot.isSplitPeriod && selectedWeek === 2;
+              // Determine active lesson for this teacher based on active week
+              const isSecondWeek = slot.isSplitPeriod && activeWeek === 2;
               const activeLesson = isSecondWeek ? slot.secondLesson : slot.lesson;
               const activeLessonId = isSecondWeek ? (slot.secondLessonId || slot.lessonId) : slot.lessonId;
               const activeLessonName = activeLesson?.name || slot.lesson?.name || '';
