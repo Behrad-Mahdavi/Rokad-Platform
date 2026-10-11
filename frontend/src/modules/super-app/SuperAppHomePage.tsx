@@ -1232,7 +1232,7 @@ export const SuperAppHomePage: React.FC = () => {
   // ==========================================
   // Staff / Admin Rows (6 Custom Rows)
   // ==========================================
-  // 1. پیام‌ها - رویدادها
+  // 1. پیام‌ها - رویدادها (۲تایی)
   const staffRow1: SuperAppCard[] = [
     {
       id: 'staff-messages',
@@ -1254,8 +1254,28 @@ export const SuperAppHomePage: React.FC = () => {
     },
   ];
 
-  // 2. دفتر کلاسی - ارزشیابی و نمرات - تکالیف
+  // 2. ساختار سال و کلاس‌ها - برنامه هفتگی (۲تایی - پایه‌ای و پرکاربرد)
   const staffRow2: SuperAppCard[] = [
+    {
+      id: 'staff-academic',
+      title: 'ساختار سال و کلاس‌ها',
+      href: '/app/admin/academic',
+      icon: BookOpen,
+      iconBg: 'bg-male-light dark:bg-[#182346]',
+      iconColor: 'text-sec dark:text-[#8194EE]',
+    },
+    {
+      id: 'staff-schedule',
+      title: 'برنامه هفتگی',
+      href: '/app/admin/schedule',
+      icon: CalendarDays,
+      iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+      iconColor: 'text-primary-dark dark:text-primary',
+    },
+  ];
+
+  // 3. دفتر کلاسی - ارزشیابی و نمرات - تکالیف (۳تایی - آموزش کلاسی)
+  const staffRow3: SuperAppCard[] = [
     {
       id: 'staff-attendance',
       title: 'دفتر کلاسی',
@@ -1283,8 +1303,8 @@ export const SuperAppHomePage: React.FC = () => {
     },
   ];
 
-  // 3. آزمون‌ها - بانک سوالات - محتوای آموزشی
-  const staffRow3: SuperAppCard[] = [
+  // 4. آزمون‌ها - بانک سوالات - محتوای آموزشی (۳تایی - سنجش و محتوا)
+  const staffRow4: SuperAppCard[] = [
     {
       id: 'staff-exams',
       title: 'آزمون‌ها',
@@ -1312,16 +1332,8 @@ export const SuperAppHomePage: React.FC = () => {
     },
   ];
 
-  // 4. برنامه هفتگی - دانش‌آموزان - کادر آموزشی
-  const staffRow4: SuperAppCard[] = [
-    {
-      id: 'staff-schedule',
-      title: 'برنامه هفتگی',
-      href: '/app/admin/schedule',
-      icon: CalendarDays,
-      iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
-      iconColor: 'text-primary-dark dark:text-primary',
-    },
+  // 5. دانش‌آموزان - کادر آموزشی (۲تایی - اعضای مدرسه)
+  const staffRow5: SuperAppCard[] = [
     {
       id: 'staff-students',
       title: 'دانش‌آموزان',
@@ -1340,8 +1352,8 @@ export const SuperAppHomePage: React.FC = () => {
     },
   ];
 
-  // 5. شهریه و اقساط - حقوق و دستمزد - گزارش‌های جامع
-  const staffRow5: SuperAppCard[] = [
+  // 6. شهریه و اقساط - حقوق و دستمزد (۲تایی - امور مالی)
+  const staffRow6: SuperAppCard[] = [
     {
       id: 'staff-fees',
       title: 'شهریه و اقساط',
@@ -1358,18 +1370,10 @@ export const SuperAppHomePage: React.FC = () => {
       iconBg: 'bg-male-light dark:bg-[#182346]',
       iconColor: 'text-sec dark:text-[#8194EE]',
     },
-    {
-      id: 'staff-reports',
-      title: 'گزارش‌های جامع',
-      href: '/app/admin/reports',
-      icon: BarChart3,
-      iconBg: 'bg-college-light dark:bg-[#38260D]',
-      iconColor: 'text-third dark:text-[#FBBF24]',
-    },
   ];
 
-  // 6. انضباطی/تشویقی - نظرسنجی
-  const staffRow6: SuperAppCard[] = [
+  // 7. انضباطی/تشویقی - نظرسنجی - کوچینگ (۳تایی - امور تربیتی و پرورشی)
+  const staffRow7: SuperAppCard[] = [
     {
       id: 'staff-matters',
       title: 'انضباطی/تشویقی',
@@ -1386,6 +1390,66 @@ export const SuperAppHomePage: React.FC = () => {
       iconBg: 'bg-college-light dark:bg-[#38260D]',
       iconColor: 'text-third dark:text-[#FBBF24]',
       badge: pollsCount > 0 ? toPersianDigits(pollsCount) : undefined,
+    },
+    {
+      id: 'staff-coaching',
+      title: 'کوچینگ',
+      href: '/app/coaching',
+      icon: Compass,
+      iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+      iconColor: 'text-primary-dark dark:text-primary',
+    },
+  ];
+
+  // 8. پیامک هوشمند - گزارش‌های جامع (۲تایی - ارتباطات و پایش)
+  const staffRow8: SuperAppCard[] = [
+    {
+      id: 'staff-sms',
+      title: 'پیامک هوشمند',
+      href: '/app/sms',
+      icon: Smartphone,
+      iconBg: 'bg-college-light dark:bg-[#38260D]',
+      iconColor: 'text-third dark:text-[#FBBF24]',
+    },
+    {
+      id: 'staff-reports',
+      title: 'گزارش‌های جامع',
+      href: '/app/admin/reports',
+      icon: BarChart3,
+      iconBg: 'bg-college-light dark:bg-[#38260D]',
+      iconColor: 'text-third dark:text-[#FBBF24]',
+    },
+  ];
+
+  // 9. گاوصندوق رمز عبور - نقش‌ها و دسترسی‌ها (۲تایی - امنیت و مدیریت دسترسی)
+  const staffRow9: SuperAppCard[] = [
+    {
+      id: 'staff-vault',
+      title: 'گاوصندوق رمز عبور',
+      href: '/app/admin/vault',
+      icon: KeyRound,
+      iconBg: 'bg-female-light dark:bg-[#3D1426]',
+      iconColor: 'text-girl dark:text-[#F472B6]',
+    },
+    {
+      id: 'staff-roles',
+      title: 'نقش‌ها و دسترسی‌ها',
+      href: '/app/admin/roles',
+      icon: ShieldCheck,
+      iconBg: 'bg-club-light dark:bg-[#2A173E]',
+      iconColor: 'text-club dark:text-[#C084FC]',
+    },
+  ];
+
+  // 10. پروفایل رسمی مدرسه (تک‌کارت یا ردیف پایانی)
+  const staffRow10: SuperAppCard[] = [
+    {
+      id: 'staff-profile',
+      title: 'پروفایل رسمی مدرسه',
+      href: '/app/admin/profile',
+      icon: School,
+      iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+      iconColor: 'text-primary-dark dark:text-primary',
     },
   ];
 
@@ -1640,34 +1704,54 @@ export const SuperAppHomePage: React.FC = () => {
         </div>
       ) : user?.role === 'SCHOOL_ADMIN' || user?.role === 'STAFF' ? (
         <div className="space-y-2.5 sm:space-y-3.5">
-          {/* 1. پیام‌ها - رویدادها */}
+          {/* 1. پیام‌ها - رویدادها (۲تایی) */}
           <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
             {staffRow1.map(renderCard)}
           </div>
 
-          {/* 2. دفتر کلاسی - ارزشیابی و نمرات - تکالیف */}
-          <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+          {/* 2. ساختار سال و کلاس‌ها - برنامه هفتگی (۲تایی) */}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
             {staffRow2.map(renderCard)}
           </div>
 
-          {/* 3. آزمون‌ها - بانک سوالات - محتوای آموزشی */}
+          {/* 3. دفتر کلاسی - ارزشیابی و نمرات - تکالیف (۳تایی) */}
           <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
             {staffRow3.map(renderCard)}
           </div>
 
-          {/* 4. برنامه هفتگی - دانش‌آموزان - کادر آموزشی */}
+          {/* 4. آزمون‌ها - بانک سوالات - محتوای آموزشی (۳تایی) */}
           <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
             {staffRow4.map(renderCard)}
           </div>
 
-          {/* 5. شهریه و اقساط - حقوق و دستمزد - گزارش‌های جامع */}
-          <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+          {/* 5. دانش‌آموزان - کادر آموزشی (۲تایی) */}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
             {staffRow5.map(renderCard)}
           </div>
 
-          {/* 6. انضباطی/تشویقی - نظرسنجی */}
+          {/* 6. شهریه و اقساط - حقوق و دستمزد (۲تایی) */}
           <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
             {staffRow6.map(renderCard)}
+          </div>
+
+          {/* 7. انضباطی/تشویقی - نظرسنجی - کوچینگ (۳تایی) */}
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+            {staffRow7.map(renderCard)}
+          </div>
+
+          {/* 8. پیامک هوشمند - گزارش‌های جامع (۲تایی) */}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
+            {staffRow8.map(renderCard)}
+          </div>
+
+          {/* 9. گاوصندوق رمز عبور - نقش‌ها و دسترسی‌ها (۲تایی) */}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
+            {staffRow9.map(renderCard)}
+          </div>
+
+          {/* 10. پروفایل رسمی مدرسه */}
+          <div className="grid grid-cols-1 gap-2.5 sm:gap-3.5">
+            {staffRow10.map(renderCard)}
           </div>
         </div>
       ) : user?.role === 'PARENT' ? (
