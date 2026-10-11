@@ -336,6 +336,18 @@ export class AttendanceService {
     const students = enrollments.map((en) => {
       const rec = recordedMap.get(en.studentId);
       const priorRec = !rec ? priorMap.get(en.studentId) : null;
+
+      // Only absence/presence status carries over; delay (tardy) is per-period and not carried over
+      let fallbackStatus = 'PRESENT';
+      if (priorRec) {
+        if (priorRec.status === 'ABSENT' || priorRec.status === 'EXCUSED_ABSENT') {
+          fallbackStatus = priorRec.status;
+        } else {
+          // If they were TARDY in an earlier period, they are already at school (PRESENT) for subsequent periods
+          fallbackStatus = 'PRESENT';
+        }
+      }
+
       return {
         studentId: en.studentId,
         studentCode: en.student.studentCode,
@@ -343,9 +355,9 @@ export class AttendanceService {
         fatherPhone: en.student.fatherPhone,
         motherPhone: en.student.motherPhone,
         user: en.student.user,
-        status: rec ? rec.status : priorRec ? priorRec.status : 'PRESENT',
-        delayMinutes: rec ? rec.delayMinutes : priorRec ? priorRec.delayMinutes : 0,
-        reason: rec ? rec.reason : priorRec ? priorRec.reason : '',
+        status: rec ? rec.status : fallbackStatus,
+        delayMinutes: rec ? rec.delayMinutes : 0,
+        reason: rec ? rec.reason : '',
         oralGrade: rec?.oralGrade !== undefined ? rec.oralGrade : null,
         rewardDisciplineType: rec?.rewardDisciplineType || 'NONE',
         rewardDisciplineNote: rec?.rewardDisciplineNote || '',
