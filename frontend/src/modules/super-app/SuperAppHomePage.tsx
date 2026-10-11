@@ -1230,6 +1230,166 @@ export const SuperAppHomePage: React.FC = () => {
   ];
 
   // ==========================================
+  // Staff / Admin Rows (6 Custom Rows)
+  // ==========================================
+  // 1. پیام‌ها - رویدادها
+  const staffRow1: SuperAppCard[] = [
+    {
+      id: 'staff-messages',
+      title: 'پیام‌ها',
+      href: '/app/messages',
+      icon: MessageSquare,
+      iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+      iconColor: 'text-primary-dark dark:text-primary',
+      badge: unreadMessagesCount > 0 ? toPersianDigits(unreadMessagesCount) : undefined,
+    },
+    {
+      id: 'staff-events',
+      title: 'رویدادها',
+      href: '/app/events',
+      icon: CalendarRange,
+      iconBg: 'bg-college-light dark:bg-[#38260D]',
+      iconColor: 'text-third dark:text-[#FBBF24]',
+      badge: eventsCount > 0 ? toPersianDigits(eventsCount) : undefined,
+    },
+  ];
+
+  // 2. دفتر کلاسی - ارزشیابی و نمرات - تکالیف
+  const staffRow2: SuperAppCard[] = [
+    {
+      id: 'staff-attendance',
+      title: 'دفتر کلاسی',
+      href: '/app/admin/attendance',
+      icon: UserCheck,
+      iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+      iconColor: 'text-primary-dark dark:text-primary',
+    },
+    {
+      id: 'staff-gradebook',
+      title: 'ارزشیابی و نمرات',
+      href: '/app/admin/gradebook',
+      icon: BarChart3,
+      iconBg: 'bg-male-light dark:bg-[#182346]',
+      iconColor: 'text-sec dark:text-[#8194EE]',
+    },
+    {
+      id: 'staff-homework',
+      title: 'تکالیف',
+      href: '/app/admin/homework',
+      icon: FileCheck,
+      iconBg: 'bg-club-light dark:bg-[#2A173E]',
+      iconColor: 'text-club dark:text-[#C084FC]',
+      badge: homeworkCount > 0 ? toPersianDigits(homeworkCount) : undefined,
+    },
+  ];
+
+  // 3. آزمون‌ها - بانک سوالات - محتوای آموزشی
+  const staffRow3: SuperAppCard[] = [
+    {
+      id: 'staff-exams',
+      title: 'آزمون‌ها',
+      href: '/app/admin/exams',
+      icon: HelpCircle,
+      iconBg: 'bg-college-light dark:bg-[#38260D]',
+      iconColor: 'text-third dark:text-[#FBBF24]',
+      badge: examsCount > 0 ? toPersianDigits(examsCount) : undefined,
+    },
+    {
+      id: 'staff-question-bank',
+      title: 'بانک سوالات',
+      href: '/app/admin/question-bank',
+      icon: FileQuestion,
+      iconBg: 'bg-male-light dark:bg-[#182346]',
+      iconColor: 'text-sec dark:text-[#8194EE]',
+    },
+    {
+      id: 'staff-lessons',
+      title: 'محتوای آموزشی',
+      href: '/app/admin/lessons',
+      icon: BookOpen,
+      iconBg: 'bg-female-light dark:bg-[#3D1426]',
+      iconColor: 'text-girl dark:text-[#F472B6]',
+    },
+  ];
+
+  // 4. برنامه هفتگی - دانش‌آموزان - کادر آموزشی
+  const staffRow4: SuperAppCard[] = [
+    {
+      id: 'staff-schedule',
+      title: 'برنامه هفتگی',
+      href: '/app/admin/schedule',
+      icon: CalendarDays,
+      iconBg: 'bg-ecosystem-light dark:bg-[#163330]',
+      iconColor: 'text-primary-dark dark:text-primary',
+    },
+    {
+      id: 'staff-students',
+      title: 'دانش‌آموزان',
+      href: '/app/admin/members?tab=students',
+      icon: GraduationCap,
+      iconBg: 'bg-male-light dark:bg-[#182346]',
+      iconColor: 'text-sec dark:text-[#8194EE]',
+    },
+    {
+      id: 'staff-members',
+      title: 'کادر آموزشی',
+      href: '/app/admin/members?tab=staff',
+      icon: Briefcase,
+      iconBg: 'bg-club-light dark:bg-[#2A173E]',
+      iconColor: 'text-club dark:text-[#C084FC]',
+    },
+  ];
+
+  // 5. شهریه و اقساط - حقوق و دستمزد - گزارش‌های جامع
+  const staffRow5: SuperAppCard[] = [
+    {
+      id: 'staff-fees',
+      title: 'شهریه و اقساط',
+      href: '/app/admin/finance/fees',
+      icon: Receipt,
+      iconBg: 'bg-club-light dark:bg-[#2A173E]',
+      iconColor: 'text-club dark:text-[#C084FC]',
+    },
+    {
+      id: 'staff-payroll',
+      title: 'حقوق و دستمزد',
+      href: '/app/admin/finance/payroll',
+      icon: Wallet,
+      iconBg: 'bg-male-light dark:bg-[#182346]',
+      iconColor: 'text-sec dark:text-[#8194EE]',
+    },
+    {
+      id: 'staff-reports',
+      title: 'گزارش‌های جامع',
+      href: '/app/admin/reports',
+      icon: BarChart3,
+      iconBg: 'bg-college-light dark:bg-[#38260D]',
+      iconColor: 'text-third dark:text-[#FBBF24]',
+    },
+  ];
+
+  // 6. انضباطی/تشویقی - نظرسنجی
+  const staffRow6: SuperAppCard[] = [
+    {
+      id: 'staff-matters',
+      title: 'انضباطی/تشویقی',
+      href: '/app/admin/matters',
+      icon: Scale,
+      iconBg: 'bg-female-light dark:bg-[#3D1426]',
+      iconColor: 'text-girl dark:text-[#F472B6]',
+    },
+    {
+      id: 'staff-polls',
+      title: 'نظرسنجی',
+      href: '/app/polls',
+      icon: Vote,
+      iconBg: 'bg-college-light dark:bg-[#38260D]',
+      iconColor: 'text-third dark:text-[#FBBF24]',
+      badge: pollsCount > 0 ? toPersianDigits(pollsCount) : undefined,
+    },
+  ];
+
+  // ==========================================
   // Parent Rows (4 Custom Rows)
   // ==========================================
   // 1. پیام ها - شهریه
@@ -1476,6 +1636,38 @@ export const SuperAppHomePage: React.FC = () => {
           {/* 6. ملاقات با اولیا - فیش حقوقی */}
           <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
             {teacherRow6.map(renderCard)}
+          </div>
+        </div>
+      ) : user?.role === 'SCHOOL_ADMIN' || user?.role === 'STAFF' ? (
+        <div className="space-y-2.5 sm:space-y-3.5">
+          {/* 1. پیام‌ها - رویدادها */}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
+            {staffRow1.map(renderCard)}
+          </div>
+
+          {/* 2. دفتر کلاسی - ارزشیابی و نمرات - تکالیف */}
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+            {staffRow2.map(renderCard)}
+          </div>
+
+          {/* 3. آزمون‌ها - بانک سوالات - محتوای آموزشی */}
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+            {staffRow3.map(renderCard)}
+          </div>
+
+          {/* 4. برنامه هفتگی - دانش‌آموزان - کادر آموزشی */}
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+            {staffRow4.map(renderCard)}
+          </div>
+
+          {/* 5. شهریه و اقساط - حقوق و دستمزد - گزارش‌های جامع */}
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+            {staffRow5.map(renderCard)}
+          </div>
+
+          {/* 6. انضباطی/تشویقی - نظرسنجی */}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
+            {staffRow6.map(renderCard)}
           </div>
         </div>
       ) : user?.role === 'PARENT' ? (
