@@ -411,24 +411,26 @@ export const StudentSchedulePage: React.FC = () => {
                                     </span>
                                   )}
                                 </div>
-                                <div className="space-y-1.5">
-                                  <h3 className="font-bold text-sm sm:text-base text-foreground dark:text-white flex items-center gap-1.5">
+                                <div className="space-y-1.5 min-w-0">
+                                  <h3 className="font-bold text-sm sm:text-base text-foreground dark:text-white flex items-center gap-1.5 min-w-0">
                                     <BookOpen className="w-4 h-4 text-primary shrink-0" />
-                                    <span className="line-clamp-1">{slot.lesson?.name}</span>
+                                    <span className="truncate" title={slot.lesson?.name}>{slot.lesson?.name}</span>
                                   </h3>
                                   {slot.teacher?.user && (
-                                    <span className="inline-flex items-center gap-1 bg-white/80 dark:bg-[#1C2536] px-2 py-0.5 rounded-md border border-gray-200/80 dark:border-[#242F42] text-[11px] font-medium text-muted-foreground dark:text-slate-300">
-                                      <UserCheck className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                                      <span>
-                                        {slot.teacher.user.firstName} {slot.teacher.user.lastName}
+                                    <div className="flex items-center min-w-0">
+                                      <span className="inline-flex items-center gap-1 bg-white/80 dark:bg-[#1C2536] px-2 py-0.5 rounded-md border border-gray-200/80 dark:border-[#242F42] text-[11px] font-medium text-muted-foreground dark:text-slate-300 max-w-full">
+                                        <UserCheck className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                        <span className="truncate">
+                                          {slot.teacher.user.firstName} {slot.teacher.user.lastName}
+                                        </span>
                                       </span>
-                                    </span>
+                                    </div>
                                   )}
                                 </div>
                               </div>
 
                               {/* Part 1 Quick Actions */}
-                              {!isParent && slot.lessonId && (
+                              {!isParent && (slot.lessonId || slot.lesson?.id) && (
                                 <div className="pt-2.5 border-t border-gray-200/60 dark:border-[#242F42]/80 mt-auto space-y-1.5">
                                   <span className="text-[10px] font-bold text-primary dark:text-primary-light block">
                                     دسترسی سریع:
@@ -439,7 +441,7 @@ export const StudentSchedulePage: React.FC = () => {
                                       size="sm"
                                       onClick={() =>
                                         navigate(
-                                          `/app/student/materials?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                                          `/app/student/materials?lessonId=${slot.lessonId || slot.lesson?.id}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
                                         )
                                       }
                                       className="text-[10px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-purple-400/60 dark:border-purple-500/50 bg-purple-100/85 dark:bg-purple-600/25 text-purple-800 dark:text-purple-200 hover:bg-purple-200/80 dark:hover:bg-purple-600/35 shadow-2xs font-bold transition-colors cursor-pointer"
@@ -454,7 +456,7 @@ export const StudentSchedulePage: React.FC = () => {
                                       size="sm"
                                       onClick={() =>
                                         navigate(
-                                          `/app/student/homework?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                                          `/app/student/homework?lessonId=${slot.lessonId || slot.lesson?.id}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
                                         )
                                       }
                                       className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-third/40 bg-third-light/70 dark:bg-third/15 text-third-dark dark:text-third hover:bg-third-light dark:hover:bg-third/25 dark:border-third/40 shadow-2xs font-bold transition-colors cursor-pointer"
@@ -469,7 +471,7 @@ export const StudentSchedulePage: React.FC = () => {
                                       size="sm"
                                       onClick={() =>
                                         navigate(
-                                          `/app/student/exams?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                                          `/app/student/exams?lessonId=${slot.lessonId || slot.lesson?.id}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
                                         )
                                       }
                                       className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-girl/40 bg-girl-light/70 dark:bg-girl/15 text-girl-dark dark:text-girl-light hover:bg-girl-light dark:hover:bg-girl/25 dark:border-girl/40 shadow-2xs font-bold transition-colors cursor-pointer"
@@ -515,24 +517,28 @@ export const StudentSchedulePage: React.FC = () => {
                                     </span>
                                   )}
                                 </div>
-                                <div className="space-y-1.5">
+                                <div className="space-y-1.5 min-w-0">
                                   <h3
-                                    className={`font-bold text-sm sm:text-base flex items-center gap-1.5 ${
+                                    className={`font-bold text-sm sm:text-base flex items-center gap-1.5 min-w-0 ${
                                       slot.secondLesson
                                         ? 'text-foreground dark:text-white'
                                         : 'text-muted-foreground dark:text-gray-400 font-medium'
                                     }`}
                                   >
                                     <BookOpen className="w-4 h-4 text-primary shrink-0" />
-                                    <span className="line-clamp-1">{slot.secondLesson?.name || 'بدون کلاس'}</span>
+                                    <span className="truncate" title={slot.secondLesson?.name || 'بدون کلاس'}>
+                                      {slot.secondLesson?.name || 'بدون کلاس'}
+                                    </span>
                                   </h3>
                                   {slot.secondTeacher?.user && (
-                                    <span className="inline-flex items-center gap-1 bg-white/80 dark:bg-[#1C2536] px-2 py-0.5 rounded-md border border-gray-200/80 dark:border-[#242F42] text-[11px] font-medium text-muted-foreground dark:text-slate-300">
-                                      <UserCheck className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                                      <span>
-                                        {slot.secondTeacher.user.firstName} {slot.secondTeacher.user.lastName}
+                                    <div className="flex items-center min-w-0">
+                                      <span className="inline-flex items-center gap-1 bg-white/80 dark:bg-[#1C2536] px-2 py-0.5 rounded-md border border-gray-200/80 dark:border-[#242F42] text-[11px] font-medium text-muted-foreground dark:text-slate-300 max-w-full">
+                                        <UserCheck className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                        <span className="truncate">
+                                          {slot.secondTeacher.user.firstName} {slot.secondTeacher.user.lastName}
+                                        </span>
                                       </span>
-                                    </span>
+                                    </div>
                                   )}
                                 </div>
                               </div>
@@ -551,7 +557,7 @@ export const StudentSchedulePage: React.FC = () => {
                                           size="sm"
                                           onClick={() =>
                                             navigate(
-                                              `/app/student/materials?lessonId=${slot.secondLessonId || slot.lessonId}&lessonName=${encodeURIComponent(slot.secondLesson?.name || '')}`
+                                              `/app/student/materials?lessonId=${slot.secondLessonId || slot.secondLesson?.id || slot.lessonId}&lessonName=${encodeURIComponent(slot.secondLesson?.name || '')}`
                                             )
                                           }
                                           className="text-[10px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-purple-400/60 dark:border-purple-500/50 bg-purple-100/85 dark:bg-purple-600/25 text-purple-800 dark:text-purple-200 hover:bg-purple-200/80 dark:hover:bg-purple-600/35 shadow-2xs font-bold transition-colors cursor-pointer"
@@ -566,7 +572,7 @@ export const StudentSchedulePage: React.FC = () => {
                                           size="sm"
                                           onClick={() =>
                                             navigate(
-                                              `/app/student/homework?lessonId=${slot.secondLessonId || slot.lessonId}&lessonName=${encodeURIComponent(slot.secondLesson?.name || '')}`
+                                              `/app/student/homework?lessonId=${slot.secondLessonId || slot.secondLesson?.id || slot.lessonId}&lessonName=${encodeURIComponent(slot.secondLesson?.name || '')}`
                                             )
                                           }
                                           className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-third/40 bg-third-light/70 dark:bg-third/15 text-third-dark dark:text-third hover:bg-third-light dark:hover:bg-third/25 dark:border-third/40 shadow-2xs font-bold transition-colors cursor-pointer"
@@ -581,7 +587,7 @@ export const StudentSchedulePage: React.FC = () => {
                                           size="sm"
                                           onClick={() =>
                                             navigate(
-                                              `/app/student/exams?lessonId=${slot.secondLessonId || slot.lessonId}&lessonName=${encodeURIComponent(slot.secondLesson?.name || '')}`
+                                              `/app/student/exams?lessonId=${slot.secondLessonId || slot.secondLesson?.id || slot.lessonId}&lessonName=${encodeURIComponent(slot.secondLesson?.name || '')}`
                                             )
                                           }
                                           className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-girl/40 bg-girl-light/70 dark:bg-girl/15 text-girl-dark dark:text-girl-light hover:bg-girl-light dark:hover:bg-girl/25 dark:border-girl/40 shadow-2xs font-bold transition-colors cursor-pointer"
