@@ -254,30 +254,37 @@ export class CalendarService {
     let homeworkEvents: any[] = [];
     if (!eventType || eventType === 'ALL' || eventType === 'HOMEWORK') {
       try {
-        const hwWhere: any = { tenantId };
-        if (startDate && endDate) {
-          hwWhere.dueDate = {
-            gte: new Date(startDate),
-            lte: new Date(endDate),
-          };
-        }
-        if (search) {
-          hwWhere.OR = [
-            { title: { contains: search, mode: 'insensitive' } },
-            { description: { contains: search, mode: 'insensitive' } },
-          ];
-        }
-        const homeworks = await this.prisma.homework.findMany({
-          where: hwWhere,
-          include: {
-            lesson: { select: { id: true, name: true } },
-            classroom: { select: { id: true, name: true } },
-            teacher: { include: { user: { select: { firstName: true, lastName: true, role: true, avatarUrl: true } } } },
-          },
-          orderBy: { dueDate: 'asc' },
-        });
+        const { filter: audienceFilter, allowQuery } = await this.getHomeworkAudienceFilter(
+          tenantId,
+          userId,
+          role,
+        );
 
-        homeworkEvents = homeworks.map((hw) => ({
+        if (allowQuery) {
+          const hwWhere: any = { tenantId, ...audienceFilter };
+          if (startDate && endDate) {
+            hwWhere.dueDate = {
+              gte: new Date(startDate),
+              lte: new Date(endDate),
+            };
+          }
+          if (search) {
+            hwWhere.OR = [
+              { title: { contains: search, mode: 'insensitive' } },
+              { description: { contains: search, mode: 'insensitive' } },
+            ];
+          }
+          const homeworks = await this.prisma.homework.findMany({
+            where: hwWhere,
+            include: {
+              lesson: { select: { id: true, name: true } },
+              classroom: { select: { id: true, name: true } },
+              teacher: { include: { user: { select: { firstName: true, lastName: true, role: true, avatarUrl: true } } } },
+            },
+            orderBy: { dueDate: 'asc' },
+          });
+
+          homeworkEvents = homeworks.map((hw) => ({
           id: `hw-${hw.id}`,
           tenantId: hw.tenantId,
           title: `مهلت تکلیف: ${hw.title}`,
@@ -303,6 +310,7 @@ export class CalendarService {
             : undefined,
           createdAt: hw.createdAt,
         }));
+        }
       } catch {
         // Non-blocking fallback
       }
@@ -322,6 +330,80 @@ export class CalendarService {
     const allEvents = [...hydratedSchoolEvents, ...homeworkEvents, ...coachingEvents];
     allEvents.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     return allEvents;
+  }
+
+  /**
+   * Helper to restrict homework query to the student's or parent's enrolled classrooms
+   */
+  private async getHomeworkAudienceFilter(
+    tenantId: string,
+    userId?: string,
+    role?: string,
+  ): Promise<{ filter: any; allowQuery: boolean }> {
+    if (!userId || !role) {
+      return { filter: {}, allowQuery: true };
+    }
+
+    if (role === Role.STUDENT || role === 'STUDENT') {
+      const student = await this.prisma.studentProfile.findFirst({
+        where: { tenantId, userId },
+        include: {
+          enrollments: {
+            where: { status: 'ACTIVE' },
+            select: { classroomId: true },
+          },
+        },
+      });
+      const classroomIds = student?.enrollments.map((e) => e.classroomId) || [];
+      if (classroomIds.length === 0) {
+        return { filter: {}, allowQuery: false };
+      }
+      return { filter: { classroomId: { in: classroomIds } }, allowQuery: true };
+    }
+
+    if (role === Role.PARENT || role === 'PARENT') {
+      const parent = await this.prisma.parentProfile.findFirst({
+        where: { tenantId, userId },
+        include: {
+          studentLinks: {
+            include: {
+              student: {
+                include: {
+                  enrollments: {
+                    where: { status: 'ACTIVE' },
+                    select: { classroomId: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      const classroomIds = Array.from(
+        new Set(
+          parent?.studentLinks.flatMap((link) =>
+            link.student.enrollments.map((e) => e.classroomId),
+          ) || [],
+        ),
+      );
+      if (classroomIds.length === 0) {
+        return { filter: {}, allowQuery: false };
+      }
+      return { filter: { classroomId: { in: classroomIds } }, allowQuery: true };
+    }
+
+    if (role === Role.TEACHER || role === 'TEACHER') {
+      const teacher = await this.prisma.teacherProfile.findFirst({
+        where: { tenantId, userId },
+        select: { id: true },
+      });
+      if (teacher) {
+        return { filter: { teacherId: teacher.id }, allowQuery: true };
+      }
+    }
+
+    // School admin, super admin, staff see all tenant homework
+    return { filter: {}, allowQuery: true };
   }
 
   private async fetchCoachingCalendarEvents(
@@ -729,24 +811,31 @@ export class CalendarService {
     let homeworkEvents: any[] = [];
     if (!eventType || eventType === 'ALL' || eventType === 'HOMEWORK') {
       try {
-        const hwWhere: any = { tenantId };
-        if (search) {
-          hwWhere.OR = [
-            { title: { contains: search, mode: 'insensitive' } },
-            { description: { contains: search, mode: 'insensitive' } },
-          ];
-        }
-        const homeworks = await this.prisma.homework.findMany({
-          where: hwWhere,
-          include: {
-            lesson: { select: { id: true, name: true } },
-            classroom: { select: { id: true, name: true } },
-            teacher: { include: { user: { select: { firstName: true, lastName: true } } } },
-          },
-          orderBy: { dueDate: 'asc' },
-        });
+        const { filter: audienceFilter, allowQuery } = await this.getHomeworkAudienceFilter(
+          tenantId,
+          userId,
+          role,
+        );
 
-        homeworkEvents = homeworks.map((hw) => ({
+        if (allowQuery) {
+          const hwWhere: any = { tenantId, ...audienceFilter };
+          if (search) {
+            hwWhere.OR = [
+              { title: { contains: search, mode: 'insensitive' } },
+              { description: { contains: search, mode: 'insensitive' } },
+            ];
+          }
+          const homeworks = await this.prisma.homework.findMany({
+            where: hwWhere,
+            include: {
+              lesson: { select: { id: true, name: true } },
+              classroom: { select: { id: true, name: true } },
+              teacher: { include: { user: { select: { firstName: true, lastName: true } } } },
+            },
+            orderBy: { dueDate: 'asc' },
+          });
+
+          homeworkEvents = homeworks.map((hw) => ({
           id: `hw-${hw.id}`,
           tenantId: hw.tenantId,
           title: `مهلت تکلیف: ${hw.title}`,
@@ -772,6 +861,7 @@ export class CalendarService {
             : undefined,
           createdAt: hw.createdAt,
         }));
+        }
       } catch {
         // Non-blocking fallback
       }

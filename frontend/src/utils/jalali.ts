@@ -203,12 +203,45 @@ const safeToGregorian = (jy: number, jm: number, jd: number) => {
  * این متد به صورت خودکار هر شنبه تغییر می‌کند (یک هفته هفته فرد، هفته بعد هفته زوج)
  */
 export function getCurrentJalaliWeekInfo(dateInput: Date | string = new Date()): JalaliWeekInfo {
-  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-  const validDate = isNaN(date.getTime()) ? new Date() : date;
-  const j = safeToJalaali(validDate.getFullYear(), validDate.getMonth() + 1, validDate.getDate());
+  let jy: number;
+  let jm: number;
+  let jd: number;
 
-  const dayOfYear = (j.jm <= 6 ? (j.jm - 1) * 31 : 6 * 31 + (j.jm - 7) * 30) + j.jd;
-  const gFarvardin1 = safeToGregorian(j.jy, 1, 1);
+  if (typeof dateInput === 'string') {
+    const norm = normalizeDigits(dateInput.trim());
+    const match = norm.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+    if (match) {
+      const y = parseInt(match[1], 10);
+      const m = parseInt(match[2], 10);
+      const d = parseInt(match[3], 10);
+      if (y >= 1300 && y <= 1500) {
+        jy = y;
+        jm = m;
+        jd = d;
+      } else {
+        const j = safeToJalaali(y, m, d);
+        jy = j.jy;
+        jm = j.jm;
+        jd = j.jd;
+      }
+    } else {
+      const parsed = new Date(dateInput);
+      const validDate = isNaN(parsed.getTime()) ? new Date() : parsed;
+      const j = safeToJalaali(validDate.getFullYear(), validDate.getMonth() + 1, validDate.getDate());
+      jy = j.jy;
+      jm = j.jm;
+      jd = j.jd;
+    }
+  } else {
+    const validDate = isNaN(dateInput.getTime()) ? new Date() : dateInput;
+    const j = safeToJalaali(validDate.getFullYear(), validDate.getMonth() + 1, validDate.getDate());
+    jy = j.jy;
+    jm = j.jm;
+    jd = j.jd;
+  }
+
+  const dayOfYear = (jm <= 6 ? (jm - 1) * 31 : 6 * 31 + (jm - 7) * 30) + jd;
+  const gFarvardin1 = safeToGregorian(jy, 1, 1);
   const dFarvardin1 = new Date(gFarvardin1.gy, gFarvardin1.gm - 1, gFarvardin1.gd);
   const dowFarvardin1 = (dFarvardin1.getDay() + 1) % 7; // شنبه = 0, ..., جمعه = 6
 
@@ -221,8 +254,8 @@ export function getCurrentJalaliWeekInfo(dateInput: Date | string = new Date()):
     activeWeek,
     weekLabel,
     dayOfYear,
-    jy: j.jy,
-    jm: j.jm,
-    jd: j.jd,
+    jy,
+    jm,
+    jd,
   };
 }

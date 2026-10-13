@@ -67,21 +67,44 @@ export function getDayOfWeekFromDate(dateStr?: string): DayOfWeek {
 }
 
 export function getActiveWeekFromDate(dateStr?: string): 1 | 2 {
-  if (!dateStr || typeof dateStr !== 'string') return 1;
-  let jYear: number, jMonth: number, jDay: number;
-  const parts = dateStr.split('-').map(Number);
-  if (parts.length === 3 && parts[0] > 1300 && parts[0] < 1500) {
-    jYear = parts[0];
-    jMonth = parts[1];
-    jDay = parts[2];
+  if (!dateStr || typeof dateStr !== 'string') {
+    const now = new Date();
+    const j = jalaali.toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    const dayOfYear = (j.jm <= 6 ? (j.jm - 1) * 31 : 6 * 31 + (j.jm - 7) * 30) + j.jd;
+    const gFarvardin1 = jalaali.toGregorian(j.jy, 1, 1);
+    const dFarvardin1 = new Date(gFarvardin1.gy, gFarvardin1.gm - 1, gFarvardin1.gd);
+    const dowFarvardin1 = (dFarvardin1.getDay() + 1) % 7;
+    const weekNumber = Math.floor((dayOfYear - 1 + dowFarvardin1) / 7) + 1;
+    return weekNumber % 2 === 1 ? 1 : 2;
+  }
+
+  let jYear: number | undefined;
+  let jMonth: number | undefined;
+  let jDay: number | undefined;
+  const parts = dateStr.trim().split(/[-/]/).map(Number);
+  if (parts.length === 3 && !parts.some(isNaN)) {
+    if (parts[0] > 1300 && parts[0] < 1500) {
+      jYear = parts[0];
+      jMonth = parts[1];
+      jDay = parts[2];
+    } else {
+      const j = jalaali.toJalaali(parts[0], parts[1], parts[2]);
+      jYear = j.jy;
+      jMonth = j.jm;
+      jDay = j.jd;
+    }
   } else {
     const gDate = new Date(dateStr);
-    if (isNaN(gDate.getTime())) return 1;
-    const j = jalaali.toJalaali(gDate.getFullYear(), gDate.getMonth() + 1, gDate.getDate());
-    jYear = j.jy;
-    jMonth = j.jm;
-    jDay = j.jd;
+    if (!isNaN(gDate.getTime())) {
+      const j = jalaali.toJalaali(gDate.getFullYear(), gDate.getMonth() + 1, gDate.getDate());
+      jYear = j.jy;
+      jMonth = j.jm;
+      jDay = j.jd;
+    }
   }
+
+  if (!jYear || !jMonth || !jDay) return 1;
+
   const dayOfYear = (jMonth <= 6 ? (jMonth - 1) * 31 : 6 * 31 + (jMonth - 7) * 30) + jDay;
   const gFarvardin1 = jalaali.toGregorian(jYear, 1, 1);
   const dFarvardin1 = new Date(gFarvardin1.gy, gFarvardin1.gm - 1, gFarvardin1.gd);
@@ -89,6 +112,8 @@ export function getActiveWeekFromDate(dateStr?: string): 1 | 2 {
   const weekNumber = Math.floor((dayOfYear - 1 + dowFarvardin1) / 7) + 1;
   return weekNumber % 2 === 1 ? 1 : 2;
 }
+
+export const getJalaliActiveWeek = getActiveWeekFromDate;
 
 @Injectable()
 export class AttendanceService {
@@ -691,6 +716,7 @@ export class AttendanceService {
   ) {
     const dayOfWeek = getDayOfWeekFromDate(dateStr);
     const dateVariants = getDateVariants(dateStr);
+    const activeWeek = getJalaliActiveWeek(dateStr);
 
     let teacherId: string | undefined;
     if (userRole === 'TEACHER') {
@@ -701,6 +727,7 @@ export class AttendanceService {
         return {
           dayOfWeek,
           date: dateStr,
+          activeWeek,
           schedules: [],
         };
       }
@@ -729,11 +756,10 @@ export class AttendanceService {
         lesson: true,
         secondLesson: true,
         teacher: { include: { user: true } },
+        secondTeacher: { include: { user: true } },
       },
       orderBy: [{ periodNumber: 'asc' }],
     });
-
-    const activeWeek = getActiveWeekFromDate(dateStr);
 
     // Filter alternating week slots: only include if this teacher teaches in the active week!
     const applicableSchedules = schedules.filter((slot) => {
@@ -742,7 +768,10 @@ export class AttendanceService {
         if (activeWeek === 1) {
           return slot.teacherId === teacherId;
         } else {
-          return slot.secondTeacherId === teacherId && Boolean(slot.secondLessonId || slot.secondLesson);
+          return (
+            slot.secondTeacherId === teacherId &&
+            Boolean(slot.secondLessonId || slot.secondLesson)
+          );
         }
       }
       if (activeWeek === 2) {
@@ -776,9 +805,12 @@ export class AttendanceService {
         const tardyCount = attendances.filter((a) => a.status === 'TARDY').length;
         const excusedCount = attendances.filter((a) => a.status === 'EXCUSED_ABSENT').length;
 
+        // Dynamically resolve active lesson and teacher for this week
         const isSecondWeek = slot.isSplitPeriod && activeWeek === 2;
-        const currentLesson = isSecondWeek ? slot.secondLesson || slot.lesson : slot.lesson;
-        const currentLessonId = isSecondWeek ? slot.secondLessonId || slot.lessonId : slot.lessonId;
+        const activeLesson = isSecondWeek && slot.secondLesson ? slot.secondLesson : slot.lesson;
+        const activeLessonId = isSecondWeek && slot.secondLessonId ? slot.secondLessonId : slot.lessonId;
+        const activeTeacher = isSecondWeek && slot.secondTeacher ? slot.secondTeacher : slot.teacher;
+        const activeTeacherId = isSecondWeek && slot.secondTeacherId ? slot.secondTeacherId : slot.teacherId;
 
         return {
           id: slot.id,
@@ -786,12 +818,17 @@ export class AttendanceService {
           classroomName: slot.classroom.name,
           classroomGrade: slot.classroom.level?.name || '',
           classroomField: slot.classroom.field?.name || '',
-          lessonId: currentLessonId,
-          lessonName: currentLesson?.name || '',
+          lessonId: activeLessonId,
+          lessonName: activeLesson?.name || slot.lesson?.name || '',
+          teacherId: activeTeacherId,
+          teacherName: activeTeacher?.user
+            ? `${activeTeacher.user.firstName} ${activeTeacher.user.lastName}`
+            : '',
           periodNumber: slot.periodNumber,
           startTime: slot.startTime,
           endTime: slot.endTime,
           isSplitPeriod: slot.isSplitPeriod,
+          activeWeek,
           stats: {
             totalStudents,
             recordedCount: attendances.length,
@@ -809,6 +846,7 @@ export class AttendanceService {
     return {
       dayOfWeek,
       date: dateStr,
+      activeWeek,
       schedules: enrichedSchedules,
     };
   }
