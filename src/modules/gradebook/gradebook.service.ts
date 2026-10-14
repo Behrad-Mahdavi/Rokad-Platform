@@ -1106,6 +1106,26 @@ export class GradebookService {
         rewardDisciplineNote: r.rewardDisciplineNote,
         sessionNote: r.sessionNote,
       })),
+      attendance: attendanceRecords.map((r) => ({
+        id: r.id,
+        date: r.date,
+        periodNumber: r.periodNumber,
+        status: r.status,
+        delayMinutes: r.delayMinutes,
+        reason: r.reason,
+        sessionNote: r.sessionNote,
+        rewardDisciplineType: r.rewardDisciplineType,
+      })),
+      oralGrades: attendanceRecords
+        .filter((r) => r.oralGrade !== null && r.oralGrade !== undefined)
+        .map((r) => ({
+          id: r.id,
+          score: r.oralGrade,
+          title: r.sessionNote || `جلسه ${r.periodNumber || ''}`,
+          recordedAt: r.date,
+          topic: null,
+          feedback: r.rewardDisciplineNote,
+        })),
       homeworks: homeworkList.map((h) => {
         const sub = h.submissions[0];
         return {

@@ -191,13 +191,23 @@ export const GradebookPage: React.FC = () => {
           apiClient.get('/classes/classrooms'),
         ]);
 
-        const rawLessons = lessonsRes?.data || lessonsRes || [];
-        const rawClassrooms = classesRes?.data || classesRes || [];
+        const rawLessons = lessonsRes?.data?.data || lessonsRes?.data || lessonsRes || [];
+        const rawClassrooms = classesRes?.data?.data || classesRes?.data || classesRes || [];
 
-        const classroomsArr = Array.isArray(rawClassrooms) ? rawClassrooms : [];
+        const classroomsArr = Array.isArray(rawClassrooms)
+          ? rawClassrooms
+          : Array.isArray((rawClassrooms as any)?.data)
+            ? (rawClassrooms as any).data
+            : [];
         setClassroomsList(classroomsArr);
 
-        const mappedLessons: LessonItem[] = (Array.isArray(rawLessons) ? rawLessons : []).map((l: any) => ({
+        const lessonsArr = Array.isArray(rawLessons)
+          ? rawLessons
+          : Array.isArray((rawLessons as any)?.data)
+            ? (rawLessons as any).data
+            : [];
+
+        const mappedLessons: LessonItem[] = lessonsArr.map((l: any) => ({
           id: l.id,
           name: l.name,
           code: l.code,
@@ -264,14 +274,16 @@ export const GradebookPage: React.FC = () => {
           apiClient.get(`/attendance/classroom/${selectedClassroom.id}/summary?lessonId=${selectedLesson.id}`).catch(() => null),
         ]);
 
-        const rawStudents = studentsRes?.data || studentsRes || [];
+        const rawStudents = studentsRes?.data?.data || studentsRes?.data || studentsRes || [];
         const studentsArr = Array.isArray(rawStudents)
           ? rawStudents
-          : Array.isArray(rawStudents?.students)
-            ? rawStudents.students
-            : Array.isArray(rawStudents?.enrollments)
-              ? rawStudents.enrollments
-              : [];
+          : Array.isArray((rawStudents as any)?.data)
+            ? (rawStudents as any).data
+            : Array.isArray((rawStudents as any)?.students)
+              ? (rawStudents as any).students
+              : Array.isArray((rawStudents as any)?.enrollments)
+                ? (rawStudents as any).enrollments
+                : [];
 
         const normalizedStudents: StudentItem[] = studentsArr.map((s: any) => {
           const profile = s.student || (s.user ? s : s);
@@ -381,8 +393,32 @@ export const GradebookPage: React.FC = () => {
       const res: any = await apiClient.get(
         `/gradebook/student/${studentId}/dossier?classroomId=${selectedClassroom.id}&lessonId=${selectedLesson.id}`,
       );
-      const raw = res?.data || res;
-      setDossierData(raw?.data || raw);
+      const raw = res?.data?.data || res?.data || res;
+      const dossier = raw?.data || raw || {};
+
+      const sessions = Array.isArray(dossier.sessions) ? dossier.sessions : [];
+      const oralGrades = Array.isArray(dossier.oralGrades)
+        ? dossier.oralGrades
+        : sessions
+            .filter((s: any) => s.oralGrade !== null && s.oralGrade !== undefined)
+            .map((s: any) => ({
+              id: s.id,
+              score: s.oralGrade,
+              title: s.sessionNote || `جلسه ${s.periodNumber || ''}`,
+              recordedAt: s.date,
+              topic: null,
+              feedback: s.rewardDisciplineNote,
+            }));
+
+      setDossierData({
+        ...dossier,
+        oralGrades,
+        attendance: Array.isArray(dossier.attendance) ? dossier.attendance : sessions,
+        homeworks: Array.isArray(dossier.homeworks) ? dossier.homeworks : [],
+        matters: Array.isArray(dossier.matters) ? dossier.matters : [],
+        gradeEntries: Array.isArray(dossier.gradeEntries) ? dossier.gradeEntries : [],
+        podmanGrades: Array.isArray(dossier.podmanGrades) ? dossier.podmanGrades : [],
+      });
     } catch (err: any) {
       console.error('Error loading student dossier:', err);
       toast.error('خطا در دریافت پرونده تحصیلی دانش‌آموز');
@@ -401,7 +437,7 @@ export const GradebookPage: React.FC = () => {
       setIsSavingGrades(true);
 
       if (selectedLesson.isModular) {
-        const payloadStudents = studentsList.map((st) => {
+        const payloadStudents = (studentsList || []).map((st) => {
           const sid = st.studentId;
           const podGrades = modularGrades[sid] || {};
           const gradesObj: Record<string, any> = {};
@@ -791,7 +827,7 @@ export const GradebookPage: React.FC = () => {
                 <Skeleton key={i} className="h-44 rounded-2xl" />
               ))}
             </div>
-          ) : filteredLessons.length === 0 ? (
+          ) : (!filteredLessons || filteredLessons.length === 0) ? (
             <div className="text-center py-16 bg-white dark:bg-[#151C28] rounded-2xl border border-dashed border-gray-200 dark:border-[#242F42]">
               <BookOpen className="w-10 h-10 text-muted-foreground dark:text-slate-500 mx-auto mb-2 opacity-60" />
               <h3 className="font-bold text-sm text-foreground dark:text-white">درسی یافت نشد</h3>
@@ -799,7 +835,7 @@ export const GradebookPage: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-              {filteredLessons.map((lesson) => (
+              {(filteredLessons || []).map((lesson) => (
                 <div
                   key={lesson.id}
                   onClick={() => {
@@ -917,8 +953,15 @@ export const GradebookPage: React.FC = () => {
             کلاس‌های متصل به این درس (لطفاً کلاس را انتخاب کنید):
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {classroomsList.map((cls) => (
+          {(!classroomsList || classroomsList.length === 0) ? (
+            <div className="text-center py-16 bg-white dark:bg-[#151C28] rounded-2xl border border-dashed border-gray-200 dark:border-[#242F42]">
+              <Users className="w-10 h-10 text-muted-foreground dark:text-slate-500 mx-auto mb-2 opacity-60" />
+              <h3 className="font-bold text-sm text-foreground dark:text-white">کلاسی برای این درس یافت نشد</h3>
+              <p className="text-xs text-muted-foreground dark:text-slate-400 mt-1">هنوز کلاسی به این درس اختصاص داده نشده است یا دسترسی تعریف نشده است.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {(classroomsList || []).map((cls) => (
               <div
                 key={cls.id}
                 onClick={() => {
@@ -957,8 +1000,9 @@ export const GradebookPage: React.FC = () => {
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
+    )}
 
       {/* ─────────────────────────────────────────────────────────────────────
           STEP 3: SMART EVALUATION SHEET (ماتریس هوشمند نمرات کلاس)
@@ -1149,7 +1193,7 @@ export const GradebookPage: React.FC = () => {
                   </thead>
 
                   <tbody className="divide-y divide-gray-100 dark:divide-[#242F42]/60">
-                    {filteredStudents.map((st, idx) => {
+                    {(filteredStudents || []).map((st, idx) => {
                       const sid = st.studentId;
                       const att = attendanceSummaryMap[sid];
 
@@ -1916,13 +1960,13 @@ export const GradebookPage: React.FC = () => {
                         </span>
                       </div>
 
-                      {dossierData.oralGrades?.length === 0 ? (
+                      {(!dossierData.oralGrades || dossierData.oralGrades.length === 0) ? (
                         <div className="py-8 text-center bg-gray-50 dark:bg-[#1C2536] border border-dashed border-gray-200 dark:border-[#242F42] rounded-xl text-xs text-muted-foreground font-bold">
                           تاکنون نمره پرسش کلاسی مستقلی برای این دانش‌آموز در این درس ثبت نشده است.
                         </div>
                       ) : (
                         <div className="divide-y divide-gray-100 dark:divide-[#242F42] border border-gray-200 dark:border-[#242F42] rounded-xl overflow-hidden bg-white dark:bg-[#151C28]">
-                          {dossierData.oralGrades.map((og: any) => (
+                          {(dossierData.oralGrades || []).map((og: any) => (
                             <div key={og.id} className="p-3 flex items-center justify-between text-xs hover:bg-gray-50 dark:hover:bg-[#1C2536] transition-colors">
                               <div className="flex items-center gap-2.5">
                                 <span className="w-7 h-7 rounded-lg bg-primary/10 text-primary font-mono font-black flex items-center justify-center text-xs">
@@ -1963,13 +2007,13 @@ export const GradebookPage: React.FC = () => {
                         </span>
                       </div>
 
-                      {dossierData.homeworks?.length === 0 ? (
+                      {(!dossierData.homeworks || dossierData.homeworks.length === 0) ? (
                         <div className="py-8 text-center bg-gray-50 dark:bg-[#1C2536] border border-dashed border-gray-200 dark:border-[#242F42] rounded-xl text-xs text-muted-foreground font-bold">
                           تکلیفی در ارتباط با این درس برای کلاس تعریف نشده است.
                         </div>
                       ) : (
                         <div className="divide-y divide-gray-100 dark:divide-[#242F42] border border-gray-200 dark:border-[#242F42] rounded-xl overflow-hidden bg-white dark:bg-[#151C28]">
-                          {dossierData.homeworks.map((hw: any) => (
+                          {(dossierData.homeworks || []).map((hw: any) => (
                             <div key={hw.id} className="p-3 flex items-center justify-between text-xs hover:bg-gray-50 dark:hover:bg-[#1C2536] transition-colors">
                               <div>
                                 <div className="font-bold text-foreground dark:text-white">{hw.title}</div>
@@ -2025,13 +2069,13 @@ export const GradebookPage: React.FC = () => {
                         )}
                       </div>
 
-                      {dossierData.attendance?.length === 0 ? (
+                      {(!dossierData.attendance || dossierData.attendance.length === 0) ? (
                         <div className="py-8 text-center bg-gray-50 dark:bg-[#1C2536] border border-dashed border-gray-200 dark:border-[#242F42] rounded-xl text-xs text-muted-foreground font-bold">
                           تاکنون جلسه حضوری برای این درس در سامانه ثبت نهایی نشده است.
                         </div>
                       ) : (
                         <div className="divide-y divide-gray-100 dark:divide-[#242F42] border border-gray-200 dark:border-[#242F42] rounded-xl overflow-hidden bg-white dark:bg-[#151C28]">
-                          {dossierData.attendance.map((attItem: any, aIdx: number) => {
+                          {(dossierData.attendance || []).map((attItem: any, aIdx: number) => {
                             const isPresent = attItem.status === 'PRESENT';
                             const isAbsent = attItem.status === 'ABSENT';
                             const isTardy = attItem.status === 'TARDY';
@@ -2229,7 +2273,7 @@ export const GradebookPage: React.FC = () => {
                       )}
 
                       {/* Matters List */}
-                      {dossierData.matters?.length === 0 ? (
+                      {(!dossierData.matters || dossierData.matters.length === 0) ? (
                         <div className="py-8 text-center bg-gray-50 dark:bg-[#1C2536] border border-dashed border-gray-200 dark:border-[#242F42] rounded-xl space-y-2">
                           <Scale className="w-8 h-8 text-muted-foreground mx-auto stroke-1" />
                           <div className="text-xs font-black text-foreground dark:text-white">
@@ -2238,7 +2282,7 @@ export const GradebookPage: React.FC = () => {
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          {dossierData.matters.map((m: any) => {
+                          {(dossierData.matters || []).map((m: any) => {
                             const isPositive = m.type === 'POSITIVE';
                             return (
                               <div

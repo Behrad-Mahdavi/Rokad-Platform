@@ -49,6 +49,7 @@ export class ClassesService {
       where.OR = [
         { teacherLessons: { some: { teacherId: effectiveTeacherId } } },
         { schedules: { some: { teacherId: effectiveTeacherId } } },
+        { schedules: { some: { secondTeacherId: effectiveTeacherId } } },
       ];
     }
 
@@ -431,6 +432,7 @@ export class ClassesService {
             tenantId,
             OR: [
               { schedules: { some: { teacherId: teacher.id } } },
+              { schedules: { some: { secondTeacherId: teacher.id } } },
               { mentorId: user.id },
             ],
           },
@@ -438,6 +440,7 @@ export class ClassesService {
         if (teacherClassroomsCount > 0) {
           whereClause.OR = [
             { schedules: { some: { teacherId: teacher.id } } },
+            { schedules: { some: { secondTeacherId: teacher.id } } },
             { mentorId: user.id },
           ];
         }
