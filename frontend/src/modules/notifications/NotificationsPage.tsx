@@ -78,12 +78,14 @@ export const NotificationsPage: React.FC = () => {
     try {
       setIsLoading(true);
       const res = await apiClient.get<NotificationItem[]>('/notifications');
-      const list = (res.data || []).map((n) => ({
+      const raw = res?.data as any;
+      const rawList = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : []);
+      const list = rawList.map((n: any) => ({
         ...n,
         read: isRead(n.id, n.read),
       }));
-      setNotifications(Array.isArray(list) ? list : []);
-      const unread = list.filter((n) => !n.read).length;
+      setNotifications(list);
+      const unread = list.filter((n: any) => !n.read).length;
       setUnreadCount(unread);
     } catch (err) {
       console.error('Failed to load notifications', err);

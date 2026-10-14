@@ -68,10 +68,16 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
     private readonly configService: ConfigService,
   ) {}
 
+  private readonly defaultVapidPublicKey =
+    'BGabfLnai94NXhgE3sGsOuVsAmPrPp3fsaUF26pJYkDpdSjOuVL275YzSCVpoiS1pKhW-M5WhzXnT2EmiAN2_MM';
+  private readonly defaultVapidPrivateKey =
+    'ho4xMcinhDgWGRHDTNzUqj0x1QhnGZaUYbXnWyPiMOE';
+  private readonly defaultVapidSubject = 'mailto:support@rokadschool.ir';
+
   onModuleInit() {
-    const subject = this.configService.get<string>('VAPID_SUBJECT') || 'mailto:support@rokadschool.ir';
-    const publicKey = this.configService.get<string>('VAPID_PUBLIC_KEY');
-    const privateKey = this.configService.get<string>('VAPID_PRIVATE_KEY');
+    const subject = this.configService.get<string>('VAPID_SUBJECT') || this.defaultVapidSubject;
+    const publicKey = this.configService.get<string>('VAPID_PUBLIC_KEY') || this.defaultVapidPublicKey;
+    const privateKey = this.configService.get<string>('VAPID_PRIVATE_KEY') || this.defaultVapidPrivateKey;
 
     if (publicKey && privateKey) {
       try {
@@ -374,9 +380,9 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
   }
 
   async getUserNotifications(tenantId: string, user: any): Promise<SystemNotification[]> {
+    const notifications: SystemNotification[] = [];
     try {
       const readIds = await this.getReadIds(user.id);
-      const notifications: SystemNotification[] = [];
       const role = user?.role as Role;
 
       // 0. Active Broadcast Announcements (from Memory & Redis)
@@ -433,30 +439,6 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
         badge: 'success',
         targetUrl: '/app/superadmin/tenants',
         createdAt: new Date().toISOString(),
-      });
-
-      notifications.push({
-        id: 'sys-storage-minio',
-        title: 'پشتیبان‌گیری مخازن ذخیره‌سازی MinIO',
-        desc: 'عملیات اعتبارسنجی باکت‌ها و ذخیره‌سازی ابری فایل‌های آموزشی با موفقیت سپری شد.',
-        time: '۳۰ دقیقه پیش',
-        read: readIds.has('sys-storage-minio'),
-        type: 'SYSTEM',
-        badge: 'default',
-        targetUrl: '/app/superadmin/ops',
-        createdAt: new Date(Date.now() - 1800000).toISOString(),
-      });
-
-      notifications.push({
-        id: 'sys-audit-security',
-        title: 'گزارش نظارت امنیتی و احراز هویت',
-        desc: 'تمام توکن‌های نشست ۲۴ ساعت گذشته اعتبارسنجی شده و هیچ تلاش نفوذ غیرمجازی ثبت نشده است.',
-        time: '۲ ساعت پیش',
-        read: readIds.has('sys-audit-security'),
-        type: 'SYSTEM',
-        badge: 'college',
-        targetUrl: '/app/superadmin/ops',
-        createdAt: new Date(Date.now() - 7200000).toISOString(),
       });
     }
 
@@ -1041,20 +1023,8 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
     } catch (err: any) {
-      console.warn('⚠️ [NotificationsService.getUserNotifications] DB offline fallback:', err?.message || err);
-      return [
-        {
-          id: 'sys-offline-health',
-          title: 'وضعیت سامانه',
-          desc: 'سامانه در حالت آماده به کار قرار دارد.',
-          time: 'اکنون',
-          read: false,
-          type: 'SYSTEM',
-          badge: 'success',
-          targetUrl: '/app/dashboard',
-          createdAt: new Date().toISOString(),
-        },
-      ];
+      this.logger.error(`Error in getUserNotifications: ${err?.message || err}`, err?.stack);
+      return notifications;
     }
   }
 
@@ -1063,7 +1033,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
    */
   getVapidPublicKey(): { publicKey: string } {
     return {
-      publicKey: this.configService.get<string>('VAPID_PUBLIC_KEY') || '',
+      publicKey: this.configService.get<string>('VAPID_PUBLIC_KEY') || this.defaultVapidPublicKey,
     };
   }
 

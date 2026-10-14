@@ -149,12 +149,31 @@ export function useWebPush(): WebPushState {
 
       // 3. Get or register Service Worker
       const registration = await getOrRegisterServiceWorker();
+      await registration.update().catch(() => {});
+
+      const wantedKey = urlBase64ToUint8Array(publicKey);
       let subscription = await registration.pushManager.getSubscription();
+
+      if (subscription) {
+        // Check if existing subscription used the same VAPID key
+        const currentRawKey = subscription.options?.applicationServerKey;
+        if (currentRawKey) {
+          const currentKeyArray = new Uint8Array(currentRawKey);
+          const isMatching =
+            currentKeyArray.length === wantedKey.length &&
+            currentKeyArray.every((byte, idx) => byte === wantedKey[idx]);
+          if (!isMatching) {
+            console.log('VAPID key changed, refreshing subscription...');
+            await subscription.unsubscribe().catch(() => {});
+            subscription = null;
+          }
+        }
+      }
 
       if (!subscription) {
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey) as unknown as BufferSource,
+          applicationServerKey: wantedKey as unknown as BufferSource,
         });
       }
 
@@ -219,7 +238,7 @@ export function useWebPush(): WebPushState {
       setIsLoading(true);
       setError(null);
       const res = await apiClient.post<any>('/notifications/push/test');
-      const data = res.data;
+      const data = res.data?.data || res.data;
       if (data?.sent > 0) {
         return { ok: true, message: data.message || 'اعلان تستی با موفقیت به دستگاه ارسال شد! 🎉' };
       } else {

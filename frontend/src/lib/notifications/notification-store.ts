@@ -74,7 +74,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   fetchUnreadCount: async () => {
     try {
       const res = await apiClient.get<NotificationItem[]>('/notifications');
-      const list = res.data || [];
+      const rawData = res.data as any;
+      const list = Array.isArray(rawData) ? rawData : (Array.isArray(rawData?.data) ? rawData.data : []);
       if (Array.isArray(list)) {
         const { readIds } = get();
         const count = list.filter((n) => !n.read && !readIds.has(n.id)).length;
