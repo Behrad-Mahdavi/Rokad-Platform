@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.1] - 2026-10-14
+
+### 🚀 Fixed & Hardened
+- **ارتقا و بازطراحی زیرساخت وب‌پوش و سرویس‌ورکر (Web Push & Service Worker Overhaul):**
+  - الزام قطعی به رجیستر مستقیم و آپدیت `/push-worker.js` با پارامترهای `{ scope: '/', updateViaCache: 'none' }` در تمام محیط‌ها به ویژه پروداکشن به منظور تضمین حضور لیسنر `push`.
+  - فعال‌سازی آنی ورکر به محض باز شدن برنامه از طریق رویدادهای `self.skipWaiting()` در مرحله نصب و `self.clients.claim()` در فعال‌سازی.
+  - پشتیبانی کامل از حالت Standalone PWA در سیستم‌عامل‌های iOS 16.4+ و تمامی دستگاه‌های اندروید و دسکتاپ.
+  - تشخیص هوشمند عدم تطابق کلید VAPID و لغو/ثبت مجدد اشتراک به‌صورت خودکار (VAPID Mismatch Auto Re-subscription).
+  - سازگاری کامل متد `sendTestNotification` با ساختار ترنسفورم‌شده ریسپانس بک‌اند (`res.data?.data ?? res.data`).
+- **تاب‌آوری کامل سیستم اعلان‌ها بدون Redis و ماندگارسازی پایدار (Redis-Free Fallback & DB Persistence):**
+  - توسعه متد کمکی امن `getSafeRedisClient` در `NotificationsService` جهت جلوگیری از ایجاد هرگونه خطا یا مسدودشدن در غیاب Redis در محیط ابری.
+  - ماندگارسازی پایدار اعلان‌های عمومی (Broadcasts) در جداول پایگاه‌داده PostgreSQL (`AcademicMessage` و `AcademicMessageRecipient`) به منظور حفظ دائمی اعلان‌ها پس از ری‌استارت شدن سرور حتی بدون ردیس.
+  - اعمال مکانیزم یکتاسازی (Deduplication) لیست اعلان‌های کاربر بر اساس شناسه قبل از تحویل به کلاینت.
+  - ایمن‌سازی اندپوینت ارسال اعلان عمومی با `RolesGuard` و محدودسازی به نقش‌های مجاز.
+- **اصلاح شمارشگر و نشانگر اعلان‌های خوانده‌نشده (Unread Counter Badge):**
+  - اصلاح متد `fetchUnreadCount` در `notification-store.ts` برای تفکیک امن ساختار دیتای تودرتو و به‌روزرسانی صحیح تعداد اعلان‌های خوانده‌نشده.
+- **رفع خطاهای نمرات و چرخه عمر تننت‌ها:**
+  - رفع کرش رندر کارنامه دبیران بر اثر `Cannot read properties of undefined (reading 'map')`.
+  - پایدارسازی و بازگردانی سرویس مدیریت چرخه عمر تننت‌ها در `saas-tenant-lifecycle.service.ts`.
+
 ## [1.1.0] - 2026-10-09
 
 ### 🚀 Added & Improved

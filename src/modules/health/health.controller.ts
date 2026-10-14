@@ -10,6 +10,13 @@ import { Public } from '../../common/decorators/public.decorator';
 
 import { HeartbeatService } from './heartbeat.service';
 
+let appVersion = '1.1.1';
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const pkg = require('../../../package.json');
+  if (pkg?.version) appVersion = pkg.version;
+} catch {}
+
 @ApiTags('Health Check')
 @Controller('health')
 export class HealthController {
@@ -28,7 +35,7 @@ export class HealthController {
       status: 'alive',
       timestamp: new Date().toISOString(),
       uptimeSeconds: Math.floor(process.uptime()),
-      version: '1.1.0',
+      version: appVersion,
     };
   }
 
@@ -131,7 +138,7 @@ export class HealthController {
       status: isHealthy ? 'healthy' : 'degraded',
       timestamp: new Date().toISOString(),
       uptimeSeconds: Math.floor(process.uptime()),
-      version: '1.1.0',
+      version: appVersion,
       latencies: {
         databaseMs: dbLatencyMs,
         redisMs: redisLatencyMs,

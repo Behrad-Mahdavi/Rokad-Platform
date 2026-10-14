@@ -109,7 +109,7 @@ export class HeartbeatService implements OnModuleInit, OnModuleDestroy {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'Rokad-Platform-Heartbeat/1.1.0',
+          'User-Agent': 'Rokad-Platform-Heartbeat/1.1.1',
         },
         body: JSON.stringify({
           status: 'ok',
