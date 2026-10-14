@@ -78,10 +78,45 @@ export const MessageDetailModal: React.FC<Props> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [previewVideo, previewImage]);
 
+  const [downloadingUrl, setDownloadingUrl] = useState<string | null>(null);
+
   const getDownloadUrl = (url: string, name: string) => {
     if (!url) return '';
     const separator = url.includes('?') ? '&' : '?';
     return `${url}${separator}download=1&filename=${encodeURIComponent(name)}`;
+  };
+
+  const handleDownload = async (url: string, name: string) => {
+    if (!url) return;
+    try {
+      setDownloadingUrl(url);
+      const downloadTarget = getDownloadUrl(url, name);
+      const res = await fetch(downloadTarget, { credentials: 'omit' });
+      if (!res.ok) {
+        throw new Error(`Failed to fetch file: ${res.statusText}`);
+      }
+      const blob = await res.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      const tempLink = document.createElement('a');
+      tempLink.href = objectUrl;
+      tempLink.download = name || 'file';
+      document.body.appendChild(tempLink);
+      tempLink.click();
+      document.body.removeChild(tempLink);
+      setTimeout(() => window.URL.revokeObjectURL(objectUrl), 2000);
+    } catch {
+      // Fallback: direct navigation download if fetch is blocked
+      const fallbackLink = document.createElement('a');
+      fallbackLink.href = getDownloadUrl(url, name);
+      fallbackLink.download = name || 'file';
+      fallbackLink.target = '_blank';
+      fallbackLink.rel = 'noreferrer';
+      document.body.appendChild(fallbackLink);
+      fallbackLink.click();
+      document.body.removeChild(fallbackLink);
+    } finally {
+      setDownloadingUrl(null);
+    }
   };
 
   useEffect(() => {
@@ -324,16 +359,15 @@ export const MessageDetailModal: React.FC<Props> = ({
                             </button>
                           )}
                           {att.url && (
-                            <a
-                              href={getDownloadUrl(att.url, att.name)}
-                              download={att.name}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="p-1.5 rounded-lg text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-800"
+                            <button
+                              type="button"
+                              onClick={() => handleDownload(att.url, att.name)}
+                              disabled={downloadingUrl === att.url}
+                              className="p-1.5 rounded-lg text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer disabled:opacity-50 transition-colors"
                               title="دانلود فایل"
                             >
-                              <Download className="w-4 h-4" />
-                            </a>
+                              <Download className={`w-4 h-4 ${downloadingUrl === att.url ? 'animate-bounce text-primary' : ''}`} />
+                            </button>
                           )}
                         </div>
                       </div>
@@ -384,17 +418,17 @@ export const MessageDetailModal: React.FC<Props> = ({
                       {rep.attachments && rep.attachments.length > 0 && (
                         <div className="flex items-center gap-2 flex-wrap pt-1.5 border-t border-gray-100 dark:border-gray-700/60">
                           {rep.attachments.map((att: any, idx: number) => (
-                            <a
+                            <button
                               key={idx}
-                              href={att.url}
-                              download={att.name}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1.5 text-[11px] font-bold text-primary hover:underline px-2 py-1 rounded-lg bg-primary/5 dark:bg-primary/10 border border-primary/15"
+                              type="button"
+                              onClick={() => handleDownload(att.url, att.name)}
+                              disabled={downloadingUrl === att.url}
+                              className="inline-flex items-center gap-1.5 text-[11px] font-bold text-primary hover:underline px-2 py-1 rounded-lg bg-primary/5 dark:bg-primary/10 border border-primary/15 cursor-pointer disabled:opacity-50"
                             >
                               <Paperclip className="w-3 h-3" />
                               <span className="truncate max-w-[150px]">{att.name}</span>
-                            </a>
+                              <Download className={`w-3 h-3 ${downloadingUrl === att.url ? 'animate-bounce' : ''}`} />
+                            </button>
                           ))}
                         </div>
                       )}
@@ -492,16 +526,15 @@ export const MessageDetailModal: React.FC<Props> = ({
                   <span className="text-xs sm:text-sm font-bold truncate">{previewVideo.name}</span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <a
-                    href={getDownloadUrl(previewVideo.url, previewVideo.name)}
-                    download={previewVideo.name}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  <button
+                    type="button"
+                    onClick={() => handleDownload(previewVideo.url, previewVideo.name)}
+                    disabled={downloadingUrl === previewVideo.url}
+                    className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer disabled:opacity-50"
                     title="دانلود ویدیو"
                   >
-                    <Download className="w-4 h-4" />
-                  </a>
+                    <Download className={`w-4 h-4 ${downloadingUrl === previewVideo.url ? 'animate-bounce text-primary' : ''}`} />
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
@@ -519,14 +552,15 @@ export const MessageDetailModal: React.FC<Props> = ({
               {videoError && (
                 <div className="mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex flex-col sm:flex-row items-center justify-between gap-2.5">
                   <span>مرورگر امکان پخش مستقیم این فرمت ویدیویی را ندارد.</span>
-                  <a
-                    href={getDownloadUrl(previewVideo.url, previewVideo.name)}
-                    download={previewVideo.name}
-                    className="px-3 py-1.5 rounded-lg bg-amber-500 text-black font-bold text-xs shrink-0 flex items-center gap-1.5 hover:bg-amber-400 transition-colors"
+                  <button
+                    type="button"
+                    onClick={() => handleDownload(previewVideo.url, previewVideo.name)}
+                    disabled={downloadingUrl === previewVideo.url}
+                    className="px-3 py-1.5 rounded-lg bg-amber-500 text-black font-bold text-xs shrink-0 flex items-center gap-1.5 hover:bg-amber-400 transition-colors cursor-pointer disabled:opacity-50"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>دانلود فایل و مشاهده در دستگاه</span>
-                  </a>
+                  </button>
                 </div>
               )}
 

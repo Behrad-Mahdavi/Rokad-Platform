@@ -40,8 +40,44 @@
   </head>
   <body class="bg-gray-50 dark:bg-[#0B0F17] text-ink-normal dark:text-gray-100 font-sans antialiased selection:bg-primary-light selection:text-primary-darker">
     <div id="root">
-      <div id="pwa-splash" style="position: fixed; inset: 0; width: 100vw; height: 100dvh; background-color: #59BBAF; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 99999;">
-        <img src="/logo-rokad-white.svg" alt="Rokad" style="width: 140px; height: auto; max-width: 45vw; object-fit: contain;" />
+      <div id="pwa-splash" style="position: fixed; inset: 0; width: 100vw; height: 100dvh; background: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 99999; font-family: 'IRANSansXFaNum', 'IRANSansX', system-ui, sans-serif; transition: opacity 0.3s ease;">
+        <style>
+          .dark #pwa-splash {
+            background: #0B0F17 !important;
+          }
+          @keyframes rk-pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(0.97); opacity: 0.85; }
+          }
+          @keyframes rk-progress {
+            0% { transform: translateX(100%); }
+            50% { transform: translateX(0%); }
+            100% { transform: translateX(-100%); }
+          }
+          .rk-splash-logo {
+            animation: rk-pulse 2.2s ease-in-out infinite;
+          }
+          .rk-progress-bar {
+            animation: rk-progress 1.6s ease-in-out infinite;
+          }
+        </style>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+          <!-- Crisp Emblem Icon -->
+          <div class="rk-splash-logo" style="width: 72px; height: 72px; border-radius: 22px; background: linear-gradient(135deg, #59BBAF, #2FAA9E); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px -5px rgba(47, 170, 158, 0.35);">
+            <svg width="34" height="44" viewBox="0 0 1382.74 1809.68" fill="#FFFFFF" style="display: block;">
+              <path d="M1354.57,469.13c-5.82-2.6-12.38-3.99-18.81-3.97H418.68V75.6h849.17l-230.43,236.99c-14.48,14.89-14.15,38.7,0.75,53.18 c14.89,14.48,38.7,14.15,53.18-0.75l0,0l278.3-286.23l0.02-0.02c4.22-4.33,7.63-9.59,9.83-15.16c2.22-5.58,3.24-11.4,3.24-16.97 c-0.06-11.99-4.46-23-12.52-31.68c-4.04-4.33-9.1-8.03-14.92-10.61c-5.8-2.59-12.34-3.98-18.77-3.96H389.66 c-12.64-0.02-24.43,5.23-32.67,13.53c-8.3,8.24-13.55,20.03-13.53,32.67v447.59c-0.02,12.64,5.23,24.43,13.53,32.67 c8.24,8.3,20.03,13.55,32.67,13.53h874.84L232.35,1547.83l583.32-858.38c11.67-17.18,7.21-40.57-9.97-52.24 c-17.18-11.67-40.57-7.21-52.24,9.97L8.1,1743.99l0.08-0.12C3.05,1751.22-0.07,1760.8,0,1770c0,6.81,1.55,13.27,4.07,18.82 c3.82,8.36,9.57,14.84,16.64,19.59c7.06,4.71,15.8,7.81,25.68,7.83c5.69,0.01,11.72-1.11,17.33-3.43 c5.62-2.3,10.73-5.77,14.83-9.78l0.02-0.02l1289.46-1258.6l0.08-0.07c4.44-4.34,8.06-9.69,10.4-15.4 c2.36-5.72,3.47-11.73,3.47-17.52c-0.06-11.92-4.4-22.9-12.45-31.63C1365.48,475.46,1360.41,471.73,1354.57,469.13z"/>
+            </svg>
+          </div>
+          <!-- Minimal Brand Name -->
+          <div style="text-align: center;">
+            <div style="font-size: 20px; font-weight: 900; letter-spacing: -0.5px; color: #1e293b;" class="dark:text-white">رکــاد</div>
+            <div style="font-size: 11px; font-weight: 600; color: #94a3b8; margin-top: 4px;">پلتفرم هوشمند آموزشی</div>
+          </div>
+          <!-- Clean Minimal Progress Indicator -->
+          <div style="width: 110px; height: 3px; border-radius: 99px; background: rgba(89, 187, 175, 0.15); overflow: hidden; position: relative; margin-top: 8px;">
+            <div class="rk-progress-bar" style="position: absolute; inset: 0; width: 60%; background: #2FAA9E; border-radius: 99px;"></div>
+          </div>
+        </div>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>

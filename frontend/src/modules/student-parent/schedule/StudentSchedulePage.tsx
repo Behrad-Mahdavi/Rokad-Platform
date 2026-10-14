@@ -390,69 +390,223 @@ export const StudentSchedulePage: React.FC = () => {
                       {/* Lesson Details */}
                       {slot.isSplitPeriod ? (
                         <div className="space-y-2.5 pt-1">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {/* Part 1 */}
-                            <div className={`p-3.5 rounded-xl border space-y-2 ${
-                              currentWeekInfo.activeWeek === 1
-                                ? 'bg-primary-50/50 dark:bg-primary-950/40 border-primary/50 ring-1 ring-primary/40 shadow-2xs'
-                                : 'bg-gray-50/40 dark:bg-[#1C2536]/40 border-gray-200 dark:border-[#242F42] opacity-75'
-                            }`}>
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-primary dark:text-primary-light block">هفته فرد</span>
-                                {currentWeekInfo.activeWeek === 1 && (
-                                  <span className="text-[9.5px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-300">
-                                    درس این هفته
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+                            {/* Part 1 (هفته فرد) */}
+                            <div
+                              className={`p-3.5 sm:p-4 rounded-xl border flex flex-col justify-between gap-3 transition-all ${
+                                currentWeekInfo.activeWeek === 1
+                                  ? 'bg-primary-50/50 dark:bg-primary-950/40 border-primary/50 ring-1 ring-primary/40 shadow-2xs'
+                                  : 'bg-gray-50/40 dark:bg-[#1C2536]/40 border-gray-200 dark:border-[#242F42] opacity-80 hover:opacity-100'
+                              }`}
+                            >
+                              <div className="space-y-2.5">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-[11px] font-bold text-primary dark:text-primary-light block">
+                                    هفته فرد
                                   </span>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="font-bold text-sm sm:text-base text-foreground dark:text-white flex items-center gap-1.5">
-                                  <BookOpen className="w-4 h-4 text-primary shrink-0" />
-                                  <span>{slot.lesson?.name}</span>
-                                </h3>
-                                {slot.teacher?.user && (
-                                  <span className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#1C2536] px-2 py-0.5 rounded-md border border-gray-200 dark:border-[#242F42] text-[11px] font-medium text-muted-foreground dark:text-slate-300">
-                                    <UserCheck className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                                    <span>
-                                      {slot.teacher.user.firstName} {slot.teacher.user.lastName}
+                                  {currentWeekInfo.activeWeek === 1 && (
+                                    <span className="text-[9.5px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100/90 dark:bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-600/60 inline-flex items-center gap-1 shadow-2xs">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                      درس این هفته
                                     </span>
-                                  </span>
-                                )}
+                                  )}
+                                </div>
+                                <div className="space-y-1.5 min-w-0">
+                                  <h3 className="font-bold text-sm sm:text-base text-foreground dark:text-white flex items-center gap-1.5 min-w-0">
+                                    <BookOpen className="w-4 h-4 text-primary shrink-0" />
+                                    <span className="truncate" title={slot.lesson?.name}>{slot.lesson?.name}</span>
+                                  </h3>
+                                  {slot.teacher?.user && (
+                                    <div className="flex items-center min-w-0">
+                                      <span className="inline-flex items-center gap-1 bg-white/80 dark:bg-[#1C2536] px-2 py-0.5 rounded-md border border-gray-200/80 dark:border-[#242F42] text-[11px] font-medium text-muted-foreground dark:text-slate-300 max-w-full">
+                                        <UserCheck className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                        <span className="truncate">
+                                          {slot.teacher.user.firstName} {slot.teacher.user.lastName}
+                                        </span>
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
+
+                              {/* Part 1 Quick Actions */}
+                              {!isParent && (slot.lessonId || slot.lesson?.id) && (
+                                <div className="pt-2.5 border-t border-gray-200/60 dark:border-[#242F42]/80 mt-auto space-y-1.5">
+                                  <span className="text-[10px] font-bold text-primary dark:text-primary-light block">
+                                    دسترسی سریع:
+                                  </span>
+                                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        navigate(
+                                          `/app/student/materials?lessonId=${slot.lessonId || slot.lesson?.id}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                                        )
+                                      }
+                                      className="text-[10px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-purple-400/60 dark:border-purple-500/50 bg-purple-100/85 dark:bg-purple-600/25 text-purple-800 dark:text-purple-200 hover:bg-purple-200/80 dark:hover:bg-purple-600/35 shadow-2xs font-bold transition-colors cursor-pointer"
+                                      title={`دانلود محتوای آموزشی ${slot.lesson?.name}`}
+                                    >
+                                      <FolderDown className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300 shrink-0" />
+                                      <span className="whitespace-nowrap">محتوا</span>
+                                    </Button>
+
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        navigate(
+                                          `/app/student/homework?lessonId=${slot.lessonId || slot.lesson?.id}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                                        )
+                                      }
+                                      className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-third/40 bg-third-light/70 dark:bg-third/15 text-third-dark dark:text-third hover:bg-third-light dark:hover:bg-third/25 dark:border-third/40 shadow-2xs font-bold transition-colors cursor-pointer"
+                                      title={`مشاهده و ارسال تکالیف ${slot.lesson?.name}`}
+                                    >
+                                      <FileCheck className="w-3.5 h-3.5 text-third-dark dark:text-third shrink-0" />
+                                      <span className="whitespace-nowrap">تکالیف</span>
+                                    </Button>
+
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        navigate(
+                                          `/app/student/exams?lessonId=${slot.lessonId || slot.lesson?.id}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                                        )
+                                      }
+                                      className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-girl/40 bg-girl-light/70 dark:bg-girl/15 text-girl-dark dark:text-girl-light hover:bg-girl-light dark:hover:bg-girl/25 dark:border-girl/40 shadow-2xs font-bold transition-colors cursor-pointer"
+                                      title={`آزمون‌های آنلاین درس ${slot.lesson?.name}`}
+                                    >
+                                      <HelpCircle className="w-3.5 h-3.5 text-girl dark:text-girl-light shrink-0" />
+                                      <span className="whitespace-nowrap">آزمون‌ها</span>
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
 
-                            {/* Part 2 */}
-                            <div className={`p-3.5 rounded-xl border space-y-2 ${
-                              currentWeekInfo.activeWeek === 2
-                                ? 'bg-primary-50/50 dark:bg-primary-950/40 border-primary/50 ring-1 ring-primary/40 shadow-2xs'
-                                : 'bg-gray-50/40 dark:bg-[#1C2536]/40 border-gray-200 dark:border-[#242F42] opacity-75'
-                            }`}>
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-primary dark:text-primary-light block">هفته زوج</span>
-                                {currentWeekInfo.activeWeek === 2 && (
-                                  <span className={`text-[9.5px] font-bold px-1.5 py-0.2 rounded border ${
-                                    slot.secondLesson
-                                      ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 border-emerald-300'
-                                      : 'text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/80 border-amber-300'
-                                  }`}>
-                                    {slot.secondLesson ? 'درس این هفته' : 'این هفته کلاس ندارید'}
+                            {/* Part 2 (هفته زوج) */}
+                            <div
+                              className={`p-3.5 sm:p-4 rounded-xl border flex flex-col justify-between gap-3 transition-all ${
+                                currentWeekInfo.activeWeek === 2
+                                  ? 'bg-primary-50/50 dark:bg-primary-950/40 border-primary/50 ring-1 ring-primary/40 shadow-2xs'
+                                  : 'bg-gray-50/40 dark:bg-[#1C2536]/40 border-gray-200 dark:border-[#242F42] opacity-80 hover:opacity-100'
+                              }`}
+                            >
+                              <div className="space-y-2.5">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-[11px] font-bold text-primary dark:text-primary-light block">
+                                    هفته زوج
                                   </span>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <h3 className={`font-bold text-sm sm:text-base flex items-center gap-1.5 ${slot.secondLesson ? 'text-foreground dark:text-white' : 'text-muted-foreground dark:text-gray-400 font-medium'}`}>
-                                  <BookOpen className="w-4 h-4 text-primary shrink-0" />
-                                  <span>{slot.secondLesson?.name || 'بدون کلاس'}</span>
-                                </h3>
-                                {slot.secondTeacher?.user && (
-                                  <span className="inline-flex items-center gap-1 bg-gray-50 dark:bg-[#1C2536] px-2 py-0.5 rounded-md border border-gray-200 dark:border-[#242F42] text-[11px] font-medium text-muted-foreground dark:text-slate-300">
-                                    <UserCheck className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                                    <span>
-                                      {slot.secondTeacher.user.firstName} {slot.secondTeacher.user.lastName}
+                                  {currentWeekInfo.activeWeek === 2 && (
+                                    <span
+                                      className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded border inline-flex items-center gap-1 shadow-2xs ${
+                                        slot.secondLesson
+                                          ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-100/90 dark:bg-emerald-950/80 border-emerald-300 dark:border-emerald-600/60'
+                                          : 'text-amber-700 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/80 border-amber-300 dark:border-amber-600/60'
+                                      }`}
+                                    >
+                                      {slot.secondLesson ? (
+                                        <>
+                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                          درس این هفته
+                                        </>
+                                      ) : (
+                                        'این هفته کلاس ندارید'
+                                      )}
                                     </span>
-                                  </span>
-                                )}
+                                  )}
+                                </div>
+                                <div className="space-y-1.5 min-w-0">
+                                  <h3
+                                    className={`font-bold text-sm sm:text-base flex items-center gap-1.5 min-w-0 ${
+                                      slot.secondLesson
+                                        ? 'text-foreground dark:text-white'
+                                        : 'text-muted-foreground dark:text-gray-400 font-medium'
+                                    }`}
+                                  >
+                                    <BookOpen className="w-4 h-4 text-primary shrink-0" />
+                                    <span className="truncate" title={slot.secondLesson?.name || 'بدون کلاس'}>
+                                      {slot.secondLesson?.name || 'بدون کلاس'}
+                                    </span>
+                                  </h3>
+                                  {slot.secondTeacher?.user && (
+                                    <div className="flex items-center min-w-0">
+                                      <span className="inline-flex items-center gap-1 bg-white/80 dark:bg-[#1C2536] px-2 py-0.5 rounded-md border border-gray-200/80 dark:border-[#242F42] text-[11px] font-medium text-muted-foreground dark:text-slate-300 max-w-full">
+                                        <UserCheck className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                        <span className="truncate">
+                                          {slot.secondTeacher.user.firstName} {slot.secondTeacher.user.lastName}
+                                        </span>
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
+
+                              {/* Part 2 Quick Actions */}
+                              {!isParent && (
+                                <>
+                                  {slot.secondLesson ? (
+                                    <div className="pt-2.5 border-t border-gray-200/60 dark:border-[#242F42]/80 mt-auto space-y-1.5">
+                                      <span className="text-[10px] font-bold text-primary dark:text-primary-light block">
+                                        دسترسی سریع:
+                                      </span>
+                                      <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() =>
+                                            navigate(
+                                              `/app/student/materials?lessonId=${slot.secondLessonId || slot.secondLesson?.id || slot.lessonId}&lessonName=${encodeURIComponent(slot.secondLesson?.name || '')}`
+                                            )
+                                          }
+                                          className="text-[10px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-purple-400/60 dark:border-purple-500/50 bg-purple-100/85 dark:bg-purple-600/25 text-purple-800 dark:text-purple-200 hover:bg-purple-200/80 dark:hover:bg-purple-600/35 shadow-2xs font-bold transition-colors cursor-pointer"
+                                          title={`دانلود محتوای آموزشی ${slot.secondLesson?.name}`}
+                                        >
+                                          <FolderDown className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300 shrink-0" />
+                                          <span className="whitespace-nowrap">محتوا</span>
+                                        </Button>
+
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() =>
+                                            navigate(
+                                              `/app/student/homework?lessonId=${slot.secondLessonId || slot.secondLesson?.id || slot.lessonId}&lessonName=${encodeURIComponent(slot.secondLesson?.name || '')}`
+                                            )
+                                          }
+                                          className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-third/40 bg-third-light/70 dark:bg-third/15 text-third-dark dark:text-third hover:bg-third-light dark:hover:bg-third/25 dark:border-third/40 shadow-2xs font-bold transition-colors cursor-pointer"
+                                          title={`مشاهده و ارسال تکالیف ${slot.secondLesson?.name}`}
+                                        >
+                                          <FileCheck className="w-3.5 h-3.5 text-third-dark dark:text-third shrink-0" />
+                                          <span className="whitespace-nowrap">تکالیف</span>
+                                        </Button>
+
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() =>
+                                            navigate(
+                                              `/app/student/exams?lessonId=${slot.secondLessonId || slot.secondLesson?.id || slot.lessonId}&lessonName=${encodeURIComponent(slot.secondLesson?.name || '')}`
+                                            )
+                                          }
+                                          className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-girl/40 bg-girl-light/70 dark:bg-girl/15 text-girl-dark dark:text-girl-light hover:bg-girl-light dark:hover:bg-girl/25 dark:border-girl/40 shadow-2xs font-bold transition-colors cursor-pointer"
+                                          title={`آزمون‌های آنلاین درس ${slot.secondLesson?.name}`}
+                                        >
+                                          <HelpCircle className="w-3.5 h-3.5 text-girl dark:text-girl-light shrink-0" />
+                                          <span className="whitespace-nowrap">آزمون‌ها</span>
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="pt-2.5 border-t border-gray-200/50 dark:border-[#242F42]/60 mt-auto text-center py-1.5">
+                                      <span className="text-[11px] text-muted-foreground dark:text-slate-400 font-medium">
+                                        در این هفته کلاسی تعریف نشده است
+                                      </span>
+                                    </div>
+                                  )}
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -466,168 +620,58 @@ export const StudentSchedulePage: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Quick Actions for Student */}
-                    {!isParent && (
-                      <div className="pt-3.5 sm:pt-4 border-t border-gray-100 dark:border-[#242F42] w-full space-y-2.5">
-                        {slot.isSplitPeriod && slot.secondLesson ? (
-                          <>
-                            {/* Part 1 Actions */}
-                            <div className="space-y-1">
-                              <span className="text-[10px] font-bold text-primary dark:text-primary-light block">
-                                دسترسی سریع:
-                              </span>
-                              <div className="grid grid-cols-3 gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    navigate(
-                                      `/app/student/materials?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
-                                    )
-                                  }
-                                  className="text-[10px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-purple-400/60 dark:border-purple-500/50 bg-purple-100/85 dark:bg-purple-600/25 text-purple-800 dark:text-purple-200 hover:bg-purple-200/80 dark:hover:bg-purple-600/35 shadow-2xs font-bold transition-colors"
-                                  title={`دانلود محتوای آموزشی ${slot.lesson?.name}`}
-                                >
-                                  <FolderDown className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300 shrink-0" />
-                                  <span className="whitespace-nowrap">محتوا</span>
-                                </Button>
+                    {/* Quick Actions for Student (Single Lesson Period) */}
+                    {!isParent && !slot.isSplitPeriod && (
+                      <div className="pt-3.5 sm:pt-4 border-t border-gray-100 dark:border-[#242F42] w-full">
+                        <div className="grid grid-cols-3 gap-2">
+                          {/* 1. Right Box (First in RTL): محتوای آموزشی */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              navigate(
+                                `/app/student/materials?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                              )
+                            }
+                            className="text-[10px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-purple-400/60 dark:border-purple-500/50 bg-purple-100/85 dark:bg-purple-600/25 text-purple-800 dark:text-purple-200 hover:bg-purple-200/80 dark:hover:bg-purple-600/35 shadow-2xs font-bold transition-colors cursor-pointer"
+                            title={`دانلود محتوای آموزشی ${slot.lesson?.name}`}
+                          >
+                            <FolderDown className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300 shrink-0" />
+                            <span className="whitespace-nowrap">محتوای آموزشی</span>
+                          </Button>
 
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    navigate(
-                                      `/app/student/homework?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
-                                    )
-                                  }
-                                  className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-third/40 bg-third-light/70 dark:bg-third/15 text-third-dark dark:text-third hover:bg-third-light dark:hover:bg-third/25 dark:border-third/40 shadow-2xs font-bold transition-colors"
-                                  title={`مشاهده و ارسال تکالیف ${slot.lesson?.name}`}
-                                >
-                                  <FileCheck className="w-3.5 h-3.5 text-third-dark dark:text-third shrink-0" />
-                                  <span className="whitespace-nowrap">تکالیف</span>
-                                </Button>
+                          {/* 2. Center Box: تکالیف */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              navigate(
+                                `/app/student/homework?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                              )
+                            }
+                            className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-third/40 bg-third-light/70 dark:bg-third/15 text-third-dark dark:text-third hover:bg-third-light dark:hover:bg-third/25 dark:border-third/40 shadow-2xs font-bold transition-colors cursor-pointer"
+                            title={`مشاهده و ارسال تکالیف ${slot.lesson?.name}`}
+                          >
+                            <FileCheck className="w-3.5 h-3.5 text-third-dark dark:text-third shrink-0" />
+                            <span className="whitespace-nowrap">تکالیف</span>
+                          </Button>
 
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    navigate(
-                                      `/app/student/exams?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
-                                    )
-                                  }
-                                  className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-girl/40 bg-girl-light/70 dark:bg-girl/15 text-girl-dark dark:text-girl-light hover:bg-girl-light dark:hover:bg-girl/25 dark:border-girl/40 shadow-2xs font-bold transition-colors"
-                                  title={`آزمون‌های آنلاین درس ${slot.lesson?.name}`}
-                                >
-                                  <HelpCircle className="w-3.5 h-3.5 text-girl dark:text-girl-light shrink-0" />
-                                  <span className="whitespace-nowrap">آزمون‌ها</span>
-                                </Button>
-                              </div>
-                            </div>
-
-                            {/* Part 2 Actions */}
-                            <div className="space-y-1 pt-1 border-t border-dashed border-gray-200 dark:border-[#242F42]">
-                              <span className="text-[10px] font-bold text-primary dark:text-primary-light block">
-                                دسترسی سریع:
-                              </span>
-                              <div className="grid grid-cols-3 gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    navigate(
-                                      `/app/student/materials?lessonId=${slot.secondLessonId || slot.lessonId}&lessonName=${encodeURIComponent(slot.secondLesson?.name || '')}`
-                                    )
-                                  }
-                                  className="text-[10px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-purple-400/60 dark:border-purple-500/50 bg-purple-100/85 dark:bg-purple-600/25 text-purple-800 dark:text-purple-200 hover:bg-purple-200/80 dark:hover:bg-purple-600/35 shadow-2xs font-bold transition-colors"
-                                  title={`دانلود محتوای آموزشی ${slot.secondLesson?.name}`}
-                                >
-                                  <FolderDown className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300 shrink-0" />
-                                  <span className="whitespace-nowrap">محتوا</span>
-                                </Button>
-
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    navigate(
-                                      `/app/student/homework?lessonId=${slot.secondLessonId || slot.lessonId}&lessonName=${encodeURIComponent(slot.secondLesson?.name || '')}`
-                                    )
-                                  }
-                                  className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-third/40 bg-third-light/70 dark:bg-third/15 text-third-dark dark:text-third hover:bg-third-light dark:hover:bg-third/25 dark:border-third/40 shadow-2xs font-bold transition-colors"
-                                  title={`مشاهده و ارسال تکالیف ${slot.secondLesson?.name}`}
-                                >
-                                  <FileCheck className="w-3.5 h-3.5 text-third-dark dark:text-third shrink-0" />
-                                  <span className="whitespace-nowrap">تکالیف</span>
-                                </Button>
-
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    navigate(
-                                      `/app/student/exams?lessonId=${slot.secondLessonId || slot.lessonId}&lessonName=${encodeURIComponent(slot.secondLesson?.name || '')}`
-                                    )
-                                  }
-                                  className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-girl/40 bg-girl-light/70 dark:bg-girl/15 text-girl-dark dark:text-girl-light hover:bg-girl-light dark:hover:bg-girl/25 dark:border-girl/40 shadow-2xs font-bold transition-colors"
-                                  title={`آزمون‌های آنلاین درس ${slot.secondLesson?.name}`}
-                                >
-                                  <HelpCircle className="w-3.5 h-3.5 text-girl dark:text-girl-light shrink-0" />
-                                  <span className="whitespace-nowrap">آزمون‌ها</span>
-                                </Button>
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="grid grid-cols-3 gap-2">
-                            {/* 1. Right Box (First in RTL): محتوای آموزشی */}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                navigate(
-                                  `/app/student/materials?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
-                                )
-                              }
-                              className="text-[10px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-purple-400/60 dark:border-purple-500/50 bg-purple-100/85 dark:bg-purple-600/25 text-purple-800 dark:text-purple-200 hover:bg-purple-200/80 dark:hover:bg-purple-600/35 shadow-2xs font-bold transition-colors"
-                              title={`دانلود محتوای آموزشی ${slot.lesson?.name}`}
-                            >
-                              <FolderDown className="w-3.5 h-3.5 text-purple-700 dark:text-purple-300 shrink-0" />
-                              <span className="whitespace-nowrap">محتوای آموزشی</span>
-                            </Button>
-
-                            {/* 2. Center Box: تکالیف */}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                navigate(
-                                  `/app/student/homework?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
-                                )
-                              }
-                              className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-third/40 bg-third-light/70 dark:bg-third/15 text-third-dark dark:text-third hover:bg-third-light dark:hover:bg-third/25 dark:border-third/40 shadow-2xs font-bold transition-colors"
-                              title={`مشاهده و ارسال تکالیف ${slot.lesson?.name}`}
-                            >
-                              <FileCheck className="w-3.5 h-3.5 text-third-dark dark:text-third shrink-0" />
-                              <span className="whitespace-nowrap">تکالیف</span>
-                            </Button>
-
-                            {/* 3. Left Box: آزمون‌ها */}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                navigate(
-                                  `/app/student/exams?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
-                                )
-                              }
-                              className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-girl/40 bg-girl-light/70 dark:bg-girl/15 text-girl-dark dark:text-girl-light hover:bg-girl-light dark:hover:bg-girl/25 dark:border-girl/40 shadow-2xs font-bold transition-colors"
-                              title={`آزمون‌های آنلاین درس ${slot.lesson?.name}`}
-                            >
-                              <HelpCircle className="w-3.5 h-3.5 text-girl dark:text-girl-light shrink-0" />
-                              <span className="whitespace-nowrap">آزمون‌ها</span>
-                            </Button>
-                          </div>
-                        )}
+                          {/* 3. Left Box: آزمون‌ها */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              navigate(
+                                `/app/student/exams?lessonId=${slot.lessonId}&lessonName=${encodeURIComponent(slot.lesson?.name || '')}`
+                              )
+                            }
+                            className="text-[10.5px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 h-8 w-full px-1 sm:px-2 rounded-xl border-girl/40 bg-girl-light/70 dark:bg-girl/15 text-girl-dark dark:text-girl-light hover:bg-girl-light dark:hover:bg-girl/25 dark:border-girl/40 shadow-2xs font-bold transition-colors cursor-pointer"
+                            title={`آزمون‌های آنلاین درس ${slot.lesson?.name}`}
+                          >
+                            <HelpCircle className="w-3.5 h-3.5 text-girl dark:text-girl-light shrink-0" />
+                            <span className="whitespace-nowrap">آزمون‌ها</span>
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </div>

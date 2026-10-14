@@ -122,7 +122,10 @@ export class StorageController {
     const isDownload = req.query.download === '1' || req.query.download === 'true';
     const downloadName = (req.query.filename as string) || fileInfo.originalName || filename;
     if (isDownload) {
-      commonHeaders['Content-Disposition'] = `attachment; filename="${encodeURIComponent(downloadName)}"`;
+      // RFC 5987 / RFC 6266 standard for unicode filenames across all browsers
+      const asciiFallback = downloadName.replace(/[^\x20-\x7E]/g, '_');
+      const utf8Encoded = encodeURIComponent(downloadName).replace(/['()]/g, escape).replace(/\*/g, '%2A');
+      commonHeaders['Content-Disposition'] = `attachment; filename="${asciiFallback}"; filename*=UTF-8''${utf8Encoded}`;
     }
 
     const range = req.headers.range;
