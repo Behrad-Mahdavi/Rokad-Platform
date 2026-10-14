@@ -454,6 +454,43 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
     toast.success(`سرگروه تیم «${activeIdeaForLeaderChange.title}» با موفقیت به «${newLeader}» تغییر یافت.`);
   };
 
+  // Remove leader from team (Unassign leader)
+  const handleRemoveLeader = () => {
+    if (!activeIdeaForLeaderChange) return;
+    const currentTeam = getIdeaTeam(activeIdeaForLeaderChange);
+    const updatedTeam: IdeaTeam = {
+      ...currentTeam,
+      leaderName: '',
+    };
+    setTeamsMap((prev) => ({
+      ...prev,
+      [activeIdeaForLeaderChange.id]: updatedTeam,
+    }));
+    if (onUpdateIdea) {
+      onUpdateIdea({
+        ...activeIdeaForLeaderChange,
+        authorName: '',
+      });
+    }
+    setIsChangeLeaderModalOpen(false);
+    setActiveIdeaForLeaderChange(null);
+    toast.success(`مسئول تیم از «${activeIdeaForLeaderChange.title}» برداشته شد (تیم بدون سرگروه شد).`);
+  };
+
+  // Remove team from team formation
+  const handleRemoveTeam = (idea: EventIdea) => {
+    if (!window.confirm(`آیا از حذف یا غیرفعال‌سازی تیم «${idea.title}» از لیست تیم‌های فعال اطمینان دارید؟`)) {
+      return;
+    }
+    setCustomActiveIdeaIds((prev) => prev.filter((id) => id !== idea.id));
+    setTeamsMap((prev) => {
+      const copy = { ...prev };
+      delete copy[idea.id];
+      return copy;
+    });
+    toast.success(`تیم «${idea.title}» با موفقیت از لیست تیم‌های فعال برداشته شد.`);
+  };
+
   // Add existing idea to team formation
   const handleAddExistingIdeaAsTeam = () => {
     if (!selectedExistingIdeaId) {
@@ -870,6 +907,17 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                           <span>تایید شده</span>
                         </span>
+                      )}
+
+                      {isManager && !isEventEnded && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTeam(idea)}
+                          className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200 dark:hover:border-rose-900 transition-colors cursor-pointer"
+                          title="حذف یا غیرفعال‌سازی این تیم از بخش تیم‌سازی"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       )}
                     </div>
                   </div>
@@ -1372,26 +1420,38 @@ export const EventTeamFormationStep: React.FC<EventTeamFormationStepProps> = ({
               </div>
 
               {/* Modal Footer Actions */}
-              <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end gap-2">
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex flex-wrap items-center justify-between gap-2">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    setIsChangeLeaderModalOpen(false);
-                    setActiveIdeaForLeaderChange(null);
-                  }}
-                  className="text-xs font-bold"
+                  onClick={handleRemoveLeader}
+                  className="text-xs font-bold text-rose-600 border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950/40 gap-1.5"
                 >
-                  انصراف
+                  <UserX className="w-3.5 h-3.5" />
+                  <span>حذف مسئول تیم (بدون سرگروه)</span>
                 </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  className="text-xs font-black gap-1.5"
-                >
-                  <Crown className="w-3.5 h-3.5" />
-                  <span>ثبت و تغییر سرگروه</span>
-                </Button>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsChangeLeaderModalOpen(false);
+                      setActiveIdeaForLeaderChange(null);
+                    }}
+                    className="text-xs font-bold"
+                  >
+                    انصراف
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    className="text-xs font-black gap-1.5"
+                  >
+                    <Crown className="w-3.5 h-3.5" />
+                    <span>ثبت و تغییر سرگروه</span>
+                  </Button>
+                </div>
               </div>
             </form>
           );

@@ -12,6 +12,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PollsService } from './polls.service';
 import {
   CreatePollDto,
+  UpdatePollDto,
   CastVoteDto,
   SubmitPollAnswersDto,
   UpdatePollStatusDto,
@@ -61,6 +62,19 @@ export class PollsController {
     return this.pollsService.updatePollStatus(effectiveTenantId, pollId, dto.action);
   }
 
+  @Patch(':id')
+  @Roles(...POLL_MANAGEMENT_ROLES)
+  @ApiOperation({ summary: 'ویرایش مشخصات و دسترسی‌های نظرسنجی (حتی در حالت بسته یا آرشیو)' })
+  async updatePoll(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Param('id') pollId: string,
+    @Body() dto: UpdatePollDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.pollsService.updatePoll(effectiveTenantId, pollId, dto);
+  }
+
   @Delete(':id')
   @Roles(...POLL_MANAGEMENT_ROLES)
   @ApiOperation({ summary: 'حذف نظرسنجی' })
@@ -86,16 +100,16 @@ export class PollsController {
   }
 
   @Get(':id/analytics')
-  @Roles(...POLL_RESULTS_VIEW_ROLES)
   @ApiOperation({ summary: 'آنالیتیکس و نتایج نظرسنجی برای کاربران مجاز' })
   async getAnalytics(
+    @CurrentUser('id') userId: string,
     @CurrentUser('tenantId') userTenantId: string,
     @CurrentUser('role') role: string,
     @CurrentTenant('id') tenantId: string,
     @Param('id') pollId: string,
   ) {
     const effectiveTenantId = tenantId || userTenantId;
-    return this.pollsService.getAnalytics(effectiveTenantId, pollId, role);
+    return this.pollsService.getAnalytics(effectiveTenantId, pollId, role, userId);
   }
 
   @Get(':id')

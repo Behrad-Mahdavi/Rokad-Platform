@@ -538,40 +538,8 @@ export const EventsRoadmapPage: React.FC = () => {
 
   // Reset auto-scroll flag when key filters change
   useEffect(() => {
-    hasAutoScrolledRef.current = false;
+    hasAutoScrolledRef.current = true;
   }, [selectedCategory, statusFilter, audienceFilter]);
-
-  // Scroll to current month on initial load or when roadmap is ready
-  useEffect(() => {
-    if (isLoading || roadmapGroups.length === 0 || hasAutoScrolledRef.current) return;
-
-    // Find the current month group
-    const currentGroup = roadmapGroups.find(
-      (g) => g.year === currentYear && g.monthIndex === currentMonthIndex
-    );
-
-    // If current month exists in roadmap, target it; otherwise target closest upcoming/past month
-    const targetGroup =
-      currentGroup ||
-      roadmapGroups.find(
-        (g) =>
-          Number(g.year) > Number(currentYear) ||
-          (g.year === currentYear && g.monthIndex >= currentMonthIndex)
-      ) ||
-      roadmapGroups[0];
-
-    if (targetGroup) {
-      const targetId = `month-group-${targetGroup.year}-${targetGroup.monthIndex}`;
-      const timer = setTimeout(() => {
-        const el = document.getElementById(targetId);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          hasAutoScrolledRef.current = true;
-        }
-      }, 250);
-      return () => clearTimeout(timer);
-    }
-  }, [isLoading, roadmapGroups, currentYear, currentMonthIndex]);
 
   // Open Create Modal
   const handleOpenCreate = () => {

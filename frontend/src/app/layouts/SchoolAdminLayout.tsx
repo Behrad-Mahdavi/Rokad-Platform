@@ -10,7 +10,7 @@ export const SchoolAdminLayout: React.FC = () => {
   const { pathname } = useLocation();
 
   useLayoutEffect(() => {
-    if (!pathname.includes('/events') && mainRef.current) {
+    if (mainRef.current) {
       mainRef.current.scrollTop = 0;
     }
   }, [pathname]);

@@ -128,14 +128,14 @@ export const EventStepWizard: React.FC<EventStepWizardProps> = ({
     }
   }, [unlockedSteps, isManager, currentStep]);
 
-  // Smooth scroll active step into view in horizontal roadmap
+  // Smooth scroll active step into view in horizontal steps bar (without vertical page jumping)
   useEffect(() => {
-    if (activeStepRef.current) {
-      activeStepRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center',
-      });
+    if (scrollContainerRef.current && activeStepRef.current) {
+      const container = scrollContainerRef.current;
+      const target = activeStepRef.current;
+      const targetOffset =
+        target.offsetLeft - container.offsetWidth / 2 + target.offsetWidth / 2;
+      container.scrollTo({ left: targetOffset, behavior: 'smooth' });
     }
   }, [currentStep]);
 

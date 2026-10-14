@@ -185,6 +185,21 @@ export class CreatePollDto {
   @IsOptional()
   preventDuplicate?: boolean;
 
+  @ApiPropertyOptional({ description: 'آیا مشاهده نتایج برای تمام کاربران آزاد است؟', default: false })
+  @IsBoolean()
+  @IsOptional()
+  isResultsPublic?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'لیست نقش‌های مجاز برای مشاهده نتایج نظرسنجی (مانند STUDENT, PARENT, TEACHER, COACH, STAFF)',
+    type: [String],
+    example: ['TEACHER', 'COACH', 'STAFF'],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  resultsVisibleToRoles?: string[];
+
   @ApiProperty({
     description: 'لیست گزینه‌های نظرسنجی (حداقل ۲ گزینه برای تک/چند انتخابی)',
     type: [CreatePollOptionDto],
@@ -280,4 +295,97 @@ export class UpdatePollStatusDto {
   })
   @IsIn(['close', 'open', 'archive', 'unarchive'])
   action: PollStatusAction;
+}
+
+export class UpdatePollDto {
+  @ApiPropertyOptional({ description: 'عنوان نظرسنجی' })
+  @IsString()
+  @IsOptional()
+  title?: string;
+
+  @ApiPropertyOptional({ description: 'توضیحات نظرسنجی' })
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @ApiPropertyOptional({
+    description: 'نوع نظرسنجی',
+    enum: PollType,
+  })
+  @IsEnum(PollType)
+  @IsOptional()
+  pollType?: PollType;
+
+  @ApiPropertyOptional({
+    description: 'مخاطبان نظرسنجی',
+    enum: TargetAudience,
+  })
+  @IsEnum(TargetAudience)
+  @IsOptional()
+  targetAudience?: TargetAudience;
+
+  @ApiPropertyOptional({ description: 'شناسه کلاس‌های مخاطب' })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  targetClassIds?: string[];
+
+  @ApiPropertyOptional({ description: 'تاریخ شروع نظرسنجی' })
+  @IsDateString()
+  @IsOptional()
+  startDate?: string;
+
+  @ApiPropertyOptional({ description: 'تاریخ پایان نظرسنجی' })
+  @IsDateString()
+  @IsOptional()
+  endDate?: string;
+
+  @ApiPropertyOptional({ description: 'آیا آرا ناشناس ذخیره شود؟' })
+  @IsBoolean()
+  @IsOptional()
+  isAnonymous?: boolean;
+
+  @ApiPropertyOptional({ description: 'آیا پاسخ‌دهی اجباری است؟' })
+  @IsBoolean()
+  @IsOptional()
+  isMandatory?: boolean;
+
+  @ApiPropertyOptional({ description: 'جلوگیری از ثبت تکراری' })
+  @IsBoolean()
+  @IsOptional()
+  preventDuplicate?: boolean;
+
+  @ApiPropertyOptional({ description: 'آیا مشاهده نتایج برای تمام کاربران آزاد است؟' })
+  @IsBoolean()
+  @IsOptional()
+  isResultsPublic?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'لیست نقش‌های مجاز برای مشاهده نتایج نظرسنجی (مانند STUDENT, PARENT, TEACHER, COACH, STAFF)',
+    type: [String],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  resultsVisibleToRoles?: string[];
+
+  @ApiPropertyOptional({
+    description: 'لیست گزینه‌های نظرسنجی',
+    type: [CreatePollOptionDto],
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreatePollOptionDto)
+  @IsOptional()
+  options?: CreatePollOptionDto[];
+
+  @ApiPropertyOptional({
+    description: 'سوالات فرم پرس‌کاد',
+    type: [CreateSurveyQuestionDto],
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateSurveyQuestionDto)
+  @IsOptional()
+  questions?: CreateSurveyQuestionDto[];
 }
