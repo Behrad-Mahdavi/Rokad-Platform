@@ -21,6 +21,7 @@ import {
 import { SecuritySection } from './components/SecuritySection';
 import { toPersianDigits, cleanUserFullName } from '../../lib/utils';
 import { useCuriosityStore } from '../../lib/ui/curiosity-store';
+import { getFullMediaUrl } from '../../lib/api/media-url';
 
 export const ProfileSettingsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -84,6 +85,8 @@ export const ProfileSettingsPage: React.FC = () => {
   // Avatar Upload State
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
+  const [imageLoadFailed, setImageLoadFailed] = useState(false);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -97,6 +100,11 @@ export const ProfileSettingsPage: React.FC = () => {
       toast.error('حجم تصویر نمایه نباید بیشتر از ۵ مگابایت باشد');
       return;
     }
+
+    // Instant local preview for immediate user feedback
+    const localBlobUrl = URL.createObjectURL(file);
+    setPreviewAvatar(localBlobUrl);
+    setImageLoadFailed(false);
 
     try {
       setIsUploadingAvatar(true);
@@ -126,20 +134,23 @@ export const ProfileSettingsPage: React.FC = () => {
         });
       }
 
-      // Persist avatar to PostgreSQL database
+      // Persist avatar to database
       const profileRes: any = await apiClient.patch('/auth/profile', { avatarUrl: finalAvatarUrl });
       const updatedUser = profileRes?.data?.data || profileRes?.data;
+      const savedAvatarUrl = updatedUser?.avatarUrl || finalAvatarUrl;
 
       if (user) {
         useAuthStore.getState().setUser({
           ...user,
-          avatarUrl: updatedUser?.avatarUrl || finalAvatarUrl,
+          avatarUrl: savedAvatarUrl,
         });
       }
 
+      setPreviewAvatar(null);
       toast.success('تصویر نمایه با موفقیت به‌روزرسانی شد');
     } catch (err) {
       console.error('Failed to upload avatar:', err);
+      setPreviewAvatar(null);
       toast.error('خطا در بارگذاری تصویر نمایه');
     } finally {
       setIsUploadingAvatar(false);
@@ -224,11 +235,14 @@ export const ProfileSettingsPage: React.FC = () => {
                 title="تغییر عکس نمایه"
                 aria-label="تغییر عکس نمایه"
               >
-                {user?.avatarUrl ? (
+                {(previewAvatar || user?.avatarUrl) && !imageLoadFailed ? (
                   <img
-                    src={user.avatarUrl}
-                    alt={user.firstName}
+                    src={previewAvatar || getFullMediaUrl(user?.avatarUrl)}
+                    alt={user?.firstName || 'پروفایل'}
                     className="w-full h-full object-cover object-center aspect-square block group-hover:scale-105 transition-transform duration-300"
+                    onError={() => {
+                      setImageLoadFailed(true);
+                    }}
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-primary to-primary-darker text-white flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
