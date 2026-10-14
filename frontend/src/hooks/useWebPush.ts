@@ -18,33 +18,28 @@ async function getOrRegisterServiceWorker(): Promise<ServiceWorkerRegistration> 
     throw new Error('مرورگر شما از سرویس‌ورکر پشتیبانی نمی‌کند.');
   }
 
-  let registration = await navigator.serviceWorker.getRegistration();
-
-  if (!registration) {
-    try {
-      // In dev or standalone, /push-worker.js is always available in public folder
-      const swUrl = import.meta.env.PROD ? '/sw.js' : '/push-worker.js';
-      registration = await navigator.serviceWorker.register(swUrl, { scope: '/' });
-    } catch (err) {
-      console.warn('Initial SW registration failed, falling back to /push-worker.js:', err);
-      try {
-        registration = await navigator.serviceWorker.register('/push-worker.js', { scope: '/' });
-      } catch (fallbackErr) {
-        console.error('Push worker fallback registration failed:', fallbackErr);
-      }
-    }
-  }
-
-  // Wait for ready with a timeout safeguard so the UI never hangs indefinitely
   try {
+    // همیشه به صورت صریح push-worker.js را رجیستر/آپدیت می‌کنیم تا مطمئن شویم لیسنر push فعال است
+    const registration = await navigator.serviceWorker.register('/push-worker.js', {
+      scope: '/',
+      updateViaCache: 'none',
+    });
+
+    // اگر سرویس‌ورکر جدیدی در حالت انتظار است، فعالش کن
+    if (registration.waiting) {
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+
     const readyPromise = navigator.serviceWorker.ready;
     const timeoutPromise = new Promise<ServiceWorkerRegistration>((_, reject) =>
       setTimeout(() => reject(new Error('تایم‌اوت سرویس‌ورکر')), 5000)
     );
     return await Promise.race([readyPromise, timeoutPromise]);
-  } catch {
-    if (registration) return registration;
-    return await navigator.serviceWorker.ready;
+  } catch (err) {
+    console.error('Service Worker registration error:', err);
+    const existing = await navigator.serviceWorker.getRegistration();
+    if (existing) return existing;
+    throw new Error('خطا در راه‌اندازی سرویس‌ورکر نوتیفیکیشن.');
   }
 }
 
@@ -238,7 +233,8 @@ export function useWebPush(): WebPushState {
       setIsLoading(true);
       setError(null);
       const res = await apiClient.post<any>('/notifications/push/test');
-      const data = res.data?.data || res.data;
+      // پشتیبانی از هر دو حالت (با TransformInterceptor یا بدون آن)
+      const data = res.data?.data ?? res.data;
       if (data?.sent > 0) {
         return { ok: true, message: data.message || 'اعلان تستی با موفقیت به دستگاه ارسال شد! 🎉' };
       } else {

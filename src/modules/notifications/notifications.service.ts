@@ -68,6 +68,21 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
     private readonly configService: ConfigService,
   ) {}
 
+  /**
+   * Safe helper to get Redis client only if connected, preventing crashes when Redis is disabled
+   */
+  private getSafeRedisClient() {
+    try {
+      const client = this.redis?.getClient?.();
+      if (client && client.status === 'ready') {
+        return client;
+      }
+    } catch {
+      // Redis is not configured or offline
+    }
+    return null;
+  }
+
   private readonly defaultVapidPublicKey =
     'BGabfLnai94NXhgE3sGsOuVsAmPrPp3fsaUF26pJYkDpdSjOuVL275YzSCVpoiS1pKhW-M5WhzXnT2EmiAN2_MM';
   private readonly defaultVapidPrivateKey =
@@ -174,7 +189,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
 
       if (!upcomingHomeworks.length) return;
 
-      const redisClient = this.redis.getClient();
+      const redisClient = this.getSafeRedisClient();
 
       for (const hw of upcomingHomeworks) {
         const submittedStudentIds = new Set(hw.submissions.map((s) => s.studentId));
@@ -261,7 +276,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
 
       if (!upcomingSessions.length) return;
 
-      const redisClient = this.redis.getClient();
+      const redisClient = this.getSafeRedisClient();
 
       for (const cs of upcomingSessions) {
         const timeStr = cs.scheduledDate.toLocaleTimeString('fa-IR', {
@@ -346,8 +361,8 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
 
   async markAsRead(userId: string, notificationId: string): Promise<boolean> {
     const key = `notifications:read:${userId}`;
-    const client = this.redis.getClient();
-    if (client && client.status === 'ready') {
+    const client = this.getSafeRedisClient();
+    if (client) {
       await client.sadd(key, notificationId);
       await client.expire(key, 86400 * 30); // 30 days
     } else {
@@ -358,8 +373,8 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
 
   async markAllAsRead(userId: string, notificationIds: string[]): Promise<boolean> {
     const key = `notifications:read:${userId}`;
-    const client = this.redis.getClient();
-    if (client && client.status === 'ready' && notificationIds.length > 0) {
+    const client = this.getSafeRedisClient();
+    if (client && notificationIds.length > 0) {
       await client.sadd(key, ...notificationIds);
       await client.expire(key, 86400 * 30);
     } else {
@@ -371,8 +386,8 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
 
   private async getReadIds(userId: string): Promise<Set<string>> {
     const key = `notifications:read:${userId}`;
-    const client = this.redis.getClient();
-    if (client && client.status === 'ready') {
+    const client = this.getSafeRedisClient();
+    if (client) {
       const members = await client.smembers(key);
       return new Set(members);
     }
@@ -388,8 +403,8 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       // 0. Active Broadcast Announcements (from Memory & Redis)
       try {
         const activeBroadcasts = [...this.broadcastStore];
-        const client = this.redis.getClient();
-        if (client && client.status === 'ready') {
+        const client = this.getSafeRedisClient();
+        if (client) {
           const rawItems = await client.lrange(`notifications:broadcasts:${tenantId}`, 0, 30);
           for (const raw of rawItems) {
             try {
@@ -1018,8 +1033,16 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       // non-blocking
     }
 
+    // Deduplicate notifications by id
+    const seenIds = new Set<string>();
+    const uniqueNotifications = notifications.filter((item) => {
+      if (seenIds.has(item.id)) return false;
+      seenIds.add(item.id);
+      return true;
+    });
+
     // Sort by creation time descending
-    return notifications.sort(
+    return uniqueNotifications.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
     } catch (err: any) {
@@ -1264,8 +1287,8 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
 
     // Also persist in Redis if available
     try {
-      const client = this.redis.getClient();
-      if (client && client.status === 'ready') {
+      const client = this.getSafeRedisClient();
+      if (client) {
         const key = `notifications:broadcasts:${tenantId}`;
         await client.lpush(key, JSON.stringify(item));
         await client.ltrim(key, 0, 99);
@@ -1285,6 +1308,45 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       where: userWhere,
       select: { id: true },
     });
+
+    // Persist to Postgres database (AcademicMessage & AcademicMessageRecipient)
+    // so broadcasts survive restarts and appear in notifications even without Redis
+    try {
+      let targetAudience: 'ALL' | 'STUDENTS' | 'PARENTS' | 'TEACHERS' | 'STAFF' = 'ALL';
+      if (targetRole === 'STUDENT') targetAudience = 'STUDENTS';
+      else if (targetRole === 'PARENT') targetAudience = 'PARENTS';
+      else if (targetRole === 'TEACHER') targetAudience = 'TEACHERS';
+      else if (targetRole === 'STAFF') targetAudience = 'STAFF';
+
+      const priority =
+        dto.badge === 'destructive' ? 'URGENT' : dto.badge === 'warning' ? 'IMPORTANT' : 'NORMAL';
+
+      const academicMsg = await this.prisma.academicMessage.create({
+        data: {
+          tenantId,
+          senderId: sender.id,
+          title: dto.title,
+          body: dto.body,
+          priority,
+          targetType: targetRole === 'ALL' ? 'ALL' : 'ROLE',
+          targetAudience,
+        },
+      });
+
+      if (recipients.length > 0) {
+        await this.prisma.academicMessageRecipient.createMany({
+          data: recipients.map((r) => ({
+            tenantId,
+            messageId: academicMsg.id,
+            recipientId: r.id,
+            isRead: false,
+          })),
+          skipDuplicates: true,
+        });
+      }
+    } catch (dbErr: any) {
+      this.logger.warn(`Failed to persist broadcast to AcademicMessage: ${dbErr.message}`);
+    }
 
     let delivered = 0;
     // Dispatch push asynchronously
