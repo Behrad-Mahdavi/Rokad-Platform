@@ -26,37 +26,45 @@ export const PERSIAN_WEEKDAY_NAMES = [
 
 // فرمت تاریخ به شمسی خوانا
 export function formatToJalali(
-  date: Date | string | null,
+  date: Date | string | null | undefined,
   options?: { showMonthName?: boolean; includeDayName?: boolean },
 ): string {
   if (!date) return '-';
-  let d: Date;
-  if (typeof date === 'string') {
-    const parts = date.split('T')[0].split('-');
-    if (parts.length === 3) {
-      d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  try {
+    let d: Date;
+    if (typeof date === 'string') {
+      const parts = date.split('T')[0].split('-');
+      if (parts.length === 3) {
+        d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      } else {
+        d = new Date(date);
+      }
     } else {
-      d = new Date(date);
+      d = date;
     }
-  } else {
-    d = date;
-  }
 
-  const j = jalaali.toJalaali(d.getFullYear(), d.getMonth() + 1, d.getDate());
-  const dayStr = toPersianDigits(j.jd);
-  const yearStr = toPersianDigits(j.jy);
+    if (!d || isNaN(d.getTime())) return '-';
 
-  if (options?.showMonthName) {
-    const monthName = PERSIAN_MONTH_NAMES[j.jm - 1];
-    if (options.includeDayName) {
-      const dayName = PERSIAN_WEEKDAY_NAMES[d.getDay()];
-      return `${dayName} ${dayStr} ${monthName} ${yearStr}`;
+    const j = jalaali.toJalaali(d.getFullYear(), d.getMonth() + 1, d.getDate());
+    if (!j || isNaN(j.jy) || isNaN(j.jm) || isNaN(j.jd)) return '-';
+
+    const dayStr = toPersianDigits(j.jd);
+    const yearStr = toPersianDigits(j.jy);
+
+    if (options?.showMonthName) {
+      const monthName = PERSIAN_MONTH_NAMES[j.jm - 1] || '';
+      if (options.includeDayName) {
+        const dayName = PERSIAN_WEEKDAY_NAMES[d.getDay()] || '';
+        return `${dayName} ${dayStr} ${monthName} ${yearStr}`.trim();
+      }
+      return `${dayStr} ${monthName} ${yearStr}`.trim();
     }
-    return `${dayStr} ${monthName} ${yearStr}`;
-  }
 
-  const monthStr = toPersianDigits(j.jm.toString().padStart(2, '0'));
-  return `${yearStr}/${monthStr}/${dayStr.padStart(2, '۰')}`;
+    const monthStr = toPersianDigits(j.jm.toString().padStart(2, '0'));
+    return `${yearStr}/${monthStr}/${dayStr.padStart(2, '۰')}`;
+  } catch {
+    return '-';
+  }
 }
 
 /**

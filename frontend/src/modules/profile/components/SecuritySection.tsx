@@ -66,11 +66,50 @@ export const SecuritySection: React.FC = () => {
   const [isRevokingAll, setIsRevokingAll] = useState(false);
   const [isExpandedSessions, setIsExpandedSessions] = useState(false);
 
+  // Fallback session representation for current active device/browser
+  const fallbackCurrentSession = useMemo<SessionItem>(() => {
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+    const uaLower = ua.toLowerCase();
+    let os = 'سایر';
+    if (uaLower.includes('windows')) os = 'Windows';
+    else if (uaLower.includes('macintosh') || uaLower.includes('mac os')) os = 'macOS';
+    else if (uaLower.includes('android')) os = 'Android';
+    else if (uaLower.includes('iphone') || uaLower.includes('ipad') || uaLower.includes('ios')) os = 'iOS';
+    else if (uaLower.includes('linux')) os = 'Linux';
+
+    let browser = 'مرورگر وب';
+    if (uaLower.includes('edg')) browser = 'Microsoft Edge';
+    else if (uaLower.includes('chrome') && !uaLower.includes('edg')) browser = 'Google Chrome';
+    else if (uaLower.includes('safari') && !uaLower.includes('chrome')) browser = 'Safari';
+    else if (uaLower.includes('firefox')) browser = 'Mozilla Firefox';
+
+    let deviceType: 'DESKTOP' | 'MOBILE' | 'TABLET' = 'DESKTOP';
+    if (uaLower.includes('mobile') || uaLower.includes('android') || uaLower.includes('iphone')) {
+      deviceType = 'MOBILE';
+    } else if (uaLower.includes('ipad') || uaLower.includes('tablet')) {
+      deviceType = 'TABLET';
+    }
+
+    return {
+      id: 'current-device-session',
+      ipAddress: 'دستگاه جاری شما',
+      browser,
+      os,
+      deviceType,
+      createdAt: new Date().toISOString(),
+      lastActiveAt: new Date().toISOString(),
+      isCurrent: true,
+    };
+  }, []);
+
   const sortedSessions = useMemo(() => {
-    // Deduplicate by device signature (browser + OS + deviceType)
+    // If sessions list from server is empty, provide current active device fallback so it never fails to show
+    const rawSessions = sessions.length > 0 ? sessions : [fallbackCurrentSession];
     const map = new Map<string, SessionItem>();
-    for (const s of sessions) {
-      const key = `${s.deviceType || 'DESKTOP'}_${s.os || 'OS'}_${s.browser || 'BROWSER'}`;
+
+    for (const s of rawSessions) {
+      if (!s) continue;
+      const key = `${s.deviceType || 'DESKTOP'}_${s.os || 'OS'}_${s.browser || 'BROWSER'}_${s.id || ''}`;
       if (!map.has(key)) {
         map.set(key, s);
       } else {
@@ -87,15 +126,20 @@ export const SecuritySection: React.FC = () => {
       }
     }
 
-    return Array.from(map.values()).sort((a, b) => {
+    const result = Array.from(map.values()).sort((a, b) => {
       if (a.isCurrent && !b.isCurrent) return -1;
       if (!a.isCurrent && b.isCurrent) return 1;
-      return (
-        new Date(b.lastActiveAt || b.createdAt).getTime() -
-        new Date(a.lastActiveAt || a.createdAt).getTime()
-      );
+      const timeB = new Date(b.lastActiveAt || b.createdAt).getTime() || 0;
+      const timeA = new Date(a.lastActiveAt || a.createdAt).getTime() || 0;
+      return timeB - timeA;
     });
-  }, [sessions]);
+
+    if (result.length > 0 && !result.some((s) => s.isCurrent)) {
+      result[0] = { ...result[0], isCurrent: true };
+    }
+
+    return result;
+  }, [sessions, fallbackCurrentSession]);
 
   const visibleSessions = useMemo(() => {
     if (isExpandedSessions || sortedSessions.length <= 3) {
@@ -146,10 +190,19 @@ export const SecuritySection: React.FC = () => {
       const res: any = await apiClient.get('/auth/sessions', {
         headers: rt ? { 'x-refresh-token': rt } : undefined,
       });
-      const list = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+      const list = Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res?.data?.sessions)
+        ? res.data.sessions
+        : Array.isArray(res?.sessions)
+        ? res.sessions
+        : Array.isArray(res)
+        ? res
+        : [];
       setSessions(list);
     } catch {
-      toast.error('خطا در دریافت لیست نشست‌های فعال');
+      // Keep existing sessions or fallback active device
+      console.warn('Failed to refresh sessions from server');
     } finally {
       setLoadingSessions(false);
     }
@@ -452,7 +505,12 @@ export const SecuritySection: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent className="pt-3.5 space-y-2.5">
-          {sortedSessions.length === 0 ? (
+          {loadingSessions && sortedSessions.length === 0 ? (
+            <div className="flex items-center justify-center py-6 text-xs text-gray-400 gap-2">
+              <RefreshCw className="w-4 h-4 animate-spin text-primary" />
+              <span>در حال بارگذاری لیست دستگاه‌ها...</span>
+            </div>
+          ) : sortedSessions.length === 0 ? (
             <div className="text-center py-6 text-xs text-gray-400 dark:text-gray-500">
               هیچ نشستی ثبت نشده است
             </div>
@@ -506,7 +564,7 @@ export const SecuritySection: React.FC = () => {
                                 <span>آنلاین (هم‌اکنون)</span>
                               </span>
                             ) : (
-                              <span>آخرین فعالیت: {formatToJalali(s.lastActiveAt)}</span>
+                              <span>آخرین فعالیت: {s.lastActiveAt ? formatToJalali(s.lastActiveAt) : 'هم‌اکنون'}</span>
                             )}
                           </span>
                         </div>

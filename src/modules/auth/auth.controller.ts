@@ -224,8 +224,15 @@ export class AuthController {
   async getSessions(
     @CurrentUser('id') userId: string,
     @Headers('x-refresh-token') currentRefreshToken?: string,
+    @Ip() ipAddress?: string,
+    @Headers('user-agent') userAgent?: string,
   ) {
-    return this.sessionService.getUserSessions(userId, currentRefreshToken);
+    return this.sessionService.getUserSessions(
+      userId,
+      currentRefreshToken,
+      ipAddress,
+      userAgent,
+    );
   }
 
   @UseGuards(JwtAuthGuard)

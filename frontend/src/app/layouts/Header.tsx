@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../lib/auth/auth-store';
 import { apiClient } from '../../lib/api/client';
+import { getFullMediaUrl } from '../../lib/api/media-url';
 import { toPersianDigits } from '../../lib/utils';
 import { Bell, User } from 'lucide-react';
 import rokadLogoWhite from '../../assets/logo-rokad-white.png';
@@ -11,6 +12,11 @@ export const Header: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { unreadCount, fetchUnreadCount } = useNotificationStore();
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [user?.avatarUrl]);
 
   useEffect(() => {
     if (user) {
@@ -22,7 +28,8 @@ export const Header: React.FC = () => {
         .get('/auth/me')
         .then((res: any) => {
           const freshUser = res?.data?.user || res?.user;
-          if (freshUser && freshUser.avatarUrl !== user.avatarUrl) {
+          const freshAvatar = freshUser?.avatarUrl || freshUser?.avatar;
+          if (freshUser && (freshAvatar !== user.avatarUrl || (!user.avatarUrl && freshAvatar))) {
             const isGeneric =
               (freshUser.firstName === 'کاربر' && (freshUser.lastName === 'سیستم' || !freshUser.lastName)) ||
               (!freshUser.firstName && !freshUser.lastName);
@@ -34,6 +41,7 @@ export const Header: React.FC = () => {
             useAuthStore.getState().setUser({
               ...user,
               ...freshUser,
+              avatarUrl: freshAvatar || user.avatarUrl,
               ...(isGeneric && hasExistingRealName
                 ? {
                     firstName: user.firstName,
@@ -49,6 +57,10 @@ export const Header: React.FC = () => {
     }
   }, [user?.id]);
 
+  const rawAvatar = user?.avatarUrl || (user as any)?.avatar;
+  const cleanAvatar = rawAvatar && rawAvatar !== 'null' && rawAvatar !== 'undefined' ? rawAvatar : null;
+  const avatarSrc = cleanAvatar ? getFullMediaUrl(cleanAvatar) : null;
+
   return (
     <>
       {/* Pinned Fixed Header - Stays permanently fixed during scroll and respects safe-area-inset-top (notch/status bar) */}
@@ -63,10 +75,11 @@ export const Header: React.FC = () => {
               aria-label="پروفایل کاربری"
               className="relative p-2 rounded-full text-white hover:bg-white/10 active:scale-90 transition-all flex items-center justify-center min-w-[44px] min-h-[44px] cursor-pointer"
             >
-              {user?.avatarUrl ? (
+              {avatarSrc && !imageError ? (
                 <img
-                  src={user.avatarUrl}
-                  alt={user.firstName}
+                  src={avatarSrc}
+                  alt={user?.firstName || 'پروفایل کاربری'}
+                  onError={() => setImageError(true)}
                   className="w-8 h-8 rounded-full object-cover ring-2 ring-white/30"
                 />
               ) : (
