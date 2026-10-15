@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>بوم کسب‌وکار ناب — بازارچه محتوای مدرسان</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef1f5; --surface:#fff; --ink:#14213d; --muted:#55627a; --line:#d5dbe5;
+  --head:#14213d; --head-ink:#fff;
+  --c-problem:#b4382f; --c-solution:#0f766e; --c-uvp:#14213d; --c-adv:#6d4bb5;
+  --c-seg:#b86a00; --c-chan:#1d5fb8; --c-metric:#3a7d2c; --c-cost:#7a4b3a; --c-rev:#0f766e;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1420; --surface:#18202f; --ink:#e8ecf3; --muted:#9aa6bb; --line:#2c3850;
+    --head:#e8ecf3; --head-ink:#0e1420;
+    --c-problem:#ef8a80; --c-solution:#4fd1c1; --c-uvp:#e8ecf3; --c-adv:#b9a2f0;
+    --c-seg:#f0b45a; --c-chan:#7fb2f5; --c-metric:#8ed67c; --c-cost:#d9a58f; --c-rev:#4fd1c1;
+  }
+}
+html{height:auto;scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Vazirmatn",Tahoma,"Segoe UI",sans-serif;line-height:1.75;font-size:14px}
+.wrap{max-width:1360px;margin:0 auto;padding:28px 20px 40px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+h1{margin:0;font-size:26px;font-weight:800;line-height:1.4}
+header p{margin:2px 0 0;color:var(--muted);max-width:60ch}
+.tag{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:4px 12px;border-radius:999px;background:var(--surface)}
+.canvas{display:grid;gap:10px}
+.top{grid-template-columns:repeat(5,minmax(0,1fr));grid-template-areas:
+  "problem solution uvp adv seg"
+  "problem metrics uvp chan seg"}
+.bottom{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:10px}
+.box{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--c);border-radius:6px;padding:14px 16px 16px;min-width:0}
+.box h2{margin:0 0 10px;font-size:15px;font-weight:700;color:var(--c)}
+.box h3{margin:14px 0 6px;font-size:12.5px;font-weight:700;color:var(--muted)}
+.box ul{margin:0;padding:0 18px 0 0}
+.box li{margin:0 0 7px;padding-right:2px}
+.box li::marker{color:var(--c)}
+.box p{margin:0 0 8px}
+.small{font-size:12.5px;color:var(--muted)}
+.problem{grid-area:problem;--c:var(--c-problem)}
+.solution{grid-area:solution;--c:var(--c-solution)}
+.uvp{grid-area:uvp;--c:var(--c-uvp);background:var(--head);color:var(--head-ink);border-color:var(--head)}
+.uvp h2,.uvp li::marker{color:var(--head-ink)}
+.uvp .small,.uvp h3{color:var(--head-ink);opacity:.75}
+.quote{font-size:17px;font-weight:700;line-height:1.9;margin:0 0 14px}
+.adv{grid-area:adv;--c:var(--c-adv)}
+.seg{grid-area:seg;--c:var(--c-seg)}
+.metrics{grid-area:metrics;--c:var(--c-metric)}
+.chan{grid-area:chan;--c:var(--c-chan)}
+.cost{--c:var(--c-cost)}
+.rev{--c:var(--c-rev)}
+.cols{columns:2;column-gap:28px}
+.cols li{break-inside:avoid}
+.table{width:100%;border-collapse:collapse}
+.table td{padding:5px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.table tr:last-child td{border-bottom:0}
+.table td:first-child{font-weight:700;white-space:nowrap;padding-left:14px}
+footer{margin-top:14px;color:var(--muted);font-size:12px}
+@media (max-width:1100px){
+  .top{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"problem solution" "uvp seg" "adv chan" "metrics metrics"}
+}
+@media (max-width:640px){
+  .top,.bottom{grid-template-columns:1fr;grid-template-areas:none}
+  .top>.box{grid-area:auto}
+  .cols{columns:1}
+  h1{font-size:21px}
+}
+@media print{
+  @page{size:A3 landscape;margin:10mm}
+  body{background:#fff;font-size:12px}
+  .wrap{max-width:none;padding:0}
+  .tag{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>بازارچه محتوا و شبکه حرفه‌ای مدرسان</h1>
+    <p>بوم کسب‌وکار ناب — طرح درس، بانک سؤال و جزوه از استادان باتجربه برای مدرسان تازه‌کار، همراه با شبکه‌ای از همکاران هم‌رشته.</p>
+  </div>
+  <span class="tag">Lean Canvas · نسخه ۱</span>
+</header>
+
+<main>
+<div class="canvas top">
+
+  <section class="box problem">
+    <h2>مسئله</h2>
+    <ul>
+      <li>مدرسان تازه‌کار (استادیار جدید، مدرس حق‌التدریس، معلم سال اول) برای هر درس باید طرح درس، سؤال و جزوه را از صفر بسازند.</li>
+      <li>استادان باتجربه محتوای ارزشمندی دارند که روی دستگاه خودشان مانده و هیچ درآمد یا اعتبار شغلی‌ای از آن نمی‌گیرند.</li>
+      <li>شبکه‌سازی تخصصی وجود ندارد. مدرسان برای تبادل تجربه تدریس جایی ندارند و فقط به گروه‌های پراکنده تلگرام و واتساپ متکی‌اند.</li>
+    </ul>
+  </section>
+
+  <section class="box solution">
+    <h2>راه‌حل</h2>
+    <ul>
+      <li><b>بازارچه محتوا:</b> طرح درس، بانک سؤال، جزوه، اسلاید، پروژه و ارزشیابی</li>
+      <li><b>پروفایل حرفه‌ای:</b> رشته، دانشگاه، سوابق تدریس، امتیاز و نشان‌ها</li>
+      <li><b>اعتبارسنجی:</b> نقد و امتیاز خریداران، نشان «مدرس تأییدشده» و پیش‌نمایش رایگان</li>
+      <li><b>شبکه‌سازی:</b> دنبال‌کردن، پرسش‌وپاسخ تخصصی، گروه‌های رشته‌ای، جامعه تجربه‌های تدریس و منتورشیپ</li>
+      <li><b>بسته درس کامل</b> با خرید یک‌مرحله‌ای</li>
+    </ul>
+  </section>
+
+  <section class="box uvp">
+    <h2>پیشنهاد ارزش منحصربه‌فرد</h2>
+    <p class="quote">تدریس را از صفر شروع نکن؛ از تجربه بهترین‌ها شروع کن، و اگر خودت تجربه داری، از آن درآمد و اعتبار بساز.</p>
+    <ul>
+      <li><b>برای خریدار:</b> صرفه‌جویی در زمان، شروع سریع‌تر و دسترسی به منابع اعتبارسنجی‌شده</li>
+      <li><b>برای فروشنده:</b> درآمد منفعل، برند شخصی و دیده‌شدن در جامعه آکادمیک</li>
+      <li><b>برای هر دو:</b> شبکه‌ای از همکاران هم‌رشته</li>
+    </ul>
+  </section>
+
+  <section class="box adv">
+    <h2>مزیت رقابتی غیرقابل‌کپی</h2>
+    <ul>
+      <li><b>اثر شبکه‌ای دوطرفه:</b> با افزایش فروشندگان، خریداران بیشتر می‌آیند و برعکس</li>
+      <li><b>داده و اعتبار:</b> تاریخچه امتیازها و پروفایل‌ها قابل‌انتقال نیست</li>
+      <li><b>شبکه حرفه‌ای:</b> وقتی دوستان و منتورها اینجا هستند، ترک پلتفرم سخت می‌شود</li>
+      <li><b>تمرکز بومی و دانشگاهی:</b> هم‌راستایی با سرفصل‌ها و نیازهای محلی</li>
+      <li><b>روابط اولیه</b> با استادان شاخص</li>
+    </ul>
+  </section>
+
+  <section class="box seg">
+    <h2>بخش‌های مشتری</h2>
+    <h3>فروشندگان (عرضه)</h3>
+    <ul>
+      <li>استادان و مدرسان دانشگاهی باتجربه</li>
+      <li>مدرسان خوش‌نام و صاحب جزوه</li>
+    </ul>
+    <h3>مشتری اول (Early Adopter)</h3>
+    <ul>
+      <li>مدرسان تازه‌کار دانشگاه: استادیاران جدید، مدرسان حق‌التدریس و دانشجویان دکتری که تدریس می‌کنند</li>
+    </ul>
+    <h3>فازهای بعد</h3>
+    <ul>
+      <li><b>فاز دوم:</b> معلمان مدرسه، به‌ویژه سال‌های اول کاری</li>
+      <li><b>فاز سوم:</b> مراکز آموزشی، آموزشگاه‌ها و دپارتمان‌ها (B2B)</li>
+    </ul>
+  </section>
+
+  <section class="box metrics">
+    <h2>شاخص‌های کلیدی</h2>
+    <ul>
+      <li><b>عرضه:</b> تعداد فروشندگان فعال و محصولات منتشرشده</li>
+      <li><b>تقاضا:</b> تعداد خریداران ماهانه و نرخ خرید مجدد</li>
+      <li><b>کیفیت:</b> میانگین امتیاز محتوا و نرخ بازپرداخت</li>
+      <li><b>شبکه:</b> تعامل (دنبال‌کردن، نظر، پیام) به‌ازای هر کاربر</li>
+      <li><b>رشد:</b> ضریب ویروسی</li>
+      <li><b>مالی:</b> درآمد ناخالص و خالص</li>
+    </ul>
+  </section>
+
+  <section class="box chan">
+    <h2>کانال‌ها</h2>
+    <ul>
+      <li><b>جذب فروشندگان کلیدی (اولویت اول):</b> ارتباط مستقیم با ۲۰ تا ۵۰ استاد معتبر و کمیسیون صفر در شش ماه اول</li>
+      <li><b>شبکه‌های حرفه‌ای:</b> لینکدین، گروه‌های تلگرامی هیئت‌علمی و انجمن‌های علمی</li>
+      <li><b>دانشگاه‌ها:</b> همکاری با دانشکده‌ها، دفاتر توسعه آموزش و مراکز نوآوری</li>
+      <li><b>ارجاع:</b> هر استاد، همکارانش را دعوت می‌کند</li>
+      <li><b>رویدادها:</b> وبینار و کارگاه‌های «آموزش تدریس»</li>
+    </ul>
+  </section>
+</div>
+
+<div class="canvas bottom">
+  <section class="box cost">
+    <h2>ساختار هزینه</h2>
+    <ul class="cols">
+      <li>توسعه و نگهداری پلتفرم (وب و موبایل)</li>
+      <li>درگاه پرداخت و کارمزد تراکنش</li>
+      <li>جذب فروشندگان اولیه و بازاریابی</li>
+      <li>زیرساخت ذخیره‌سازی و امنیت فایل</li>
+      <li>تیم محتوا و پشتیبانی</li>
+      <li>هزینه‌های حقوقی</li>
+    </ul>
+  </section>
+
+  <section class="box rev">
+    <h2>جریان‌های درآمدی</h2>
+    <table class="table">
+      <tr><td>کمیسیون فروش</td><td>۱۵ تا ۳۰ درصد از هر فروش (مدل اصلی)</td></tr>
+      <tr><td>محتوای ویژه و تبلیغ</td><td>ارتقای جایگاه محتوا و حمایت مالی ناشران</td></tr>
+    </table>
+  </section>
+</div>
+</main>
+
+<footer>برای خروجی PDF از گزینه Print مرورگر استفاده کنید (چاپ افقی، ابعاد A3).</footer>
+</div>
+</body>
+</html>

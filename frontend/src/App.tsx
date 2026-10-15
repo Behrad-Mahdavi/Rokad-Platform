@@ -11,7 +11,7 @@ import { CuriosityEasterEggModal } from './components/ui/CuriosityEasterEggModal
 const cleanupStaleServiceWorkers = () => {
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
   // Dev: unregister any stale SW left from earlier builds so Workbox can't serve stale JS,
-  // but preserve push-worker so Web Push remains active and testable.
+  // 
   if (import.meta.env.DEV) {
     void navigator.serviceWorker.getRegistrations().then((regs) => {
       regs.forEach((r) => {
