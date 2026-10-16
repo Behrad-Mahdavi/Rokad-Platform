@@ -23,6 +23,7 @@ import {
   Layers,
   ChevronDown,
   BookOpen,
+  FileText,
 } from 'lucide-react';
 import {
   clubApi,
@@ -35,6 +36,8 @@ import {
   ClubRoadmapMilestone,
   ClubChallenge,
   ClubChallengeSubmission,
+  AdminEnrolledProject,
+  ClubWorkReport,
 } from '../../../lib/api/club';
 import { apiClient } from '../../../lib/api/client';
 import { Button } from '../../../components/ui/Button';
@@ -46,7 +49,22 @@ import { toast } from '../../../components/ui/toast/toast';
 import { toPersianDigits, formatToJalali } from '../../../lib/utils';
 
 export const AdminClubPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'MEMBERS' | 'ROADMAP' | 'CHALLENGES' | 'SUBMISSIONS'>('MEMBERS');
+  const [activeTab, setActiveTab] = useState<'ENTRANCE_CALL' | 'MEMBERS' | 'ROADMAP' | 'CHALLENGES' | 'SUBMISSIONS'>('ENTRANCE_CALL');
+
+  // Entrance Call & Work Reports State
+  const [enrolledProjects, setEnrolledProjects] = useState<AdminEnrolledProject[]>([]);
+  const [enrolledStats, setEnrolledStats] = useState({
+    totalEnrolled: 0,
+    activeProjects: 0,
+    submittedProjects: 0,
+    gradedProjects: 0,
+    totalReports: 0,
+  });
+  const [isEnrolledLoading, setIsEnrolledLoading] = useState(false);
+  const [enrolledSearch, setEnrolledSearch] = useState('');
+  const [enrolledDeptFilter, setEnrolledDeptFilter] = useState<string>('ALL');
+  const [enrolledStatusFilter, setEnrolledStatusFilter] = useState<string>('ALL');
+  const [selectedProjectForReports, setSelectedProjectForReports] = useState<AdminEnrolledProject | null>(null);
 
   // Shared state
   const [lessons, setLessons] = useState<any[]>([]);
@@ -184,8 +202,29 @@ export const AdminClubPage: React.FC = () => {
     }
   };
 
+  // Fetch Entrance Call Enrolled Projects
+  const fetchEnrolledProjects = async () => {
+    try {
+      setIsEnrolledLoading(true);
+      const res = await clubApi.getAdminEnrolledProjects();
+      setEnrolledProjects(res.projects || []);
+      setEnrolledStats({
+        totalEnrolled: res.totalEnrolled || 0,
+        activeProjects: res.activeProjects || 0,
+        submittedProjects: res.submittedProjects || 0,
+        gradedProjects: res.gradedProjects || 0,
+        totalReports: res.totalReports || 0,
+      });
+    } catch {
+      toast.error('خطا در بارگذاری پروژه‌های فراخوان ورودی');
+    } finally {
+      setIsEnrolledLoading(false);
+    }
+  };
+
   // Load initial tab data
   useEffect(() => {
+    if (activeTab === 'ENTRANCE_CALL') fetchEnrolledProjects();
     if (activeTab === 'MEMBERS') fetchMembers();
     if (activeTab === 'ROADMAP') fetchMilestones();
     if (activeTab === 'CHALLENGES') fetchChallenges();
@@ -478,6 +517,17 @@ export const AdminClubPage: React.FC = () => {
         {/* Tab Navigation */}
         <div className="flex items-center gap-2 mt-8 pt-4 border-t border-stone-800 overflow-x-auto">
           <button
+            onClick={() => setActiveTab('ENTRANCE_CALL')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+              activeTab === 'ENTRANCE_CALL'
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-stone-950 font-black shadow-md'
+                : 'text-amber-400 hover:text-amber-300 hover:bg-stone-800'
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            فراخوان ورودی و گزارش‌ها
+          </button>
+          <button
             onClick={() => setActiveTab('MEMBERS')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
               activeTab === 'MEMBERS'
@@ -523,6 +573,456 @@ export const AdminClubPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* ======================================================== */}
+      {/* TAB 0: ENTRANCE CALL & STUDENT WORK REPORTS */}
+      {/* ======================================================== */}
+      {activeTab === 'ENTRANCE_CALL' && (
+        <div className="space-y-6">
+          {/* Headline Stats Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-stone-900 border border-stone-800 p-4 rounded-2xl flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
+                <Users className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-[11px] text-stone-400 font-bold">پروژه‌های ثبت‌نامی</div>
+                <div className="text-xl font-black text-white">{toPersianDigits(enrolledStats.totalEnrolled)}</div>
+              </div>
+            </div>
+
+            <div className="bg-stone-900 border border-stone-800 p-4 rounded-2xl flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+                <Clock className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-[11px] text-stone-400 font-bold">در حال اجرا</div>
+                <div className="text-xl font-black text-emerald-400">{toPersianDigits(enrolledStats.activeProjects)}</div>
+              </div>
+            </div>
+
+            <div className="bg-stone-900 border border-stone-800 p-4 rounded-2xl flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-[11px] text-stone-400 font-bold">تحویل داده‌شده</div>
+                <div className="text-xl font-black text-blue-400">{toPersianDigits(enrolledStats.submittedProjects)}</div>
+              </div>
+            </div>
+
+            <div className="bg-stone-900 border border-stone-800 p-4 rounded-2xl flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-[11px] text-stone-400 font-bold">کل گزارش‌های ثبت‌شده</div>
+                <div className="text-xl font-black text-purple-400">{toPersianDigits(enrolledStats.totalReports)}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Filters Bar */}
+          <div className="bg-stone-900 rounded-2xl p-4 border border-stone-800 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="relative w-full md:w-80">
+              <Search className="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+              <Input
+                value={enrolledSearch}
+                onChange={(e) => setEnrolledSearch(e.target.value)}
+                placeholder="جستجوی دانش‌آموز یا پروژه..."
+                className="pr-10 h-10 text-sm rounded-xl bg-stone-950 border-stone-800"
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+              <select
+                value={enrolledDeptFilter}
+                onChange={(e) => setEnrolledDeptFilter(e.target.value)}
+                className="h-10 px-3 bg-stone-950 border border-stone-800 rounded-xl text-xs text-stone-300 font-bold focus:outline-none"
+              >
+                <option value="ALL">همه دپارتمان‌ها</option>
+                <option value="ENGINEER">مهندسا</option>
+                <option value="ARTIST">آرتیستا</option>
+                <option value="JACK_OF_ALL_TRADES">آچارفرانسه‌ها</option>
+              </select>
+
+              <select
+                value={enrolledStatusFilter}
+                onChange={(e) => setEnrolledStatusFilter(e.target.value)}
+                className="h-10 px-3 bg-stone-950 border border-stone-800 rounded-xl text-xs text-stone-300 font-bold focus:outline-none"
+              >
+                <option value="ALL">همه وضعیت‌ها</option>
+                <option value="IN_PROGRESS">در حال انجام</option>
+                <option value="SUBMITTED">تحویل داده‌شده</option>
+                <option value="GRADED">داوری‌شده</option>
+              </select>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchEnrolledProjects}
+                className="h-10 px-4 rounded-xl text-xs font-bold border-stone-800 text-stone-300"
+              >
+                به‌روزرسانی
+              </Button>
+            </div>
+          </div>
+
+          {/* Enrolled Projects: Desktop Table & Mobile Card List */}
+          {isEnrolledLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-20 rounded-2xl bg-stone-900/60 animate-pulse border border-stone-800" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* 1. Mobile Card List (block md:hidden) */}
+              <div className="block md:hidden space-y-3">
+                {enrolledProjects
+                  .filter((p) => {
+                    if (enrolledDeptFilter !== 'ALL' && p.challenge.department !== enrolledDeptFilter) return false;
+                    if (enrolledStatusFilter !== 'ALL' && p.status !== enrolledStatusFilter) return false;
+                    if (enrolledSearch.trim()) {
+                      const q = enrolledSearch.trim().toLowerCase();
+                      const sName = `${p.student.firstName} ${p.student.lastName}`.toLowerCase();
+                      const pTitle = p.challenge.title.toLowerCase();
+                      const sCode = p.student.studentProfile?.studentCode || '';
+                      return sName.includes(q) || pTitle.includes(q) || sCode.includes(q);
+                    }
+                    return true;
+                  })
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      className="bg-stone-900 border border-stone-800 rounded-2xl p-4 space-y-3 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between gap-2 border-b border-stone-800 pb-2.5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-10 h-10 rounded-full bg-stone-800 border border-stone-700 flex items-center justify-center font-bold text-sm text-amber-400 overflow-hidden shrink-0">
+                            {item.student.avatarUrl ? (
+                              <img src={item.student.avatarUrl} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              `${item.student.firstName?.[0] || ''}`
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-bold text-sm text-white">
+                              {item.student.firstName} {item.student.lastName}
+                            </div>
+                            <div className="text-xs text-stone-400">
+                              کد: {toPersianDigits(item.student.studentProfile?.studentCode || item.student.username)}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          {item.status === 'IN_PROGRESS' && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>در حال انجام</span>
+                            </span>
+                          )}
+                          {item.status === 'SUBMITTED' && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>تحویل داده‌شده</span>
+                            </span>
+                          )}
+                          {item.status === 'GRADED' && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                              <span>نمره: {toPersianDigits(item.score || 0)}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="text-sm font-bold text-stone-100">{item.challenge.title}</div>
+                        <div className="flex items-center justify-between text-xs text-stone-400 pt-1">
+                          <span>
+                            دپارتمان:{' '}
+                            <strong className="text-stone-300">
+                              {item.challenge.department === 'ENGINEER'
+                                ? 'مهندسا'
+                                : item.challenge.department === 'ARTIST'
+                                ? 'آرتیستا'
+                                : 'آچارفرانسه‌ها'}
+                            </strong>
+                          </span>
+                          <span>شروع: {formatToJalali(item.startedAt, { showMonthName: true })}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-2 border-t border-stone-800">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedProjectForReports(item)}
+                          className="min-h-[44px] flex-1 text-xs sm:text-sm font-bold gap-1.5 rounded-xl border-stone-700 bg-stone-950 text-stone-200"
+                        >
+                          <FileText className="w-4 h-4 text-amber-400" />
+                          <span>مشاهده {toPersianDigits(item.reportsCount || 0)} گزارش کار</span>
+                        </Button>
+
+                        {item.status === 'SUBMITTED' && (
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setGradingSubmission(item as any);
+                              setGradingForm({
+                                score: 85,
+                                feedback: '',
+                                overrideGrade: '',
+                              });
+                              setGradingModalOpen(true);
+                            }}
+                            className="min-h-[44px] px-4 text-xs sm:text-sm font-black bg-amber-500 hover:bg-amber-400 text-stone-950 rounded-xl"
+                          >
+                            داوری
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                {enrolledProjects.length === 0 && (
+                  <div className="text-center py-12 bg-stone-900 rounded-2xl border border-dashed border-stone-800 text-stone-400 text-sm">
+                    هنوز هیچ دانش‌آموزی در پروژه‌های فراخوان ورودی ثبت‌نام نکرده است.
+                  </div>
+                )}
+              </div>
+
+              {/* 2. Desktop Table (hidden md:block) */}
+              <div className="hidden md:block bg-stone-900 border border-stone-800 rounded-2xl overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-right text-xs">
+                    <thead>
+                      <tr className="border-b border-stone-800 bg-stone-950/50 text-stone-400 font-bold">
+                        <th className="py-3.5 px-4">دانش‌آموز</th>
+                        <th className="py-3.5 px-4">پروژه انتخابی</th>
+                        <th className="py-3.5 px-4">دپارتمان</th>
+                        <th className="py-3.5 px-4">تاریخ شروع</th>
+                        <th className="py-3.5 px-4">وضعیت</th>
+                        <th className="py-3.5 px-4">گزارش‌های کار</th>
+                        <th className="py-3.5 px-4 text-left">عملیات</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-800">
+                      {enrolledProjects
+                        .filter((p) => {
+                          if (enrolledDeptFilter !== 'ALL' && p.challenge.department !== enrolledDeptFilter) return false;
+                          if (enrolledStatusFilter !== 'ALL' && p.status !== enrolledStatusFilter) return false;
+                          if (enrolledSearch.trim()) {
+                            const q = enrolledSearch.trim().toLowerCase();
+                            const sName = `${p.student.firstName} ${p.student.lastName}`.toLowerCase();
+                            const pTitle = p.challenge.title.toLowerCase();
+                            const sCode = p.student.studentProfile?.studentCode || '';
+                            return sName.includes(q) || pTitle.includes(q) || sCode.includes(q);
+                          }
+                          return true;
+                        })
+                        .map((item) => (
+                          <tr key={item.id} className="hover:bg-stone-800/40 transition-colors">
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-full bg-stone-800 border border-stone-700 flex items-center justify-center font-bold text-xs text-amber-400 overflow-hidden">
+                                  {item.student.avatarUrl ? (
+                                    <img src={item.student.avatarUrl} alt="" className="w-full h-full object-cover" />
+                                  ) : (
+                                    `${item.student.firstName?.[0] || ''}`
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="font-bold text-white">
+                                    {item.student.firstName} {item.student.lastName}
+                                  </div>
+                                  <div className="text-[10px] text-stone-400">
+                                    کد: {toPersianDigits(item.student.studentProfile?.studentCode || item.student.username)}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="py-3.5 px-4">
+                              <div className="font-bold text-stone-200">{item.challenge.title}</div>
+                            </td>
+
+                            <td className="py-3.5 px-4">
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-stone-800 text-stone-300">
+                                {item.challenge.department === 'ENGINEER'
+                                  ? 'مهندسا'
+                                  : item.challenge.department === 'ARTIST'
+                                  ? 'آرتیستا'
+                                  : 'آچارفرانسه‌ها'}
+                              </span>
+                            </td>
+
+                            <td className="py-3.5 px-4 text-stone-400">
+                              {formatToJalali(item.startedAt, { showMonthName: true })}
+                            </td>
+
+                            <td className="py-3.5 px-4">
+                              {item.status === 'IN_PROGRESS' && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                  <Clock className="w-3 h-3" />
+                                  <span>در حال انجام</span>
+                                </span>
+                              )}
+                              {item.status === 'SUBMITTED' && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  <span>تحویل داده‌شده</span>
+                                </span>
+                              )}
+                              {item.status === 'GRADED' && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                                  <span>داوری‌شده ({toPersianDigits(item.score || 0)})</span>
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="py-3.5 px-4">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setSelectedProjectForReports(item)}
+                                className="min-h-[36px] text-xs font-bold gap-1.5 rounded-lg border-stone-700 bg-stone-950 hover:bg-stone-800 text-stone-200"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-amber-400" />
+                                <span>{toPersianDigits(item.reportsCount || 0)} گزارش کار</span>
+                              </Button>
+                            </td>
+
+                            <td className="py-3.5 px-4 text-left">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {item.status === 'SUBMITTED' && (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      setGradingSubmission(item as any);
+                                      setGradingForm({
+                                        score: 85,
+                                        feedback: '',
+                                        overrideGrade: '',
+                                      });
+                                      setGradingModalOpen(true);
+                                    }}
+                                    className="min-h-[36px] px-3 text-xs font-black bg-amber-500 hover:bg-amber-400 text-stone-950 rounded-lg"
+                                  >
+                                    داوری و ثبت نمره
+                                  </Button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      {enrolledProjects.length === 0 && (
+                        <tr>
+                          <td colSpan={7} className="py-12 text-center text-stone-400 text-xs">
+                            هنوز هیچ دانش‌آموزی در پروژه‌های فراخوان ورودی ثبت‌نام نکرده است.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal: View Student Progress Reports */}
+          {selectedProjectForReports && (
+            <Modal
+              isOpen={!!selectedProjectForReports}
+              onClose={() => setSelectedProjectForReports(null)}
+              title={`گزارش‌های کار: ${selectedProjectForReports.student.firstName} ${selectedProjectForReports.student.lastName} (${selectedProjectForReports.challenge.title})`}
+              maxWidth="2xl"
+            >
+              <div className="space-y-4 text-right" dir="rtl">
+                <div className="flex items-center justify-between bg-stone-900 border border-stone-800 p-3 rounded-xl text-xs">
+                  <div className="space-y-0.5">
+                    <div className="font-bold text-white">
+                      {selectedProjectForReports.student.firstName} {selectedProjectForReports.student.lastName}
+                    </div>
+                    <div className="text-[11px] text-stone-400">
+                      پروژه: {selectedProjectForReports.challenge.title}
+                    </div>
+                  </div>
+                  <div className="text-left font-mono text-[11px] text-stone-400">
+                    <div>کد: {selectedProjectForReports.student.studentProfile?.studentCode || '-'}</div>
+                    <div>تلفن: {selectedProjectForReports.student.phone || '-'}</div>
+                  </div>
+                </div>
+
+                <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                  {(!selectedProjectForReports.reports || selectedProjectForReports.reports.length === 0) ? (
+                    <div className="text-center py-10 bg-stone-900/50 rounded-xl border border-dashed border-stone-800 text-stone-400 text-xs">
+                      دانش‌آموز هنوز هیچ گزارش کاری برای این پروژه ثبت نکرده است.
+                    </div>
+                  ) : (
+                    selectedProjectForReports.reports.map((rep, idx) => (
+                      <div
+                        key={rep.id || idx}
+                        className="bg-stone-900/80 border border-stone-800 rounded-xl p-4 space-y-2"
+                      >
+                        <div className="flex items-center justify-between gap-2 border-b border-stone-800/80 pb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                            <span className="text-xs font-bold text-white">
+                              {rep.title || 'گزارش پیشرفت پروژه'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[11px] text-stone-400">
+                            {rep.workDuration && (
+                              <span className="bg-stone-800 px-2 py-0.5 rounded text-[10px] text-emerald-400 font-bold">
+                                {toPersianDigits(rep.workDuration)} ساعت کار
+                              </span>
+                            )}
+                            <span>تاریخ: {formatToJalali(rep.reportDate, { showMonthName: true })}</span>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-stone-300 leading-relaxed whitespace-pre-line">
+                          {rep.content}
+                        </p>
+
+                        {rep.links && Array.isArray(rep.links) && rep.links.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {rep.links.map((link: string, lIdx: number) => (
+                              <a
+                                key={lIdx}
+                                href={link}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-[10px] font-mono text-indigo-400 hover:text-indigo-300 bg-indigo-950/40 px-2 py-0.5 rounded border border-indigo-900/50"
+                              >
+                                <ExternalLink className="w-2.5 h-2.5" />
+                                <span>{link.replace(/^https?:\/\//, '').slice(0, 30)}...</span>
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setSelectedProjectForReports(null)}
+                    className="text-xs text-stone-400"
+                  >
+                    بستن
+                  </Button>
+                </div>
+              </div>
+            </Modal>
+          )}
+        </div>
+      )}
 
       {/* ======================================================== */}
       {/* TAB 1: MEMBERS DIRECTORY */}

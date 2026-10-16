@@ -179,4 +179,109 @@ export const clubApi = {
     apiClient.get<any>('/club/admin/submissions', { params: status ? { status } : {} }).then((r) => r.data?.data || r.data),
   gradeSubmission: (submissionId: string, data: { score: number; feedback?: string; overrideGrade?: ClubGrade }) =>
     apiClient.post<any>(`/club/admin/submissions/${submissionId}/grade`, data).then((r) => r.data?.data || r.data),
+
+  // Entrance Challenges & Dated Progress Reports (فراخوان ورودی باشگاه)
+  getEntranceChallenges: () =>
+    apiClient.get<any>('/club/entrance-challenges').then((r) => r.data?.data || r.data),
+  startEntranceChallenge: (id: string) =>
+    apiClient.post<any>(`/club/entrance-challenges/${id}/start`).then((r) => r.data?.data || r.data),
+  submitWorkReport: (
+    submissionId: string,
+    data: { reportDate?: string; title?: string; content: string; workDuration?: number; links?: string[]; attachments?: any },
+  ) =>
+    apiClient.post<any>(`/club/submissions/${submissionId}/reports`, data).then((r) => r.data?.data || r.data),
+  getSubmissionReports: (submissionId: string) =>
+    apiClient.get<any>(`/club/submissions/${submissionId}/reports`).then((r) => r.data?.data || r.data),
+  getAdminEnrolledProjects: () =>
+    apiClient.get<any>('/club/admin/enrolled-projects').then((r) => r.data?.data || r.data),
 };
+
+export interface ClubWorkReport {
+  id: string;
+  submissionId: string;
+  studentId: string;
+  reportDate: string;
+  title?: string | null;
+  content: string;
+  workDuration?: number | null;
+  links?: string[] | null;
+  attachments?: any;
+  createdAt?: string;
+}
+
+export interface EntranceChallenge {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  department: ClubDepartment;
+  missionBrief: string;
+  rules: string;
+  packageFile: string;
+  driveUrl?: string | null;
+  packageDownloadUrl: string;
+  maxDays: number;
+  maxScore: number;
+  tags: string[];
+  isEnrolled: boolean;
+  submissionStatus: ClubSubmissionStatus | 'NOT_STARTED';
+  submission: {
+    id: string;
+    status: ClubSubmissionStatus;
+    startedAt: string;
+    deadlineAt: string;
+    submittedAt: string | null;
+    score: number | null;
+    feedback: string | null;
+    reportsCount: number;
+    reports: ClubWorkReport[];
+  } | null;
+}
+
+export interface EntranceChallengesResponse {
+  challenges: EntranceChallenge[];
+  activeCount: number;
+  maxAllowed: number;
+  canStartNew: boolean;
+}
+
+export interface AdminEnrolledProject {
+  id: string;
+  tenantId: string;
+  challengeId: string;
+  studentId: string;
+  status: ClubSubmissionStatus;
+  startedAt: string;
+  deadlineAt: string;
+  submittedAt: string | null;
+  repositoryUrl?: string | null;
+  demoUrl?: string | null;
+  figmaUrl?: string | null;
+  submissionNotes?: string | null;
+  score?: number | null;
+  feedback?: string | null;
+  student: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    username: string;
+    avatarUrl: string | null;
+    phone: string | null;
+    studentProfile?: {
+      studentCode: string;
+      nationalCode?: string;
+    };
+  };
+  challenge: {
+    id: string;
+    title: string;
+    slug: string;
+    department: ClubDepartment;
+    maxDays: number;
+    maxScore: number;
+  };
+  reports: ClubWorkReport[];
+  reportsCount: number;
+  lastReportDate: string | null;
+}
+

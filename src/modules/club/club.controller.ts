@@ -8,7 +8,12 @@ import {
   Param,
   Query,
   UseGuards,
+  Res,
+  NotFoundException,
 } from '@nestjs/common';
+import { Response } from 'express';
+import * as fs from 'fs';
+import * as path from 'path';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ClubService } from './club.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -16,6 +21,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentTenant } from '../../common/decorators/current-tenant.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { Role } from '../../common/constants';
 import {
   ClubDepartment,
@@ -31,7 +37,9 @@ import {
   GradeSubmissionDto,
   UpdateClubMembershipDto,
   TeacherApprovalDto,
+  CreateClubReportDto,
 } from './dto/club.dto';
+import { ENTRANCE_CHALLENGES } from './club.constants';
 
 @ApiTags('Rokad Business Club — باشگاه کسب‌وکار')
 @ApiBearerAuth()
@@ -308,5 +316,116 @@ export class ClubController {
   ) {
     const effectiveTenantId = tenantId || userTenantId;
     return this.clubService.gradeSubmission(submissionId, effectiveTenantId, adminUserId, dto);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 4. Entrance Challenges & Dated Progress Reports (فراخوان ورودی باشگاه)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  @Get('entrance-challenges')
+  @Roles(Role.STUDENT, Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
+  @ApiOperation({ summary: 'واکشی ۹ چالش ورودی به باشگاه به همراه وضعیت شرکت دانش‌آموز' })
+  async getEntranceChallenges(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.clubService.getEntranceChallenges(userId, effectiveTenantId);
+  }
+
+  @Post('entrance-challenges/:id/start')
+  @Roles(Role.STUDENT, Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @ApiOperation({ summary: 'شروع یک چالش ورودی (با سقف حداکثر ۲ چالش فعال)' })
+  async startEntranceChallenge(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.clubService.startEntranceChallenge(id, userId, effectiveTenantId);
+  }
+
+  @Public()
+  @Get('packages/:filename')
+  @ApiOperation({ summary: 'دانلود پایدار فایل فشرده (ZIP) پکیج چالش از سرور' })
+  async downloadPackage(
+    @Param('filename') filename: string,
+    @Res() res: Response,
+  ) {
+    // Sanitize filename to prevent directory traversal
+    const safeName = path.basename(filename);
+
+    // If Google Drive link is configured, redirect directly
+    const def = ENTRANCE_CHALLENGES.find((c) => c.packageFile === safeName || c.slug === safeName);
+    if (def?.driveUrl) {
+      return res.redirect(def.driveUrl);
+    }
+
+    const candidatePaths = [
+      path.join(process.cwd(), 'uploads', 'club-challenges', safeName),
+      path.join('/app', 'uploads', 'club-challenges', safeName),
+      path.join('/Users/behrad/Desktop/Business Club Rokad/event', safeName),
+      path.join('/Users/behrad/Desktop/Business Club Rokad/Event', safeName),
+    ];
+
+    let foundPath: string | null = null;
+    for (const p of candidatePaths) {
+      if (fs.existsSync(p)) {
+        foundPath = p;
+        break;
+      }
+    }
+
+    if (!foundPath) {
+      throw new NotFoundException(`فایل ${safeName} روی سرور یافت نشد.`);
+    }
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${safeName}"`);
+    return res.download(foundPath, safeName);
+  }
+
+  @Post('submissions/:submissionId/reports')
+  @Roles(Role.STUDENT, Role.SUPER_ADMIN, Role.SCHOOL_ADMIN)
+  @ApiOperation({ summary: 'ثبت گزارش پیشرفت کار با تاریخ برای یک چالش فعال' })
+  async addSubmissionReport(
+    @Param('submissionId') submissionId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @Body() dto: CreateClubReportDto,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.clubService.addSubmissionReport(submissionId, userId, effectiveTenantId, dto);
+  }
+
+  @Get('submissions/:submissionId/reports')
+  @Roles(Role.STUDENT, Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF)
+  @ApiOperation({ summary: 'دریافت تاریخچه گزارش‌های ثبت‌شده برای یک پروژه چالش' })
+  async getSubmissionReports(
+    @Param('submissionId') submissionId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+    @CurrentUser('role') role: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    const isAdmin = [Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.TEACHER, Role.STAFF].includes(
+      role as Role,
+    );
+    return this.clubService.getSubmissionReports(submissionId, userId, effectiveTenantId, isAdmin);
+  }
+
+  @Get('admin/enrolled-projects')
+  @Roles(Role.SUPER_ADMIN, Role.SCHOOL_ADMIN, Role.STAFF)
+  @ApiOperation({ summary: 'گزارش پروژه‌های شروع‌شده توسط دانش‌آموزان به همراه گزارش‌های کار' })
+  async getAdminEnrolledProjects(
+    @CurrentUser('tenantId') userTenantId: string,
+    @CurrentTenant('id') tenantId: string,
+  ) {
+    const effectiveTenantId = tenantId || userTenantId;
+    return this.clubService.getAdminEnrolledProjects(effectiveTenantId);
   }
 }

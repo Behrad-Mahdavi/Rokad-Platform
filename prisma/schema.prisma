@@ -371,6 +371,7 @@ model Tenant {
   clubStudentMilestoneProgresses ClubStudentMilestoneProgress[]
   clubChallenges                 ClubChallenge[]
   clubChallengeSubmissions       ClubChallengeSubmission[]
+  clubSubmissionReports          ClubSubmissionReport[]
 
   @@index([status])
   @@index([parentTenantId])
@@ -480,6 +481,7 @@ model User {
   studentClubMilestones    ClubStudentMilestoneProgress[] @relation("StudentClubMilestones")
   approvedClubMilestones   ClubStudentMilestoneProgress[] @relation("ApprovedMilestones")
   studentClubSubmissions   ClubChallengeSubmission[]  @relation("StudentClubSubmissions")
+  studentClubReports       ClubSubmissionReport[]     @relation("StudentClubReports")
   gradedClubSubmissions    ClubChallengeSubmission[]  @relation("GradedClubSubmissions")
 
   @@unique([tenantId, email])
@@ -2968,11 +2970,34 @@ model ClubChallengeSubmission {
   gradedAt        DateTime?
   gradedById      String?
   gradedBy        User?                @relation("GradedClubSubmissions", fields: [gradedById], references: [id], onDelete: SetNull)
+  reports         ClubSubmissionReport[]
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
 
   @@index([tenantId, studentId, status])
   @@index([tenantId, challengeId])
+}
+
+model ClubSubmissionReport {
+  id           String                  @id @default(uuid())
+  tenantId     String
+  tenant       Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  submissionId String
+  submission   ClubChallengeSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  studentId    String
+  student      User                    @relation("StudentClubReports", fields: [studentId], references: [id], onDelete: Cascade)
+  reportDate   DateTime                @default(now())
+  title        String?
+  content      String                  // متن گزارش کار و اقدامات انجام‌شده
+  workDuration Int?                    // مدت زمان کار (به ساعت یا دقیقه - اختیاری)
+  links        Json?                   // لینک‌ها (گیت‌هاب کامیت، فیگما، دمو و ...)
+  attachments  Json?                   // فایل‌های پیوست گزارش
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+
+  @@index([tenantId, submissionId])
+  @@index([tenantId, studentId])
+  @@index([tenantId, reportDate])
 }
 
 

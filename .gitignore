@@ -51,3 +51,8 @@ scratch/
 # Local scripts & templates (kept locally for reference)
 scripts/*
 !scripts/sync-version.js
+
+# Uploads & Large media/archives
+uploads/
+*.zip
+

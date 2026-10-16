@@ -2,181 +2,219 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   clubApi,
-  MyClubStatusResponse,
-  ClubChallenge,
   ClubDepartment,
-  ClubGrade,
+  EntranceChallenge,
+  ClubWorkReport,
 } from '../../lib/api/club';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { Modal } from '../../components/ui/Modal';
+import { Input } from '../../components/ui/Input';
 import { useAuthStore } from '../../lib/auth/auth-store';
 import {
-  Trophy,
-  Crown,
-  Sparkles,
-  ChevronRight,
-  Flame,
-  Medal,
-  Star,
-  Users,
+  Rocket,
   Code2,
   Palette,
   Wrench,
   Clock,
-  ArrowRight,
   CheckCircle2,
-  CircleDashed,
-  Rocket,
-  ShieldCheck,
-  Target,
+  Calendar,
+  Download,
+  Plus,
+  FileText,
+  AlertTriangle,
+  ArrowRight,
   ExternalLink,
-  Laptop,
-  Check,
-  Lock,
+  Crown,
+  Sparkles,
   Send,
-  Award,
+  Info,
+  Check,
+  Zap,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { UnderDevelopmentOverlay } from '../../components/ui/UnderDevelopmentOverlay';
-
-const DEFAULT_PREVIEW_DATA: MyClubStatusResponse = {
-  membership: {
-    id: 'preview-mem',
-    userId: 'preview',
-    department: 'ENGINEER',
-    grade: 'B',
-    status: 'ACTIVE_MEMBER',
-    points: 1250,
-    currentStreak: 5,
-    maxStreak: 12,
-  } as any,
-  roadmap: [
-    { id: '1', title: 'مقدمات کسب‌وکار و کارآفرینی', status: 'COMPLETED', order: 1 } as any,
-    { id: '2', title: 'طراحی ارزش پیشنهادی و اعتبارسنجی ایده', status: 'COMPLETED', order: 2 } as any,
-    { id: '3', title: 'توسعه نمونه اولیه و تست محصول (MVP)', status: 'IN_PROGRESS', order: 3 } as any,
-    { id: '4', title: 'جذب کاربر و بازاریابی اولیه', status: 'LOCKED', order: 4 } as any,
-    { id: '5', title: 'پیچ‌دک و ورود به استودیوی رشد', status: 'LOCKED', order: 5 } as any,
-  ],
-  progressPercentage: 60,
-  activeChallengesCount: 2,
-  canStartNewChallenge: true,
-  activeSubmissions: [],
-  recentSubmissions: [],
-  isStudioReady: false,
-};
+import { toPersianDigits, formatToJalali } from '../../lib/utils';
 
 export const ClubPage: React.FC = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'SCHOOL_ADMIN' || user?.role === 'STAFF';
-  const isTeacher = user?.role === 'TEACHER';
+  const isAdmin =
+    user?.role === 'SUPER_ADMIN' || user?.role === 'SCHOOL_ADMIN' || user?.role === 'STAFF';
 
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<MyClubStatusResponse | null>(null);
-  const [challenges, setChallenges] = useState<ClubChallenge[]>([]);
+  const [challenges, setChallenges] = useState<EntranceChallenge[]>([]);
+  const [activeCount, setActiveCount] = useState(0);
+  const [maxAllowed, setMaxAllowed] = useState(2);
+  const [canStartNew, setCanStartNew] = useState(true);
   const [selectedDeptFilter, setSelectedDeptFilter] = useState<ClubDepartment | 'ALL'>('ALL');
-  const [activeTab, setActiveTab] = useState<'roadmap' | 'challenges' | 'studio' | 'rotello'>('roadmap');
 
-  const fetchClubData = async () => {
+  // Modals state
+  const [selectedChallengeForBrief, setSelectedChallengeForBrief] = useState<EntranceChallenge | null>(null);
+  const [activeChallengeForReport, setActiveChallengeForReport] = useState<EntranceChallenge | null>(null);
+  const [activeReportTab, setActiveReportTab] = useState<'NEW_REPORT' | 'REPORT_HISTORY' | 'FINAL_SUBMIT'>('NEW_REPORT');
+
+  // New report form state
+  const [reportDate, setReportDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [reportTitle, setReportTitle] = useState('');
+  const [reportContent, setReportContent] = useState('');
+  const [reportHours, setReportHours] = useState<number | ''>('');
+  const [reportLinks, setReportLinks] = useState('');
+  const [submittingReport, setSubmittingReport] = useState(false);
+
+  // Final submission form state
+  const [repoUrl, setRepoUrl] = useState('');
+  const [demoUrl, setDemoUrl] = useState('');
+  const [figmaUrl, setFigmaUrl] = useState('');
+  const [submissionNotes, setSubmissionNotes] = useState('');
+  const [submittingFinal, setSubmittingFinal] = useState(false);
+
+  const fetchEntranceData = async () => {
     try {
       setLoading(true);
-      const [statusRes, challengesRes] = await Promise.all([
-        clubApi.getMyStatus(),
-        clubApi.getChallenges(),
-      ]);
-      setData(statusRes);
-      setChallenges(challengesRes.challenges || []);
+      const res = await clubApi.getEntranceChallenges();
+      setChallenges(res.challenges || []);
+      setActiveCount(res.activeCount || 0);
+      setMaxAllowed(res.maxAllowed || 2);
+      setCanStartNew(res.canStartNew ?? (res.activeCount < 2));
     } catch (err: any) {
-      toast.error('خطا در بارگذاری اطلاعات باشگاه کسب‌وکار');
+      toast.error('خطا در واکشی چالش‌های ورودی باشگاه');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchClubData();
+    fetchEntranceData();
   }, []);
 
-  const getDeptConfig = (dept: ClubDepartment | null) => {
+  const handleStartChallenge = async (challenge: EntranceChallenge) => {
+    if (activeCount >= maxAllowed) {
+      toast.error(`شما هم‌زمان حداکثر می‌توانید در ${toPersianDigits(maxAllowed)} چالش فعال شرکت کنید.`);
+      return;
+    }
+    try {
+      await clubApi.startEntranceChallenge(challenge.id || challenge.slug);
+      toast.success(`شما با موفقیت در چالش «${challenge.title}» ثبت‌نام کردید!`);
+      await fetchEntranceData();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'خطا در ثبت‌نام در چالش';
+      toast.error(msg);
+    }
+  };
+
+  const handleDownloadPackage = (challenge: EntranceChallenge) => {
+    if (challenge.driveUrl) {
+      window.open(challenge.driveUrl, '_blank', 'noopener,noreferrer');
+      toast.success(`پوشه گوگل درایو «${challenge.title}» در تب جدید باز شد.`);
+      return;
+    }
+
+    const downloadUrl = challenge.packageDownloadUrl || `/api/club/packages/${challenge.packageFile}`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.setAttribute('download', challenge.packageFile);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(`دانلود بسته چالش «${challenge.title}» آغاز شد.`);
+  };
+
+  const handleOpenReportModal = (challenge: EntranceChallenge) => {
+    setActiveChallengeForReport(challenge);
+    setActiveReportTab('NEW_REPORT');
+    setReportTitle('');
+    setReportContent('');
+    setReportHours('');
+    setReportLinks('');
+    setReportDate(new Date().toISOString().split('T')[0]);
+  };
+
+  const handleSubmitNewReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeChallengeForReport?.submission?.id) {
+      toast.error('پروژه فعال یافت نشد.');
+      return;
+    }
+    if (!reportContent.trim()) {
+      toast.error('لطفاً شرح اقدامات و کارهای انجام‌شده را وارد کنید.');
+      return;
+    }
+
+    try {
+      setSubmittingReport(true);
+      const linksArray = reportLinks
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean);
+
+      await clubApi.submitWorkReport(activeChallengeForReport.submission.id, {
+        reportDate: reportDate ? new Date(reportDate).toISOString() : new Date().toISOString(),
+        title: reportTitle.trim() || 'گزارش پیشرفت روزانه',
+        content: reportContent.trim(),
+        workDuration: reportHours ? Number(reportHours) : undefined,
+        links: linksArray.length > 0 ? linksArray : undefined,
+      });
+
+      toast.success('گزارش پیشرفت کار شما با موفقیت ثبت گردید.');
+      setReportTitle('');
+      setReportContent('');
+      setReportHours('');
+      setReportLinks('');
+      await fetchEntranceData();
+      setActiveReportTab('REPORT_HISTORY');
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'خطا در ثبت گزارش کار';
+      toast.error(msg);
+    } finally {
+      setSubmittingReport(false);
+    }
+  };
+
+  const handleFinalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeChallengeForReport?.submission?.id) return;
+    try {
+      setSubmittingFinal(true);
+      await clubApi.submitChallenge(activeChallengeForReport.id, {
+        repositoryUrl: repoUrl.trim() || undefined,
+        demoUrl: demoUrl.trim() || undefined,
+        figmaUrl: figmaUrl.trim() || undefined,
+        submissionNotes: submissionNotes.trim() || undefined,
+      });
+      toast.success('پروژه شما با موفقیت ارسال شد و به کارتابل داوران منتقل گردید.');
+      setActiveChallengeForReport(null);
+      await fetchEntranceData();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'خطا در ارسال نهایی پروژه';
+      toast.error(msg);
+    } finally {
+      setSubmittingFinal(false);
+    }
+  };
+
+  const getDeptBadge = (dept: ClubDepartment) => {
     switch (dept) {
       case 'ENGINEER':
         return {
-          title: 'دپارتمان مهندسا (Tech & Dev)',
+          label: 'دپارتمان مهندسا (Tech)',
           icon: Code2,
-          color: 'text-indigo-400',
-          bg: 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300',
-          cardGradient: 'from-slate-900 via-indigo-950 to-slate-900',
-          accent: '#6366F1',
+          className: 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30',
         };
       case 'ARTIST':
         return {
-          title: 'دپارتمان آرتیستا (UI/UX & Creative)',
+          label: 'دپارتمان آرتیستا (Design & Media)',
           icon: Palette,
-          color: 'text-pink-400',
-          bg: 'bg-pink-500/10 border-pink-500/30 text-pink-300',
-          cardGradient: 'from-slate-900 via-pink-950 to-slate-900',
-          accent: '#EC4899',
+          className: 'bg-pink-500/15 text-pink-400 border border-pink-500/30',
         };
       case 'JACK_OF_ALL_TRADES':
         return {
-          title: 'دپارتمان آچار فرانسه‌ها (Product & All-Rounder)',
+          label: 'دپارتمان آچارفرانسه‌ها (Product & Ops)',
           icon: Wrench,
-          color: 'text-amber-400',
-          bg: 'bg-amber-500/10 border-amber-500/30 text-amber-300',
-          cardGradient: 'from-slate-900 via-amber-950 to-slate-900',
-          accent: '#F59E0B',
-        };
-      default:
-        return {
-          title: 'در حال تعیین دپارتمان با چالش ورودی',
-          icon: Sparkles,
-          color: 'text-primary',
-          bg: 'bg-primary/10 border-primary/30 text-primary',
-          cardGradient: 'from-slate-900 via-slate-800 to-slate-900',
-          accent: '#59BBAF',
+          className: 'bg-amber-500/15 text-amber-400 border border-amber-500/30',
         };
     }
   };
-
-  const getGradeConfig = (grade: ClubGrade | null) => {
-    switch (grade) {
-      case 'A':
-        return {
-          title: 'گرید A (طلایی / نخبه)',
-          desc: 'بالاترین سطح نخبگی — مجوز رسمی ورود به پروژه‌های استودیو',
-          color: 'text-amber-400',
-          badge: 'bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black',
-        };
-      case 'B':
-        return {
-          title: 'گرید B (نقره‌ای / حرفه‌ای)',
-          desc: 'مهارت تثبیت‌شده — در مسیر رسیدن به سطح استودیو',
-          color: 'text-slate-300',
-          badge: 'bg-gradient-to-r from-slate-200 to-slate-400 text-slate-950 font-black',
-        };
-      case 'C':
-        return {
-          title: 'گرید C (برنزی / ورودی)',
-          desc: 'ورود موفق به باشگاه — نیازمند حل چالش‌های ارتقای سطح',
-          color: 'text-amber-600',
-          badge: 'bg-amber-700/30 text-amber-300 border border-amber-600/40 font-black',
-        };
-      default:
-        return {
-          title: 'در انتظار تعیین سطح',
-          desc: 'با شرکت در چالش ورودی گرید شما مشخص می‌شود',
-          color: 'text-gray-400',
-          badge: 'bg-slate-800 text-slate-300 font-bold',
-        };
-    }
-  };
-
-  const currentData = data || DEFAULT_PREVIEW_DATA;
-  const { membership, roadmap, progressPercentage, activeChallengesCount, canStartNewChallenge } = currentData;
-  const isMember = membership.status === 'ACTIVE_MEMBER' || membership.status === 'STUDIO_READY';
-  const deptConfig = getDeptConfig(membership.department);
-  const gradeConfig = getGradeConfig(membership.grade);
 
   const filteredChallenges = challenges.filter((c) => {
     if (selectedDeptFilter === 'ALL') return true;
@@ -184,690 +222,676 @@ export const ClubPage: React.FC = () => {
   });
 
   return (
-    <UnderDevelopmentOverlay
-      title="باشگاه کارآفرینی و کسب‌وکار رُکاد"
-      subtitle="Rokad Entrepreneurship & Business Club"
-      description="محیط تیم‌سازی دانش‌آموزی، انجام مأموریت‌ها و چالش‌های دنیای واقعی کسب‌وکار، و ورود به استودیوی محصول در حال توسعه نهایی است و به زودی رونمایی می‌شود."
-      badgeText="باشگاه کسب‌وکار • در حال توسعه"
-      icon={Rocket}
-      accentColor="purple"
-    >
-      <div className="max-w-4xl mx-auto space-y-6 pb-20 animate-in fade-in duration-300" data-theme="club">
-      {/* Admin Quick Jump Banner */}
+    <div className="w-full max-w-6xl mx-auto px-3 sm:px-6 space-y-6 pb-24 animate-in fade-in duration-300">
+      {/* 1. Admin Quick Jump Banner */}
       {isAdmin && (
         <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 rounded-2xl p-4 text-stone-950 font-bold flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md border-2 border-stone-950">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-stone-950 text-amber-400 flex items-center justify-center shrink-0 shadow-inner">
-              <Crown className="w-5 h-5" />
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="w-11 h-11 rounded-xl bg-stone-950 text-amber-400 flex items-center justify-center shrink-0 shadow-inner">
+              <Crown className="w-6 h-6" />
             </div>
             <div>
-              <div className="font-black text-sm">پنل مدیریت باشگاه کسب‌وکار رُکاد</div>
-              <div className="text-xs text-stone-900/80 font-medium">
-                شما به عنوان مدیر وارد شده‌اید. برای رده‌بندی اعضا، ساخت نقشه راه داینامیک، تعریف چالش‌ها و داوری پروژه‌ها کلیک کنید:
+              <div className="font-black text-sm sm:text-base">پنل مدیریت باشگاه کسب‌وکار رُکاد</div>
+              <div className="text-xs sm:text-sm text-stone-900/80 font-medium">
+                مشاهده کارتابل دانش‌آموزان و گزارش‌های ثبت‌شده
               </div>
             </div>
           </div>
           <Button
             onClick={() => navigate('/app/admin/club')}
-            className="bg-stone-950 hover:bg-stone-900 text-amber-400 font-black text-xs h-9 px-4 rounded-xl shrink-0 gap-1.5 shadow-sm"
+            className="w-full sm:w-auto min-h-[44px] bg-stone-950 hover:bg-stone-900 text-amber-400 font-black text-xs sm:text-sm px-5 rounded-xl shrink-0 gap-2 shadow-sm"
           >
-            <span>ورود به پنل مدیریت باشگاه</span>
-            <ArrowRight className="w-3.5 h-3.5 rotate-180" />
+            <span>ورود به کارتابل مدیران باشگاه</span>
+            <ArrowRight className="w-4 h-4 rotate-180" />
           </Button>
         </div>
       )}
 
-      {/* Teacher Quick Jump Banner */}
-      {isTeacher && (
-        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 rounded-2xl p-4 text-white font-bold flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md border-2 border-stone-950">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-stone-950 text-blue-400 flex items-center justify-center shrink-0 shadow-inner">
-              <Award className="w-5 h-5" />
+      {/* 2. Notice / Call for Challengers Hero Banner */}
+      <div className="relative overflow-hidden rounded-2xl border-2 border-amber-500/40 bg-gradient-to-br from-amber-950/40 via-stone-900 to-purple-950/40 p-4 sm:p-7 backdrop-blur shadow-xl">
+        <div className="absolute top-0 right-0 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 relative z-10">
+          <div className="space-y-3 flex-1">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs sm:text-sm font-black">
+              <Sparkles className="w-4 h-4 text-amber-400 animate-spin" style={{ animationDuration: '6s' }} />
+              <span>پرتال اصلی باشگاه در حال به‌روزرسانی • فراخوان رسمی ورود</span>
             </div>
-            <div>
-              <div className="font-black text-sm">کارتابل ارزیابی و تأییدیه‌های باشگاه</div>
-              <div className="text-xs text-white/80 font-medium">
-                شما به عنوان مربی وارد شده‌اید. برای بررسی شایستگی‌ها و ثبت تأییدیه دروس دانش‌آموزان کلیک کنید:
-              </div>
-            </div>
-          </div>
-          <Button
-            onClick={() => navigate('/app/teacher/club-approvals')}
-            className="bg-stone-950 hover:bg-stone-900 text-white font-black text-xs h-9 px-4 rounded-xl shrink-0 gap-1.5 shadow-sm"
-          >
-            <span>ورود به کارتابل تأییدیه‌ها</span>
-            <ArrowRight className="w-3.5 h-3.5 rotate-180" />
-          </Button>
-        </div>
-      )}
 
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8A38F5]/10 text-[#8A38F5] border border-[#8A38F5]/25 text-xs font-black">
-            <Rocket className="w-3.5 h-3.5" />
-            <span>باشگاه کسب‌وکار و کارآفرینی رُکاد</span>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-black text-ink-darker dark:text-white">
-            مرکز نخبگان و شتاب‌دهی مهارتی
-          </h1>
-        </div>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight leading-snug">
+              چالش ورودی به باشگاه کسب‌وکار رُکاد
+            </h1>
 
-        {/* Tab Switcher */}
-        <div className="flex p-1 bg-white dark:bg-[#151C28] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xs self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setActiveTab('roadmap')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'roadmap'
-                ? 'bg-[#8A38F5] text-white shadow-xs font-black'
-                : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-            }`}
-          >
-            مسیر رودمپ پذیرش
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('challenges')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-              activeTab === 'challenges'
-                ? 'bg-[#8A38F5] text-white shadow-xs font-black'
-                : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-            }`}
-          >
-            <span>چالش‌های مهارتی</span>
-            {activeChallengesCount > 0 && (
-              <span className="w-4 h-4 rounded-full bg-amber-400 text-slate-900 text-[10px] font-black flex items-center justify-center">
-                {activeChallengesCount}
+            <p className="text-sm sm:text-base text-stone-200 leading-relaxed max-w-3xl">
+              صفحات کامل باشگاه و استودیوی محصول در حال بهینه‌سازی فنی است. تا زمان بازگشایی نهایی، برای ورود به
+              باشگاه و تعیین رده مهارتی خود، می‌توانید از بین ۹ مأموریت واقعی زیر، حداکثر در{' '}
+              <strong className="text-amber-400 font-black">۲ چالش هم‌زمان</strong> شرکت کنید.
+              مهلت انجام تمامی چالش‌ها <strong className="text-emerald-400 font-black">۱۰ روز</strong> است و
+              می‌توانید گزارش‌های روزانه کار خود را مستقیماً ثبت کنید.
+            </p>
+          </div>
+
+          {/* Capacity Counter Meter */}
+          <div className="w-full lg:w-auto shrink-0 bg-stone-950/90 border border-stone-800 rounded-2xl p-4 sm:p-5 text-center min-w-[220px] shadow-lg">
+            <div className="text-xs sm:text-sm text-stone-400 font-bold mb-1">ظرفیت پروژه‌های هم‌زمان شما</div>
+            <div className="flex items-center justify-center gap-2 text-3xl font-black text-white my-1">
+              <span className={activeCount >= maxAllowed ? 'text-amber-400' : 'text-emerald-400'}>
+                {toPersianDigits(activeCount)}
               </span>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('studio')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'studio'
-                ? 'bg-[#8A38F5] text-white shadow-xs font-black'
-                : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-            }`}
-          >
-            رُکاد استودیو
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('rotello')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-              activeTab === 'rotello'
-                ? 'bg-[#8A38F5] text-white shadow-xs font-black'
-                : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>روتلو</span>
-            {isMember && (
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* ─────────────────────────────────────────────────────────────────────────────
-          VIP Digital Club Card
-          ───────────────────────────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-[#111827] via-[#1E293B] to-[#0F172A] text-white border-2 border-slate-700/60 shadow-2xl">
-        {/* Glow orb */}
-        <div
-          className="absolute -top-24 -left-24 w-80 h-80 rounded-full blur-3xl opacity-30 pointer-events-none"
-          style={{ backgroundColor: deptConfig.accent }}
-        />
-
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-slate-800 border-2 border-white/20 overflow-hidden flex items-center justify-center shadow-lg">
-                {membership.user?.avatarUrl ? (
-                  <img
-                    src={membership.user.avatarUrl}
-                    alt={membership.user.firstName}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <Users className="w-8 h-8 text-slate-400" />
-                )}
-              </div>
-              {isMember && (
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-md">
-                  <Crown className="w-3.5 h-3.5" />
-                </div>
+              <span className="text-stone-500 text-xl">/</span>
+              <span>{toPersianDigits(maxAllowed)}</span>
+            </div>
+            <div className="text-xs sm:text-sm font-bold mt-1">
+              {activeCount >= maxAllowed ? (
+                <span className="text-amber-400">ظرفیت تکمیل است (۲ از ۲)</span>
+              ) : (
+                <span className="text-emerald-400">
+                  {toPersianDigits(maxAllowed - activeCount)} ظرفیت خالی دارید
+                </span>
               )}
             </div>
-
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-black">
-                  {membership.user?.firstName} {membership.user?.lastName}
-                </h2>
-                {isMember && (
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold">
-                    عضو رسمی
-                  </span>
-                )}
-              </div>
-
-              <div className="text-xs text-slate-400 font-mono">
-                کد دانش‌آموزی: {membership.user?.studentProfile?.studentCode || 'نامشخص'}
-              </div>
-
-              <div className="pt-1">
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border ${deptConfig.bg}`}>
-                  <deptConfig.icon className="w-3.5 h-3.5" />
-                  <span>{deptConfig.title}</span>
-                </span>
-              </div>
-            </div>
           </div>
-
-          {/* Right Badges & Level Status */}
-          <div className="flex flex-col sm:items-end gap-2.5 w-full md:w-auto pt-3 md:pt-0 border-t md:border-t-0 border-slate-700/60">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400">سطح باشگاهی:</span>
-              <span className={`px-3 py-1 rounded-xl text-xs ${gradeConfig.badge}`}>
-                {gradeConfig.title}
-              </span>
-            </div>
-
-            {membership.grade === 'A' ? (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-xs font-black shadow-md">
-                <Sparkles className="w-4 h-4" />
-                <span>آماده تخصیص به پروژه‌های استودیو</span>
-              </div>
-            ) : isMember ? (
-              <span className="text-[11px] text-slate-400">
-                تارگت بعدی: <strong className="text-amber-400">ارتقا به گرید A</strong> برای ورود به استودیو
-              </span>
-            ) : (
-              <span className="text-[11px] text-primary">
-                تکمیل رودمپ و شرکت در چالش ورودی الزامی است
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Dynamic Progress Bar Section */}
-        <div className="mt-6 pt-5 border-t border-slate-700/60 space-y-2">
-          <div className="flex items-center justify-between text-xs font-bold">
-            <div className="flex items-center gap-1.5 text-slate-300">
-              <Flame className="w-4 h-4 text-orange-400" />
-              <span>پیشرفت پذیرش و عضویت در باشگاه:</span>
-            </div>
-            <span className="font-mono text-[#8A38F5] text-sm font-black">
-              %{progressPercentage}
-            </span>
-          </div>
-
-          <div className="w-full h-3 rounded-full bg-slate-800 border border-slate-700 overflow-hidden relative">
-            <div
-              className="h-full bg-gradient-to-r from-[#8A38F5] via-[#A855F7] to-[#C084FC] rounded-full transition-all duration-700 shadow-sm"
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
-
-          {!isMember && (
-            <p className="text-[11px] text-slate-400 text-left pt-0.5">
-              {progressPercentage < 100
-                ? `هنوز ${100 - progressPercentage}٪ تا عضویت کامل در باشگاه باقی‌مانده است. چالش‌های زیر را تکمیل کنید.`
-                : 'رودمپ با موفقیت تکمیل شد! منتظر صدور کارت عضویت باشید.'}
-            </p>
-          )}
         </div>
       </div>
 
-      {/* ─────────────────────────────────────────────────────────────────────────────
-          Tab 1: Admission Roadmap Stepper
-          ───────────────────────────────────────────────────────────────────────────── */}
-      {activeTab === 'roadmap' && (
-        <div className="space-y-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-black text-ink-darker dark:text-white">
-                مراحل و چک‌لیست ورود به باشگاه
-              </h3>
-              <p className="text-xs text-gray-500">
-                هر مرحله وزن مشخصی در پروگرس‌بار عضویت شما دارد.
-              </p>
-            </div>
-            <span className="text-xs font-mono font-bold text-gray-500">
-              {roadmap.filter((r) => r.progress?.status === 'APPROVED').length} از {roadmap.length} مرحله
-            </span>
-          </div>
+      {/* 3. Department Filters Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-stone-900/70 border border-stone-800 p-2 sm:p-3 rounded-2xl">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          <Button
+            size="sm"
+            variant={selectedDeptFilter === 'ALL' ? 'primary' : 'ghost'}
+            onClick={() => setSelectedDeptFilter('ALL')}
+            className={`min-h-[44px] px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap ${
+              selectedDeptFilter === 'ALL' ? 'bg-primary text-primary-foreground shadow-md' : 'text-stone-300'
+            }`}
+          >
+            همه چالش‌ها ({toPersianDigits(challenges.length)})
+          </Button>
 
-          <div className="space-y-3">
-            {roadmap.map((m, idx) => {
-              const isApproved = m.progress?.status === 'APPROVED';
-              const isPending = m.progress?.status === 'PENDING';
+          <Button
+            size="sm"
+            variant={selectedDeptFilter === 'ENGINEER' ? 'primary' : 'ghost'}
+            onClick={() => setSelectedDeptFilter('ENGINEER')}
+            className={`min-h-[44px] px-4 rounded-xl text-xs sm:text-sm font-bold gap-2 whitespace-nowrap ${
+              selectedDeptFilter === 'ENGINEER' ? 'bg-indigo-600 text-white shadow-md' : 'text-stone-300'
+            }`}
+          >
+            <Code2 className="w-4 h-4" />
+            <span>مهندسا</span>
+          </Button>
 
-              return (
-                <Card
-                  key={m.id}
-                  className={`rounded-2xl border transition-all ${
-                    isApproved
-                      ? 'border-emerald-500/40 bg-emerald-50/50 dark:bg-emerald-950/15 shadow-2xs'
-                      : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-[#151C28]'
-                  }`}
-                >
-                  <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-start gap-3.5">
-                      <div
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                          isApproved
-                            ? 'bg-emerald-500 text-white shadow-xs'
-                            : 'bg-gray-100 dark:bg-slate-800 text-gray-400'
-                        }`}
-                      >
-                        {isApproved ? (
-                          <Check className="w-5 h-5 stroke-[3]" />
-                        ) : (
-                          <span className="font-mono font-black text-sm">{idx + 1}</span>
-                        )}
-                      </div>
+          <Button
+            size="sm"
+            variant={selectedDeptFilter === 'ARTIST' ? 'primary' : 'ghost'}
+            onClick={() => setSelectedDeptFilter('ARTIST')}
+            className={`min-h-[44px] px-4 rounded-xl text-xs sm:text-sm font-bold gap-2 whitespace-nowrap ${
+              selectedDeptFilter === 'ARTIST' ? 'bg-pink-600 text-white shadow-md' : 'text-stone-300'
+            }`}
+          >
+            <Palette className="w-4 h-4" />
+            <span>آرتیستا</span>
+          </Button>
 
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h4 className="font-black text-sm text-ink-darker dark:text-white">
-                            {m.title}
-                          </h4>
-                          <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 text-[10px] font-bold">
-                            وزن: {m.weight}٪
-                          </span>
-                          {m.type === 'TEACHER_APPROVAL' && (
-                            <span className="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold">
-                              نیازمند تأییدیه مربی
-                            </span>
-                          )}
-                          {m.type === 'PLACEMENT_CHALLENGE' && (
-                            <span className="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
-                              چالش عملی
-                            </span>
-                          )}
-                        </div>
-
-                        {m.description && (
-                          <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                            {m.description}
-                          </p>
-                        )}
-
-                        {/* Approval note */}
-                        {isApproved && m.progress?.notes && (
-                          <div className="mt-2 text-[11px] text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 p-2 rounded-xl border border-emerald-500/20">
-                            <strong>بازخورد:</strong> {m.progress.notes}
-                            {m.progress.approvedBy && (
-                              <span className="opacity-80 block text-[10px] mt-0.5">
-                                تایید شده توسط {m.progress.approvedBy.firstName} {m.progress.approvedBy.lastName}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Action on this milestone */}
-                    <div className="self-end sm:self-center shrink-0">
-                      {isApproved ? (
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span>تکمیل شد</span>
-                        </div>
-                      ) : m.type === 'PLACEMENT_CHALLENGE' ? (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => setActiveTab('challenges')}
-                          className="text-xs font-bold"
-                        >
-                          مشاهده چالش‌ها
-                        </Button>
-                      ) : (
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-500 text-xs font-bold">
-                          <CircleDashed className="w-4 h-4 animate-spin text-gray-400" />
-                          <span>در انتظار ارزیابی</span>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+          <Button
+            size="sm"
+            variant={selectedDeptFilter === 'JACK_OF_ALL_TRADES' ? 'primary' : 'ghost'}
+            onClick={() => setSelectedDeptFilter('JACK_OF_ALL_TRADES')}
+            className={`min-h-[44px] px-4 rounded-xl text-xs sm:text-sm font-bold gap-2 whitespace-nowrap ${
+              selectedDeptFilter === 'JACK_OF_ALL_TRADES' ? 'bg-amber-600 text-white shadow-md' : 'text-stone-300'
+            }`}
+          >
+            <Wrench className="w-4 h-4" />
+            <span>آچارفرانسه‌ها</span>
+          </Button>
         </div>
-      )}
 
-      {/* ─────────────────────────────────────────────────────────────────────────────
-          Tab 2: Challenges Catalog
-          ───────────────────────────────────────────────────────────────────────────── */}
-      {activeTab === 'challenges' && (
-        <div className="space-y-6">
-          {/* Header & Submissions Status Banner */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 shadow-2xs">
-            <div className="space-y-1">
-              <h3 className="text-sm font-black text-ink-darker dark:text-white flex items-center gap-2">
-                <Target className="w-4 h-4 text-primary" />
-                <span>بانک چالش‌های ورود و ارتقای گرید</span>
-              </h3>
-              <p className="text-xs text-gray-500">
-                هر دانش‌آموز مجاز است همزمان حداکثر روی ۲ چالش فعال تمرکز کند.
-              </p>
-            </div>
+        <div className="hidden lg:flex items-center gap-1.5 text-xs text-stone-400 px-2 shrink-0">
+          <Info className="w-4 h-4 text-stone-500" />
+          <span>پکیج هر چالش حاوی راهنما و مستندات کامل است.</span>
+        </div>
+      </div>
 
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-gray-600 dark:text-gray-300">
-                چالش‌های فعال شما:
-              </span>
-              <span
-                className={`px-3 py-1 rounded-xl text-xs font-mono font-black border ${
-                  activeChallengesCount >= 2
-                    ? 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
-                    : 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
+      {/* 4. Challenges Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-72 rounded-2xl bg-stone-900/60 animate-pulse border border-stone-800" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredChallenges.map((challenge) => {
+            const dept = getDeptBadge(challenge.department);
+            const DeptIcon = dept.icon;
+            const sub = challenge.submission;
+            const isInProgress = sub?.status === 'IN_PROGRESS';
+            const isSubmitted = sub?.status === 'SUBMITTED';
+            const isGraded = sub?.status === 'GRADED';
+
+            return (
+              <Card
+                key={challenge.slug}
+                className={`flex flex-col justify-between transition-all duration-200 border-2 rounded-2xl overflow-hidden ${
+                  isInProgress
+                    ? 'border-emerald-500/50 bg-gradient-to-b from-emerald-950/25 via-stone-900 to-stone-900 shadow-xl shadow-emerald-950/20'
+                    : isSubmitted
+                    ? 'border-blue-500/40 bg-gradient-to-b from-blue-950/25 to-stone-900'
+                    : 'border-stone-800 bg-stone-900/90 hover:border-stone-700'
                 }`}
               >
-                {activeChallengesCount} از ۲ چالش مجاز
-              </span>
-            </div>
-          </div>
-
-          {/* Department Filter Pills */}
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedDeptFilter('ALL')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                selectedDeptFilter === 'ALL'
-                  ? 'bg-[#8A38F5] text-white border-[#8A38F5] shadow-xs font-black'
-                  : 'bg-white dark:bg-[#151C28] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800 hover:border-[#8A38F5]'
-              }`}
-            >
-              همه دپارتمان‌ها
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedDeptFilter('ENGINEER')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
-                selectedDeptFilter === 'ENGINEER'
-                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                  : 'bg-white dark:bg-[#151C28] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800 hover:border-indigo-500'
-              }`}
-            >
-              <Code2 className="w-3.5 h-3.5" />
-              <span>مهندسا</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedDeptFilter('ARTIST')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
-                selectedDeptFilter === 'ARTIST'
-                  ? 'bg-pink-600 text-white border-pink-600 shadow-xs'
-                  : 'bg-white dark:bg-[#151C28] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800 hover:border-pink-500'
-              }`}
-            >
-              <Palette className="w-3.5 h-3.5" />
-              <span>آرتیستا</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedDeptFilter('JACK_OF_ALL_TRADES')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
-                selectedDeptFilter === 'JACK_OF_ALL_TRADES'
-                  ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
-                  : 'bg-white dark:bg-[#151C28] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800 hover:border-amber-500'
-              }`}
-            >
-              <Wrench className="w-3.5 h-3.5" />
-              <span>آچار فرانسه‌ها</span>
-            </button>
-          </div>
-
-          {/* Challenges Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredChallenges.map((ch) => {
-              const chDept = getDeptConfig(ch.department);
-              const ChDeptIcon = chDept.icon;
-              const hasEnrolled = ch.isEnrolled;
-              const hasGraded = ch.isGraded;
-
-              return (
-                <Card
-                  key={ch.id}
-                  className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#151C28] shadow-sm hover:shadow-md transition-all flex flex-col justify-between overflow-hidden"
-                >
-                  <CardContent className="p-5 space-y-4">
+                <CardContent className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                  {/* Top Header: Dept Badge & Status */}
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between gap-2">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${chDept.bg}`}>
-                        <ChDeptIcon className="w-3.5 h-3.5" />
-                        <span>{chDept.title}</span>
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${dept.className}`}>
+                        <DeptIcon className="w-3.5 h-3.5" />
+                        <span>{dept.label}</span>
                       </span>
 
-                      {ch.type === 'PLACEMENT' ? (
-                        <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
-                          چالش ورودی
+                      {isInProgress && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 animate-pulse">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>در حال انجام</span>
                         </span>
-                      ) : (
-                        <span className="text-[10px] font-bold text-[#8A38F5] dark:text-[#C084FC] bg-[#8A38F5]/10 px-2 py-0.5 rounded-md border border-[#8A38F5]/30">
-                          ارتقای گرید
+                      )}
+                      {isSubmitted && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-blue-500/20 text-blue-400 border border-blue-500/40">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>تحویل داده‌شده</span>
+                        </span>
+                      )}
+                      {isGraded && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                          <span>نمره: {toPersianDigits(sub.score || 0)}</span>
                         </span>
                       )}
                     </div>
 
-                    <div className="space-y-1.5">
-                      <h4 className="font-black text-sm text-ink-darker dark:text-white line-clamp-1">
-                        {ch.title}
-                      </h4>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
-                        {ch.description}
-                      </p>
-                    </div>
+                    <h3 className="text-base sm:text-lg font-bold text-white leading-snug line-clamp-2">
+                      {challenge.title}
+                    </h3>
 
-                    <div className="flex items-center gap-4 text-xs font-mono text-gray-500 pt-1 border-t border-gray-100 dark:border-gray-800">
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-gray-400" />
-                        <span>{ch.maxDays} روز مهلت</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Trophy className="w-3.5 h-3.5 text-amber-500" />
-                        <span>{ch.maxScore} نمره</span>
-                      </div>
-                    </div>
-                  </CardContent>
-
-                  <div className="p-4 pt-0">
-                    <Button
-                      variant={hasEnrolled ? 'primary' : 'outline'}
-                      onClick={() => navigate(`/app/club/challenges/${ch.id}`)}
-                      className={`w-full text-xs font-bold flex items-center justify-center gap-1.5 ${
-                        hasEnrolled
-                          ? 'bg-[#8A38F5] hover:bg-[#7828E0] text-white shadow-[2px_2px_0_#5B21B6]'
-                          : 'border-[#8A38F5]/40 text-[#8A38F5] hover:bg-[#8A38F5]/10'
-                      }`}
-                    >
-                      {hasGraded ? (
-                        <>
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                          <span>مشاهده کارنامه و نمره</span>
-                        </>
-                      ) : hasEnrolled ? (
-                        <>
-                          <Send className="w-4 h-4" />
-                          <span>ادامه و ارسال پروژه</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>مشاهده و شروع چالش</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </>
-                      )}
-                    </Button>
+                    <p className="text-xs sm:text-sm text-stone-300 leading-relaxed line-clamp-3">
+                      {challenge.description}
+                    </p>
                   </div>
-                </Card>
-              );
-            })}
-          </div>
+
+                  {/* Middle Meta: Tags & Duration */}
+                  <div className="space-y-3 pt-3 border-t border-stone-800">
+                    <div className="flex flex-wrap gap-1.5">
+                      {challenge.tags.slice(0, 3).map((tag, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2.5 py-1 rounded-lg bg-stone-800 text-stone-300 text-xs font-medium"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs sm:text-sm text-stone-300">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-4 h-4 text-emerald-400" />
+                        <span>مهلت انجام: <strong className="text-white font-bold">{toPersianDigits(challenge.maxDays || 10)} روز</strong></span>
+                      </div>
+                      {isInProgress && sub && (
+                        <div className="text-emerald-400 font-black">
+                          {toPersianDigits(sub.reportsCount || 0)} گزارش ثبت‌شده
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Bottom Actions: Download ZIP + Start / Report */}
+                  <div className="space-y-2.5 pt-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDownloadPackage(challenge)}
+                      className="w-full min-h-[44px] text-xs sm:text-sm font-bold gap-2 border-stone-700 hover:bg-stone-800 text-stone-100 rounded-xl"
+                    >
+                      <Download className="w-4 h-4 text-amber-400" />
+                      <span>دانلود بسته چالش (ZIP)</span>
+                    </Button>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setSelectedChallengeForBrief(challenge)}
+                        className="flex-1 min-h-[44px] text-xs sm:text-sm font-bold text-stone-300 hover:text-white hover:bg-stone-800 rounded-xl"
+                      >
+                        <span>مشاهده بریف</span>
+                      </Button>
+
+                      {isInProgress ? (
+                        <Button
+                          size="sm"
+                          onClick={() => handleOpenReportModal(challenge)}
+                          className="flex-1 min-h-[44px] text-xs sm:text-sm font-black bg-emerald-600 hover:bg-emerald-500 text-white gap-1.5 rounded-xl shadow-md"
+                        >
+                          <FileText className="w-4 h-4" />
+                          <span>ثبت گزارش کار</span>
+                        </Button>
+                      ) : isSubmitted ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled
+                          className="flex-1 min-h-[44px] text-xs sm:text-sm font-bold text-blue-300 bg-blue-950/60 rounded-xl"
+                        >
+                          در انتظار داوری
+                        </Button>
+                      ) : isGraded ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled
+                          className="flex-1 min-h-[44px] text-xs sm:text-sm font-bold text-amber-300 bg-amber-950/60 rounded-xl"
+                        >
+                          پایان یافته
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          disabled={!canStartNew}
+                          onClick={() => handleStartChallenge(challenge)}
+                          className="flex-1 min-h-[44px] text-xs sm:text-sm font-black bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 rounded-xl disabled:opacity-50 shadow-md"
+                        >
+                          <Rocket className="w-4 h-4" />
+                          <span>شروع چالش</span>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
-      {/* ─────────────────────────────────────────────────────────────────────────────
-          Tab 3: Rokad Studio Showcase
-          ───────────────────────────────────────────────────────────────────────────── */}
-      {activeTab === 'studio' && (
-        <div className="space-y-6">
-          <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-[#1E1B4B] via-[#312E81] to-[#0F172A] text-white border-2 border-indigo-500/30 shadow-xl">
-            <div className="relative z-10 space-y-3">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-xs font-bold">
-                <Rocket className="w-3.5 h-3.5" />
-                <span>استارتاپ استودیو رُکاد (Startup Studio)</span>
-              </div>
-              <h2 className="text-xl sm:text-2xl font-black">
-                جایی که ایده‌ها تبدیل به محصولات واقعی می‌شوند
-              </h2>
-              <p className="text-xs sm:text-sm text-indigo-200 leading-relaxed max-w-2xl">
-                دانش‌آموزانی که در باشگاه به **گرید A** دست یابند، پس از تأیید نهایی راهبر، مستقیماً وارد تیم‌های تولید محصول و پروژه‌های تجاری استودیو می‌شوند و رزومه کاری حرفه‌ای می‌سازند.
-              </p>
+      {/* 5. Modal: Full Challenge Mission Brief */}
+      {selectedChallengeForBrief && (
+        <Modal
+          isOpen={!!selectedChallengeForBrief}
+          onClose={() => setSelectedChallengeForBrief(null)}
+          title={selectedChallengeForBrief.title}
+          maxWidth="2xl"
+        >
+          <div className="space-y-5 text-right p-1" dir="rtl">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs sm:text-sm font-bold ${getDeptBadge(selectedChallengeForBrief.department).className}`}>
+                {getDeptBadge(selectedChallengeForBrief.department).label}
+              </span>
+              <span className="text-xs sm:text-sm text-stone-300 font-bold">
+                مهلت انجام: {toPersianDigits(selectedChallengeForBrief.maxDays || 10)} روز
+              </span>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-5 rounded-3xl bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 space-y-3 shadow-2xs">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 flex items-center justify-center">
-                <Code2 className="w-6 h-6" />
-              </div>
-              <h4 className="font-black text-sm text-gray-900 dark:text-white">
-                تیم توسعه پلتفرم و زیرساخت
+            <div className="space-y-2">
+              <h4 className="text-sm sm:text-base font-bold text-amber-400 flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                <span>شرح صورت‌مسئله و مأموریت:</span>
               </h4>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                مشارکت در توسعه ماژول‌های بک‌اند، پایگاه داده و سیستم‌های بلادرنگ با راهنمایی مهندسان ارشد استودیو.
-              </p>
-            </div>
-
-            <div className="p-5 rounded-3xl bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 space-y-3 shadow-2xs">
-              <div className="w-12 h-12 rounded-2xl bg-pink-50 dark:bg-pink-950/40 text-pink-600 flex items-center justify-center">
-                <Palette className="w-6 h-6" />
+              <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 text-xs sm:text-sm text-stone-200 leading-relaxed whitespace-pre-line">
+                {selectedChallengeForBrief.missionBrief}
               </div>
-              <h4 className="font-black text-sm text-gray-900 dark:text-white">
-                لَب طراحی تجربه و رابط کاربری
-              </h4>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                طراحی محصول در مقیاس صنعتی، پرسوناشناسی، ساخت سیستم‌های طراحی و تست کاربردپذیری با کاربران واقعی.
-              </p>
             </div>
 
-            <div className="p-5 rounded-3xl bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 space-y-3 shadow-2xs">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 flex items-center justify-center">
-                <Wrench className="w-6 h-6" />
+            <div className="space-y-2">
+              <h4 className="text-sm sm:text-base font-bold text-stone-300 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-500" />
+                <span>قوانین و الزامات تحویل پروژه:</span>
+              </h4>
+              <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 text-xs sm:text-sm text-stone-300 leading-relaxed">
+                {selectedChallengeForBrief.rules}
               </div>
-              <h4 className="font-black text-sm text-gray-900 dark:text-white">
-                تیم رشد و مدیریت محصول
-              </h4>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                تحلیل داده‌های رفتاری کاربران، استراتژی لانچ و هک رشد در کنار منتورهای بیزینس و مدیران محصول.
-              </p>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* ─────────────────────────────────────────────────────────────────────────────
-          Tab 4: Rotello Platform Gateway
-          ───────────────────────────────────────────────────────────────────────────── */}
-      {activeTab === 'rotello' && (
-        <div className="space-y-6 animate-in fade-in duration-300">
-          <div className="relative overflow-hidden rounded-3xl p-6 sm:p-10 bg-gradient-to-br from-[#1C1427] via-[#2D1B4E] to-[#120B1C] text-white border-2 border-[#8A38F5]/40 shadow-2xl">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-[#8A38F5]/25 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-            <div className="relative z-10 space-y-6">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#8A38F5]/25 text-[#C084FC] border border-[#8A38F5]/40 text-xs font-bold">
-                  <Sparkles className="w-4 h-4 text-amber-300" />
-                  <span>پلتفرم تخصصی همکاری اعضای باشگاه رُکاد</span>
-                </div>
-                {isMember ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>عضویت رسمی باشگاه فعال است</span>
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold">
-                    <span>در حال طی نقشه راه پذیرش</span>
-                  </span>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-stone-800">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDownloadPackage(selectedChallengeForBrief)}
+                className="min-h-[44px] gap-2 text-xs sm:text-sm font-bold rounded-xl"
+              >
+                <Download className="w-4 h-4 text-amber-400" />
+                <span>دانلود بسته (.zip)</span>
+              </Button>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedChallengeForBrief(null)}
+                  className="min-h-[44px] flex-1 sm:flex-initial text-xs sm:text-sm text-stone-400 rounded-xl"
+                >
+                  بستن
+                </Button>
+                {!selectedChallengeForBrief.isEnrolled && (
+                  <Button
+                    size="sm"
+                    disabled={!canStartNew}
+                    onClick={() => {
+                      const ch = selectedChallengeForBrief;
+                      setSelectedChallengeForBrief(null);
+                      handleStartChallenge(ch);
+                    }}
+                    className="min-h-[44px] flex-1 sm:flex-initial text-xs sm:text-sm font-black bg-primary text-primary-foreground gap-1.5 rounded-xl"
+                  >
+                    <Rocket className="w-4 h-4" />
+                    <span>شروع این چالش</span>
+                  </Button>
                 )}
               </div>
-
-              <div className="space-y-3">
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
-                  سامانه مدیریت تسک‌ها و تیم‌های روتلو
-                </h2>
-                <p className="text-sm sm:text-base text-purple-100/90 leading-relaxed max-w-2xl font-normal">
-                  روتلو، فضای کار اشتراکی دانش‌آموزان و اعضای باشگاه کسب‌وکار رُکاد است؛ جایی برای مدیریت تسک‌های اسپرینت، اشتراک کارهای تیمی، پورتفولیو و تعامل نزدیک با منتورهای صنعتی.
-                </p>
-              </div>
-
-              {/* Direct Entry Button */}
-              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-                <a
-                  href="https://rotello.vercel.app/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-[#8A38F5] hover:bg-[#7828E0] text-white font-black text-sm shadow-[3px_3px_0_#5B21B6] hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer text-center group"
-                >
-                  <Rocket className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                  <span>ورود مستقیم به سامانه روتلو</span>
-                  <ExternalLink className="w-4 h-4 opacity-80" />
-                </a>
-
-                <div className="text-xs text-purple-200/80 font-mono text-center sm:text-right">
-                  آدرس سامانه: rotello.vercel.app
-                </div>
-              </div>
             </div>
           </div>
-
-          {/* Rotello Feature Highlights */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-5 rounded-3xl bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 space-y-3 shadow-2xs hover:border-[#8A38F5]/50 transition-colors">
-              <div className="w-12 h-12 rounded-2xl bg-[#8A38F5]/10 text-[#8A38F5] flex items-center justify-center">
-                <Target className="w-6 h-6" />
-              </div>
-              <h4 className="font-black text-sm text-gray-900 dark:text-white">
-                مدیریت تسک‌ها و اسپرینت‌ها
-              </h4>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                بورد کانبان و برنامه‌ریزی هفتگی پروژه‌ها جهت تحویل به موقع چالش‌ها و مایلسون‌های باشگاه.
-              </p>
-            </div>
-
-            <div className="p-5 rounded-3xl bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 space-y-3 shadow-2xs hover:border-[#8A38F5]/50 transition-colors">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center">
-                <Users className="w-6 h-6" />
-              </div>
-              <h4 className="font-black text-sm text-gray-900 dark:text-white">
-                تیم‌سازی و اشتراک تجارب
-              </h4>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                همکاری بین دپارتمان‌های مهندسی، طراحی و مدیریت محصول برای ساخت پروژه‌های میان‌رشته‌ای.
-              </p>
-            </div>
-
-            <div className="p-5 rounded-3xl bg-white dark:bg-[#151C28] border border-gray-200 dark:border-gray-800 space-y-3 shadow-2xs hover:border-[#8A38F5]/50 transition-colors">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 flex items-center justify-center">
-                <Trophy className="w-6 h-6" />
-              </div>
-              <h4 className="font-black text-sm text-gray-900 dark:text-white">
-                ساخت پورتفولیو و رزومه
-              </h4>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                مستندسازی خروجی‌های واقعی چالش‌ها و اخذ تأییدیه فنی برای ارتقا به گرید A و استودیو.
-              </p>
-            </div>
-          </div>
-        </div>
+        </Modal>
       )}
-      </div>
-    </UnderDevelopmentOverlay>
+
+      {/* 6. Modal: Work Reports & Final Submission */}
+      {activeChallengeForReport && (
+        <Modal
+          isOpen={!!activeChallengeForReport}
+          onClose={() => setActiveChallengeForReport(null)}
+          title={`مدیریت پروژه: ${activeChallengeForReport.title}`}
+          maxWidth="3xl"
+        >
+          <div className="space-y-5 text-right p-1" dir="rtl">
+            {/* Modal Tabs with 44px min-height */}
+            <div className="flex items-center gap-2 border-b border-stone-800 pb-3 overflow-x-auto scrollbar-none">
+              <Button
+                size="sm"
+                variant={activeReportTab === 'NEW_REPORT' ? 'primary' : 'ghost'}
+                onClick={() => setActiveReportTab('NEW_REPORT')}
+                className={`min-h-[44px] text-xs sm:text-sm font-bold rounded-xl gap-2 whitespace-nowrap ${
+                  activeReportTab === 'NEW_REPORT' ? 'bg-emerald-600 text-white shadow-md' : 'text-stone-400'
+                }`}
+              >
+                <Plus className="w-4 h-4" />
+                <span>ثبت گزارش کار جدید با تاریخ</span>
+              </Button>
+
+              <Button
+                size="sm"
+                variant={activeReportTab === 'REPORT_HISTORY' ? 'primary' : 'ghost'}
+                onClick={() => setActiveReportTab('REPORT_HISTORY')}
+                className={`min-h-[44px] text-xs sm:text-sm font-bold rounded-xl gap-2 whitespace-nowrap ${
+                  activeReportTab === 'REPORT_HISTORY' ? 'bg-stone-800 text-white' : 'text-stone-400'
+                }`}
+              >
+                <Clock className="w-4 h-4" />
+                <span>
+                  تاریخچه گزارش‌ها ({toPersianDigits(activeChallengeForReport.submission?.reports?.length || 0)})
+                </span>
+              </Button>
+
+              <Button
+                size="sm"
+                variant={activeReportTab === 'FINAL_SUBMIT' ? 'primary' : 'ghost'}
+                onClick={() => setActiveReportTab('FINAL_SUBMIT')}
+                className={`min-h-[44px] text-xs sm:text-sm font-bold rounded-xl gap-2 whitespace-nowrap ${
+                  activeReportTab === 'FINAL_SUBMIT' ? 'bg-blue-600 text-white' : 'text-stone-400'
+                }`}
+              >
+                <Send className="w-4 h-4" />
+                <span>ارسال نهایی برای داوری</span>
+              </Button>
+            </div>
+
+            {/* Tab 1: New Report Form */}
+            {activeReportTab === 'NEW_REPORT' && (
+              <form onSubmit={handleSubmitNewReport} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs sm:text-sm font-bold text-stone-200 mb-1.5">
+                      تاریخ انجام کار <span className="text-rose-400">*</span>
+                    </label>
+                    <Input
+                      type="date"
+                      value={reportDate}
+                      onChange={(e) => setReportDate(e.target.value)}
+                      required
+                      className="min-h-[44px] text-sm bg-stone-900 border-stone-800 rounded-xl"
+                    />
+                    <div className="text-xs text-stone-400 mt-1">
+                      معادل شمسی: {formatToJalali(reportDate, { showMonthName: true })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs sm:text-sm font-bold text-stone-200 mb-1.5">
+                      عنوان اقدام / موضوع
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder="مثال: پیاده‌سازی سوکت و مدل‌ها"
+                      value={reportTitle}
+                      onChange={(e) => setReportTitle(e.target.value)}
+                      className="min-h-[44px] text-sm bg-stone-900 border-stone-800 rounded-xl"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs sm:text-sm font-bold text-stone-200 mb-1.5">
+                      مدت زمان کار (ساعت)
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.5"
+                      min="0.5"
+                      inputMode="decimal"
+                      placeholder="مثال: ۳"
+                      value={reportHours}
+                      onChange={(e) => setReportHours(e.target.value ? Number(e.target.value) : '')}
+                      className="min-h-[44px] text-sm bg-stone-900 border-stone-800 rounded-xl"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-bold text-stone-200 mb-1.5">
+                    شرح اقدامات انجام‌شده و توضیحات فنی <span className="text-rose-400">*</span>
+                  </label>
+                  <textarea
+                    rows={4}
+                    required
+                    placeholder="در این تاریخ چه بخش‌هایی را پیاده‌سازی کردید؟ با چه چالش‌هایی روبرو شدید؟"
+                    value={reportContent}
+                    onChange={(e) => setReportContent(e.target.value)}
+                    className="w-full text-sm bg-stone-900 border border-stone-800 rounded-xl p-3.5 text-stone-100 focus:outline-none focus:border-emerald-500 resize-none leading-relaxed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-bold text-stone-200 mb-1.5">
+                    لینک‌های مرتبط (هر لینک در یک خط - اختیاری)
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="https://github.com/.../commit/...&#10;https://www.figma.com/..."
+                    value={reportLinks}
+                    onChange={(e) => setReportLinks(e.target.value)}
+                    dir="ltr"
+                    className="w-full text-sm bg-stone-900 border border-stone-800 rounded-xl p-3 text-stone-100 focus:outline-none focus:border-emerald-500 resize-none font-mono"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-3">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setActiveChallengeForReport(null)}
+                    className="min-h-[44px] px-4 text-xs sm:text-sm text-stone-400 rounded-xl"
+                  >
+                    انصراف
+                  </Button>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={submittingReport}
+                    className="min-h-[44px] px-6 text-xs sm:text-sm font-black bg-emerald-600 hover:bg-emerald-500 text-white gap-2 rounded-xl shadow-md"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>{submittingReport ? 'در حال ثبت...' : 'ثبت گزارش پیشرفت'}</span>
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            {/* Tab 2: Report History Timeline */}
+            {activeReportTab === 'REPORT_HISTORY' && (
+              <div className="space-y-3 max-h-[440px] overflow-y-auto pr-1">
+                {(!activeChallengeForReport.submission?.reports ||
+                  activeChallengeForReport.submission.reports.length === 0) ? (
+                  <div className="text-center py-12 bg-stone-900/50 rounded-2xl border border-dashed border-stone-800 text-stone-400 text-sm space-y-2">
+                    <FileText className="w-8 h-8 text-stone-500 mx-auto" />
+                    <div>هنوز هیچ گزارش کاری برای این پروژه ثبت نشده است.</div>
+                    <div className="text-xs text-stone-500">
+                      از تب «ثبت گزارش کار جدید» می‌توانید گزارش‌های روزانه خود را وارد کنید.
+                    </div>
+                  </div>
+                ) : (
+                  activeChallengeForReport.submission.reports.map((rep, idx) => (
+                    <div
+                      key={rep.id || idx}
+                      className="bg-stone-900/80 border border-stone-800 rounded-xl p-4 space-y-2.5 relative"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 border-b border-stone-800 pb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0" />
+                          <span className="text-sm font-bold text-white">
+                            {rep.title || 'گزارش پیشرفت پروژه'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-stone-400">
+                          {rep.workDuration && (
+                            <span className="bg-stone-800 px-2 py-0.5 rounded text-emerald-400 font-bold">
+                              {toPersianDigits(rep.workDuration)} ساعت کار
+                            </span>
+                          )}
+                          <span>تاریخ: {formatToJalali(rep.reportDate, { showMonthName: true })}</span>
+                        </div>
+                      </div>
+
+                      <p className="text-xs sm:text-sm text-stone-200 leading-relaxed whitespace-pre-line">
+                        {rep.content}
+                      </p>
+
+                      {rep.links && Array.isArray(rep.links) && rep.links.length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {rep.links.map((link: string, lIdx: number) => (
+                            <a
+                              key={lIdx}
+                              href={link}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="min-h-[32px] inline-flex items-center gap-1.5 text-xs font-mono text-indigo-400 hover:text-indigo-300 bg-indigo-950/40 px-3 py-1 rounded-lg border border-indigo-900/50"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              <span>{link.replace(/^https?:\/\//, '').slice(0, 32)}...</span>
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* Tab 3: Final Project Submission */}
+            {activeReportTab === 'FINAL_SUBMIT' && (
+              <form onSubmit={handleFinalSubmit} className="space-y-4">
+                <div className="bg-blue-950/30 border border-blue-900/50 rounded-xl p-3.5 text-xs sm:text-sm text-blue-200 leading-relaxed">
+                  هنگامی که پیاده‌سازی پروژه به پایان رسید، لینک‌های خروجی و توضیحات نهایی را وارد نموده و ارسال کنید.
+                  پس از ارسال، وضعیت پروژه به «تحویل داده‌شده» تغییر یافته و منتورها پروژه شما را داوری خواهند کرد.
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs sm:text-sm font-bold text-stone-200 mb-1.5">
+                      لینک مخزن گیت‌هاب (GitHub Repository)
+                    </label>
+                    <Input
+                      type="url"
+                      placeholder="https://github.com/username/project-name"
+                      value={repoUrl}
+                      onChange={(e) => setRepoUrl(e.target.value)}
+                      dir="ltr"
+                      className="min-h-[44px] text-sm bg-stone-900 border-stone-800 rounded-xl font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs sm:text-sm font-bold text-stone-200 mb-1.5">
+                      لینک پیش‌نمایش آنلاین / دمو (Live Demo URL)
+                    </label>
+                    <Input
+                      type="url"
+                      placeholder="https://my-project.vercel.app"
+                      value={demoUrl}
+                      onChange={(e) => setDemoUrl(e.target.value)}
+                      dir="ltr"
+                      className="min-h-[44px] text-sm bg-stone-900 border-stone-800 rounded-xl font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs sm:text-sm font-bold text-stone-200 mb-1.5">
+                      لینک فایل فیگما یا مستندات طراحی (اختیاری)
+                    </label>
+                    <Input
+                      type="url"
+                      placeholder="https://www.figma.com/file/..."
+                      value={figmaUrl}
+                      onChange={(e) => setFigmaUrl(e.target.value)}
+                      dir="ltr"
+                      className="min-h-[44px] text-sm bg-stone-900 border-stone-800 rounded-xl font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs sm:text-sm font-bold text-stone-200 mb-1.5">
+                      توضیحات و نکات تکمیلی برای داوران
+                    </label>
+                    <textarea
+                      rows={3}
+                      placeholder="نکته خاص، نحوه اجرا، دستورالعمل‌های تست و..."
+                      value={submissionNotes}
+                      onChange={(e) => setSubmissionNotes(e.target.value)}
+                      className="w-full text-sm bg-stone-900 border border-stone-800 rounded-xl p-3.5 text-stone-100 focus:outline-none focus:border-blue-500 resize-none leading-relaxed"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-3">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setActiveChallengeForReport(null)}
+                    className="min-h-[44px] px-4 text-xs sm:text-sm text-stone-400 rounded-xl"
+                  >
+                    انصراف
+                  </Button>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={submittingFinal}
+                    className="min-h-[44px] px-6 text-xs sm:text-sm font-black bg-blue-600 hover:bg-blue-500 text-white gap-2 rounded-xl shadow-md"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span>{submittingFinal ? 'در حال ارسال...' : 'ارسال نهایی برای داوری'}</span>
+                  </Button>
+                </div>
+              </form>
+            )}
+          </div>
+        </Modal>
+      )}
+    </div>
   );
 };

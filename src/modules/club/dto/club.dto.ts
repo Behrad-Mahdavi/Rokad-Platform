@@ -243,3 +243,27 @@ export class TeacherApprovalDto {
   @IsString()
   notes?: string;
 }
+
+export class CreateClubReportDto {
+  @IsOptional()
+  @IsString()
+  reportDate?: string;
+
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @IsString()
+  content: string;
+
+  @IsOptional()
+  @IsNumber()
+  workDuration?: number;
+
+  @IsOptional()
+  links?: any;
+
+  @IsOptional()
+  attachments?: any;
+}
+
