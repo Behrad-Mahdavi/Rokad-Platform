@@ -32,6 +32,10 @@ import {
   Info,
   Check,
   Zap,
+  Target,
+  Laptop,
+  Users,
+  Award,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { toPersianDigits, formatToJalali } from '../../lib/utils';
@@ -290,6 +294,82 @@ export const ClubPage: React.FC = () => {
                 </span>
               )}
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 2.5. Challenge Flow Steps (روند چالش) */}
+      <div className="bg-stone-900/90 border border-stone-800 rounded-2xl p-4 sm:p-6 space-y-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-800/80 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold shrink-0">
+              <Zap className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-black text-white">روند گام‌به‌گام چالش ورودی</h2>
+              <p className="text-xs sm:text-sm text-stone-400">مسیر شما از انتخاب پروژه تا ورود رسمی به استودیوی کسب‌وکار</p>
+            </div>
+          </div>
+          <span className="self-start sm:self-auto text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full">
+            ۴ مرحله اصلی
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {/* Step 1 */}
+          <div className="relative bg-stone-950/60 border border-stone-800/80 rounded-xl p-4 space-y-2 hover:border-purple-500/40 transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-black text-xs">
+                ۱
+              </span>
+              <Target className="w-5 h-5 text-purple-400" />
+            </div>
+            <h3 className="text-sm sm:text-base font-bold text-white">انتخاب چالش</h3>
+            <p className="text-xs sm:text-sm text-stone-300 leading-relaxed">
+              انتخاب حداکثر ۲ چالش متناسب با تخصص و علایق، و دریافت پکیج فایل‌ها و بریف رسمی.
+            </p>
+          </div>
+
+          {/* Step 2 */}
+          <div className="relative bg-stone-950/60 border border-stone-800/80 rounded-xl p-4 space-y-2 hover:border-blue-500/40 transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-black text-xs">
+                ۲
+              </span>
+              <Laptop className="w-5 h-5 text-blue-400" />
+            </div>
+            <h3 className="text-sm sm:text-base font-bold text-white">کار کردن روی پروژه</h3>
+            <p className="text-xs sm:text-sm text-stone-300 leading-relaxed">
+              پیاده‌سازی تسک‌ها در مهلت ۱۰ روزه و ثبت مستمر گزارش‌های کار با تاریخ در پنل کاربری.
+            </p>
+          </div>
+
+          {/* Step 3 */}
+          <div className="relative bg-stone-950/60 border border-stone-800/80 rounded-xl p-4 space-y-2 hover:border-emerald-500/40 transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-xs">
+                ۳
+              </span>
+              <Users className="w-5 h-5 text-emerald-400" />
+            </div>
+            <h3 className="text-sm sm:text-base font-bold text-white">منتورینگ و هدایت</h3>
+            <p className="text-xs sm:text-sm text-stone-300 leading-relaxed">
+              همراهی منتورهای ارشد حوزه، بررسی پیشرفت کار، رفع چالش‌های فنی و ارتقای کیفیت خروجی.
+            </p>
+          </div>
+
+          {/* Step 4 */}
+          <div className="relative bg-stone-950/60 border border-stone-800/80 rounded-xl p-4 space-y-2 hover:border-amber-500/40 transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-black text-xs">
+                ۴
+              </span>
+              <Award className="w-5 h-5 text-amber-400" />
+            </div>
+            <h3 className="text-sm sm:text-base font-bold text-white">روز ارائه (Demo Day)</h3>
+            <p className="text-xs sm:text-sm text-stone-300 leading-relaxed">
+              ارائه نهایی دمو در برابر داوران و اساتید، تعیین گرید (A/B/C) و ورود به استودیوی کسب‌وکار.
+            </p>
           </div>
         </div>
       </div>
