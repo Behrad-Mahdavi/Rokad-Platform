@@ -117,7 +117,7 @@ apiClient.interceptors.request.use(
     }
 
     // Attach Client App Version for release version tracking and server error/audit logs
-    config.headers['X-App-Version'] = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.1.1';
+    config.headers['X-App-Version'] = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.2.0';
 
     return config;
   },

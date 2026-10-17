@@ -953,13 +953,33 @@ export class ClubService {
             rules: item.rules,
             department: item.department,
             type: item.type,
-            maxDays: item.maxDays || 14,
+            maxDays: item.maxDays || 10,
             maxScore: item.maxScore || 100,
             attachments: {
               packageFile: item.packageFile,
               tags: item.tags,
             },
             isPublished: true,
+          },
+        });
+      } else if (
+        challenge.title !== item.title ||
+        challenge.department !== item.department ||
+        challenge.description !== item.description
+      ) {
+        challenge = await this.prisma.clubChallenge.update({
+          where: { id: challenge.id },
+          data: {
+            title: item.title,
+            department: item.department,
+            description: item.description,
+            missionBrief: item.missionBrief,
+            rules: item.rules,
+            maxDays: item.maxDays || 10,
+            attachments: {
+              packageFile: item.packageFile,
+              tags: item.tags,
+            },
           },
         });
       }

@@ -358,7 +358,7 @@ export const ProfileSettingsPage: React.FC = () => {
           title="پاداش نسخه ۱.۰.۰"
           className="text-[11.5px] text-gray-400/80 dark:text-gray-500 font-medium tracking-wide hover:text-amber-500 dark:hover:text-amber-400 transition-colors cursor-pointer active:scale-95 inline-block"
         >
-          سامانه هوشمند مدارس رُکاد • نسخه {toPersianDigits(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.1.1')}
+          سامانه هوشمند مدارس رُکاد • نسخه {toPersianDigits(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.2.0')}
         </button>
       </div>
     </div>

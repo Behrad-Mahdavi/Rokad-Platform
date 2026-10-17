@@ -10,7 +10,7 @@ import { Public } from '../../common/decorators/public.decorator';
 
 import { HeartbeatService } from './heartbeat.service';
 
-let appVersion = '1.1.1';
+let appVersion = '1.2.0';
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const pkg = require('../../../package.json');
